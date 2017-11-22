@@ -2,10 +2,11 @@
 name = "uefi"
 version = "0.1.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+readme = "README.md"
 publish = false
 
 [dependencies]
 bitflags = "1"
 
 [workspace]
-members = ["tests"]
+members = ["tests", "uefi-logger"]

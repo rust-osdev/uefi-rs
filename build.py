@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+
+import os
+from pathlib import Path
+import subprocess as sp
+import sys
+
+## Configurable settings
+# Target to build for.
+TARGET = 'x86_64-uefi'
+# Configuration to build.
+CONFIG = 'debug'
+
+# Xargo executable.
+XARGO = 'xargo'
+# Additional flags passed to Xargo.
+XARGO_FLAGS = [
+    '--target', TARGET,
+]
+
+# A linker for PE/COFF files.
+LINKER = 'lld'
+LINKER_FLAGS = [
+    # Use LLD in `link.exe` mode.
+    '-flavor', 'link',
+    # Create 64-bit executables.
+    '/Machine:x64',
+    # Create UEFI apps.
+    '/Subsystem:EFI_Application',
+    # Customizable entry point name.
+    '/Entry:uefi_start',
+]
+
+BUILD_DIR = Path('target') / TARGET / CONFIG
+ESP_DIR = BUILD_DIR / 'esp'
+
+def run_xargo(verb, *flags):
+    sp.run([XARGO, verb, *XARGO_FLAGS, *flags]).check_returncode()
+
+def build():
+    run_xargo('build', '--package', 'tests')
+
+    input = BUILD_DIR / 'libtests.a'
+
+    boot_dir = ESP_DIR / 'EFI' / 'Boot'
+    boot_dir.mkdir(parents=True, exist_ok=True)
+
+    output = boot_dir / 'BootX64.efi'
+
+    sp.run([LINKER, *LINKER_FLAGS, input, f'-Out:{output}']).check_returncode()
+
+def doc():
+    run_xargo('doc', '--no-deps', '--package', 'uefi')
+
+def clippy():
+    run_xargo('clippy')
+
+
+def run_qemu():
+    qemu = 'qemu-system-x86_64'
+
+    # TODO: download and extract automatically from Kraxel's repo.
+    ovmf_dir = Path('.')
+    ovmf_code, ovmf_vars = ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
+
+    qemu_flags = [
+        # Disable default devices.
+        '-nodefaults',
+        # Use a standard VGA for graphics.
+        '-vga', 'std',
+        # Use a modern machine, with acceleration if possible.
+        '-machine', 'q35,accel=kvm:zen:hax:tcg',
+        # Allocate some memory.
+        '-m', '128M',
+        # Set up OVMF.
+        '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
+        '-drive', f'if=pflash,format=raw,file={ovmf_vars}',
+        # Create AHCI controller.
+        '-device', 'ahci,id=ahci,multifunction=on',
+        # Mount a local directory as a FAT partition.
+        '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
+        '-device', 'ide-drive,bus=ahci.0,drive=esp',
+        # Only enable when debugging UEFI boot:
+        #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
+    ]
+
+    sp.run([qemu, *qemu_flags]).check_returncode()
+
+
+def main(args) -> int:
+    # Clear any Rust flags which might affect the build.
+    os.environ['RUSTFLAGS'] = ''
+
+    if len(args) < 2:
+        print("Expected at least one parameter (the commands to run): build / doc / run / clippy")
+        return 1
+
+    cmds = args[1:]
+
+    KNOWN_CMDS = {
+        'build': build,
+        'doc': doc,
+        'run': run_qemu,
+    }
+
+    for cmd in cmds:
+        if cmd in KNOWN_CMDS:
+            KNOWN_CMDS[cmd]()
+        else:
+            print("Unknown verb:", cmd)
+            return 1
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv))

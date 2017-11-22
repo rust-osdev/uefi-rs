@@ -1,0 +1,16 @@
+[package]
+name = "tests"
+version = "0.1.0"
+authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+rlibc = "1"
+compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
+
+uefi = { path = ".." }
+uefi-logger = { path = "../uefi-logger" }
+log = { version = "0.3", default-features = false }

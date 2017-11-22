@@ -1,0 +1,9 @@
+[package]
+name = "uefi-logger"
+version = "0.1.0"
+authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+publish = false
+
+[dependencies]
+uefi = { path = ".." }
+log = { version = "0.3", default-features = false }

@@ -1,0 +1,22 @@
+//! Protocol definitions.
+//!
+//! Protocols are sets of related functionality.
+//!
+//! Protocols are identified by a unique ID.
+//!
+//! Protocols can be implemented by a UEFI driver,
+//! and are usually retrieved from a standard UEFI table or
+//! by querying a handle.
+
+use Guid;
+
+/// Common trait implemented by all standard UEFI protocols.
+pub trait Protocol {
+    /// Unique protocol identifier.
+    const GUID: Guid;
+}
+
+mod macros;
+use self::macros::impl_proto;
+
+pub mod console;

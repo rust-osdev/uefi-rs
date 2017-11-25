@@ -115,18 +115,25 @@ impl Status {
     pub fn is_error(self) -> bool {
         (self as usize) & HIGHEST_BIT_SET == 1
     }
-}
 
-impl Into<Result<()>> for Status {
-    /// Converts this status code to `Ok` if it indicates success,
-    /// or to `Err` if it indicates an error or warning.
+    /// Converts this status code into a result with a given value.
     #[inline]
-    fn into(self) -> Result<()> {
+    pub fn into_with<T, F>(self, f: F) -> Result<T>
+    where
+        F: FnOnce() -> T,
+    {
         if self.is_success() {
-            Ok(())
+            Ok(f())
         } else {
             Err(self)
         }
+    }
+}
+
+impl Into<Result<()>> for Status {
+    #[inline]
+    fn into(self) -> Result<()> {
+        self.into_with(|| ())
     }
 }
 

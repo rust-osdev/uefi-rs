@@ -76,7 +76,7 @@ def run_qemu():
         '-m', '128M',
         # Set up OVMF.
         '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
-        '-drive', f'if=pflash,format=raw,file={ovmf_vars}',
+        '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
         # Create AHCI controller.
         '-device', 'ahci,id=ahci,multifunction=on',
         # Mount a local directory as a FAT partition.

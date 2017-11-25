@@ -1,5 +1,5 @@
 use super::Result;
-use core::{fmt, ops};
+use core::ops;
 
 const HIGHEST_BIT_SET: usize = !((!0_usize) >> 1);
 
@@ -134,13 +134,6 @@ impl Into<Result<()>> for Status {
     #[inline]
     fn into(self) -> Result<()> {
         self.into_with(|| ())
-    }
-}
-
-impl From<fmt::Error> for Status {
-    fn from(_: fmt::Error) -> Self {
-        // This is pretty much the only cause why console I/O would fail.
-        Status::WarnUnknownGlyph
     }
 }
 

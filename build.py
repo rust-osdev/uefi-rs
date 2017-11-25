@@ -31,6 +31,12 @@ LINKER_FLAGS = [
     '/Entry:uefi_start',
 ]
 
+# QEMU executable to use
+QEMU = 'qemu-system-x86_64'
+
+# Path to directory containing `OVMF_{CODE/VARS}.fd`.
+OVMF_DIR = Path('.')
+
 BUILD_DIR = Path('target') / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
@@ -57,11 +63,7 @@ def clippy():
 
 
 def run_qemu():
-    qemu = 'qemu-system-x86_64'
-
-    # TODO: download and extract automatically from Kraxel's repo.
-    ovmf_dir = Path('.')
-    ovmf_code, ovmf_vars = ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
+    ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
 
     qemu_flags = [
         # Disable default devices.
@@ -84,7 +86,7 @@ def run_qemu():
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]
 
-    sp.run([qemu, *qemu_flags]).check_returncode()
+    sp.run([QEMU, *qemu_flags]).check_returncode()
 
 
 def main(args) -> int:

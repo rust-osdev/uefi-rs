@@ -16,7 +16,7 @@ pub trait Protocol {
     const GUID: Guid;
 }
 
+#[macro_use]
 mod macros;
-use self::macros::impl_proto;
 
 pub mod console;

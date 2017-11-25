@@ -1,4 +1,4 @@
-use {Status, Result, proto};
+use {Status, Result};
 use core::mem;
 
 /// Interface for text-based input devices.
@@ -111,7 +111,7 @@ pub enum ScanCode {
     Eject,
 }
 
-proto::impl_proto! {
+impl_proto! {
     protocol Input {
         GUID = 0x387477c1, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
     }

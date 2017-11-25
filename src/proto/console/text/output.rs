@@ -1,4 +1,4 @@
-use {Status, Result, proto};
+use {Status, Result};
 
 /// Interface for text-based output devices.
 #[repr(C)]
@@ -143,7 +143,7 @@ struct OutputData {
     cursor_visible: bool,
 }
 
-proto::impl_proto! {
+impl_proto! {
     protocol Output {
         GUID = 0x387477c2, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
     }

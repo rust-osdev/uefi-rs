@@ -3,11 +3,15 @@ use {Status, Result};
 /// Interface for text-based output devices.
 #[repr(C)]
 pub struct Output {
-    reset: extern fn(this: &Output, extended: bool) -> Status,
-    output_string: extern fn(this: &Output, string: *const u16) -> Status,
-    test_string: extern fn(this: &Output, string: *const u16) -> Status,
-    query_mode: extern fn(this: &Output, mode: i32, columns: &mut usize, rows: &mut usize) -> Status,
-    set_mode: extern fn(this: &mut Output, mode: i32) -> Status,
+    reset: extern "C" fn(this: &Output, extended: bool) -> Status,
+    output_string: extern "C" fn(this: &Output, string: *const u16) -> Status,
+    test_string: extern "C" fn(this: &Output, string: *const u16) -> Status,
+    query_mode: extern "C" fn(this: &Output,
+                              mode: i32,
+                              columns: &mut usize,
+                              rows: &mut usize)
+                              -> Status,
+    set_mode: extern "C" fn(this: &mut Output, mode: i32) -> Status,
     _pad: [usize; 4],
     data: &'static OutputData,
 }
@@ -68,7 +72,7 @@ impl Output {
     pub fn current_mode(&self) -> Result<OutputMode> {
         let index = self.data.mode;
         let dims = self.query_mode(index)?;
-        Ok(OutputMode { index, dims } )
+        Ok(OutputMode { index, dims })
     }
 }
 

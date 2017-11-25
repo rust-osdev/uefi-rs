@@ -1,4 +1,4 @@
-use {Handle};
+use Handle;
 use super::{Header, Revision, cfg};
 use proto::console::text;
 use core::slice;
@@ -36,31 +36,23 @@ impl SystemTable {
 
     /// Returns the standard input protocol.
     pub fn stdin(&self) -> &mut text::Input {
-        unsafe {
-            &mut *self.stdin
-        }
+        unsafe { &mut *self.stdin }
     }
 
     /// Returns the standard output protocol.
     pub fn stdout(&self) -> &mut text::Output {
-        unsafe {
-            &mut *self.stdout
-        }
+        unsafe { &mut *self.stdout }
     }
 
     /// Returns the standard error protocol.
     pub fn stderr(&self) -> &mut text::Output {
-        unsafe {
-            &mut *self.stderr
-        }
+        unsafe { &mut *self.stderr }
     }
 
     /// Returns the config table entries, a linear array of structures
     /// pointing to other system-specific tables.
     pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
-        unsafe {
-            slice::from_raw_parts(self.cfg_table, self.nr_cfg)
-        }
+        unsafe { slice::from_raw_parts(self.cfg_table, self.nr_cfg) }
     }
 }
 

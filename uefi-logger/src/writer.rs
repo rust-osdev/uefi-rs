@@ -3,14 +3,12 @@ use core::{fmt, str};
 
 /// Struct which is used to implement the `fmt::Write` trait on a UEFI output protocol.
 pub struct OutputWriter {
-    output: &'static mut Output
+    output: &'static mut Output,
 }
 
 impl OutputWriter {
     pub fn new(output: &'static mut Output) -> Self {
-        OutputWriter {
-            output
-        }
+        OutputWriter { output }
     }
 }
 
@@ -28,7 +26,9 @@ impl fmt::Write for OutputWriter {
             buf[*i] = 0;
             *i = 0;
 
-            self.output.output_string(buf.as_ptr()).map_err(|_| fmt::Error)
+            self.output.output_string(buf.as_ptr()).map_err(
+                |_| fmt::Error,
+            )
         };
 
         {

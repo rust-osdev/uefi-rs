@@ -18,9 +18,7 @@ pub struct UefiLogger {
 impl UefiLogger {
     /// Creates a new logger.
     pub fn new(output: &'static mut Output) -> Self {
-        UefiLogger {
-            writer: UnsafeCell::new(OutputWriter::new(output))
-        }
+        UefiLogger { writer: UnsafeCell::new(OutputWriter::new(output)) }
     }
 }
 
@@ -34,7 +32,7 @@ impl log::Log for UefiLogger {
 
         let writer = unsafe { &mut *self.writer.get() };
         use core::fmt::Write;
-        writeln!(writer, "{}", args);
+        writeln!(writer, "{}", args).unwrap();
     }
 }
 

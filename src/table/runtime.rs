@@ -1,6 +1,6 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use {Status};
+use Status;
 use super::Header;
 use core::ptr;
 
@@ -13,15 +13,15 @@ pub struct RuntimeServices {
     header: Header,
     // Skip some useless functions.
     _pad: [usize; 10],
-    reset: extern fn(u32, Status, usize, *const u8) -> !,
+    reset: extern "C" fn(u32, Status, usize, *const u8) -> !,
 }
 
 impl RuntimeServices {
     /// Resets the computer.
     pub fn reset(&self, rt: ResetType, status: Status, data: Option<&[u8]>) -> ! {
         let (size, data) = match data {
-           Some(data) => (data.len(), data.as_ptr()),
-           None => (0, ptr::null()),
+            Some(data) => (data.len(), data.as_ptr()),
+            None => (0, ptr::null()),
         };
 
         (self.reset)(rt as u32, status, size, data)

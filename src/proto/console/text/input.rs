@@ -4,8 +4,8 @@ use core::mem;
 /// Interface for text-based input devices.
 #[repr(C)]
 pub struct Input {
-    reset: extern fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern fn(this: &mut Input, key: &mut Key) -> Status,
+    reset: extern "C" fn(this: &mut Input, extended: bool) -> Status,
+    read_key_stroke: extern "C" fn(this: &mut Input, key: &mut Key) -> Status,
 }
 
 impl Input {
@@ -29,11 +29,13 @@ impl Input {
             match self.read_key() {
                 // Received a key, exit loop.
                 Ok(key) => return Ok(key),
-                Err(code) => match code {
-                    // Wait for key press.
-                    Status::NotReady => (),
-                    // Exit on error, no point in looping.
-                    _ => return Err(code),
+                Err(code) => {
+                    match code {
+                        // Wait for key press.
+                        Status::NotReady => (),
+                        // Exit on error, no point in looping.
+                        _ => return Err(code),
+                    }
                 }
             }
         }

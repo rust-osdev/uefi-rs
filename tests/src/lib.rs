@@ -10,14 +10,15 @@ extern crate uefi_logger;
 extern crate log;
 
 mod no_std;
+mod boot;
 
 use uefi::{Handle, Status};
 use uefi::table;
 
 #[no_mangle]
-pub extern fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Status {
+pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Status {
     let stdout = st.stdout();
-    stdout.reset(false);
+    stdout.reset(false).unwrap();
 
     let logger = uefi_logger::UefiLogger::new(stdout);
 
@@ -30,8 +31,9 @@ pub extern fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Sta
         }).unwrap(); // Can only fail if already initialized.
     }
 
-    info!("Hello world!");
+    info!("# uefi-rs test runner");
     info!("Image handle: {:?}", handle);
+
     {
         let revision = st.uefi_revision();
         let (major, minor) = (revision.major(), revision.minor());
@@ -39,9 +41,15 @@ pub extern fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Sta
         info!("UEFI {}.{}.{}", major, minor / 10, minor % 10);
     }
 
-    loop {
+    let bt = st.boot;
 
+    match boot::boot_services_test(bt) {
+        Ok(_) => info!("Boot services test passed."),
+        Err(status) => error!("Boot services test failed with status {:?}", status),
     }
 
-    Status::Success
+    bt.stall(4_000_000);
+
+    let rt = st.runtime;
+    rt.reset(table::runtime::ResetType::Shutdown, Status::Success, None);
 }

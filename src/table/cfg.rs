@@ -148,27 +148,3 @@ pub const DEBUG_IMAGE_INFO_GUID: Guid = Guid::from_values(
     0x4764,
     [0xb7, 0xa2, 0x7a, 0xfe, 0xfe, 0xd9, 0x5e, 0x8b],
 );
-
-/// Itanium is not supported by Rust, and it's a dead platform anyway.
-///
-/// These tables are listed for completion.
-pub mod ia64 {
-    use super::Guid;
-
-    /// Itanium System Abstraction Table.
-    pub const SYSTEM_ABSTRACTION_TABLE_GUID: Guid =
-        Guid::from_values(
-            0xeb9d2d32,
-            0x2d88,
-            0x11d3,
-            [0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d],
-        );
-
-    /// MPS table, Itanium-specific.
-    pub const MPS_GUID: Guid = Guid::from_values(
-        0xeb9d2d2f,
-        0x2d88,
-        0x11d3,
-        [0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d],
-    );
-}

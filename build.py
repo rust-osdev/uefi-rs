@@ -35,6 +35,7 @@ LINKER_FLAGS = [
 QEMU = 'qemu-system-x86_64'
 
 # Path to directory containing `OVMF_{CODE/VARS}.fd`.
+# TODO: use installed OVMF, if available.
 OVMF_DIR = Path('.')
 
 BUILD_DIR = Path('target') / TARGET / CONFIG

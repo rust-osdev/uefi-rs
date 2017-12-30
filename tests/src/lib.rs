@@ -20,6 +20,10 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
     let stdout = st.stdout();
     stdout.reset(false).unwrap();
 
+    // Switch to the maximum supported graphics mode.
+    let best_mode = stdout.modes().last().unwrap();
+    stdout.set_mode(best_mode).unwrap();
+
     let logger = uefi_logger::UefiLogger::new(stdout);
 
     unsafe {

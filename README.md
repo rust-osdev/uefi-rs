@@ -10,7 +10,7 @@ interfaces, and allow developers to write idiomatic Rust code.
 [uefi]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
 ## Documentation
-This crate's documentation is fairly minimal, and you are encouraged to refer to 
+This crate's documentation is fairly minimal, and you are encouraged to refer to
 the [UEFI specification][spec] for detailed information.
 
 You can find some example code in the `tests` directory,
@@ -29,6 +29,8 @@ a custom Rust target for 64-bit UEFI applications.
   You need to extract `OVMF_CODE.fd` and `OVMF_VARS.fd` to the same directory as the `build.py` file.
   Alternatively, install OVMF using your distro's package manager and change the paths in the script file.
 - [Xargo](https://github.com/japaric/xargo): this is essential if you plan to do any sort of cross-platform / bare-bones Rust programming.
+- [LLD](https://lld.llvm.org/): the LLVM project linker is currently the only supported linker.
+  Alternatively, you can use `link.exe` if you are on Windows.
 
 ### Steps
 It's as simple as running the `build.py` script with the `build` and `run` arguments:

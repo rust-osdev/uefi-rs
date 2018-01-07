@@ -11,31 +11,35 @@ mod writer;
 use self::writer::OutputWriter;
 
 /// Logging implementation which writes to a UEFI output stream.
-pub struct UefiLogger {
+pub struct Logger {
     writer: UnsafeCell<OutputWriter>,
 }
 
-impl UefiLogger {
+impl Logger {
     /// Creates a new logger.
     pub fn new(output: &'static mut Output) -> Self {
-        UefiLogger { writer: UnsafeCell::new(OutputWriter::new(output)) }
+        Logger { writer: UnsafeCell::new(OutputWriter::new(output)) }
     }
 }
 
-impl log::Log for UefiLogger {
-    fn enabled(&self, _metadata: &log::LogMetadata) -> bool {
+impl log::Log for Logger {
+    fn enabled(&self, _metadata: &log::Metadata) -> bool {
         true
     }
 
-    fn log(&self, record: &log::LogRecord) {
+    fn log(&self, record: &log::Record) {
         let args = record.args();
 
         let writer = unsafe { &mut *self.writer.get() };
         use core::fmt::Write;
         writeln!(writer, "{}", args).unwrap();
     }
+
+    fn flush(&self) {
+        // This simple logger does not buffer output.
+    }
 }
 
 // The logger is not thread-safe, but the UEFI boot environment only uses one processor.
-unsafe impl Sync for UefiLogger {}
-unsafe impl Send for UefiLogger {}
+unsafe impl Sync for Logger {}
+unsafe impl Send for Logger {}

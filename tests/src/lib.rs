@@ -15,6 +15,8 @@ mod boot;
 use uefi::{Handle, Status};
 use uefi::table;
 
+static mut LOGGER: Option<uefi_logger::Logger> = None;
+
 #[no_mangle]
 pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Status {
     let stdout = st.stdout();
@@ -24,16 +26,18 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
     let best_mode = stdout.modes().last().unwrap();
     stdout.set_mode(best_mode).unwrap();
 
-    let logger = uefi_logger::UefiLogger::new(stdout);
+    // Construct the logger.
+    let logger = unsafe {
+        LOGGER = Some(uefi_logger::Logger::new(stdout));
 
-    unsafe {
-        log::set_logger_raw(|log_level| {
-            // Log everything.
-            log_level.set(log::LogLevelFilter::Info);
+        LOGGER.as_ref().unwrap()
+    };
 
-            &logger
-        }).unwrap(); // Can only fail if already initialized.
-    }
+    // Set the logger.
+    log::set_logger(logger).unwrap(); // Can only fail if already initialized.
+
+    // Log everything.
+    log::set_max_level(log::LevelFilter::Info);
 
     info!("# uefi-rs test runner");
     info!("Image handle: {:?}", handle);

@@ -13,4 +13,4 @@ compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-built
 
 uefi = { path = ".." }
 uefi-logger = { path = "../uefi-logger" }
-log = { version = "0.3", default-features = false }
+log = { version = "0.4", default-features = false }

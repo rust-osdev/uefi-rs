@@ -2,6 +2,9 @@ language: rust
 rust:
   - nightly
 
+python:
+  - "3.6"
+
 dist: trusty
 sudo: false
 

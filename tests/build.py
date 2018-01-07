@@ -55,9 +55,8 @@ def build():
     boot_dir.mkdir(parents=True, exist_ok=True)
 
     output = boot_dir / 'BootX64.efi'
-    output_arg = '-Out:{}'.format(output)
 
-    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), output_arg]).check_returncode()
+    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), f'-Out:{output}']).check_returncode()
 
 def doc():
     run_xargo('doc', '--no-deps', '--package', 'uefi')
@@ -79,12 +78,12 @@ def run_qemu():
         # Allocate some memory.
         '-m', '128M',
         # Set up OVMF.
-        '-drive', 'if=pflash,format=raw,file={},readonly=on'.format(ovmf_code),
-        '-drive', 'if=pflash,format=raw,file={},readonly=on'.format(ovmf_vars),
+        '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
+        '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
         # Create AHCI controller.
         '-device', 'ahci,id=ahci,multifunction=on',
         # Mount a local directory as a FAT partition.
-        '-drive', 'if=none,format=raw,file=fat:rw:{},id=esp'.format(ESP_DIR),
+        '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
         '-device', 'ide-drive,bus=ahci.0,drive=esp',
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',

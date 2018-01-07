@@ -39,7 +39,7 @@ QEMU = 'qemu-system-x86_64'
 OVMF_DIR = Path('.')
 
 # Path to workspace's `Cargo.toml`
-WORKSPACE_DIR = Path(__file__).resolve().parent
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 BUILD_DIR = WORKSPACE_DIR / Path('target') / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
@@ -98,6 +98,8 @@ def main(args) -> int:
 
     # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
     os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'tests')
+
+    print(os.environ['RUST_TARGET_PATH'])
 
     if len(args) < 2:
         print("Expected at least one parameter (the commands to run): build / doc / run / clippy")

@@ -39,7 +39,7 @@ QEMU = 'qemu-system-x86_64'
 OVMF_DIR = Path('.')
 
 # Path to workspace's `Cargo.toml`
-WORKSPACE_DIR = Path('..')
+WORKSPACE_DIR = Path('..').resolve()
 BUILD_DIR = WORKSPACE_DIR / Path('target') / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 

@@ -40,7 +40,7 @@ BUILD_DIR = WORKSPACE_DIR / Path('target') / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
 def run_xargo(verb, *flags):
-    sp.run([XARGO, verb, '--target', TARGET] + list(flags)).check_returncode()
+    sp.run([XARGO, verb, '--target', TARGET, *flags]).check_returncode()
 
 def build():
     run_xargo('build', '--package', 'tests')
@@ -52,7 +52,7 @@ def build():
 
     output = boot_dir / 'BootX64.efi'
 
-    sp.run([LINKER] + LINKER_FLAGS + [str(input_lib), '-Out:{}'.format(output)]).check_returncode()
+    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), f'-Out:{output}']).check_returncode()
 
 def doc():
     run_xargo('doc', '--no-deps', '--package', 'uefi')
@@ -74,12 +74,12 @@ def run_qemu():
         # Allocate some memory.
         '-m', '128M',
         # Set up OVMF.
-        '-drive', 'if=pflash,format=raw,file={},readonly=on'.format(ovmf_code),
-        '-drive', 'if=pflash,format=raw,file={},readonly=on'.format(ovmf_vars),
+        '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
+        '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
         # Create AHCI controller.
         '-device', 'ahci,id=ahci,multifunction=on',
         # Mount a local directory as a FAT partition.
-        '-drive', 'if=none,format=raw,file=fat:rw:{},id=esp'.format(ESP_DIR),
+        '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
         '-device', 'ide-drive,bus=ahci.0,drive=esp',
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',

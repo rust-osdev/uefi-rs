@@ -38,7 +38,9 @@ QEMU = 'qemu-system-x86_64'
 # TODO: use installed OVMF, if available.
 OVMF_DIR = Path('.')
 
-BUILD_DIR = Path('target') / TARGET / CONFIG
+# Path to workspace's `Cargo.toml`
+WORKSPACE_DIR = Path('.')
+BUILD_DIR = WORKSPACE_DIR / Path('target') / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
 def run_xargo(verb, *flags):
@@ -93,6 +95,9 @@ def run_qemu():
 def main(args) -> int:
     # Clear any Rust flags which might affect the build.
     os.environ['RUSTFLAGS'] = ''
+
+    # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
+    os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR.resolve())
 
     if len(args) < 2:
         print("Expected at least one parameter (the commands to run): build / doc / run / clippy")

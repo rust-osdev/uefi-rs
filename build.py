@@ -74,7 +74,7 @@ def run_qemu():
         # Use a standard VGA for graphics.
         '-vga', 'std',
         # Use a modern machine, with acceleration if possible.
-        '-machine', 'q35,accel=kvm:zen:hax:tcg',
+        '-machine', 'q35,accel=kvm:tcg',
         # Allocate some memory.
         '-m', '128M',
         # Set up OVMF.

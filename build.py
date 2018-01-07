@@ -49,14 +49,14 @@ def run_xargo(verb, *flags):
 def build():
     run_xargo('build', '--package', 'tests')
 
-    input = BUILD_DIR / 'libtests.a'
+    input_lib = BUILD_DIR / 'libtests.a'
 
     boot_dir = ESP_DIR / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
 
     output = boot_dir / 'BootX64.efi'
 
-    sp.run([LINKER, *LINKER_FLAGS, input, f'-Out:{output}']).check_returncode()
+    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), f'-Out:{output}']).check_returncode()
 
 def doc():
     run_xargo('doc', '--no-deps', '--package', 'uefi')

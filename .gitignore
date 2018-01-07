@@ -1,6 +1,2 @@
 /target/
 Cargo.lock
-
-# OVMF images, which provide a UEFI firmware for QEMU.
-/OVMF_CODE.fd
-/OVMF_VARS.fd

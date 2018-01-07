@@ -21,26 +21,30 @@ a custom Rust target for 64-bit UEFI applications.
 
 [spec]: http://www.uefi.org/specifications
 
-## Running the tests
+## Building UEFI programs
 ### Prerequisites
-- [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
-- [Python 3](https://www.python.org)
-- [OVMF](https://github.com/tianocore/tianocore.github.io/wiki/OVMF):
-  You need to extract `OVMF_CODE.fd` and `OVMF_VARS.fd` to the same directory as the `build.py` file.
-  Alternatively, install OVMF using your distro's package manager and change the paths in the script file.
 - [Xargo](https://github.com/japaric/xargo): this is essential if you plan to do any sort of cross-platform / bare-bones Rust programming.
-- [LLD](https://lld.llvm.org/): the LLVM project linker is currently the only supported linker.
+- [LLD](https://lld.llvm.org/): the LLVM linker is currently the only supported linker.
   Alternatively, you can use `link.exe` if you are on Windows.
 
 ### Steps
-It's as simple as running the `build.py` script with the `build` and `run` arguments:
-
-```sh
-./build.py build run
+The following steps allow you to build a simple UEFI app.
+- Create a new `#![no_std]` crate, and make sure you have an entry point function which matches the one below:
+```rust
+#[no_mangle]
+pub extern "C" fn entry_point(handle: Handle, system_table: &'static table::SystemTable) -> Status;
 ```
+- Copy the `tests/x86_64-uefi.json` target file to your project's root. You can create your own target file based on it.
+- Build using `xargo build --target x86_64-uefi`.
+- The generated static library needs to be linked with LLD, e.g.
+```sh
+lld-link /Machine:x64 /Subsystem:EFI_Application /Entry:entry_point uefi_app.lib /Out:uefi_app.efi
+```
+- You can run the `uefi_app.efi` file as a normal UEFI executable.
 
-You can also pass `doc` for generating documentation, or `clippy` to run Clippy.
+You can use the `tests` directory as sample code for building a simple UEFI app.
 
 ## License
-The code in this repository is licensed under the Mozilla Public License 2.
+The code in this repository is licensed under the Mozilla Public License 2. This license allows you to use the crate in proprietary programs, but any modifications to the files must be open-sourced.
+
 The full text of the license is available in the `LICENSE` file.

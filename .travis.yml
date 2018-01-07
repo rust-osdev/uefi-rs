@@ -1,0 +1,19 @@
+language: rust
+rust:
+  - nightly
+
+dist: trusty
+sudo: false
+
+matrix:
+  allow_failures:
+    - rust: nightly
+
+cache: cargo
+
+before_install:
+  - cargo install xargo
+
+script:
+  - cd tests
+  - python3 -m build build

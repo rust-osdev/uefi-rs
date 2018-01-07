@@ -55,8 +55,9 @@ def build():
     boot_dir.mkdir(parents=True, exist_ok=True)
 
     output = boot_dir / 'BootX64.efi'
+    output_arg = '-Out:{}'.format(output)
 
-    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), f'-Out:{output}']).check_returncode()
+    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), output_arg]).check_returncode()
 
 def doc():
     run_xargo('doc', '--no-deps', '--package', 'uefi')

@@ -1,24 +1,24 @@
 #![no_std]
 
-#![feature(lang_items)]
-#![feature(compiler_builtins_lib)]
+#![feature(alloc)]
 
 extern crate uefi;
-extern crate uefi_logger;
+extern crate uefi_services;
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate alloc;
 
-mod no_std;
 mod boot;
 
 use uefi::{Handle, Status};
 use uefi::table;
 
-static mut LOGGER: Option<uefi_logger::Logger> = None;
-
 #[no_mangle]
 pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Status {
+    uefi_services::init(st);
+
     let stdout = st.stdout();
     stdout.reset(false).unwrap();
 
@@ -26,21 +26,17 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
     let best_mode = stdout.modes().last().unwrap();
     stdout.set_mode(best_mode).unwrap();
 
-    // Construct the logger.
-    let logger = unsafe {
-        LOGGER = Some(uefi_logger::Logger::new(stdout));
-
-        LOGGER.as_ref().unwrap()
-    };
-
-    // Set the logger.
-    log::set_logger(logger).unwrap(); // Can only fail if already initialized.
-
-    // Log everything.
-    log::set_max_level(log::LevelFilter::Info);
-
     info!("# uefi-rs test runner");
     info!("Image handle: {:?}", handle);
+
+    // Test the memory allocator.
+    {
+        let mut values = vec![-5, 16, 23, 4, 0];
+
+        values.sort();
+
+        info!("Sorted vector: {:?}", values);
+    }
 
     {
         let revision = st.uefi_revision();

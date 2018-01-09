@@ -9,6 +9,14 @@ interfaces, and allow developers to write idiomatic Rust code.
 
 [uefi]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
+## Crates
+This project contains multiple sub-crates:
+- `uefi` (top directory): contains wrappers around the UEFI interfaces.
+- `uefi-services`: initializes many convenience crates:
+  - `uefi-logger`: wrapper for the standard [logging](https://github.com/rust-lang-nursery/log) crate.
+  - `uefi-alloc`: wrapper for the memory allocation functions. This allows you to allocate objects on the heap.
+- `tests`: a sample UEFI applications that runs unit tests.
+
 ## Documentation
 This crate's documentation is fairly minimal, and you are encouraged to refer to
 the [UEFI specification][spec] for detailed information.

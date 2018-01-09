@@ -1,0 +1,14 @@
+[package]
+name = "uefi-services"
+version = "0.1.0"
+authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+publish = false
+
+[dependencies]
+rlibc = "1"
+compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
+
+uefi = { path = ".." }
+uefi-alloc = { path = "../uefi-alloc" }
+uefi-logger = { path = "../uefi-logger" }
+log = { version = "0.4", default-features = false }

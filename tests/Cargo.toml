@@ -8,8 +8,7 @@ publish = false
 crate-type = ["staticlib"]
 
 [dependencies]
-rlibc = "1"
-
 uefi = { path = ".." }
-uefi-logger = { path = "../uefi-logger" }
+uefi-services = { path = "../uefi-services" }
+
 log = { version = "0.4", default-features = false }

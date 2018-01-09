@@ -51,13 +51,13 @@ impl BootServices {
         (self.free_pages)(addr as u64, count).into()
     }
 
-    /// Allocates a memory pool.
+    /// Allocates from a memory pool. The address is 8-byte aligned.
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<usize> {
         let mut buffer = 0;
         (self.allocate_pool)(mem_ty, size, &mut buffer).into_with(|| buffer)
     }
 
-    /// Frees a memory pool allocated by UEFI.
+    /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: usize) -> Result<()> {
         (self.free_pool)(addr).into()
     }

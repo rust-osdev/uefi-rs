@@ -30,13 +30,14 @@ LINKER_FLAGS = [
 # QEMU executable to use
 QEMU = 'qemu-system-x86_64'
 
+# Path to workspace directory (which contains the top-level `Cargo.toml`)
+WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+
 # Path to directory containing `OVMF_{CODE/VARS}.fd`.
 # TODO: use installed OVMF, if available.
-OVMF_DIR = Path('.')
+OVMF_DIR = WORKSPACE_DIR / 'tests'
 
-# Path to workspace's `Cargo.toml`
-WORKSPACE_DIR = Path(__file__).resolve().parents[1]
-BUILD_DIR = WORKSPACE_DIR / Path('target') / TARGET / CONFIG
+BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
 def run_xargo(verb, *flags):

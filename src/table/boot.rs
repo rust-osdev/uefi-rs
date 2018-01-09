@@ -16,6 +16,8 @@ pub struct BootServices {
     free_pool: extern "C" fn(buffer: usize) -> Status,
     _pad: [usize; 21],
     stall: extern "C" fn(usize) -> Status,
+    copy_mem: extern "C" fn(dest: usize, src: usize, len: usize),
+    set_mem: extern "C" fn(buffer: usize, len: usize, value: u8),
 }
 
 impl BootServices {
@@ -68,6 +70,16 @@ impl BootServices {
     pub fn stall(&self, time: usize) {
         // The spec says this cannot fail.
         (self.stall)(time);
+    }
+
+    /// Copies memory from source to destination. The buffers can overlap.
+    pub fn memmove(&self, dest: usize, src: usize, size: usize) {
+        (self.copy_mem)(dest, src, size);
+    }
+
+    /// Sets a buffer to a certain value.
+    pub fn memset(&self, buffer: usize, size: usize, value: u8) {
+        (self.set_mem)(buffer, size, value);
     }
 }
 

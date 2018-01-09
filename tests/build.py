@@ -111,7 +111,10 @@ def main(args) -> int:
 
     for cmd in cmds:
         if cmd in KNOWN_CMDS:
-            KNOWN_CMDS[cmd]()
+            try:
+                KNOWN_CMDS[cmd]()
+            except sp.CalledProcessError:
+                return 1
         else:
             print("Unknown verb:", cmd)
             return 1

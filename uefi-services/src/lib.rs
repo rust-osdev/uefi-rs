@@ -43,7 +43,6 @@ fn init_logger(st: &'static SystemTable) {
 
     // Log everything.
     log::set_max_level(log::LevelFilter::Info);
-
 }
 
 fn init_alloc(st: &'static SystemTable) {

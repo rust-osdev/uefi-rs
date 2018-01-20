@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+'Script used to build, run, and test the code on all supported platforms.'
+
 import os
 from pathlib import Path
 import subprocess as sp
@@ -41,9 +43,12 @@ BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
 def run_xargo(verb, *flags):
+    'Runs Xargo with certain arguments.'
     sp.run([XARGO, verb, '--target', TARGET, *flags]).check_returncode()
 
 def build():
+    'Builds the tests package.'
+
     run_xargo('build', '--package', 'tests')
 
     input_lib = BUILD_DIR / 'libtests.a'
@@ -56,14 +61,20 @@ def build():
     sp.run([LINKER, *LINKER_FLAGS, str(input_lib), f'-Out:{output}']).check_returncode()
 
 def doc():
+    'Generates documentation for the main crate.'
     run_xargo('doc', '--no-deps', '--package', 'uefi')
 
 def clippy():
+    'Analyses the code with Clippy.'
     run_xargo('clippy')
 
 
 def run_qemu():
+    'Runs the code in QEMU.'
     ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
+
+    if not ovmf_code.is_file():
+        raise FileNotFoundError(f'OVMF_CODE.fd not found in the `{OVMF_DIR}` directory')
 
     qemu_flags = [
         # Disable default devices.
@@ -88,8 +99,9 @@ def run_qemu():
 
     sp.run([QEMU] + qemu_flags).check_returncode()
 
-
 def main(args) -> int:
+    'Runs the user-requested actions.'
+
     # Clear any Rust flags which might affect the build.
     os.environ['RUSTFLAGS'] = ''
 
@@ -119,6 +131,8 @@ def main(args) -> int:
         else:
             print("Unknown verb:", cmd)
             return 1
+
+    return 0
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))

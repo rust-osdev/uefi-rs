@@ -42,6 +42,9 @@ OVMF_DIR = WORKSPACE_DIR / 'tests'
 BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
+# File with test output.
+LOG_FILE = BUILD_DIR / 'tests.log'
+
 def run_xargo(verb, *flags):
     'Runs Xargo with certain arguments.'
     sp.run([XARGO, verb, '--target', TARGET, *flags]).check_returncode()
@@ -68,7 +71,6 @@ def clippy():
     'Analyses the code with Clippy.'
     run_xargo('clippy')
 
-
 def run_qemu():
     'Runs the code in QEMU.'
     ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
@@ -93,6 +95,8 @@ def run_qemu():
         # Mount a local directory as a FAT partition.
         '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
         '-device', 'ide-drive,bus=ahci.0,drive=esp',
+        # Enable the debug connection to allow retrieving test data from the test runner.
+        '-debugcon', f'file:{LOG_FILE}', '-global', 'isa-debugcon.iobase=0xE9',
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]

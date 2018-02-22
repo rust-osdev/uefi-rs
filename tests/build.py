@@ -124,6 +124,7 @@ def main(args) -> int:
         'build': build,
         'doc': doc,
         'run': run_qemu,
+        'clippy': clippy,
     }
 
     for cmd in cmds:

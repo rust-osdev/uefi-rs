@@ -13,8 +13,6 @@
 #[macro_use]
 extern crate bitflags;
 
-mod guid;
-pub use self::guid::Guid;
 
 mod status;
 pub use self::status::Status;
@@ -23,8 +21,8 @@ use core::result;
 /// Return type of many UEFI functions.
 pub type Result<T> = result::Result<T, Status>;
 
-/// A pointer to an opaque data structure.
-pub type Handle = *mut ();
+mod data_types;
+pub use self::data_types::{Guid, Handle};
 
 pub mod table;
 

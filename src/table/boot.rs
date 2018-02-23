@@ -7,17 +7,52 @@ use super::Header;
 #[repr(C)]
 pub struct BootServices {
     header: Header,
+
+    // Task Priority services
     raise_tpl: extern "C" fn(Tpl) -> Tpl,
     restore_tpl: extern "C" fn(Tpl),
+
+    // Memory allocation functions
     allocate_pages: extern "C" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64) -> Status,
     free_pages: extern "C" fn(u64, usize) -> Status,
     memory_map: extern "C" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32) -> Status,
     allocate_pool: extern "C" fn(MemoryType, usize, addr: &mut usize) -> Status,
     free_pool: extern "C" fn(buffer: usize) -> Status,
-    _pad: [usize; 21],
+
+    // Event & timer functions
+    create_event: usize,
+    set_timer: usize,
+    wait_for_event: usize,
+    signal_event: usize,
+    close_event: usize,
+    check_event: usize,
+
+    // Protocol handlers
+    install_protocol_interface: usize,
+    reinstall_protocol_interface: usize,
+    uninstall_protocol_interface: usize,
+    handle_protocol: usize,
+    _reserved: usize,
+    register_protocol_notify: usize,
+    locate_handle: usize,
+    locate_device_path: usize,
+    install_configuration_table: usize,
+
+    // Image services
+    load_image: usize,
+    start_image: usize,
+    exit: usize,
+    unload_image: usize,
+    exit_boot_services: extern "C" fn(Handle, MemoryMapKey) -> Status,
+
+    // Misc functions
+    get_next_monotonic_count: usize,
     stall: extern "C" fn(usize) -> Status,
     copy_mem: extern "C" fn(dest: usize, src: usize, len: usize),
     set_mem: extern "C" fn(buffer: usize, len: usize, value: u8),
+
+    // New event functions (UEFI 2.0 or newer)
+    create_event_ex: usize,
 }
 
 impl BootServices {

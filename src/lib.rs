@@ -13,13 +13,8 @@
 #[macro_use]
 extern crate bitflags;
 
-
-mod status;
-pub use self::status::Status;
-
-use core::result;
-/// Return type of many UEFI functions.
-pub type Result<T> = result::Result<T, Status>;
+mod error;
+pub use self::error::{Status, Result};
 
 mod data_types;
 pub use self::data_types::{Guid, Handle};

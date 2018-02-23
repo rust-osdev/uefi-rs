@@ -1,6 +1,6 @@
 //! UEFI services available during boot.
 
-use {Status, Result};
+use {Status, Result, Handle};
 use super::Header;
 
 /// Contains pointers to all of the boot services.
@@ -97,6 +97,23 @@ impl BootServices {
     /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: usize) -> Result<()> {
         (self.free_pool)(addr).into()
+    }
+
+    /// Exits the early boot stage.
+    ///
+    /// After calling this function, the boot services functions become invalid.
+    /// Only runtime services may be used.
+    ///
+    /// The handle passed must be the one of the currently executing image.
+    ///
+    /// The application **must** retrieve the current memory map, and pass in a key to ensure it is the latest.
+    /// If the memory map was changed, you must obtain the new memory map,
+    /// and then immediately call this function again.
+    ///
+    /// After you first call this function, the firmware may perform a partial shutdown of boot services.
+    /// You should only call the mmap-related functions in order to update the memory map.
+    pub fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
+        (self.exit_boot_services)(image, mmap_key).into()
     }
 
     /// Stalls the processor for an amount of time.

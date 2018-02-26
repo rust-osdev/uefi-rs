@@ -145,7 +145,7 @@ impl BootServices {
     ///
     /// After you first call this function, the firmware may perform a partial shutdown of boot services.
     /// You should only call the mmap-related functions in order to update the memory map.
-    pub fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
+    pub unsafe fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
         (self.exit_boot_services)(image, mmap_key).into()
     }
 

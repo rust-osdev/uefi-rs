@@ -21,6 +21,10 @@ extern crate log;
 
 use uefi::table::SystemTable;
 
+/// Initialize the UEFI utility library.
+///
+/// This must be called as early as possible,
+/// before trying to use logging or memory allocation capabilities.
 pub fn init(st: &'static SystemTable) {
     init_logger(st);
     init_alloc(st);

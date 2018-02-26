@@ -11,31 +11,12 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
+mod debug;
 mod boot;
 mod proto;
 
 use uefi::{Handle, Status};
 use uefi::table;
-
-fn output_string(s: &str) {
-    for b in s.as_bytes() {
-        unsafe {
-            asm!("outb %al, $$0xE9" : : "{al}"(*b));
-        }
-    }
-}
-
-fn print_ok(ok: &str) {
-    output_string("OK : ");
-    output_string(ok);
-    output_string("\n");
-}
-
-fn print_err(err: &str) {
-    output_string("ERR: ");
-    output_string(err);
-    output_string("\n");
-}
 
 #[no_mangle]
 pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Status {

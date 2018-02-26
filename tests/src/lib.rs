@@ -12,6 +12,7 @@ extern crate log;
 extern crate alloc;
 
 mod boot;
+mod proto;
 
 use uefi::{Handle, Status};
 use uefi::table;
@@ -71,6 +72,11 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
     match boot::boot_services_test(bt) {
         Ok(_) => info!("Boot services test passed."),
         Err(status) => error!("Boot services test failed with status {:?}", status),
+    }
+
+    match proto::protocol_test(bt) {
+        Ok(_) => info!("Protocol test passed."),
+        Err(status) => error!("Protocol test failed with status {:?}", status),
     }
 
     bt.stall(4_000_000);

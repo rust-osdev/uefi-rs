@@ -1,7 +1,9 @@
 //! UEFI services available during boot.
 
-use {Status, Result, Handle};
+use {Status, Result, Handle, Guid};
 use super::Header;
+use proto::Protocol;
+use core::{ptr, mem};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -34,7 +36,7 @@ pub struct BootServices {
     handle_protocol: usize,
     _reserved: usize,
     register_protocol_notify: usize,
-    locate_handle: usize,
+    locate_handle: extern "C" fn(search_ty: i32, proto: *const Guid, key: *mut (), buf_sz: &mut usize, buf: *mut Handle) -> Status,
     locate_device_path: usize,
     install_configuration_table: usize,
 
@@ -97,6 +99,37 @@ impl BootServices {
     /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: usize) -> Result<()> {
         (self.free_pool)(addr).into()
+    }
+
+    /// Enumerates all handles installed on the system which match a certain query.
+    ///
+    /// You should first call this function with `None` for the output buffer,
+    /// in order to retrieve the length of the buffer you need to allocate.
+    ///
+    /// The next call will fill the buffer with the requested data.
+    pub fn locate_handle(&self, search_ty: SearchType, output: Option<&mut [Handle]>) -> Result<usize> {
+        let handle_size = mem::size_of::<Handle>();
+
+        let (mut buffer_size, buffer) = match output {
+            Some(buffer) => (buffer.len() * handle_size, buffer.as_mut_ptr()),
+            None => (0, ptr::null_mut()),
+        };
+
+        // Obtain the needed data from the parameters.
+        let (ty, guid, key) = match search_ty {
+            SearchType::AllHandles => (0, ptr::null(), ptr::null_mut()),
+            SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
+        };
+
+        let status = (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer);
+
+        // Must convert the returned size (in bytes) to length (number of elements).
+        let buffer_len = buffer_size / handle_size;
+
+        match status {
+            Status::Success | Status::BufferTooSmall => Ok(buffer_len),
+            err => Err(err),
+        }
     }
 
     /// Exits the early boot stage.
@@ -262,3 +295,23 @@ bitflags! {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct MemoryMapKey(usize);
+
+/// The type of handle search to perform.
+#[derive(Debug, Copy, Clone)]
+pub enum SearchType<'a> {
+    /// Return all handles present on the system.
+    AllHandles,
+    /// Returns all handles supporting a certain protocol, specified by its GUID.
+    ///
+    /// If the protocol implements the `Protocol` interface,
+    /// you can use the `from_proto` function to construct a new `SearchType`.
+    ByProtocol(&'a Guid),
+    // TODO: add ByRegisterNotify once the corresponding function is implemented.
+}
+
+impl<'a> SearchType<'a> {
+    /// Constructs a new search type for a specified protocol.
+    pub fn from_proto<P: Protocol>() -> Self {
+        SearchType::ByProtocol(&P::GUID)
+    }
+}

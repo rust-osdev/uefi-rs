@@ -1,3 +1,20 @@
+//! This crate adds support for the `log` crate, providing
+//! a custom logger implementation which writes to a UEFI text output protocol.
+//!
+//! The main export of this library is the `Logger` structure,
+//! which implements the `log` crate's trait `Log`.
+//!
+//! # Implementation details
+//!
+//! The implementation is not the most efficient, since there is no buffering done,
+//! and the messages have to be converted from UTF-8 to UEFI's UCS-2.
+//!
+//! The last part also means that some Unicode characters might not be
+//! supported by the UEFI console. Don't expect emoji output support.
+
+#![warn(missing_docs)]
+#![cfg_attr(feature = "cargo-clippy", warn(clippy))]
+
 #![no_std]
 
 extern crate uefi;

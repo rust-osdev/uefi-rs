@@ -1,5 +1,20 @@
+//! `uefi-alloc` implements Rust's global allocator interface using UEFI's memory allocation functions.
+//!
+//! Linking this crate in your app will allow you to use Rust's higher-level data structures,
+//! like boxes, vectors, hash maps, linked lists and so on.
+//!
+//! # Usage
+//!
+//! Call the `init` function with a reference to the boot services table.
+//! Failure to do so before calling a memory allocating function will panic.
+
+// Enable additional lints.
+#![warn(missing_docs)]
+#![cfg_attr(feature = "cargo-clippy", warn(clippy))]
+
 #![no_std]
 
+// Custom allocators are currently unstable.
 #![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(global_allocator)]
@@ -10,6 +25,7 @@ use alloc::allocator::{Alloc, AllocErr, Layout};
 extern crate uefi;
 use uefi::table::boot::{BootServices, MemoryType};
 
+/// Reference to the boot services table, used to call the pool memory allocation functions.
 static mut BOOT_SERVICES: Option<&BootServices> = None;
 
 /// Initializes the allocator.

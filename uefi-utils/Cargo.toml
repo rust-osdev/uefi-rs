@@ -1,5 +1,5 @@
 [package]
-name = "tests"
+name = "uefi-utils"
 version = "0.1.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 publish = false
@@ -7,6 +7,3 @@ publish = false
 [dependencies]
 uefi = { path = ".." }
 uefi-services = { path = "../uefi-services" }
-uefi-utils = { path = "../uefi-utils" }
-
-log = { version = "0.4", default-features = false }

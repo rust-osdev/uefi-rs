@@ -20,6 +20,9 @@ This project contains multiple sub-crates:
   - `uefi-logger`: wrapper for the standard [logging](https://github.com/rust-lang-nursery/log) crate.
   - `uefi-alloc`: wrapper for the memory allocation functions. This allows you to allocate objects on the heap.
 
+- `uefi-utils`: building on top of `uefi-services`, this crate provides a higher-level access to UEFI functions.
+  Provides utility functions for common API usage.
+
 - `tests`: a sample UEFI applications that runs unit tests.
 
 ## Documentation

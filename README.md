@@ -40,30 +40,27 @@ a custom Rust target for 64-bit UEFI applications.
 ### Prerequisites
 
 - [Xargo](https://github.com/japaric/xargo): this is essential if you plan to do any sort of cross-platform / bare-bones Rust programming.
-- [LLD](https://lld.llvm.org/): the LLVM linker is currently the only supported linker.
-  Alternatively, you can use `link.exe` if you are on Windows.
+- [LLD](https://lld.llvm.org/): this linker is now [shipped](https://github.com/rust-lang/rust/pull/48125) with the latest nightly!
 
 ### Steps
 
 The following steps allow you to build a simple UEFI app.
 
-- Create a new `#![no_std]` crate, and make sure you have an entry point function which matches the one below:
+- Create a new `#![no_std]` binary, add `#![no_main]` to use a custom entry point,
+  and make sure you have an entry point function which matches the one below:
 
 ```rust
 #[no_mangle]
-pub extern "C" fn entry_point(handle: Handle, system_table: &'static table::SystemTable) -> Status;
+pub extern "C" fn uefi_start(handle: Handle, system_table: &'static table::SystemTable) -> Status;
 ```
 
-- Copy the `tests/x86_64-uefi.json` target file to your project's root. You can create your own target file based on it.
+- Copy the `tests/x86_64-uefi.json` target file to your project's root.
+  You can customize it.
+
 - Build using `xargo build --target x86_64-uefi`.
 
-- The generated static library needs to be linked with LLD, e.g.
-
-```sh
-lld-link /Machine:x64 /Subsystem:EFI_Application /Entry:entry_point uefi_app.lib /Out:uefi_app.efi
-```
-
-- You can run the `uefi_app.efi` file as a normal UEFI executable.
+- The `target` directory will contain a `x86_64-uefi` subdirectory,
+  where you will find the `uefi_app.efi` file - a normal UEFI executable.
 
 You can use the `tests` directory as sample code for building a simple UEFI app.
 

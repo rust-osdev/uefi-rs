@@ -1,10 +1,12 @@
 #![no_std]
+#![no_main]
 
 #![feature(alloc)]
 #![feature(asm)]
 
 extern crate uefi;
 extern crate uefi_services;
+extern crate uefi_utils as utils;
 
 #[macro_use]
 extern crate log;

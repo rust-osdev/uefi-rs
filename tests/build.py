@@ -4,6 +4,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess as sp
 import sys
 
@@ -15,19 +16,6 @@ CONFIG = 'debug'
 
 # Xargo executable.
 XARGO = 'xargo'
-
-# A linker for PE/COFF files.
-LINKER = 'lld'
-LINKER_FLAGS = [
-    # Use LLD in `link.exe` mode.
-    '-flavor', 'link',
-    # Create 64-bit executables.
-    '/Machine:x64',
-    # Create UEFI apps.
-    '/Subsystem:EFI_Application',
-    # Customizable entry point name.
-    '/Entry:uefi_start',
-]
 
 # QEMU executable to use
 QEMU = 'qemu-system-x86_64'
@@ -54,14 +42,15 @@ def build():
 
     run_xargo('build', '--package', 'tests')
 
-    input_lib = BUILD_DIR / 'libtests.a'
+    # Copy the built file to the right directory for running tests.
+    built_file = BUILD_DIR / 'tests.efi'
 
     boot_dir = ESP_DIR / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
 
-    output = boot_dir / 'BootX64.efi'
+    output_file = boot_dir / 'BootX64.efi'
 
-    sp.run([LINKER, *LINKER_FLAGS, str(input_lib), f'-Out:{output}']).check_returncode()
+    shutil.copy2(built_file, output_file)
 
 def doc():
     'Generates documentation for the main crate.'
@@ -107,7 +96,8 @@ def main(args) -> int:
     'Runs the user-requested actions.'
 
     # Clear any Rust flags which might affect the build.
-    os.environ['RUSTFLAGS'] = ''
+    # BUG: disable debug information since it currently breaks the build.
+    os.environ['RUSTFLAGS'] = '-C debuginfo=0'
 
     # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
     os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'tests')

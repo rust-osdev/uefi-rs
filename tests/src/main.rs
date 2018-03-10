@@ -47,9 +47,7 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
         let revision = st.uefi_revision();
         let (major, minor) = (revision.major(), revision.minor());
 
-    /* BUG: uncommenting this code breaks the linker.
         info!("UEFI {}.{}.{}", major, minor / 10, minor % 10);
-    */
     }
 
     let bt = st.boot;

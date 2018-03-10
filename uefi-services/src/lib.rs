@@ -106,3 +106,6 @@ pub fn panic_fmt(_fmt: core::fmt::Arguments, file_line_col: &(&'static str, u32,
         // TODO: add a timeout then shutdown.
     }
 }
+
+#[no_mangle]
+pub extern "C" fn __chkstk() {}

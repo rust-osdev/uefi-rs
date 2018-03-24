@@ -15,6 +15,9 @@ fn find_protocol_handles<P: Protocol>(bt: &boot::BootServices) -> Result<Vec<Han
 
     // Allocate a large enough buffer.
     let mut buffer = Vec::with_capacity(buffer_size);
+    unsafe {
+        buffer.set_len(buffer_size);
+    }
 
     // Perform the search.
     bt.locate_handle(search_type, Some(&mut buffer))?;

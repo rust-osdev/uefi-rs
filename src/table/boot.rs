@@ -33,7 +33,7 @@ pub struct BootServices {
     install_protocol_interface: usize,
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
-    handle_protocol: usize,
+    handle_protocol: extern "C" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
     locate_handle: extern "C" fn(search_ty: i32, proto: *const Guid, key: *mut (), buf_sz: &mut usize, buf: *mut Handle) -> Status,
@@ -99,6 +99,18 @@ impl BootServices {
     /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: usize) -> Result<()> {
         (self.free_pool)(addr).into()
+    }
+
+    /// Query a handle for a certain protocol.
+    ///
+    /// This function attempts to get the protocol implementation of a handle,
+    /// based on the protocol GUID.
+    pub fn handle_protocol<P>(&self, handle: Handle, guid: &Guid) -> Option<*mut P> {
+        let mut ptr = 0usize;
+        match (self.handle_protocol)(handle, guid, &mut ptr) {
+            Status::Success => Some(ptr as *mut P),
+            _ => None,
+        }
     }
 
     /// Enumerates all handles installed on the system which match a certain query.

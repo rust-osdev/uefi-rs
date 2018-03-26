@@ -51,10 +51,7 @@ pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>
         else {
             return Err(Status::CompromisedData);
         }
-        match output(ch) {
-            Ok(()) => {},
-            Err(err) => { return Err(err); },
-        }
+        output(ch)?;
     }
     Ok(())
 }
@@ -63,33 +60,32 @@ pub fn encode_ucs2(input: &str, buffer: &mut [u16]) -> Result<usize> {
     let mut result = Ok(());
     let buffer_size = buffer.len();
     let mut i = 0;
+    
     {
-    let add_ch = |ch| {
-        if i >= buffer_size {
-            Err(Status::BufferTooSmall)
-        }
-        else {
-            buffer[i] = ch;
-            i += 1;
-            if ch == '\n' as u16 {
-                if i == buffer_size {
-                    Err(Status::BufferTooSmall)
+        let add_ch = |ch| {
+            if i >= buffer_size {
+                Err(Status::BufferTooSmall)
+            }
+            else {
+                buffer[i] = ch;
+                i += 1;
+                if ch == '\n' as u16 {
+                    if i == buffer_size {
+                        Err(Status::BufferTooSmall)
+                    }
+                    else {
+                        buffer[i] = '\r' as u16;
+                        i += 1;
+                        Ok(())
+                    }
                 }
                 else {
-                    buffer[i] = '\r' as u16;
-                    i += 1;
                     Ok(())
                 }
             }
-            else {
-                Ok(())
-            }
-        }
-    };
-    result = ucs2_encoder(input, add_ch);
+        };
+        let result = ucs2_encoder(input, add_ch);
     }
-    match result {
-        Ok(()) => { Ok(i) },
-        Err(err) => { Err(err) },
-    }
+
+    result.map(|_| i)
 }

@@ -308,6 +308,19 @@ pub struct MemoryDescriptor {
     pub att: MemoryAttribute,
 }
 
+impl Default for MemoryDescriptor {
+    fn default() -> MemoryDescriptor {
+        MemoryDescriptor {
+            ty: MemoryType::Reserved,
+            padding: 0,
+            phys_start: 0,
+            virt_start: 0,
+            page_count: 0,
+            att: MemoryAttribute::empty()
+        }
+    }
+}
+
 bitflags! {
     /// Flags describing the capabilities of a memory range.
     pub struct MemoryAttribute: u64 {

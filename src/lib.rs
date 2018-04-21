@@ -27,6 +27,7 @@
 #![feature(optin_builtin_traits)]
 #![feature(const_fn)]
 #![feature(conservative_impl_trait)]
+#![feature(align_offset)]
 
 #![no_std]
 

@@ -260,6 +260,8 @@ pub enum MemoryType {
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
+    /// Skip 4 bytes as UEFI declares items in structs should be naturally aligned
+    padding: u32,
     /// Starting physical address.
     pub phys_start: u64,
     /// Starting virtual address.

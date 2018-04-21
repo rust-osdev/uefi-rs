@@ -256,6 +256,7 @@ pub enum MemoryType {
 }
 
 /// A structure describing a region of memory.
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.

@@ -3,7 +3,7 @@
 use {Status, Result, Handle, Guid};
 use super::Header;
 use proto::Protocol;
-use core::{ptr, mem};
+use core::{ptr, mem, cmp};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -88,6 +88,41 @@ impl BootServices {
     /// Frees memory pages allocated by UEFI.
     pub fn free_pages(&self, addr: usize, count: usize) -> Result<()> {
         (self.free_pages)(addr as u64, count).into()
+    }
+
+    /// Retrieves the current memory map
+    ///
+    /// `buffer` is a location for retrieving the raw memory map from UEFI. This needs to be passed
+    /// in to work around the fact that we have no way to allocate memory and rust does not support variable
+    /// sized stack allocations. We may not use allocate_pages/free_pages as this would change the memory map
+    /// making such an implemenetation unsuitable for supporting usage of ExitBootServices, which requires
+    /// MemoryMap be called and then ExitBootServices be called with the memory map not changing in between.
+    pub fn get_memory_map(&self, output: &mut [MemoryDescriptor], buffer: &mut [u8]) -> Result<(usize, MemoryMapKey)> {
+        // These will get set in the call to memory_map, but we assign default values to
+        // prevent rustc from complaining
+        let mut map_key = MemoryMapKey(0);
+        let mut entry_size = 0;
+        let mut entry_version = 0;
+        // create a subslice of the buffer that is the minimal alignment of a MemoryDescriptor
+        let offset = buffer.as_ptr().align_offset(mem::align_of::<MemoryDescriptor>());
+        if offset > mem::size_of_val(buffer) {
+            return Err(Status::BufferTooSmall);
+        }
+        let aligned_buffer = &mut buffer[offset..];
+        // Attempt to get the result
+        let mut map_size = mem::size_of_val(aligned_buffer);
+        (self.memory_map)(&mut map_size, aligned_buffer.as_mut_ptr() as usize, &mut map_key, &mut entry_size, &mut entry_version)?;
+        // Calculate actual number of descriptors
+        let num_descriptors = map_size / entry_size;
+        // Copy each descriptor individually as their may be padding between due to the entry_size
+        // being larger than the size of a MemoryDescriptor
+        for i in 0 .. cmp::min(num_descriptors, output.len()) {
+            let base = aligned_buffer.as_ptr() as usize + entry_size * i;
+            let pointer = base as *const MemoryDescriptor;
+            output[i] = unsafe {*pointer};
+        }
+        // Return the actual number of descriptors
+        Ok((num_descriptors, map_key))
     }
 
     /// Allocates from a memory pool. The address is 8-byte aligned.

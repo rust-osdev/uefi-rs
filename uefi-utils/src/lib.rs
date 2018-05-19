@@ -9,3 +9,11 @@ extern crate uefi_services;
 
 #[macro_use]
 extern crate alloc;
+
+pub mod proto;
+
+use uefi::table::boot;
+
+fn boot_services() -> &'static boot::BootServices {
+    uefi_services::system_table().boot
+}

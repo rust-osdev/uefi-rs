@@ -26,6 +26,7 @@
 #![feature(try_trait)]
 #![feature(optin_builtin_traits)]
 #![feature(const_fn)]
+#![feature(align_offset)]
 
 #![no_std]
 
@@ -44,3 +45,5 @@ pub use self::data_types::{Guid, Handle};
 pub mod table;
 
 pub mod proto;
+
+pub mod ucs2;

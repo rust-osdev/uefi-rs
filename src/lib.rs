@@ -26,7 +26,6 @@
 #![feature(try_trait)]
 #![feature(optin_builtin_traits)]
 #![feature(const_fn)]
-#![feature(conservative_impl_trait)]
 
 #![no_std]
 

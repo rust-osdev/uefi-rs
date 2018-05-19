@@ -6,7 +6,6 @@ publish = false
 
 [dependencies]
 rlibc = "1"
-compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }
 
 uefi = { path = ".." }
 uefi-alloc = { path = "../uefi-alloc" }

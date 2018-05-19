@@ -11,12 +11,10 @@
 
 #![no_std]
 
-#![feature(compiler_builtins_lib)]
 #![feature(lang_items)]
 
 // These crates are required.
 extern crate rlibc;
-extern crate compiler_builtins;
 
 // Core types.
 extern crate uefi;

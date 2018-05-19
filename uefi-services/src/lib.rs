@@ -107,5 +107,10 @@ pub fn panic_fmt(_fmt: core::fmt::Arguments, file_line_col: &(&'static str, u32,
     }
 }
 
+#[lang = "oom"]
+fn out_of_memory() {
+    // TODO: handle out-of-memory conditions
+}
+
 #[no_mangle]
 pub extern "C" fn __chkstk() {}

@@ -15,12 +15,10 @@
 #![no_std]
 
 // Custom allocators are currently unstable.
-#![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(global_allocator)]
 
-extern crate alloc;
-use alloc::allocator::{Alloc, AllocErr, Layout};
+use core::alloc::{GlobalAlloc, Layout, Opaque};
 
 extern crate uefi;
 use uefi::table::boot::{BootServices, MemoryType};
@@ -43,26 +41,25 @@ fn boot_services() -> &'static BootServices {
 
 pub struct Allocator;
 
-unsafe impl<'a> Alloc for &'a Allocator {
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {
+unsafe impl GlobalAlloc for Allocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut Opaque {
         let mem_ty = MemoryType::LoaderData;
         let size = layout.size();
         let align = layout.align();
 
         // TODO: add support for other alignments.
         if align > 8 {
-            let details = "Unsupported alignment for allocation, UEFI can only allocate 8-byte aligned addresses";
-            Err(AllocErr::Unsupported { details })
+            // Unsupported alignment for allocation, UEFI can only allocate 8-byte aligned addresses
+            0 as *mut _
         } else {
             boot_services()
                 .allocate_pool(mem_ty, size)
-                .map(|addr| addr as *mut u8)
-                // This is the only possible error, according to the spec.
-                .map_err(|_status| AllocErr::Exhausted { request: layout })
+                .map(|addr| addr as *mut _)
+                .unwrap_or(0 as *mut _)
         }
     }
 
-    unsafe fn dealloc(&mut self, ptr: *mut u8, _layout: Layout) {
+    unsafe fn dealloc(&self, ptr: *mut Opaque, _layout: Layout) {
         let addr = ptr as usize;
         boot_services()
             .free_pool(addr)

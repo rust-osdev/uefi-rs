@@ -20,4 +20,4 @@ pub trait Protocol {
 mod macros;
 
 pub mod console;
-pub mod sfs;
+pub mod media;

@@ -1,53 +1,23 @@
 use {Status, Result, ucs2};
-use core::mem;
 
-bitflags! {
-    pub struct FileMode : u64 {
-        const READ      = 0x0000000000000001;
-        const WRITE     = 0x0000000000000002;
-        const CREATE    = 0x8000000000000000;
-    }
-}
-
-bitflags! {
-    pub struct FileAttribute : u64 {
-        const NONE         = 0x0000000000000000;
-        const READ_ONLY    = 0x0000000000000001;
-        const HIDDEN       = 0x0000000000000002;
-        const SYSTEM       = 0x0000000000000004;
-        const RESERVED     = 0x0000000000000008;
-        const DIRECTORY    = 0x0000000000000010;
-        const ARCHIVE      = 0x0000000000000020;
-        const VALID_ATTR   = 0x0000000000000037;
-    }
-}
-
-#[repr(C)]
-pub struct FileImpl {
-    revision: u64,
-    open: extern "C" fn(this: &mut FileImpl, new_handle: &mut usize, filename: *const u16, open_mode: FileMode, attributes: FileAttribute) -> Status,
-    close: extern "C" fn(this: &mut FileImpl) -> Status,
-    delete: extern "C" fn(this: &mut FileImpl) -> Status,
-    read: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,
-    write: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *const u8) -> Status,
-    get_position: extern "C" fn(this: &mut FileImpl, position: &mut u64) -> Status,
-    set_position: extern "C" fn(this: &mut FileImpl, position: u64) -> Status,
-    get_info: usize,
-    set_info: usize,
-    flush: extern "C" fn(this: &mut FileImpl) -> Status,
-}
-
-#[repr(C)]
-pub struct SimpleFileSystem {
-    revision: u64,
-    open_volume: extern "C" fn(this: &mut SimpleFileSystem, root: &mut usize) -> Status, 
-}
-
+/// A file represents an abstraction of some contiguous block of data residing on a volume.
+///
+/// Files have names, and a fixed size.
 pub struct File<'a> {
     inner: &'a mut FileImpl,
 }
 
 impl<'a> File<'a> {
+    pub (in super) fn new(ptr: usize) -> Self {
+        let ptr = ptr as *mut FileImpl;
+
+        let inner = unsafe { &mut *ptr };
+
+        File {
+            inner,
+        }
+    }
+
     /// Try to open a file relative to this file/directory.
     ///
     /// # Arguments
@@ -55,7 +25,7 @@ impl<'a> File<'a> {
     /// * `open_mode`   The mode to open the file with. Valid
     ///     combinations are READ, READ | WRITE and READ | WRITE | CREATE
     /// * `attributes`  Only valid when FILE_MODE_CREATE is used as a mode
-    /// 
+    ///
     /// # Errors
     /// * `uefi::Status::InvalidParameter`  The filename exceeds the maximum length of 255 chars
     /// * `uefi::Status::NotFound`          Could not find file
@@ -107,7 +77,7 @@ impl<'a> File<'a> {
     ///
     /// # Errors
     /// * `uefi::Status::NoMedia`           The device has no media
-    /// * `uefi::Status::DeviceError`       The device reported an error 
+    /// * `uefi::Status::DeviceError`       The device reported an error
     /// * `uefi::Status::VolumeCorrupted`   The filesystem structures are corrupted
     pub fn read(&mut self, buffer: &mut[u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
@@ -116,7 +86,7 @@ impl<'a> File<'a> {
 
     /// Write data to file
     ///
-    /// Write `buffer` to file, increment the file pointer and return number of bytes written 
+    /// Write `buffer` to file, increment the file pointer and return number of bytes written
     ///
     /// # Arguments
     /// * `buffer`  Buffer to write to file
@@ -171,25 +141,39 @@ impl<'a> File<'a> {
     }
 }
 
-impl SimpleFileSystem {
-    /// Open the root directory on a volume
-    ///
-    /// # Errors
-    /// * `uefi::Status::Unsupported`   The volume does not support the requested filesystem type
-    /// * `uefi::Status::NoMedia`       The device has no media
-    /// * `uefi::Status::DeviceError`   The device reported an error
-    /// * `uefi::Status::VolumeCorrupted`   The file system structures are corrupted
-    /// * `uefi::Status::AccessDenied`  The service denied access to the file
-    /// * `uefi::Status::OutOfResources`    The volume was not opened
-    /// * `uefi::Status::MediaChanged`  The device has a different medium in it
-    pub fn open_volume(&mut self) -> Result<File> {
-        let mut ptr = 0usize;
-        (self.open_volume)(self, &mut ptr).into_with(|| File { inner: unsafe { &mut *(ptr as *mut FileImpl)} })
+/// The function pointer table for the File protocol.
+#[repr(C)]
+struct FileImpl {
+    revision: u64,
+    open: extern "C" fn(this: &mut FileImpl, new_handle: &mut usize, filename: *const u16, open_mode: FileMode, attributes: FileAttribute) -> Status,
+    close: extern "C" fn(this: &mut FileImpl) -> Status,
+    delete: extern "C" fn(this: &mut FileImpl) -> Status,
+    read: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,
+    write: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *const u8) -> Status,
+    get_position: extern "C" fn(this: &mut FileImpl, position: &mut u64) -> Status,
+    set_position: extern "C" fn(this: &mut FileImpl, position: u64) -> Status,
+    get_info: usize,
+    set_info: usize,
+    flush: extern "C" fn(this: &mut FileImpl) -> Status,
+}
+
+bitflags! {
+    pub struct FileMode : u64 {
+        const READ = 0x0000000000000001;
+        const WRITE = 0x0000000000000002;
+        const CREATE = 0x8000000000000000;
     }
 }
 
-impl_proto! {
-    protocol SimpleFileSystem {
-        GUID = 0x0964e5b22,0x6459,0x11d2,[0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b];
+bitflags! {
+    pub struct FileAttribute : u64 {
+        const NONE = 0x0000000000000000;
+        const READ_ONLY = 0x0000000000000001;
+        const HIDDEN = 0x0000000000000002;
+        const SYSTEM = 0x0000000000000004;
+        const RESERVED = 0x0000000000000008;
+        const DIRECTORY = 0x0000000000000010;
+        const ARCHIVE = 0x0000000000000020;
+        const VALID_ATTR = 0x0000000000000037;
     }
 }

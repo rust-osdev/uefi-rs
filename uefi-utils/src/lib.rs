@@ -6,8 +6,6 @@
 
 extern crate uefi;
 extern crate uefi_services;
-
-#[macro_use]
 extern crate alloc;
 
 pub mod proto;

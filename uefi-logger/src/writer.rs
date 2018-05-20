@@ -1,5 +1,5 @@
 use super::Output;
-use uefi::{ucs2, Status, Result};
+use uefi::{ucs2, Status};
 use core::{fmt, str};
 
 /// Struct which is used to implement the `fmt::Write` trait on a UEFI output protocol.
@@ -47,7 +47,7 @@ impl fmt::Write for OutputWriter {
                     Ok(())
                 }
             };
-            let mut add_ch = |ch| {
+            let add_ch = |ch| {
                 add_char(ch)?;
 
                 if ch == '\n' as u16 {

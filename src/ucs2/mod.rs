@@ -1,8 +1,18 @@
+//! Utility functions for the UCS-2 encoding.
+//!
+//! UEFI primarily uses the UCS-2 encoding, a precursor of UTF-16.
+//! Every character is encoded using 2 bytes, but this is a fixed-length,
+//! not a multibyte encoding such as UTF-8 / UTF-16.
+//! This means UCS-2 does *not* cover the whole Unicode range.
+//!
+//! UEFI implementations are allowed to not support all of the possible UCS-2
+//! characters for printing.
+
 use {Status, Result};
 
 /// Encode UTF-8 string to UCS-2
 pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>
-        where F: FnMut(u16) -> Result<()> {   
+        where F: FnMut(u16) -> Result<()> {
     let bytes = input.as_bytes();
     let len = bytes.len();
     let mut i = 0;
@@ -60,7 +70,7 @@ pub fn encode_ucs2(input: &str, buffer: &mut [u16]) -> Result<usize> {
     let mut result = Ok(());
     let buffer_size = buffer.len();
     let mut i = 0;
-    
+
     {
         let add_ch = |ch| {
             if i >= buffer_size {

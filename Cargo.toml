@@ -13,4 +13,6 @@ members = [
     "tests",
     "uefi-logger",
     "uefi-alloc",
+    "uefi-services",
+    "uefi-utils",
 ]

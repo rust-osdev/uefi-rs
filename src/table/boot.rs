@@ -348,7 +348,7 @@ bitflags! {
         /// This memory range can be set as read-only.
         const READ_ONLY = 0x20000;
         /// This memory must be mapped by the OS when a runtime service is called.
-        const RUNTIME = 0x8000000000000000;
+        const RUNTIME = 0x8000_0000_0000_0000;
     }
 }
 

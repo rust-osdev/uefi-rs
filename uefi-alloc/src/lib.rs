@@ -39,6 +39,9 @@ fn boot_services() -> &'static BootServices {
     }
 }
 
+/// Allocator which uses the UEFI pool allocation functions.
+///
+/// Only valid for as long as the UEFI runtime services are available.
 pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
@@ -50,11 +53,13 @@ unsafe impl GlobalAlloc for Allocator {
         // TODO: add support for other alignments.
         if align > 8 {
             // Unsupported alignment for allocation, UEFI can only allocate 8-byte aligned addresses
+            // BUG: use `Opaque::null_mut()` once it works. See https://github.com/rust-lang/rust/issues/46665
             0 as *mut _
         } else {
             boot_services()
                 .allocate_pool(mem_ty, size)
                 .map(|addr| addr as *mut _)
+                // BUG: use `Opaque::null_mut()` once it works. See https://github.com/rust-lang/rust/issues/46665
                 .unwrap_or(0 as *mut _)
         }
     }

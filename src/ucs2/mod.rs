@@ -17,10 +17,10 @@ pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>
     let len = bytes.len();
     let mut i = 0;
     while i < len {
-        let mut ch = 0u16;
+        let ch;
 
         if bytes[i] & 0b1000_0000 == 0b0000_0000 {
-            ch = bytes[i] as u16;
+            ch = u16::from(bytes[i]);
             i += 1;
         }
         else if bytes[i] & 0b1110_0000 == 0b1100_0000 {
@@ -33,8 +33,8 @@ pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>
                 // Invalid data
                 return Err(Status::CompromisedData);
             }
-            let a = (bytes[i] & 0b0001_1111) as u16;
-            let b = (bytes[i+1] & 0b0011_1111) as u16;
+            let a = u16::from(bytes[i] & 0b0001_1111);
+            let b = u16::from(bytes[i+1] & 0b0011_1111);
             ch = a << 6 | b;
             i += 2;
         }
@@ -49,9 +49,9 @@ pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>
                 // Invalid data
                 return Err(Status::CompromisedData);
             }
-            let a = (bytes[i] & 0b0000_1111) as u16;
-            let b = (bytes[i+1] & 0b0011_1111) as u16;
-            let c = (bytes[i+2] & 0b0011_1111) as u16;
+            let a = u16::from(bytes[i] & 0b0000_1111);
+            let b = u16::from(bytes[i+1] & 0b0011_1111);
+            let c = u16::from(bytes[i+2] & 0b0011_1111);
             ch = a << 12 | b << 6 | c;
             i += 3;
         }
@@ -66,8 +66,11 @@ pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>
     Ok(())
 }
 
+/// Encodes an input UTF-8 string into a UCS-2 string.
+///
+/// The returned `usize` represents the length of the returned buffer,
+/// measured in 2-byte characters.
 pub fn encode_ucs2(input: &str, buffer: &mut [u16]) -> Result<usize> {
-    let mut result = Ok(());
     let buffer_size = buffer.len();
     let mut i = 0;
 
@@ -94,8 +97,8 @@ pub fn encode_ucs2(input: &str, buffer: &mut [u16]) -> Result<usize> {
                 }
             }
         };
-        let result = ucs2_encoder(input, add_ch);
+        ucs2_encoder(input, add_ch)?;
     }
 
-    result.map(|_| i)
+    Ok(i)
 }

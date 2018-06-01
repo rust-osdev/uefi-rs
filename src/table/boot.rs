@@ -140,9 +140,9 @@ impl BootServices {
     ///
     /// This function attempts to get the protocol implementation of a handle,
     /// based on the protocol GUID.
-    pub fn handle_protocol<P>(&self, handle: Handle, guid: &Guid) -> Option<*mut P> {
+    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<*mut P> {
         let mut ptr = 0usize;
-        match (self.handle_protocol)(handle, guid, &mut ptr) {
+        match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
             Status::Success => Some(ptr as *mut P),
             _ => None,
         }

@@ -17,5 +17,7 @@
   "default-hidden-visibility": true,
   "executables": true,
   "exe-suffix": ".efi",
-  "is-like-windows": true
+  "is-like-windows": true,
+  "is-like-msvc": true,
+  "emit-debug-gdb-scripts": false
 }

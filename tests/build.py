@@ -96,8 +96,7 @@ def main(args) -> int:
     'Runs the user-requested actions.'
 
     # Clear any Rust flags which might affect the build.
-    # BUG: disable debug information since it currently breaks the build.
-    os.environ['RUSTFLAGS'] = '-C debuginfo=0'
+    os.environ['RUSTFLAGS'] = ''
 
     # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
     os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'tests')

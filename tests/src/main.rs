@@ -22,27 +22,17 @@ use uefi::{Handle, Status};
 use uefi::table;
 
 #[no_mangle]
-pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) -> Status {
+pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -> Status {
     uefi_services::init(st);
 
     let stdout = st.stdout();
-    stdout.reset(false).unwrap();
+    stdout.reset(false).expect("Failed to reset stdout");
 
     // Switch to the maximum supported graphics mode.
     let best_mode = stdout.modes().last().unwrap();
-    stdout.set_mode(best_mode).unwrap();
+    stdout.set_mode(best_mode).expect("Failed to change graphics mode");
 
     info!("# uefi-rs test runner");
-    info!("Image handle: {:?}", handle);
-
-    // Test the memory allocator.
-    {
-        let mut values = vec![-5, 16, 23, 4, 0];
-
-        values.sort();
-
-        info!("Sorted vector: {:?}", values);
-    }
 
     {
         let revision = st.uefi_revision();
@@ -50,6 +40,27 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
 
         info!("UEFI {}.{}.{}", major, minor / 10, minor % 10);
     }
+
+    info!("");
+
+    // Print all modes.
+    for (index, mode) in stdout.modes().enumerate() {
+        info!("Graphics mode #{}: {} rows by {} columns", index, mode.rows(), mode.columns());
+    }
+
+    info!("");
+
+    {
+        info!("Memory Allocation Test");
+
+        let mut values = vec![-5, 16, 23, 4, 0];
+
+        values.sort();
+
+        info!("Sorted vector: {:?}", values);
+    }
+
+    info!("");
 
     let bt = st.boot;
 
@@ -64,11 +75,28 @@ pub extern "C" fn uefi_start(handle: Handle, st: &'static table::SystemTable) ->
     }
 
     match ucs2::ucs2_encoding_test() {
-        Ok(_) => info!("UCS-2 encoding test passed"),
+        Ok(_) => info!("UCS-2 encoding test passed."),
         Err(status) => error!("UCS-2 encoding test failed with status {:?}", status),
     }
 
-    bt.stall(4_000_000);
+    info!("");
+
+    {
+        let mut pointer = uefi_utils::proto::find_protocol::<uefi::proto::console::pointer::Pointer>()
+            .expect("No pointer device was found");
+
+        let pointer = unsafe { pointer.as_mut() };
+
+        pointer.reset(false).expect("Failed to reset pointer device");
+
+        if let Ok(state) = pointer.state() {
+            info!("Pointer State: {:#?}", state);
+        } else {
+            error!("Failed to retrieve pointer state");
+        }
+    }
+
+    bt.stall(10_000_000);
 
     let rt = st.runtime;
     rt.reset(table::runtime::ResetType::Shutdown, Status::Success, None);

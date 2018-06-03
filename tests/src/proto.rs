@@ -5,19 +5,31 @@ use uefi::proto;
 use uefi_utils;
 
 pub fn protocol_test(_bt: &boot::BootServices) -> Result<()> {
-    type SearchedProtocol = proto::console::text::Output;
+    {
+        info!("UEFI Protocol Searching test");
 
-    let handles = uefi_utils::proto::find_handles::<SearchedProtocol>()
-        .expect("Failed to retrieve the list of handles");
+        type SearchedProtocol = proto::console::text::Output;
 
-    info!("Number of handles which implement the SimpleTextOutput protocol: {}", handles.len());
+        let handles = uefi_utils::proto::find_handles::<SearchedProtocol>()
+            .expect("Failed to retrieve the list of handles");
 
-    let mut debug_support_proto = uefi_utils::proto::find_protocol::<proto::debug::DebugSupport>()
-        .expect("UEFI debug protocol is not implemented");
+        info!("- Number of handles which implement the SimpleTextOutput protocol: {}", handles.len());
+    }
 
-    let debug_support = unsafe { debug_support_proto.as_mut() };
+    info!("");
 
-    info!("{:#?}", debug_support.arch());
+    {
+        info!("Debug Support Protocol");
+
+        let mut debug_support_proto = uefi_utils::proto::find_protocol::<proto::debug::DebugSupport>()
+            .expect("UEFI debug protocol is not implemented");
+
+        let debug_support = unsafe { debug_support_proto.as_mut() };
+
+        info!("- Architecture: {:?}", debug_support.arch());
+    }
+
+    info!("");
 
     Ok(())
 }

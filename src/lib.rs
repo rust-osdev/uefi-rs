@@ -30,7 +30,8 @@
 
 #![no_std]
 
-#![warn(missing_docs)]
+// Enable some additional warnings and lints.
+#![warn(missing_docs, unused)]
 #![cfg_attr(feature = "cargo-clippy", warn(clippy))]
 
 #[macro_use]

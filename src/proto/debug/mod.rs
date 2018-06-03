@@ -9,6 +9,7 @@
 //!
 //! [udk]: https://firmware.intel.com/develop/intel-uefi-tools-and-utilities/intel-uefi-development-kit-debugger-tool
 
+/// The debugging support protocol allows debuggers to connect to a UEFI machine.
 #[repr(C)]
 pub struct DebugSupport {
     isa: ProcessorArch,

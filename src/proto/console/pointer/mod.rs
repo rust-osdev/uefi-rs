@@ -7,7 +7,7 @@ use core::mem;
 pub struct Pointer {
     reset: extern "C" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "C" fn(this: &Pointer, state: &mut PointerState) -> Status,
-    wait_for_input: usize,
+    _wait_for_input: usize,
     mode: &'static PointerMode,
 }
 

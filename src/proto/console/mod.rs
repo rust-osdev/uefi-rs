@@ -4,3 +4,4 @@
 //! used by the user to interact with the early boot platform.
 
 pub mod text;
+pub mod pointer;

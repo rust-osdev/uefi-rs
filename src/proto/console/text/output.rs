@@ -12,19 +12,20 @@ pub struct Output {
                               rows: &mut usize)
                               -> Status,
     set_mode: extern "C" fn(this: &mut Output, mode: i32) -> Status,
-    _pad: [usize; 4],
+    set_attribute: usize,
+    clear_screen: usize,
+    set_cursor_position: usize,
+    enable_cursor: extern "C" fn(this: &mut Output, visible: bool) -> Status,
     data: &'static OutputData,
 }
 
 impl Output {
     /// Resets the text output device hardware.
-    #[inline]
     pub fn reset(&mut self, extended: bool) -> Result<()> {
         (self.reset)(self, extended).into()
     }
 
     /// Writes a string to the output device.
-    #[inline]
     pub fn output_string(&mut self, string: *const u16) -> Result<()> {
         (self.output_string)(self, string).into()
     }
@@ -34,7 +35,6 @@ impl Output {
     ///
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
-    #[inline]
     pub fn test_string(&mut self, string: *const u16) -> bool {
         match (self.test_string)(self, string) {
             Status::Success => true,
@@ -44,7 +44,6 @@ impl Output {
 
     /// Returns an iterator of all supported text modes.
     // TODO: fix the ugly lifetime parameter.
-    #[inline]
     pub fn modes<'a>(&'a mut self) -> impl Iterator<Item = OutputMode> + 'a {
         let max = self.data.max_mode;
         OutputModeIter {
@@ -62,17 +61,20 @@ impl Output {
     }
 
     /// Sets a mode as current.
-    #[inline]
     pub fn set_mode(&mut self, mode: OutputMode) -> Result<()> {
         (self.set_mode)(self, mode.index).into()
     }
 
     /// Returns the the current text mode.
-    #[inline]
     pub fn current_mode(&self) -> Result<OutputMode> {
         let index = self.data.mode;
         let dims = self.query_mode(index)?;
         Ok(OutputMode { index, dims })
+    }
+
+    /// Enables or disables the cursor.
+    pub fn enable_cursor(&mut self, visible: bool) -> Result<()> {
+        (self.enable_cursor)(self, visible).into()
     }
 }
 

@@ -23,20 +23,34 @@ This project contains multiple sub-crates:
 - `uefi-utils`: building on top of `uefi-services`, this crate provides a higher-level access to UEFI functions.
   Provides utility functions for common API usage.
 
-- `tests`: a sample UEFI applications that runs unit tests.
+- `uefi-test-runner` a UEFI application that runs unit / integration tests.
+
+- `examples`: example UEFI apps.
+
+- `tests`: unit and integration tests.
 
 ## Documentation
 
 This crate's documentation is fairly minimal, and you are encouraged to refer to
 the [UEFI specification][spec] for detailed information.
 
-You can find some example code in the `tests` directory,
-as well as use the `build.py` script to generate the documentation.
-
-This repo also contains a `x86_64-uefi.json` file, which is
-a custom Rust target for 64-bit UEFI applications.
-
 [spec]: http://www.uefi.org/specifications
+
+### rustdoc
+
+Use the `build.py` script in the `uefi-test-runner` directory to generate the documentation:
+
+```sh
+./build.py doc
+```
+
+### Sample code
+
+Some example UEFI apps are in the `examples` directory.
+
+The unit / integration tests are in the `tests` directory.
+
+This repo also contains a `x86_64-uefi.json` file, which is a custom Rust target for 64-bit UEFI applications.
 
 ## Building UEFI programs
 
@@ -69,6 +83,7 @@ You can use the `tests` directory as sample code for building a simple UEFI app.
 
 ## License
 
-The code in this repository is licensed under the Mozilla Public License 2. This license allows you to use the crate in proprietary programs, but any modifications to the files must be open-sourced.
+The code in this repository is licensed under the Mozilla Public License 2.
+This license allows you to use the crate in proprietary programs, but any modifications to the files must be open-sourced.
 
 The full text of the license is available in the `LICENSE` file.

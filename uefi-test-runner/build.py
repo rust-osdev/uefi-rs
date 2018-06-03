@@ -25,13 +25,10 @@ WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 
 # Path to directory containing `OVMF_{CODE/VARS}.fd`.
 # TODO: use installed OVMF, if available.
-OVMF_DIR = WORKSPACE_DIR / 'tests'
+OVMF_DIR = WORKSPACE_DIR / 'uefi-test-runner'
 
 BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
-
-# File with test output.
-LOG_FILE = BUILD_DIR / 'tests.log'
 
 def run_xargo(verb, *flags):
     'Runs Xargo with certain arguments.'
@@ -40,10 +37,10 @@ def run_xargo(verb, *flags):
 def build():
     'Builds the tests package.'
 
-    run_xargo('build', '--package', 'tests')
+    run_xargo('build', '--package', 'uefi-test-runner')
 
     # Copy the built file to the right directory for running tests.
-    built_file = BUILD_DIR / 'tests.efi'
+    built_file = BUILD_DIR / 'uefi-test-runner.efi'
 
     boot_dir = ESP_DIR / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
@@ -84,8 +81,6 @@ def run_qemu():
         # Mount a local directory as a FAT partition.
         '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
         '-device', 'ide-drive,bus=ahci.0,drive=esp',
-        # Enable the debug connection to allow retrieving test data from the test runner.
-        '-debugcon', f'file:{LOG_FILE}', '-global', 'isa-debugcon.iobase=0xE9',
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]
@@ -99,7 +94,7 @@ def main(args) -> int:
     os.environ['RUSTFLAGS'] = ''
 
     # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
-    os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'tests')
+    os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'uefi-test-runner')
 
     print(os.environ['RUST_TARGET_PATH'])
 

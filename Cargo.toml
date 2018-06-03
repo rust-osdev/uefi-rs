@@ -10,7 +10,7 @@ bitflags = "1"
 
 [workspace]
 members = [
-    "tests",
+    "uefi-test-runner",
     "uefi-logger",
     "uefi-alloc",
     "uefi-services",

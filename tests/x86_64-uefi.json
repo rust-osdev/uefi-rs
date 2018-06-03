@@ -16,8 +16,8 @@
   "panic-strategy": "abort",
   "default-hidden-visibility": true,
   "executables": true,
+  "position-independent-executables": true,
   "exe-suffix": ".efi",
   "is-like-windows": true,
-  "is-like-msvc": true,
   "emit-debug-gdb-scripts": false
 }

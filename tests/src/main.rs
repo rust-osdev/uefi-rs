@@ -14,8 +14,6 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-// TODO: implement a way of reporting test results.
-//mod debug;
 mod boot;
 mod proto;
 mod ucs2;

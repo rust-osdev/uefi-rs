@@ -5,3 +5,4 @@
 
 pub mod text;
 pub mod pointer;
+pub mod gop;

@@ -95,10 +95,11 @@ fn eh_personality() {}
 
 #[lang = "panic_fmt"]
 #[no_mangle]
-pub fn panic_fmt(_fmt: core::fmt::Arguments, file_line_col: &(&'static str, u32, u32)) {
+pub fn panic_fmt(fmt: core::fmt::Arguments, file_line_col: &(&'static str, u32, u32)) {
     let &(file, line, column) = file_line_col;
 
-    error!("Panic in {} at ({}, {})", file, line, column);
+    error!("Panic in {} at ({}, {}):", file, line, column);
+    error!("{}", fmt);
 
     loop {
         // TODO: add a timeout then shutdown.

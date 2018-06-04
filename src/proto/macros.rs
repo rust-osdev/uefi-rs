@@ -22,6 +22,7 @@ macro_rules! impl_proto {
         }
     ) => {
         impl ::proto::Protocol for $p {
+            #[doc(hidden)]
             const GUID: ::Guid = ::Guid::from_values($a, $b, $c, $d);
         }
 

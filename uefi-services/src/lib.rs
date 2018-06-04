@@ -12,6 +12,7 @@
 #![no_std]
 
 #![feature(lang_items)]
+#![feature(panic_implementation)]
 
 // These crates are required.
 extern crate rlibc;
@@ -93,13 +94,14 @@ fn init_alloc() {
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
-#[lang = "panic_fmt"]
-#[no_mangle]
-pub fn panic_fmt(fmt: core::fmt::Arguments, file_line_col: &(&'static str, u32, u32)) {
-    let &(file, line, column) = file_line_col;
-
-    error!("Panic in {} at ({}, {}):", file, line, column);
-    error!("{}", fmt);
+#[panic_implementation]
+fn panic_fmt(info: &core::panic::PanicInfo) -> ! {
+    if let Some(location) = info.location() {
+        error!("Panic in {} at ({}, {}):", location.file(), location.line(), location.column());
+        if let Some(message) = info.message() {
+            error!("{}", info.message())
+        }
+    }
 
     loop {
         // TODO: add a timeout then shutdown.

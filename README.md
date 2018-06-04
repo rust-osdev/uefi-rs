@@ -10,24 +10,20 @@ interfaces, and allow developers to write idiomatic Rust code.
 
 [uefi]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
-## Crates
+## Project structure
 
 This project contains multiple sub-crates:
 
-- `uefi` (top directory): contains wrappers around the UEFI interfaces.
+- `uefi` (top directory): defines the standard UEFI tables / interfaces.
 
 - `uefi-services`: initializes many convenience crates:
-  - `uefi-logger`: wrapper for the standard [logging](https://github.com/rust-lang-nursery/log) crate.
-  - `uefi-alloc`: wrapper for the memory allocation functions. This allows you to allocate objects on the heap.
+  - `uefi-logger`: wrapper for the standard [logging](https://github.com/rust-lang-nursery/log) crate. Prints log output to console.
+  - `uefi-alloc`: implements a global allocator using UEFI functions. This allows you to allocate objects on the heap.
 
 - `uefi-utils`: building on top of `uefi-services`, this crate provides a higher-level access to UEFI functions.
   Provides utility functions for common API usage.
 
 - `uefi-test-runner` a UEFI application that runs unit / integration tests.
-
-- `examples`: example UEFI apps.
-
-- `tests`: unit and integration tests.
 
 ## Documentation
 
@@ -44,42 +40,17 @@ Use the `build.py` script in the `uefi-test-runner` directory to generate the do
 ./build.py doc
 ```
 
-### Sample code
+## Sample code
 
-Some example UEFI apps are in the `examples` directory.
+An example UEFI app is built in the `uefi-test-runner` directory.
 
-The unit / integration tests are in the `tests` directory.
+Check out the testing [README.md](uefi-test-runner/README.md) for instructions on how to run the crate's tests.
 
 This repo also contains a `x86_64-uefi.json` file, which is a custom Rust target for 64-bit UEFI applications.
 
 ## Building UEFI programs
 
-### Prerequisites
-
-- [Xargo](https://github.com/japaric/xargo): this is essential if you plan to do any sort of cross-platform / bare-bones Rust programming.
-- [LLD](https://lld.llvm.org/): this linker is now [shipped](https://github.com/rust-lang/rust/pull/48125) with the latest nightly!
-
-### Steps
-
-The following steps allow you to build a simple UEFI app.
-
-- Create a new `#![no_std]` binary, add `#![no_main]` to use a custom entry point,
-  and make sure you have an entry point function which matches the one below:
-
-```rust
-#[no_mangle]
-pub extern "C" fn uefi_start(handle: Handle, system_table: &'static table::SystemTable) -> Status;
-```
-
-- Copy the `tests/x86_64-uefi.json` target file to your project's root.
-  You can customize it.
-
-- Build using `xargo build --target x86_64-uefi`.
-
-- The `target` directory will contain a `x86_64-uefi` subdirectory,
-  where you will find the `uefi_app.efi` file - a normal UEFI executable.
-
-You can use the `tests` directory as sample code for building a simple UEFI app.
+For instructions on how to create your own UEFI apps, see the [BUILDING.md](BUILDING.md) file.
 
 ## License
 

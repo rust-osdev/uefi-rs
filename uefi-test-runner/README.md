@@ -1,4 +1,5 @@
 ## Running the tests
+
 ### Prerequisites
 Besides all the requirements for building a UEFI app, you will also need:
 
@@ -9,6 +10,7 @@ Besides all the requirements for building a UEFI app, you will also need:
   Alternatively, install OVMF using your distro's package manager and change the paths in the script file.
 
 ### Steps
+
 It's as simple as running the `build.py` script with the `build` and `run` arguments:
 
 ```sh

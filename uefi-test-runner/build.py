@@ -66,21 +66,30 @@ def run_qemu():
 
     qemu_flags = [
         # Disable default devices.
+        # QEMU by defaults enables a ton of devices which slow down boot.
         '-nodefaults',
+
         # Use a standard VGA for graphics.
         '-vga', 'std',
+
         # Use a modern machine, with acceleration if possible.
         '-machine', 'q35,accel=kvm:tcg',
+
         # Allocate some memory.
         '-m', '128M',
+
         # Set up OVMF.
         '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
         '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
+
         # Create AHCI controller.
         '-device', 'ahci,id=ahci,multifunction=on',
+
         # Mount a local directory as a FAT partition.
         '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
         '-device', 'ide-drive,bus=ahci.0,drive=esp',
+
+        # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]

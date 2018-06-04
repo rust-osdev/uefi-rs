@@ -12,17 +12,25 @@ pub struct Output {
                               rows: &mut usize)
                               -> Status,
     set_mode: extern "C" fn(this: &mut Output, mode: i32) -> Status,
-    set_attribute: usize,
-    clear_screen: usize,
-    set_cursor_position: usize,
+    set_attribute: extern "C" fn(this: &mut Output, attribute: usize) -> Status,
+    clear_screen: extern "C" fn(this: &mut Output) -> Status,
+    set_cursor_position: extern "C" fn(this: &mut Output, column: usize, row: usize) -> Status,
     enable_cursor: extern "C" fn(this: &mut Output, visible: bool) -> Status,
     data: &'static OutputData,
 }
 
 impl Output {
-    /// Resets the text output device hardware.
+    /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result<()> {
         (self.reset)(self, extended).into()
+    }
+
+    /// Clears the output screen.
+    ///
+    /// The background is set to the current background color.
+    /// The cursor is moved to (0, 0).
+    pub fn clear(&mut self) -> Result<()> {
+        (self.clear_screen)(self).into()
     }
 
     /// Writes a string to the output device.
@@ -75,6 +83,29 @@ impl Output {
     /// Enables or disables the cursor.
     pub fn enable_cursor(&mut self, visible: bool) -> Result<()> {
         (self.enable_cursor)(self, visible).into()
+    }
+
+    /// Sets the cursor's position, relative to the top-left corner, which is (0, 0).
+    ///
+    /// This function will fail if the cursor's new position would exceed the screen's bounds.
+    pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result<()> {
+        (self.set_cursor_position)(self, column, row).into()
+    }
+
+    /// Sets the text and background colors for the console.
+    ///
+    /// Note that for the foreground color you can choose any color.
+    /// The background must be one of the first 8 colors.
+    pub fn set_color(&mut self, foreground: Color, background: Color) -> Result<()> {
+        let fgc = foreground as usize;
+        let bgc = background as usize;
+
+        if bgc >= 8 {
+            Err(Status::DeviceError)
+        } else {
+            let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
+            (self.set_attribute)(self, attr).into()
+        }
     }
 }
 
@@ -153,4 +184,30 @@ impl_proto! {
     protocol Output {
         GUID = 0x387477c2, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
     }
+}
+
+/// Colors for the UEFI console.
+///
+/// All colors can be used as foreground colors.
+/// The first 8 colors can also be used as background colors.
+#[allow(missing_docs)]
+#[derive(Debug, Copy, Clone)]
+#[repr(u8)]
+pub enum Color {
+    Black,
+    Blue,
+    Green,
+    Cyan,
+    Red,
+    Magenta,
+    Brown,
+    LightGray,
+    DarkGray,
+    LightBlue,
+    LightGreen,
+    LightCyan,
+    LightRed,
+    LightMagenta,
+    Yellow,
+    White,
 }

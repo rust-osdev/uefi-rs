@@ -26,13 +26,33 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
     uefi_services::init(st);
 
     let stdout = st.stdout();
-    stdout.reset(false).expect("Failed to reset stdout");
+
+    // Reset the console.
+    {
+        stdout.reset(false).expect("Failed to reset stdout");
+    }
 
     // Switch to the maximum supported graphics mode.
-    let best_mode = stdout.modes().last().unwrap();
-    stdout.set_mode(best_mode).expect("Failed to change graphics mode");
+    {
+        let best_mode = stdout.modes().last().unwrap();
+        stdout.set_mode(best_mode).expect("Failed to change graphics mode");
+    }
 
-    info!("# uefi-rs test runner");
+    // Set a new color, and paint the background with it.
+    {
+        use ::uefi::proto::console::text::Color;
+        stdout.set_color(Color::White, Color::Blue).expect("Failed to change console color");
+        stdout.clear().expect("Failed to clear screen");
+    }
+
+    // Move the cursor.
+    {
+        stdout.enable_cursor(true).expect("Failed to enable cursor");
+        stdout.set_cursor_position(24, 0).expect("Failed to move cursor");
+
+        // This will make this `info!` line be (somewhat) centered.
+        info!("# uefi-rs test runner");
+    }
 
     {
         let revision = st.uefi_revision();

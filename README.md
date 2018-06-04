@@ -10,6 +10,10 @@ interfaces, and allow developers to write idiomatic Rust code.
 
 [uefi]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
+<p align="center">
+  <img width="552px" height="389px" alt="uefi-rs running in QEMU" src="https://i.imgur.com/AtFQLUO.png"/>
+</p>
+
 ## Project structure
 
 This project contains multiple sub-crates:

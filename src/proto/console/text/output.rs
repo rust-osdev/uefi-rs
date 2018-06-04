@@ -85,6 +85,18 @@ impl Output {
         (self.enable_cursor)(self, visible).into()
     }
 
+    /// Returns the column and row of the cursor.
+    pub fn get_cursor_position(&self) -> (usize, usize) {
+        let column = self.data.cursor_column;
+        let row = self.data.cursor_row;
+        (column as usize, row as usize)
+    }
+
+    /// Returns whether the cursor is currently shown or not.
+    pub fn is_cursor_visible(&self) -> bool {
+        self.data.cursor_visible
+    }
+
     /// Sets the cursor's position, relative to the top-left corner, which is (0, 0).
     ///
     /// This function will fail if the cursor's new position would exceed the screen's bounds.

@@ -43,15 +43,13 @@ pub fn find_protocol<P: Protocol>() -> Option<ptr::NonNull<P>> {
     let bt = boot_services();
 
     // Retrieve a handle implementing the protocol.
-    let handle = {
-        // Allocate space for 1 handle.
-        let mut buffer = [ptr::null_mut(); 1];
+    // Note: using the `find_handles` function might not return _only_ compatible protocols.
+    // We have to retrieve them all and find one that works.
+    let handles = find_handles::<P>().ok()?;
 
-        let search_type = boot::SearchType::from_proto::<P>();
-
-        bt.locate_handle(search_type, Some(&mut buffer)).ok()
-            .and_then(|len| if len == 1 { Some(buffer[0]) } else { None })?
-    };
-
-    bt.handle_protocol::<P>(handle)
+    handles.iter()
+        .map(|&handle| bt.handle_protocol::<P>(handle))
+        .filter(Option::is_some)
+        .next()
+        .unwrap_or(None)
 }

@@ -64,6 +64,7 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
     {
         stdout.enable_cursor(true).expect("Failed to enable cursor");
         stdout.set_cursor_position(24, 0).expect("Failed to move cursor");
+        stdout.enable_cursor(false).expect("Failed to enable cursor");
 
         // This will make this `info!` line be (somewhat) centered.
         info!("# uefi-rs test runner");
@@ -115,25 +116,25 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
     info!("");
 
     {
-        let mut pointer = uefi_utils::proto::find_protocol::<uefi::proto::console::pointer::Pointer>()
-            .expect("No pointer device was found");
+        if let Some(mut pointer) = uefi_utils::proto::find_protocol::<uefi::proto::console::pointer::Pointer>() {
+            let pointer = unsafe { pointer.as_mut() };
 
-        let pointer = unsafe { pointer.as_mut() };
+            pointer.reset(false).expect("Failed to reset pointer device");
 
-        pointer.reset(false).expect("Failed to reset pointer device");
-
-        if let Ok(state) = pointer.state() {
-            info!("Pointer State: {:#?}", state);
+            if let Ok(state) = pointer.state() {
+                info!("Pointer State: {:#?}", state);
+            } else {
+                error!("Failed to retrieve pointer state");
+            }
         } else {
-            error!("Failed to retrieve pointer state");
+            warn!("No pointer device found");
         }
     }
 
-    stdout.enable_cursor(false).unwrap();
-
     info!("");
 
-    timeout!("Testing UEFI graphics in {} second(s)...", 5);
+    timeout!("Testing UEFI graphics in {} second(s)...", 3);
+    stdout.reset(false).unwrap();
 
     // Draw some graphics.
 
@@ -143,19 +144,33 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
         if let Some(mut gop_proto) = uefi_utils::proto::find_protocol::<GraphicsOutput>() {
             let gop = unsafe { gop_proto.as_mut() };
 
-            // First, fill the screen with color.
+            // Set a larger graphics mode.
+            {
+                // We know for sure QEMU has a 1024x768, mode.
+                let mode = gop.modes()
+                    .find(|ref mode| {
+                        let info = mode.info();
+
+                        info.resolution() == (1024, 768)
+                    })
+                    .unwrap();
+
+                gop.set_mode(mode).expect("Failed to set graphics mode");
+            }
+
+            // Fill the screen with color.
             {
                 let op = BltOp::VideoFill {
                     // Cornflower blue.
                     color: BltPixel::new(100, 149, 237),
                     dest: (0, 0),
-                    dims: (32, 32),
+                    dims: (1024, 768),
                 };
 
                 gop.blt(op).expect("Failed to fill screen with color");
             }
 
-            bt.stall(1_000_000);
+            bt.stall(3_000_000);
         } else {
             warn!("UEFI Graphics Output Protocol is not supported");
         }
@@ -163,9 +178,7 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
         // TODO: also test manipulating the pixel buffer directly.
     }
 
-    info!("");
-
-    timeout!("Testing complete, shutting down in {} second(s)...", 5);
+    timeout!("Testing complete, shutting down in {} second(s)...", 3);
 
     let rt = st.runtime;
     rt.reset(table::runtime::ResetType::Shutdown, Status::Success, None);

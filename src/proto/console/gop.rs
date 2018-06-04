@@ -62,7 +62,7 @@ impl GraphicsOutput {
     }
 
     /// Returns information about available graphics modes and output devices.
-    pub fn modes(&self) -> impl Iterator<Item = Mode> {
+    pub fn modes<'a>(&'a self) -> impl Iterator<Item = Mode> + 'a {
         ModeIter {
             gop: self,
             current: 0,
@@ -71,7 +71,7 @@ impl GraphicsOutput {
     }
 
     /// Sets the current graphics mode.
-    pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
+    pub fn set_mode(&mut self, mode: Mode) -> Result<()> {
         (self.set_mode)(self, mode.index).into()
     }
 
@@ -214,13 +214,13 @@ pub struct PixelBitmask {
 }
 
 /// Represents a graphics mode compatible with a given graphics device.
-pub struct Mode<'a> {
+pub struct Mode {
     index: u32,
     info_sz: usize,
-    info: &'a ModeInfo,
+    info: &'static ModeInfo,
 }
 
-impl<'a> Mode<'a> {
+impl Mode {
     /// The size of the info structure in bytes.
     ///
     /// Newer versions of the spec might add extra information, in a backwards compatible way.
@@ -285,7 +285,7 @@ struct ModeIter<'a> {
 }
 
 impl<'a> Iterator for ModeIter<'a> {
-    type Item = Mode<'a>;
+    type Item = Mode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;

@@ -26,6 +26,21 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
     uefi_services::init(st);
 
     let stdout = st.stdout();
+    let bt = st.boot;
+
+    macro_rules! timeout {
+        ($msg:expr, $seconds:expr) => {
+            for i in 0..$seconds {
+                let (_, row) = stdout.get_cursor_position();
+                info!($msg, $seconds - i);
+                stdout.set_cursor_position(0, row).unwrap();
+
+                bt.stall(1_000_000);
+            }
+
+            info!($msg, 0);
+        };
+    }
 
     // Reset the console.
     {
@@ -82,8 +97,6 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
 
     info!("");
 
-    let bt = st.boot;
-
     match boot::boot_services_test(bt) {
         Ok(_) => info!("Boot services test passed."),
         Err(status) => error!("Boot services test failed with status {:?}", status),
@@ -116,7 +129,43 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
         }
     }
 
-    bt.stall(10_000_000);
+    stdout.enable_cursor(false).unwrap();
+
+    info!("");
+
+    timeout!("Testing UEFI graphics in {} second(s)...", 5);
+
+    // Draw some graphics.
+
+    {
+        use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel};
+
+        if let Some(mut gop_proto) = uefi_utils::proto::find_protocol::<GraphicsOutput>() {
+            let gop = unsafe { gop_proto.as_mut() };
+
+            // First, fill the screen with color.
+            {
+                let op = BltOp::VideoFill {
+                    // Cornflower blue.
+                    color: BltPixel::new(100, 149, 237),
+                    dest: (0, 0),
+                    dims: (32, 32),
+                };
+
+                gop.blt(op).expect("Failed to fill screen with color");
+            }
+
+            bt.stall(1_000_000);
+        } else {
+            warn!("UEFI Graphics Output Protocol is not supported");
+        }
+
+        // TODO: also test manipulating the pixel buffer directly.
+    }
+
+    info!("");
+
+    timeout!("Testing complete, shutting down in {} second(s)...", 5);
 
     let rt = st.runtime;
     rt.reset(table::runtime::ResetType::Shutdown, Status::Success, None);

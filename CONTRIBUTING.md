@@ -2,6 +2,9 @@
 
 Pull requests, issues and suggestions are welcome!
 
+The UEFI spec is huge, so there might be some omissions or some missing features.
+You should follow the existing project structure when adding new items.
+
 ## Workflow
 
 First, change to the `uefi-test-runner` directory:
@@ -16,8 +19,10 @@ I use [VS Code][code] with the [RLS][rls] extension.
 Test your changes:
 
 ```shell
-./build.py build run
+./build.py run
 ```
+
+The line above will open a QEMU window where the test harness will run some tests.
 
 [code]: https://code.visualstudio.com/
 [rls]: https://github.com/rust-lang-nursery/rls-vscode

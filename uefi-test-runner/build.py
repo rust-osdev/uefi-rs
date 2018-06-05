@@ -2,6 +2,7 @@
 
 'Script used to build, run, and test the code on all supported platforms.'
 
+import argparse
 import os
 from pathlib import Path
 import shutil
@@ -59,6 +60,10 @@ def clippy():
 
 def run_qemu():
     'Runs the code in QEMU.'
+
+    # Ask xargo to rebuild changes.
+    build()
+
     ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
 
     if not ovmf_code.is_file():
@@ -96,7 +101,7 @@ def run_qemu():
 
     sp.run([QEMU] + qemu_flags).check_returncode()
 
-def main(args) -> int:
+def main():
     'Runs the user-requested actions.'
 
     # Currently, Clang fails to build `compiler-builtins`
@@ -109,32 +114,37 @@ def main(args) -> int:
     # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
     os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'uefi-test-runner')
 
-    print(os.environ['RUST_TARGET_PATH'])
+    usage = '%(prog)s verb [options]'
+    desc = 'Build script for UEFI programs'
 
-    if len(args) < 2:
-        print("Expected at least one parameter (the commands to run): build / doc / run / clippy")
-        return 1
+    parser = argparse.ArgumentParser(usage=usage, description=desc)
 
-    cmds = args[1:]
+    subparsers = parser.add_subparsers(dest='verb')
 
-    KNOWN_CMDS = {
-        'build': build,
-        'doc': doc,
-        'run': run_qemu,
-        'clippy': clippy,
-    }
+    build_parser = subparsers.add_parser('build')
+    run_parser = subparsers.add_parser('run')
+    doc_parser = subparsers.add_parser('doc')
+    clippy_parser = subparsers.add_parser('clippy')
 
-    for cmd in cmds:
-        if cmd in KNOWN_CMDS:
-            try:
-                KNOWN_CMDS[cmd]()
-            except sp.CalledProcessError:
-                return 1
-        else:
-            print("Unknown verb:", cmd)
-            return 1
+    opts = parser.parse_args()
 
-    return 0
+    if opts.verb == 'build':
+        build()
+    elif opts.verb == 'run':
+        run_qemu()
+    elif opts.verb == 'doc':
+        doc()
+    elif opts.verb == 'clippy':
+        clippy()
+    elif opts.verb is None or opts.verb == '':
+        # Run the program, by default.
+        run_qemu()
+    else:
+        raise ValueError(f'Unknown verb {opts.verb}')
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    try:
+        main()
+    except sp.CalledProcessError as cpe:
+        print(f'Subprocess {cpe.cmd[0]} exited with error code {cpe.returncode}')
+        sys.exit(1)

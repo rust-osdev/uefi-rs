@@ -1,6 +1,9 @@
-## Running the tests
+# Running the tests
 
-### Prerequisites
+This file documents the process of building and running the test suite.
+
+## Prerequisites
+
 Besides all the requirements for building a UEFI app, you will also need:
 
 - [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
@@ -9,12 +12,17 @@ Besides all the requirements for building a UEFI app, you will also need:
   You need to extract `OVMF_CODE.fd` and `OVMF_VARS.fd` to the same directory as the `build.py` file.
   Alternatively, install OVMF using your distro's package manager and change the paths in the script file.
 
-### Steps
+## Steps
 
-It's as simple as running the `build.py` script with the `build` and `run` arguments:
+It's as simple as running the `build.py` script with the ``run` argument:
 
 ```sh
-./build.py build run
+./build.py run
 ```
 
-You can also pass `doc` for generating documentation, or `clippy` to run Clippy.
+Available commands:
+
+- `build`: only build
+- `run`: (re)build and run
+- `doc`: generate documentation
+- `clippy`: run Clippy

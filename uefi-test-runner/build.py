@@ -99,6 +99,10 @@ def run_qemu():
 def main(args) -> int:
     'Runs the user-requested actions.'
 
+    # Currently, Clang fails to build `compiler-builtins`
+    if os.environ['CC'] == 'clang':
+        os.environ['CC'] = 'gcc'
+
     # Clear any Rust flags which might affect the build.
     os.environ['RUSTFLAGS'] = ''
 

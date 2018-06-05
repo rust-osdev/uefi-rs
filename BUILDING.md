@@ -30,4 +30,9 @@ pub extern "C" fn uefi_start(handle: Handle, system_table: &'static table::Syste
 - The `target` directory will contain a `x86_64-uefi` subdirectory,
   where you will find the `uefi_app.efi` file - a normal UEFI executable.
 
+- To run this on a real computer:
+  - Find a USB drive which is FAT12 / FAT16 / FAT32 formatted
+  - Copy the file to the USB drive, to `/EFI/Boot/Bootx64.efi`
+  - In the UEFI BIOS, choose "Boot from USB" or similar
+
 You can use the `uefi-test-runner` directory as sample code for building a simple UEFI app.

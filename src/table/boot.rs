@@ -3,7 +3,7 @@
 use {Status, Result, Handle, Guid};
 use super::Header;
 use proto::Protocol;
-use core::{ptr, mem, cmp};
+use core::{ptr, mem};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -90,39 +90,49 @@ impl BootServices {
         (self.free_pages)(addr as u64, count).into()
     }
 
-    /// Retrieves the current memory map
+    /// Retrieves the size, in bytes, of the current memory map.
     ///
-    /// `buffer` is a location for retrieving the raw memory map from UEFI. This needs to be passed
-    /// in to work around the fact that we have no way to allocate memory and rust does not support variable
-    /// sized stack allocations. We may not use allocate_pages/free_pages as this would change the memory map
-    /// making such an implemenetation unsuitable for supporting usage of ExitBootServices, which requires
-    /// MemoryMap be called and then ExitBootServices be called with the memory map not changing in between.
-    pub fn get_memory_map(&self, output: &mut [MemoryDescriptor], buffer: &mut [u8]) -> Result<(usize, MemoryMapKey)> {
-        // These will get set in the call to memory_map, but we assign default values to
-        // prevent rustc from complaining
+    /// A buffer of this size will be capable of holding the whole current memory map,
+    /// including padding. Note, however, that allocations will increase the size of the
+    /// memory map, therefore it is better to allocate some extra space.
+    pub fn memory_map_size(&self) -> usize {
+        let mut map_size = 0;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
-        // create a subslice of the buffer that is the minimal alignment of a MemoryDescriptor
-        let offset = buffer.as_ptr().align_offset(mem::align_of::<MemoryDescriptor>());
-        if offset > mem::size_of_val(buffer) {
-            return Err(Status::BufferTooSmall);
-        }
-        let aligned_buffer = &mut buffer[offset..];
-        // Attempt to get the result
-        let mut map_size = mem::size_of_val(aligned_buffer);
-        (self.memory_map)(&mut map_size, aligned_buffer.as_mut_ptr() as usize, &mut map_key, &mut entry_size, &mut entry_version)?;
-        // Calculate actual number of descriptors
-        let num_descriptors = map_size / entry_size;
-        // Copy each descriptor individually as their may be padding between due to the entry_size
-        // being larger than the size of a MemoryDescriptor
-        for i in 0 .. cmp::min(num_descriptors, output.len()) {
-            let base = aligned_buffer.as_ptr() as usize + entry_size * i;
-            let pointer = base as *const MemoryDescriptor;
-            output[i] = unsafe {*pointer};
-        }
-        // Return the actual number of descriptors
-        Ok((num_descriptors, map_key))
+
+        (self.memory_map)(&mut map_size, 0, &mut map_key, &mut entry_size, &mut entry_version);
+
+        map_size * entry_size
+    }
+
+    /// Retrieves the current memory map.
+    ///
+    /// The allocated buffer should be big enough to contain the memory map,
+    /// and a way of estimating how big it should be is by calling `memory_map_size`.
+    ///
+    /// The returned key is a unique identifier of the current configuration of memory.
+    /// Any allocations or such will change the memory map's key.
+    pub fn memory_map<'a>(&self, buffer: &'a mut [u8])
+        -> Result<(MemoryMapKey, impl ExactSizeIterator<Item = &'a MemoryDescriptor>)> {
+        let mut map_size = buffer.len();
+        let map_buffer = buffer.as_ptr() as usize;
+        let mut map_key = MemoryMapKey(0);
+        let mut entry_size = 0;
+        let mut entry_version = 0;
+
+        (self.memory_map)(&mut map_size, map_buffer, &mut map_key, &mut entry_size, &mut entry_version)?;
+
+        let len = map_size / entry_size;
+
+        let iter = MemoryMapIter {
+            buffer,
+            entry_size,
+            index: 0,
+            len,
+        };
+
+        Ok((map_key, iter))
     }
 
     /// Allocates from a memory pool. The address is 8-byte aligned.
@@ -358,6 +368,42 @@ bitflags! {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct MemoryMapKey(usize);
+
+#[derive(Debug)]
+pub struct MemoryMapIter<'a> {
+    buffer: &'a [u8],
+    entry_size: usize,
+    index: usize,
+    len: usize,
+}
+
+impl<'a> Iterator for MemoryMapIter<'a> {
+    type Item = &'a MemoryDescriptor;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let sz = self.len - self.index;
+
+        (sz, Some(sz))
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.len {
+            let ptr = self.buffer.as_ptr() as usize + self.entry_size * self.index;
+
+            self.index += 1;
+
+            let descriptor = unsafe {
+                mem::transmute::<usize, &MemoryDescriptor>(ptr)
+            };
+
+            Some(descriptor)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> ExactSizeIterator for MemoryMapIter<'a> { }
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]

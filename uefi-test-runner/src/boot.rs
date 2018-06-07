@@ -1,6 +1,8 @@
 use uefi::Result;
 use uefi::table::boot;
 
+use core::{mem, slice};
+
 pub fn boot_services_test(bt: &boot::BootServices) -> Result<()> {
     let ty = boot::AllocateType::AnyPages;
     let mem_ty = boot::MemoryType::LoaderData;
@@ -10,10 +12,21 @@ pub fn boot_services_test(bt: &boot::BootServices) -> Result<()> {
 
     bt.free_pages(pgs, 1)?;
 
-    let mut mem_desc: [boot::MemoryDescriptor; 32] = [boot::MemoryDescriptor::default(); 32];
-    let mut buffer: [u8; 4096] = [0; 4096];
-    let (num_desc, _) = bt.get_memory_map(&mut mem_desc,&mut buffer)?;
-    info!("Found information for {} memory descriptors", num_desc);
+    let map_sz = bt.memory_map_size();
+    // 2 extra pages should be enough.
+    let buf_sz = (map_sz / 4096) + 2;
+    let pages = bt.allocate_pages(ty, mem_ty, buf_sz)
+        .expect("Failed to allocate memory for memory map");
+
+    let buffer = unsafe {
+        let ptr = mem::transmute::<_, *mut u8>(pages);
+        slice::from_raw_parts_mut(ptr, buf_sz * 4096)
+    };
+
+    let (key, mut desc_iter) = bt.memory_map(buffer)?;
+    info!("Memory map key {:?}", key);
+    info!("Found information for {} memory descriptors", desc_iter.len());
+    info!("First descriptor: {:?}", desc_iter.next().unwrap());
 
     Ok(())
 }

@@ -9,6 +9,8 @@ import shutil
 import subprocess as sp
 import sys
 
+from warnings import warn
+
 ## Configurable settings
 # Target to build for.
 TARGET = 'x86_64-uefi'
@@ -33,7 +35,9 @@ ESP_DIR = BUILD_DIR / 'esp'
 
 def run_xargo(verb, *flags):
     'Runs Xargo with certain arguments.'
-    sp.run([XARGO, verb, '--target', TARGET, *flags]).check_returncode()
+    cmd_line = [XARGO, verb, '--target', TARGET, *flags]
+    print(' '.join(cmd_line))
+    sp.run(cmd_line).check_returncode()
 
 def build():
     'Builds the tests package.'
@@ -64,10 +68,16 @@ def run_qemu():
     # Ask xargo to rebuild changes.
     build()
 
-    ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
+    firmware_files = [];
 
-    if not ovmf_code.is_file():
-        raise FileNotFoundError(f'OVMF_CODE.fd not found in the `{OVMF_DIR}` directory')
+    for file in os.listdir(OVMF_DIR):
+        filename = os.fsdecode(file)
+        if filename.endswith(".fd"):
+            new_path = os.path.join(filename)
+            print('using firmware file ' + new_path)
+            firmware_files.append(new_path)
+    if(len(firmware_files) < 1):
+        warn('found no firmware in ' + str(OVMF_DIR))
 
     qemu_flags = [
         # Disable default devices.
@@ -84,8 +94,8 @@ def run_qemu():
         '-m', '128M',
 
         # Set up OVMF.
-        '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
-        '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
+        #'-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
+        #'-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
 
         # Create AHCI controller.
         '-device', 'ahci,id=ahci,multifunction=on',
@@ -99,6 +109,12 @@ def run_qemu():
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]
 
+    # Set up OVMF.
+    for path in firmware_files:
+        qemu_flags.append('-drive')
+        qemu_flags.append(f'if=pflash,format=raw,file={path},readonly=on')
+
+    print(' '.join([QEMU] + qemu_flags))
     sp.run([QEMU] + qemu_flags).check_returncode()
 
 def main():

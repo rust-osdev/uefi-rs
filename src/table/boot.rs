@@ -370,7 +370,7 @@ bitflags! {
 pub struct MemoryMapKey(usize);
 
 #[derive(Debug)]
-pub struct MemoryMapIter<'a> {
+struct MemoryMapIter<'a> {
     buffer: &'a [u8],
     entry_size: usize,
     index: usize,

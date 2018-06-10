@@ -28,12 +28,21 @@ WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 # TODO: use installed OVMF, if available.
 OVMF_DIR = WORKSPACE_DIR / 'uefi-test-runner'
 
+# Set to `True` or use the `--verbose` argument to print commands.
+VERBOSE = False
+
 BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
 def run_xargo(verb, *flags):
     'Runs Xargo with certain arguments.'
-    sp.run([XARGO, verb, '--target', TARGET, *flags]).check_returncode()
+
+    cmd = [XARGO, verb, '--target', TARGET, *flags]
+
+    if VERBOSE:
+        print(' '.join(cmd))
+
+    sp.run(cmd).check_returncode()
 
 def build():
     'Builds the tests package.'
@@ -99,7 +108,12 @@ def run_qemu():
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]
 
-    sp.run([QEMU] + qemu_flags).check_returncode()
+    cmd = [QEMU] + qemu_flags
+
+    if VERBOSE:
+        print(' '.join(cmd))
+
+    sp.run(cmd).check_returncode()
 
 def main():
     'Runs the user-requested actions.'
@@ -119,6 +133,8 @@ def main():
 
     parser = argparse.ArgumentParser(usage=usage, description=desc)
 
+    parser.add_argument('--verbose', '-v', action='store_true')
+
     subparsers = parser.add_subparsers(dest='verb')
 
     build_parser = subparsers.add_parser('build')
@@ -127,6 +143,10 @@ def main():
     clippy_parser = subparsers.add_parser('clippy')
 
     opts = parser.parse_args()
+
+    # Check if we need to enable verbose mode
+    global VERBOSE
+    VERBOSE = VERBOSE or opts.verbose
 
     if opts.verb == 'build':
         build()

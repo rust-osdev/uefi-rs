@@ -11,6 +11,8 @@ Besides all the requirements for building a UEFI app, you will also need:
 - [OVMF](https://github.com/tianocore/tianocore.github.io/wiki/OVMF):
   You need to extract `OVMF_CODE.fd` and `OVMF_VARS.fd` to the same directory as the `build.py` file.
   Alternatively, install OVMF using your distro's package manager and change the paths in the script file.
+  **Note**: if your distro's OVMF version is too old / does not provide these files,
+  you can download [Gerd Hoffmann's builds](https://www.kraxel.org/repos/) and extract them in the local directory.
 
 ## Steps
 

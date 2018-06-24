@@ -19,6 +19,7 @@
 #![feature(global_allocator)]
 
 use core::alloc::{GlobalAlloc, Layout};
+use core::ptr;
 
 extern crate uefi;
 use uefi::table::boot::{BootServices, MemoryType};
@@ -53,12 +54,12 @@ unsafe impl GlobalAlloc for Allocator {
         // TODO: add support for other alignments.
         if align > 8 {
             // Unsupported alignment for allocation, UEFI can only allocate 8-byte aligned addresses
-            0 as *mut _
+            ptr::null_mut()
         } else {
             boot_services()
                 .allocate_pool(mem_ty, size)
                 .map(|addr| addr as *mut _)
-                .unwrap_or(0 as *mut _)
+                .unwrap_or(ptr::null_mut())
         }
     }
 

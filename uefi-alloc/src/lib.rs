@@ -18,7 +18,8 @@
 #![feature(allocator_api)]
 #![feature(global_allocator)]
 
-use core::alloc::{GlobalAlloc, Layout, Opaque};
+use core::alloc::{GlobalAlloc, Layout};
+use core::ptr;
 
 extern crate uefi;
 use uefi::table::boot::{BootServices, MemoryType};
@@ -45,7 +46,7 @@ fn boot_services() -> &'static BootServices {
 pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut Opaque {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mem_ty = MemoryType::LoaderData;
         let size = layout.size();
         let align = layout.align();
@@ -53,18 +54,16 @@ unsafe impl GlobalAlloc for Allocator {
         // TODO: add support for other alignments.
         if align > 8 {
             // Unsupported alignment for allocation, UEFI can only allocate 8-byte aligned addresses
-            // BUG: use `Opaque::null_mut()` once it works. See https://github.com/rust-lang/rust/issues/46665
-            0 as *mut _
+            ptr::null_mut()
         } else {
             boot_services()
                 .allocate_pool(mem_ty, size)
                 .map(|addr| addr as *mut _)
-                // BUG: use `Opaque::null_mut()` once it works. See https://github.com/rust-lang/rust/issues/46665
-                .unwrap_or(0 as *mut _)
+                .unwrap_or(ptr::null_mut())
         }
     }
 
-    unsafe fn dealloc(&self, ptr: *mut Opaque, _layout: Layout) {
+    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
         let addr = ptr as usize;
         boot_services()
             .free_pool(addr)

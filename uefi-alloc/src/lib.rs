@@ -16,7 +16,6 @@
 
 // Custom allocators are currently unstable.
 #![feature(allocator_api)]
-#![feature(global_allocator)]
 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr;

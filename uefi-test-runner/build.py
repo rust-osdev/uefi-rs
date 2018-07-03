@@ -119,7 +119,7 @@ def main():
     'Runs the user-requested actions.'
 
     # Currently, Clang fails to build `compiler-builtins`
-    if os.environ['CC'] == 'clang':
+    if 'CC' in os.environ and os.environ['CC'] == 'clang':
         os.environ['CC'] = 'gcc'
 
     # Clear any Rust flags which might affect the build.

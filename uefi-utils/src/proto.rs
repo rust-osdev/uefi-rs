@@ -6,7 +6,7 @@ use uefi::{Result, Handle};
 use uefi::table::boot;
 use uefi::proto::Protocol;
 
-use alloc::Vec;
+use alloc::vec::Vec;
 
 use core::ptr;
 

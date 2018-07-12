@@ -14,6 +14,7 @@
 #![feature(lang_items)]
 #![feature(panic_implementation)]
 #![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
 
 // These crates are required.
 extern crate rlibc;
@@ -109,7 +110,7 @@ fn panic_fmt(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-#[lang = "oom"]
+#[alloc_error_handler]
 fn out_of_memory(_: ::core::alloc::Layout) -> ! {
     // TODO: handle out-of-memory conditions
     loop { }

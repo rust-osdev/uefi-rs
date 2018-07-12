@@ -110,8 +110,9 @@ fn panic_fmt(info: &core::panic::PanicInfo) -> ! {
 }
 
 #[lang = "oom"]
-fn out_of_memory() {
+fn out_of_memory(_: ::core::alloc::Layout) -> ! {
     // TODO: handle out-of-memory conditions
+    loop { }
 }
 
 #[no_mangle]

@@ -12,18 +12,18 @@ pub struct Revision(u32);
 impl Revision {
     /// Creates a new revision.
     pub fn new(major: u16, minor: u16) -> Self {
-        let (major, minor) = (major as u32, minor as u32);
+        let (major, minor) = (u32::from(major), u32::from(minor));
         let value = (major << 16) | minor;
         Revision(value)
     }
 
     /// Returns the major revision.
-    pub fn major(&self) -> u16 {
+    pub fn major(self) -> u16 {
         (self.0 >> 16) as u16
     }
 
     /// Returns the minor revision.
-    pub fn minor(&self) -> u16 {
+    pub fn minor(self) -> u16 {
         self.0 as u16
     }
 }

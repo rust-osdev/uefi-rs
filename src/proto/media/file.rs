@@ -158,22 +158,20 @@ struct FileImpl {
 }
 
 bitflags! {
-    pub struct FileMode : u64 {
-        const READ = 0x0000000000000001;
-        const WRITE = 0x0000000000000002;
-        const CREATE = 0x8000000000000000;
+    pub struct FileMode: u64 {
+        const READ = 1;
+        const WRITE = 1 << 1;
+        const CREATE = 1 << 63;
     }
 }
 
 bitflags! {
-    pub struct FileAttribute : u64 {
-        const NONE = 0x0000000000000000;
-        const READ_ONLY = 0x0000000000000001;
-        const HIDDEN = 0x0000000000000002;
-        const SYSTEM = 0x0000000000000004;
-        const RESERVED = 0x0000000000000008;
-        const DIRECTORY = 0x0000000000000010;
-        const ARCHIVE = 0x0000000000000020;
-        const VALID_ATTR = 0x0000000000000037;
+    pub struct FileAttribute: u64 {
+        const READ_ONLY = 1;
+        const HIDDEN = 1 << 1;
+        const SYSTEM = 1 << 2;
+        const DIRECTORY = 1 << 4;
+        const ARCHIVE = 1 << 5;
+        const VALID_ATTR = 0x37;
     }
 }

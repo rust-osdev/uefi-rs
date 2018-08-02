@@ -7,6 +7,8 @@
 //! This module contains the actual entries of the configuration table,
 //! as well as GUIDs for many known vendor tables.
 
+#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+
 use crate::Guid;
 
 /// Contains a set of GUID / pointer for a vendor-specific table.

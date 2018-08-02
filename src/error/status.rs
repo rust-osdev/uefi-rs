@@ -1,3 +1,6 @@
+// The error codes are unportable, but that's how the spec defines them.
+#![cfg_attr(feature = "cargo-clippy", allow(enum_clike_unportable_variant))]
+
 use super::Result;
 use core::ops;
 
@@ -113,7 +116,7 @@ impl Status {
     /// Returns true if the status code indicates an error.
     #[inline]
     pub fn is_error(self) -> bool {
-        (self as usize) & HIGHEST_BIT_SET == 1
+        (self as usize) & HIGHEST_BIT_SET != 0
     }
 
     /// Converts this status code into a result with a given value.

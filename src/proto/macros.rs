@@ -23,6 +23,8 @@ macro_rules! impl_proto {
     ) => {
         impl $crate::proto::Protocol for $p {
             #[doc(hidden)]
+            // These literals aren't meant to be human-readable.
+            #[cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
             const GUID: $crate::Guid = $crate::Guid::from_values($a, $b, $c, $d);
         }
 

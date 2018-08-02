@@ -34,25 +34,21 @@ impl Guid {
 
 impl fmt::Display for Guid {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let (a, b, c) = (self.a, self.b, self.c);
-
         let d = {
-            let (low, high) = (self.d[0] as u16, self.d[1] as u16);
+            let (low, high) = (u16::from(self.d[0]), u16::from(self.d[1]));
 
             (low << 8) | high
         };
 
-        let e = {
-            let node = &self.d[2..8];
-            let mut e = 0;
+        // Extract and reverse byte order.
+        let e = self.d[2..8]
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (i, &elem)| acc | {
+                let shift = (5 - i) * 8;
+                u64::from(elem) << shift
+            });
 
-            for i in 0..6 {
-                e |= u64::from(node[5 - i]) << (i * 8);
-            }
-
-            e
-        };
-
-        write!(fmt, "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}", a, b, c, d, e)
+        write!(fmt, "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}", self.a, self.b, self.c, d, e)
     }
 }

@@ -8,7 +8,7 @@
 //! and are usually retrieved from a standard UEFI table or
 //! by querying a handle.
 
-use Guid;
+use crate::Guid;
 
 /// Common trait implemented by all standard UEFI protocols.
 pub trait Protocol {

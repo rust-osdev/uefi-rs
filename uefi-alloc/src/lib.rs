@@ -20,7 +20,6 @@
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr;
 
-extern crate uefi;
 use uefi::table::boot::{BootServices, MemoryType};
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.

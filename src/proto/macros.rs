@@ -21,9 +21,9 @@ macro_rules! impl_proto {
             GUID = $a:expr, $b:expr, $c:expr, $d:expr;
         }
     ) => {
-        impl ::proto::Protocol for $p {
+        impl $crate::proto::Protocol for $p {
             #[doc(hidden)]
-            const GUID: ::Guid = ::Guid::from_values($a, $b, $c, $d);
+            const GUID: $crate::Guid = $crate::Guid::from_values($a, $b, $c, $d);
         }
 
         // Most UEFI functions expect to be called on the bootstrap processor.

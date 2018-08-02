@@ -7,7 +7,7 @@
 //! This module contains the actual entries of the configuration table,
 //! as well as GUIDs for many known vendor tables.
 
-use Guid;
+use crate::Guid;
 
 /// Contains a set of GUID / pointer for a vendor-specific table.
 ///

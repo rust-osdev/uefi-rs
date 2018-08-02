@@ -1,6 +1,6 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use Status;
+use crate::Status;
 use super::Header;
 use core::ptr;
 

@@ -8,7 +8,7 @@
 //! UEFI implementations are allowed to not support all of the possible UCS-2
 //! characters for printing.
 
-use {Status, Result};
+use crate::{Status, Result};
 
 /// Encode UTF-8 string to UCS-2
 pub fn ucs2_encoder<F>(input: &str, mut output: F) -> Result<()>

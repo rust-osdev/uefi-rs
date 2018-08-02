@@ -23,7 +23,7 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
-use {Status, Result};
+use crate::{Status, Result};
 use core::{ptr, slice};
 
 /// Provides access to the video hardware's frame buffer.

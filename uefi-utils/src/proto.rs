@@ -1,6 +1,6 @@
 //! Protocol handling utility functions.
 
-use boot_services;
+use crate::boot_services;
 
 use uefi::{Result, Handle};
 use uefi::table::boot;

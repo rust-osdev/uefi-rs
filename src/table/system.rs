@@ -1,6 +1,6 @@
-use Handle;
+use crate::Handle;
 use super::{Header, Revision, cfg};
-use proto::console::text;
+use crate::proto::console::text;
 use core::slice;
 
 /// The system table entry points for accessing the core UEFI system functionality.

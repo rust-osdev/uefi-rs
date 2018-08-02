@@ -1,9 +1,12 @@
+cargo-features = ["edition"]
+
 [package]
 name = "uefi"
 version = "0.1.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 publish = false
+edition = "2018"
 
 [dependencies]
 bitflags = "1"

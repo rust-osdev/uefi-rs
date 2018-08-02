@@ -1,4 +1,4 @@
-use {Status, Result};
+use crate::{Status, Result};
 
 /// Interface for text-based output devices.
 #[repr(C)]

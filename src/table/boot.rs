@@ -1,8 +1,8 @@
 //! UEFI services available during boot.
 
-use {Status, Result, Handle, Guid};
+use crate::{Status, Result, Handle, Guid};
 use super::Header;
-use proto::Protocol;
+use crate::proto::Protocol;
 use core::{ptr, mem};
 
 /// Contains pointers to all of the boot services.

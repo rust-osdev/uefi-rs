@@ -1,7 +1,7 @@
 use uefi::Result;
 use uefi::table::boot;
 
-use core::{mem, slice};
+use core::slice;
 
 pub fn boot_services_test(bt: &boot::BootServices) -> Result<()> {
     let ty = boot::AllocateType::AnyPages;
@@ -19,7 +19,7 @@ pub fn boot_services_test(bt: &boot::BootServices) -> Result<()> {
         .expect("Failed to allocate memory for memory map");
 
     let buffer = unsafe {
-        let ptr = mem::transmute::<_, *mut u8>(pages);
+        let ptr = pages as *mut u8;
         slice::from_raw_parts_mut(ptr, buf_sz * 4096)
     };
 

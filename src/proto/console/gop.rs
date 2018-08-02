@@ -33,6 +33,8 @@ use core::{ptr, slice};
 pub struct GraphicsOutput {
     query_mode: extern "C" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo) -> Status,
     set_mode: extern "C" fn(&mut GraphicsOutput, mode: u32) -> Status,
+    // Clippy correctly complains that this is too complicated, but we can't change the spec.
+    #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
     blt: extern "C" fn(
         this: &mut GraphicsOutput,
         buffer: usize,

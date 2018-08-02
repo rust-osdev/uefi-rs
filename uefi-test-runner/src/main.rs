@@ -17,6 +17,7 @@ extern crate alloc;
 mod boot;
 mod proto;
 mod ucs2;
+mod gop;
 
 use uefi::{Handle, Status};
 use uefi::table;
@@ -137,46 +138,15 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
     stdout.reset(false).unwrap();
 
     // Draw some graphics.
-
-    {
-        use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel};
-
-        if let Some(mut gop_proto) = uefi_utils::proto::find_protocol::<GraphicsOutput>() {
-            let gop = unsafe { gop_proto.as_mut() };
-
-            // Set a larger graphics mode.
-            {
-                // We know for sure QEMU has a 1024x768, mode.
-                let mode = gop.modes()
-                    .find(|ref mode| {
-                        let info = mode.info();
-
-                        info.resolution() == (1024, 768)
-                    })
-                    .unwrap();
-
-                gop.set_mode(mode).expect("Failed to set graphics mode");
-            }
-
-            // Fill the screen with color.
-            {
-                let op = BltOp::VideoFill {
-                    // Cornflower blue.
-                    color: BltPixel::new(100, 149, 237),
-                    dest: (0, 0),
-                    dims: (1024, 768),
-                };
-
-                gop.blt(op).expect("Failed to fill screen with color");
-            }
-
-            bt.stall(3_000_000);
-        } else {
-            warn!("UEFI Graphics Output Protocol is not supported");
-        }
-
-        // TODO: also test manipulating the pixel buffer directly.
+    match gop::test_graphics_output(bt) {
+        Ok(_) => info!("Graphics Output Protocol test passed."),
+        Err(status) => error!("Graphics test failed: {:?}", status),
     }
+
+    // Get our text output back.
+    stdout.reset(false).unwrap();
+
+    info!("");
 
     timeout!("Testing complete, shutting down in {} second(s)...", 3);
 

@@ -73,7 +73,9 @@ impl GraphicsOutput {
     }
 
     /// Sets the current graphics mode.
-    pub fn set_mode(&mut self, mode: Mode) -> Result<()> {
+    ///
+    /// This function **will** invalidate the current framebuffer and change the current mode.
+    pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
         (self.set_mode)(self, mode.index).into()
     }
 
@@ -148,6 +150,11 @@ impl GraphicsOutput {
                 ).into()
             },
         }
+    }
+
+    /// Returns the frame buffer information for the current mode.
+    pub fn current_mode_info(&self) -> ModeInfo {
+        *self.mode.info
     }
 
     /// Returns a reference to the frame buffer.
@@ -253,8 +260,8 @@ impl ModeInfo {
     /// Returns the (horizontal, vertical) resolution.
     ///
     /// On desktop monitors, this usually means (width, height).
-    pub fn resolution(&self) -> (u32, u32) {
-        (self.hor_res, self.ver_res)
+    pub fn resolution(&self) -> (usize, usize) {
+        (self.hor_res as usize, self.ver_res as usize)
     }
 
     /// Returns the format of the frame buffer.
@@ -274,8 +281,8 @@ impl ModeInfo {
     ///
     /// Due to performance reasons, the stride might not be equal to the width,
     /// instead the stride might be bigger for better alignment.
-    pub fn stride(&self) -> u32 {
-        self.stride
+    pub fn stride(&self) -> usize {
+        self.stride as usize
     }
 }
 

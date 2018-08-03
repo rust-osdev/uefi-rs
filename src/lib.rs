@@ -46,3 +46,5 @@ pub use self::data_types::{Guid, Handle};
 pub mod table;
 
 pub mod proto;
+
+pub mod prelude;

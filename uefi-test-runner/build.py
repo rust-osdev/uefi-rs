@@ -45,11 +45,12 @@ def run_xargo(verb, *flags):
     sp.run(cmd).check_returncode()
 
 def build():
-    'Builds the tests package.'
+    'Builds the tests and examples.'
 
     run_xargo('build', '--package', 'uefi-test-runner')
+    run_xargo('build', '--package', 'uefi', '--examples')
 
-    # Copy the built file to the right directory for running tests.
+    # Copy the built test runner file to the right directory for running tests.
     built_file = BUILD_DIR / 'uefi-test-runner.efi'
 
     boot_dir = ESP_DIR / 'EFI' / 'Boot'
@@ -85,6 +86,8 @@ def run_qemu():
     if not ovmf_code.is_file():
         raise FileNotFoundError(f'OVMF_CODE.fd not found in the `{OVMF_DIR}` directory')
 
+    examples_dir = BUILD_DIR / 'examples'
+
     qemu_flags = [
         # Disable default devices.
         # QEMU by defaults enables a ton of devices which slow down boot.
@@ -103,12 +106,11 @@ def run_qemu():
         '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
         '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
 
-        # Create AHCI controller.
-        '-device', 'ahci,id=ahci,multifunction=on',
-
         # Mount a local directory as a FAT partition.
-        '-drive', f'if=none,format=raw,file=fat:rw:{ESP_DIR},id=esp',
-        '-device', 'ide-drive,bus=ahci.0,drive=esp',
+        '-drive', f'format=raw,file=fat:rw:{ESP_DIR}',
+
+        # Mount the built examples directory.
+        '-drive', f'format=raw,file=fat:rw:{examples_dir}',
 
         # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:

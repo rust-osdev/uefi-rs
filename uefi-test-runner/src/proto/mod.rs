@@ -1,7 +1,7 @@
-use uefi::table::{SystemTable, boot::BootServices};
+use uefi::prelude::*;
+use uefi_exts::BootServicesExt;
 
 use uefi::proto;
-use uefi_exts::BootServicesExt;
 
 pub fn test(st: &SystemTable) {
     let bt = st.boot;

@@ -1,9 +1,8 @@
-use uefi::Result;
 use uefi::table::boot::BootServices;
 use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel};
 use uefi_exts::BootServicesExt;
 
-pub fn test_graphics_output(bt: &BootServices) -> Result<()> {
+pub fn test(bt: &BootServices) {
     if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
         let gop = unsafe { gop_proto.as_mut() };
 
@@ -11,14 +10,12 @@ pub fn test_graphics_output(bt: &BootServices) -> Result<()> {
         fill_color(gop);
         draw_fb(gop);
 
-        // For now, allow the user to inspect the visual output.
-        bt.stall(3_000_000);
+        // TODO: For now, allow the user to inspect the visual output.
+        bt.stall(1_000_000);
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");
     }
-
-    Ok(())
 }
 
 // Set a larger graphics mode.

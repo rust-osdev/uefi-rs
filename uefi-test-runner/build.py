@@ -60,8 +60,15 @@ def build():
     shutil.copy2(built_file, output_file)
 
 def doc():
-    'Generates documentation for the main crate.'
-    run_xargo('doc', '--no-deps', '--package', 'uefi')
+    'Generates documentation for the library crates.'
+    run_xargo(
+        'doc', '--no-deps',
+        '--package', 'uefi',
+        '--package', 'uefi-utils',
+        '--package', 'uefi-alloc',
+        '--package', 'uefi-logger',
+        '--package', 'uefi-services',
+    )
 
 def clippy():
     'Analyses the code with Clippy.'

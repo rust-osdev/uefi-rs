@@ -7,8 +7,7 @@ The `x86_64-uefi.json` file creates a custom target for building UEFI / Windows 
 
 ## Prerequisites
 
-- [Xargo](https://github.com/japaric/xargo): this is essential if you plan to do any sort of cross-platform / bare-bones Rust programming.
-- [LLD](https://lld.llvm.org/): this linker is now [shipped](https://github.com/rust-lang/rust/pull/48125) with the latest nightly!
+- [cargo-xbuild](https://github.com/rust-osdev/cargo-xbuild): this is essential if you plan to do any sort of cross-platform / bare-bones Rust programming.
 
 ## Steps
 
@@ -25,7 +24,7 @@ pub extern "C" fn uefi_start(handle: Handle, system_table: &'static table::Syste
 - Copy the `tests/x86_64-uefi.json` target file to your project's root.
   You can customize it.
 
-- Build using `xargo build --target x86_64-uefi`.
+- Build using `cargo xbuild --target x86_64-uefi`.
 
 - The `target` directory will contain a `x86_64-uefi` subdirectory,
   where you will find the `uefi_app.efi` file - a normal UEFI executable.

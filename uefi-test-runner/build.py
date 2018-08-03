@@ -15,9 +15,6 @@ TARGET = 'x86_64-uefi'
 # Configuration to build.
 CONFIG = 'debug'
 
-# Xargo executable.
-XARGO = 'xargo'
-
 # QEMU executable to use
 QEMU = 'qemu-system-x86_64'
 
@@ -34,10 +31,10 @@ VERBOSE = False
 BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
 ESP_DIR = BUILD_DIR / 'esp'
 
-def run_xargo(verb, *flags):
-    'Runs Xargo with certain arguments.'
+def run_xbuild(*flags):
+    'Runs Cargo XBuild with certain arguments.'
 
-    cmd = [XARGO, verb, '--target', TARGET, *flags]
+    cmd = ['cargo', 'xbuild', '--target', TARGET, *flags]
 
     if VERBOSE:
         print(' '.join(cmd))
@@ -47,8 +44,8 @@ def run_xargo(verb, *flags):
 def build():
     'Builds the tests and examples.'
 
-    run_xargo('build', '--package', 'uefi-test-runner')
-    run_xargo('build', '--package', 'uefi', '--examples')
+    run_xbuild('--package', 'uefi-test-runner')
+    run_xbuild('--package', 'uefi', '--examples')
 
     # Copy the built test runner file to the right directory for running tests.
     built_file = BUILD_DIR / 'uefi-test-runner.efi'
@@ -62,8 +59,8 @@ def build():
 
 def doc():
     'Generates documentation for the library crates.'
-    run_xargo(
-        'doc', '--no-deps',
+    sp.run(
+        'cargo', 'doc', '--no-deps',
         '--package', 'uefi',
         '--package', 'uefi-utils',
         '--package', 'uefi-alloc',
@@ -71,14 +68,10 @@ def doc():
         '--package', 'uefi-services',
     )
 
-def clippy():
-    'Analyses the code with Clippy.'
-    run_xargo('clippy')
-
 def run_qemu():
     'Runs the code in QEMU.'
 
-    # Ask xargo to rebuild changes.
+    # Rebuild all the changes.
     build()
 
     ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
@@ -134,9 +127,6 @@ def main():
     # Clear any Rust flags which might affect the build.
     os.environ['RUSTFLAGS'] = ''
 
-    # Temporary solution for https://github.com/rust-lang/cargo/issues/4905
-    os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'uefi-test-runner')
-
     usage = '%(prog)s verb [options]'
     desc = 'Build script for UEFI programs'
 
@@ -149,7 +139,6 @@ def main():
     build_parser = subparsers.add_parser('build')
     run_parser = subparsers.add_parser('run')
     doc_parser = subparsers.add_parser('doc')
-    clippy_parser = subparsers.add_parser('clippy')
 
     opts = parser.parse_args()
 
@@ -163,8 +152,6 @@ def main():
         run_qemu()
     elif opts.verb == 'doc':
         doc()
-    elif opts.verb == 'clippy':
-        clippy()
     elif opts.verb is None or opts.verb == '':
         # Run the program, by default.
         run_qemu()

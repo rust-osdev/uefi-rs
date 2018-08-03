@@ -14,6 +14,7 @@ mod boot;
 mod proto;
 mod ucs2;
 mod gop;
+mod pointer;
 
 use uefi::{Handle, Status};
 use uefi::table;
@@ -110,23 +111,7 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
         Err(status) => error!("UCS-2 encoding test failed with status {:?}", status),
     }
 
-    info!("");
-
-    {
-        if let Some(mut pointer) = uefi_utils::proto::find_protocol::<uefi::proto::console::pointer::Pointer>() {
-            let pointer = unsafe { pointer.as_mut() };
-
-            pointer.reset(false).expect("Failed to reset pointer device");
-
-            if let Ok(state) = pointer.state() {
-                info!("Pointer State: {:#?}", state);
-            } else {
-                error!("Failed to retrieve pointer state");
-            }
-        } else {
-            warn!("No pointer device found");
-        }
-    }
+    pointer::test(bt);
 
     info!("");
 

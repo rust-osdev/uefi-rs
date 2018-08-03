@@ -17,5 +17,5 @@ members = [
     "uefi-logger",
     "uefi-alloc",
     "uefi-services",
-    "uefi-utils",
+    "uefi-exts",
 ]

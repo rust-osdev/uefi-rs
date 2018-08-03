@@ -1,9 +1,10 @@
 use uefi::Result;
 use uefi::table::boot::BootServices;
 use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel};
+use uefi_exts::BootServicesExt;
 
 pub fn test_graphics_output(bt: &BootServices) -> Result<()> {
-    if let Some(mut gop_proto) = uefi_utils::proto::find_protocol::<GraphicsOutput>() {
+    if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
         let gop = unsafe { gop_proto.as_mut() };
 
         set_graphics_mode(gop);

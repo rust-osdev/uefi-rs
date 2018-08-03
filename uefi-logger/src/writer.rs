@@ -1,5 +1,4 @@
 use super::Output;
-use uefi::Status;
 use core::{fmt, str};
 use ucs2;
 

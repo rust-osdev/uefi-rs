@@ -3,6 +3,7 @@
 
 use super::Result;
 use core::ops;
+use ucs2;
 
 const HIGHEST_BIT_SET: usize = !((!0_usize) >> 1);
 
@@ -154,5 +155,17 @@ impl ops::Try for Status {
 
     fn from_ok(_: Self::Ok) -> Self {
         Status::Success
+    }
+}
+
+impl From<ucs2::Error> for Status {
+    fn from(other: ucs2::Error) -> Self {
+        use ucs2::Error;
+        match other {
+            Error::InvalidData => Status::CompromisedData,
+            Error::BufferUnderflow => Status::BadBufferSize,
+            Error::BufferOverflow => Status::BufferTooSmall,
+            Error::MultiByte => Status::Unsupported,
+        }
     }
 }

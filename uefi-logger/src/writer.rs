@@ -1,6 +1,7 @@
 use super::Output;
-use uefi::{ucs2, Status};
+use uefi::Status;
 use core::{fmt, str};
+use ucs2;
 
 /// Struct which is used to implement the `fmt::Write` trait on a UEFI output protocol.
 pub struct OutputWriter {
@@ -42,11 +43,12 @@ impl fmt::Write for OutputWriter {
                 i += 1;
 
                 if i == BUF_SIZE {
-                    flush_buffer(&mut buf, &mut i).map_err(|_| Status::ProtocolError)
+                    flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
                 } else {
                     Ok(())
                 }
             };
+
             let add_ch = |ch| {
                 add_char(ch)?;
 
@@ -58,7 +60,7 @@ impl fmt::Write for OutputWriter {
                 }
             };
 
-            ucs2::ucs2_encoder(s, add_ch).map_err(|_| fmt::Error)?;
+            ucs2::encode_with(s, add_ch).map_err(|_| fmt::Error)?;
         }
 
         // Flush whatever is left in the buffer.

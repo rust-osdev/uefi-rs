@@ -10,6 +10,7 @@ edition = "2018"
 
 [dependencies]
 bitflags = "1"
+ucs2 = "0.1"
 
 [workspace]
 members = [

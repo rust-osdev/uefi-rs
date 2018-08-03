@@ -1,4 +1,5 @@
-use crate::{Status, Result, ucs2};
+use crate::{Status, Result};
+use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing on a volume.
 ///
@@ -46,7 +47,7 @@ impl<'a> File<'a> {
             let mut buf = [0u16; BUF_SIZE+1];
             let mut ptr = 0usize;
 
-            ucs2::encode_ucs2(filename, &mut buf)?;
+            ucs2::encode(filename, &mut buf)?;
             (self.inner.open)(self.inner, &mut ptr, buf.as_ptr(), open_mode, attributes).into_with(|| File {
                 inner: unsafe { &mut *(ptr as *mut FileImpl) }
             })

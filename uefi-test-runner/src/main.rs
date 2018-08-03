@@ -11,8 +11,6 @@ extern crate log;
 extern crate alloc;
 
 mod boot;
-mod proto;
-mod ucs2;
 mod gop;
 mod pointer;
 
@@ -104,11 +102,6 @@ pub extern "C" fn uefi_start(_handle: Handle, st: &'static table::SystemTable) -
     match proto::protocol_test(bt) {
         Ok(_) => info!("Protocol test passed."),
         Err(status) => error!("Protocol test failed with status {:?}", status),
-    }
-
-    match ucs2::ucs2_encoding_test() {
-        Ok(_) => info!("UCS-2 encoding test passed."),
-        Err(status) => error!("UCS-2 encoding test failed with status {:?}", status),
     }
 
     pointer::test(bt);

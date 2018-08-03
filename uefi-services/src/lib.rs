@@ -120,13 +120,3 @@ fn out_of_memory(_: ::core::alloc::Layout) -> ! {
 
 #[no_mangle]
 pub extern "C" fn __chkstk() { }
-
-#[no_mangle]
-pub extern "C" fn cos() { unimplemented!() }
-#[no_mangle]
-pub extern "C" fn cosf() { unimplemented!() }
-
-#[no_mangle]
-pub extern "C" fn sin() { unimplemented!() }
-#[no_mangle]
-pub extern "C" fn sinf() { unimplemented!() }

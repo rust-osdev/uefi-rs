@@ -12,7 +12,7 @@
 #![no_std]
 
 #![feature(lang_items)]
-#![feature(panic_implementation)]
+#![feature(panic_handler)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 
@@ -96,8 +96,8 @@ fn init_alloc() {
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
-#[panic_implementation]
-fn panic_fmt(info: &core::panic::PanicInfo) -> ! {
+#[panic_handler]
+fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     if let Some(location) = info.location() {
         error!("Panic in {} at ({}, {}):", location.file(), location.line(), location.column());
         if let Some(message) = info.message() {

@@ -1,5 +1,3 @@
-cargo-features = ["edition"]
-
 [package]
 name = "uefi-services"
 version = "0.1.0"

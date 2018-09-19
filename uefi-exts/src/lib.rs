@@ -7,5 +7,7 @@
 
 #![feature(alloc)]
 
+extern crate alloc;
+
 mod boot;
 pub use self::boot::BootServicesExt;

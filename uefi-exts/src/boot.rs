@@ -2,7 +2,7 @@ use uefi::{Result, Handle};
 use uefi::table::boot::{BootServices, SearchType};
 use uefi::proto::Protocol;
 
-use alloc::vec::Vec;
+use crate::alloc::vec::Vec;
 use core::ptr::NonNull;
 
 /// Utility functions for the UEFI boot services.

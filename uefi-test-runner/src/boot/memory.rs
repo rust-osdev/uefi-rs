@@ -1,7 +1,7 @@
 use uefi::table::boot::{BootServices, AllocateType, MemoryType, MemoryDescriptor};
 
 use core::mem;
-use alloc::vec::Vec;
+use crate::alloc::vec::Vec;
 
 pub fn test(bt: &BootServices) {
     allocate_pages(bt);

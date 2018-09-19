@@ -114,8 +114,3 @@ fn out_of_memory(_: ::core::alloc::Layout) -> ! {
     // TODO: handle out-of-memory conditions
     loop { }
 }
-
-// These functions don't seem to actually get called, but linking fails without them.
-
-#[no_mangle]
-pub extern "C" fn __chkstk() { }

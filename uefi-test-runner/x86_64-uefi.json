@@ -1,5 +1,7 @@
 {
-  "llvm-target": "x86_64-pc-windows-msvc",
+  "llvm-target": "x86_64-pc-windows-gnu",
+  "env": "gnu",
+  "target-family": "windows",
   "target-endian": "little",
   "target-pointer-width": "64",
   "target-c-int-width": "32",

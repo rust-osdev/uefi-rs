@@ -105,6 +105,9 @@ def run_qemu():
         # Mount the built examples directory.
         '-drive', f'format=raw,file=fat:rw:{examples_dir}',
 
+        # Map the QEMU exit signal to port f4
+        '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
+
         # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',

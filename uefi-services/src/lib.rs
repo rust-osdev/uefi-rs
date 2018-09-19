@@ -12,6 +12,7 @@
 #![no_std]
 
 #![feature(lang_items)]
+#![feature(never_type)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 
@@ -92,6 +93,18 @@ fn init_alloc() {
     uefi_alloc::init(st.boot);
 }
 
+
+// This code handles errors and panics
+
+/// User-defined hook to shut down the UEFI system, possibly after some delay
+static mut PANIC_SHUTDOWN_HOOK: Option<&Fn() -> !> = None;
+
+/// Set the panic hook. This is only safe if run in a sequential section of the
+/// code, as otherwise a panic could occur concurrently in another thread...
+pub unsafe fn set_panic_shutdown_hook(hook: &'static Fn() -> !) {
+    PANIC_SHUTDOWN_HOOK = Some(hook)
+}
+
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
@@ -104,8 +117,13 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
-    loop {
-        // TODO: add a timeout then shutdown.
+    if let Some(shutdown_hook) = unsafe { PANIC_SHUTDOWN_HOOK } {
+        // If the user had the time to provide a shutdown hook, run it
+        shutdown_hook();
+    } else {
+        // Otherwise, just give up and loop...
+        error!("No shutdown hook defined, will loop indefinitely...");
+        loop { }
     }
 }
 

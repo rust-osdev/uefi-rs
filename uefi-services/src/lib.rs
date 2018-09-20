@@ -93,7 +93,6 @@ fn init_alloc() {
 }
 
 
-// This code handles errors and panics
 
 #[lang = "eh_personality"]
 fn eh_personality() {}

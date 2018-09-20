@@ -96,20 +96,14 @@ fn init_alloc() {
 
 // This code handles errors and panics
 
-/// User-defined hook to shut down the UEFI system, possibly after some delay
-static mut PANIC_SHUTDOWN_HOOK: Option<&Fn() -> !> = None;
-
-/// Set the panic hook. This is only safe if run in a sequential section of the
-/// code, as otherwise a panic could occur concurrently in another thread...
-pub unsafe fn set_panic_shutdown_hook(hook: &'static Fn() -> !) {
-    PANIC_SHUTDOWN_HOOK = Some(hook)
-}
-
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
+    use uefi::Status;
+    use uefi::table::runtime::ResetType;
+
     if let Some(location) = info.location() {
         error!("Panic in {} at ({}, {}):", location.file(), location.line(), location.column());
         if let Some(message) = info.message() {
@@ -117,14 +111,34 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
-    if let Some(shutdown_hook) = unsafe { PANIC_SHUTDOWN_HOOK } {
-        // If the user had the time to provide a shutdown hook, run it
-        shutdown_hook();
+    // Give the user some time to read the message
+    if let Some(st) = unsafe { SYSTEM_TABLE } {
+        // FIXME: Check if boot-time services have been exited too
+        st.boot.stall(10_000_000);
     } else {
-        // Otherwise, just give up and loop...
-        error!("No shutdown hook was defined, please power off the system manually...");
-        loop { }
+        let mut dummy = 0u64;
+        // FIXME: May need different counter values in debug & release builds
+        for i in 0..300_000_000 {
+            unsafe { core::ptr::write_volatile(&mut dummy, i); }
+        }
     }
+
+    // If running inside of QEMU and the f4 port hack is enabled, use it to
+    // signal the error to the parent shell and exit
+    if cfg!(feature = "qemu-f4-exit") {
+        use x86_64::instructions::port::Port;
+        let mut port = Port::<u32>::new(0xf4);
+        unsafe { port.write(42); }
+    }
+
+    // If the system table is available, use UEFI's standard shutdown mechanism
+    if let Some(st) = unsafe { SYSTEM_TABLE } {
+        st.runtime.reset(ResetType::Shutdown, Status::Aborted, None)
+    }
+
+    // If we don't have any shutdown mechanism handy, the best we can do is loop
+    error!("Could not shut down, please power off the system manually...");
+    loop { }
 }
 
 #[alloc_error_handler]

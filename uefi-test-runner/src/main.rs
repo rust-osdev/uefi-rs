@@ -17,9 +17,6 @@ mod proto;
 
 #[no_mangle]
 pub extern "C" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
-    // Set up a hook to shut down QEMU when a panic occurs
-    unsafe { uefi_services::set_panic_shutdown_hook(&qemu_panic_shutdown) }
-
     // Initialize logging.
     uefi_services::init(st);
 
@@ -60,27 +57,4 @@ fn shutdown(st: &SystemTable) -> ! {
 
     let rt = st.runtime;
     rt.reset(ResetType::Shutdown, Status::Success, None);
-}
-
-fn qemu_panic_shutdown() -> ! {
-    use core::ptr;
-    use x86_64::instructions::port::Port;
-
-    // Sleep a bit to let the user see the error message. Using a busy loop like
-    // this is admittedly crude, but it has two advantages over st.boot.stall():
-    //
-    // 1. It works even if boot-time services have been exited
-    // 2. There is no need to track the state associated with the SystemTable
-    //
-    let mut dummy = 0u64;
-    for i in 0..300_000_000 {
-        unsafe { ptr::write_volatile(&mut dummy, i); }
-    }
-
-    // QEMU has been configured such that writing to the f4 port will abort...
-    let mut port = Port::<u32>::new(0xf4);
-    unsafe { port.write(42); }
-
-    // ...so this code will never be reached
-    loop {}
 }

@@ -6,10 +6,11 @@ publish = false
 edition = "2018"
 
 [dependencies]
-x86_64 = "0.2"
-
 uefi = { path = ".." }
 uefi-services = { path = "../uefi-services" }
 uefi-exts = { path = "../uefi-exts" }
 
 log = { version = "0.4", default-features = false }
+
+[features]
+qemu-f4-exit = ["uefi-services/qemu-f4-exit"]

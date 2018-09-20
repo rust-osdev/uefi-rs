@@ -41,10 +41,10 @@ def run_xbuild(*flags):
 
     sp.run(cmd).check_returncode()
 
-def build():
+def build(*test_flags):
     'Builds the tests and examples.'
 
-    run_xbuild('--package', 'uefi-test-runner')
+    run_xbuild('--package', 'uefi-test-runner', *test_flags)
     run_xbuild('--package', 'uefi', '--examples')
 
     # Copy the built test runner file to the right directory for running tests.
@@ -72,7 +72,7 @@ def run_qemu():
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
-    build()
+    build('--features', 'qemu-f4-exit')
 
     ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
 

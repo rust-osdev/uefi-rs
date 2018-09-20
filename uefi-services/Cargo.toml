@@ -7,8 +7,14 @@ edition = "2018"
 
 [dependencies]
 rlibc = "1"
+x86_64 = "0.2"
 
 uefi = { path = ".." }
 uefi-alloc = { path = "../uefi-alloc" }
 uefi-logger = { path = "../uefi-logger" }
 log = { version = "0.4", default-features = false }
+
+[features]
+# Signals the implementation that QEMU's exit port hack is enabled and assigned
+# to the f4 CPU port.
+qemu-f4-exit = []

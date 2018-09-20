@@ -122,7 +122,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         shutdown_hook();
     } else {
         // Otherwise, just give up and loop...
-        error!("No shutdown hook defined, will loop indefinitely...");
+        error!("No shutdown hook was defined, please power off the system manually...");
         loop { }
     }
 }

@@ -101,9 +101,6 @@ fn eh_personality() {}
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
-    use uefi::Status;
-    use uefi::table::runtime::ResetType;
-
     if let Some(location) = info.location() {
         error!("Panic in {} at ({}, {}):", location.file(), location.line(), location.column());
         if let Some(message) = info.message() {
@@ -133,7 +130,8 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
 
     // If the system table is available, use UEFI's standard shutdown mechanism
     if let Some(st) = unsafe { SYSTEM_TABLE } {
-        st.runtime.reset(ResetType::Shutdown, Status::Aborted, None)
+        use uefi::table::runtime::ResetType;
+        st.runtime.reset(ResetType::Shutdown, uefi::Status::Aborted, None)
     }
 
     // If we don't have any shutdown mechanism handy, the best we can do is loop

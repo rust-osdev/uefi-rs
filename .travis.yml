@@ -1,0 +1,21 @@
+sudo: false
+
+# We need a newer version of Python
+language: python
+
+# Need Python for build script
+python: 3.6
+
+install:
+  # Manually install nightly Rust
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - source "$HOME/.cargo/env"
+  - rustc -V
+  - cargo -V
+  - rustup component add rust-src
+  - cargo install cargo-xbuild
+
+script:
+  - cd uefi-test-runner && ./build.py build
+
+cache: cargo

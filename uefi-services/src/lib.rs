@@ -12,7 +12,6 @@
 #![no_std]
 
 #![feature(lang_items)]
-#![feature(never_type)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 

@@ -10,8 +10,6 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-extern crate x86_64;
-
 use uefi::prelude::*;
 
 mod boot;

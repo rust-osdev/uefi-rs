@@ -41,10 +41,10 @@ def run_xbuild(*flags):
 
     sp.run(cmd).check_returncode()
 
-def build():
+def build(*test_flags):
     'Builds the tests and examples.'
 
-    run_xbuild('--package', 'uefi-test-runner')
+    run_xbuild('--package', 'uefi-test-runner', *test_flags)
     run_xbuild('--package', 'uefi', '--examples')
 
     # Copy the built test runner file to the right directory for running tests.
@@ -72,7 +72,7 @@ def run_qemu():
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
-    build()
+    build('--features', 'qemu-f4-exit')
 
     ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
 
@@ -104,6 +104,9 @@ def run_qemu():
 
         # Mount the built examples directory.
         '-drive', f'format=raw,file=fat:rw:{examples_dir}',
+
+        # Map the QEMU exit signal to port f4
+        '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
 
         # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:

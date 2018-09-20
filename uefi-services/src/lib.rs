@@ -92,6 +92,8 @@ fn init_alloc() {
     uefi_alloc::init(st.boot);
 }
 
+
+
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
@@ -104,9 +106,35 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
-    loop {
-        // TODO: add a timeout then shutdown.
+    // Give the user some time to read the message
+    if let Some(st) = unsafe { SYSTEM_TABLE } {
+        // FIXME: Check if boot-time services have been exited too
+        st.boot.stall(10_000_000);
+    } else {
+        let mut dummy = 0u64;
+        // FIXME: May need different counter values in debug & release builds
+        for i in 0..300_000_000 {
+            unsafe { core::ptr::write_volatile(&mut dummy, i); }
+        }
     }
+
+    // If running inside of QEMU and the f4 port hack is enabled, use it to
+    // signal the error to the parent shell and exit
+    if cfg!(feature = "qemu-f4-exit") {
+        use x86_64::instructions::port::Port;
+        let mut port = Port::<u32>::new(0xf4);
+        unsafe { port.write(42); }
+    }
+
+    // If the system table is available, use UEFI's standard shutdown mechanism
+    if let Some(st) = unsafe { SYSTEM_TABLE } {
+        use uefi::table::runtime::ResetType;
+        st.runtime.reset(ResetType::Shutdown, uefi::Status::Aborted, None)
+    }
+
+    // If we don't have any shutdown mechanism handy, the best we can do is loop
+    error!("Could not shut down, please power off the system manually...");
+    loop { }
 }
 
 #[alloc_error_handler]

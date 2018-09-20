@@ -1,5 +1,7 @@
 # uefi-rs
 
+[![Build Status](https://travis-ci.org/GabrielMajeri/uefi-rs.svg?branch=master)](https://travis-ci.org/GabrielMajeri/uefi-rs)
+
 This library allows you to write [UEFI][uefi] applications in Rust.
 
 UEFI is the successor to the BIOS. It provides an early boot environment for OS loaders

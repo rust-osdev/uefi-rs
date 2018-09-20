@@ -18,16 +18,28 @@ interfaces, and allow developers to write idiomatic Rust code.
 
 This project contains multiple sub-crates:
 
-- `uefi` (top directory): defines the standard UEFI tables / interfaces.
+- `uefi` (top directory): defines the standard UEFI tables / interfaces. The objective is to stay unopionated
+  and safely wrap most interfaces.
 
 - `uefi-services`: initializes many convenience crates:
-  - `uefi-logger`: wrapper for the standard [logging](https://github.com/rust-lang-nursery/log) crate. Prints log output to console.
-  - `uefi-alloc`: implements a global allocator using UEFI functions. This allows you to allocate objects on the heap.
+  - `uefi-logger`: wrapper for the standard [logging](https://github.com/rust-lang-nursery/log) crate.
+  Prints log output to console. No buffering is done: this is not a high-performance logger.
+  - `uefi-alloc`: implements a global allocator using UEFI functions.
+  This allows you to allocate objects on the heap.
+  There's no guarantee of the efficiency of UEFI's allocator.
+  
+  Since the global logger / allocator **can only be set once** per binary, if you're building
+  a real OS you will want to either:
+    - provide your own logger / allocator, using _your_ kernel's systems
+    - use UEFI for writing an OS-specific boot loader binary, while your kernel is a separate binary, packaged
+      together with the boot loader: similar to what the Linux kernel's [EFI stub] does
 
 - `uefi-exts`: extends existing UEFI objects by providing utility functions for common API usage.
   Requires the `alloc` crate (either use `uefi-alloc` or your own custom allocator).
 
 - `uefi-test-runner` a UEFI application that runs unit / integration tests.
+
+[EFI stub]: https://www.kernel.org/doc/Documentation/efi-stub.txt
 
 ## Documentation
 

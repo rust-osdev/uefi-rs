@@ -4,6 +4,7 @@ use crate::{Status, Result};
 use core::mem;
 
 /// Provides information about a pointer device.
+#[repr(C)]
 pub struct Pointer {
     reset: extern "C" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "C" fn(this: &Pointer, state: &mut PointerState) -> Status,

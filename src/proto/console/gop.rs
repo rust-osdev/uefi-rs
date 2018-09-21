@@ -30,6 +30,7 @@ use core::{ptr, slice};
 ///
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
+#[repr(C)]
 pub struct GraphicsOutput {
     query_mode: extern "C" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo) -> Status,
     set_mode: extern "C" fn(&mut GraphicsOutput, mode: u32) -> Status,

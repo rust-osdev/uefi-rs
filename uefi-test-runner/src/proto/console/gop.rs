@@ -63,7 +63,6 @@ fn draw_fb(gop: &mut GraphicsOutput) {
         pixel[1] = g;
         pixel[2] = r;
     };
-
     let write_pixel: PixelWriter = match mi.pixel_format() {
         PixelFormat::RGB => &write_pixel_rgb,
         PixelFormat::BGR => &write_pixel_bgr,

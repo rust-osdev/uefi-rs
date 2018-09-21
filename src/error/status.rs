@@ -11,6 +11,7 @@ const HIGHEST_BIT_SET: usize = !((!0_usize) >> 1);
 /// to indicate whether an operation completed successfully.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(usize)]
+#[must_use]
 pub enum Status {
     /// The operation completed successfully.
     Success,

@@ -34,12 +34,11 @@ fn change_color(stdout: &mut Output) {
 fn center_text(stdout: &mut Output) {
     // Move the cursor.
     // This will make this `info!` line below be (somewhat) centered.
-    stdout.set_cursor_position(24, 0).expect("Failed to move cursor");
-
     stdout.enable_cursor(true).unwrap_or_else(|s| match s {
         Status::Unsupported => info!("Cursor visibility control unavailable"),
         _ => panic!("Failed to show cursor")
     });
+    stdout.set_cursor_position(24, 0).expect("Failed to move cursor");
     info!("# uefi-rs test runner");
     stdout.enable_cursor(false).unwrap_or_else(|s| match s {
         Status::Unsupported => info!("Cursor visibility control unavailable"),

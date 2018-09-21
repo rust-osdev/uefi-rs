@@ -28,7 +28,7 @@ pub struct SystemTable {
 }
 
 // This is unsafe, but it's the best solution we have from now.
-#[cfg_attr(feature = "cargo-clippy", allow(mut_from_ref))]
+#[allow(clippy::mut_from_ref)]
 impl SystemTable {
     /// Returns the revision of this table, which is defined to be
     /// the revision of the UEFI specification implemented by the firmware.

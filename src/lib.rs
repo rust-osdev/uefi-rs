@@ -23,16 +23,17 @@
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
 
-#![feature(try_trait)]
-#![feature(optin_builtin_traits)]
-#![feature(const_fn)]
 #![feature(align_offset)]
+#![feature(const_fn)]
+#![feature(optin_builtin_traits)]
+#![feature(tool_lints)]
+#![feature(try_trait)]
 
 #![no_std]
 
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]
-#![cfg_attr(feature = "cargo-clippy", warn(clippy))]
+#![warn(clippy::all)]
 
 #[macro_use]
 extern crate bitflags;

@@ -1,5 +1,5 @@
 // The error codes are unportable, but that's how the spec defines them.
-#![cfg_attr(feature = "cargo-clippy", allow(enum_clike_unportable_variant))]
+#![allow(clippy::enum_clike_unportable_variant)]
 
 use super::Result;
 use core::ops;

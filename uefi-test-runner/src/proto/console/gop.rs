@@ -52,21 +52,21 @@ fn draw_fb(gop: &mut GraphicsOutput) {
 
     let fb = unsafe { gop.frame_buffer() };
 
-    type PixelWriter = fn(&mut [u8], &[u8; 3]);
-    fn write_pixel_rgb(pixel: &mut [u8], rgb: &[u8; 3]) {
-        pixel[0] = rgb[0];
-        pixel[1] = rgb[1];
-        pixel[2] = rgb[2];
-    }
-    fn write_pixel_bgr(pixel: &mut [u8], rgb: &[u8; 3]) {
-        pixel[0] = rgb[2];
-        pixel[1] = rgb[1];
-        pixel[2] = rgb[0];
-    }
+    type PixelWriter<'a> = &'a Fn(&mut [u8], (u8, u8, u8));
+    let write_pixel_rgb = |pixel: &mut [u8], (r, g, b)| {
+        pixel[0] = r;
+        pixel[1] = g;
+        pixel[2] = b;
+    };
+    let write_pixel_bgr = |pixel: &mut [u8], (r, g, b)| {
+        pixel[0] = b;
+        pixel[1] = g;
+        pixel[2] = r;
+    };
 
     let write_pixel: PixelWriter = match mi.pixel_format() {
-        PixelFormat::RGB => write_pixel_rgb,
-        PixelFormat::BGR => write_pixel_bgr,
+        PixelFormat::RGB => &write_pixel_rgb,
+        PixelFormat::BGR => &write_pixel_bgr,
         _ => {
             info!("This pixel format is not supported by the drawing demo");
             return;
@@ -80,11 +80,11 @@ fn draw_fb(gop: &mut GraphicsOutput) {
             for column in x1..x2 {
                 let index = (row * stride) + column;
                 let pixel = &mut fb[4*index..4*index+3];
-                write_pixel(pixel, &color);
+                write_pixel(pixel, color);
             }
         }
     };
 
-    fill_rectangle((50, 30), (150, 600), [250, 128, 64]);
-    fill_rectangle((400, 120), (750, 450), [16, 128, 255]);
+    fill_rectangle((50, 30), (150, 600), (250, 128, 64));
+    fill_rectangle((400, 120), (750, 450), (16, 128, 255));
 }

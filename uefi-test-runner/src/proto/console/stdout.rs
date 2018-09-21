@@ -38,11 +38,11 @@ fn center_text(stdout: &mut Output) {
 
     stdout.enable_cursor(true).unwrap_or_else(|s| match s {
         Status::Unsupported => info!("Cursor visibility control unavailable"),
-        _ => panic!("Failed to enable cursor")
+        _ => panic!("Failed to show cursor")
     });
     info!("# uefi-rs test runner");
     stdout.enable_cursor(false).unwrap_or_else(|s| match s {
         Status::Unsupported => info!("Cursor visibility control unavailable"),
-        _ => panic!("Failed to enable cursor")
+        _ => panic!("Failed to hide cursor")
     });
 }

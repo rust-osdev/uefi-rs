@@ -101,7 +101,8 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        (self.memory_map)(&mut map_size, 0, &mut map_key, &mut entry_size, &mut entry_version);
+        let status = (self.memory_map)(&mut map_size, 0, &mut map_key, &mut entry_size, &mut entry_version);
+        assert_eq!(status, Status::BufferTooSmall);
 
         map_size * entry_size
     }
@@ -210,8 +211,7 @@ impl BootServices {
     ///
     /// The time is in microseconds.
     pub fn stall(&self, time: usize) {
-        // The spec says this cannot fail.
-        (self.stall)(time);
+        assert_eq!((self.stall)(time), Status::Success);
     }
 
     /// Copies memory from source to destination. The buffers can overlap.

@@ -6,6 +6,8 @@ pub fn test(bt: &BootServices) {
     if let Some(mut serial) = bt.find_protocol::<Serial>() {
         let serial = unsafe { serial.as_mut() };
 
+        let old_ctrl_bits = serial.get_control_bits()
+                                  .expect("Failed to get device control bits");
         let mut ctrl_bits = ControlBits::empty();
 
         // For the purposes of testing, we're _not_ going to implement
@@ -35,6 +37,15 @@ pub fn test(bt: &BootServices) {
         assert_eq!(len, msg_len, "Serial port read timed-out!");
 
         assert_eq!(&output[..], &input[..msg_len]);
+
+        // Clean up after ourselves
+        serial.reset().expect("Could not reset the serial device");
+        let settable_bits = ControlBits::REQUEST_TO_SEND
+                          | ControlBits::DATA_TERMINAL_READY
+                          | ControlBits::HARDWARE_LOOPBACK_ENABLE
+                          | ControlBits::SOFTWARE_LOOPBACK_ENABLE
+                          | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE;
+        serial.set_control_bits(old_ctrl_bits & settable_bits).unwrap();
     } else {
         warn!("No serial device found");
     }

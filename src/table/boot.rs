@@ -278,10 +278,26 @@ impl BootServices {
     /// The image must either successfully load an OS and call `ExitBootServices`
     /// in that time, or disable the watchdog.
     ///
-    /// Otherwise, the system will be reset after the time expires.
+    /// Otherwise, the firmware will log the event using the provided numeric
+    /// code and data, then reset the system.
+    ///
+    /// This function allows you to change the watchdog timer's timeout to a
+    /// certain amount of seconds or to disable the watchdog entirely. It also
+    /// allows you to change what will be logged when the timer expires.
+    ///
+    /// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
+    /// firmware use. You should therefore only use them if instructed to do so
+    /// by firmware-specific documentation. Higher values can be used freely.
+    ///
+    /// If provided, the watchdog data must be a null-terminated string
+    /// optionally followed by other binary data.
     pub fn set_watchdog_timer(&self, timeout: usize, watchdog_code: u64, data: Option<&mut [u16]>) -> Result<()> {
-        let (data_len, data) = data.map(|d| (d.len(), d.as_mut_ptr()))
-            .unwrap_or((0, ptr::null_mut()));
+        let (data_len, data) =
+            data.map(|d| {
+                         assert!(d.contains(&0), "Watchdog data must contain a null-terminated string");
+                         (d.len(), d.as_mut_ptr())
+                     })
+                .unwrap_or((0, ptr::null_mut()));
 
         (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data).into()
     }

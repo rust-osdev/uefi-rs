@@ -6,18 +6,30 @@ pub fn test(bt: &BootServices) {
     if let Some(mut serial) = bt.find_protocol::<Serial>() {
         let serial = unsafe { serial.as_mut() };
 
+        let mut ctrl_bits = ControlBits::empty();
+
         // For the purposes of testing, we're _not_ going to implement
         // software flow control.
-        serial.set_control_bits(ControlBits::HARDWARE_FLOW_CONTROL_ENABLE)
-            .expect("Device does not support HW control flow");
+        ctrl_bits |= ControlBits::HARDWARE_FLOW_CONTROL_ENABLE;
 
-        let mut buffer = vec![0u8; 16];
+        // Use a loop back device for testing.
+        ctrl_bits |= ControlBits::SOFTWARE_LOOPBACK_ENABLE;
 
-        let len = serial.read(&mut buffer).expect("Failed to read from serial port");
+        serial.set_control_bits(ctrl_bits)
+            .expect("Failed to set device control bits");
 
-        assert_eq!(len, buffer.len(), "Serial port read timed-out!");
+        // Keep this message short, we need it to fit in the FIFO.
+        let output = b"Hello world!";
+        let msg_len = output.len();
 
-        buffer.resize(len, 0);
+        let len = serial.write(output).expect("Failed to write to serial port");
+        assert_eq!(len, msg_len, "Serial port write timed-out!");
+
+        let mut input = [0u8; 128];
+        let len = serial.read(&mut input).expect("Failed to read from serial port");
+        assert_eq!(len, msg_len, "Serial port read timed-out!");
+
+        assert_eq!(&output[..], &input[..msg_len]);
     } else {
         warn!("No serial device found");
     }

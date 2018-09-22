@@ -6,6 +6,7 @@ use crate::alloc::vec::Vec;
 pub fn test(bt: &BootServices) {
     allocate_pages(bt);
     vec_alloc();
+    memmove(bt);
 
     memory_map(bt);
 }
@@ -41,6 +42,22 @@ fn vec_alloc() {
     values.sort();
 
     assert_eq!(values[..], [-5, 0, 4, 16, 23], "Failed to sort vector");
+}
+
+// Test that the `memmove` / `memset` functions work.
+fn memmove(bt: &BootServices) {
+    let src = [1, 2, 3, 4];
+    let mut dest = [0u8; 4];
+
+    // Fill the buffer with a value
+    bt.memset(dest.as_mut_ptr(), dest.len(), 1);
+
+    assert_eq!(dest, [1; 4], "Failed to set memory");
+
+    // Copy other values on it
+    bt.memmove(dest.as_mut_ptr(), src.as_ptr(), dest.len());
+
+    assert_eq!(dest, src, "Failed to copy memory");
 }
 
 fn memory_map(bt: &BootServices) {

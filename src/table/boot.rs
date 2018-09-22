@@ -47,11 +47,33 @@ pub struct BootServices {
     unload_image: usize,
     exit_boot_services: extern "C" fn(Handle, MemoryMapKey) -> Status,
 
-    // Misc functions
+    // Misc services
     get_next_monotonic_count: usize,
     stall: extern "C" fn(usize) -> Status,
-    copy_mem: extern "C" fn(dest: usize, src: usize, len: usize),
-    set_mem: extern "C" fn(buffer: usize, len: usize, value: u8),
+    set_watchdog_timer: usize,
+
+    // Driver support services
+    connect_controller: usize,
+    disconnect_controller: usize,
+
+    // Protocol open / close services
+    open_protocol: usize,
+    close_protocol: usize,
+    open_protocol_information: usize,
+
+    // Library services
+    protocols_per_handle: usize,
+    locate_handle_buffer: usize,
+    locate_protocol: usize,
+    install_multiple_protocol_interfaces: usize,
+    uninstall_multiple_protocol_interfaces: usize,
+
+    // CRC services
+    calculate_crc32: usize,
+
+    // Misc services
+    copy_mem: extern "C" fn(dest: *mut u8, src: *const u8, len: usize),
+    set_mem: extern "C" fn(buffer: *mut u8, len: usize, value: u8),
 
     // New event functions (UEFI 2.0 or newer)
     create_event_ex: usize,
@@ -215,12 +237,12 @@ impl BootServices {
     }
 
     /// Copies memory from source to destination. The buffers can overlap.
-    pub fn memmove(&self, dest: usize, src: usize, size: usize) {
+    pub fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
         (self.copy_mem)(dest, src, size);
     }
 
     /// Sets a buffer to a certain value.
-    pub fn memset(&self, buffer: usize, size: usize, value: u8) {
+    pub fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.set_mem)(buffer, size, value);
     }
 }

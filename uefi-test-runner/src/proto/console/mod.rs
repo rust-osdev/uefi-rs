@@ -8,6 +8,6 @@ pub fn test(st: &SystemTable) {
     pointer::test(bt);
 }
 
-mod stdout;
 mod gop;
 mod pointer;
+mod stdout;

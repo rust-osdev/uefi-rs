@@ -1,5 +1,5 @@
+use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
 use uefi::table::boot::BootServices;
-use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel, PixelFormat};
 use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
@@ -21,13 +21,13 @@ pub fn test(bt: &BootServices) {
 // Set a larger graphics mode.
 fn set_graphics_mode(gop: &mut GraphicsOutput) {
     // We know for sure QEMU has a 1024x768, mode.
-    let mode = gop.modes()
+    let mode = gop
+        .modes()
         .find(|ref mode| {
             let info = mode.info();
 
             info.resolution() == (1024, 768)
-        })
-        .unwrap();
+        }).unwrap();
 
     gop.set_mode(&mode).expect("Failed to set graphics mode");
 }
@@ -78,7 +78,7 @@ fn draw_fb(gop: &mut GraphicsOutput) {
         for row in y1..y2 {
             for column in x1..x2 {
                 let index = (row * stride) + column;
-                let pixel = &mut fb[4*index..4*index+3];
+                let pixel = &mut fb[4 * index..4 * index + 3];
                 write_pixel(pixel, color);
             }
         }

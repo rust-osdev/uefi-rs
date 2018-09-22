@@ -1,5 +1,5 @@
-use uefi::table::boot::BootServices;
 use uefi::proto::debug::DebugSupport;
+use uefi::table::boot::BootServices;
 
 use uefi_exts::BootServicesExt;
 

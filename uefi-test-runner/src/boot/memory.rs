@@ -1,4 +1,4 @@
-use uefi::table::boot::{BootServices, AllocateType, MemoryType, MemoryDescriptor};
+use uefi::table::boot::{AllocateType, BootServices, MemoryDescriptor, MemoryType};
 
 use core::mem;
 use crate::alloc::vec::Vec;
@@ -14,7 +14,8 @@ pub fn test(bt: &BootServices) {
 fn allocate_pages(bt: &BootServices) {
     let ty = AllocateType::AnyPages;
     let mem_ty = MemoryType::LoaderData;
-    let pgs = bt.allocate_pages(ty, mem_ty, 1)
+    let pgs = bt
+        .allocate_pages(ty, mem_ty, 1)
         .expect("Failed to allocate a page of memory");
 
     assert_eq!(pgs % 4096, 0, "Page pointer is not page-aligned");
@@ -74,7 +75,8 @@ fn memory_map(bt: &BootServices) {
         buffer.set_len(buf_sz);
     }
 
-    let (_key, mut desc_iter) = bt.memory_map(&mut buffer)
+    let (_key, mut desc_iter) = bt
+        .memory_map(&mut buffer)
         .expect("Failed to retrieve UEFI memory map");
 
     // Ensured we have at least one entry.

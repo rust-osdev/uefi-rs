@@ -15,8 +15,13 @@ pub fn test(st: &SystemTable) {
 fn find_protocol(bt: &BootServices) {
     type SearchedProtocol = proto::console::text::Output;
 
-    let handles = bt.find_handles::<SearchedProtocol>().expect("Failed to retrieve list of handles");
-    assert!(handles.len() > 1, "There should be at least one implementation of Simple Text Output (stdout)");
+    let handles = bt
+        .find_handles::<SearchedProtocol>()
+        .expect("Failed to retrieve list of handles");
+    assert!(
+        handles.len() > 1,
+        "There should be at least one implementation of Simple Text Output (stdout)"
+    );
 }
 
 mod console;

@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-
 #![feature(slice_patterns)]
 #![feature(alloc)]
 #![feature(asm)]
@@ -42,7 +41,10 @@ fn check_revision(rev: uefi::table::Revision) {
     info!("UEFI {}.{}", major, minor);
 
     assert!(major >= 2, "Running on an old, unsupported version of UEFI");
-    assert!(minor >= 30, "Old version of UEFI 2, some features might not be available.");
+    assert!(
+        minor >= 30,
+        "Old version of UEFI 2, some features might not be available."
+    );
 }
 
 fn shutdown(st: &SystemTable) -> ! {

@@ -278,8 +278,12 @@ impl BootServices {
     /// The image must either successfully load an OS and call `ExitBootServices`
     /// in that time, or disable the watchdog.
     ///
-    /// Otherwise, the firmware will log the event using the provided code and
-    /// data, then reset the system.
+    /// Otherwise, the firmware will log the event using the provided numeric
+    /// code and data, then reset the system.
+    ///
+    /// This function allows you to change the watchdog timer's timeout to a
+    /// certain amount of seconds or to disable the watchdog entirely. It also
+    /// allows you to change what will be logged when the timer expires.
     ///
     /// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
     /// firmware use. You should therefore only use them if instructed to do so

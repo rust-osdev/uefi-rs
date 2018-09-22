@@ -28,9 +28,7 @@
 #![feature(optin_builtin_traits)]
 #![feature(tool_lints)]
 #![feature(try_trait)]
-
 #![no_std]
-
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]
 #![warn(clippy::all)]
@@ -39,7 +37,7 @@
 extern crate bitflags;
 
 mod error;
-pub use self::error::{Status, Result};
+pub use self::error::{Result, Status};
 
 mod data_types;
 pub use self::data_types::{Guid, Handle};

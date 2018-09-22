@@ -1,4 +1,4 @@
-use crate::{Status, Result};
+use crate::{Result, Status};
 
 use super::file::File;
 
@@ -25,8 +25,7 @@ impl SimpleFileSystem {
     /// * `uefi::Status::MediaChanged` - The device has a different medium in it
     pub fn open_volume(&mut self) -> Result<File> {
         let mut ptr = 0usize;
-        (self.open_volume)(self, &mut ptr)
-            .into_with(|| File::new(ptr))
+        (self.open_volume)(self, &mut ptr).into_with(|| File::new(ptr))
     }
 }
 

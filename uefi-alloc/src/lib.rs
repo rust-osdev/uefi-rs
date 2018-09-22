@@ -11,9 +11,7 @@
 // Enable additional lints.
 #![warn(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", warn(clippy))]
-
 #![no_std]
-
 // Custom allocators are currently unstable.
 #![feature(allocator_api)]
 
@@ -33,9 +31,7 @@ pub fn init(boot_services: &'static BootServices) {
 }
 
 fn boot_services() -> &'static BootServices {
-    unsafe {
-        BOOT_SERVICES.unwrap()
-    }
+    unsafe { BOOT_SERVICES.unwrap() }
 }
 
 /// Allocator which uses the UEFI pool allocation functions.
@@ -63,9 +59,7 @@ unsafe impl GlobalAlloc for Allocator {
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
         let addr = ptr as usize;
-        boot_services()
-            .free_pool(addr)
-            .unwrap();
+        boot_services().free_pool(addr).unwrap();
     }
 }
 

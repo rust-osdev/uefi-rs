@@ -27,9 +27,9 @@ impl fmt::Write for OutputWriter {
             buf[*i] = 0;
             *i = 0;
 
-            self.output.output_string(buf.as_ptr()).map_err(
-                |_| fmt::Error,
-            )
+            self.output
+                .output_string(buf.as_ptr())
+                .map_err(|_| fmt::Error)
         };
 
         {
@@ -53,8 +53,7 @@ impl fmt::Write for OutputWriter {
 
                 if ch == '\n' as u16 {
                     add_char('\r' as u16)
-                }
-                else {
+                } else {
                     Ok(())
                 }
             };

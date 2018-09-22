@@ -9,7 +9,7 @@ pub fn test(st: &SystemTable) {
     pointer::test(bt);
 }
 
-mod stdout;
-mod serial;
 mod gop;
 mod pointer;
+mod serial;
+mod stdout;

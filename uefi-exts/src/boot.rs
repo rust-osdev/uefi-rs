@@ -1,9 +1,9 @@
-use uefi::{Result, Handle};
-use uefi::table::boot::{BootServices, SearchType};
 use uefi::proto::Protocol;
+use uefi::table::boot::{BootServices, SearchType};
+use uefi::{Handle, Result};
 
-use crate::alloc::vec::Vec;
 use core::ptr::NonNull;
+use crate::alloc::vec::Vec;
 
 /// Utility functions for the UEFI boot services.
 pub trait BootServicesExt {

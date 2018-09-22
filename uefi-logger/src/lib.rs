@@ -14,7 +14,6 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", warn(clippy))]
-
 #![no_std]
 
 extern crate uefi;
@@ -35,7 +34,9 @@ pub struct Logger {
 impl Logger {
     /// Creates a new logger.
     pub fn new(output: &'static mut Output) -> Self {
-        Logger { writer: UnsafeCell::new(OutputWriter::new(output)) }
+        Logger {
+            writer: UnsafeCell::new(OutputWriter::new(output)),
+        }
     }
 }
 

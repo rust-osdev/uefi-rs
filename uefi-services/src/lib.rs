@@ -10,7 +10,6 @@
 //! through the reference provided by `system_table`.
 
 #![no_std]
-
 #![feature(lang_items)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
@@ -42,9 +41,7 @@ static mut SYSTEM_TABLE: Option<&'static SystemTable> = None;
 ///
 /// `init` must have been called first by the UEFI app.
 pub fn system_table() -> &'static SystemTable {
-    unsafe {
-        SYSTEM_TABLE.expect("The uefi-services library has not yet been initialized")
-    }
+    unsafe { SYSTEM_TABLE.expect("The uefi-services library has not yet been initialized") }
 }
 
 /// Initialize the UEFI utility library.
@@ -92,15 +89,18 @@ fn init_alloc() {
     uefi_alloc::init(st.boot);
 }
 
-
-
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     if let Some(location) = info.location() {
-        error!("Panic in {} at ({}, {}):", location.file(), location.line(), location.column());
+        error!(
+            "Panic in {} at ({}, {}):",
+            location.file(),
+            location.line(),
+            location.column()
+        );
         if let Some(message) = info.message() {
             error!("{}", message);
         }
@@ -114,7 +114,9 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         let mut dummy = 0u64;
         // FIXME: May need different counter values in debug & release builds
         for i in 0..300_000_000 {
-            unsafe { core::ptr::write_volatile(&mut dummy, i); }
+            unsafe {
+                core::ptr::write_volatile(&mut dummy, i);
+            }
         }
     }
 
@@ -123,22 +125,25 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     if cfg!(feature = "qemu-f4-exit") {
         use x86_64::instructions::port::Port;
         let mut port = Port::<u32>::new(0xf4);
-        unsafe { port.write(42); }
+        unsafe {
+            port.write(42);
+        }
     }
 
     // If the system table is available, use UEFI's standard shutdown mechanism
     if let Some(st) = unsafe { SYSTEM_TABLE } {
         use uefi::table::runtime::ResetType;
-        st.runtime.reset(ResetType::Shutdown, uefi::Status::Aborted, None)
+        st.runtime
+            .reset(ResetType::Shutdown, uefi::Status::Aborted, None)
     }
 
     // If we don't have any shutdown mechanism handy, the best we can do is loop
     error!("Could not shut down, please power off the system manually...");
-    loop { }
+    loop {}
 }
 
 #[alloc_error_handler]
 fn out_of_memory(_: ::core::alloc::Layout) -> ! {
     // TODO: handle out-of-memory conditions
-    loop { }
+    loop {}
 }

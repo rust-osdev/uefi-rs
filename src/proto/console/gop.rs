@@ -23,8 +23,8 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
-use crate::{Status, Result};
 use core::{ptr, slice};
+use crate::{Result, Status};
 
 /// Provides access to the video hardware's frame buffer.
 ///
@@ -32,7 +32,9 @@ use core::{ptr, slice};
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
 pub struct GraphicsOutput {
-    query_mode: extern "C" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo) -> Status,
+    query_mode:
+        extern "C" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo)
+            -> Status,
     set_mode: extern "C" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
     #[allow(clippy::type_complexity)]
@@ -40,9 +42,12 @@ pub struct GraphicsOutput {
         this: &mut GraphicsOutput,
         buffer: usize,
         op: u32,
-        source_x: usize, source_y: usize,
-        dest_x: usize, dest_y: usize,
-        width: usize, height: usize,
+        source_x: usize,
+        source_y: usize,
+        dest_x: usize,
+        dest_y: usize,
+        width: usize,
+        height: usize,
         stride: usize,
     ) -> Status,
     mode: &'static ModeData,
@@ -53,15 +58,14 @@ impl GraphicsOutput {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info)
-            .into_with(|| {
-                let info = unsafe { &*info };
-                Mode {
-                    index,
-                    info_sz,
-                    info,
-                }
-            })
+        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with(|| {
+            let info = unsafe { &*info };
+            Mode {
+                index,
+                info_sz,
+                info,
+            }
+        })
     }
 
     /// Returns information about available graphics modes and output devices.
@@ -87,69 +91,64 @@ impl GraphicsOutput {
         // Demultiplex the operation type.
         match op {
             BltOp::VideoFill {
-                    color,
-                    dest: (dest_x, dest_y),
-                    dims: (width, height)
-                } => {
-                (self.blt)(
-                    self,
-                    &color as *const _ as usize,
-                    0,
-                    0, 0,
-                    dest_x, dest_y,
-                    width, height,
-                    1,
-                ).into()
-            },
+                color,
+                dest: (dest_x, dest_y),
+                dims: (width, height),
+            } => (self.blt)(
+                self,
+                &color as *const _ as usize,
+                0,
+                0,
+                0,
+                dest_x,
+                dest_y,
+                width,
+                height,
+                1,
+            ).into(),
             BltOp::VideoToBltBuffer {
-                    buffer,
-                    stride,
-                    src: (src_x, src_y),
-                    dest: (dest_x, dest_y),
-                    dims: (width, height)
-                } => {
-                (self.blt)(
-                    self,
-                    buffer.as_mut_ptr() as usize,
-                    1,
-                    src_x, src_y,
-                    dest_x, dest_y,
-                    width, height,
-                    stride,
-                ).into()
-            },
+                buffer,
+                stride,
+                src: (src_x, src_y),
+                dest: (dest_x, dest_y),
+                dims: (width, height),
+            } => (self.blt)(
+                self,
+                buffer.as_mut_ptr() as usize,
+                1,
+                src_x,
+                src_y,
+                dest_x,
+                dest_y,
+                width,
+                height,
+                stride,
+            ).into(),
             BltOp::BufferToVideo {
-                    buffer,
-                    stride,
-                    src: (src_x, src_y),
-                    dest: (dest_x, dest_y),
-                    dims: (width, height)
-                } => {
-                (self.blt)(
-                    self,
-                    buffer.as_ptr() as usize,
-                    2,
-                    src_x, src_y,
-                    dest_x, dest_y,
-                    width, height,
-                    stride,
-                ).into()
-            },
+                buffer,
+                stride,
+                src: (src_x, src_y),
+                dest: (dest_x, dest_y),
+                dims: (width, height),
+            } => (self.blt)(
+                self,
+                buffer.as_ptr() as usize,
+                2,
+                src_x,
+                src_y,
+                dest_x,
+                dest_y,
+                width,
+                height,
+                stride,
+            ).into(),
             BltOp::VideoToVideo {
-                    src: (src_x, src_y),
-                    dest: (dest_x, dest_y),
-                    dims: (width, height)
-                } => {
-                (self.blt)(
-                    self,
-                    0usize,
-                    3,
-                    src_x, src_y,
-                    dest_x, dest_y,
-                    width, height,
-                    0,
-                ).into()
-            },
+                src: (src_x, src_y),
+                dest: (dest_x, dest_y),
+                dims: (width, height),
+            } => (self.blt)(
+                self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
+            ).into(),
         }
     }
 
@@ -302,9 +301,7 @@ impl<'a> Iterator for ModeIter<'a> {
         if index < self.max {
             self.current += 1;
 
-            self.gop.query_mode(index)
-                .ok()
-                .or_else(|| self.next())
+            self.gop.query_mode(index).ok().or_else(|| self.next())
         } else {
             None
         }

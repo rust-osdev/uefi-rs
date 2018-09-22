@@ -1,4 +1,4 @@
-use crate::{Status, Result};
+use crate::{Result, Status};
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing on a volume.
@@ -9,14 +9,12 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub (in super) fn new(ptr: usize) -> Self {
+    pub(super) fn new(ptr: usize) -> Self {
         let ptr = ptr as *mut FileImpl;
 
         let inner = unsafe { &mut *ptr };
 
-        File {
-            inner,
-        }
+        File { inner }
     }
 
     /// Try to open a file relative to this file/directory.
@@ -38,19 +36,25 @@ impl<'a> File<'a> {
     /// * `uefi::Status::AccessDenied`      The service denied access to the file
     /// * `uefi::Status::OutOfResources`    Not enough resources to open file
     /// * `uefi::Status::VolumeFull`        The volume is full
-    pub fn open(&mut self, filename: &str, open_mode: FileMode, attributes: FileAttribute) -> Result<File> {
-        const BUF_SIZE : usize = 255;
+    pub fn open(
+        &mut self,
+        filename: &str,
+        open_mode: FileMode,
+        attributes: FileAttribute,
+    ) -> Result<File> {
+        const BUF_SIZE: usize = 255;
         if filename.len() > BUF_SIZE {
             Err(Status::InvalidParameter)
-        }
-        else {
-            let mut buf = [0u16; BUF_SIZE+1];
+        } else {
+            let mut buf = [0u16; BUF_SIZE + 1];
             let mut ptr = 0usize;
 
             ucs2::encode(filename, &mut buf)?;
-            (self.inner.open)(self.inner, &mut ptr, buf.as_ptr(), open_mode, attributes).into_with(|| File {
-                inner: unsafe { &mut *(ptr as *mut FileImpl) }
-            })
+            (self.inner.open)(self.inner, &mut ptr, buf.as_ptr(), open_mode, attributes).into_with(
+                || File {
+                    inner: unsafe { &mut *(ptr as *mut FileImpl) },
+                },
+            )
         }
     }
 
@@ -80,9 +84,10 @@ impl<'a> File<'a> {
     /// * `uefi::Status::NoMedia`           The device has no media
     /// * `uefi::Status::DeviceError`       The device reported an error
     /// * `uefi::Status::VolumeCorrupted`   The filesystem structures are corrupted
-    pub fn read(&mut self, buffer: &mut[u8]) -> Result<usize> {
+    pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
-        (self.inner.read)(self.inner, &mut buffer_size, buffer.as_mut_ptr()).into_with(|| buffer_size)
+        (self.inner.read)(self.inner, &mut buffer_size, buffer.as_mut_ptr())
+            .into_with(|| buffer_size)
     }
 
     /// Write data to file
@@ -146,7 +151,13 @@ impl<'a> File<'a> {
 #[repr(C)]
 struct FileImpl {
     revision: u64,
-    open: extern "C" fn(this: &mut FileImpl, new_handle: &mut usize, filename: *const u16, open_mode: FileMode, attributes: FileAttribute) -> Status,
+    open: extern "C" fn(
+        this: &mut FileImpl,
+        new_handle: &mut usize,
+        filename: *const u16,
+        open_mode: FileMode,
+        attributes: FileAttribute,
+    ) -> Status,
     close: extern "C" fn(this: &mut FileImpl) -> Status,
     delete: extern "C" fn(this: &mut FileImpl) -> Status,
     read: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,

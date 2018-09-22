@@ -1,6 +1,6 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
-use crate::{Status, Result};
+use crate::{Result, Status};
 
 /// Provides access to a serial I/O device.
 ///

@@ -1,4 +1,4 @@
-use crate::{Status, Result};
+use crate::{Result, Status};
 
 /// Interface for text-based output devices.
 #[repr(C)]
@@ -6,11 +6,8 @@ pub struct Output {
     reset: extern "C" fn(this: &Output, extended: bool) -> Status,
     output_string: extern "C" fn(this: &Output, string: *const u16) -> Status,
     test_string: extern "C" fn(this: &Output, string: *const u16) -> Status,
-    query_mode: extern "C" fn(this: &Output,
-                              mode: i32,
-                              columns: &mut usize,
-                              rows: &mut usize)
-                              -> Status,
+    query_mode:
+        extern "C" fn(this: &Output, mode: i32, columns: &mut usize, rows: &mut usize) -> Status,
     set_mode: extern "C" fn(this: &mut Output, mode: i32) -> Status,
     set_attribute: extern "C" fn(this: &mut Output, attribute: usize) -> Status,
     clear_screen: extern "C" fn(this: &mut Output) -> Status,

@@ -41,14 +41,17 @@ impl fmt::Display for Guid {
         };
 
         // Extract and reverse byte order.
-        let e = self.d[2..8]
-            .iter()
-            .enumerate()
-            .fold(0, |acc, (i, &elem)| acc | {
+        let e = self.d[2..8].iter().enumerate().fold(0, |acc, (i, &elem)| {
+            acc | {
                 let shift = (5 - i) * 8;
                 u64::from(elem) << shift
-            });
+            }
+        });
 
-        write!(fmt, "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}", self.a, self.b, self.c, d, e)
+        write!(
+            fmt,
+            "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}",
+            self.a, self.b, self.c, d, e
+        )
     }
 }

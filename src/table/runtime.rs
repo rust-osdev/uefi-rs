@@ -1,8 +1,8 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use crate::Status;
 use super::Header;
 use core::ptr;
+use crate::Status;
 
 /// Contains pointers to all of the runtime services.
 ///

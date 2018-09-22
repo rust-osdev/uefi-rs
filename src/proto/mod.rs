@@ -20,5 +20,5 @@ pub trait Protocol {
 mod macros;
 
 pub mod console;
-pub mod media;
 pub mod debug;
+pub mod media;

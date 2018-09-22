@@ -15,18 +15,23 @@ pub fn test(bt: &BootServices) {
         // Use a loop back device for testing.
         ctrl_bits |= ControlBits::SOFTWARE_LOOPBACK_ENABLE;
 
-        serial.set_control_bits(ctrl_bits)
+        serial
+            .set_control_bits(ctrl_bits)
             .expect("Failed to set device control bits");
 
         // Keep this message short, we need it to fit in the FIFO.
         let output = b"Hello world!";
         let msg_len = output.len();
 
-        let len = serial.write(output).expect("Failed to write to serial port");
+        let len = serial
+            .write(output)
+            .expect("Failed to write to serial port");
         assert_eq!(len, msg_len, "Serial port write timed-out!");
 
         let mut input = [0u8; 128];
-        let len = serial.read(&mut input).expect("Failed to read from serial port");
+        let len = serial
+            .read(&mut input)
+            .expect("Failed to read from serial port");
         assert_eq!(len, msg_len, "Serial port read timed-out!");
 
         assert_eq!(&output[..], &input[..msg_len]);

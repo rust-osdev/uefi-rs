@@ -287,12 +287,20 @@ impl BootServices {
     }
 
     /// Copies memory from source to destination. The buffers can overlap.
-    pub fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
+    ///
+    /// This function is unsafe as it can be used to violate most safety
+    /// invariants of the Rust type system.
+    ///
+    pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
         (self.copy_mem)(dest, src, size);
     }
 
     /// Sets a buffer to a certain value.
-    pub fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
+    ///
+    /// This function is unsafe as it can be used to violate most safety
+    /// invariants of the Rust type system.
+    ///
+    pub unsafe fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.set_mem)(buffer, size, value);
     }
 }

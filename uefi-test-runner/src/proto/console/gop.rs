@@ -1,5 +1,5 @@
 use uefi::table::boot::BootServices;
-use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel};
+use uefi::proto::console::gop::{GraphicsOutput, BltOp, BltPixel, PixelFormat};
 use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
@@ -48,29 +48,38 @@ fn fill_color(gop: &mut GraphicsOutput) {
 fn draw_fb(gop: &mut GraphicsOutput) {
     let mi = gop.current_mode_info();
     let stride = mi.stride();
-    // BUG: we should check we have enough space to draw.
-    // let (width, height) = mi.resolution();
+    let (width, height) = mi.resolution();
 
     let fb = unsafe { gop.frame_buffer() };
 
-    let mut set_pixel = |(row, column), (r, g, b)| {
-        let index = (row * stride) + column;
-
-        // BUG: we assume the pixel format is 32-bit BGR, as it often is on x86.
-        // For RGB the red / blue channels will be inverted.
-        let bi = 4 * index;
-        let gi = 4 * index + 1;
-        let ri = 4 * index + 2;
-
-        fb[bi] = b;
-        fb[gi] = g;
-        fb[ri] = r;
+    type PixelWriter<'a> = &'a Fn(&mut [u8], (u8, u8, u8));
+    let write_pixel_rgb = |pixel: &mut [u8], (r, g, b)| {
+        pixel[0] = r;
+        pixel[1] = g;
+        pixel[2] = b;
+    };
+    let write_pixel_bgr = |pixel: &mut [u8], (r, g, b)| {
+        pixel[0] = b;
+        pixel[1] = g;
+        pixel[2] = r;
+    };
+    let write_pixel: PixelWriter = match mi.pixel_format() {
+        PixelFormat::RGB => &write_pixel_rgb,
+        PixelFormat::BGR => &write_pixel_bgr,
+        _ => {
+            info!("This pixel format is not supported by the drawing demo");
+            return;
+        }
     };
 
     let mut fill_rectangle = |(x1, y1), (x2, y2), color| {
+        assert!((x1 < width) && (x2 < width), "Bad X coordinate");
+        assert!((y1 < height) && (y2 < height), "Bad Y coordinate");
         for row in y1..y2 {
             for column in x1..x2 {
-                set_pixel((row, column), color);
+                let index = (row * stride) + column;
+                let pixel = &mut fb[4*index..4*index+3];
+                write_pixel(pixel, color);
             }
         }
     };

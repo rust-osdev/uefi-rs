@@ -6,3 +6,4 @@
 pub mod text;
 pub mod pointer;
 pub mod gop;
+pub mod serial;

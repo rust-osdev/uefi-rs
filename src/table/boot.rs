@@ -50,7 +50,7 @@ pub struct BootServices {
     // Misc services
     get_next_monotonic_count: usize,
     stall: extern "C" fn(usize) -> Status,
-    set_watchdog_timer: usize,
+    set_watchdog_timer: extern "C" fn(timeout: usize, watchdog_code: u64, data_size: usize, watchdog_data: *mut u16) -> Status,
 
     // Driver support services
     connect_controller: usize,
@@ -234,6 +234,11 @@ impl BootServices {
     /// The time is in microseconds.
     pub fn stall(&self, time: usize) {
         assert_eq!((self.stall)(time), Status::Success);
+    }
+
+    /// Set the watchdog timer.
+    pub fn set_watchdog_timer(&self, timeout: usize, watchdog_code: u64, data_size: usize, watchdog_data: *mut u16) {
+        assert_eq!((self.set_watchdog_timer)(timeout, watchdog_code, data_size, watchdog_data), Status::Success);
     }
 
     /// Copies memory from source to destination. The buffers can overlap.

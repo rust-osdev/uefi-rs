@@ -68,7 +68,7 @@ def doc():
         '--package', 'uefi-services',
     )
 
-def run_qemu():
+def run_qemu(headless):
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
@@ -86,9 +86,6 @@ def run_qemu():
         # QEMU by defaults enables a ton of devices which slow down boot.
         '-nodefaults',
 
-        # Use a standard VGA for graphics.
-        '-vga', 'std',
-
         # Use a modern machine, with acceleration if possible.
         '-machine', 'q35,accel=kvm:tcg',
 
@@ -104,7 +101,21 @@ def run_qemu():
 
         # Mount the built examples directory.
         '-drive', f'format=raw,file=fat:rw:{examples_dir}',
+    ]
 
+    # When running in headless mode we don't have video
+    if headless:
+        # Disable window
+        qemu_flags.append('-nographic')
+
+        # Redirect all output to stdio
+        qemu_flags.extend(['-serial', 'stdio'])
+    else:
+        # Use a standard VGA for graphics.
+        qemu_flags.extend(['-vga', 'std'])
+
+    # Add other devices
+    qemu_flags.extend([
         # Map the QEMU exit signal to port f4
         '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
 
@@ -114,7 +125,7 @@ def run_qemu():
         # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
-    ]
+    ])
 
     cmd = [QEMU] + qemu_flags
 
@@ -136,29 +147,32 @@ def main():
 
     parser = argparse.ArgumentParser(usage=usage, description=desc)
 
-    parser.add_argument('--verbose', '-v', action='store_true')
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument('--verbose', '-v', help='print commands before executing them', action='store_true')
+    common.add_argument('--headless', help='run QEMU without a GUI', action='store_true')
 
     subparsers = parser.add_subparsers(dest='verb')
 
-    build_parser = subparsers.add_parser('build')
-    run_parser = subparsers.add_parser('run')
-    doc_parser = subparsers.add_parser('doc')
+    build_parser = subparsers.add_parser('build', parents=[common])
+    run_parser = subparsers.add_parser('run', parents=[common])
+    doc_parser = subparsers.add_parser('doc', parents=[common])
 
     opts = parser.parse_args()
 
     # Check if we need to enable verbose mode
     global VERBOSE
     VERBOSE = VERBOSE or opts.verbose
+    headless = opts.headless
 
     if opts.verb == 'build':
         build()
     elif opts.verb == 'run':
-        run_qemu()
+        run_qemu(headless)
     elif opts.verb == 'doc':
         doc()
     elif opts.verb is None or opts.verb == '':
         # Run the program, by default.
-        run_qemu()
+        run_qemu(headless)
     else:
         raise ValueError(f'Unknown verb {opts.verb}')
 

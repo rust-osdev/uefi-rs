@@ -1,9 +1,9 @@
 //! UEFI services available during boot.
 
-use crate::{Status, Result, Handle, Guid};
 use super::Header;
+use core::{mem, ptr};
 use crate::proto::Protocol;
-use core::{ptr, mem};
+use crate::{Guid, Handle, Result, Status};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -15,9 +15,12 @@ pub struct BootServices {
     restore_tpl: extern "C" fn(Tpl),
 
     // Memory allocation functions
-    allocate_pages: extern "C" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64) -> Status,
+    allocate_pages:
+        extern "C" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64) -> Status,
     free_pages: extern "C" fn(u64, usize) -> Status,
-    memory_map: extern "C" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32) -> Status,
+    memory_map:
+        extern "C" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32)
+            -> Status,
     allocate_pool: extern "C" fn(MemoryType, usize, addr: &mut usize) -> Status,
     free_pool: extern "C" fn(buffer: usize) -> Status,
 
@@ -33,10 +36,17 @@ pub struct BootServices {
     install_protocol_interface: usize,
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
-    handle_protocol: extern "C" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
+    handle_protocol:
+        extern "C" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
-    locate_handle: extern "C" fn(search_ty: i32, proto: *const Guid, key: *mut (), buf_sz: &mut usize, buf: *mut Handle) -> Status,
+    locate_handle: extern "C" fn(
+        search_ty: i32,
+        proto: *const Guid,
+        key: *mut (),
+        buf_sz: &mut usize,
+        buf: *mut Handle,
+    ) -> Status,
     locate_device_path: usize,
     install_configuration_table: usize,
 
@@ -50,7 +60,12 @@ pub struct BootServices {
     // Misc services
     get_next_monotonic_count: usize,
     stall: extern "C" fn(usize) -> Status,
-    set_watchdog_timer: extern "C" fn(timeout: usize, watchdog_code: u64, data_size: usize, watchdog_data: *mut u16) -> Status,
+    set_watchdog_timer: extern "C" fn(
+        timeout: usize,
+        watchdog_code: u64,
+        data_size: usize,
+        watchdog_data: *const u16,
+    ) -> Status,
 
     // Driver support services
     connect_controller: usize,
@@ -123,7 +138,13 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        let status = (self.memory_map)(&mut map_size, 0, &mut map_key, &mut entry_size, &mut entry_version);
+        let status = (self.memory_map)(
+            &mut map_size,
+            0,
+            &mut map_key,
+            &mut entry_size,
+            &mut entry_version,
+        );
         assert_eq!(status, Status::BufferTooSmall);
 
         map_size * entry_size
@@ -136,15 +157,26 @@ impl BootServices {
     ///
     /// The returned key is a unique identifier of the current configuration of memory.
     /// Any allocations or such will change the memory map's key.
-    pub fn memory_map<'a>(&self, buffer: &'a mut [u8])
-        -> Result<(MemoryMapKey, impl ExactSizeIterator<Item = &'a MemoryDescriptor>)> {
+    pub fn memory_map<'a>(
+        &self,
+        buffer: &'a mut [u8],
+    ) -> Result<(
+        MemoryMapKey,
+        impl ExactSizeIterator<Item = &'a MemoryDescriptor>,
+    )> {
         let mut map_size = buffer.len();
         let map_buffer = buffer.as_ptr() as usize;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        (self.memory_map)(&mut map_size, map_buffer, &mut map_key, &mut entry_size, &mut entry_version)?;
+        (self.memory_map)(
+            &mut map_size,
+            map_buffer,
+            &mut map_key,
+            &mut entry_size,
+            &mut entry_version,
+        )?;
 
         let len = map_size / entry_size;
 
@@ -187,7 +219,11 @@ impl BootServices {
     /// in order to retrieve the length of the buffer you need to allocate.
     ///
     /// The next call will fill the buffer with the requested data.
-    pub fn locate_handle(&self, search_ty: SearchType, output: Option<&mut [Handle]>) -> Result<usize> {
+    pub fn locate_handle(
+        &self,
+        search_ty: SearchType,
+        output: Option<&mut [Handle]>,
+    ) -> Result<usize> {
         let handle_size = mem::size_of::<Handle>();
 
         let (mut buffer_size, buffer) = match output {
@@ -237,8 +273,17 @@ impl BootServices {
     }
 
     /// Set the watchdog timer.
-    pub fn set_watchdog_timer(&self, timeout: usize, watchdog_code: u64, data_size: usize, watchdog_data: *mut u16) {
-        assert_eq!((self.set_watchdog_timer)(timeout, watchdog_code, data_size, watchdog_data), Status::Success);
+    ///
+    /// UEFI will start a 5-minute countdown after an UEFI image is loaded.
+    /// The image must either successfully load an OS and call `ExitBootServices`
+    /// in that time, or disable the watchdog.
+    ///
+    /// Otherwise, the system will be reset after the time expires.
+    pub fn set_watchdog_timer(&self, timeout: usize, watchdog_code: u64, data: Option<&mut [u16]>) -> Result<()> {
+        let (data_len, data) = data.map(|d| (d.len(), d.as_mut_ptr()))
+            .unwrap_or((0, ptr::null_mut()));
+
+        (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data).into()
     }
 
     /// Copies memory from source to destination. The buffers can overlap.
@@ -353,7 +398,7 @@ impl Default for MemoryDescriptor {
             phys_start: 0,
             virt_start: 0,
             page_count: 0,
-            att: MemoryAttribute::empty()
+            att: MemoryAttribute::empty(),
         }
     }
 }
@@ -419,9 +464,7 @@ impl<'a> Iterator for MemoryMapIter<'a> {
 
             self.index += 1;
 
-            let descriptor = unsafe {
-                mem::transmute::<usize, &MemoryDescriptor>(ptr)
-            };
+            let descriptor = unsafe { mem::transmute::<usize, &MemoryDescriptor>(ptr) };
 
             Some(descriptor)
         } else {
@@ -430,7 +473,7 @@ impl<'a> Iterator for MemoryMapIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for MemoryMapIter<'a> { }
+impl<'a> ExactSizeIterator for MemoryMapIter<'a> {}
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]

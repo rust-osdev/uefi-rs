@@ -40,7 +40,7 @@ pub fn test(bt: &BootServices) {
 
         // Clean up after ourselves
         serial.reset().expect("Could not reset the serial device");
-        serial.set_control_bits(old_ctrl_bits & Serial::settable_control_bits())
+        serial.set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)
               .expect("Could not restore the serial device state");
     } else {
         warn!("No serial device found");

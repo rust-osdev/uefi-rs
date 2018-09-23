@@ -64,23 +64,10 @@ impl Serial {
 
     /// Sets the device's new control bits.
     ///
-    /// Not all bits can be modified with this function. You can use the
-    /// settable_control_bits() method to query which of them are.
+    /// Not all bits can be modified with this function. A mask of the allowed
+    /// bits is stored in the [`ControlBits::SETTABLE`] constant.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result<()> {
         (self.set_control_bits)(self, bits).into()
-    }
-
-
-    /// Get a bitmask of the control bits that can be set.
-    ///
-    /// TODO: To be replaced with a constant once Rust has const generics
-    pub fn settable_control_bits() -> ControlBits {
-        // Up to date as of UEFI 2.7 / Serial protocol v1
-        ControlBits::DATA_TERMINAL_READY
-        | ControlBits::REQUEST_TO_SEND
-        | ControlBits::HARDWARE_LOOPBACK_ENABLE
-        | ControlBits::SOFTWARE_LOOPBACK_ENABLE
-        | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE
     }
 
     /// Retrieve the device's current control bits.
@@ -192,6 +179,16 @@ bitflags! {
         const SOFTWARE_LOOPBACK_ENABLE = 0x2000;
         /// Allow the hardware to handle flow control
         const HARDWARE_FLOW_CONTROL_ENABLE = 0x4000;
+
+        /// Bitmask of the control bits that can be set.
+        ///
+        /// Up to date as of UEFI 2.7 / Serial protocol v1
+        const SETTABLE =
+            ControlBits::DATA_TERMINAL_READY.bits
+            | ControlBits::REQUEST_TO_SEND.bits
+            | ControlBits::HARDWARE_LOOPBACK_ENABLE.bits
+            | ControlBits::SOFTWARE_LOOPBACK_ENABLE.bits
+            | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE.bits;
     }
 }
 

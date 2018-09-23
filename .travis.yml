@@ -25,8 +25,9 @@ before_script:
   - qemu-system-x86_64 --version
 
 script:
-  - cd uefi-test-runner && ./build.py run --headless
-  - cd uefi-test-runner && ./build.py clippy
+  - cd uefi-test-runner
+  - ./build.py run --headless
+  - ./build.py clippy
 
 cache:
   directories:

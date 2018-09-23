@@ -15,9 +15,6 @@ import sys
 # Path to workspace directory (which contains the top-level `Cargo.toml`)
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 
-# Named pipe associated with the QEMU monitor
-QEMU_MONITOR_PIPE = "qemu-monitor"
-
 # Try changing these with command line flags, where possible
 SETTINGS = {
     # Print commands before running them.
@@ -114,6 +111,8 @@ def run_qemu():
 
     examples_dir = build_dir() / 'examples'
 
+    qemu_monitor_pipe = 'qemu-monitor'
+
     qemu_flags = [
         # Disable default devices.
         # QEMU by defaults enables a ton of devices which slow down boot.
@@ -142,8 +141,8 @@ def run_qemu():
         # Map the QEMU exit signal to port f4
         '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
 
-        # Map the QEMU monitor to a certain named pipe
-        '-qmp', f'pipe:{QEMU_MONITOR_PIPE}',
+        # Map the QEMU monitor to a pair of named pipes
+        '-qmp', f'pipe:{qemu_monitor_pipe}',
 
         # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:
@@ -167,12 +166,10 @@ def run_qemu():
     ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
 
     # Setup a communication channel with QEMU's monitor: named pipes
-    monitor_input_path = QEMU_MONITOR_PIPE+'.in'
-    if not os.path.exists(monitor_input_path):
-        os.mkfifo(monitor_input_path)
-    monitor_output_path = QEMU_MONITOR_PIPE+'.out'
-    if not os.path.exists(monitor_output_path):
-        os.mkfifo(monitor_output_path)
+    monitor_input_path = f'{qemu_monitor_pipe}.in'
+    os.mkfifo(monitor_input_path)
+    monitor_output_path = f'{qemu_monitor_pipe}.out'
+    os.mkfifo(monitor_output_path)
 
     # Start QEMU
     qemu = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, universal_newlines=True)
@@ -200,6 +197,7 @@ def run_qemu():
                 # When the app requests a screenshot, take it
                 if stripped.startswith("SCREENSHOT: "):
                     # Ask QEMU to take a screenshot
+                    # TODO: Always save screenshots to the same file
                     filename_base = stripped[12:]
                     monitor_command = '{"execute": "screendump", "arguments": {"filename": "' + filename_base + '.ppm"}}'
                     print(monitor_command, file=monitor_input, flush=True)
@@ -212,9 +210,18 @@ def run_qemu():
 
                     # Tell the VM that the screenshot was taken
                     print('OK', file=qemu.stdin, flush=True)
+
+                    # TODO: Compare screenshot against reference
+                    # TODO: Delete screenshot once that's done
     finally:
-        # Wait for QEMU to finish, abort if it fails
+        # Wait for QEMU to finish
         status = qemu.wait()
+
+        # Delete the monitor pipes
+        os.remove(monitor_input_path)
+        os.remove(monitor_output_path)
+
+        # Throw an exception if QEMU failed
         if status != 0:
             raise sp.CalledProcessError(cmd=cmd, returncode=status)
 

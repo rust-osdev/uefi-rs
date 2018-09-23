@@ -136,8 +136,7 @@ impl fmt::Write for Output {
             buf[*i] = 0;
             *i = 0;
 
-            self.output_string(buf.as_ptr())
-                .map_err(|_| fmt::Error)
+            self.output_string(buf.as_ptr()).map_err(|_| fmt::Error)
         };
 
         // This closure converts a character to UCS-2 and adds it to the buffer,

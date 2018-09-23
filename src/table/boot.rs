@@ -292,13 +292,20 @@ impl BootServices {
     ///
     /// If provided, the watchdog data must be a null-terminated string
     /// optionally followed by other binary data.
-    pub fn set_watchdog_timer(&self, timeout: usize, watchdog_code: u64, data: Option<&mut [u16]>) -> Result<()> {
-        let (data_len, data) =
-            data.map(|d| {
-                         assert!(d.contains(&0), "Watchdog data must contain a null-terminated string");
-                         (d.len(), d.as_mut_ptr())
-                     })
-                .unwrap_or((0, ptr::null_mut()));
+    pub fn set_watchdog_timer(
+        &self,
+        timeout: usize,
+        watchdog_code: u64,
+        data: Option<&mut [u16]>,
+    ) -> Result<()> {
+        let (data_len, data) = data
+            .map(|d| {
+                assert!(
+                    d.contains(&0),
+                    "Watchdog data must contain a null-terminated string"
+                );
+                (d.len(), d.as_mut_ptr())
+            }).unwrap_or((0, ptr::null_mut()));
 
         (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data).into()
     }

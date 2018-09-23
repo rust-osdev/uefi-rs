@@ -10,9 +10,10 @@
 //! through the reference provided by `system_table`.
 
 #![no_std]
+#![feature(alloc_error_handler)]
+#![feature(asm)]
 #![feature(lang_items)]
 #![feature(panic_info_message)]
-#![feature(alloc_error_handler)]
 
 // These crates are required.
 extern crate rlibc;
@@ -139,11 +140,19 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
 
     // If we don't have any shutdown mechanism handy, the best we can do is loop
     error!("Could not shut down, please power off the system manually...");
-    loop {}
+
+    loop {
+        unsafe {
+            // Try to at least keep CPU from running at 100%
+            asm!("hlt" :::: "volatile");
+        }
+    }
 }
 
 #[alloc_error_handler]
-fn out_of_memory(_: ::core::alloc::Layout) -> ! {
-    // TODO: handle out-of-memory conditions
-    loop {}
+fn out_of_memory(layout: ::core::alloc::Layout) -> ! {
+    panic!(
+        "Ran out of free memory while trying to allocate {:#?}",
+        layout
+    );
 }

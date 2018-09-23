@@ -49,10 +49,8 @@ impl BootServicesExt for BootServices {
             // We have to retrieve them all and find one that works.
             .iter()
             .map(|&handle| self.handle_protocol::<P>(handle))
-            // Only choose a handle which implements the protocol.
-            .filter(Option::is_some)
-            // Pick the first one that works.
-            .next()
+            // Find a handle which implements the protocol.
+            .find(Option::is_some)
             // Filter itself returns an option, we need to lift it out.
             .unwrap_or(None)
     }

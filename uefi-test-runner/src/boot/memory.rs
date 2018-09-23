@@ -51,12 +51,16 @@ fn memmove(bt: &BootServices) {
     let mut dest = [0u8; 4];
 
     // Fill the buffer with a value
-    unsafe { bt.memset(dest.as_mut_ptr(), dest.len(), 1); }
+    unsafe {
+        bt.memset(dest.as_mut_ptr(), dest.len(), 1);
+    }
 
     assert_eq!(dest, [1; 4], "Failed to set memory");
 
     // Copy other values on it
-    unsafe { bt.memmove(dest.as_mut_ptr(), src.as_ptr(), dest.len()); }
+    unsafe {
+        bt.memmove(dest.as_mut_ptr(), src.as_ptr(), dest.len());
+    }
 
     assert_eq!(dest, src, "Failed to copy memory");
 }

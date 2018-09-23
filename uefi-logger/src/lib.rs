@@ -45,9 +45,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         let writer = unsafe { &mut *self.writer.get() };
-        DecoratedLog::write(writer,
-                            record.level(),
-                            record.args()).unwrap();
+        DecoratedLog::write(writer, record.level(), record.args()).unwrap();
     }
 
     fn flush(&self) {
@@ -58,7 +56,6 @@ impl log::Log for Logger {
 // The logger is not thread-safe, but the UEFI boot environment only uses one processor.
 unsafe impl Sync for Logger {}
 unsafe impl Send for Logger {}
-
 
 /// Writer wrapper which prints a log level in front of every line of text
 ///
@@ -71,18 +68,15 @@ unsafe impl Send for Logger {}
 ///
 /// Therefore, we need to inject ourselves in the middle of the fmt::Write
 /// machinery and intercept the strings that it sends to the Writer.
-///.
 struct DecoratedLog<'a, W: fmt::Write> {
     backend: &'a mut W,
     log_level: log::Level,
     at_line_start: bool,
 }
-//
+
 impl<'a, W: fmt::Write> DecoratedLog<'a, W> {
     // Call this method to print a level-annotated log
-    fn write(writer: &'a mut W,
-             level: log::Level,
-             args: &fmt::Arguments) -> fmt::Result {
+    fn write(writer: &'a mut W, level: log::Level, args: &fmt::Arguments) -> fmt::Result {
         let mut decorated_writer = Self {
             backend: writer,
             log_level: level,
@@ -91,7 +85,7 @@ impl<'a, W: fmt::Write> DecoratedLog<'a, W> {
         writeln!(decorated_writer, "{}", *args)
     }
 }
-//
+
 impl<'a, W: fmt::Write> fmt::Write for DecoratedLog<'a, W> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         // Split the input string into lines

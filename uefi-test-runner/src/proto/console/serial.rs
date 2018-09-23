@@ -3,6 +3,7 @@ use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
+    info!("Running serial protocol test");
     if let Some(mut serial) = bt.find_protocol::<Serial>() {
         let serial = unsafe { serial.as_mut() };
 

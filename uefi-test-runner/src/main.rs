@@ -19,6 +19,9 @@ pub extern "C" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) ->
     // Initialize logging.
     uefi_services::init(st);
 
+    // Reset the console before running all the other tests.
+    st.stdout().reset(false).expect("Failed to reset stdout");
+
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
 
@@ -38,7 +41,7 @@ pub extern "C" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) ->
 fn check_revision(rev: uefi::table::Revision) {
     let (major, minor) = (rev.major(), rev.minor());
 
-    info!("UEFI {}.{}", major, minor);
+    info!("UEFI {}.{}", major, minor / 10);
 
     assert!(major >= 2, "Running on an old, unsupported version of UEFI");
     assert!(

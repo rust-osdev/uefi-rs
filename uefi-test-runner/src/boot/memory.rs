@@ -4,6 +4,8 @@ use core::mem;
 use crate::alloc::vec::Vec;
 
 pub fn test(bt: &BootServices) {
+    info!("Testing memory functions");
+
     allocate_pages(bt);
     vec_alloc();
     memmove(bt);
@@ -12,6 +14,8 @@ pub fn test(bt: &BootServices) {
 }
 
 fn allocate_pages(bt: &BootServices) {
+    info!("Allocating some pages of memory");
+
     let ty = AllocateType::AnyPages;
     let mem_ty = MemoryType::LoaderData;
     let pgs = bt
@@ -38,6 +42,8 @@ fn allocate_pages(bt: &BootServices) {
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.
 fn vec_alloc() {
+    info!("Allocating a vector through the `alloc` crate");
+
     let mut values = vec![-5, 16, 23, 4, 0];
 
     values.sort();
@@ -47,6 +53,8 @@ fn vec_alloc() {
 
 // Test that the `memmove` / `memset` functions work.
 fn memmove(bt: &BootServices) {
+    info!("Testing the `memmove` / `memset` functions");
+
     let src = [1, 2, 3, 4];
     let mut dest = [0u8; 4];
 
@@ -66,6 +74,8 @@ fn memmove(bt: &BootServices) {
 }
 
 fn memory_map(bt: &BootServices) {
+    info!("Testing memory map functions");
+
     // Get an estimate of the memory map size.
     let map_sz = bt.memory_map_size();
 

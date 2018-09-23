@@ -2,8 +2,7 @@ use uefi::prelude::*;
 use uefi::proto::console::text::{Color, Output};
 
 pub fn test(stdout: &mut Output) {
-    // Reset the console before beginning all the other tests.
-    stdout.reset(false).expect("Failed to reset stdout");
+    info!("Running text output protocol test");
 
     change_text_mode(stdout);
     change_color(stdout);
@@ -12,7 +11,7 @@ pub fn test(stdout: &mut Output) {
     // Print all modes.
     for (index, mode) in stdout.modes().enumerate() {
         info!(
-            "Graphics mode #{}: {} rows by {} columns",
+            "- Graphics mode #{}: {} rows by {} columns",
             index,
             mode.rows(),
             mode.columns()

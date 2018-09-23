@@ -4,6 +4,8 @@ use uefi_exts::BootServicesExt;
 use uefi::proto;
 
 pub fn test(st: &SystemTable) {
+    info!("Testing various protocols");
+
     let bt = st.boot;
 
     find_protocol(bt);

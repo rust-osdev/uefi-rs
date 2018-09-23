@@ -184,14 +184,15 @@ def run_qemu():
 
             # Iterate over stdout...
             for line in qemu.stdout:
-                # Strip ending and trailing whitespace + ANSI escape codes for analysis
+                # Strip ending and trailing whitespace + ANSI escape codes
+                # (This simplifies log analysis and keeps the terminal clean)
                 stripped = ansi_escape.sub('', line.strip())
 
-                # Skip empty lines
+                # Skip lines which contain nothing else
                 if not stripped:
                     continue
 
-                # Print out the processed QEMU output to allow logging & inspection
+                # Print out the processed QEMU output for logging & inspection
                 print(stripped)
 
                 # If the app requests a screenshot, take it

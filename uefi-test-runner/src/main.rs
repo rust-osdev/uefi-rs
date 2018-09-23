@@ -9,7 +9,6 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-use core::fmt::Write;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi_exts::BootServicesExt;
@@ -75,7 +74,13 @@ fn check_screenshot(bt: &BootServices, name: &str) {
             .expect("Failed to configure serial port timeout");
 
         // Send a screenshot request to the host
-        writeln!(serial, "SCREENSHOT: {}", name).expect("Failed to send request");
+        let mut len = serial.write(b"SCREENSHOT: ").expect("Failed to send request");
+        assert_eq!(len, 12, "Screenshot request timed out");
+        let name_bytes = name.as_bytes();
+        len = serial.write(name_bytes).expect("Failed to send request");
+        assert_eq!(len, name_bytes.len(), "Screenshot request timed out");
+        len = serial.write(b"\n").expect("Failed to send request");
+        assert_eq!(len, 1, "Screenshot request timed out");
 
         // Wait for the host's acknowledgement before moving forward
         let mut reply = [0; 3];

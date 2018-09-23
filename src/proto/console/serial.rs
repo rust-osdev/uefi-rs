@@ -1,7 +1,6 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use bitflags::bitflags;
-use core::fmt;
 use crate::{Result, Status};
 
 /// Provides access to a serial I/O device.
@@ -11,10 +10,6 @@ use crate::{Result, Status};
 ///
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
-///
-/// It implements the fmt::Write trait, so you can use it to print text with
-/// standard Rust constructs like the write!() and writeln!() macros. The text
-/// will be emitted as UTF-8 and timeouts will be treated as errors.
 #[repr(C)]
 pub struct Serial {
     // Revision of this protocol, only 1.0 is currently defined.
@@ -117,17 +112,6 @@ impl Serial {
     /// Returns the current I/O mode.
     pub fn io_mode(&self) -> &IoMode {
         self.io_mode
-    }
-}
-
-impl fmt::Write for Serial {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        let bytes = s.as_bytes();
-        if self.write(bytes).map_err(|_| fmt::Error)? != bytes.len() {
-            Err(fmt::Error)
-        } else {
-            Ok(())
-        }
     }
 }
 

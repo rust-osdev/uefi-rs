@@ -5,6 +5,7 @@
 import argparse
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess as sp
 import sys
@@ -101,26 +102,23 @@ def run_qemu(headless):
 
         # Mount the built examples directory.
         '-drive', f'format=raw,file=fat:rw:{examples_dir}',
+
+        # Connect the serial port to the host. OVMF is kind enough to connect
+        # the UEFI stdout and stdin to that port too.
+        '-serial', 'stdio',
     ]
 
-    # When running in headless mode we don't have video
+    # When running in headless mode we don't have video, but we can still have
+    # QEMU emulate a display and take screenshots from it.
+    qemu_flags.extend(['-vga', 'std'])
     if headless:
-        # Disable window
-        qemu_flags.append('-nographic')
-
-        # Redirect all output to stdio
-        qemu_flags.extend(['-serial', 'stdio'])
-    else:
-        # Use a standard VGA for graphics.
-        qemu_flags.extend(['-vga', 'std'])
+        # Do not attach a window to QEMU's display
+        qemu_flags.extend(['-display', 'none'])
 
     # Add other devices
     qemu_flags.extend([
         # Map the QEMU exit signal to port f4
         '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
-
-        # Add a null serial device for testing with loop-back
-        '-serial', 'null',
 
         # OVMF debug builds can output information to a serial `debugcon`.
         # Only enable when debugging UEFI boot:
@@ -132,7 +130,29 @@ def run_qemu(headless):
     if VERBOSE:
         print(' '.join(cmd))
 
-    sp.run(cmd).check_returncode()
+    # This regex can be used to detect and strip ANSI escape codes when
+    # analyzing the output of the test runner.
+    ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
+
+    # Start QEMU
+    qemu = sp.Popen(cmd, stdout=sp.PIPE, universal_newlines=True)
+
+    # Iterate over stdout...
+    for line in qemu.stdout:
+        # Strip ending and trailing whitespace + ANSI escape codes for analysis
+        stripped = ansi_escape.sub('', line.strip())
+
+        # Skip empty lines
+        if not stripped:
+            continue
+
+        # Print out the processed QEMU output to allow logging & inspection
+        print(stripped)
+
+    # Wait for QEMU to finish, then abort if that fails
+    status = qemu.wait()
+    if status != 0:
+        raise sp.CalledProcessError(cmd=cmd, returncode=status)
 
 def main():
     'Runs the user-requested actions.'

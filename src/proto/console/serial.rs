@@ -64,16 +64,23 @@ impl Serial {
 
     /// Sets the device's new control bits.
     ///
-    /// Not all bits can be modified with this function.
-    /// Only the folowing can be set:
-    ///
-    /// - DATA_TERMINAL_READY
-    /// - REQUEST_TO_SEND
-    /// - HARDWARE_LOOPBACK_ENABLE
-    /// - SOFTWARE_LOOPBACK_ENABLE
-    /// - HARDWARE_FLOW_CONTROL_ENABLE
+    /// Not all bits can be modified with this function. You can use the
+    /// settable_control_bits() method to query which of them are.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result<()> {
         (self.set_control_bits)(self, bits).into()
+    }
+
+
+    /// Get a bitmask of the control bits that can be set.
+    ///
+    /// TODO: To be replaced with a constant once Rust has const generics
+    pub fn settable_control_bits() -> ControlBits {
+        // Up to date as of UEFI 2.7 / Serial protocol v1
+        ControlBits::DATA_TERMINAL_READY
+        | ControlBits::REQUEST_TO_SEND
+        | ControlBits::HARDWARE_LOOPBACK_ENABLE
+        | ControlBits::SOFTWARE_LOOPBACK_ENABLE
+        | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE
     }
 
     /// Retrieve the device's current control bits.

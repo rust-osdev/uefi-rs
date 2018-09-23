@@ -2,6 +2,9 @@ use core::fmt;
 use crate::{Result, Status};
 
 /// Interface for text-based output devices.
+///
+/// It implements the fmt::Write trait, so you can use it to print text with
+/// standard Rust constructs like the write!() and writeln!() macros.
 #[repr(C)]
 pub struct Output {
     reset: extern "C" fn(this: &Output, extended: bool) -> Status,
@@ -137,36 +140,36 @@ impl fmt::Write for Output {
                 .map_err(|_| fmt::Error)
         };
 
-        {
-            // This closure converts a character to UCS-2 and adds it to the buffer,
-            // flushing it as necessary.
-            let mut add_char = |ch| {
-                // UEFI only supports UCS-2 characters, not UTF-16,
-                // so there are no multibyte characters.
-                buf[i] = ch;
-                i += 1;
+        // This closure converts a character to UCS-2 and adds it to the buffer,
+        // flushing it as necessary.
+        let mut add_char = |ch| {
+            // UEFI only supports UCS-2 characters, not UTF-16,
+            // so there are no multibyte characters.
+            buf[i] = ch;
+            i += 1;
 
-                if i == BUF_SIZE {
-                    flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
-                } else {
-                    Ok(())
-                }
-            };
+            if i == BUF_SIZE {
+                flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
+            } else {
+                Ok(())
+            }
+        };
 
-            let add_ch = |ch| {
-                add_char(ch)?;
+        // This one converts Rust line feeds to UEFI line feeds beforehand
+        let add_ch = |ch| {
+            add_char(ch)?;
 
-                if ch == '\n' as u16 {
-                    add_char('\r' as u16)
-                } else {
-                    Ok(())
-                }
-            };
+            if ch == '\n' as u16 {
+                add_char('\r' as u16)
+            } else {
+                Ok(())
+            }
+        };
 
-            ucs2::encode_with(s, add_ch).map_err(|_| fmt::Error)?;
-        }
+        // Translate and write the input string, flushing the buffer when needed
+        ucs2::encode_with(s, add_ch).map_err(|_| fmt::Error)?;
 
-        // Flush whatever is left in the buffer.
+        // Flush the remainder of the buffer
         flush_buffer(&mut buf, &mut i)
     }
 }

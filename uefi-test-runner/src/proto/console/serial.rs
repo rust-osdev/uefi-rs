@@ -40,12 +40,8 @@ pub fn test(bt: &BootServices) {
 
         // Clean up after ourselves
         serial.reset().expect("Could not reset the serial device");
-        let settable_bits = ControlBits::REQUEST_TO_SEND
-                          | ControlBits::DATA_TERMINAL_READY
-                          | ControlBits::HARDWARE_LOOPBACK_ENABLE
-                          | ControlBits::SOFTWARE_LOOPBACK_ENABLE
-                          | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE;
-        serial.set_control_bits(old_ctrl_bits & settable_bits).unwrap();
+        serial.set_control_bits(old_ctrl_bits & Serial::settable_control_bits())
+              .expect("Could not restore the serial device state");
     } else {
         warn!("No serial device found");
     }

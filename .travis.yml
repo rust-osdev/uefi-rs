@@ -26,6 +26,7 @@ before_script:
 
 script:
   - cd uefi-test-runner && ./build.py run --headless
+  - cd uefi-test-runner && ./build.py clippy
 
 cache:
   directories:

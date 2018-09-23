@@ -11,52 +11,79 @@ import subprocess as sp
 import sys
 
 ## Configurable settings
-# Target to build for.
-TARGET = 'x86_64-uefi'
-# Configuration to build.
-CONFIG = 'debug'
-
-# QEMU executable to use
-QEMU = 'qemu-system-x86_64'
-
 # Path to workspace directory (which contains the top-level `Cargo.toml`)
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 
-# Path to directory containing `OVMF_{CODE/VARS}.fd`.
-# TODO: use installed OVMF, if available.
-OVMF_DIR = WORKSPACE_DIR / 'uefi-test-runner'
+# Try changing these with command line flags, where possible
+SETTINGS = {
+    # Print commands before running them.
+    'verbose': False,
+    # Run QEMU without showing GUI
+    'headless': False,
+    # Target to build for.
+    'target': 'x86_64-uefi',
+    # Configuration to build.
+    'config': 'debug',
+    # QEMU executable to use
+    'qemu_binary': 'qemu-system-x86_64',
+    # Path to directory containing `OVMF_{CODE/VARS}.fd`.
+    # TODO: use installed OVMF, if available.
+    'ovmf_dir': WORKSPACE_DIR / 'uefi-test-runner',
+}
 
-# Set to `True` or use the `--verbose` argument to print commands.
-VERBOSE = False
+def build_dir():
+    'Returns the directory where Cargo places the build artifacts'
+    return WORKSPACE_DIR / 'target' / SETTINGS['target'] / SETTINGS['config']
 
-BUILD_DIR = WORKSPACE_DIR / 'target' / TARGET / CONFIG
-ESP_DIR = BUILD_DIR / 'esp'
+def esp_dir():
+    'Returns the directory where we will build the emulated UEFI system partition'
+    return build_dir() / 'esp'
 
-def run_xbuild(*flags):
-    'Runs Cargo XBuild with certain arguments.'
+def run_xtool(tool, *flags):
+    'Runs cargo-x<tool> with certain arguments.'
 
-    cmd = ['cargo', 'xbuild', '--target', TARGET, *flags]
+    cmd = ['cargo', tool, '--target', SETTINGS['target'], *flags]
 
-    if VERBOSE:
+    if SETTINGS['verbose']:
         print(' '.join(cmd))
 
     sp.run(cmd).check_returncode()
 
+def run_xbuild(*flags):
+    'Runs cargo-xbuild with certain arguments.'
+    run_xtool('xbuild', *flags)
+
+def run_xclippy(*flags):
+    'Runs cargo-xclippy with certain arguments.'
+    run_xtool('xclippy', *flags)
+
 def build(*test_flags):
     'Builds the tests and examples.'
 
-    run_xbuild('--package', 'uefi-test-runner', *test_flags)
-    run_xbuild('--package', 'uefi', '--examples')
+    xbuild_args = [
+        '--package', 'uefi-test-runner',
+        *test_flags,
+    ]
+
+    if SETTINGS['config'] == 'release':
+        xbuild_args.append('--release')
+
+    run_xbuild(*xbuild_args)
 
     # Copy the built test runner file to the right directory for running tests.
-    built_file = BUILD_DIR / 'uefi-test-runner.efi'
+    built_file = build_dir() / 'uefi-test-runner.efi'
 
-    boot_dir = ESP_DIR / 'EFI' / 'Boot'
+    boot_dir = esp_dir() / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
 
     output_file = boot_dir / 'BootX64.efi'
 
     shutil.copy2(built_file, output_file)
+
+def clippy():
+    'Runs Clippy on all projects'
+
+    run_xclippy('--all')
 
 def doc():
     'Generates documentation for the library crates.'
@@ -69,18 +96,19 @@ def doc():
         '--package', 'uefi-services',
     ])
 
-def run_qemu(headless):
+def run_qemu():
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
     build('--features', 'qemu-f4-exit')
 
-    ovmf_code, ovmf_vars = OVMF_DIR / 'OVMF_CODE.fd', OVMF_DIR / 'OVMF_VARS.fd'
+    ovmf_dir = SETTINGS['ovmf_dir']
+    ovmf_code, ovmf_vars = ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
 
     if not ovmf_code.is_file():
-        raise FileNotFoundError(f'OVMF_CODE.fd not found in the `{OVMF_DIR}` directory')
+        raise FileNotFoundError(f'OVMF_CODE.fd not found in the `{ovmf_dir}` directory')
 
-    examples_dir = BUILD_DIR / 'examples'
+    examples_dir = build_dir() / 'examples'
 
     qemu_flags = [
         # Disable default devices.
@@ -98,7 +126,7 @@ def run_qemu(headless):
         '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
 
         # Mount a local directory as a FAT partition.
-        '-drive', f'format=raw,file=fat:rw:{ESP_DIR}',
+        '-drive', f'format=raw,file=fat:rw:{esp_dir()}',
 
         # Mount the built examples directory.
         '-drive', f'format=raw,file=fat:rw:{examples_dir}',
@@ -111,7 +139,7 @@ def run_qemu(headless):
     # When running in headless mode we don't have video, but we can still have
     # QEMU emulate a display and take screenshots from it.
     qemu_flags.extend(['-vga', 'std'])
-    if headless:
+    if SETTINGS['headless']:
         # Do not attach a window to QEMU's display
         qemu_flags.extend(['-display', 'none'])
 
@@ -125,9 +153,9 @@ def run_qemu(headless):
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ])
 
-    cmd = [QEMU] + qemu_flags
+    cmd = [SETTINGS['qemu_binary']] + qemu_flags
 
-    if VERBOSE:
+    if SETTINGS['verbose']:
         print(' '.join(cmd))
 
     # This regex can be used to detect and strip ANSI escape codes when
@@ -167,32 +195,36 @@ def main():
 
     parser = argparse.ArgumentParser(usage=usage, description=desc)
 
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('--verbose', '-v', help='print commands before executing them', action='store_true')
-    common.add_argument('--headless', help='run QEMU without a GUI', action='store_true')
+    parser.add_argument('verb', help='command to run', type=str,
+                        choices=['build', 'run', 'doc', 'clippy'])
 
-    subparsers = parser.add_subparsers(dest='verb')
+    parser.add_argument('--verbose', '-v', help='print commands before executing them',
+                        action='store_true')
 
-    build_parser = subparsers.add_parser('build', parents=[common])
-    run_parser = subparsers.add_parser('run', parents=[common])
-    doc_parser = subparsers.add_parser('doc', parents=[common])
+    parser.add_argument('--headless', help='run QEMU without a GUI',
+                        action='store_true')
+
+    parser.add_argument('--release', help='build in release mode',
+                        action='store_true')
 
     opts = parser.parse_args()
 
     # Check if we need to enable verbose mode
-    global VERBOSE
-    VERBOSE = VERBOSE or opts.verbose
-    headless = opts.headless
+    SETTINGS['verbose'] = opts.verbose
+    SETTINGS['headless'] = opts.headless
+    SETTINGS['config'] = 'release' if opts.release else 'debug'
 
-    if opts.verb == 'build':
+    verb = opts.verb
+
+    if verb == 'build':
         build()
-    elif opts.verb == 'run':
-        run_qemu(headless)
-    elif opts.verb == 'doc':
+    elif verb == 'clippy':
+        clippy()
+    elif verb == 'doc':
         doc()
-    elif opts.verb is None or opts.verb == '':
+    elif verb == 'run' or verb is None or opts.verb == '':
         # Run the program, by default.
-        run_qemu(headless)
+        run_qemu()
     else:
         raise ValueError(f'Unknown verb {opts.verb}')
 

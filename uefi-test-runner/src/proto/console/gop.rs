@@ -1,5 +1,4 @@
 use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
-use uefi::proto::console::serial::Serial;
 use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
 
@@ -12,28 +11,7 @@ pub fn test(bt: &BootServices) {
         fill_color(gop);
         draw_fb(gop);
 
-        // TODO: Guard this with a QEMU-specific feature flag
-        // TODO: Extract this into a dedicated method
-
-        // Acquire access to the serial port
-        let mut serial = bt.find_protocol::<Serial>().expect("Could not find serial port");
-        let serial = unsafe { serial.as_mut() };
-
-        // Use a large-ish timeout to avoid problems
-        let mut io_mode = serial.io_mode().clone();
-        io_mode.timeout = 100_000;
-        serial.set_attributes(&io_mode).expect("Failed to configure serial port");
-
-        // Send a screenshot request to QEMU
-        let screenshot_request = b"SCREENSHOT: gop_test\n";
-        let write_size = serial.write(screenshot_request).expect("Failed to write screenshot command");
-        assert_eq!(write_size, screenshot_request.len(), "Screenshot request timed out");
-
-        // Wait for QEMU's acknowledgement before moving forward
-        let mut reply = [0; 3];
-        let read_size = serial.read(&mut reply[..]).expect("Failed to read host reply");
-        assert_eq!(read_size, 3, "Screenshot request timed out");
-        assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
+        crate::check_screenshot(bt, "gop_test");
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");

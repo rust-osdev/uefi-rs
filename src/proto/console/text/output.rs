@@ -157,13 +157,10 @@ impl fmt::Write for Output {
 
         // This one converts Rust line feeds to UEFI line feeds beforehand
         let add_ch = |ch| {
-            add_char(ch)?;
-
             if ch == '\n' as u16 {
-                add_char('\r' as u16)
-            } else {
-                Ok(())
+                add_char('\r' as u16)?;
             }
+            add_char(ch)
         };
 
         // Translate and write the input string, flushing the buffer when needed

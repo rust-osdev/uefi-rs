@@ -1,8 +1,10 @@
+use core::fmt::Write;
 use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
-use uefi::table::boot::BootServices;
+use uefi::table::SystemTable;
 use uefi_exts::BootServicesExt;
 
-pub fn test(bt: &BootServices) {
+pub fn test(st: &SystemTable) {
+    let bt = st.boot;
     info!("Running graphics output protocol test");
     if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
         let gop = unsafe { gop_proto.as_mut() };
@@ -11,7 +13,9 @@ pub fn test(bt: &BootServices) {
         fill_color(gop);
         draw_fb(gop);
 
-        // TODO: For now, allow the user to inspect the visual output.
+        // TODO: Add screenshot check and host acknowledgment, remove stall
+        // TODO: Use the serial port instead of polluting stdout with commands
+        writeln!(st.stdout(), "SCREENSHOT: gop_test");
         bt.stall(1_000_000);
     } else {
         // No tests can be run.

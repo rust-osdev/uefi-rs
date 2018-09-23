@@ -3,6 +3,7 @@
 'Script used to build, run, and test the code on all supported platforms.'
 
 import argparse
+import json
 import os
 from pathlib import Path
 import re
@@ -13,6 +14,9 @@ import sys
 ## Configurable settings
 # Path to workspace directory (which contains the top-level `Cargo.toml`)
 WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+
+# Named pipe associated with the QEMU monitor
+QEMU_MONITOR_PIPE = "qemu-monitor"
 
 # Try changing these with command line flags, where possible
 SETTINGS = {
@@ -134,6 +138,16 @@ def run_qemu():
         # Connect the serial port to the host. OVMF is kind enough to connect
         # the UEFI stdout and stdin to that port too.
         '-serial', 'stdio',
+
+        # Map the QEMU exit signal to port f4
+        '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
+
+        # Map the QEMU monitor to a certain named pipe
+        '-qmp', f'pipe:{QEMU_MONITOR_PIPE}',
+
+        # OVMF debug builds can output information to a serial `debugcon`.
+        # Only enable when debugging UEFI boot:
+        #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]
 
     # When running in headless mode we don't have video, but we can still have
@@ -142,16 +156,6 @@ def run_qemu():
     if SETTINGS['headless']:
         # Do not attach a window to QEMU's display
         qemu_flags.extend(['-display', 'none'])
-
-    # Add other devices
-    qemu_flags.extend([
-        # Map the QEMU exit signal to port f4
-        '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
-
-        # OVMF debug builds can output information to a serial `debugcon`.
-        # Only enable when debugging UEFI boot:
-        #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
-    ])
 
     cmd = [SETTINGS['qemu_binary']] + qemu_flags
 
@@ -162,25 +166,57 @@ def run_qemu():
     # analyzing the output of the test runner.
     ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
 
+    # Setup a communication channel with QEMU's monitor: named pipes
+    monitor_input_path = QEMU_MONITOR_PIPE+'.in'
+    if not os.path.exists(monitor_input_path):
+        os.mkfifo(monitor_input_path)
+    monitor_output_path = QEMU_MONITOR_PIPE+'.out'
+    if not os.path.exists(monitor_output_path):
+        os.mkfifo(monitor_output_path)
+
     # Start QEMU
-    qemu = sp.Popen(cmd, stdout=sp.PIPE, universal_newlines=True)
+    qemu = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, universal_newlines=True)
+    try:
+        # Connect to the QEMU monitor
+        with open(monitor_input_path, mode='w') as monitor_input,                  \
+             open(monitor_output_path, mode='r') as monitor_output:
+            # Execute the QEMU monitor handshake, doing basic sanity checks
+            assert monitor_output.readline().startswith('{"QMP":')
+            print('{"execute": "qmp_capabilities"}', file=monitor_input, flush=True)
+            assert monitor_output.readline() == '{"return": {}}\n'
 
-    # Iterate over stdout...
-    for line in qemu.stdout:
-        # Strip ending and trailing whitespace + ANSI escape codes for analysis
-        stripped = ansi_escape.sub('', line.strip())
+            # Iterate over stdout...
+            for line in qemu.stdout:
+                # Strip ending and trailing whitespace + ANSI escape codes for analysis
+                stripped = ansi_escape.sub('', line.strip())
 
-        # Skip empty lines
-        if not stripped:
-            continue
+                # Skip empty lines
+                if not stripped:
+                    continue
 
-        # Print out the processed QEMU output to allow logging & inspection
-        print(stripped)
+                # Print out the processed QEMU output to allow logging & inspection
+                print(stripped)
 
-    # Wait for QEMU to finish, then abort if that fails
-    status = qemu.wait()
-    if status != 0:
-        raise sp.CalledProcessError(cmd=cmd, returncode=status)
+                # When the app requests a screenshot, take it
+                if stripped.startswith("SCREENSHOT: "):
+                    # Ask QEMU to take a screenshot
+                    filename_base = stripped[12:]
+                    monitor_command = '{"execute": "screendump", "arguments": {"filename": "' + filename_base + '.ppm"}}'
+                    print(monitor_command, file=monitor_input, flush=True)
+
+                    # Wait for QEMU's acknowledgement, ignoring events
+                    reply = json.loads(monitor_output.readline())
+                    while "event" in reply:
+                        reply = json.loads(monitor_output.readline())
+                    assert reply == {"return": {}}
+
+                    # Tell the VM that the screenshot was taken
+                    print('OK', file=qemu.stdin, flush=True)
+    finally:
+        # Wait for QEMU to finish, abort if it fails
+        status = qemu.wait()
+        if status != 0:
+            raise sp.CalledProcessError(cmd=cmd, returncode=status)
 
 def main():
     'Runs the user-requested actions.'

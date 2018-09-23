@@ -62,9 +62,9 @@ fn check_screenshot(bt: &BootServices, name: &str) {
         .expect("Could not find serial port");
     let serial = unsafe { serial.as_mut() };
 
-    // Set a large-ish timeout to avoid problems
+    // Set a large timeout to avoid problems
     let mut io_mode = serial.io_mode().clone();
-    io_mode.timeout = 100_000;
+    io_mode.timeout = 1_000_000;
     serial
         .set_attributes(&io_mode)
         .expect("Failed to configure serial port");

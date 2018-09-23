@@ -165,7 +165,7 @@ def run_qemu():
     # analyzing the output of the test runner.
     ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
 
-    # Setup a communication channel with QEMU's monitor: named pipes
+    # Setup named pipes as a communication channel with QEMU's monitor
     monitor_input_path = f'{qemu_monitor_pipe}.in'
     os.mkfifo(monitor_input_path)
     monitor_output_path = f'{qemu_monitor_pipe}.out'
@@ -199,8 +199,8 @@ def run_qemu():
                 if stripped.startswith("SCREENSHOT: "):
                     # Ask QEMU to take a screenshot
                     # TODO: Always save screenshots to the same file
-                    filename_base = stripped[12:]
-                    monitor_command = '{"execute": "screendump", "arguments": {"filename": "' + filename_base + '.ppm"}}'
+                    screenshot_name = stripped[12:]
+                    monitor_command = '{"execute": "screendump", "arguments": {"filename": "' + screenshot_name + '.ppm"}}'
                     print(monitor_command, file=monitor_input, flush=True)
 
                     # Wait for QEMU's acknowledgement, ignoring events
@@ -212,7 +212,7 @@ def run_qemu():
                     # Tell the VM that the screenshot was taken
                     print('OK', file=qemu.stdin, flush=True)
 
-                    # TODO: Compare screenshot against reference
+                    # TODO: Compare against reference (can use filecmp.cmp(f1, f2))
                     # TODO: Delete screenshot once that's done
     finally:
         # Wait for QEMU to finish

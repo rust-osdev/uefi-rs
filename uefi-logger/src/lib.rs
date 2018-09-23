@@ -24,19 +24,16 @@ extern crate log;
 use core::cell::UnsafeCell;
 use core::fmt::{self, Write};
 
-mod writer;
-use self::writer::OutputWriter;
-
 /// Logging implementation which writes to a UEFI output stream.
 pub struct Logger {
-    writer: UnsafeCell<OutputWriter>,
+    writer: UnsafeCell<&'static mut Output>,
 }
 
 impl Logger {
     /// Creates a new logger.
     pub fn new(output: &'static mut Output) -> Self {
         Logger {
-            writer: UnsafeCell::new(OutputWriter::new(output)),
+            writer: UnsafeCell::new(output),
         }
     }
 }

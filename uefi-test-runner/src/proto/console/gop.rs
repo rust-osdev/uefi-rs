@@ -11,8 +11,7 @@ pub fn test(bt: &BootServices) {
         fill_color(gop);
         draw_fb(gop);
 
-        // TODO: For now, allow the user to inspect the visual output.
-        bt.stall(1_000_000);
+        crate::check_screenshot(bt, "gop_test");
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");

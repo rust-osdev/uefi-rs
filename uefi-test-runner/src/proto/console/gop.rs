@@ -19,7 +19,7 @@ pub fn test(bt: &BootServices) {
         let mut serial = bt.find_protocol::<Serial>().expect("Could not find serial port");
         let serial = unsafe { serial.as_mut() };
 
-        // Use a 100ms timeout to avoid problems
+        // Use a large-ish timeout to avoid problems
         let mut io_mode = serial.io_mode().clone();
         io_mode.timeout = 100_000;
         serial.set_attributes(&io_mode).expect("Failed to configure serial port");
@@ -27,13 +27,13 @@ pub fn test(bt: &BootServices) {
         // Send a screenshot request to QEMU
         let screenshot_request = b"SCREENSHOT: gop_test\n";
         let write_size = serial.write(screenshot_request).expect("Failed to write screenshot command");
-        assert_eq!(write_size, screenshot_request.len());
+        assert_eq!(write_size, screenshot_request.len(), "Screenshot request timed out");
 
         // Wait for QEMU's acknowledgement before moving forward
         let mut reply = [0; 3];
         let read_size = serial.read(&mut reply[..]).expect("Failed to read host reply");
-        assert_eq!(read_size, 3);
-        assert_eq!(&reply[..], b"OK\n");
+        assert_eq!(read_size, 3, "Screenshot request timed out");
+        assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");

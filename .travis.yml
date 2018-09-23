@@ -14,6 +14,8 @@ install:
   - cargo -V
   # Required by cargo-xbuild
   - rustup component add rust-src
+  # Required by cargo-xclippy
+  - rustup component add clippy-preview
   # Try installing cargo-xbuild if it's not already installed
   - hash cargo-xbuild || cargo install cargo-xbuild
   # Download OVMF

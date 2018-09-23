@@ -23,9 +23,8 @@
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
 
-#![feature(align_offset)]
-#![feature(const_fn)]
 #![feature(optin_builtin_traits)]
+#![feature(min_const_fn)]
 #![feature(tool_lints)]
 #![feature(try_trait)]
 #![no_std]

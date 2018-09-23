@@ -3,6 +3,7 @@
 'Script used to build, run, and test the code on all supported platforms.'
 
 import argparse
+import filecmp
 import json
 import os
 from pathlib import Path
@@ -197,10 +198,10 @@ def run_qemu():
 
                 # If the app requests a screenshot, take it
                 if stripped.startswith("SCREENSHOT: "):
+                    reference_name = stripped[12:]
+
                     # Ask QEMU to take a screenshot
-                    # TODO: Always save screenshots to the same file
-                    screenshot_name = stripped[12:]
-                    monitor_command = '{"execute": "screendump", "arguments": {"filename": "' + screenshot_name + '.ppm"}}'
+                    monitor_command = '{"execute": "screendump", "arguments": {"filename": "screenshot.ppm"}}'
                     print(monitor_command, file=monitor_input, flush=True)
 
                     # Wait for QEMU's acknowledgement, ignoring events
@@ -212,8 +213,13 @@ def run_qemu():
                     # Tell the VM that the screenshot was taken
                     print('OK', file=qemu.stdin, flush=True)
 
-                    # TODO: Compare against reference (can use filecmp.cmp(f1, f2))
-                    # TODO: Delete screenshot once that's done
+                    # Compare screenshot to the reference file specified by the user
+                    # TODO: Add an operating mode where the reference is created if it doesn't exist
+                    reference_file = WORKSPACE_DIR / 'uefi-test-runner' / 'screenshots' / (reference_name + '.ppm')
+                    assert filecmp.cmp('screenshot.ppm', reference_file)
+
+                    # Delete the screenshot once done
+                    os.remove('screenshot.ppm')
     finally:
         # Wait for QEMU to finish
         status = qemu.wait()

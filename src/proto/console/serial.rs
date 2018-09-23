@@ -1,5 +1,6 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
+use bitflags::bitflags;
 use crate::{Result, Status};
 
 /// Provides access to a serial I/O device.

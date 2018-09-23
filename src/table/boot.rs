@@ -1,6 +1,7 @@
 //! UEFI services available during boot.
 
 use super::Header;
+use bitflags::bitflags;
 use core::{mem, ptr};
 use crate::proto::Protocol;
 use crate::{Guid, Handle, Result, Status};

@@ -9,6 +9,7 @@
 
 #![allow(clippy::unreadable_literal)]
 
+use bitflags::bitflags;
 use crate::Guid;
 
 /// Contains a set of GUID / pointer for a vendor-specific table.

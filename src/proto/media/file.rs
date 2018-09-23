@@ -1,3 +1,4 @@
+use bitflags::bitflags;
 use crate::{Result, Status};
 use ucs2;
 

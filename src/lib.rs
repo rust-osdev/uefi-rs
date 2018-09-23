@@ -32,9 +32,6 @@
 #![warn(missing_docs, unused)]
 #![warn(clippy::all)]
 
-#[macro_use]
-extern crate bitflags;
-
 mod error;
 pub use self::error::{Result, Status};
 

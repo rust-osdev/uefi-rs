@@ -60,14 +60,14 @@ def build(*test_flags):
 
 def doc():
     'Generates documentation for the library crates.'
-    sp.run(
+    sp.run([
         'cargo', 'doc', '--no-deps',
         '--package', 'uefi',
-        '--package', 'uefi-utils',
+        '--package', 'uefi-exts',
         '--package', 'uefi-alloc',
         '--package', 'uefi-logger',
         '--package', 'uefi-services',
-    )
+    ])
 
 def run_qemu(headless):
     'Runs the code in QEMU.'

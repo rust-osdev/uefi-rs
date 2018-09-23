@@ -7,7 +7,7 @@ pub fn test(st: &SystemTable) {
 
     let bt = st.boot;
     serial::test(bt);
-    gop::test(st);
+    gop::test(bt);
     pointer::test(bt);
 }
 

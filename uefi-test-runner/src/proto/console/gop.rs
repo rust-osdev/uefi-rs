@@ -1,10 +1,9 @@
-use core::fmt::Write;
 use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
-use uefi::table::SystemTable;
+use uefi::proto::console::serial::Serial;
+use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
 
-pub fn test(st: &SystemTable) {
-    let bt = st.boot;
+pub fn test(bt: &BootServices) {
     info!("Running graphics output protocol test");
     if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
         let gop = unsafe { gop_proto.as_mut() };
@@ -13,10 +12,28 @@ pub fn test(st: &SystemTable) {
         fill_color(gop);
         draw_fb(gop);
 
-        // TODO: Add screenshot check and host acknowledgment, remove stall
-        // TODO: Use the serial port instead of polluting stdout with commands
-        writeln!(st.stdout(), "SCREENSHOT: gop_test");
-        bt.stall(1_000_000);
+        // TODO: Guard this with a QEMU-specific feature flag
+        // TODO: Extract this into a dedicated method
+
+        // Acquire access to the serial port
+        let mut serial = bt.find_protocol::<Serial>().expect("Could not find serial port");
+        let serial = unsafe { serial.as_mut() };
+
+        // Use a 100ms timeout to avoid problems
+        let mut io_mode = serial.io_mode().clone();
+        io_mode.timeout = 100_000;
+        serial.set_attributes(&io_mode).expect("Failed to configure serial port");
+
+        // Send a screenshot request to QEMU
+        let screenshot_request = b"SCREENSHOT: gop_test\n";
+        let write_size = serial.write(screenshot_request).expect("Failed to write screenshot command");
+        assert_eq!(write_size, screenshot_request.len());
+
+        // Wait for QEMU's acknowledgement before moving forward
+        let mut reply = [0; 3];
+        let read_size = serial.read(&mut reply[..]).expect("Failed to read host reply");
+        assert_eq!(read_size, 3);
+        assert_eq!(&reply[..], b"OK\n");
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");

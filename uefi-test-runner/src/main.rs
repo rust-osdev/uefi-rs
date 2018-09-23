@@ -67,14 +67,16 @@ fn check_screenshot(bt: &BootServices, name: &str) {
         let serial = unsafe { serial.as_mut() };
 
         // Set a large timeout to avoid problems
-        let mut io_mode = serial.io_mode().clone();
+        let mut io_mode = *serial.io_mode();
         io_mode.timeout = 1_000_000;
         serial
             .set_attributes(&io_mode)
             .expect("Failed to configure serial port timeout");
 
         // Send a screenshot request to the host
-        let mut len = serial.write(b"SCREENSHOT: ").expect("Failed to send request");
+        let mut len = serial
+            .write(b"SCREENSHOT: ")
+            .expect("Failed to send request");
         assert_eq!(len, 12, "Screenshot request timed out");
         let name_bytes = name.as_bytes();
         len = serial.write(name_bytes).expect("Failed to send request");

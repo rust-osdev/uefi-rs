@@ -9,6 +9,7 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
+use core::fmt::Write;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi_exts::BootServicesExt;
@@ -67,22 +68,12 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     io_mode.timeout = 1_000_000;
     serial
         .set_attributes(&io_mode)
-        .expect("Failed to configure serial port");
+        .expect("Failed to configure serial port timeout");
 
-    // Send a screenshot request to QEMU
-    // TODO: Do not hardcode the screenshot name
-    // TODO: Implement write!() for serial ports
-    let screenshot_request = b"SCREENSHOT: gop_test\n";
-    let write_size = serial
-        .write(screenshot_request)
-        .expect("Failed to write screenshot command");
-    assert_eq!(
-        write_size,
-        screenshot_request.len(),
-        "Screenshot request timed out"
-    );
+    // Send a screenshot request to the host
+    writeln!(serial, "SCREENSHOT: {}", name).expect("Failed to send screenshot request");
 
-    // Wait for QEMU's acknowledgement before moving forward
+    // Wait for the host's acknowledgement before moving forward
     let mut reply = [0; 3];
     let read_size = serial
         .read(&mut reply[..])

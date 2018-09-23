@@ -54,32 +54,40 @@ fn check_revision(rev: uefi::table::Revision) {
 }
 
 /// Ask the test runner to check the current screen output against a reference
-/// TODO: This is obviously highly QEMU-specific
-/// TODO: Turn it into something which waits a bit for user inspection elsewhere
+///
+/// This functionality is very specific to our QEMU-based test runner. Outside
+/// of it, we just pause the tests for a couple of seconds to allow visual
+/// inspection of the output.
+///
 fn check_screenshot(bt: &BootServices, name: &str) {
-    // Access the serial port (in a QEMU environment, it should always be there)
-    let mut serial = bt
-        .find_protocol::<Serial>()
-        .expect("Could not find serial port");
-    let serial = unsafe { serial.as_mut() };
+    if cfg!(feature = "qemu") {
+        // Access the serial port (in a QEMU environment, it should always be there)
+        let mut serial = bt
+            .find_protocol::<Serial>()
+            .expect("Could not find serial port");
+        let serial = unsafe { serial.as_mut() };
 
-    // Set a large timeout to avoid problems
-    let mut io_mode = serial.io_mode().clone();
-    io_mode.timeout = 1_000_000;
-    serial
-        .set_attributes(&io_mode)
-        .expect("Failed to configure serial port timeout");
+        // Set a large timeout to avoid problems
+        let mut io_mode = serial.io_mode().clone();
+        io_mode.timeout = 1_000_000;
+        serial
+            .set_attributes(&io_mode)
+            .expect("Failed to configure serial port timeout");
 
-    // Send a screenshot request to the host
-    writeln!(serial, "SCREENSHOT: {}", name).expect("Failed to send screenshot request");
+        // Send a screenshot request to the host
+        writeln!(serial, "SCREENSHOT: {}", name).expect("Failed to send request");
 
-    // Wait for the host's acknowledgement before moving forward
-    let mut reply = [0; 3];
-    let read_size = serial
-        .read(&mut reply[..])
-        .expect("Failed to read host reply");
-    assert_eq!(read_size, 3, "Screenshot request timed out");
-    assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
+        // Wait for the host's acknowledgement before moving forward
+        let mut reply = [0; 3];
+        let read_size = serial
+            .read(&mut reply[..])
+            .expect("Failed to read host reply");
+        assert_eq!(read_size, 3, "Screenshot request timed out");
+        assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
+    } else {
+        // Outside of QEMU, give the user some time to inspect the output
+        bt.stall(3_000_000);
+    }
 }
 
 fn shutdown(st: &SystemTable) -> ! {
@@ -88,9 +96,13 @@ fn shutdown(st: &SystemTable) -> ! {
     // Get our text output back.
     st.stdout().reset(false).unwrap();
 
-    // Inform the user.
-    info!("Testing complete, shutting down in 3 seconds...");
-    st.boot.stall(3_000_000);
+    // Inform the user, and give him time to read on real hardware
+    if cfg!(not(feature = "qemu")) {
+        info!("Testing complete, shutting down in 3 seconds...");
+        st.boot.stall(3_000_000);
+    } else {
+        info!("Testing complete, shutting down...");
+    }
 
     let rt = st.runtime;
     rt.reset(ResetType::Shutdown, Status::Success, None);

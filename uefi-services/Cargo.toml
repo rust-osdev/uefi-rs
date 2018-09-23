@@ -15,6 +15,5 @@ uefi-logger = { path = "../uefi-logger" }
 log = { version = "0.4", default-features = false }
 
 [features]
-# Signals the implementation that QEMU's exit port hack is enabled and assigned
-# to the f4 CPU port.
-qemu-f4-exit = []
+# Enable QEMU-specific functionality
+qemu = []

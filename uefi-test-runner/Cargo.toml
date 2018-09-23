@@ -13,4 +13,4 @@ uefi-exts = { path = "../uefi-exts" }
 log = { version = "0.4", default-features = false }
 
 [features]
-qemu-f4-exit = ["uefi-services/qemu-f4-exit"]
+qemu = ["uefi-services/qemu"]

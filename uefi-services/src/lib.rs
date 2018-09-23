@@ -121,9 +121,8 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         }
     }
 
-    // If running inside of QEMU and the f4 port hack is enabled, use it to
-    // signal the error to the parent shell and exit
-    if cfg!(feature = "qemu-f4-exit") {
+    // If running in QEMU, use the f4 exit port to signal the error and exit
+    if cfg!(feature = "qemu") {
         use x86_64::instructions::port::Port;
         let mut port = Port::<u32>::new(0xf4);
         unsafe {

@@ -102,7 +102,7 @@ def run_qemu():
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
-    build('--features', 'qemu-f4-exit')
+    build('--features', 'qemu')
 
     ovmf_dir = SETTINGS['ovmf_dir']
     ovmf_code, ovmf_vars = ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'

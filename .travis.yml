@@ -41,3 +41,6 @@ addons:
   apt:
     packages:
       - bsdtar
+
+notifications:
+  email: false

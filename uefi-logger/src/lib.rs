@@ -13,8 +13,9 @@
 //! supported by the UEFI console. Don't expect emoji output support.
 
 #![warn(missing_docs)]
-#![cfg_attr(feature = "cargo-clippy", warn(clippy))]
+#![deny(clippy::all)]
 #![no_std]
+#![feature(tool_lints)]
 
 extern crate uefi;
 use uefi::proto::console::text::Output;

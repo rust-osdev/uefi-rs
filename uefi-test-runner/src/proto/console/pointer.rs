@@ -4,6 +4,7 @@ use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
+    info!("Running pointer protocol test");
     if let Some(mut pointer) = bt.find_protocol::<Pointer>() {
         let pointer = unsafe { pointer.as_mut() };
 

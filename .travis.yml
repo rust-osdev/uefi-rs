@@ -14,6 +14,8 @@ install:
   - cargo -V
   # Required by cargo-xbuild
   - rustup component add rust-src
+  # Required by cargo-xclippy
+  - rustup component add clippy-preview
   # Try installing cargo-xbuild if it's not already installed
   - hash cargo-xbuild || cargo install cargo-xbuild
   # Download OVMF
@@ -25,7 +27,9 @@ before_script:
   - qemu-system-x86_64 --version
 
 script:
-  - cd uefi-test-runner && ./build.py run --headless
+  - cd uefi-test-runner
+  - ./build.py run --headless
+  - ./build.py clippy
 
 cache:
   directories:

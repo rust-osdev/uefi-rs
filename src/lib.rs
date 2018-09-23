@@ -30,7 +30,7 @@
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]
-#![warn(clippy::all)]
+#![deny(clippy::all)]
 
 mod error;
 pub use self::error::{Result, Status};

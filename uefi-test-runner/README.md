@@ -28,3 +28,9 @@ Available commands:
 - `run`: (re)build and run
 - `doc`: generate documentation
 - `clippy`: run Clippy
+
+Available options:
+
+- `--verbose`: enables verbose mode, prints commands before running them
+- `--headless`: enables headless mode, which runs QEMU without a GUI
+- `--release`: builds the code with optimizations enabled

@@ -1,6 +1,8 @@
 use uefi::table::SystemTable;
 
 pub fn test(st: &SystemTable) {
+    info!("Testing console protocols");
+
     stdout::test(st.stdout());
 
     let bt = st.boot;

@@ -194,7 +194,7 @@ def run_qemu():
                 # Print out the processed QEMU output to allow logging & inspection
                 print(stripped)
 
-                # When the app requests a screenshot, take it
+                # If the app requests a screenshot, take it
                 if stripped.startswith("SCREENSHOT: "):
                     # Ask QEMU to take a screenshot
                     # TODO: Always save screenshots to the same file

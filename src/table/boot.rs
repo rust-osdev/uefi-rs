@@ -12,18 +12,19 @@ pub struct BootServices {
     header: Header,
 
     // Task Priority services
-    raise_tpl: extern "C" fn(Tpl) -> Tpl,
-    restore_tpl: extern "C" fn(Tpl),
+    raise_tpl: extern "win64" fn(Tpl) -> Tpl,
+    restore_tpl: extern "win64" fn(Tpl),
 
     // Memory allocation functions
     allocate_pages:
-        extern "C" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64) -> Status,
-    free_pages: extern "C" fn(u64, usize) -> Status,
-    memory_map:
-        extern "C" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32)
+        extern "win64" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64)
             -> Status,
-    allocate_pool: extern "C" fn(MemoryType, usize, addr: &mut usize) -> Status,
-    free_pool: extern "C" fn(buffer: usize) -> Status,
+    free_pages: extern "win64" fn(u64, usize) -> Status,
+    memory_map:
+        extern "win64" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32)
+            -> Status,
+    allocate_pool: extern "win64" fn(MemoryType, usize, addr: &mut usize) -> Status,
+    free_pool: extern "win64" fn(buffer: usize) -> Status,
 
     // Event & timer functions
     create_event: usize,
@@ -38,10 +39,10 @@ pub struct BootServices {
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
     handle_protocol:
-        extern "C" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
+        extern "win64" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
-    locate_handle: extern "C" fn(
+    locate_handle: extern "win64" fn(
         search_ty: i32,
         proto: *const Guid,
         key: *mut (),
@@ -56,12 +57,12 @@ pub struct BootServices {
     start_image: usize,
     exit: usize,
     unload_image: usize,
-    exit_boot_services: extern "C" fn(Handle, MemoryMapKey) -> Status,
+    exit_boot_services: extern "win64" fn(Handle, MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
-    stall: extern "C" fn(usize) -> Status,
-    set_watchdog_timer: extern "C" fn(
+    stall: extern "win64" fn(usize) -> Status,
+    set_watchdog_timer: extern "win64" fn(
         timeout: usize,
         watchdog_code: u64,
         data_size: usize,
@@ -88,8 +89,8 @@ pub struct BootServices {
     calculate_crc32: usize,
 
     // Misc services
-    copy_mem: extern "C" fn(dest: *mut u8, src: *const u8, len: usize),
-    set_mem: extern "C" fn(buffer: *mut u8, len: usize, value: u8),
+    copy_mem: extern "win64" fn(dest: *mut u8, src: *const u8, len: usize),
+    set_mem: extern "win64" fn(buffer: *mut u8, len: usize, value: u8),
 
     // New event functions (UEFI 2.0 or newer)
     create_event_ex: usize,

@@ -4,8 +4,8 @@ use crate::{Result, Status};
 /// Interface for text-based input devices.
 #[repr(C)]
 pub struct Input {
-    reset: extern "C" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "C" fn(this: &mut Input, key: &mut Key) -> Status,
+    reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
+    read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut Key) -> Status,
 }
 
 impl Input {

@@ -17,7 +17,7 @@ mod boot;
 mod proto;
 
 #[no_mangle]
-pub extern "C" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
+pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
     // Initialize logging.
     uefi_services::init(st);
 

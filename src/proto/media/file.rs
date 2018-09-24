@@ -152,22 +152,24 @@ impl<'a> File<'a> {
 #[repr(C)]
 struct FileImpl {
     revision: u64,
-    open: extern "C" fn(
+    open: extern "win64" fn(
         this: &mut FileImpl,
         new_handle: &mut usize,
         filename: *const u16,
         open_mode: FileMode,
         attributes: FileAttribute,
     ) -> Status,
-    close: extern "C" fn(this: &mut FileImpl) -> Status,
-    delete: extern "C" fn(this: &mut FileImpl) -> Status,
-    read: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,
-    write: extern "C" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *const u8) -> Status,
-    get_position: extern "C" fn(this: &mut FileImpl, position: &mut u64) -> Status,
-    set_position: extern "C" fn(this: &mut FileImpl, position: u64) -> Status,
+    close: extern "win64" fn(this: &mut FileImpl) -> Status,
+    delete: extern "win64" fn(this: &mut FileImpl) -> Status,
+    read:
+        extern "win64" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,
+    write: extern "win64" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *const u8)
+        -> Status,
+    get_position: extern "win64" fn(this: &mut FileImpl, position: &mut u64) -> Status,
+    set_position: extern "win64" fn(this: &mut FileImpl, position: u64) -> Status,
     get_info: usize,
     set_info: usize,
-    flush: extern "C" fn(this: &mut FileImpl) -> Status,
+    flush: extern "win64" fn(this: &mut FileImpl) -> Status,
 }
 
 bitflags! {

@@ -5,7 +5,7 @@
 ///
 /// ```rust
 /// struct CustomProtocol {
-///     function_pointer: extern "C" fn() -> (),
+///     function_pointer: extern "win64" fn() -> (),
 ///     data: usize
 /// }
 ///

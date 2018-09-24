@@ -13,7 +13,7 @@ pub struct RuntimeServices {
     header: Header,
     // Skip some useless functions.
     _pad: [usize; 10],
-    reset: extern "C" fn(u32, Status, usize, *const u8) -> !,
+    reset: extern "win64" fn(u32, Status, usize, *const u8) -> !,
 }
 
 impl RuntimeServices {

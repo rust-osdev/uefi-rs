@@ -12,6 +12,9 @@ interfaces, and allow developers to write idiomatic Rust code.
 
 [uefi]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
+**Note**: due to some issues with the Rust compiler, this crate currently works
+and has been tested _only_ with **64-bit** UEFI.
+
 <p align="center">
   <img width="848px" height="701px" alt="uefi-rs running in QEMU" src="https://imgur.com/SFPSVuO.png"/>
 </p>

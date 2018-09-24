@@ -33,12 +33,12 @@ use crate::{Result, Status};
 #[repr(C)]
 pub struct GraphicsOutput {
     query_mode:
-        extern "C" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo)
+        extern "win64" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo)
             -> Status,
-    set_mode: extern "C" fn(&mut GraphicsOutput, mode: u32) -> Status,
+    set_mode: extern "win64" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
     #[allow(clippy::type_complexity)]
-    blt: extern "C" fn(
+    blt: extern "win64" fn(
         this: &mut GraphicsOutput,
         buffer: usize,
         op: u32,

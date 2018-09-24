@@ -9,7 +9,7 @@ use super::file::File;
 #[repr(C)]
 pub struct SimpleFileSystem {
     revision: u64,
-    open_volume: extern "C" fn(this: &mut SimpleFileSystem, root: &mut usize) -> Status,
+    open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut usize) -> Status,
 }
 
 impl SimpleFileSystem {

@@ -6,8 +6,8 @@ use crate::{Result, Status};
 /// Provides information about a pointer device.
 #[repr(C)]
 pub struct Pointer {
-    reset: extern "C" fn(this: &mut Pointer, ext_verif: bool) -> Status,
-    get_state: extern "C" fn(this: &Pointer, state: &mut PointerState) -> Status,
+    reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
+    get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,
     _wait_for_input: usize,
     mode: &'static PointerMode,
 }

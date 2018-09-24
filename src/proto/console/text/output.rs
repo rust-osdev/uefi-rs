@@ -7,16 +7,16 @@ use crate::{Result, Status};
 /// standard Rust constructs like the write!() and writeln!() macros.
 #[repr(C)]
 pub struct Output {
-    reset: extern "C" fn(this: &Output, extended: bool) -> Status,
-    output_string: extern "C" fn(this: &Output, string: *const u16) -> Status,
-    test_string: extern "C" fn(this: &Output, string: *const u16) -> Status,
-    query_mode:
-        extern "C" fn(this: &Output, mode: i32, columns: &mut usize, rows: &mut usize) -> Status,
-    set_mode: extern "C" fn(this: &mut Output, mode: i32) -> Status,
-    set_attribute: extern "C" fn(this: &mut Output, attribute: usize) -> Status,
-    clear_screen: extern "C" fn(this: &mut Output) -> Status,
-    set_cursor_position: extern "C" fn(this: &mut Output, column: usize, row: usize) -> Status,
-    enable_cursor: extern "C" fn(this: &mut Output, visible: bool) -> Status,
+    reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
+    output_string: extern "win64" fn(this: &Output, string: *const u16) -> Status,
+    test_string: extern "win64" fn(this: &Output, string: *const u16) -> Status,
+    query_mode: extern "win64" fn(this: &Output, mode: i32, columns: &mut usize, rows: &mut usize)
+        -> Status,
+    set_mode: extern "win64" fn(this: &mut Output, mode: i32) -> Status,
+    set_attribute: extern "win64" fn(this: &mut Output, attribute: usize) -> Status,
+    clear_screen: extern "win64" fn(this: &mut Output) -> Status,
+    set_cursor_position: extern "win64" fn(this: &mut Output, column: usize, row: usize) -> Status,
+    enable_cursor: extern "win64" fn(this: &mut Output, visible: bool) -> Status,
     data: &'static OutputData,
 }
 

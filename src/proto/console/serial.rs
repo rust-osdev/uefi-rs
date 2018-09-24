@@ -15,8 +15,8 @@ pub struct Serial {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
     revision: u32,
-    reset: extern "C" fn(&mut Serial) -> Status,
-    set_attributes: extern "C" fn(
+    reset: extern "win64" fn(&mut Serial) -> Status,
+    set_attributes: extern "win64" fn(
         &Serial,
         baud_rate: u64,
         receive_fifo_depth: u32,
@@ -25,10 +25,10 @@ pub struct Serial {
         data_bits: u8,
         stop_bits_type: StopBits,
     ) -> Status,
-    set_control_bits: extern "C" fn(&mut Serial, ControlBits) -> Status,
-    get_control_bits: extern "C" fn(&Serial, &mut ControlBits) -> Status,
-    write: extern "C" fn(&mut Serial, &mut usize, *const u8) -> Status,
-    read: extern "C" fn(&mut Serial, &mut usize, *mut u8) -> Status,
+    set_control_bits: extern "win64" fn(&mut Serial, ControlBits) -> Status,
+    get_control_bits: extern "win64" fn(&Serial, &mut ControlBits) -> Status,
+    write: extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
+    read: extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
     io_mode: &'static IoMode,
 }
 

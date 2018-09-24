@@ -22,7 +22,7 @@ The following steps allow you to build a simple UEFI app.
 pub extern "win64" fn uefi_start(handle: Handle, system_table: &'static table::SystemTable) -> Status;
 ```
 
-- Copy the `tests/x86_64-uefi.json` target file to your project's root.
+- Copy the `uefi-test-runner/x86_64-uefi.json` target file to your project's root.
   You can customize it.
 
 - Build using `cargo xbuild --target x86_64-uefi`.

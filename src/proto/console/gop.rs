@@ -161,6 +161,9 @@ impl GraphicsOutput {
     ///
     /// This function is inherently unsafe since the wrong format
     /// could be used by a UEFI app when reading / writting the buffer.
+    ///
+    /// It is also the callers responsibilty to use volatile memory accesses,
+    /// otherwise they could be optimized to nothing.
     pub unsafe fn frame_buffer(&mut self) -> &mut [u8] {
         let data = self.mode.fb_address as *mut u8;
         let len = self.mode.fb_size;

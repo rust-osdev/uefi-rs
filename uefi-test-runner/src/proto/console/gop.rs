@@ -1,3 +1,4 @@
+use core::ptr;
 use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
 use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
@@ -54,14 +55,20 @@ fn draw_fb(gop: &mut GraphicsOutput) {
 
     type PixelWriter<'a> = &'a Fn(&mut [u8], (u8, u8, u8));
     let write_pixel_rgb = |pixel: &mut [u8], (r, g, b)| {
-        pixel[0] = r;
-        pixel[1] = g;
-        pixel[2] = b;
+        let p = pixel.as_mut_ptr();
+        unsafe {
+            ptr::write_volatile(p.offset(0), r);
+            ptr::write_volatile(p.offset(1), g);
+            ptr::write_volatile(p.offset(2), b);
+        }
     };
     let write_pixel_bgr = |pixel: &mut [u8], (r, g, b)| {
-        pixel[0] = b;
-        pixel[1] = g;
-        pixel[2] = r;
+        let p = pixel.as_mut_ptr();
+        unsafe {
+            ptr::write_volatile(p.offset(0), b);
+            ptr::write_volatile(p.offset(1), g);
+            ptr::write_volatile(p.offset(2), r);
+        }
     };
     let write_pixel: PixelWriter = match mi.pixel_format() {
         PixelFormat::RGB => &write_pixel_rgb,

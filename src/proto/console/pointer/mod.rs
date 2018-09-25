@@ -27,13 +27,18 @@ impl Pointer {
 
     /// Retrieves the pointer device's current state.
     ///
+    /// Will return None if the state has not changed since the last query.
+    ///
     /// # Errors
-    /// - `NotReady` is returned if the state hasn't changed since the last call.
     /// - `DeviceError` if there was an issue with the pointer device.
-    pub fn state(&self) -> Result<PointerState> {
+    pub fn state(&self) -> Result<Option<PointerState>> {
         let mut pointer_state = unsafe { mem::uninitialized() };
 
-        (self.get_state)(self, &mut pointer_state).into_with(|| pointer_state)
+        match (self.get_state)(self, &mut pointer_state) {
+            Status::Success => Ok(Some(pointer_state)),
+            Status::NotReady => Ok(None),
+            error => Err(error)
+        }
     }
 
     /// Returns a reference to the pointer device information.

@@ -321,7 +321,7 @@ pub struct BltPixel {
     pub blue: u8,
     pub green: u8,
     pub red: u8,
-    pub reserved: u8,
+    _reserved: u8,
 }
 
 impl BltPixel {
@@ -331,7 +331,7 @@ impl BltPixel {
             red,
             green,
             blue,
-            reserved: 0,
+            _reserved: 0,
         }
     }
 }
@@ -342,7 +342,7 @@ impl From<u32> for BltPixel {
             blue: (color & 0x00_00_FF) as u8,
             green: (color & 0x00_FF_00 >> 8) as u8,
             red: (color & 0xFF_00_00 >> 16) as u8,
-            reserved: 0,
+            _reserved: 0,
         }
     }
 }

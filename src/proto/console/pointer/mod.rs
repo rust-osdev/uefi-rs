@@ -29,7 +29,7 @@ impl Pointer {
     /// since the last time this function was called.
     ///
     /// Use wait_for_input_event() with the BootServices::wait_for_event()
-    /// interface in order to wait for a key to be pressed.
+    /// interface in order to wait for input from the pointer device.
     ///
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.

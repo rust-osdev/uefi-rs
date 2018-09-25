@@ -2,13 +2,14 @@
 
 use core::mem;
 use crate::{Result, Status};
+use crate::data_types::Event;
 
 /// Provides information about a pointer device.
 #[repr(C)]
 pub struct Pointer {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,
-    _wait_for_input: usize,
+    wait_for_input: Event,
     mode: &'static PointerMode,
 }
 
@@ -39,6 +40,12 @@ impl Pointer {
             Status::NotReady => Ok(None),
             error => Err(error),
         }
+    }
+
+    /// Event to use with BootServices::wait_for_event() to wait for input from
+    /// the pointer device
+    pub fn wait_for_input_event(&self) -> Event {
+        self.wait_for_input
     }
 
     /// Returns a reference to the pointer device information.

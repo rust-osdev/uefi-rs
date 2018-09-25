@@ -25,9 +25,10 @@ impl Pointer {
         (self.reset)(self, extended_verification).into()
     }
 
-    /// Retrieves the pointer device's current state.
+    /// Retrieves the pointer device's current state, if a state change occured.
     ///
-    /// Will return None if the state has not changed since the last query.
+    /// Use wait_for_input_event() with the BootServices::wait_for_event()
+    /// interface in order to wait for a key to be pressed.
     ///
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.

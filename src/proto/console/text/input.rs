@@ -1,44 +1,49 @@
 use core::mem;
-use crate::{Result, Status};
+use crate::{Event, Result, Status};
 
 /// Interface for text-based input devices.
 #[repr(C)]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut Key) -> Status,
+    wait_for_key: Event,
 }
 
 impl Input {
     /// Resets the input device hardware.
-    pub fn reset(&mut self, extended: bool) -> Result<()> {
-        (self.reset)(self, extended).into()
-    }
-
-    /// Reads the next keystroke from the input device.
     ///
-    /// Returns `Err(NotReady)` if no keystroke is available yet.
-    pub fn read_key(&mut self) -> Result<Key> {
-        let mut key = unsafe { mem::uninitialized() };
-        (self.read_key_stroke)(self, &mut key)?;
-        Ok(key)
+    /// The `extended_verification` parameter is used to request that UEFI
+    /// performs an extended check and reset of the input device.
+    ///
+    /// # Errors
+    ///
+    /// - `DeviceError` if the device is malfunctioning and cannot be reset.
+    pub fn reset(&mut self, extended_verification: bool) -> Result<()> {
+        (self.reset)(self, extended_verification).into()
     }
 
-    /// Blocks until a key is read from the device or an error occurs.
-    pub fn read_key_sync(&mut self) -> Result<Key> {
-        loop {
-            match self.read_key() {
-                // Received a key, exit loop.
-                Ok(key) => return Ok(key),
-                Err(code) => {
-                    match code {
-                        // Wait for key press.
-                        Status::NotReady => (),
-                        // Exit on error, no point in looping.
-                        _ => return Err(code),
-                    }
-                }
-            }
+    /// Reads the next keystroke from the input device, if any.
+    ///
+    /// Use wait_for_key_event() with the BootServices::wait_for_event()
+    /// interface in order to wait for a key to be pressed.
+    ///
+    /// # Errors
+    ///
+    /// - `DeviceError` if there was an issue with the input device
+    pub fn read_key(&mut self) -> Result<Option<Key>> {
+        let mut key = unsafe { mem::uninitialized() };
+
+        match (self.read_key_stroke)(self, &mut key) {
+            Status::Success => Ok(Some(key)),
+            Status::NotReady => Ok(None),
+            error => Err(error),
         }
+    }
+
+    /// Event to use with BootServices::wait_for_event() to wait for a key to be
+    /// available
+    pub fn wait_for_key_event(&self) -> Event {
+        self.wait_for_key
     }
 }
 

@@ -25,14 +25,15 @@ impl Pointer {
         (self.reset)(self, extended_verification).into()
     }
 
-    /// Retrieves the pointer device's current state, if a state change occured.
+    /// Retrieves the pointer device's current state, if a state change occured
+    /// since the last time this function was called.
     ///
     /// Use wait_for_input_event() with the BootServices::wait_for_event()
     /// interface in order to wait for a key to be pressed.
     ///
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.
-    pub fn state(&self) -> Result<Option<PointerState>> {
+    pub fn read_state(&mut self) -> Result<Option<PointerState>> {
         let mut pointer_state = unsafe { mem::uninitialized() };
 
         match (self.get_state)(self, &mut pointer_state) {

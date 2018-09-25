@@ -4,6 +4,7 @@ use core::convert::TryFrom;
 pub struct CharConversionError;
 
 /// A Latin-1 character
+#[repr(transparent)]
 pub struct Char8(u8);
 //
 impl TryFrom<char> for Char8 {
@@ -26,6 +27,7 @@ impl Into<u8> for Char8 {
 }
 
 /// An UCS-2 code point
+#[repr(transparent)]
 pub struct Char16(u16);
 //
 impl TryFrom<char> for Char16 {

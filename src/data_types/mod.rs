@@ -13,5 +13,8 @@ pub struct Event(*mut c_void);
 mod guid;
 pub use self::guid::Guid;
 
+mod chars;
+pub use self::chars::{Char8, Char16};
+
 #[macro_use]
 mod enums;

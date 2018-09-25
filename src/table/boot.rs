@@ -4,7 +4,7 @@ use super::Header;
 use bitflags::bitflags;
 use core::{mem, ptr};
 use crate::proto::Protocol;
-use crate::{Guid, Handle, Result, Status};
+use crate::{Event, Guid, Handle, Result, Status};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -29,7 +29,9 @@ pub struct BootServices {
     // Event & timer functions
     create_event: usize,
     set_timer: usize,
-    wait_for_event: usize,
+    wait_for_event:
+        extern "win64" fn(number_of_events: usize, events: *mut Event, out_index: &mut usize)
+            -> Status,
     signal_event: usize,
     close_event: usize,
     check_event: usize,
@@ -201,6 +203,40 @@ impl BootServices {
     /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: usize) -> Result<()> {
         (self.free_pool)(addr).into()
+    }
+
+    /// Stops execution until an event is signaled
+    ///
+    /// This function must be called at priority level TPL_APPLICATION. If an
+    /// attempt is made to call it at any other priority level, an `Unsupported`
+    /// error is returned.
+    ///
+    /// The input Event slice is repeatedly iterated from first to last until an
+    /// event is signaled or an error is detected. The following checks are
+    /// performed on each event:
+    ///
+    /// * If an event is of type NotifySignal, then an `InvalidParameter` error
+    ///   is returned.
+    /// * If an event is in the signaled state, the signaled state is cleared
+    ///   and the index of the event that was signaled is returned.
+    /// * If an event is not in the signaled state but does have a notification
+    ///   function, the notification function is queued at the event's
+    ///   notification task priority level. If the execution of the event's
+    ///   notification function causes the event to be signaled, then the
+    ///   signaled state is cleared and the index of the event that was signaled
+    ///   is returned.
+    ///
+    /// To wait for a specified time, a timer event must be included in the
+    /// Event slice.
+    ///
+    /// To check if an event is signaled without waiting, an already signaled
+    /// event can be used as the last event in the slice being checked, or the
+    /// check_event() interface may be used.
+    pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize> {
+        // FIXME: How to propagate the index of the faulty NotifySignal event?
+        let (number_of_events, events) = (events.len(), events.as_mut_ptr());
+        let mut index = unsafe { mem::uninitialized() };
+        (self.wait_for_event)(number_of_events, events, &mut index).into_with(|| index)
     }
 
     /// Query a handle for a certain protocol.

@@ -37,7 +37,7 @@ impl Pointer {
         match (self.get_state)(self, &mut pointer_state) {
             Status::Success => Ok(Some(pointer_state)),
             Status::NotReady => Ok(None),
-            error => Err(error)
+            error => Err(error),
         }
     }
 

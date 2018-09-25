@@ -18,6 +18,12 @@ impl TryFrom<char> for Char8 {
         }
     }
 }
+//
+impl Into<u8> for Char8 {
+    fn into(self) -> u8 {
+        self.0 as u8
+    }
+}
 
 /// An UCS-2 code point
 pub struct Char16(u16);
@@ -32,5 +38,11 @@ impl TryFrom<char> for Char16 {
         } else {
             Err(CharConversionError)
         }
+    }
+}
+//
+impl Into<u16> for Char16 {
+    fn into(self) -> u16 {
+        self.0 as u16
     }
 }

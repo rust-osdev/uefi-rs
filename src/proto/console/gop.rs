@@ -111,7 +111,7 @@ impl GraphicsOutput {
                     height,
                     0,
                 ).into()
-            },
+            }
             BltOp::VideoToBltBuffer {
                 buffer,
                 src: (src_x, src_y),
@@ -149,7 +149,7 @@ impl GraphicsOutput {
                         px_stride * core::mem::size_of::<BltPixel>(),
                     ).into(),
                 }
-            },
+            }
             BltOp::BufferToVideo {
                 buffer,
                 src: src_region,
@@ -187,7 +187,7 @@ impl GraphicsOutput {
                         px_stride * core::mem::size_of::<BltPixel>(),
                     ).into(),
                 }
-            },
+            }
             BltOp::VideoToVideo {
                 src: (src_x, src_y),
                 dest: (dest_x, dest_y),
@@ -198,37 +198,42 @@ impl GraphicsOutput {
                 (self.blt)(
                     self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
                 ).into()
-            },
+            }
         }
     }
 
     /// Memory-safety check for accessing a region of the framebuffer
     fn check_framebuffer_region(&self, coords: (usize, usize), dims: (usize, usize)) {
         let (width, height) = self.current_mode_info().resolution();
-        assert!(coords.0.saturating_add(dims.0) <= width,
-                "Horizontal framebuffer coordinate out of bounds");
-        assert!(coords.1.saturating_add(dims.1) <= height,
-                "Vertical framebuffer coordinate out of bounds");
+        assert!(
+            coords.0.saturating_add(dims.0) <= width,
+            "Horizontal framebuffer coordinate out of bounds"
+        );
+        assert!(
+            coords.1.saturating_add(dims.1) <= height,
+            "Vertical framebuffer coordinate out of bounds"
+        );
     }
 
     /// Memory-safety check for accessing a region of a user-provided buffer
-    fn check_blt_buffer_region(&self,
-                               region: BltRegion,
-                               dims: (usize, usize),
-                               buf_length: usize) {
+    fn check_blt_buffer_region(&self, region: BltRegion, dims: (usize, usize), buf_length: usize) {
         match region {
-            BltRegion::Full => {
-                assert!(dims.0.saturating_add(dims.1.saturating_mul(dims.0)) <= buf_length,
-                        "BltBuffer access out of bounds")
-            },
+            BltRegion::Full => assert!(
+                dims.0.saturating_add(dims.1.saturating_mul(dims.0)) <= buf_length,
+                "BltBuffer access out of bounds"
+            ),
             BltRegion::SubRectangle {
                 coords: (x, y),
                 px_stride,
             } => {
-                assert!(x.saturating_add(dims.0) <= px_stride,
-                        "Horizontal BltBuffer coordinate out of bounds");
-                assert!(y.saturating_add(dims.1).saturating_mul(px_stride) <= buf_length,
-                        "Vertical BltBuffer coordinate out of bounds");
+                assert!(
+                    x.saturating_add(dims.0) <= px_stride,
+                    "Horizontal BltBuffer coordinate out of bounds"
+                );
+                assert!(
+                    y.saturating_add(dims.1).saturating_mul(px_stride) <= buf_length,
+                    "Vertical BltBuffer coordinate out of bounds"
+                );
             }
         }
     }
@@ -246,8 +251,10 @@ impl GraphicsOutput {
     /// It is also the callers responsibilty to use volatile memory accesses,
     /// otherwise they could be optimized to nothing.
     pub unsafe fn frame_buffer(&mut self) -> &mut [u8] {
-        assert!(self.mode.info.format != PixelFormat::BltOnly,
-                "Cannot access the framebuffer in a Blt-only mode");
+        assert!(
+            self.mode.info.format != PixelFormat::BltOnly,
+            "Cannot access the framebuffer in a Blt-only mode"
+        );
         let data = self.mode.fb_address as *mut u8;
         let len = self.mode.fb_size;
 

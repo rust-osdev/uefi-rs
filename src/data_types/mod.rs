@@ -1,6 +1,6 @@
 use core::ffi::c_void;
 
-/// A collection of related interfaces
+/// Opaque handle to an UEFI entity (protocol, image...)
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Handle(*mut c_void);

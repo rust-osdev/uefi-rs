@@ -54,6 +54,8 @@ pub struct GraphicsOutput {
 }
 
 impl GraphicsOutput {
+    /// Returns information for an available graphics mode that the graphics
+    /// device and the set of active video output devices supports.
     fn query_mode(&self, index: u32) -> Result<Mode> {
         let mut info_sz = 0;
         let mut info = ptr::null();
@@ -68,7 +70,7 @@ impl GraphicsOutput {
         })
     }
 
-    /// Returns information about available graphics modes and output devices.
+    /// Returns information about all available graphics modes.
     pub fn modes<'a>(&'a self) -> impl Iterator<Item = Mode> + 'a {
         ModeIter {
             gop: self,
@@ -77,7 +79,8 @@ impl GraphicsOutput {
         }
     }
 
-    /// Sets the current graphics mode.
+    /// Sets the video device into the specified mode, clearing visible portions
+    /// of the output display to black.
     ///
     /// This function **will** invalidate the current framebuffer and change the current mode.
     pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
@@ -94,61 +97,144 @@ impl GraphicsOutput {
                 color,
                 dest: (dest_x, dest_y),
                 dims: (width, height),
-            } => (self.blt)(
-                self,
-                &color as *const _ as usize,
-                0,
-                0,
-                0,
-                dest_x,
-                dest_y,
-                width,
-                height,
-                1,
-            ).into(),
+            } => {
+                self.check_framebuffer_region((dest_x, dest_y), (width, height));
+                (self.blt)(
+                    self,
+                    &color as *const _ as usize,
+                    0,
+                    0,
+                    0,
+                    dest_x,
+                    dest_y,
+                    width,
+                    height,
+                    0,
+                ).into()
+            }
             BltOp::VideoToBltBuffer {
                 buffer,
-                stride,
                 src: (src_x, src_y),
-                dest: (dest_x, dest_y),
+                dest: dest_region,
                 dims: (width, height),
-            } => (self.blt)(
-                self,
-                buffer.as_mut_ptr() as usize,
-                1,
-                src_x,
-                src_y,
-                dest_x,
-                dest_y,
-                width,
-                height,
-                stride,
-            ).into(),
+            } => {
+                self.check_framebuffer_region((src_x, src_y), (width, height));
+                self.check_blt_buffer_region(dest_region, (width, height), buffer.len());
+                match dest_region {
+                    BltRegion::Full => (self.blt)(
+                        self,
+                        buffer.as_mut_ptr() as usize,
+                        1,
+                        src_x,
+                        src_y,
+                        0,
+                        0,
+                        width,
+                        height,
+                        0,
+                    ).into(),
+                    BltRegion::SubRectangle {
+                        coords: (dest_x, dest_y),
+                        px_stride,
+                    } => (self.blt)(
+                        self,
+                        buffer.as_mut_ptr() as usize,
+                        1,
+                        src_x,
+                        src_y,
+                        dest_x,
+                        dest_y,
+                        width,
+                        height,
+                        px_stride * core::mem::size_of::<BltPixel>(),
+                    ).into(),
+                }
+            }
             BltOp::BufferToVideo {
                 buffer,
-                stride,
-                src: (src_x, src_y),
+                src: src_region,
                 dest: (dest_x, dest_y),
                 dims: (width, height),
-            } => (self.blt)(
-                self,
-                buffer.as_ptr() as usize,
-                2,
-                src_x,
-                src_y,
-                dest_x,
-                dest_y,
-                width,
-                height,
-                stride,
-            ).into(),
+            } => {
+                self.check_blt_buffer_region(src_region, (width, height), buffer.len());
+                self.check_framebuffer_region((dest_x, dest_y), (width, height));
+                match src_region {
+                    BltRegion::Full => (self.blt)(
+                        self,
+                        buffer.as_ptr() as usize,
+                        2,
+                        0,
+                        0,
+                        dest_x,
+                        dest_y,
+                        width,
+                        height,
+                        0,
+                    ).into(),
+                    BltRegion::SubRectangle {
+                        coords: (src_x, src_y),
+                        px_stride,
+                    } => (self.blt)(
+                        self,
+                        buffer.as_ptr() as usize,
+                        2,
+                        src_x,
+                        src_y,
+                        dest_x,
+                        dest_y,
+                        width,
+                        height,
+                        px_stride * core::mem::size_of::<BltPixel>(),
+                    ).into(),
+                }
+            }
             BltOp::VideoToVideo {
                 src: (src_x, src_y),
                 dest: (dest_x, dest_y),
                 dims: (width, height),
-            } => (self.blt)(
-                self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
-            ).into(),
+            } => {
+                self.check_framebuffer_region((src_x, src_y), (width, height));
+                self.check_framebuffer_region((dest_x, dest_y), (width, height));
+                (self.blt)(
+                    self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
+                ).into()
+            }
+        }
+    }
+
+    /// Memory-safety check for accessing a region of the framebuffer
+    fn check_framebuffer_region(&self, coords: (usize, usize), dims: (usize, usize)) {
+        let (width, height) = self.current_mode_info().resolution();
+        assert!(
+            coords.0.saturating_add(dims.0) <= width,
+            "Horizontal framebuffer coordinate out of bounds"
+        );
+        assert!(
+            coords.1.saturating_add(dims.1) <= height,
+            "Vertical framebuffer coordinate out of bounds"
+        );
+    }
+
+    /// Memory-safety check for accessing a region of a user-provided buffer
+    fn check_blt_buffer_region(&self, region: BltRegion, dims: (usize, usize), buf_length: usize) {
+        match region {
+            BltRegion::Full => assert!(
+                dims.0.saturating_add(dims.1.saturating_mul(dims.0)) <= buf_length,
+                "BltBuffer access out of bounds"
+            ),
+            BltRegion::SubRectangle {
+                coords: (x, y),
+                px_stride,
+            } => {
+                assert!(
+                    x.saturating_add(dims.0) <= px_stride,
+                    "Horizontal BltBuffer coordinate out of bounds"
+                );
+                assert!(
+                    y.saturating_add(dims.1).saturating_mul(px_stride) <= buf_length,
+                    "Vertical BltBuffer coordinate out of bounds"
+                );
+            }
         }
     }
 
@@ -165,6 +251,10 @@ impl GraphicsOutput {
     /// It is also the callers responsibilty to use volatile memory accesses,
     /// otherwise they could be optimized to nothing.
     pub unsafe fn frame_buffer(&mut self) -> &mut [u8] {
+        assert!(
+            self.mode.info.format != PixelFormat::BltOnly,
+            "Cannot access the framebuffer in a Blt-only mode"
+        );
         let data = self.mode.fb_address as *mut u8;
         let len = self.mode.fb_size;
 
@@ -321,7 +411,7 @@ pub struct BltPixel {
     pub blue: u8,
     pub green: u8,
     pub red: u8,
-    pub reserved: u8,
+    _reserved: u8,
 }
 
 impl BltPixel {
@@ -331,7 +421,7 @@ impl BltPixel {
             red,
             green,
             blue,
-            reserved: 0,
+            _reserved: 0,
         }
     }
 }
@@ -342,9 +432,28 @@ impl From<u32> for BltPixel {
             blue: (color & 0x00_00_FF) as u8,
             green: (color & 0x00_FF_00 >> 8) as u8,
             red: (color & 0xFF_00_00 >> 16) as u8,
-            reserved: 0,
+            _reserved: 0,
         }
     }
+}
+
+/// Region of the BltBuffer which we are operating on
+///
+/// Some Blt operations can operate on either the full BltBuffer or a
+/// sub-rectangle of it, but require the stride to be known in the latter case.
+#[derive(Clone, Copy, Debug)]
+pub enum BltRegion {
+    /// Operate on the full BltBuffer
+    Full,
+
+    /// Operate on a sub-rectangle of the BltBuffer
+    SubRectangle {
+        /// Coordinate of the rectangle in the BltBuffer
+        coords: (usize, usize),
+
+        /// Stride (length of each row of the BltBuffer) in **pixels**
+        px_stride: usize,
+    },
 }
 
 /// Blit operation to perform.
@@ -363,13 +472,11 @@ pub enum BltOp<'a> {
     VideoToBltBuffer {
         /// Buffer into which to copy data.
         buffer: &'a mut [BltPixel],
-        /// The stride is the width / number of bytes in each row of the user-provided buffer.
-        stride: usize,
-        /// The coordinate of the source rectangle, in the frame buffer.
+        /// Coordinates of the source rectangle, in the frame buffer.
         src: (usize, usize),
-        /// The coordinate of the destination rectangle, in the user-provided buffer.
-        dest: (usize, usize),
-        /// The width / height of the rectangles.
+        /// Location of the destination rectangle in the user-provided buffer
+        dest: BltRegion,
+        /// Width / height of the rectangles.
         dims: (usize, usize),
     },
     /// Write data from the buffer to the video rectangle.
@@ -377,23 +484,21 @@ pub enum BltOp<'a> {
     BufferToVideo {
         /// Buffer from which to copy data.
         buffer: &'a [BltPixel],
-        /// The stride is the width / number of bytes in each row of the user-provided buffer.
-        stride: usize,
-        /// The coordinate of the source rectangle, in the user-provided buffer.
-        src: (usize, usize),
-        /// The coordinate of the destination rectangle, in the frame buffer.
+        /// Location of the source rectangle in the user-provided buffer.
+        src: BltRegion,
+        /// Coordinates of the destination rectangle, in the frame buffer.
         dest: (usize, usize),
-        /// The width / height of the rectangles.
+        /// Width / height of the rectangles.
         dims: (usize, usize),
     },
     /// Copy from the source rectangle in video memory to
     /// the destination rectangle, also in video memory.
     VideoToVideo {
-        /// The coordinate of the source rectangle, in the frame buffer.
+        /// Coordinates of the source rectangle, in the frame buffer.
         src: (usize, usize),
-        /// The coordinate of the destination rectangle, also in the frame buffer.
+        /// Coordinates of the destination rectangle, also in the frame buffer.
         dest: (usize, usize),
-        /// The width / height of the rectangles.
+        /// Width / height of the rectangles.
         dims: (usize, usize),
     },
 }

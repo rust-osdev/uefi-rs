@@ -2,7 +2,7 @@
 
 use super::Header;
 use bitflags::bitflags;
-use core::{mem, ptr};
+use core::{mem, ptr, result};
 use crate::proto::Protocol;
 use crate::{Event, Guid, Handle, Result, Status};
 
@@ -216,7 +216,7 @@ impl BootServices {
     /// performed on each event:
     ///
     /// * If an event is of type NotifySignal, then an `InvalidParameter` error
-    ///   is returned.
+    ///   is returned together with the index of the event that caused the failure.
     /// * If an event is in the signaled state, the signaled state is cleared
     ///   and the index of the event that was signaled is returned.
     /// * If an event is not in the signaled state but does have a notification
@@ -232,11 +232,14 @@ impl BootServices {
     /// To check if an event is signaled without waiting, an already signaled
     /// event can be used as the last event in the slice being checked, or the
     /// check_event() interface may be used.
-    pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize> {
-        // FIXME: How to propagate the index of the faulty NotifySignal event?
+    pub fn wait_for_event(&self, events: &mut [Event]) -> result::Result<usize, (Status, usize)> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
-        (self.wait_for_event)(number_of_events, events, &mut index).into_with(|| index)
+        match (self.wait_for_event)(number_of_events, events, &mut index) {
+            Status::Success => Ok(index),
+            s @ Status::InvalidParameter => Err((s, index)),
+            error => Err((error, 0)),
+        }
     }
 
     /// Query a handle for a certain protocol.

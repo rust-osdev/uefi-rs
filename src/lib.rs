@@ -33,7 +33,7 @@
 #![deny(clippy::all)]
 
 mod error;
-pub use self::error::{Result, Status};
+pub use self::error::{Result, status, Status};
 
 mod data_types;
 pub use self::data_types::{Event, Guid, Handle};

@@ -1,6 +1,5 @@
 use core::fmt;
-use crate::error::status;
-use crate::{Result, Status};
+use crate::{Result, status, Status};
 
 /// Interface for text-based output devices.
 ///

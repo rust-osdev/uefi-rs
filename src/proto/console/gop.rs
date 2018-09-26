@@ -204,11 +204,10 @@ impl GraphicsOutput {
 
     /// Memory-safety check for accessing a region of the framebuffer
     fn check_framebuffer_region(&self, coords: (usize, usize), dims: (usize, usize)) {
-        let mode_info = self.current_mode_info();
-        let (width, height) = (mode_info.hor_res, mode_info.ver_res);
-        assert!(coords.0.saturating_add(dims.0) <= width as usize,
+        let (width, height) = self.current_mode_info().resolution();
+        assert!(coords.0.saturating_add(dims.0) <= width,
                 "Horizontal framebuffer coordinate out of bounds");
-        assert!(coords.1.saturating_add(dims.1) <= height as usize,
+        assert!(coords.1.saturating_add(dims.1) <= height,
                 "Vertical framebuffer coordinate out of bounds");
     }
 

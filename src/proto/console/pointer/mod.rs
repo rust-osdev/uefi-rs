@@ -1,14 +1,14 @@
 //! Pointer device access.
 
 use core::mem;
-use crate::{Result, Status};
+use crate::{Event, Result, Status};
 
 /// Provides information about a pointer device.
 #[repr(C)]
 pub struct Pointer {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,
-    _wait_for_input: usize,
+    wait_for_input: Event,
     mode: &'static PointerMode,
 }
 
@@ -25,13 +25,15 @@ impl Pointer {
         (self.reset)(self, extended_verification).into()
     }
 
-    /// Retrieves the pointer device's current state.
+    /// Retrieves the pointer device's current state, if a state change occured
+    /// since the last time this function was called.
     ///
-    /// Will return None if the state has not changed since the last query.
+    /// Use wait_for_input_event() with the BootServices::wait_for_event()
+    /// interface in order to wait for input from the pointer device.
     ///
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.
-    pub fn state(&self) -> Result<Option<PointerState>> {
+    pub fn read_state(&mut self) -> Result<Option<PointerState>> {
         let mut pointer_state = unsafe { mem::uninitialized() };
 
         match (self.get_state)(self, &mut pointer_state) {
@@ -39,6 +41,12 @@ impl Pointer {
             Status::NotReady => Ok(None),
             error => Err(error),
         }
+    }
+
+    /// Event to use with BootServices::wait_for_event() to wait for input from
+    /// the pointer device
+    pub fn wait_for_input_event(&self) -> Event {
+        self.wait_for_input
     }
 
     /// Returns a reference to the pointer device information.

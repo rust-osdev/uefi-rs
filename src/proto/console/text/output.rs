@@ -62,7 +62,16 @@ impl Output {
         }
     }
 
-    /// Returns the width (column count) and height (row count) of this mode.
+    /// Returns the width (column count) and height (row count) of a text mode.
+    ///
+    /// Devices are required to support at least an 80x25 text mode and to
+    /// assign index 0 to it. If 80x50 is supported, then it will be mode 1,
+    /// otherwise querying for mode 1 will return the `Unsupported` error.
+    /// Modes 2+ will describe other text modes supported by the device.
+    ///
+    /// If you want to iterate over all text modes supported by the device,
+    /// consider using the iterator produced by `modes()` as a more ergonomic
+    /// alternative to this method.
     fn query_mode(&self, index: i32) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
         (self.query_mode)(self, index, &mut columns, &mut rows)?;
@@ -81,9 +90,17 @@ impl Output {
         Ok(OutputMode { index, dims })
     }
 
-    /// Enables or disables the cursor.
+    /// Make the cursor visible or invisible.
+    ///
+    /// The output device may not support this operation, in which case an
+    /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result<()> {
         (self.enable_cursor)(self, visible).into()
+    }
+
+    /// Returns whether the cursor is currently shown or not.
+    pub fn cursor_visible(&self) -> bool {
+        self.data.cursor_visible
     }
 
     /// Returns the column and row of the cursor.
@@ -91,11 +108,6 @@ impl Output {
         let column = self.data.cursor_column;
         let row = self.data.cursor_row;
         (column as usize, row as usize)
-    }
-
-    /// Returns whether the cursor is currently shown or not.
-    pub fn is_cursor_visible(&self) -> bool {
-        self.data.cursor_visible
     }
 
     /// Sets the cursor's position, relative to the top-left corner, which is (0, 0).
@@ -255,7 +267,7 @@ impl_proto! {
 #[derive(Debug, Copy, Clone)]
 #[repr(u8)]
 pub enum Color {
-    Black,
+    Black = 0,
     Blue,
     Green,
     Cyan,

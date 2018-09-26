@@ -207,7 +207,7 @@ impl BootServices {
 
     /// Stops execution until an event is signaled
     ///
-    /// This function must be called at priority level TPL_APPLICATION. If an
+    /// This function must be called at priority level Tpl::Application. If an
     /// attempt is made to call it at any other priority level, an `Unsupported`
     /// error is returned.
     ///

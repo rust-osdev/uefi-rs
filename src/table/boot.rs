@@ -4,7 +4,7 @@ use super::Header;
 use bitflags::bitflags;
 use core::{mem, ptr, result};
 use crate::proto::Protocol;
-use crate::{Event, Guid, Handle, Result, status, Status};
+use crate::{status, Event, Guid, Handle, Result, Status};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]

@@ -18,7 +18,7 @@ use ucs2;
 pub struct Status(usize);
 
 /// Bit indicating that a status code is an error
-const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>()*8 - 1);
+const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
 
 /// The operation completed successfully.
 pub const SUCCESS: Status = Status(0);

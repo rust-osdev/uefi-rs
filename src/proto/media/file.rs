@@ -1,5 +1,5 @@
 use bitflags::bitflags;
-use crate::{Result, status, Status};
+use crate::{status, Result, Status};
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing on a volume.

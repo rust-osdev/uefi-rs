@@ -20,8 +20,19 @@ install:
   - rustup component add rustfmt-preview
   # Try installing cargo-xbuild if it's not already installed
   - hash cargo-xbuild || cargo install cargo-xbuild
-  # Download OVMF
-  - bash -e "uefi-test-runner/ci/ovmf.sh"
+  # Save the current branch
+  - git branch travis-temp
+  # Checkout the firmware branch
+  - git fetch origin ovmf:ovmf
+  - git checkout ovmf
+  # Download it with Git LFS
+  - git lfs pull
+  # Copy it to the local directory
+  - cp -v x86_64/*.fd .
+  # Checkout the original repo back
+  - git checkout travis-temp
+  # Move the firmware files to the right directory
+  - mv -v *.fd uefi-test-runner
 
 before_script:
   # Try using cached QEMU install

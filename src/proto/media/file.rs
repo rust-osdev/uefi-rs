@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use crate::error::status;
 use crate::{Result, Status};
 use ucs2;
 
@@ -45,7 +46,7 @@ impl<'a> File<'a> {
     ) -> Result<File> {
         const BUF_SIZE: usize = 255;
         if filename.len() > BUF_SIZE {
-            Err(Status::InvalidParameter)
+            Err(status::INVALID_PARAMETER)
         } else {
             let mut buf = [0u16; BUF_SIZE + 1];
             let mut ptr = 0usize;

@@ -1,4 +1,5 @@
 use core::mem;
+use crate::error::status;
 use crate::{Event, Result, Status};
 
 /// Interface for text-based input devices.
@@ -34,8 +35,8 @@ impl Input {
         let mut key = unsafe { mem::uninitialized() };
 
         match (self.read_key_stroke)(self, &mut key) {
-            Status::Success => Ok(Some(key)),
-            Status::NotReady => Ok(None),
+            status::SUCCESS => Ok(Some(key)),
+            status::NOT_READY => Ok(None),
             error => Err(error),
         }
     }

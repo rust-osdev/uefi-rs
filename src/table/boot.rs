@@ -4,6 +4,7 @@ use super::Header;
 use bitflags::bitflags;
 use core::{mem, ptr, result};
 use crate::proto::Protocol;
+use crate::error::status;
 use crate::{Event, Guid, Handle, Result, Status};
 
 /// Contains pointers to all of the boot services.
@@ -149,7 +150,7 @@ impl BootServices {
             &mut entry_size,
             &mut entry_version,
         );
-        assert_eq!(status, Status::BufferTooSmall);
+        assert_eq!(status, status::BUFFER_TOO_SMALL);
 
         map_size * entry_size
     }
@@ -236,8 +237,8 @@ impl BootServices {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
         match (self.wait_for_event)(number_of_events, events, &mut index) {
-            Status::Success => Ok(index),
-            s @ Status::InvalidParameter => Err((s, index)),
+            status::SUCCESS => Ok(index),
+            s @ status::INVALID_PARAMETER => Err((s, index)),
             error => Err((error, 0)),
         }
     }
@@ -249,7 +250,7 @@ impl BootServices {
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<ptr::NonNull<P>> {
         let mut ptr = 0usize;
         match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
-            Status::Success => ptr::NonNull::new(ptr as *mut P),
+            status::SUCCESS => ptr::NonNull::new(ptr as *mut P),
             _ => None,
         }
     }
@@ -284,7 +285,7 @@ impl BootServices {
         let buffer_len = buffer_size / handle_size;
 
         match status {
-            Status::Success | Status::BufferTooSmall => Ok(buffer_len),
+            status::SUCCESS | status::BUFFER_TOO_SMALL => Ok(buffer_len),
             err => Err(err),
         }
     }
@@ -310,7 +311,7 @@ impl BootServices {
     ///
     /// The time is in microseconds.
     pub fn stall(&self, time: usize) {
-        assert_eq!((self.stall)(time), Status::Success);
+        assert_eq!((self.stall)(time), status::SUCCESS);
     }
 
     /// Set the watchdog timer.

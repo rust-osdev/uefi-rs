@@ -28,6 +28,7 @@ macro_rules! error_codes {
     ( $( $status:ident => $value:expr, $docstring:expr ),* ) => {
         $(
             #[doc = $docstring]
+            #[allow(unused)]
             pub const $status: Status = Status($value | ERROR_BIT);
         )*
     }
@@ -125,6 +126,7 @@ macro_rules! warning_codes {
     ( $( $status:ident => $value:expr, $docstring:expr ),* ) => {
         $(
             #[doc = $docstring]
+            #[allow(unused)]
             pub const $status: Status = Status($value);
         )*
     }

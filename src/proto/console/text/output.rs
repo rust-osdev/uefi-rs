@@ -1,4 +1,5 @@
 use core::fmt;
+use crate::error::status;
 use crate::{Result, Status};
 
 /// Interface for text-based output devices.
@@ -46,7 +47,7 @@ impl Output {
     /// some unsupported characters.
     pub fn test_string(&mut self, string: *const u16) -> bool {
         match (self.test_string)(self, string) {
-            Status::Success => true,
+            status::SUCCESS => true,
             _ => false,
         }
     }
@@ -126,7 +127,7 @@ impl Output {
         let bgc = background as usize;
 
         if bgc >= 8 {
-            Err(Status::DeviceError)
+            Err(status::DEVICE_ERROR)
         } else {
             let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
             (self.set_attribute)(self, attr).into()

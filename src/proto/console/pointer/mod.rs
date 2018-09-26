@@ -1,6 +1,7 @@
 //! Pointer device access.
 
 use core::mem;
+use crate::error::status;
 use crate::{Event, Result, Status};
 
 /// Provides information about a pointer device.
@@ -37,8 +38,8 @@ impl Pointer {
         let mut pointer_state = unsafe { mem::uninitialized() };
 
         match (self.get_state)(self, &mut pointer_state) {
-            Status::Success => Ok(Some(pointer_state)),
-            Status::NotReady => Ok(None),
+            status::SUCCESS => Ok(Some(pointer_state)),
+            status::NOT_READY => Ok(None),
             error => Err(error),
         }
     }

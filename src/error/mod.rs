@@ -1,6 +1,6 @@
 use core::result;
 
-mod status;
+pub mod status;
 pub use self::status::Status;
 
 /// Return type of many UEFI functions.

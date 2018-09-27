@@ -112,5 +112,5 @@ fn shutdown(st: &SystemTable) -> ! {
     }
 
     let rt = st.runtime;
-    rt.reset(ResetType::Shutdown, status::SUCCESS, None);
+    rt.reset(ResetType::Shutdown, Status::SUCCESS, None);
 }

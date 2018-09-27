@@ -1,7 +1,7 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use bitflags::bitflags;
-use crate::{status, Result, Status};
+use crate::{Result, Status};
 
 /// Provides access to a serial I/O device.
 ///
@@ -88,7 +88,7 @@ impl Serial {
         let status = (self.write)(self, &mut buffer_size, data.as_ptr());
 
         match status {
-            status::SUCCESS | status::TIMEOUT => Ok(buffer_size),
+            Status::SUCCESS | Status::TIMEOUT => Ok(buffer_size),
             err => Err(err),
         }
     }
@@ -104,7 +104,7 @@ impl Serial {
         let status = (self.read)(self, &mut buffer_size, data.as_mut_ptr());
 
         match status {
-            status::SUCCESS | status::TIMEOUT => Ok(buffer_size),
+            Status::SUCCESS | Status::TIMEOUT => Ok(buffer_size),
             err => Err(err),
         }
     }

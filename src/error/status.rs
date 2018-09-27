@@ -114,8 +114,8 @@ error_codes! {
     TFTP_ERROR              = 23,
     /// A protocol error occurred during the network operation.
     PROTOCOL_ERROR          = 24,
-    /// The function encountered an internal version that was incompatible with
-    /// a version requested by the caller.
+    /// The function encountered an internal version that was
+    /// incompatible with a version requested by the caller.
     INCOMPATIBLE_VERSION    = 25,
     /// The function was not performed due to a security violation.
     SECURITY_VIOLATION      = 26,
@@ -127,8 +127,8 @@ error_codes! {
     END_OF_FILE             = 31,
     /// The language specified was invalid.
     INVALID_LANGUAGE        = 32,
-    /// The security status of the data is unknown or compromised and the data
-    /// must be updated or replaced to restore a valid security status.
+    /// The security status of the data is unknown or compromised and
+    /// the data must be updated or replaced to restore a valid security status.
     COMPROMISED_DATA        = 33,
     /// There is an address conflict address allocation
     IP_ADDRESS_CONFLICT     = 34,

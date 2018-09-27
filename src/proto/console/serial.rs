@@ -210,6 +210,10 @@ pub enum Parity {
     Mark,
     /// Space parity
     Space,
+
+    // NOTE: The serial protocol is very old, and new parity modes are very
+    //       unlikely to be added at this point in time. Therefore, modeling
+    //       this C enum as a Rust enum seems safe.
 }
 
 /// Number of stop bits per character.
@@ -224,4 +228,8 @@ pub enum StopBits {
     OneFive,
     /// 2 stop bits
     Two,
+
+    // NOTE: The serial protocol is very old, and new stop bit modes are very
+    //       unlikely to be added at this point in time. Therefore, modeling
+    //       this C enum as a Rust enum seems safe.
 }

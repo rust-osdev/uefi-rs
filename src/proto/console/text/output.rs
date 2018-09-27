@@ -265,7 +265,6 @@ impl_proto! {
 /// The first 8 colors can also be used as background colors.
 #[allow(missing_docs)]
 #[derive(Debug, Copy, Clone)]
-#[repr(u8)]
 pub enum Color {
     Black = 0,
     Blue,

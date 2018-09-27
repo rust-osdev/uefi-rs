@@ -1,6 +1,3 @@
-// The error codes are unportable, but that's how the spec defines them.
-#![allow(clippy::enum_clike_unportable_variant)]
-
 use super::Result;
 use core::ops;
 use ucs2;
@@ -17,20 +14,8 @@ use ucs2;
 #[must_use]
 pub struct Status(usize);
 
-/// Macro to make implementation of status codes easier
-macro_rules! status_codes {
-    (   $(  $(#[$attr:meta])*
-            $status:ident = $code:expr, )*
-    ) => {
-        #[allow(unused)]
-        impl Status {
-            $(  $(#[$attr])*
-                pub const $status: Status = Status($code); )*
-        }
-    }
-}
-//
-status_codes! {
+// Success and warning status codes
+newtype_enum_variants! { Status => {
     /// The operation completed successfully.
     SUCCESS                 =  0,
     /// The string contained characters that could not be rendered and were skipped.
@@ -47,20 +32,25 @@ status_codes! {
     WARN_FILE_SYSTEM        =  6,
     /// The operation will be processed across a system reset.
     WARN_RESET_REQUIRED     =  7,
-}
+}}
 
 /// Bit indicating that a status code is an error
 const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
 
-/// Macro to make implementation of error codes easier
+/// Macro which eases implementation of error codes
+///
+/// Syntax is mostly identical to that of newtype_enum_variants, but with the
+/// Status type implicit (since this notion only applies to status codes) and
+/// with the ERROR_BIT set for every enum variant.
+///
 macro_rules! error_codes {
     (   $(  $(#[$attr:meta])*
             $status:ident = $error_code:expr, )*
     ) => {
-        status_codes! { $(
+        newtype_enum_variants! { Status => { $(
             $(#[$attr])*
             $status = $error_code | ERROR_BIT,
-        )* }
+        )* } }
     }
 }
 //

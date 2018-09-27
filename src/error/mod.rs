@@ -1,5 +1,6 @@
 use core::result;
 
+/// Definition of UEFI's standard status codes
 mod status;
 pub use self::status::Status;
 

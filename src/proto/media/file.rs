@@ -27,16 +27,16 @@ impl<'a> File<'a> {
     /// * `attributes`  Only valid when FILE_MODE_CREATE is used as a mode
     ///
     /// # Errors
-    /// * `uefi::Status::InvalidParameter`  The filename exceeds the maximum length of 255 chars
-    /// * `uefi::Status::NotFound`          Could not find file
-    /// * `uefi::Status::NoMedia`           The device has no media
-    /// * `uefi::Status::MediaChanged`      The device has a different medium in it
-    /// * `uefi::Status::DeviceError`       The device reported an error
-    /// * `uefi::Status::VolumeCorrupted`   The filesystem structures are corrupted
-    /// * `uefi::Status::WriteProtected`    Write/Create attempted on readonly file
-    /// * `uefi::Status::AccessDenied`      The service denied access to the file
-    /// * `uefi::Status::OutOfResources`    Not enough resources to open file
-    /// * `uefi::Status::VolumeFull`        The volume is full
+    /// * `uefi::Status::INVALID_PARAMETER`  The filename exceeds the maximum length of 255 chars
+    /// * `uefi::Status::NOT_FOUND`          Could not find file
+    /// * `uefi::Status::NO_MEDIA`           The device has no media
+    /// * `uefi::Status::MEDIA_CHANGED`      The device has a different medium in it
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
+    /// * `uefi::Status::WRITE_PROTECTED`    Write/Create attempted on readonly file
+    /// * `uefi::Status::ACCESS_DENIED`      The service denied access to the file
+    /// * `uefi::Status::OUT_OF_RESOURCES`    Not enough resources to open file
+    /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn open(
         &mut self,
         filename: &str,
@@ -45,7 +45,7 @@ impl<'a> File<'a> {
     ) -> Result<File> {
         const BUF_SIZE: usize = 255;
         if filename.len() > BUF_SIZE {
-            Err(Status::InvalidParameter)
+            Err(Status::INVALID_PARAMETER)
         } else {
             let mut buf = [0u16; BUF_SIZE + 1];
             let mut ptr = 0usize;
@@ -69,7 +69,7 @@ impl<'a> File<'a> {
     /// Closes and deletes this file
     ///
     /// # Errors
-    /// * `uefi::Status::WarnDeleteFailure` The file was closed, but deletion failed
+    /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     pub fn delete(self) -> Result<()> {
         (self.inner.delete)(self.inner).into()
     }
@@ -82,9 +82,9 @@ impl<'a> File<'a> {
     /// * `buffer`  The target buffer of the read operation
     ///
     /// # Errors
-    /// * `uefi::Status::NoMedia`           The device has no media
-    /// * `uefi::Status::DeviceError`       The device reported an error
-    /// * `uefi::Status::VolumeCorrupted`   The filesystem structures are corrupted
+    /// * `uefi::Status::NO_MEDIA`           The device has no media
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
         (self.inner.read)(self.inner, &mut buffer_size, buffer.as_mut_ptr())
@@ -99,12 +99,12 @@ impl<'a> File<'a> {
     /// * `buffer`  Buffer to write to file
     ///
     /// # Errors
-    /// * `uefi::Status::NoMedia`           The device has no media
-    /// * `uefi::Status::DeviceError`       The device reported an error
-    /// * `uefi::Status::VolumeCorrupted`   The filesystem structures are corrupted
-    /// * `uefi::Status::WriteProtected`    Attempt to write to readonly file
-    /// * `uefi::Status::AccessDenied`      The file was opened read only.
-    /// * `uefi::Status::VolumeFull`        The volume is full
+    /// * `uefi::Status::NO_MEDIA`           The device has no media
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
+    /// * `uefi::Status::WRITE_PROTECTED`    Attempt to write to readonly file
+    /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only.
+    /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn write(&mut self, buffer: &[u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
         (self.inner.write)(self.inner, &mut buffer_size, buffer.as_ptr()).into_with(|| buffer_size)
@@ -113,7 +113,7 @@ impl<'a> File<'a> {
     /// Get the file's current position
     ///
     /// # Errors
-    /// * `uefi::Status::DeviceError`   An attempt was made to get the position of a deleted file
+    /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
         (self.inner.get_position)(self.inner, &mut pos).into_with(|| pos)
@@ -129,7 +129,7 @@ impl<'a> File<'a> {
     /// * `position` The new absolution position of the file handle
     ///
     /// # Errors
-    /// * `uefi::Status::DeviceError`   An attempt was made to set the position of a deleted file
+    /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
     pub fn set_position(&mut self, position: u64) -> Result<()> {
         (self.inner.set_position)(self.inner, position).into()
     }
@@ -137,12 +137,12 @@ impl<'a> File<'a> {
     /// Flushes all modified data associated with the file handle to the device
     ///
     /// # Errors
-    /// * `uefi::Status::NoMedia`           The device has no media
-    /// * `uefi::Status::DeviceError`       The device reported an error
-    /// * `uefi::Status::VolumeCorrupted`   The filesystem structures are corrupted
-    /// * `uefi::Status::WriteProtected`    The file or medium is write protected
-    /// * `uefi::Status::AccessDenied`      The file was opened read only
-    /// * `uefi::Status::VolumeFull`        The volume is full
+    /// * `uefi::Status::NO_MEDIA`           The device has no media
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
+    /// * `uefi::Status::WRITE_PROTECTED`    The file or medium is write protected
+    /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only
+    /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn flush(&mut self) -> Result<()> {
         (self.inner.flush)(self.inner).into()
     }

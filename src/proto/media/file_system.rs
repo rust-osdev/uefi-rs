@@ -16,13 +16,13 @@ impl SimpleFileSystem {
     /// Open the root directory on a volume.
     ///
     /// # Errors
-    /// * `uefi::Status::Unsupported` - The volume does not support the requested filesystem type
-    /// * `uefi::Status::NoMedia` - The device has no media
-    /// * `uefi::Status::DeviceError` - The device reported an error
-    /// * `uefi::Status::VolumeCorrupted` - The file system structures are corrupted
-    /// * `uefi::Status::AccessDenied` - The service denied access to the file
-    /// * `uefi::Status::OutOfResources` - The volume was not opened
-    /// * `uefi::Status::MediaChanged` - The device has a different medium in it
+    /// * `uefi::Status::UNSUPPORTED` - The volume does not support the requested filesystem type
+    /// * `uefi::Status::NO_MEDIA` - The device has no media
+    /// * `uefi::Status::DEVICE_ERROR` - The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED` - The file system structures are corrupted
+    /// * `uefi::Status::ACCESS_DENIED` - The service denied access to the file
+    /// * `uefi::Status::OUT_OF_RESOURCES` - The volume was not opened
+    /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
     pub fn open_volume(&mut self) -> Result<File> {
         let mut ptr = 0usize;
         (self.open_volume)(self, &mut ptr).into_with(|| File::new(ptr))

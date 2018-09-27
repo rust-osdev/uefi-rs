@@ -60,7 +60,8 @@ impl Serial {
             mode.parity,
             mode.data_bits as u8,
             mode.stop_bits,
-        ).into()
+        )
+        .into()
     }
 
     /// Sets the device's new control bits.
@@ -88,7 +89,7 @@ impl Serial {
         let status = (self.write)(self, &mut buffer_size, data.as_ptr());
 
         match status {
-            Status::Success | Status::Timeout => Ok(buffer_size),
+            Status::SUCCESS | Status::TIMEOUT => Ok(buffer_size),
             err => Err(err),
         }
     }
@@ -104,7 +105,7 @@ impl Serial {
         let status = (self.read)(self, &mut buffer_size, data.as_mut_ptr());
 
         match status {
-            Status::Success | Status::Timeout => Ok(buffer_size),
+            Status::SUCCESS | Status::TIMEOUT => Ok(buffer_size),
             err => Err(err),
         }
     }

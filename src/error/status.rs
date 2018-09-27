@@ -20,12 +20,12 @@ pub struct Status(usize);
 /// Macro to make implementation of status codes easier
 macro_rules! status_codes {
     (   $(  $(#[$attr:meta])*
-            $status:ident = $raw_code:expr, )*
+            $status:ident = $code:expr, )*
     ) => {
         #[allow(unused)]
         impl Status {
             $(  $(#[$attr])*
-                pub const $status: Status = Status($raw_code); )*
+                pub const $status: Status = Status($code); )*
         }
     }
 }
@@ -55,11 +55,11 @@ const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
 /// Macro to make implementation of error codes easier
 macro_rules! error_codes {
     (   $(  $(#[$attr:meta])*
-            $status:ident = $code:expr, )*
+            $status:ident = $error_code:expr, )*
     ) => {
         status_codes! { $(
             $(#[$attr])*
-            $status = $code | ERROR_BIT,
+            $status = $error_code | ERROR_BIT,
         )* }
     }
 }

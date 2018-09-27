@@ -22,9 +22,9 @@ macro_rules! status_codes {
     (   $(  $(#[$attr:meta])*
             $status:ident = $raw_code:expr, )*
     ) => {
+        #[allow(unused)]
         impl Status {
             $(  $(#[$attr])*
-                #[allow(unused)]
                 pub const $status: Status = Status($raw_code); )*
         }
     }

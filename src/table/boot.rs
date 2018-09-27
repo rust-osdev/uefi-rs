@@ -345,7 +345,8 @@ impl BootServices {
                     "Watchdog data must contain a null-terminated string"
                 );
                 (d.len(), d.as_mut_ptr())
-            }).unwrap_or((0, ptr::null_mut()));
+            })
+            .unwrap_or((0, ptr::null_mut()));
 
         (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data).into()
     }

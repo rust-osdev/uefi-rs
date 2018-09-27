@@ -110,7 +110,8 @@ impl GraphicsOutput {
                     width,
                     height,
                     0,
-                ).into()
+                )
+                .into()
             }
             BltOp::VideoToBltBuffer {
                 buffer,
@@ -132,7 +133,8 @@ impl GraphicsOutput {
                         width,
                         height,
                         0,
-                    ).into(),
+                    )
+                    .into(),
                     BltRegion::SubRectangle {
                         coords: (dest_x, dest_y),
                         px_stride,
@@ -147,7 +149,8 @@ impl GraphicsOutput {
                         width,
                         height,
                         px_stride * core::mem::size_of::<BltPixel>(),
-                    ).into(),
+                    )
+                    .into(),
                 }
             }
             BltOp::BufferToVideo {
@@ -170,7 +173,8 @@ impl GraphicsOutput {
                         width,
                         height,
                         0,
-                    ).into(),
+                    )
+                    .into(),
                     BltRegion::SubRectangle {
                         coords: (src_x, src_y),
                         px_stride,
@@ -185,7 +189,8 @@ impl GraphicsOutput {
                         width,
                         height,
                         px_stride * core::mem::size_of::<BltPixel>(),
-                    ).into(),
+                    )
+                    .into(),
                 }
             }
             BltOp::VideoToVideo {
@@ -197,7 +202,8 @@ impl GraphicsOutput {
                 self.check_framebuffer_region((dest_x, dest_y), (width, height));
                 (self.blt)(
                     self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
-                ).into()
+                )
+                .into()
             }
         }
     }

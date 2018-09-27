@@ -28,7 +28,8 @@ fn set_graphics_mode(gop: &mut GraphicsOutput) {
             let info = mode.info();
 
             info.resolution() == (1024, 768)
-        }).unwrap();
+        })
+        .unwrap();
 
     gop.set_mode(&mode).expect("Failed to set graphics mode");
 }

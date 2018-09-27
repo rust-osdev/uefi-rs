@@ -60,7 +60,8 @@ impl Serial {
             mode.parity,
             mode.data_bits as u8,
             mode.stop_bits,
-        ).into()
+        )
+        .into()
     }
 
     /// Sets the device's new control bits.

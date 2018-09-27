@@ -33,18 +33,15 @@ macro_rules! status_codes {
 status_codes! {
     /// The operation completed successfully.
     SUCCESS                 =  0,
-    /// The string contained characters that the device could not render and
-    /// were skipped.
+    /// The string contained characters that could not be rendered and were skipped.
     WARN_UNKNOWN_GLYPH      =  1,
     /// The handle was closed, but the file was not deleted.
     WARN_DELETE_FAILURE     =  2,
     /// The handle was closed, but the data to the file was not flushed properly.
     WARN_WRITE_FAILURE      =  3,
-    /// The resulting buffer was too small, and the data was truncated to the
-    /// buffer size.
+    /// The resulting buffer was too small, and the data was truncated.
     WARN_BUFFER_TOO_SMALL   =  4,
-    /// The data has not been updated within the timeframe set by local policy
-    /// for this type of data.
+    /// The data has not been updated within the timeframe set by local policy.
     WARN_STALE_DATA         =  5,
     /// The resulting buffer contains UEFI-compliant file system.
     WARN_FILE_SYSTEM        =  6,

@@ -113,8 +113,7 @@ newtype_enum_variants! { ScanCode => {
     FUNCTION_23 = 0x72,
     FUNCTION_24 = 0x73,
 
-    MUTE    = 0x7F,
-
+    MUTE        = 0x7F,
     VOLUME_UP   = 0x80,
     VOLUME_DOWN = 0x81,
 

@@ -390,6 +390,11 @@ pub enum Tpl {
     ///
     /// Even processor interrupts are disable at this level.
     HighLevel = 31,
+
+    // NOTE: The UEFI specification repeatedly state that only the these
+    //       priority levels may be used, the rest being reserved for internal
+    //       firmware use. So only these priority levels should be exposed to
+    //       the application, and modeling them as a Rust enum seems safe.
 }
 
 /// Type of allocation to perform.
@@ -443,6 +448,10 @@ pub enum MemoryType {
     PalCode,
     /// Memory region which is usable and is also non-volatile.
     PersistentMemory,
+
+    // NOTE: UEFI defines a MaxMemoryType, therefore adding new memory types
+    //       would be a breaking change, so exposing them as a Rust enum seems
+    //       to be safe.
 }
 
 /// A structure describing a region of memory.

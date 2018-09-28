@@ -4,8 +4,6 @@
 //! They provide both **high-level abstractions** such as **files and partitions**,
 //! and **low-level access** such as an **block I/O** or **raw ATA** access protocol.
 
-mod file;
-pub use self::file::File;
+pub mod file;
 
-mod file_system;
-pub use self::file_system::SimpleFileSystem;
+pub mod fs;

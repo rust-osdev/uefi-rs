@@ -1,8 +1,19 @@
+//! This module provides the `File` structure, representing an opaque handle to a
+//! directory / file, as well as providing functions for opening new files.
+//!
+//! Usually a file system implementation will return a "root" file, representing
+//! `/` on that volume, and with that file it is possible to enumerate and open
+//! all the other files on that volume.
+
 use bitflags::bitflags;
+use core::mem;
 use crate::{Result, Status};
 use ucs2;
 
-/// A file represents an abstraction of some contiguous block of data residing on a volume.
+/// A file represents an abstraction of some contiguous block of data residing
+/// on a volume.
+///
+/// Dropping this structure will result in the file handle being closed.
 ///
 /// Files have names, and a fixed size.
 pub struct File<'a> {
@@ -59,19 +70,19 @@ impl<'a> File<'a> {
         }
     }
 
-    /// Close this file handle
-    ///
-    /// This MUST be called when you are done with the file
-    pub fn close(self) -> Result<()> {
-        (self.inner.close)(self.inner).into()
-    }
+    /// Close this file handle. Same as dropping this structure.
+    pub fn close(self) {}
 
     /// Closes and deletes this file
     ///
     /// # Errors
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     pub fn delete(self) -> Result<()> {
-        (self.inner.delete)(self.inner).into()
+        let result = (self.inner.delete)(self.inner).into();
+
+        mem::forget(self);
+
+        result
     }
 
     /// Read data from file
@@ -148,6 +159,14 @@ impl<'a> File<'a> {
     }
 }
 
+impl<'a> Drop for File<'a> {
+    fn drop(&mut self) {
+        let result: Result<()> = (self.inner.close)(self.inner).into();
+        // The spec says this always succeeds.
+        result.expect("Failed to close file");
+    }
+}
+
 /// The function pointer table for the File protocol.
 #[repr(C)]
 struct FileImpl {
@@ -173,20 +192,31 @@ struct FileImpl {
 }
 
 bitflags! {
+    /// Usage flags describing what is possible to do with the file.
     pub struct FileMode: u64 {
+        /// The file can be read from.
         const READ = 1;
+        /// The file can be written to.
         const WRITE = 1 << 1;
+        /// The file will be created if not found.
         const CREATE = 1 << 63;
     }
 }
 
 bitflags! {
+    /// Attributes describing the properties of a file on the file system.
     pub struct FileAttribute: u64 {
+        /// File can only be opened in [`FileMode::READ`] mode.
         const READ_ONLY = 1;
+        /// Hidden file, not normally visible to the user.
         const HIDDEN = 1 << 1;
+        /// System file, indicates this file is an internal operating system file.
         const SYSTEM = 1 << 2;
+        /// This file is a directory.
         const DIRECTORY = 1 << 4;
+        /// This file is compressed.
         const ARCHIVE = 1 << 5;
+        /// Mask combining all the valid attributes.
         const VALID_ATTR = 0x37;
     }
 }

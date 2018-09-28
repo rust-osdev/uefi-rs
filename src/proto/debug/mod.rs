@@ -23,28 +23,34 @@ impl DebugSupport {
 }
 
 /// The instruction set architecture of the running processor.
+///
+/// UEFI can be and has been ported to new CPU architectures in the past,
+/// therefore modeling this C enum as a Rust enum (where the compiler must know
+/// about every variant in existence) would _not_ be safe.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(u32)]
-pub enum ProcessorArch {
+#[repr(transparent)]
+pub struct ProcessorArch(u32);
+
+newtype_enum_variants! { ProcessorArch => {
     /// 32-bit x86 PC
-    X86_32 = 0x014C,
+    X86_32      = 0x014C,
     /// 64-bit x86 PC
-    X86_64 = 0x8664,
+    X86_64      = 0x8664,
     /// Intel Itanium
-    Itanium = 0x200,
+    ITANIUM     = 0x200,
     /// UEFI Interpreter bytecode
-    EBC = 0x0EBC,
+    EBC         = 0x0EBC,
     /// ARM Thumb / Mixed
-    Arm = 0x01C2,
+    ARM         = 0x01C2,
     /// ARM 64-bit
-    AArch64 = 0xAA64,
+    AARCH_64    = 0xAA64,
     /// RISC-V 32-bit
-    RiscV32 = 0x5032,
+    RISCV_32    = 0x5032,
     /// RISC-V 64-bit
-    RiscV64 = 0x5064,
+    RISCV_64    = 0x5064,
     /// RISC-V 128-bit
-    RiscV128 = 0x5128,
-}
+    RISCV_128   = 0x5128,
+}}
 
 impl_proto! {
     protocol DebugSupport {

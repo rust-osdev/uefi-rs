@@ -14,25 +14,28 @@
 //! featuring a large set of associated constants instead of as Rust enums. This
 //! module provides facilities to simplify this kind of FFI.
 
+
+
 /// Add a set of enum variants to a C enum that is modeled as an integer newtype
 ///
 /// ```
 /// pub struct UnixBool(i32);
-/// newtype_enum_variants! { UnixBool => {
+/// newtype_enum_variants! { UnixBool => #[allow(missing_docs)] {
 ///     FALSE          =  0,
 ///     TRUE           =  1,
 ///     FILE_NOT_FOUND = -1,
-/// }
+/// }}
 /// ```
 #[macro_export]
 macro_rules! newtype_enum_variants {
-    ( $type:tt => {
-        $(  $(#[$attr:meta])*
+    ( $type:tt => $(#[$outer:meta])* {
+        $(  $(#[$inner:meta])*
             $variant:ident = $value:expr, )*
     } ) => {
+        $(#[$outer])*
         #[allow(unused)]
         impl $type {
-            $(  $(#[$attr])*
+            $(  $(#[$inner])*
                 pub const $variant: $type = $type($value); )*
         }
     }

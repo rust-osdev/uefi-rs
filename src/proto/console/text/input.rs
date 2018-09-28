@@ -1,5 +1,3 @@
-#![allow(missing_docs)]
-
 use core::mem;
 use crate::{Event, Result, Status};
 
@@ -69,7 +67,7 @@ pub struct Key {
 #[repr(transparent)]
 pub struct ScanCode(u16);
 
-newtype_enum_variants! { ScanCode => {
+newtype_enum_variants! { ScanCode => #[allow(missing_docs)] {
     /// Null scan code, indicates that the Unicode character should be used.
     NULL        = 0x00,
     /// Move cursor up 1 row.

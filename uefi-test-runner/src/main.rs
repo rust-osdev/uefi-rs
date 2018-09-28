@@ -68,7 +68,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
 
         // Set a large timeout to avoid problems
         let mut io_mode = *serial.io_mode();
-        io_mode.timeout = 1_000_000;
+        io_mode.timeout = 3_000_000;
         serial
             .set_attributes(&io_mode)
             .expect("Failed to configure serial port timeout");

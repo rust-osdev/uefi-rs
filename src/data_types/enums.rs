@@ -14,7 +14,6 @@
 //! featuring a large set of associated constants instead of as Rust enums. This
 //! module provides facilities to simplify this kind of FFI.
 
-
 /// Interface a C-style enum as an integer newtype.
 ///
 /// This macro implements Debug for you, the way you would expect it to work on

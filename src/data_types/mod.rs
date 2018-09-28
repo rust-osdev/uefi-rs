@@ -13,4 +13,5 @@ pub struct Event(*mut c_void);
 mod guid;
 pub use self::guid::Guid;
 
-#[macro_use] mod enums;
+#[macro_use]
+mod enums;

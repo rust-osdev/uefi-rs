@@ -17,8 +17,11 @@
 /// Interface a C-style enum as an integer newtype.
 ///
 /// This macro implements Debug for you, the way you would expect it to work on
-/// Rust enums (printing the variant name instead of its integer value). If you
-/// want anything else to be derived, you need to ask for it.
+/// Rust enums (printing the variant name instead of its integer value). It also
+/// derives Clone, Copy, Eq and PartialEq, since that always makes sense for
+/// C-style enums and is used by the implementation. If you want anything else
+/// to be derived, you can ask for it by adding extra derives as shown in the
+/// example below.
 ///
 /// One minor annoyance is that since variants will be translated into
 /// associated constants in a separate impl block, you need to discriminate
@@ -28,7 +31,7 @@
 /// Usage example:
 /// ```
 /// newtype_enum! {
-/// #[derive(Copy, Clone)]
+/// #[derive(Cmp, PartialCmp)]
 /// pub enum UnixBool: i32 => #[allow(missing_docs)] {
 ///     FALSE          =  0,
 ///     TRUE           =  1,
@@ -49,6 +52,7 @@ macro_rules! newtype_enum {
     ) => {
         $(#[$type_attrs])*
         #[repr(transparent)]
+        #[derive(Clone, Copy, Eq, PartialEq)]
         pub struct $type($base_integer);
 
         $(#[$impl_attrs])*

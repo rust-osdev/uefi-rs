@@ -28,7 +28,6 @@ newtype_enum! {
 /// UEFI can be and has been ported to new CPU architectures in the past,
 /// therefore modeling this C enum as a Rust enum (where the compiler must know
 /// about every variant in existence) would _not_ be safe.
-#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ProcessorArch: u32 => {
     /// 32-bit x86 PC
     X86_32      = 0x014C,

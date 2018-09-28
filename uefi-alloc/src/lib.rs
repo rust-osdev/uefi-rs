@@ -42,7 +42,7 @@ pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let mem_ty = MemoryType::LoaderData;
+        let mem_ty = MemoryType::LOADER_DATA;
         let size = layout.size();
         let align = layout.align();
 

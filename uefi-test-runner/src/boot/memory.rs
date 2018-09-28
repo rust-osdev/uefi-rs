@@ -17,7 +17,7 @@ fn allocate_pages(bt: &BootServices) {
     info!("Allocating some pages of memory");
 
     let ty = AllocateType::AnyPages;
-    let mem_ty = MemoryType::LoaderData;
+    let mem_ty = MemoryType::LOADER_DATA;
     let pgs = bt
         .allocate_pages(ty, mem_ty, 1)
         .expect("Failed to allocate a page of memory");

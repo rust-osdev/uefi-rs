@@ -64,7 +64,6 @@ newtype_enum! {
 /// Codes 0x8000 -> 0xFFFF are reserved for future OEM extensibility, therefore
 /// this C enum is _not_ safe to model as a Rust enum (where the compiler must
 /// know about all variants at compile time).
-#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ScanCode: u16 => #[allow(missing_docs)] {
     /// Null scan code, indicates that the Unicode character should be used.
     NULL        = 0x00,

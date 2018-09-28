@@ -13,7 +13,6 @@ newtype_enum! {
 /// enum, as injecting an unknown value in a Rust enum is undefined behaviour.
 ///
 /// For lack of a better option, we therefore model them as a newtype of usize.
-#[derive(Copy, Clone, Eq, PartialEq)]
 #[must_use]
 pub enum Status: usize => {
     /// The operation completed successfully.

@@ -58,16 +58,14 @@ pub struct Key {
     pub unicode_char: u16,
 }
 
+newtype_enum! {
 /// A keyboard scan code
 ///
 /// Codes 0x8000 -> 0xFFFF are reserved for future OEM extensibility, therefore
 /// this C enum is _not_ safe to model as a Rust enum (where the compiler must
 /// know about all variants at compile time).
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(transparent)]
-pub struct ScanCode(u16);
-
-newtype_enum_variants! { ScanCode => #[allow(missing_docs)] {
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum ScanCode: u16 => #[allow(missing_docs)] {
     /// Null scan code, indicates that the Unicode character should be used.
     NULL        = 0x00,
     /// Move cursor up 1 row.

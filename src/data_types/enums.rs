@@ -15,28 +15,66 @@
 //! module provides facilities to simplify this kind of FFI.
 
 
-
-/// Add a set of enum variants to a C enum that is modeled as an integer newtype
+/// Interface a C-style enum as an integer newtype.
 ///
+/// This macro implements Debug for you, the way you would expect it to work on
+/// Rust enums (printing the variant name instead of its integer value). If you
+/// want anything else to be derived, you need to ask for it.
+///
+/// One minor annoyance is that since variants will be translated into
+/// associated constants in a separate impl block, you need to discriminate
+/// which attributes should go on the type and which should go on the impl
+/// block. The latter should go on the right-hand side of the arrow operator.
+///
+/// Usage example:
 /// ```
-/// pub struct UnixBool(i32);
-/// newtype_enum_variants! { UnixBool => #[allow(missing_docs)] {
+/// newtype_enum! {
+/// #[derive(Copy, Clone)]
+/// pub enum UnixBool: i32 => #[allow(missing_docs)] {
 ///     FALSE          =  0,
 ///     TRUE           =  1,
+///     /// Nobody expects the Unix inquisition!
 ///     FILE_NOT_FOUND = -1,
 /// }}
 /// ```
 #[macro_export]
-macro_rules! newtype_enum_variants {
-    ( $type:tt => $(#[$outer:meta])* {
-        $(  $(#[$inner:meta])*
-            $variant:ident = $value:expr, )*
-    } ) => {
-        $(#[$outer])*
+macro_rules! newtype_enum {
+    (
+        $(#[$type_attrs:meta])*
+        pub enum $type:ident : $base_integer:ty => $(#[$impl_attrs:meta])* {
+            $(
+                $(#[$variant_attrs:meta])*
+                $variant:ident = $value:expr,
+            )*
+        }
+    ) => {
+        $(#[$type_attrs])*
+        #[repr(transparent)]
+        pub struct $type($base_integer);
+
+        $(#[$impl_attrs])*
         #[allow(unused)]
         impl $type {
-            $(  $(#[$inner])*
-                pub const $variant: $type = $type($value); )*
+            $(
+                $(#[$variant_attrs])*
+                pub const $variant: $type = $type($value);
+            )*
+        }
+
+        impl core::fmt::Debug for $type {
+            fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                match *self {
+                    // Display variants by their name, like Rust enums do
+                    $(
+                        $type::$variant => write!(f, stringify!($variant)),
+                    )*
+
+                    // Display unknown variants in tuple struct format
+                    $type(unknown) => {
+                        write!(f, "{}({})", stringify!($type), unknown)
+                    }
+                }
+            }
         }
     }
 }

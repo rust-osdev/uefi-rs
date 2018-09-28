@@ -22,16 +22,14 @@ impl DebugSupport {
     }
 }
 
+newtype_enum! {
 /// The instruction set architecture of the running processor.
 ///
 /// UEFI can be and has been ported to new CPU architectures in the past,
 /// therefore modeling this C enum as a Rust enum (where the compiler must know
 /// about every variant in existence) would _not_ be safe.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(transparent)]
-pub struct ProcessorArch(u32);
-
-newtype_enum_variants! { ProcessorArch => {
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum ProcessorArch: u32 => {
     /// 32-bit x86 PC
     X86_32      = 0x014C,
     /// 64-bit x86 PC

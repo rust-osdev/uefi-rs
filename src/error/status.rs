@@ -2,6 +2,10 @@ use super::Result;
 use core::ops;
 use ucs2;
 
+/// Bit indicating that an UEFI status code is an error
+const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
+
+newtype_enum! {
 /// UEFI uses status codes in order to report successes, errors, and warnings.
 ///
 /// Unfortunately, the spec allows and encourages implementation-specific
@@ -9,15 +13,12 @@ use ucs2;
 /// enum, as injecting an unknown value in a Rust enum is undefined behaviour.
 ///
 /// For lack of a better option, we therefore model them as a newtype of usize.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(transparent)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[must_use]
-pub struct Status(usize);
-
-// Success and warning status codes
-newtype_enum_variants! { Status => {
+pub enum Status: usize => {
     /// The operation completed successfully.
     SUCCESS                 =  0,
+
     /// The string contained characters that could not be rendered and were skipped.
     WARN_UNKNOWN_GLYPH      =  1,
     /// The handle was closed, but the file was not deleted.
@@ -32,99 +33,77 @@ newtype_enum_variants! { Status => {
     WARN_FILE_SYSTEM        =  6,
     /// The operation will be processed across a system reset.
     WARN_RESET_REQUIRED     =  7,
-}}
 
-/// Bit indicating that a status code is an error
-const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
-
-/// Macro which eases implementation of error codes
-///
-/// Syntax is mostly identical to that of newtype_enum_variants, but with the
-/// Status type implicit (since this notion only applies to status codes) and
-/// with the ERROR_BIT set for every enum variant.
-///
-macro_rules! error_codes {
-    (   $(  $(#[$attr:meta])*
-            $status:ident = $error_code:expr, )*
-    ) => {
-        newtype_enum_variants! { Status => { $(
-            $(#[$attr])*
-            $status = $error_code | ERROR_BIT,
-        )* } }
-    }
-}
-//
-error_codes! {
     /// The image failed to load.
-    LOAD_ERROR              =  1,
+    LOAD_ERROR              = ERROR_BIT |  1,
     /// A parameter was incorrect.
-    INVALID_PARAMETER       =  2,
+    INVALID_PARAMETER       = ERROR_BIT |  2,
     /// The operation is not supported.
-    UNSUPPORTED             =  3,
+    UNSUPPORTED             = ERROR_BIT |  3,
     /// The buffer was not the proper size for the request.
-    BAD_BUFFER_SIZE         =  4,
+    BAD_BUFFER_SIZE         = ERROR_BIT |  4,
     /// The buffer is not large enough to hold the requested data.
     /// The required buffer size is returned in the appropriate parameter.
-    BUFFER_TOO_SMALL        =  5,
+    BUFFER_TOO_SMALL        = ERROR_BIT |  5,
     /// There is no data pending upon return.
-    NOT_READY               =  6,
+    NOT_READY               = ERROR_BIT |  6,
     /// The physical device reported an error while attempting the operation.
-    DEVICE_ERROR            =  7,
+    DEVICE_ERROR            = ERROR_BIT |  7,
     /// The device cannot be written to.
-    WRITE_PROTECTED         =  8,
+    WRITE_PROTECTED         = ERROR_BIT |  8,
     /// A resource has run out.
-    OUT_OF_RESOURCES        =  9,
+    OUT_OF_RESOURCES        = ERROR_BIT |  9,
     /// An inconstency was detected on the file system.
-    VOLUME_CORRUPTED        = 10,
+    VOLUME_CORRUPTED        = ERROR_BIT | 10,
     /// There is no more space on the file system.
-    VOLUME_FULL             = 11,
+    VOLUME_FULL             = ERROR_BIT | 11,
     /// The device does not contain any medium to perform the operation.
-    NO_MEDIA                = 12,
+    NO_MEDIA                = ERROR_BIT | 12,
     /// The medium in the device has changed since the last access.
-    MEDIA_CHANGED           = 13,
+    MEDIA_CHANGED           = ERROR_BIT | 13,
     /// The item was not found.
-    NOT_FOUND               = 14,
+    NOT_FOUND               = ERROR_BIT | 14,
     /// Access was denied.
-    ACCESS_DENIED           = 15,
+    ACCESS_DENIED           = ERROR_BIT | 15,
     /// The server was not found or did not respond to the request.
-    NO_RESPONSE             = 16,
+    NO_RESPONSE             = ERROR_BIT | 16,
     /// A mapping to a device does not exist.
-    NO_MAPPING              = 17,
+    NO_MAPPING              = ERROR_BIT | 17,
     /// The timeout time expired.
-    TIMEOUT                 = 18,
+    TIMEOUT                 = ERROR_BIT | 18,
     /// The protocol has not been started.
-    NOT_STARTED             = 19,
+    NOT_STARTED             = ERROR_BIT | 19,
     /// The protocol has already been started.
-    ALREADY_STARTED         = 20,
+    ALREADY_STARTED         = ERROR_BIT | 20,
     /// The operation was aborted.
-    ABORTED                 = 21,
+    ABORTED                 = ERROR_BIT | 21,
     /// An ICMP error occurred during the network operation.
-    ICMP_ERROR              = 22,
+    ICMP_ERROR              = ERROR_BIT | 22,
     /// A TFTP error occurred during the network operation.
-    TFTP_ERROR              = 23,
+    TFTP_ERROR              = ERROR_BIT | 23,
     /// A protocol error occurred during the network operation.
-    PROTOCOL_ERROR          = 24,
+    PROTOCOL_ERROR          = ERROR_BIT | 24,
     /// The function encountered an internal version that was
     /// incompatible with a version requested by the caller.
-    INCOMPATIBLE_VERSION    = 25,
+    INCOMPATIBLE_VERSION    = ERROR_BIT | 25,
     /// The function was not performed due to a security violation.
-    SECURITY_VIOLATION      = 26,
+    SECURITY_VIOLATION      = ERROR_BIT | 26,
     /// A CRC error was detected.
-    CRC_ERROR               = 27,
+    CRC_ERROR               = ERROR_BIT | 27,
     /// Beginning or end of media was reached
-    END_OF_MEDIA            = 28,
+    END_OF_MEDIA            = ERROR_BIT | 28,
     /// The end of the file was reached.
-    END_OF_FILE             = 31,
+    END_OF_FILE             = ERROR_BIT | 31,
     /// The language specified was invalid.
-    INVALID_LANGUAGE        = 32,
+    INVALID_LANGUAGE        = ERROR_BIT | 32,
     /// The security status of the data is unknown or compromised and
     /// the data must be updated or replaced to restore a valid security status.
-    COMPROMISED_DATA        = 33,
+    COMPROMISED_DATA        = ERROR_BIT | 33,
     /// There is an address conflict address allocation
-    IP_ADDRESS_CONFLICT     = 34,
+    IP_ADDRESS_CONFLICT     = ERROR_BIT | 34,
     /// A HTTP error occurred during the network operation.
-    HTTP_ERROR              = 35,
-}
+    HTTP_ERROR              = ERROR_BIT | 35,
+}}
 
 impl Status {
     /// Returns true if status code indicates success.

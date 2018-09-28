@@ -1,7 +1,7 @@
 //! This module provides tooling that facilitates dealing with C-style enums
 //!
 //! C-style enums and Rust-style enums are quite different. There are things
-//! which one allows, but not the others, and vice versa. In an FFI context, two
+//! which one allows, but not the other, and vice versa. In an FFI context, two
 //! aspects of C-style enums are particularly bothersome to us:
 //!
 //! - They allow a caller to send back an unknown enum variant. In Rust, the

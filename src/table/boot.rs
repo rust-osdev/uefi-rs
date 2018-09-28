@@ -207,7 +207,7 @@ impl BootServices {
 
     /// Stops execution until an event is signaled
     ///
-    /// This function must be called at priority level Tpl::Application. If an
+    /// This function must be called at priority level Tpl::APPLICATION. If an
     /// attempt is made to call it at any other priority level, an `Unsupported`
     /// error is returned.
     ///
@@ -374,27 +374,30 @@ impl super::Table for BootServices {
     const SIGNATURE: u64 = 0x5652_4553_544f_4f42;
 }
 
+newtype_enum! {
 /// Task priority level.
-#[derive(Debug, Copy, Clone)]
-#[repr(usize)]
-pub enum Tpl {
+///
+/// Although the UEFI specification repeatedly states that only the variants
+/// specified below should be used in application-provided input, as the other
+/// are reserved for internal firmware use, it might still happen that the
+/// firmware accidentally discloses one of these internal TPLs to us.
+///
+/// Since feeding an unexpected variant to a Rust enum is UB, this means that
+/// this C enum must be interfaced via the newtype pattern.
+pub enum Tpl: usize => {
     /// Normal task execution level.
-    Application = 4,
+    APPLICATION = 4,
     /// Async interrupt-style callbacks run at this TPL.
-    Callback = 8,
+    CALLBACK    = 8,
     /// Notifications are masked at this level.
     ///
     /// This is used in critical sections of code.
-    Notify = 16,
+    NOTIFY      = 16,
     /// Highest priority level.
     ///
     /// Even processor interrupts are disable at this level.
-    HighLevel = 31,
-    // SAFETY: The UEFI specification repeatedly states that only the these
-    //         priority levels may be used, the rest being reserved for internal
-    //         firmware use. So only these priority levels should be exposed to
-    //         the application, and modeling them as a Rust enum seems safe.
-}
+    HIGH_LEVEL  = 31,
+}}
 
 /// Type of allocation to perform.
 #[derive(Debug, Copy, Clone)]

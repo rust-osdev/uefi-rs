@@ -49,7 +49,7 @@ pub enum ResetType {
     /// The additional data must be a pointer to
     /// a null-terminated string followed by an UUID.
     PlatformSpecific,
-    // NOTE: This enum is never exposed to the user, but only fed as input to
-    //       the firmware. Therefore, unexpected values can never come from the
-    //       firmware, and modeling this as a Rust enum seems safe.
+    // SAFETY: This enum is never exposed to the user, but only fed as input to
+    //         the firmware. Therefore, unexpected values can never come from
+    //         the firmware, and modeling this as a Rust enum seems safe.
 }

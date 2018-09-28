@@ -305,10 +305,10 @@ pub enum PixelFormat {
     /// This means you will have to use the `blt` function which will
     /// convert the graphics data to the device's internal pixel format.
     BltOnly,
-    // NOTE: UEFI also defines a PixelFormatMax variant, and states that all
-    //       valid enum values are guaranteed to be smaller. Since that is the
-    //       case, adding a new enum variant would be a breaking change, so it
-    //       is safe to model this C enum as a Rust enum.
+    // SAFETY: UEFI also defines a PixelFormatMax variant, and states that all
+    //         valid enum values are guaranteed to be smaller. Since that is the
+    //         case, adding a new enum variant would be a breaking change, so it
+    //         is safe to model this C enum as a Rust enum.
 }
 
 /// Bitmask used to indicate which bits of a pixel represent a given color.

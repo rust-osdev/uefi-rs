@@ -32,11 +32,12 @@
 #![warn(missing_docs, unused)]
 #![deny(clippy::all)]
 
-mod error;
-pub use self::error::{Result, Status};
-
+#[macro_use]
 mod data_types;
 pub use self::data_types::{Event, Guid, Handle};
+
+mod error;
+pub use self::error::{Result, Status};
 
 pub mod table;
 

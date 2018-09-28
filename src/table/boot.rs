@@ -207,7 +207,7 @@ impl BootServices {
 
     /// Stops execution until an event is signaled
     ///
-    /// This function must be called at priority level Tpl::Application. If an
+    /// This function must be called at priority level Tpl::APPLICATION. If an
     /// attempt is made to call it at any other priority level, an `Unsupported`
     /// error is returned.
     ///
@@ -374,23 +374,30 @@ impl super::Table for BootServices {
     const SIGNATURE: u64 = 0x5652_4553_544f_4f42;
 }
 
+newtype_enum! {
 /// Task priority level.
-#[derive(Debug, Copy, Clone)]
-#[repr(usize)]
-pub enum Tpl {
+///
+/// Although the UEFI specification repeatedly states that only the variants
+/// specified below should be used in application-provided input, as the other
+/// are reserved for internal firmware use, it might still happen that the
+/// firmware accidentally discloses one of these internal TPLs to us.
+///
+/// Since feeding an unexpected variant to a Rust enum is UB, this means that
+/// this C enum must be interfaced via the newtype pattern.
+pub enum Tpl: usize => {
     /// Normal task execution level.
-    Application = 4,
+    APPLICATION = 4,
     /// Async interrupt-style callbacks run at this TPL.
-    Callback = 8,
+    CALLBACK    = 8,
     /// Notifications are masked at this level.
     ///
     /// This is used in critical sections of code.
-    Notify = 16,
+    NOTIFY      = 16,
     /// Highest priority level.
     ///
     /// Even processor interrupts are disable at this level.
-    HighLevel = 31,
-}
+    HIGH_LEVEL  = 31,
+}}
 
 /// Type of allocation to perform.
 #[derive(Debug, Copy, Clone)]
@@ -403,47 +410,51 @@ pub enum AllocateType {
     Address(usize),
 }
 
+newtype_enum! {
 /// The type of a memory range.
-#[derive(Debug, Copy, Clone)]
-#[repr(u32)]
-pub enum MemoryType {
+///
+/// UEFI allows firmwares and operating systems to introduce new memory types
+/// in the 0x70000000..0xFFFFFFFF range. Therefore, we don't know the full set
+/// of memory types at compile time, and it is _not_ safe to model this C enum
+/// as a Rust enum.
+pub enum MemoryType: u32 => {
     /// This enum variant is not used.
-    Reserved,
+    RESERVED                =  0,
     /// The code portions of a loaded UEFI application.
-    LoaderCode,
+    LOADER_CODE             =  1,
     /// The data portions of a loaded UEFI applications,
     /// as well as any memory allocated by it.
-    LoaderData,
+    LOADER_DATA             =  2,
     /// Code of the boot drivers.
     ///
     /// Can be reused after OS is loaded.
-    BootServicesCode,
+    BOOT_SERVICES_CODE      =  3,
     /// Memory used to store boot drivers' data.
     ///
     /// Can be reused after OS is loaded.
-    BootServicesData,
+    BOOT_SERVICES_DATA      =  4,
     /// Runtime drivers' code.
-    RuntimeServicesCode,
+    RUNTIME_SERVICES_CODE   =  5,
     /// Runtime services' code.
-    RuntimeServicesData,
+    RUNTIME_SERVICES_DATA   =  6,
     /// Free usable memory.
-    Conventional,
+    CONVENTIONAL            =  7,
     /// Memory in which errors have been detected.
-    Unusable,
+    UNUSABLE                =  8,
     /// Memory that holds ACPI tables.
     /// Can be reclaimed after they are parsed.
-    AcpiReclaim,
+    ACPI_RECLAIM            =  9,
     /// Firmware-reserved addresses.
-    AcpiNonVolatile,
+    ACPI_NON_VOLATILE       = 10,
     /// A region used for memory-mapped I/O.
-    Mmio,
+    MMIO                    = 11,
     /// Address space used for memory-mapped port I/O.
-    MmioPortSpace,
+    MMIO_PORT_SPACE         = 12,
     /// Address space which is part of the processor.
-    PalCode,
+    PAL_CODE                = 13,
     /// Memory region which is usable and is also non-volatile.
-    PersistentMemory,
-}
+    PERSISTENT_MEMORY       = 14,
+}}
 
 /// A structure describing a region of memory.
 #[derive(Debug, Copy, Clone)]
@@ -466,7 +477,7 @@ pub struct MemoryDescriptor {
 impl Default for MemoryDescriptor {
     fn default() -> MemoryDescriptor {
         MemoryDescriptor {
-            ty: MemoryType::Reserved,
+            ty: MemoryType::RESERVED,
             padding: 0,
             phys_start: 0,
             virt_start: 0,

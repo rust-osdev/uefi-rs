@@ -58,65 +58,68 @@ pub struct Key {
     pub unicode_char: u16,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(u16)]
-#[allow(missing_docs)]
-pub enum ScanCode {
-    Null,
+newtype_enum! {
+/// A keyboard scan code
+///
+/// Codes 0x8000 -> 0xFFFF are reserved for future OEM extensibility, therefore
+/// this C enum is _not_ safe to model as a Rust enum (where the compiler must
+/// know about all variants at compile time).
+pub enum ScanCode: u16 => #[allow(missing_docs)] {
+    /// Null scan code, indicates that the Unicode character should be used.
+    NULL        = 0x00,
     /// Move cursor up 1 row.
-    Up,
+    UP          = 0x01,
     /// Move cursor down 1 row.
-    Down,
+    DOWN        = 0x02,
     /// Move cursor right 1 column.
-    Right,
+    RIGHT       = 0x03,
     /// Move cursor left 1 column.
-    Left,
-    Home,
-    End,
-    Insert,
-    Delete,
-    PageUp,
-    PageDown,
-    Function1,
-    Function2,
-    Function3,
-    Function4,
-    Function5,
-    Function6,
-    Function7,
-    Function8,
-    Function9,
-    Function10,
-    Function11,
-    Function12,
-    Escape,
+    LEFT        = 0x04,
+    HOME        = 0x05,
+    END         = 0x06,
+    INSERT      = 0x07,
+    DELETE      = 0x08,
+    PAGE_UP     = 0x09,
+    PAGE_DOWN   = 0x0A,
+    FUNCTION_1  = 0x0B,
+    FUNCTION_2  = 0x0C,
+    FUNCTION_3  = 0x0D,
+    FUNCTION_4  = 0x0E,
+    FUNCTION_5  = 0x0F,
+    FUNCTION_6  = 0x10,
+    FUNCTION_7  = 0x11,
+    FUNCTION_8  = 0x12,
+    FUNCTION_9  = 0x13,
+    FUNCTION_10 = 0x14,
+    FUNCTION_11 = 0x15,
+    FUNCTION_12 = 0x16,
+    ESCAPE      = 0x17,
 
-    Function13 = 0x68,
-    Function14,
-    Function15,
-    Function16,
-    Function17,
-    Function18,
-    Function19,
-    Function20,
-    Function21,
-    Function22,
-    Function23,
-    Function24,
+    FUNCTION_13 = 0x68,
+    FUNCTION_14 = 0x69,
+    FUNCTION_15 = 0x6A,
+    FUNCTION_16 = 0x6B,
+    FUNCTION_17 = 0x6C,
+    FUNCTION_18 = 0x6D,
+    FUNCTION_19 = 0x6E,
+    FUNCTION_20 = 0x6F,
+    FUNCTION_21 = 0x70,
+    FUNCTION_22 = 0x71,
+    FUNCTION_23 = 0x72,
+    FUNCTION_24 = 0x73,
 
-    Mute = 0x7F,
+    MUTE        = 0x7F,
+    VOLUME_UP   = 0x80,
+    VOLUME_DOWN = 0x81,
 
-    VolumeUp = 0x80,
-    VolumeDown,
-
-    BrightnessUp = 0x100,
-    BrightnessDown,
-    Suspend,
-    Hibernate,
-    ToggleDisplay,
-    Recovery,
-    Eject,
-}
+    BRIGHTNESS_UP   = 0x100,
+    BRIGHTNESS_DOWN = 0x101,
+    SUSPEND         = 0x102,
+    HIBERNATE       = 0x103,
+    TOGGLE_DISPLAY  = 0x104,
+    RECOVERY        = 0x105,
+    EJECT           = 0x106,
+}}
 
 impl_proto! {
     protocol Input {

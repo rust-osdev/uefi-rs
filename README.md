@@ -13,10 +13,13 @@ This crates makes it easy to write UEFI applications in Rust.
 The objective is to provide **safe** and **performant** wrappers for UEFI interfaces,
 and allow developers to write idiomatic Rust code.
 
+Check out @gilomendes [blog post on getting started with UEFI in Rust][gm-blog].
+
 **Note**: due to some issues with the Rust compiler, this crate currently works
 and has been tested _only_ with **64-bit** UEFI.
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
+[gm-blog]: https://medium.com/@gil0mendes/an-efi-app-a-bit-rusty-82c36b745f49
 
 ![uefi-rs running in QEMU](https://imgur.com/SFPSVuO.png)
 

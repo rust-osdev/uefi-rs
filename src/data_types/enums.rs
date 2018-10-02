@@ -53,7 +53,7 @@ macro_rules! newtype_enum {
         $(#[$type_attrs])*
         #[repr(transparent)]
         #[derive(Clone, Copy, Eq, PartialEq)]
-        pub struct $type($base_integer);
+        pub struct $type(pub $base_integer);
 
         $(#[$impl_attrs])*
         #[allow(unused)]

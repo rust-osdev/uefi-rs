@@ -163,7 +163,7 @@ impl<'a> Drop for File<'a> {
     fn drop(&mut self) {
         let result: Result<()> = (self.inner.close)(self.inner).into();
         // The spec says this always succeeds.
-        result.expect("Failed to close file");
+        result.expect("Failed to close file").unwrap();
     }
 }
 

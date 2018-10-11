@@ -86,12 +86,7 @@ impl Serial {
     pub fn write(&mut self, data: &[u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        let status = (self.write)(self, &mut buffer_size, data.as_ptr());
-
-        match status {
-            Status::SUCCESS | Status::TIMEOUT => Ok(buffer_size),
-            err => Err(err),
-        }
+        (self.write)(self, &mut buffer_size, data.as_ptr()).into_with(|| buffer_size)
     }
 
     /// Reads data from this device.
@@ -102,12 +97,7 @@ impl Serial {
     pub fn read(&mut self, data: &mut [u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        let status = (self.read)(self, &mut buffer_size, data.as_mut_ptr());
-
-        match status {
-            Status::SUCCESS | Status::TIMEOUT => Ok(buffer_size),
-            err => Err(err),
-        }
+        (self.read)(self, &mut buffer_size, data.as_mut_ptr()).into_with(|| buffer_size)
     }
 
     /// Returns the current I/O mode.

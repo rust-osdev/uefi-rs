@@ -1,4 +1,4 @@
-use super::Result;
+use super::{Completion, Result};
 use core::ops;
 use ucs2;
 
@@ -129,9 +129,10 @@ impl Status {
     where
         F: FnOnce() -> T,
     {
-        // FIXME: Is that the best way to handle warnings?
         if self.is_success() {
-            Ok(f())
+            Ok(Completion::Success(f()))
+        } else if self.is_warning() {
+            Ok(Completion::Warning(f(), self))
         } else {
             Err(self)
         }
@@ -146,7 +147,7 @@ impl Into<Result<()>> for Status {
 }
 
 impl ops::Try for Status {
-    type Ok = ();
+    type Ok = Completion<()>;
     type Error = Status;
 
     fn into_result(self) -> Result<()> {

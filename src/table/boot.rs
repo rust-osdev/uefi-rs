@@ -180,18 +180,16 @@ impl BootServices {
             &mut map_key,
             &mut entry_size,
             &mut entry_version,
-        )?;
-
-        let len = map_size / entry_size;
-
-        let iter = MemoryMapIter {
-            buffer,
-            entry_size,
-            index: 0,
-            len,
-        };
-
-        Ok((map_key, iter))
+        ).into_with(move || {
+            let len = map_size / entry_size;
+            let iter = MemoryMapIter {
+                buffer,
+                entry_size,
+                index: 0,
+                len,
+            };
+            (map_key, iter)
+        })
     }
 
     /// Allocates from a memory pool. The address is 8-byte aligned.
@@ -278,15 +276,10 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
         };
 
-        let status = (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer);
-
-        // Must convert the returned size (in bytes) to length (number of elements).
-        let buffer_len = buffer_size / handle_size;
-
-        match status {
-            Status::SUCCESS | Status::BUFFER_TOO_SMALL => Ok(buffer_len),
-            err => Err(err),
-        }
+        (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer).into_with(|| {
+            // Must convert the returned size (in bytes) to length (number of elements).
+            buffer_size / handle_size
+        })
     }
 
     /// Exits the early boot stage.

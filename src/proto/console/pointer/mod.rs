@@ -37,9 +37,8 @@ impl Pointer {
         let mut pointer_state = unsafe { mem::uninitialized() };
 
         match (self.get_state)(self, &mut pointer_state) {
-            Status::SUCCESS => Ok(Some(pointer_state)),
-            Status::NOT_READY => Ok(None),
-            error => Err(error),
+            Status::NOT_READY => Ok(None.into()),
+            other => other.into_with(|| Some(pointer_state)),
         }
     }
 

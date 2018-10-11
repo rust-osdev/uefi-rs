@@ -34,9 +34,8 @@ impl Input {
         let mut key = unsafe { mem::uninitialized() };
 
         match (self.read_key_stroke)(self, &mut key) {
-            Status::SUCCESS => Ok(Some(key)),
-            Status::NOT_READY => Ok(None),
-            error => Err(error),
+            Status::NOT_READY => Ok(None.into()),
+            other => other.into_with(|| Some(key))
         }
     }
 

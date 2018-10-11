@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::{Result, Status};
+use crate::{Completion, Result, Status};
 
 /// Interface for text-based output devices.
 ///
@@ -53,7 +53,7 @@ impl Output {
 
     /// Returns an iterator of all supported text modes.
     // TODO: fix the ugly lifetime parameter.
-    pub fn modes<'a>(&'a mut self) -> impl Iterator<Item = OutputMode> + 'a {
+    pub fn modes<'a>(&'a mut self) -> impl Iterator<Item = Completion<OutputMode>> + 'a {
         let max = self.data.max_mode;
         OutputModeIter {
             output: self,
@@ -74,8 +74,7 @@ impl Output {
     /// alternative to this method.
     fn query_mode(&self, index: i32) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
-        (self.query_mode)(self, index, &mut columns, &mut rows)?;
-        Ok((columns, rows))
+        (self.query_mode)(self, index, &mut columns, &mut rows).into_with(|| (columns, rows))
     }
 
     /// Sets a mode as current.
@@ -86,8 +85,8 @@ impl Output {
     /// Returns the the current text mode.
     pub fn current_mode(&self) -> Result<OutputMode> {
         let index = self.data.mode;
-        let dims = self.query_mode(index)?;
-        Ok(OutputMode { index, dims })
+        let dims_completion = self.query_mode(index)?;
+        Ok(dims_completion.map(|dims| OutputMode { index, dims }))
     }
 
     /// Make the cursor visible or invisible.
@@ -161,6 +160,7 @@ impl fmt::Write for Output {
 
             if i == BUF_SIZE {
                 flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
+                                              .map(|completion| completion.unwrap())
             } else {
                 Ok(())
             }
@@ -178,7 +178,7 @@ impl fmt::Write for Output {
         ucs2::encode_with(s, add_ch).map_err(|_| fmt::Error)?;
 
         // Flush the remainder of the buffer
-        flush_buffer(&mut buf, &mut i)
+        flush_buffer(&mut buf, &mut i).map(|completion| completion.unwrap())
     }
 }
 
@@ -217,15 +217,15 @@ struct OutputModeIter<'a> {
 }
 
 impl<'a> Iterator for OutputModeIter<'a> {
-    type Item = OutputMode;
+    type Item = Completion<OutputMode>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;
         if index < self.max {
             self.current += 1;
 
-            if let Ok(dims) = self.output.query_mode(index) {
-                Some(OutputMode { index, dims })
+            if let Ok(dims_completion) = self.output.query_mode(index) {
+                Some(dims_completion.map(|dims| OutputMode { index, dims }))
             } else {
                 self.next()
             }

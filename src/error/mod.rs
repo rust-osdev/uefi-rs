@@ -37,11 +37,20 @@ impl<T> Completion<T> {
         }
     }
 
+    /// Assume that no warning occured, panic if not
+    pub fn unwrap(self) -> T {
+        match self {
+            Completion::Success(res) => res,
+            Completion::Warning(_, w) =>
+                unwrap_failed("Called `Completion::unwrap()` on a `Warning` value", w),
+        }
+    }
+
     /// Assume that no warning occured, panic with provided message if not
     pub fn expect(self, msg: &str) -> T {
         match self {
             Completion::Success(res) => res,
-            Completion::Warning(_, w) => panic!("{}: {:?}", msg, w),
+            Completion::Warning(_, w) => unwrap_failed(msg, w),
         }
     }
 
@@ -77,13 +86,19 @@ impl<T> Completion<T> {
             }
         }
     }
-
 }
 
 impl<T> From<T> for Completion<T> {
     fn from(res: T) -> Self {
         Completion::Success(res)
     }
+}
+
+// This is a separate function to reduce the code size of the methods
+#[inline(never)]
+#[cold]
+fn unwrap_failed(msg: &str, warning: Status) -> ! {
+    panic!("{}: {:?}", msg, warning)
 }
 
 /// Return type of many UEFI functions.

@@ -1,7 +1,7 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use bitflags::bitflags;
-use crate::{Result, Status};
+use crate::{Completion, Result, Status};
 
 /// Provides access to a serial I/O device.
 ///
@@ -83,10 +83,15 @@ impl Serial {
     /// Returns the number of bytes actually written to the device.
     /// In the case of a timeout, this number will be smaller than
     /// the buffer's size.
+    ///
+    /// Unlike UEFI, we handle timeouts as warnings, not errors
     pub fn write(&mut self, data: &[u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        (self.write)(self, &mut buffer_size, data.as_ptr()).into_with(|| buffer_size)
+        match (self.write)(self, &mut buffer_size, data.as_ptr()) {
+            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
+            other => other.into_with(|| buffer_size),
+        }
     }
 
     /// Reads data from this device.
@@ -94,10 +99,15 @@ impl Serial {
     /// Returns the number of bytes actually read from the device.
     /// In the case of a timeout or buffer overrun, this number will be smaller
     /// than the buffer's size.
+    ///
+    /// Unlike UEFI, we handle timeouts as warnings, not errors
     pub fn read(&mut self, data: &mut [u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        (self.read)(self, &mut buffer_size, data.as_mut_ptr()).into_with(|| buffer_size)
+        match (self.read)(self, &mut buffer_size, data.as_mut_ptr()) {
+            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
+            other => other.into_with(|| buffer_size),
+        }
     }
 
     /// Returns the current I/O mode.

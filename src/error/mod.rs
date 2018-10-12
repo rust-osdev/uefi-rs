@@ -17,7 +17,7 @@ pub enum Completion<T> {
 }
 
 impl<T> Completion<T> {
-    /// Split the complation into a (status, value) pair
+    /// Split the completion into a (status, value) pair
     pub fn split(self) -> (T, Status) {
         match self {
             Completion::Success(res) => (res, Status::SUCCESS),
@@ -50,7 +50,6 @@ impl<T> Completion<T> {
     /// be stored, one of them will be spilled into the logs.
     ///
     pub fn with_warning(self, extra_stat: Status) -> Self {
-        assert!(!extra_stat.is_error(), "Completions do not handle error status");
         match self {
             Completion::Success(res) => {
                 if extra_stat.is_success() {

@@ -265,9 +265,11 @@ impl BootServices {
     ) -> Result<usize> {
         let handle_size = mem::size_of::<Handle>();
 
+        const NULL_BUFFER: *mut Handle = ptr::null_mut();
+
         let (mut buffer_size, buffer) = match output {
             Some(buffer) => (buffer.len() * handle_size, buffer.as_mut_ptr()),
-            None => (0, ptr::null_mut()),
+            None => (0, NULL_BUFFER),
         };
 
         // Obtain the needed data from the parameters.
@@ -276,10 +278,15 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
         };
 
-        (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer).into_with(|| {
-            // Must convert the returned size (in bytes) to length (number of elements).
-            buffer_size / handle_size
-        })
+        let status = (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer);
+
+        // Must convert the returned size (in bytes) to length (number of elements).
+        let buffer_len = buffer_size / handle_size;
+
+        match (buffer, status) {
+            (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
+            (_, other_status) => other_status.into_with(|| buffer_len),
+        }
     }
 
     /// Exits the early boot stage.

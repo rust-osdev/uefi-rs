@@ -160,7 +160,7 @@ impl fmt::Write for Output {
 
             if i == BUF_SIZE {
                 flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
-                                              .map(|completion| completion.unwrap())
+                                              .map(|completion| completion.value())
             } else {
                 Ok(())
             }
@@ -178,7 +178,7 @@ impl fmt::Write for Output {
         ucs2::encode_with(s, add_ch).map_err(|_| fmt::Error)?;
 
         // Flush the remainder of the buffer
-        flush_buffer(&mut buf, &mut i).map(|completion| completion.unwrap())
+        flush_buffer(&mut buf, &mut i).map(|completion| completion.value())
     }
 }
 

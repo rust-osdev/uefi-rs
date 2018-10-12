@@ -8,6 +8,7 @@ pub use self::status::Status;
 /// This type is used when an UEFI operation has completed, but some non-fatal
 /// problems may have been encountered along the way
 #[must_use]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Completion<T> {
     /// The operation completed without problems
     Success(T),
@@ -26,13 +27,21 @@ impl<T> Completion<T> {
     }
 
     /// Access the inner value, logging the warning if there is any
-    pub fn unwrap(self) -> T {
+    pub fn value(self) -> T {
         match self {
             Completion::Success(res) => res,
             Completion::Warning(res, stat) => {
-                warn!("Encountered UEFI warning {:?}", stat);
+                warn!("Encountered UEFI warning: {:?}", stat);
                 res
             },
+        }
+    }
+
+    /// Assume that no warning occured, panic with provided message if not
+    pub fn expect(self, msg: &str) -> T {
+        match self {
+            Completion::Success(res) => res,
+            Completion::Warning(_, w) => panic!("{}: {:?}", msg, w),
         }
     }
 

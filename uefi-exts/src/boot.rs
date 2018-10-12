@@ -46,7 +46,7 @@ impl BootServicesExt for BootServices {
         // Retrieve all handles implementing this.
         self.find_handles::<P>()
             // Convert to an option.
-            .ok()?.unwrap()
+            .ok()?.value()
             // Using the `find_handles` function might not return _only_ compatible protocols.
             // We have to retrieve them all and find one that works.
             .iter()

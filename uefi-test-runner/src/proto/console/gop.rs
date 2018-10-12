@@ -24,14 +24,16 @@ fn set_graphics_mode(gop: &mut GraphicsOutput) {
     // We know for sure QEMU has a 1024x768, mode.
     let mode = gop
         .modes()
+        .map(|mode| mode.expect("Warnings encountered while querying mode"))
         .find(|ref mode| {
             let info = mode.info();
-
             info.resolution() == (1024, 768)
         })
         .unwrap();
 
-    gop.set_mode(&mode).expect("Failed to set graphics mode");
+    gop.set_mode(&mode)
+        .expect("Failed to set graphics mode")
+        .expect("Warnings encountered while setting graphics mode");
 }
 
 // Fill the screen with color.
@@ -43,7 +45,9 @@ fn fill_color(gop: &mut GraphicsOutput) {
         dims: (1024, 768),
     };
 
-    gop.blt(op).expect("Failed to fill screen with color");
+    gop.blt(op)
+        .expect("Failed to fill screen with color")
+        .expect("Warnings encountered while filling screen with color");
 }
 
 // Draw directly to the frame buffer.

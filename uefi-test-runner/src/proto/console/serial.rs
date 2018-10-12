@@ -9,7 +9,8 @@ pub fn test(bt: &BootServices) {
 
         let old_ctrl_bits = serial
             .get_control_bits()
-            .expect("Failed to get device control bits");
+            .expect("Failed to get device control bits")
+            .expect("Warnings encountered while getting device control bits");
         let mut ctrl_bits = ControlBits::empty();
 
         // For the purposes of testing, we're _not_ going to implement
@@ -21,30 +22,37 @@ pub fn test(bt: &BootServices) {
 
         serial
             .set_control_bits(ctrl_bits)
-            .expect("Failed to set device control bits");
+            .expect("Failed to set device control bits")
+            .expect("Warnings encountered while setting device control bits");
 
         // Keep this message short, we need it to fit in the FIFO.
-        let output = b"Hello world!";
-        let msg_len = output.len();
+        const OUTPUT: &[u8] = b"Hello world!";
+        const MSG_LEN: usize = OUTPUT.len();
 
         let len = serial
-            .write(output)
-            .expect("Failed to write to serial port");
-        assert_eq!(len, msg_len, "Serial port write timed-out!");
+            .write(OUTPUT)
+            .expect("Failed to write to serial port")
+            .expect("Warnings encountered while writing to serial port");
+        assert_eq!(len, MSG_LEN, "Bad serial port write length");
 
-        let mut input = [0u8; 128];
+        let mut input = [0u8; MSG_LEN];
         let len = serial
             .read(&mut input)
-            .expect("Failed to read from serial port");
-        assert_eq!(len, msg_len, "Serial port read timed-out!");
+            .expect("Failed to read from serial port")
+            .expect("Warnings encountered while reading from serial port");
+        assert_eq!(len, MSG_LEN, "Bad serial port read length");
 
-        assert_eq!(&output[..], &input[..msg_len]);
+        assert_eq!(&OUTPUT[..], &input[..MSG_LEN]);
 
         // Clean up after ourselves
-        serial.reset().expect("Could not reset the serial device");
+        serial
+            .reset()
+            .expect("Could not reset the serial device")
+            .expect("Warnings encountered while resetting serial device");
         serial
             .set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)
-            .expect("Could not restore the serial device state");
+            .expect("Could not restore the serial device state")
+            .expect("Warnings encountered while restoring serial device state");
     } else {
         warn!("No serial device found");
     }

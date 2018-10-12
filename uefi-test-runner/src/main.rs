@@ -1,8 +1,9 @@
 #![no_std]
 #![no_main]
-#![feature(slice_patterns)]
 #![feature(alloc)]
 #![feature(asm)]
+#![feature(const_slice_len)]
+#![feature(slice_patterns)]
 
 #[macro_use]
 extern crate log;
@@ -22,7 +23,10 @@ pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable
     uefi_services::init(st);
 
     // Reset the console before running all the other tests.
-    st.stdout().reset(false).expect("Failed to reset stdout");
+    st.stdout()
+        .reset(false)
+        .expect("Failed to reset stdout")
+        .expect("Warnings encountered while resetting stdout");
 
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
@@ -71,25 +75,31 @@ fn check_screenshot(bt: &BootServices, name: &str) {
         io_mode.timeout = 3_000_000;
         serial
             .set_attributes(&io_mode)
-            .expect("Failed to configure serial port timeout");
+            .expect("Failed to configure serial port timeout")
+            .expect("Warnings encountered while configuring serial port timeout");
 
         // Send a screenshot request to the host
-        let mut len = serial
+        serial
             .write(b"SCREENSHOT: ")
-            .expect("Failed to send request");
-        assert_eq!(len, 12, "Screenshot request timed out");
+            .expect("Failed to send request")
+            .expect("Request triggered a warning");
         let name_bytes = name.as_bytes();
-        len = serial.write(name_bytes).expect("Failed to send request");
-        assert_eq!(len, name_bytes.len(), "Screenshot request timed out");
-        len = serial.write(b"\n").expect("Failed to send request");
-        assert_eq!(len, 1, "Screenshot request timed out");
+        serial
+            .write(name_bytes)
+            .expect("Failed to send request")
+            .expect("Request triggered a warning");
+        serial
+            .write(b"\n")
+            .expect("Failed to send request")
+            .expect("Request triggered a warning");
 
         // Wait for the host's acknowledgement before moving forward
         let mut reply = [0; 3];
-        let read_size = serial
+        serial
             .read(&mut reply[..])
-            .expect("Failed to read host reply");
-        assert_eq!(read_size, 3, "Screenshot request timed out");
+            .expect("Failed to read host reply")
+            .expect("Request triggered a warning");
+
         assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
     } else {
         // Outside of QEMU, give the user some time to inspect the output
@@ -101,7 +111,7 @@ fn shutdown(st: &SystemTable) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.
-    st.stdout().reset(false).unwrap();
+    st.stdout().reset(false).unwrap().unwrap();
 
     // Inform the user, and give him time to read on real hardware
     if cfg!(not(feature = "qemu")) {

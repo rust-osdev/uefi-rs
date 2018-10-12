@@ -10,11 +10,13 @@ pub fn test(bt: &BootServices) {
 
         pointer
             .reset(false)
-            .expect("Failed to reset pointer device");
+            .expect("Failed to reset pointer device")
+            .expect("Warnings encountered while resetting pointer device");
 
         let state = pointer
             .read_state()
-            .expect("Failed to retrieve pointer state");
+            .expect("Failed to retrieve pointer state")
+            .expect("Warnings encountered while retrieving pointer state");
         if let Some(state) = state {
             info!("New pointer State: {:#?}", state);
         } else {

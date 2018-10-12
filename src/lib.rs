@@ -24,7 +24,6 @@
 //! therefore all the network protocols will be unavailable.
 
 #![feature(optin_builtin_traits)]
-#![feature(tool_lints)]
 #![feature(try_trait)]
 #![no_std]
 // Enable some additional warnings and lints.

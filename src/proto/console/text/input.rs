@@ -35,7 +35,7 @@ impl Input {
 
         match (self.read_key_stroke)(self, &mut key) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with(|| Some(key))
+            other => other.into_with(|| Some(key)),
         }
     }
 

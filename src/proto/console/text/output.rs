@@ -159,8 +159,9 @@ impl fmt::Write for Output {
             i += 1;
 
             if i == BUF_SIZE {
-                flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
-                                              .map(|completion| completion.value())
+                flush_buffer(&mut buf, &mut i)
+                    .map_err(|_| ucs2::Error::BufferOverflow)
+                    .map(|completion| completion.value())
             } else {
                 Ok(())
             }

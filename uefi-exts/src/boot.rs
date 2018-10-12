@@ -20,8 +20,7 @@ impl BootServicesExt for BootServices {
         let search_type = SearchType::from_proto::<P>();
 
         // Determine how much we need to allocate.
-        let (buffer_size, warn1) = self.locate_handle(search_type, None)?
-                                       .split();
+        let (buffer_size, warn1) = self.locate_handle(search_type, None)?.split();
 
         // Allocate a large enough buffer.
         let mut buffer = Vec::with_capacity(buffer_size);
@@ -31,22 +30,24 @@ impl BootServicesExt for BootServices {
         }
 
         // Perform the search.
-        let (buffer_size, warn2) = self.locate_handle(search_type, Some(&mut buffer))?
-                                       .split();
+        let (buffer_size, warn2) = self.locate_handle(search_type, Some(&mut buffer))?.split();
 
         // Once the vector has been filled, update its size.
         unsafe {
             buffer.set_len(buffer_size);
         }
 
-        warn1.into_with(|| buffer).map(|completion| completion.with_warning(warn2))
+        warn1
+            .into_with(|| buffer)
+            .map(|completion| completion.with_warning(warn2))
     }
 
     fn find_protocol<P: Protocol>(&self) -> Option<NonNull<P>> {
         // Retrieve all handles implementing this.
         self.find_handles::<P>()
             // Convert to an option.
-            .ok()?.value()
+            .ok()?
+            .value()
             // Using the `find_handles` function might not return _only_ compatible protocols.
             // We have to retrieve them all and find one that works.
             .iter()

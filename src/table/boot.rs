@@ -180,7 +180,8 @@ impl BootServices {
             &mut map_key,
             &mut entry_size,
             &mut entry_version,
-        ).into_with(move || {
+        )
+        .into_with(move || {
             let len = map_size / entry_size;
             let iter = MemoryMapIter {
                 buffer,

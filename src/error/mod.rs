@@ -33,7 +33,7 @@ impl<T> Completion<T> {
             Completion::Warning(res, stat) => {
                 warn!("Encountered UEFI warning: {:?}", stat);
                 res
-            },
+            }
         }
     }
 
@@ -41,8 +41,9 @@ impl<T> Completion<T> {
     pub fn unwrap(self) -> T {
         match self {
             Completion::Success(res) => res,
-            Completion::Warning(_, w) =>
-                unwrap_failed("Called `Completion::unwrap()` on a `Warning` value", w),
+            Completion::Warning(_, w) => {
+                unwrap_failed("Called `Completion::unwrap()` on a `Warning` value", w)
+            }
         }
     }
 

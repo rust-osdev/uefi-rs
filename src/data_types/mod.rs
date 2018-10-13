@@ -18,10 +18,10 @@ mod guid;
 pub use self::guid::Guid;
 
 pub mod chars;
-pub use self::chars::{Char8, Char16};
+pub use self::chars::{Char16, Char8};
 
 #[macro_use]
 mod enums;
 
 mod strs;
-pub use self::strs::{CStr8, CStr16};
+pub use self::strs::{CStr16, CStr8};

@@ -33,7 +33,7 @@
 
 #[macro_use]
 pub mod data_types;
-pub use self::data_types::{Char8, Char16, CStr8, CStr16, Event, Guid, Handle};
+pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
 
 mod error;
 pub use self::error::{Completion, Result, ResultExt, Status};

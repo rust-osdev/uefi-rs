@@ -1,7 +1,7 @@
+use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use core::convert::TryInto;
-use core::slice;
 use core::result::Result;
-use super::chars::{Char8, Char16, NUL_8, NUL_16};
+use core::slice;
 
 /// Errors which can occur during checked [uN] -> CStrN conversions
 pub enum FromSliceWithNulError {
@@ -27,7 +27,9 @@ impl CStr8 {
     /// Wraps a raw UEFI string with a safe C string wrapper
     pub unsafe fn from_ptr<'a>(ptr: *const Char8) -> &'a Self {
         let mut len = 0;
-        while *ptr.add(len) != NUL_8 { len += 1 }
+        while *ptr.add(len) != NUL_8 {
+            len += 1
+        }
         let ptr = ptr as *const u8;
         Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
@@ -79,7 +81,9 @@ impl CStr16 {
     /// Wraps a raw UEFI string with a safe C string wrapper
     pub unsafe fn from_ptr<'a>(ptr: *const Char16) -> &'a Self {
         let mut len = 0;
-        while *ptr.add(len) != NUL_16 { len += 1 }
+        while *ptr.add(len) != NUL_16 {
+            len += 1
+        }
         let ptr = ptr as *const u16;
         Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
@@ -98,7 +102,9 @@ impl CStr16 {
                         return Ok(unsafe { Self::from_u16_with_nul_unchecked(codes) });
                     }
                 }
-                Err(_) => { return Err(FromSliceWithNulError::InvalidChar(pos)); }
+                Err(_) => {
+                    return Err(FromSliceWithNulError::InvalidChar(pos));
+                }
                 _ => {}
             }
         }

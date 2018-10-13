@@ -1,7 +1,7 @@
 use super::{cfg, Header, Revision};
 use core::slice;
 use crate::proto::console::text;
-use crate::{Char16, CStr16, Handle};
+use crate::{CStr16, Char16, Handle};
 
 /// The system table entry points for accessing the core UEFI system functionality.
 #[repr(C)]

@@ -8,7 +8,7 @@
 use bitflags::bitflags;
 use core::mem;
 use crate::prelude::*;
-use crate::{Char16, CStr16, Result, Status};
+use crate::{CStr16, Char16, Result, Status};
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing
@@ -63,11 +63,16 @@ impl<'a> File<'a> {
             let len = ucs2::encode(filename, &mut buf)?;
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
 
-            (self.inner.open)(self.inner, &mut ptr, filename.as_ptr(), open_mode, attributes).into_with(
-                || File {
-                    inner: unsafe { &mut *(ptr as *mut FileImpl) },
-                },
+            (self.inner.open)(
+                self.inner,
+                &mut ptr,
+                filename.as_ptr(),
+                open_mode,
+                attributes,
             )
+            .into_with(|| File {
+                inner: unsafe { &mut *(ptr as *mut FileImpl) },
+            })
         }
     }
 

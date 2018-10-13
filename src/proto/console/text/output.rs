@@ -1,6 +1,6 @@
 use core::fmt;
-use crate::{Char16, CStr16, Completion, Result, Status};
 use crate::prelude::*;
+use crate::{CStr16, Char16, Completion, Result, Status};
 
 /// Interface for text-based output devices.
 ///

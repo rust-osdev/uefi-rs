@@ -27,6 +27,12 @@ impl TryFrom<char> for Char8 {
     }
 }
 
+impl Into<char> for Char8 {
+    fn into(self) -> char {
+        self.0 as char
+    }
+}
+
 impl From<u8> for Char8 {
     fn from(value: u8) -> Self {
         Char8(value)
@@ -52,7 +58,7 @@ impl fmt::Display for Char8 {
 }
 
 /// Latin-1 version of the NUL character
-pub const NULL_8: Char8 = Char8(0);
+pub const NUL_8: Char8 = Char8(0);
 
 /// An UCS-2 code point
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
@@ -69,6 +75,12 @@ impl TryFrom<char> for Char16 {
         } else {
             Err(CharConversionError)
         }
+    }
+}
+
+impl Into<char> for Char16 {
+    fn into(self) -> char {
+        (self.0 as u32).try_into().unwrap()
     }
 }
 
@@ -113,4 +125,4 @@ impl fmt::Display for Char16 {
 }
 
 /// UCS-2 version of the NUL character
-pub const NULL_16: Char16 = Char16(0);
+pub const NUL_16: Char16 = Char16(0);

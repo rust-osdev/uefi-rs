@@ -1,7 +1,7 @@
 use core::convert::TryInto;
 use core::slice;
 use core::result::Result;
-use super::chars::{Char8, Char16, NULL_8, NULL_16};
+use super::chars::{Char8, Char16, NUL_8, NUL_16};
 
 /// Errors which can occur during checked [uN] -> CStrN conversions
 pub enum FromSliceWithNulError {
@@ -27,12 +27,12 @@ impl CStr8 {
     /// Wraps a raw UEFI string with a safe C string wrapper
     pub unsafe fn from_ptr<'a>(ptr: *const Char8) -> &'a Self {
         let mut len = 0;
-        while *ptr.add(len) != NULL_8 { len += 1 }
+        while *ptr.add(len) != NUL_8 { len += 1 }
         let ptr = ptr as *const u8;
         Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
 
-    /// Creates a C string wrapper from a Char8 slice
+    /// Creates a C string wrapper from bytes
     pub fn from_bytes_with_nul(chars: &[u8]) -> Result<&Self, FromSliceWithNulError> {
         let nul_pos = chars.iter().position(|&c| c == 0);
         if let Some(nul_pos) = nul_pos {
@@ -45,7 +45,7 @@ impl CStr8 {
         }
     }
 
-    /// Unsafely creates a C string wrapper from a Char8 slice.
+    /// Unsafely creates a C string wrapper from bytes
     pub unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
         &*(chars as *const [u8] as *const Self)
     }
@@ -55,13 +55,13 @@ impl CStr8 {
         self.0.as_ptr()
     }
 
-    /// Converts this C string to a Char8 slice
+    /// Converts this C string to a slice of bytes
     pub fn to_bytes(&self) -> &[u8] {
         let chars = self.to_bytes_with_nul();
         &chars[..chars.len() - 1]
     }
 
-    /// Converts this C string to a Char8 slice containing the trailing 0 char
+    /// Converts this C string to a slice of bytes containing the trailing 0 char
     pub fn to_bytes_with_nul(&self) -> &[u8] {
         unsafe { &*(&self.0 as *const [Char8] as *const [u8]) }
     }
@@ -79,7 +79,7 @@ impl CStr16 {
     /// Wraps a raw UEFI string with a safe C string wrapper
     pub unsafe fn from_ptr<'a>(ptr: *const Char16) -> &'a Self {
         let mut len = 0;
-        while *ptr.add(len) != NULL_16 { len += 1 }
+        while *ptr.add(len) != NUL_16 { len += 1 }
         let ptr = ptr as *const u16;
         Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
@@ -91,7 +91,7 @@ impl CStr16 {
     pub fn from_u16_with_nul(codes: &[u16]) -> Result<&Self, FromSliceWithNulError> {
         for (pos, &code) in codes.iter().enumerate() {
             match code.try_into() {
-                Ok(NULL_16) => {
+                Ok(NUL_16) => {
                     if pos != codes.len() - 1 {
                         return Err(FromSliceWithNulError::InteriorNul(pos));
                     } else {

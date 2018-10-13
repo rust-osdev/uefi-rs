@@ -1,5 +1,6 @@
 use core::fmt;
 use crate::{Completion, Result, Status};
+use crate::prelude::*;
 
 /// Interface for text-based output devices.
 ///
@@ -85,8 +86,7 @@ impl Output {
     /// Returns the the current text mode.
     pub fn current_mode(&self) -> Result<OutputMode> {
         let index = self.data.mode;
-        let dims_completion = self.query_mode(index)?;
-        Ok(dims_completion.map(|dims| OutputMode { index, dims }))
+        self.query_mode(index).warn_map(|dims| OutputMode { index, dims })
     }
 
     /// Make the cursor visible or invisible.
@@ -147,7 +147,7 @@ impl fmt::Write for Output {
             buf[*i] = 0;
             *i = 0;
 
-            self.output_string(buf.as_ptr()).map_err(|_| fmt::Error)
+            self.output_string(buf.as_ptr()).warn_err().map_err(|_| fmt::Error)
         };
 
         // This closure converts a character to UCS-2 and adds it to the buffer,
@@ -159,9 +159,7 @@ impl fmt::Write for Output {
             i += 1;
 
             if i == BUF_SIZE {
-                flush_buffer(&mut buf, &mut i)
-                    .map_err(|_| ucs2::Error::BufferOverflow)
-                    .map(|completion| completion.value())
+                flush_buffer(&mut buf, &mut i).map_err(|_| ucs2::Error::BufferOverflow)
             } else {
                 Ok(())
             }
@@ -179,7 +177,7 @@ impl fmt::Write for Output {
         ucs2::encode_with(s, add_ch).map_err(|_| fmt::Error)?;
 
         // Flush the remainder of the buffer
-        flush_buffer(&mut buf, &mut i).map(|completion| completion.value())
+        flush_buffer(&mut buf, &mut i)
     }
 }
 

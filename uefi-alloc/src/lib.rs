@@ -18,6 +18,7 @@
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr;
 
+use uefi::prelude::*;
 use uefi::table::boot::{BootServices, MemoryType};
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.
@@ -52,14 +53,15 @@ unsafe impl GlobalAlloc for Allocator {
         } else {
             boot_services()
                 .allocate_pool(mem_ty, size)
-                .map(|addr| addr.value() as *mut _)
+                .warn_err()
+                .map(|addr| addr as *mut _)
                 .unwrap_or(ptr::null_mut())
         }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
         let addr = ptr as usize;
-        boot_services().free_pool(addr).unwrap().value();
+        boot_services().free_pool(addr).warn_err().unwrap();
     }
 }
 

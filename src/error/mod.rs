@@ -13,7 +13,7 @@ pub type Result<T> = core::result::Result<Completion<T>, Status>;
 /// Extension trait for Result which helps dealing with UEFI's warnings
 pub trait ResultExt<T> {
     /// Treat warnings as errors
-    fn warn_error(self) -> core::result::Result<T, Status>;
+    fn warn_err(self) -> core::result::Result<T, Status>;
 
     /// Ignore warnings, keepint a trace of them in the logs
     fn warn_log(self) -> core::result::Result<T, Status>;
@@ -23,10 +23,13 @@ pub trait ResultExt<T> {
 
     /// Expect success without warnings, panic with provided message otherwise
     fn warn_expect(self, msg: &str) -> T;
+
+    /// Transform the inner output, if any
+    fn warn_map<U>(self, f: impl Fn(T) -> U) -> Result<U>;
 }
 
 impl<T> ResultExt<T> for Result<T> {
-    fn warn_error(self) -> core::result::Result<T, Status> {
+    fn warn_err(self) -> core::result::Result<T, Status> {
         match self {
             Ok(Completion::Success(v)) => Ok(v),
             Ok(Completion::Warning(_, s)) => Err(s),
@@ -35,7 +38,7 @@ impl<T> ResultExt<T> for Result<T> {
     }
 
     fn warn_log(self) -> core::result::Result<T, Status> {
-        self.map(|completion| completion.value())
+        self.map(|completion| completion.log())
     }
 
     fn warn_unwrap(self) -> T {
@@ -44,5 +47,9 @@ impl<T> ResultExt<T> for Result<T> {
 
     fn warn_expect(self, msg: &str) -> T {
         self.expect(msg).expect(msg)
+    }
+
+    fn warn_map<U>(self, f: impl Fn(T) -> U) -> Result<U> {
+        self.map(|completion| completion.map(f))
     }
 }

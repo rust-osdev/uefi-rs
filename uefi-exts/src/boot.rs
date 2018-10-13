@@ -1,6 +1,7 @@
 use uefi::proto::Protocol;
 use uefi::table::boot::{BootServices, SearchType};
 use uefi::{Handle, Result};
+use uefi::prelude::*;
 
 use core::ptr::NonNull;
 use crate::alloc::vec::Vec;
@@ -46,8 +47,8 @@ impl BootServicesExt for BootServices {
         // Retrieve all handles implementing this.
         self.find_handles::<P>()
             // Convert to an option.
+            .warn_err()
             .ok()?
-            .value()
             // Using the `find_handles` function might not return _only_ compatible protocols.
             // We have to retrieve them all and find one that works.
             .iter()

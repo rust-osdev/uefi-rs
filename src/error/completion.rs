@@ -23,7 +23,7 @@ impl<T> Completion<T> {
     }
 
     /// Access the inner value, logging the warning if there is any
-    pub fn value(self) -> T {
+    pub fn log(self) -> T {
         match self {
             Completion::Success(res) => res,
             Completion::Warning(res, stat) => {

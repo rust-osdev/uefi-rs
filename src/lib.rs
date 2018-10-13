@@ -32,7 +32,7 @@
 #![deny(clippy::all)]
 
 #[macro_use]
-mod data_types;
+pub mod data_types;
 pub use self::data_types::{Event, Guid, Handle};
 
 mod error;

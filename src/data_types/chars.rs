@@ -1,4 +1,9 @@
-use core::convert::TryFrom;
+//! UEFI character handling
+//!
+//! UEFI uses both Latin-1 and UCS-2 character encoding, this module implements
+//! support for the associated character types.
+
+use core::convert::{TryFrom, TryInto};
 use core::fmt;
 
 /// Character conversion error
@@ -22,6 +27,12 @@ impl TryFrom<char> for Char8 {
     }
 }
 
+impl From<u8> for Char8 {
+    fn from(value: u8) -> Self {
+        Char8(value)
+    }
+}
+
 impl Into<u8> for Char8 {
     fn into(self) -> u8 {
         self.0 as u8
@@ -39,6 +50,9 @@ impl fmt::Display for Char8 {
         <char as fmt::Display>::fmt(&From::from(self.0), f)
     }
 }
+
+/// Latin-1 version of the NUL character
+pub const NULL_8: Char8 = Char8(0);
 
 /// An UCS-2 code point
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
@@ -58,6 +72,20 @@ impl TryFrom<char> for Char16 {
     }
 }
 
+impl TryFrom<u16> for Char16 {
+    type Error = CharConversionError;
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        // We leverage char's TryFrom<u32> impl for Unicode validity checking
+        let res: Result<char, _> = (value as u32).try_into();
+        if let Ok(ch) = res {
+            ch.try_into()
+        } else {
+            Err(CharConversionError)
+        }
+    }
+}
+
 impl Into<u16> for Char16 {
     fn into(self) -> u16 {
         self.0 as u16
@@ -66,7 +94,7 @@ impl Into<u16> for Char16 {
 
 impl fmt::Debug for Char16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Ok(c) = TryFrom::try_from(self.0 as u32) {
+        if let Ok(c) = (self.0 as u32).try_into() {
             <char as fmt::Debug>::fmt(&c, f)
         } else {
             write!(f, "Char16({:?})", self.0)
@@ -76,10 +104,13 @@ impl fmt::Debug for Char16 {
 
 impl fmt::Display for Char16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Ok(c) = TryFrom::try_from(self.0 as u32) {
+        if let Ok(c) = (self.0 as u32).try_into() {
             <char as fmt::Display>::fmt(&c, f)
         } else {
             write!(f, "{}", core::char::REPLACEMENT_CHARACTER)
         }
     }
 }
+
+/// UCS-2 version of the NUL character
+pub const NULL_16: Char16 = Char16(0);

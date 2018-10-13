@@ -8,5 +8,5 @@ pub fn test(bt: &BootServices) {
 fn test_watchdog(bt: &BootServices) {
     // Disable the UEFI watchdog timer
     bt.set_watchdog_timer(0, 0x10000, None)
-        .warn_expect("Could not set watchdog timer");
+        .expect_success("Could not set watchdog timer");
 }

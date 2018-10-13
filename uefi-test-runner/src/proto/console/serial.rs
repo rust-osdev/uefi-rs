@@ -10,7 +10,7 @@ pub fn test(bt: &BootServices) {
 
         let old_ctrl_bits = serial
             .get_control_bits()
-            .warn_expect("Failed to get device control bits");
+            .expect_success("Failed to get device control bits");
         let mut ctrl_bits = ControlBits::empty();
 
         // For the purposes of testing, we're _not_ going to implement
@@ -22,7 +22,7 @@ pub fn test(bt: &BootServices) {
 
         serial
             .set_control_bits(ctrl_bits)
-            .warn_expect("Failed to set device control bits");
+            .expect_success("Failed to set device control bits");
 
         // Keep this message short, we need it to fit in the FIFO.
         const OUTPUT: &[u8] = b"Hello world!";
@@ -30,13 +30,13 @@ pub fn test(bt: &BootServices) {
 
         let len = serial
             .write(OUTPUT)
-            .warn_expect("Failed to write to serial port");
+            .expect_success("Failed to write to serial port");
         assert_eq!(len, MSG_LEN, "Bad serial port write length");
 
         let mut input = [0u8; MSG_LEN];
         let len = serial
             .read(&mut input)
-            .warn_expect("Failed to read from serial port");
+            .expect_success("Failed to read from serial port");
         assert_eq!(len, MSG_LEN, "Bad serial port read length");
 
         assert_eq!(&OUTPUT[..], &input[..MSG_LEN]);
@@ -44,10 +44,10 @@ pub fn test(bt: &BootServices) {
         // Clean up after ourselves
         serial
             .reset()
-            .warn_expect("Could not reset the serial device");
+            .expect_success("Could not reset the serial device");
         serial
             .set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)
-            .warn_expect("Could not restore the serial device state");
+            .expect_success("Could not restore the serial device state");
     } else {
         warn!("No serial device found");
     }

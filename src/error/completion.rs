@@ -27,7 +27,7 @@ impl<T> Completion<T> {
         match self {
             Completion::Success(res) => res,
             Completion::Warning(res, stat) => {
-                warn!("Encountered UEFI warning: {:?}", stat);
+                log_warning(stat);
                 res
             }
         }
@@ -64,21 +64,21 @@ impl<T> Completion<T> {
     /// Since this type only has storage for one warning, if two warnings must
     /// be stored, one of them will be spilled into the logs.
     ///
-    pub fn with_warning(self, extra_stat: Status) -> Self {
+    pub fn with_status(self, extra_status: Status) -> Self {
         match self {
             Completion::Success(res) => {
-                if extra_stat.is_success() {
+                if extra_status.is_success() {
                     Completion::Success(res)
                 } else {
-                    Completion::Warning(res, extra_stat)
+                    Completion::Warning(res, extra_status)
                 }
             }
             Completion::Warning(res, stat) => {
-                if extra_stat.is_success() {
+                if extra_status.is_success() {
                     Completion::Warning(res, stat)
                 } else {
-                    warn!("Encountered UEFI warning {:?}", stat);
-                    Completion::Warning(res, extra_stat)
+                    log_warning(stat);
+                    Completion::Warning(res, extra_status)
                 }
             }
         }
@@ -91,9 +91,15 @@ impl<T> From<T> for Completion<T> {
     }
 }
 
-// This is a separate function to reduce the code size of the methods
+// These are separate functions to reduce the code size of the methods
 #[inline(never)]
 #[cold]
 fn unwrap_failed(msg: &str, warning: Status) -> ! {
     panic!("{}: {:?}", msg, warning)
+}
+
+#[inline(never)]
+#[cold]
+fn log_warning(warning: Status) {
+    warn!("Encountered UEFI warning: {:?}", warning)
 }

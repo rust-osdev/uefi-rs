@@ -87,7 +87,7 @@ impl Output {
     pub fn current_mode(&self) -> Result<OutputMode> {
         let index = self.data.mode;
         self.query_mode(index)
-            .warn_map(|dims| OutputMode { index, dims })
+            .map_inner(|dims| OutputMode { index, dims })
     }
 
     /// Make the cursor visible or invisible.
@@ -149,7 +149,7 @@ impl fmt::Write for Output {
             *i = 0;
 
             self.output_string(buf.as_ptr())
-                .warn_err()
+                .warning_as_error()
                 .map_err(|_| fmt::Error)
         };
 

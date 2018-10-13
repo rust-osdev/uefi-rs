@@ -33,7 +33,7 @@ fn set_graphics_mode(gop: &mut GraphicsOutput) {
         .unwrap();
 
     gop.set_mode(&mode)
-        .warn_expect("Failed to set graphics mode");
+        .expect_success("Failed to set graphics mode");
 }
 
 // Fill the screen with color.
@@ -45,7 +45,8 @@ fn fill_color(gop: &mut GraphicsOutput) {
         dims: (1024, 768),
     };
 
-    gop.blt(op).warn_expect("Failed to fill screen with color");
+    gop.blt(op)
+        .expect_success("Failed to fill screen with color");
 }
 
 // Draw directly to the frame buffer.

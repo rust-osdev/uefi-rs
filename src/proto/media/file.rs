@@ -7,8 +7,8 @@
 
 use bitflags::bitflags;
 use core::mem;
-use crate::{Result, Status};
 use crate::prelude::*;
+use crate::{Result, Status};
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing

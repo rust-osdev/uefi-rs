@@ -25,8 +25,7 @@ pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable
     // Reset the console before running all the other tests.
     st.stdout()
         .reset(false)
-        .expect("Failed to reset stdout")
-        .expect("Warnings encountered while resetting stdout");
+        .warn_expect("Failed to reset stdout");
 
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
@@ -75,30 +74,23 @@ fn check_screenshot(bt: &BootServices, name: &str) {
         io_mode.timeout = 3_000_000;
         serial
             .set_attributes(&io_mode)
-            .expect("Failed to configure serial port timeout")
-            .expect("Warnings encountered while configuring serial port timeout");
+            .warn_expect("Failed to configure serial port timeout");
 
         // Send a screenshot request to the host
         serial
             .write(b"SCREENSHOT: ")
-            .expect("Failed to send request")
-            .expect("Request triggered a warning");
+            .warn_expect("Failed to send request");
         let name_bytes = name.as_bytes();
         serial
             .write(name_bytes)
-            .expect("Failed to send request")
-            .expect("Request triggered a warning");
-        serial
-            .write(b"\n")
-            .expect("Failed to send request")
-            .expect("Request triggered a warning");
+            .warn_expect("Failed to send request");
+        serial.write(b"\n").warn_expect("Failed to send request");
 
         // Wait for the host's acknowledgement before moving forward
         let mut reply = [0; 3];
         serial
             .read(&mut reply[..])
-            .expect("Failed to read host reply")
-            .expect("Request triggered a warning");
+            .warn_expect("Failed to read host reply");
 
         assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
     } else {
@@ -111,7 +103,7 @@ fn shutdown(st: &SystemTable) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.
-    st.stdout().reset(false).unwrap().unwrap();
+    st.stdout().reset(false).warn_unwrap();
 
     // Inform the user, and give him time to read on real hardware
     if cfg!(not(feature = "qemu")) {

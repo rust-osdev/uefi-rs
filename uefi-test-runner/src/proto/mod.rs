@@ -19,8 +19,7 @@ fn find_protocol(bt: &BootServices) {
 
     let handles = bt
         .find_handles::<SearchedProtocol>()
-        .expect("Failed to retrieve list of handles")
-        .expect("Warnings encountered while retrieving list of handles");
+        .warn_expect("Failed to retrieve list of handles");
     assert!(
         handles.len() > 1,
         "There should be at least one implementation of Simple Text Output (stdout)"

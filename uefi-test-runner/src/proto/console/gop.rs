@@ -1,4 +1,5 @@
 use core::ptr;
+use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
 use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
@@ -32,8 +33,7 @@ fn set_graphics_mode(gop: &mut GraphicsOutput) {
         .unwrap();
 
     gop.set_mode(&mode)
-        .expect("Failed to set graphics mode")
-        .expect("Warnings encountered while setting graphics mode");
+        .warn_expect("Failed to set graphics mode");
 }
 
 // Fill the screen with color.
@@ -45,9 +45,7 @@ fn fill_color(gop: &mut GraphicsOutput) {
         dims: (1024, 768),
     };
 
-    gop.blt(op)
-        .expect("Failed to fill screen with color")
-        .expect("Warnings encountered while filling screen with color");
+    gop.blt(op).warn_expect("Failed to fill screen with color");
 }
 
 // Draw directly to the frame buffer.

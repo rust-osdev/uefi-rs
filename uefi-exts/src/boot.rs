@@ -1,7 +1,7 @@
+use uefi::prelude::*;
 use uefi::proto::Protocol;
 use uefi::table::boot::{BootServices, SearchType};
 use uefi::{Handle, Result};
-use uefi::prelude::*;
 
 use core::ptr::NonNull;
 use crate::alloc::vec::Vec;

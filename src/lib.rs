@@ -35,7 +35,7 @@ mod data_types;
 pub use self::data_types::{Event, Guid, Handle};
 
 mod error;
-pub use self::error::{Completion, Result, Status};
+pub use self::error::{Completion, Result, ResultExt, Status};
 
 pub mod table;
 

@@ -80,7 +80,7 @@ impl TryFrom<char> for Char16 {
 
 impl Into<char> for Char16 {
     fn into(self) -> char {
-        (self.0 as u32).try_into().unwrap()
+        u32::from(self.0).try_into().unwrap()
     }
 }
 
@@ -89,7 +89,7 @@ impl TryFrom<u16> for Char16 {
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         // We leverage char's TryFrom<u32> impl for Unicode validity checking
-        let res: Result<char, _> = (value as u32).try_into();
+        let res: Result<char, _> = u32::from(value).try_into();
         if let Ok(ch) = res {
             ch.try_into()
         } else {
@@ -106,7 +106,7 @@ impl Into<u16> for Char16 {
 
 impl fmt::Debug for Char16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Ok(c) = (self.0 as u32).try_into() {
+        if let Ok(c) = u32::from(self.0).try_into() {
             <char as fmt::Debug>::fmt(&c, f)
         } else {
             write!(f, "Char16({:?})", self.0)
@@ -116,7 +116,7 @@ impl fmt::Debug for Char16 {
 
 impl fmt::Display for Char16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Ok(c) = (self.0 as u32).try_into() {
+        if let Ok(c) = u32::from(self.0).try_into() {
             <char as fmt::Display>::fmt(&c, f)
         } else {
             write!(f, "{}", core::char::REPLACEMENT_CHARACTER)

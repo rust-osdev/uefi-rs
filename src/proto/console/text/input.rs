@@ -1,5 +1,6 @@
 use core::mem;
 use crate::{Event, Result, Status};
+use crate::data_types::Char16;
 
 /// Interface for text-based input devices.
 #[repr(C)]
@@ -54,7 +55,7 @@ pub struct Key {
     pub scan_code: ScanCode,
     /// Associated Unicode character,
     /// or 0 if not printable.
-    pub unicode_char: u16,
+    pub unicode_char: Char16,
 }
 
 newtype_enum! {

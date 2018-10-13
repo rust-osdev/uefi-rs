@@ -1,6 +1,5 @@
 use core::mem;
-use crate::{Event, Result, Status};
-use crate::data_types::Char16;
+use crate::{Char16, Event, Result, Status};
 
 /// Interface for text-based input devices.
 #[repr(C)]

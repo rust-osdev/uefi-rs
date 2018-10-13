@@ -65,22 +65,10 @@ impl<T> Completion<T> {
     /// be stored, one of them will be spilled into the logs.
     ///
     pub fn with_status(self, extra_status: Status) -> Self {
-        match self {
-            Completion::Success(res) => {
-                if extra_status.is_success() {
-                    Completion::Success(res)
-                } else {
-                    Completion::Warning(res, extra_status)
-                }
-            }
-            Completion::Warning(res, stat) => {
-                if extra_status.is_success() {
-                    Completion::Warning(res, stat)
-                } else {
-                    log_warning(stat);
-                    Completion::Warning(res, extra_status)
-                }
-            }
+        if extra_status.is_success() {
+            self
+        } else {
+            Completion::Warning(self.log(), extra_status)
         }
     }
 }

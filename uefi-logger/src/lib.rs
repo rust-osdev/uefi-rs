@@ -15,7 +15,6 @@
 #![warn(missing_docs)]
 #![deny(clippy::all)]
 #![no_std]
-#![feature(tool_lints)]
 
 extern crate uefi;
 use uefi::proto::console::text::Output;

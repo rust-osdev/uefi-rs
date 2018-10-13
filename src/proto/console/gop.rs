@@ -24,7 +24,7 @@
 //! but in practice there might be some extra padding used for efficiency.
 
 use core::{ptr, slice};
-use crate::{Result, Status};
+use crate::{Completion, Result, Status};
 
 /// Provides access to the video hardware's frame buffer.
 ///
@@ -71,7 +71,7 @@ impl GraphicsOutput {
     }
 
     /// Returns information about all available graphics modes.
-    pub fn modes<'a>(&'a self) -> impl Iterator<Item = Mode> + 'a {
+    pub fn modes<'a>(&'a self) -> impl Iterator<Item = Completion<Mode>> + 'a {
         ModeIter {
             gop: self,
             current: 0,
@@ -397,7 +397,7 @@ struct ModeIter<'a> {
 }
 
 impl<'a> Iterator for ModeIter<'a> {
-    type Item = Mode;
+    type Item = Completion<Mode>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;

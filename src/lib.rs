@@ -24,8 +24,6 @@
 //! therefore all the network protocols will be unavailable.
 
 #![feature(optin_builtin_traits)]
-#![feature(min_const_fn)]
-#![feature(tool_lints)]
 #![feature(try_trait)]
 #![no_std]
 // Enable some additional warnings and lints.
@@ -37,7 +35,7 @@ mod data_types;
 pub use self::data_types::{Event, Guid, Handle};
 
 mod error;
-pub use self::error::{Result, Status};
+pub use self::error::{Completion, Result, ResultExt, Status};
 
 pub mod table;
 

@@ -180,18 +180,17 @@ impl BootServices {
             &mut map_key,
             &mut entry_size,
             &mut entry_version,
-        )?;
-
-        let len = map_size / entry_size;
-
-        let iter = MemoryMapIter {
-            buffer,
-            entry_size,
-            index: 0,
-            len,
-        };
-
-        Ok((map_key, iter))
+        )
+        .into_with(move || {
+            let len = map_size / entry_size;
+            let iter = MemoryMapIter {
+                buffer,
+                entry_size,
+                index: 0,
+                len,
+            };
+            (map_key, iter)
+        })
     }
 
     /// Allocates from a memory pool. The address is 8-byte aligned.
@@ -267,9 +266,11 @@ impl BootServices {
     ) -> Result<usize> {
         let handle_size = mem::size_of::<Handle>();
 
+        const NULL_BUFFER: *mut Handle = ptr::null_mut();
+
         let (mut buffer_size, buffer) = match output {
             Some(buffer) => (buffer.len() * handle_size, buffer.as_mut_ptr()),
-            None => (0, ptr::null_mut()),
+            None => (0, NULL_BUFFER),
         };
 
         // Obtain the needed data from the parameters.
@@ -283,9 +284,9 @@ impl BootServices {
         // Must convert the returned size (in bytes) to length (number of elements).
         let buffer_len = buffer_size / handle_size;
 
-        match status {
-            Status::SUCCESS | Status::BUFFER_TOO_SMALL => Ok(buffer_len),
-            err => Err(err),
+        match (buffer, status) {
+            (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
+            (_, other_status) => other_status.into_with(|| buffer_len),
         }
     }
 

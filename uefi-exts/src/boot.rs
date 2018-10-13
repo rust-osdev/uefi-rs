@@ -1,3 +1,4 @@
+use uefi::prelude::*;
 use uefi::proto::Protocol;
 use uefi::table::boot::{BootServices, SearchType};
 use uefi::{Handle, Result};
@@ -20,7 +21,7 @@ impl BootServicesExt for BootServices {
         let search_type = SearchType::from_proto::<P>();
 
         // Determine how much we need to allocate.
-        let buffer_size = self.locate_handle(search_type, None)?;
+        let (buffer_size, status1) = self.locate_handle(search_type, None)?.split();
 
         // Allocate a large enough buffer.
         let mut buffer = Vec::with_capacity(buffer_size);
@@ -30,20 +31,23 @@ impl BootServicesExt for BootServices {
         }
 
         // Perform the search.
-        let buffer_size = self.locate_handle(search_type, Some(&mut buffer))?;
+        let (buffer_size, status2) = self.locate_handle(search_type, Some(&mut buffer))?.split();
 
         // Once the vector has been filled, update its size.
         unsafe {
             buffer.set_len(buffer_size);
         }
 
-        Ok(buffer)
+        status1
+            .into_with(|| buffer)
+            .map(|completion| completion.with_status(status2))
     }
 
     fn find_protocol<P: Protocol>(&self) -> Option<NonNull<P>> {
         // Retrieve all handles implementing this.
         self.find_handles::<P>()
             // Convert to an option.
+            .warning_as_error()
             .ok()?
             // Using the `find_handles` function might not return _only_ compatible protocols.
             // We have to retrieve them all and find one that works.

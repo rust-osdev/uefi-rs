@@ -1,3 +1,4 @@
+use uefi::prelude::*;
 use uefi::proto::console::pointer::Pointer;
 use uefi::table::boot::BootServices;
 
@@ -10,11 +11,12 @@ pub fn test(bt: &BootServices) {
 
         pointer
             .reset(false)
-            .expect("Failed to reset pointer device");
+            .expect_success("Failed to reset pointer device");
 
         let state = pointer
             .read_state()
-            .expect("Failed to retrieve pointer state");
+            .expect_success("Failed to retrieve pointer state");
+
         if let Some(state) = state {
             info!("New pointer State: {:#?}", state);
         } else {

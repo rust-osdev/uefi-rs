@@ -7,6 +7,7 @@
 
 use bitflags::bitflags;
 use core::mem;
+use crate::prelude::*;
 use crate::{Result, Status};
 use ucs2;
 
@@ -163,7 +164,7 @@ impl<'a> Drop for File<'a> {
     fn drop(&mut self) {
         let result: Result<()> = (self.inner.close)(self.inner).into();
         // The spec says this always succeeds.
-        result.expect("Failed to close file");
+        result.expect_success("Failed to close file");
     }
 }
 

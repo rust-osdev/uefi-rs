@@ -1,5 +1,6 @@
 use core::fmt;
-use crate::{Result, Status};
+use crate::prelude::*;
+use crate::{Completion, Result, Status};
 
 /// Interface for text-based output devices.
 ///
@@ -53,7 +54,7 @@ impl Output {
 
     /// Returns an iterator of all supported text modes.
     // TODO: fix the ugly lifetime parameter.
-    pub fn modes<'a>(&'a mut self) -> impl Iterator<Item = OutputMode> + 'a {
+    pub fn modes<'a>(&'a mut self) -> impl Iterator<Item = Completion<OutputMode>> + 'a {
         let max = self.data.max_mode;
         OutputModeIter {
             output: self,
@@ -74,8 +75,7 @@ impl Output {
     /// alternative to this method.
     fn query_mode(&self, index: i32) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
-        (self.query_mode)(self, index, &mut columns, &mut rows)?;
-        Ok((columns, rows))
+        (self.query_mode)(self, index, &mut columns, &mut rows).into_with(|| (columns, rows))
     }
 
     /// Sets a mode as current.
@@ -86,8 +86,8 @@ impl Output {
     /// Returns the the current text mode.
     pub fn current_mode(&self) -> Result<OutputMode> {
         let index = self.data.mode;
-        let dims = self.query_mode(index)?;
-        Ok(OutputMode { index, dims })
+        self.query_mode(index)
+            .map_inner(|dims| OutputMode { index, dims })
     }
 
     /// Make the cursor visible or invisible.
@@ -148,7 +148,9 @@ impl fmt::Write for Output {
             buf[*i] = 0;
             *i = 0;
 
-            self.output_string(buf.as_ptr()).map_err(|_| fmt::Error)
+            self.output_string(buf.as_ptr())
+                .warning_as_error()
+                .map_err(|_| fmt::Error)
         };
 
         // This closure converts a character to UCS-2 and adds it to the buffer,
@@ -217,15 +219,15 @@ struct OutputModeIter<'a> {
 }
 
 impl<'a> Iterator for OutputModeIter<'a> {
-    type Item = OutputMode;
+    type Item = Completion<OutputMode>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;
         if index < self.max {
             self.current += 1;
 
-            if let Ok(dims) = self.output.query_mode(index) {
-                Some(OutputMode { index, dims })
+            if let Ok(dims_completion) = self.output.query_mode(index) {
+                Some(dims_completion.map(|dims| OutputMode { index, dims }))
             } else {
                 self.next()
             }

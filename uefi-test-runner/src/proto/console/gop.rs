@@ -70,8 +70,8 @@ fn draw_fb(gop: &mut GraphicsOutput) {
         pixel_base.add(2).write_volatile(r);
     };
     let write_pixel: PixelWriter = match mi.pixel_format() {
-        PixelFormat::RGB => write_pixel_rgb as PixelWriter,
-        PixelFormat::BGR => write_pixel_bgr as PixelWriter,
+        PixelFormat::RGB => write_pixel_rgb,
+        PixelFormat::BGR => write_pixel_bgr,
         _ => {
             info!("This pixel format is not supported by the drawing demo");
             return;
@@ -85,7 +85,7 @@ fn draw_fb(gop: &mut GraphicsOutput) {
             for column in x1..x2 {
                 unsafe {
                     let index = (row * stride) + column;
-                    let pixel_base = fb_base.add(4*index);
+                    let pixel_base = fb_base.add(4 * index);
                     write_pixel(pixel_base, color);
                 }
             }

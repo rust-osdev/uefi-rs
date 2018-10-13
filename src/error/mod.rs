@@ -15,7 +15,7 @@ pub trait ResultExt<T> {
     /// Treat warnings as errors
     fn warn_err(self) -> core::result::Result<T, Status>;
 
-    /// Ignore warnings, keepint a trace of them in the logs
+    /// Ignore warnings, keeping a trace of them in the logs
     fn warn_log(self) -> core::result::Result<T, Status>;
 
     /// Expect success without warnings, panic otherwise

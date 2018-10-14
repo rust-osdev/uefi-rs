@@ -24,6 +24,7 @@
 //! therefore all the network protocols will be unavailable.
 
 #![feature(optin_builtin_traits)]
+#![feature(try_from)]
 #![feature(try_trait)]
 #![no_std]
 // Enable some additional warnings and lints.
@@ -31,8 +32,8 @@
 #![deny(clippy::all)]
 
 #[macro_use]
-mod data_types;
-pub use self::data_types::{Event, Guid, Handle};
+pub mod data_types;
+pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
 
 mod error;
 pub use self::error::{Completion, Result, ResultExt, Status};

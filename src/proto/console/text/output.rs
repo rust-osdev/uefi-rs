@@ -1,6 +1,6 @@
 use core::fmt;
 use crate::prelude::*;
-use crate::{Completion, Result, Status};
+use crate::{CStr16, Char16, Completion, Result, Status};
 
 /// Interface for text-based output devices.
 ///
@@ -9,8 +9,8 @@ use crate::{Completion, Result, Status};
 #[repr(C)]
 pub struct Output {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
-    output_string: extern "win64" fn(this: &Output, string: *const u16) -> Status,
-    test_string: extern "win64" fn(this: &Output, string: *const u16) -> Status,
+    output_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
+    test_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
     query_mode: extern "win64" fn(this: &Output, mode: i32, columns: &mut usize, rows: &mut usize)
         -> Status,
     set_mode: extern "win64" fn(this: &mut Output, mode: i32) -> Status,
@@ -36,8 +36,8 @@ impl Output {
     }
 
     /// Writes a string to the output device.
-    pub fn output_string(&mut self, string: *const u16) -> Result<()> {
-        (self.output_string)(self, string).into()
+    pub fn output_string(&mut self, string: &CStr16) -> Result<()> {
+        (self.output_string)(self, string.as_ptr()).into()
     }
 
     /// Checks if a string contains only supported characters.
@@ -45,8 +45,8 @@ impl Output {
     ///
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
-    pub fn test_string(&mut self, string: *const u16) -> bool {
-        match (self.test_string)(self, string) {
+    pub fn test_string(&mut self, string: &CStr16) -> bool {
+        match (self.test_string)(self, string.as_ptr()) {
             Status::SUCCESS => true,
             _ => false,
         }
@@ -146,9 +146,12 @@ impl fmt::Write for Output {
         // This closure writes the local buffer to the output and resets the buffer.
         let mut flush_buffer = |buf: &mut [u16], i: &mut usize| {
             buf[*i] = 0;
+            let codes = &buf[..=*i];
             *i = 0;
 
-            self.output_string(buf.as_ptr())
+            let text = CStr16::from_u16_with_nul(codes).map_err(|_| fmt::Error)?;
+
+            self.output_string(text)
                 .warning_as_error()
                 .map_err(|_| fmt::Error)
         };

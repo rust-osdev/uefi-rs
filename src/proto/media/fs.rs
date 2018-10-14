@@ -27,7 +27,7 @@ impl SimpleFileSystem {
     /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
     pub fn open_volume(&mut self) -> Result<File> {
         let mut ptr = 0usize;
-        (self.open_volume)(self, &mut ptr).into_with(|| File::new(ptr))
+        (self.open_volume)(self, &mut ptr).into_with(|| unsafe { File::new(ptr) })
     }
 }
 

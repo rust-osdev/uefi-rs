@@ -8,7 +8,7 @@
 use bitflags::bitflags;
 use core::mem;
 use crate::prelude::*;
-use crate::{Result, Status};
+use crate::{CStr16, Char16, Result, Status};
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing
@@ -22,11 +22,9 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub(super) fn new(ptr: usize) -> Self {
+    pub(super) unsafe fn new(ptr: usize) -> Self {
         let ptr = ptr as *mut FileImpl;
-
-        let inner = unsafe { &mut *ptr };
-
+        let inner = &mut *ptr;
         File { inner }
     }
 
@@ -62,12 +60,19 @@ impl<'a> File<'a> {
             let mut buf = [0u16; BUF_SIZE + 1];
             let mut ptr = 0usize;
 
-            ucs2::encode(filename, &mut buf)?;
-            (self.inner.open)(self.inner, &mut ptr, buf.as_ptr(), open_mode, attributes).into_with(
-                || File {
-                    inner: unsafe { &mut *(ptr as *mut FileImpl) },
-                },
+            let len = ucs2::encode(filename, &mut buf)?;
+            let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
+
+            (self.inner.open)(
+                self.inner,
+                &mut ptr,
+                filename.as_ptr(),
+                open_mode,
+                attributes,
             )
+            .into_with(|| File {
+                inner: unsafe { &mut *(ptr as *mut FileImpl) },
+            })
         }
     }
 
@@ -175,7 +180,7 @@ struct FileImpl {
     open: extern "win64" fn(
         this: &mut FileImpl,
         new_handle: &mut usize,
-        filename: *const u16,
+        filename: *const Char16,
         open_mode: FileMode,
         attributes: FileAttribute,
     ) -> Status,

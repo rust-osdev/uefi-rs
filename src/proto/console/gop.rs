@@ -42,7 +42,7 @@ pub struct GraphicsOutput {
     #[allow(clippy::type_complexity)]
     blt: extern "win64" fn(
         this: &mut GraphicsOutput,
-        buffer: usize,
+        buffer: *mut BltPixel,
         op: u32,
         source_x: usize,
         source_y: usize,
@@ -52,7 +52,7 @@ pub struct GraphicsOutput {
         height: usize,
         stride: usize,
     ) -> Status,
-    mode: &'static ModeData,
+    mode: &'static ModeData<'static>,
 }
 
 impl GraphicsOutput {
@@ -103,7 +103,7 @@ impl GraphicsOutput {
                 self.check_framebuffer_region((dest_x, dest_y), (width, height));
                 (self.blt)(
                     self,
-                    &color as *const _ as usize,
+                    &color as *const _ as *mut _,
                     0,
                     0,
                     0,
@@ -126,7 +126,7 @@ impl GraphicsOutput {
                 match dest_region {
                     BltRegion::Full => (self.blt)(
                         self,
-                        buffer.as_mut_ptr() as usize,
+                        buffer.as_mut_ptr(),
                         1,
                         src_x,
                         src_y,
@@ -142,7 +142,7 @@ impl GraphicsOutput {
                         px_stride,
                     } => (self.blt)(
                         self,
-                        buffer.as_mut_ptr() as usize,
+                        buffer.as_mut_ptr(),
                         1,
                         src_x,
                         src_y,
@@ -166,7 +166,7 @@ impl GraphicsOutput {
                 match src_region {
                     BltRegion::Full => (self.blt)(
                         self,
-                        buffer.as_ptr() as usize,
+                        buffer.as_ptr() as *mut _,
                         2,
                         0,
                         0,
@@ -182,7 +182,7 @@ impl GraphicsOutput {
                         px_stride,
                     } => (self.blt)(
                         self,
-                        buffer.as_ptr() as usize,
+                        buffer.as_ptr() as *mut _,
                         2,
                         src_x,
                         src_y,
@@ -203,7 +203,7 @@ impl GraphicsOutput {
                 self.check_framebuffer_region((src_x, src_y), (width, height));
                 self.check_framebuffer_region((dest_x, dest_y), (width, height));
                 (self.blt)(
-                    self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
+                    self, ptr::null_mut(), 3, src_x, src_y, dest_x, dest_y, width, height, 0,
                 )
                 .into()
             }
@@ -275,13 +275,13 @@ impl_proto! {
 }
 
 #[repr(C)]
-struct ModeData {
+struct ModeData<'a> {
     // Number of modes which the GOP supports.
     max_mode: u32,
     // Current mode.
     mode: u32,
     // Information about the current mode.
-    info: &'static ModeInfo,
+    info: &'a ModeInfo,
     // Size of the above structure.
     info_sz: usize,
     // Physical address of the frame buffer.

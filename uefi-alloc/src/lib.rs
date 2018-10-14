@@ -12,8 +12,6 @@
 #![warn(missing_docs)]
 #![deny(clippy::all)]
 #![no_std]
-// Custom allocators are currently unstable.
-#![feature(allocator_api)]
 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr;

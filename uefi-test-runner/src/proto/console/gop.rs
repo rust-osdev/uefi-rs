@@ -1,4 +1,3 @@
-use core::ptr;
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
 use uefi::table::boot::BootServices;
@@ -55,46 +54,44 @@ fn draw_fb(gop: &mut GraphicsOutput) {
     let stride = mi.stride();
     let (width, height) = mi.resolution();
 
-    let fb = unsafe { gop.frame_buffer() };
+    let (fb_base, _fb_size) = gop.frame_buffer();
 
-    type PixelWriter<'a> = &'a Fn(&mut [u8], (u8, u8, u8));
-    let write_pixel_rgb = |pixel: &mut [u8], (r, g, b)| {
-        let p = pixel.as_mut_ptr();
-        unsafe {
-            ptr::write_volatile(p.offset(0), r);
-            ptr::write_volatile(p.offset(1), g);
-            ptr::write_volatile(p.offset(2), b);
-        }
+    type PixelWriter = unsafe fn(*mut u8, [u8; 3]);
+    unsafe fn write_pixel_rgb(pixel_base: *mut u8, rgb: [u8; 3]) {
+        let [r, g, b] = rgb;
+        pixel_base.add(0).write_volatile(r);
+        pixel_base.add(1).write_volatile(g);
+        pixel_base.add(2).write_volatile(b);
     };
-    let write_pixel_bgr = |pixel: &mut [u8], (r, g, b)| {
-        let p = pixel.as_mut_ptr();
-        unsafe {
-            ptr::write_volatile(p.offset(0), b);
-            ptr::write_volatile(p.offset(1), g);
-            ptr::write_volatile(p.offset(2), r);
-        }
+    unsafe fn write_pixel_bgr(pixel_base: *mut u8, rgb: [u8; 3]) {
+        let [r, g, b] = rgb;
+        pixel_base.add(0).write_volatile(b);
+        pixel_base.add(1).write_volatile(g);
+        pixel_base.add(2).write_volatile(r);
     };
     let write_pixel: PixelWriter = match mi.pixel_format() {
-        PixelFormat::RGB => &write_pixel_rgb,
-        PixelFormat::BGR => &write_pixel_bgr,
+        PixelFormat::RGB => write_pixel_rgb,
+        PixelFormat::BGR => write_pixel_bgr,
         _ => {
             info!("This pixel format is not supported by the drawing demo");
             return;
         }
     };
 
-    let mut fill_rectangle = |(x1, y1), (x2, y2), color| {
+    let fill_rectangle = |(x1, y1), (x2, y2), color| {
         assert!((x1 < width) && (x2 < width), "Bad X coordinate");
         assert!((y1 < height) && (y2 < height), "Bad Y coordinate");
         for row in y1..y2 {
             for column in x1..x2 {
-                let index = (row * stride) + column;
-                let pixel = &mut fb[4 * index..4 * index + 3];
-                write_pixel(pixel, color);
+                unsafe {
+                    let index = (row * stride) + column;
+                    let pixel_base = fb_base.add(4 * index);
+                    write_pixel(pixel_base, color);
+                }
             }
         }
     };
 
-    fill_rectangle((50, 30), (150, 600), (250, 128, 64));
-    fill_rectangle((400, 120), (750, 450), (16, 128, 255));
+    fill_rectangle((50, 30), (150, 600), [250, 128, 64]);
+    fill_rectangle((400, 120), (750, 450), [16, 128, 255]);
 }

@@ -23,7 +23,7 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
-use core::{ptr, slice};
+use core::ptr;
 use crate::{Completion, Result, Status};
 
 /// Provides access to the video hardware's frame buffer.
@@ -249,14 +249,13 @@ impl GraphicsOutput {
         *self.mode.info
     }
 
-    /// Returns a reference to the frame buffer.
+    /// Returns the base pointer and size (in bytes) of the framebuffer
     ///
-    /// This function is inherently unsafe since the wrong format
-    /// could be used by a UEFI app when reading / writting the buffer.
-    ///
-    /// It is also the callers responsibilty to use volatile memory accesses,
-    /// otherwise they could be optimized to nothing.
-    pub unsafe fn frame_buffer(&mut self) -> &mut [u8] {
+    /// To use this pointer safely, a caller must...
+    /// - Honor the pixel format specificed by the mode info
+    /// - Use volatile writes so that the compiler does not optimize out or
+    ///   aggressively reorder the framebuffer accesses.
+    pub fn frame_buffer(&mut self) -> (*mut u8, usize) {
         assert!(
             self.mode.info.format != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
@@ -264,7 +263,7 @@ impl GraphicsOutput {
         let data = self.mode.fb_address as *mut u8;
         let len = self.mode.fb_size;
 
-        slice::from_raw_parts_mut(data, len)
+        (data, len)
     }
 }
 

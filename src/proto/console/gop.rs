@@ -23,6 +23,7 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
+use core::marker::PhantomData;
 use core::ptr;
 use crate::{Completion, Result, Status};
 
@@ -249,29 +250,20 @@ impl GraphicsOutput {
         *self.mode.info
     }
 
-    /// Returns the base pointer and size (in bytes) of the framebuffer
-    ///
-    /// To use this pointer safely, a caller must...
-    /// - Honor the pixel format specificed by the mode info
-    /// - Keep pointer accesses in bound
-    /// - Use volatile writes so that the compiler does not optimize out or
-    ///   aggressively reorder framebuffer accesses
-    /// - Make sure that the pointer is not used beyond its validity limit
-    ///
-    /// Although the UEFI spec makes no clear statement about framebuffer
-    /// pointer validity, it seems reasonable to expect the framebuffer pointer
-    /// to be valid until the next mode change. In the future, a safer interface
-    /// may be introduced, which would enforce volatile writes and automatically
-    /// check for dangling pointers using Rust's borrow checker.
-    pub fn frame_buffer(&mut self) -> (*mut u8, usize) {
+    /// Access the frame buffer directly
+    pub fn frame_buffer(&mut self) -> FrameBuffer {
         assert!(
             self.mode.info.format != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
-        let data = self.mode.fb_address as *mut u8;
-        let len = self.mode.fb_size;
+        let base = self.mode.fb_address as *mut u8;
+        let size = self.mode.fb_size;
 
-        (data, len)
+        FrameBuffer {
+            base,
+            size,
+            _lifetime: PhantomData,
+        }
     }
 }
 
@@ -518,4 +510,49 @@ pub enum BltOp<'a> {
         /// Width / height of the rectangles.
         dims: (usize, usize),
     },
+}
+
+/// Direct access to a memory-mapped frame buffer
+pub struct FrameBuffer<'a> {
+    base: *mut u8,
+    size: usize,
+    _lifetime: PhantomData<&'a mut u8>,
+}
+
+impl<'a> FrameBuffer<'a> {
+    /// Access the raw framebuffer pointer
+    ///
+    /// To use this pointer safely and correctly, you must...
+    /// - Honor the pixel format and stride specified by the mode info
+    /// - Keep memory accesses in bound
+    /// - Use volatile reads and writes
+    /// - Make sure that the pointer does not outlive the FrameBuffer
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.base
+    }
+
+    /// Query the framebuffer size in bytes
+    pub fn len(&self) -> usize {
+        self.size
+    }
+
+    /// Modify the i-th byte of the frame buffer
+    ///
+    /// This operation is unsafe because...
+    /// - You must honor the pixel format and stride specified by the mode info
+    /// - There is no bound checking on memory accesses in release mode
+    pub unsafe fn write_byte(&mut self, index: usize, value: u8) {
+        debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
+        self.base.add(index).write_volatile(value)
+    }
+
+    /// Read the i-th byte of the frame buffer
+    ///
+    /// This operation is unsafe because...
+    /// - You must honor the pixel format and stride specified by the mode info
+    /// - There is no bound checking on memory accesses in release mode
+    pub unsafe fn read_byte(&mut self, index: usize) -> u8 {
+        debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
+        self.base.add(index).read_volatile()
+    }
 }

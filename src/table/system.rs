@@ -24,7 +24,7 @@ pub struct SystemTable {
     /// Number of entires in the configuration table.
     nr_cfg: usize,
     /// Pointer to beginning of the array.
-    cfg_table: *mut cfg::ConfigTableEntry,
+    cfg_table: *const cfg::ConfigTableEntry,
 }
 
 // This is unsafe, but it's the best solution we have from now.

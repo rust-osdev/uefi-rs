@@ -253,8 +253,16 @@ impl GraphicsOutput {
     ///
     /// To use this pointer safely, a caller must...
     /// - Honor the pixel format specificed by the mode info
+    /// - Keep pointer accesses in bound
     /// - Use volatile writes so that the compiler does not optimize out or
-    ///   aggressively reorder the framebuffer accesses.
+    ///   aggressively reorder framebuffer accesses
+    /// - Make sure that the pointer is not used beyond its validity limit
+    ///
+    /// Although the UEFI spec makes no clear statement about framebuffer
+    /// pointer validity, it seems reasonable to expect the framebuffer pointer
+    /// to be valid until the next mode change. In the future, a safer interface
+    /// may be introduced, which would enforce volatile writes and automatically
+    /// check for dangling pointers using Rust's borrow checker.
     pub fn frame_buffer(&mut self) -> (*mut u8, usize) {
         assert!(
             self.mode.info.format != PixelFormat::BltOnly,

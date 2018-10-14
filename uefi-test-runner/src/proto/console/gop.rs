@@ -1,5 +1,5 @@
 use uefi::prelude::*;
-use uefi::proto::console::gop::{BltOp, BltPixel, GraphicsOutput, PixelFormat};
+use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
 use uefi::table::boot::BootServices;
 use uefi_exts::BootServicesExt;
 
@@ -54,20 +54,14 @@ fn draw_fb(gop: &mut GraphicsOutput) {
     let stride = mi.stride();
     let (width, height) = mi.resolution();
 
-    let (fb_base, _fb_size) = gop.frame_buffer();
+    let mut fb = gop.frame_buffer();
 
-    type PixelWriter = unsafe fn(*mut u8, [u8; 3]);
-    unsafe fn write_pixel_rgb(pixel_base: *mut u8, rgb: [u8; 3]) {
-        let [r, g, b] = rgb;
-        pixel_base.add(0).write_volatile(r);
-        pixel_base.add(1).write_volatile(g);
-        pixel_base.add(2).write_volatile(b);
+    type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
+    unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
+        fb.write_value(pixel_base, rgb);
     };
-    unsafe fn write_pixel_bgr(pixel_base: *mut u8, rgb: [u8; 3]) {
-        let [r, g, b] = rgb;
-        pixel_base.add(0).write_volatile(b);
-        pixel_base.add(1).write_volatile(g);
-        pixel_base.add(2).write_volatile(r);
+    unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
+        fb.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]]);
     };
     let write_pixel: PixelWriter = match mi.pixel_format() {
         PixelFormat::RGB => write_pixel_rgb,
@@ -78,15 +72,15 @@ fn draw_fb(gop: &mut GraphicsOutput) {
         }
     };
 
-    let fill_rectangle = |(x1, y1), (x2, y2), color| {
+    let mut fill_rectangle = |(x1, y1), (x2, y2), color| {
         assert!((x1 < width) && (x2 < width), "Bad X coordinate");
         assert!((y1 < height) && (y2 < height), "Bad Y coordinate");
         for row in y1..y2 {
             for column in x1..x2 {
                 unsafe {
-                    let index = (row * stride) + column;
-                    let pixel_base = fb_base.add(4 * index);
-                    write_pixel(pixel_base, color);
+                    let pixel_index = (row * stride) + column;
+                    let pixel_base = 4 * pixel_index;
+                    write_pixel(&mut fb, pixel_base, color);
                 }
             }
         }

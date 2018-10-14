@@ -87,7 +87,7 @@ fn init_logger() {
 fn init_alloc() {
     let st = system_table();
 
-    uefi_alloc::init(st.boot);
+    uefi_alloc::init(st.boot_services());
 }
 
 #[lang = "eh_personality"]
@@ -110,7 +110,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     // Give the user some time to read the message
     if let Some(st) = unsafe { SYSTEM_TABLE } {
         // FIXME: Check if boot-time services have been exited too
-        st.boot.stall(10_000_000);
+        st.boot_services().stall(10_000_000);
     } else {
         let mut dummy = 0u64;
         // FIXME: May need different counter values in debug & release builds
@@ -133,7 +133,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     // If the system table is available, use UEFI's standard shutdown mechanism
     if let Some(st) = unsafe { SYSTEM_TABLE } {
         use uefi::table::runtime::ResetType;
-        st.runtime
+        st.runtime_services()
             .reset(ResetType::Shutdown, uefi::Status::ABORTED, None)
     }
 

@@ -31,7 +31,7 @@ pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable
     check_revision(st.uefi_revision());
 
     // Test all the boot services.
-    let bt = st.boot;
+    let bt = st.boot_services();
     boot::test(bt);
 
     // TODO: test the runtime services.
@@ -107,11 +107,11 @@ fn shutdown(st: &SystemTable) -> ! {
     // Inform the user, and give him time to read on real hardware
     if cfg!(not(feature = "qemu")) {
         info!("Testing complete, shutting down in 3 seconds...");
-        st.boot.stall(3_000_000);
+        st.boot_services().stall(3_000_000);
     } else {
         info!("Testing complete, shutting down...");
     }
 
-    let rt = st.runtime;
+    let rt = st.runtime_services();
     rt.reset(ResetType::Shutdown, Status::SUCCESS, None);
 }

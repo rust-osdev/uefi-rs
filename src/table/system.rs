@@ -1,4 +1,6 @@
 use super::{cfg, Header, Revision};
+use super::boot::BootServices;
+use super::runtime::RuntimeServices;
 use core::slice;
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle};
@@ -18,9 +20,9 @@ pub struct SystemTable {
     stderr_handle: Handle,
     stderr: *mut text::Output,
     /// Runtime services table.
-    pub runtime: &'static super::runtime::RuntimeServices,
+    runtime: &'static RuntimeServices,
     /// Boot services table.
-    pub boot: &'static super::boot::BootServices,
+    boot: &'static BootServices,
     /// Number of entires in the configuration table.
     nr_cfg: usize,
     /// Pointer to beginning of the array.
@@ -54,6 +56,16 @@ impl SystemTable {
     /// Returns the standard error protocol.
     pub fn stderr(&self) -> &mut text::Output {
         unsafe { &mut *self.stderr }
+    }
+
+    /// Access runtime services
+    pub fn runtime_services(&self) -> &RuntimeServices {
+        self.runtime
+    }
+
+    /// Access boot services
+    pub fn boot_services(&self) -> &BootServices {
+        self.boot
     }
 
     /// Returns the config table entries, a linear array of structures

@@ -6,7 +6,7 @@ use uefi::proto;
 pub fn test(st: &SystemTable) {
     info!("Testing various protocols");
 
-    let bt = st.boot;
+    let bt = st.boot_services();
 
     find_protocol(bt);
 

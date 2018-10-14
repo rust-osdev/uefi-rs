@@ -5,7 +5,7 @@ pub fn test(st: &SystemTable) {
 
     stdout::test(st.stdout());
 
-    let bt = st.boot;
+    let bt = st.boot_services();
     serial::test(bt);
     gop::test(bt);
     pointer::test(bt);

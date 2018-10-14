@@ -11,7 +11,7 @@ use crate::{Completion, Result, Status};
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
 #[repr(C)]
-pub struct Serial {
+pub struct Serial<'boot> {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
     revision: u32,
@@ -29,10 +29,10 @@ pub struct Serial {
     get_control_bits: extern "win64" fn(&Serial, &mut ControlBits) -> Status,
     write: extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
     read: extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
-    io_mode: &'static IoMode,
+    io_mode: &'boot IoMode,
 }
 
-impl Serial {
+impl<'boot> Serial<'boot> {
     /// Reset the device.
     pub fn reset(&mut self) -> Result<()> {
         (self.reset)(self).into()
@@ -117,7 +117,7 @@ impl Serial {
 }
 
 impl_proto! {
-    protocol Serial {
+    protocol Serial<'boot> {
         GUID = 0xBB25CF6F, 0xF1D4, 0x11D2, [0x9A, 0x0C, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0xFD];
     }
 }

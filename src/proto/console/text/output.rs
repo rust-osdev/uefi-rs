@@ -7,7 +7,7 @@ use crate::{CStr16, Char16, Completion, Result, Status};
 /// It implements the fmt::Write trait, so you can use it to print text with
 /// standard Rust constructs like the write!() and writeln!() macros.
 #[repr(C)]
-pub struct Output {
+pub struct Output<'boot> {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
     output_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
     test_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
@@ -18,10 +18,10 @@ pub struct Output {
     clear_screen: extern "win64" fn(this: &mut Output) -> Status,
     set_cursor_position: extern "win64" fn(this: &mut Output, column: usize, row: usize) -> Status,
     enable_cursor: extern "win64" fn(this: &mut Output, visible: bool) -> Status,
-    data: &'static OutputData,
+    data: &'boot OutputData,
 }
 
-impl Output {
+impl<'boot> Output<'boot> {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result<()> {
         (self.reset)(self, extended).into()
@@ -53,8 +53,8 @@ impl Output {
     }
 
     /// Returns an iterator of all supported text modes.
-    // TODO: fix the ugly lifetime parameter.
-    pub fn modes<'a>(&'a mut self) -> impl Iterator<Item = Completion<OutputMode>> + 'a {
+    // TODO: Bring back impl Trait once the story around bounds improves
+    pub fn modes<'a>(&'a mut self) -> OutputModeIter<'a, 'boot> {
         let max = self.data.max_mode;
         OutputModeIter {
             output: self,
@@ -134,7 +134,7 @@ impl Output {
     }
 }
 
-impl fmt::Write for Output {
+impl<'boot> fmt::Write for Output<'boot> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         // Allocate a small buffer on the stack.
         const BUF_SIZE: usize = 128;
@@ -215,13 +215,13 @@ impl OutputMode {
 }
 
 /// An iterator of the text modes (possibly) supported by a device.
-struct OutputModeIter<'a> {
-    output: &'a mut Output,
+pub struct OutputModeIter<'a, 'b: 'a> {
+    output: &'a mut Output<'b>,
     current: i32,
     max: i32,
 }
 
-impl<'a> Iterator for OutputModeIter<'a> {
+impl<'a, 'b> Iterator for OutputModeIter<'a, 'b> {
     type Item = Completion<OutputMode>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -259,7 +259,7 @@ struct OutputData {
 }
 
 impl_proto! {
-    protocol Output {
+    protocol Output<'boot> {
         GUID = 0x387477c2, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
     }
 }

@@ -15,7 +15,7 @@ pub fn test(st: &SystemTable) {
 }
 
 fn find_protocol(bt: &BootServices) {
-    type SearchedProtocol = proto::console::text::Output;
+    type SearchedProtocol<'a> = proto::console::text::Output<'a>;
 
     let handles = bt
         .find_handles::<SearchedProtocol>()

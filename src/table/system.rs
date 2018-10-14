@@ -16,9 +16,9 @@ pub struct SystemTable {
     stdin_handle: Handle,
     stdin: *mut text::Input,
     stdout_handle: Handle,
-    stdout: *mut text::Output,
+    stdout: *mut text::Output<'static>,
     stderr_handle: Handle,
-    stderr: *mut text::Output,
+    stderr: *mut text::Output<'static>,
     /// Runtime services table.
     runtime: &'static RuntimeServices,
     /// Boot services table.
@@ -50,12 +50,14 @@ impl SystemTable {
 
     /// Returns the standard output protocol.
     pub fn stdout(&self) -> &mut text::Output {
-        unsafe { &mut *self.stdout }
+        let stdout_ptr = self.stdout as *const _ as *mut _;
+        unsafe { &mut *stdout_ptr }
     }
 
     /// Returns the standard error protocol.
     pub fn stderr(&self) -> &mut text::Output {
-        unsafe { &mut *self.stderr }
+        let stderr_ptr = self.stderr as *const _ as *mut _;
+        unsafe { &mut *stderr_ptr }
     }
 
     /// Access runtime services

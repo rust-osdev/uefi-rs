@@ -7,6 +7,9 @@
 //!
 //! Call the `init` function with a reference to the boot services table.
 //! Failure to do so before calling a memory allocating function will panic.
+//!
+//! Call the `exit_boot_services` function before exiting UEFI boot services.
+//! Failure to do so will turn subsequent allocation into undefined behaviour.
 
 // Enable additional lints.
 #![warn(missing_docs)]
@@ -14,23 +17,37 @@
 #![no_std]
 
 use core::alloc::{GlobalAlloc, Layout};
-use core::ptr;
+use core::ptr::{self, NonNull};
 
 use uefi::prelude::*;
 use uefi::table::boot::{BootServices, MemoryType};
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.
-static mut BOOT_SERVICES: Option<&BootServices> = None;
+///
+/// The inner pointer is only safe to dereference if UEFI boot services have not been
+/// exited by the host application yet.
+static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
 
 /// Initializes the allocator.
-pub fn init(boot_services: &'static BootServices) {
-    unsafe {
-        BOOT_SERVICES = Some(boot_services);
-    }
+///
+/// You must make sure that exit_boot_services will be called before UEFI boot
+/// services are exited.
+pub unsafe fn init(boot_services: &BootServices) {
+    BOOT_SERVICES = NonNull::new(boot_services as *const _ as *mut _);
 }
 
-fn boot_services() -> &'static BootServices {
-    unsafe { BOOT_SERVICES.unwrap() }
+/// Access the boot services
+fn boot_services() -> NonNull<BootServices> {
+    unsafe { BOOT_SERVICES.expect("Boot services are unavailable or have been exited") }
+}
+
+/// Notify the allocator library that boot services are not safe to call anymore
+///
+/// You should call this function before exiting UEFI boot services.
+pub fn exit_boot_services() {
+    unsafe {
+        BOOT_SERVICES = None;
+    }
 }
 
 /// Allocator which uses the UEFI pool allocation functions.
@@ -50,6 +67,7 @@ unsafe impl GlobalAlloc for Allocator {
             ptr::null_mut()
         } else {
             boot_services()
+                .as_ref()
                 .allocate_pool(mem_ty, size)
                 .warning_as_error()
                 .unwrap_or(ptr::null_mut())
@@ -57,7 +75,7 @@ unsafe impl GlobalAlloc for Allocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        boot_services().free_pool(ptr).warning_as_error().unwrap();
+        boot_services().as_ref().free_pool(ptr).warning_as_error().unwrap();
     }
 }
 

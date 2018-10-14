@@ -33,7 +33,7 @@ use crate::{Completion, Result, Status};
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
-pub struct GraphicsOutput {
+pub struct GraphicsOutput<'boot> {
     query_mode:
         extern "win64" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo)
             -> Status,
@@ -52,10 +52,10 @@ pub struct GraphicsOutput {
         height: usize,
         stride: usize,
     ) -> Status,
-    mode: &'static ModeData<'static>,
+    mode: &'boot ModeData<'boot>,
 }
 
-impl GraphicsOutput {
+impl<'boot> GraphicsOutput<'boot> {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
     fn query_mode(&self, index: u32) -> Result<Mode> {
@@ -278,7 +278,7 @@ impl GraphicsOutput {
 }
 
 impl_proto! {
-    protocol GraphicsOutput {
+    protocol GraphicsOutput<'boot> {
         GUID = 0x9042a9de, 0x23dc, 0x4a38, [0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a];
     }
 }
@@ -400,7 +400,7 @@ impl ModeInfo {
 
 /// Iterator for graphics modes.
 struct ModeIter<'a> {
-    gop: &'a GraphicsOutput,
+    gop: &'a GraphicsOutput<'a>,
     current: u32,
     max: u32,
 }

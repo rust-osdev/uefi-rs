@@ -58,16 +58,10 @@ fn draw_fb(gop: &mut GraphicsOutput) {
 
     type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
     unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-        let [r, g, b] = rgb;
-        fb.write_byte(pixel_base, r);
-        fb.write_byte(pixel_base + 1, g);
-        fb.write_byte(pixel_base + 2, b);
+        fb.write_value(pixel_base, rgb);
     };
     unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-        let [r, g, b] = rgb;
-        fb.write_byte(pixel_base, b);
-        fb.write_byte(pixel_base + 1, g);
-        fb.write_byte(pixel_base + 2, r);
+        fb.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]]);
     };
     let write_pixel: PixelWriter = match mi.pixel_format() {
         PixelFormat::RGB => write_pixel_rgb,

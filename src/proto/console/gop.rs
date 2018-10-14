@@ -63,7 +63,7 @@ impl GraphicsOutput {
         let mut info = ptr::null();
 
         (self.query_mode)(self, index, &mut info_sz, &mut info).into_with(|| {
-            let info = unsafe { &*info };
+            let info = unsafe { *info };
             Mode {
                 index,
                 info_sz,
@@ -203,7 +203,16 @@ impl GraphicsOutput {
                 self.check_framebuffer_region((src_x, src_y), (width, height));
                 self.check_framebuffer_region((dest_x, dest_y), (width, height));
                 (self.blt)(
-                    self, ptr::null_mut(), 3, src_x, src_y, dest_x, dest_y, width, height, 0,
+                    self,
+                    ptr::null_mut(),
+                    3,
+                    src_x,
+                    src_y,
+                    dest_x,
+                    dest_y,
+                    width,
+                    height,
+                    0,
                 )
                 .into()
             }
@@ -329,7 +338,7 @@ pub struct PixelBitmask {
 pub struct Mode {
     index: u32,
     info_sz: usize,
-    info: &'static ModeInfo,
+    info: ModeInfo,
 }
 
 impl Mode {
@@ -342,7 +351,7 @@ impl Mode {
 
     /// Returns a reference to the mode info structure.
     pub fn info(&self) -> &ModeInfo {
-        self.info
+        &self.info
     }
 }
 

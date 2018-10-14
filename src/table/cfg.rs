@@ -10,6 +10,7 @@
 #![allow(clippy::unreadable_literal)]
 
 use bitflags::bitflags;
+use core::ffi::c_void;
 use crate::Guid;
 
 /// Contains a set of GUID / pointer for a vendor-specific table.
@@ -23,7 +24,7 @@ pub struct ConfigTableEntry {
     /// The starting address of this table.
     ///
     /// Whether this is a physical or virtual address depends on the table.
-    pub address: usize,
+    pub address: *const c_void,
 }
 
 /// Entry pointing to the old ACPI 1 RSDP.

@@ -13,18 +13,25 @@ pub struct RuntimeServices {
     header: Header,
     // Skip some useless functions.
     _pad: [usize; 10],
-    reset: extern "win64" fn(u32, Status, usize, *const u8) -> !,
+    reset: extern "win64" fn(rt: ResetType, status: Status, data_size: usize, data: *const u8) -> !,
 }
 
 impl RuntimeServices {
     /// Resets the computer.
     pub fn reset(&self, rt: ResetType, status: Status, data: Option<&[u8]>) -> ! {
         let (size, data) = match data {
+            // FIXME: The UEFI spec states that the data must start with a NUL-
+            //        terminated string, which we should check... but it does not
+            //        specify if that string should be Latin-1 or UCS-2!
+            //
+            //        PlatformSpecific resets should also insert a GUID after the
+            //        NUL-terminated string.
+            //
             Some(data) => (data.len(), data.as_ptr()),
             None => (0, ptr::null()),
         };
 
-        (self.reset)(rt as u32, status, size, data)
+        (self.reset)(rt, status, size, data)
     }
 }
 
@@ -39,7 +46,7 @@ pub enum ResetType {
     /// Resets all the internal circuitry to its initial state.
     ///
     /// This is analogous to power cycling the device.
-    Cold,
+    Cold = 0,
     /// The processor is reset to its initial state.
     Warm,
     /// The components are powered off.

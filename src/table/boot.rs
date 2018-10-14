@@ -2,6 +2,7 @@
 
 use super::Header;
 use bitflags::bitflags;
+use core::ffi::c_void;
 use core::{mem, ptr, result};
 use crate::proto::Protocol;
 use crate::{Event, Guid, Handle, Result, Status};
@@ -12,19 +13,24 @@ pub struct BootServices {
     header: Header,
 
     // Task Priority services
-    raise_tpl: extern "win64" fn(Tpl) -> Tpl,
-    restore_tpl: extern "win64" fn(Tpl),
+    raise_tpl: extern "win64" fn(new_tpl: Tpl) -> Tpl,
+    restore_tpl: extern "win64" fn(old_tpl: Tpl),
 
     // Memory allocation functions
     allocate_pages:
         extern "win64" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64)
             -> Status,
-    free_pages: extern "win64" fn(u64, usize) -> Status,
-    memory_map:
-        extern "win64" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32)
-            -> Status,
-    allocate_pool: extern "win64" fn(MemoryType, usize, addr: &mut usize) -> Status,
-    free_pool: extern "win64" fn(buffer: usize) -> Status,
+    free_pages: extern "win64" fn(addr: u64, pages: usize) -> Status,
+    memory_map: extern "win64" fn(
+        size: &mut usize,
+        map: *mut MemoryDescriptor,
+        key: &mut MemoryMapKey,
+        desc_size: &mut usize,
+        desc_version: &mut u32,
+    ) -> Status,
+    allocate_pool:
+        extern "win64" fn(pool_type: MemoryType, size: usize, buffer: &mut *mut u8) -> Status,
+    free_pool: extern "win64" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
     create_event: usize,
@@ -41,13 +47,14 @@ pub struct BootServices {
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
     handle_protocol:
-        extern "win64" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
+        extern "win64" fn(handle: Handle, proto: *const Guid, out_proto: &mut *mut c_void)
+            -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
     locate_handle: extern "win64" fn(
         search_ty: i32,
         proto: *const Guid,
-        key: *mut (),
+        key: *mut c_void,
         buf_sz: &mut usize,
         buf: *mut Handle,
     ) -> Status,
@@ -59,11 +66,11 @@ pub struct BootServices {
     start_image: usize,
     exit: usize,
     unload_image: usize,
-    exit_boot_services: extern "win64" fn(Handle, MemoryMapKey) -> Status,
+    exit_boot_services: extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
-    stall: extern "win64" fn(usize) -> Status,
+    stall: extern "win64" fn(microseconds: usize) -> Status,
     set_watchdog_timer: extern "win64" fn(
         timeout: usize,
         watchdog_code: u64,
@@ -117,18 +124,18 @@ impl BootServices {
         ty: AllocateType,
         mem_ty: MemoryType,
         count: usize,
-    ) -> Result<usize> {
+    ) -> Result<u64> {
         let (ty, mut addr) = match ty {
             AllocateType::AnyPages => (0, 0),
             AllocateType::MaxAddress(addr) => (1, addr as u64),
             AllocateType::Address(addr) => (2, addr as u64),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with(|| addr as usize)
+        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
-    pub fn free_pages(&self, addr: usize, count: usize) -> Result<()> {
-        (self.free_pages)(addr as u64, count).into()
+    pub fn free_pages(&self, addr: u64, count: usize) -> Result<()> {
+        (self.free_pages)(addr, count).into()
     }
 
     /// Retrieves the size, in bytes, of the current memory map.
@@ -144,7 +151,7 @@ impl BootServices {
 
         let status = (self.memory_map)(
             &mut map_size,
-            0,
+            ptr::null_mut(),
             &mut map_key,
             &mut entry_size,
             &mut entry_version,
@@ -169,7 +176,7 @@ impl BootServices {
         impl ExactSizeIterator<Item = &'a MemoryDescriptor>,
     )> {
         let mut map_size = buffer.len();
-        let map_buffer = buffer.as_ptr() as usize;
+        let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
@@ -194,13 +201,13 @@ impl BootServices {
     }
 
     /// Allocates from a memory pool. The address is 8-byte aligned.
-    pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<usize> {
-        let mut buffer = 0;
+    pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
+        let mut buffer = ptr::null_mut();
         (self.allocate_pool)(mem_ty, size, &mut buffer).into_with(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
-    pub fn free_pool(&self, addr: usize) -> Result<()> {
+    pub fn free_pool(&self, addr: *mut u8) -> Result<()> {
         (self.free_pool)(addr).into()
     }
 
@@ -245,10 +252,13 @@ impl BootServices {
     ///
     /// This function attempts to get the protocol implementation of a handle,
     /// based on the protocol GUID.
-    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<ptr::NonNull<P>> {
-        let mut ptr = 0usize;
+    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&mut P> {
+        let mut ptr = ptr::null_mut();
         match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
-            Status::SUCCESS => ptr::NonNull::new(ptr as *mut P),
+            Status::SUCCESS => {
+                let ptr = ptr as *mut P;
+                Some(unsafe { &mut *ptr })
+            }
             _ => None,
         }
     }

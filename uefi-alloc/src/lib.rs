@@ -54,14 +54,12 @@ unsafe impl GlobalAlloc for Allocator {
             boot_services()
                 .allocate_pool(mem_ty, size)
                 .warning_as_error()
-                .map(|addr| addr as *mut _)
                 .unwrap_or(ptr::null_mut())
         }
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        let addr = ptr as usize;
-        boot_services().free_pool(addr).warning_as_error().unwrap();
+        boot_services().free_pool(ptr).warning_as_error().unwrap();
     }
 }
 

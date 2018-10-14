@@ -64,10 +64,9 @@ fn check_revision(rev: uefi::table::Revision) {
 fn check_screenshot(bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
         // Access the serial port (in a QEMU environment, it should always be there)
-        let mut serial = bt
+        let serial = bt
             .find_protocol::<Serial>()
             .expect("Could not find serial port");
-        let serial = unsafe { serial.as_mut() };
 
         // Set a large timeout to avoid problems with Travis
         let mut io_mode = *serial.io_mode();

@@ -5,9 +5,7 @@ use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
     info!("Running graphics output protocol test");
-    if let Some(mut gop_proto) = bt.find_protocol::<GraphicsOutput>() {
-        let gop = unsafe { gop_proto.as_mut() };
-
+    if let Some(gop) = bt.find_protocol::<GraphicsOutput>() {
         set_graphics_mode(gop);
         fill_color(gop);
         draw_fb(gop);

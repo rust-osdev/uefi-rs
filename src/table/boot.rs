@@ -118,7 +118,9 @@ impl BootServices {
 
     /// Allocates memory pages from the system.
     ///
-    /// UEFI OS loaders should allocate memory of the type `LoaderData`.
+    /// UEFI OS loaders should allocate memory of the type `LoaderData`. An u64
+    /// is returned even on 32-bit platforms because some hardware configurations
+    /// like Intel PAE enable 64-bit physical addressing on a 32-bit processor.
     pub fn allocate_pages(
         &self,
         ty: AllocateType,
@@ -200,7 +202,7 @@ impl BootServices {
         })
     }
 
-    /// Allocates from a memory pool. The address is 8-byte aligned.
+    /// Allocates from a memory pool. The pointer will be 8-byte aligned.
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
         (self.allocate_pool)(mem_ty, size, &mut buffer).into_with(|| buffer)

@@ -532,7 +532,7 @@ impl<'a> FrameBuffer<'a> {
     }
 
     /// Query the framebuffer size in bytes
-    pub fn len(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.size
     }
 

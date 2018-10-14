@@ -67,6 +67,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
         let serial = bt
             .find_protocol::<Serial>()
             .expect("Could not find serial port");
+        let serial = unsafe { &mut *serial.get() };
 
         // Set a large timeout to avoid problems with Travis
         let mut io_mode = *serial.io_mode();

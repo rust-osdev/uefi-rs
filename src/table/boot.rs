@@ -2,6 +2,7 @@
 
 use super::Header;
 use bitflags::bitflags;
+use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::{mem, ptr, result};
 use crate::proto::Protocol;
@@ -254,12 +255,16 @@ impl BootServices {
     ///
     /// This function attempts to get the protocol implementation of a handle,
     /// based on the protocol GUID.
-    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&mut P> {
+    ///
+    /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
+    /// provides no mechanism to protect against concurrent usage. Such protections
+    /// must be implemented by user-level code, for example via a global HashSet.
+    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
             Status::SUCCESS => {
-                let ptr = ptr as *mut P;
-                Some(unsafe { &mut *ptr })
+                let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+                Some(unsafe { &*ptr })
             }
             _ => None,
         }

@@ -6,6 +6,8 @@ use uefi_exts::BootServicesExt;
 pub fn test(bt: &BootServices) {
     info!("Running serial protocol test");
     if let Some(serial) = bt.find_protocol::<Serial>() {
+        let serial = unsafe { &mut *serial.get() };
+
         let old_ctrl_bits = serial
             .get_control_bits()
             .expect_success("Failed to get device control bits");

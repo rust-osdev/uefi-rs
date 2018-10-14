@@ -7,6 +7,8 @@ use uefi_exts::BootServicesExt;
 pub fn test(bt: &BootServices) {
     info!("Running pointer protocol test");
     if let Some(pointer) = bt.find_protocol::<Pointer>() {
+        let pointer = unsafe { &mut *pointer.get() };
+
         pointer
             .reset(false)
             .expect_success("Failed to reset pointer device");

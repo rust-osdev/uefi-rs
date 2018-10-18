@@ -19,10 +19,8 @@ mod proto;
 
 #[no_mangle]
 pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
-    // Initialize logging.
-    unsafe {
-        uefi_services::init(st);
-    }
+    // Initialize utilities (logging, memory allocation...)
+    uefi_services::init(st).expect_success("Failed to initialize utilities");
 
     // Reset the console before running all the other tests.
     st.stdout()

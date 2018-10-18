@@ -30,8 +30,8 @@ static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
 
 /// Initializes the allocator.
 ///
-/// You must make sure that exit_boot_services will be called before UEFI boot
-/// services are exited.
+/// This function is unsafe because you _must_ make sure that exit_boot_services
+/// will be called when UEFI boot services will be exited.
 pub unsafe fn init(boot_services: &BootServices) {
     BOOT_SERVICES = NonNull::new(boot_services as *const _ as *mut _);
 }
@@ -43,7 +43,7 @@ fn boot_services() -> NonNull<BootServices> {
 
 /// Notify the allocator library that boot services are not safe to call anymore
 ///
-/// You should call this function before exiting UEFI boot services.
+/// You must arrange for this function to be called on exit from UEFI boot services
 pub fn exit_boot_services() {
     unsafe {
         BOOT_SERVICES = None;

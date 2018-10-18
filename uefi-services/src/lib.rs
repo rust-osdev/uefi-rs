@@ -31,7 +31,11 @@ extern crate uefi_alloc;
 extern crate log;
 
 use core::ptr::NonNull;
+
+use uefi::{Event, Result};
+use uefi::prelude::*;
 use uefi::table::SystemTable;
+use uefi::table::boot::{EventType, Tpl};
 
 /// Reference to the system table.
 ///
@@ -57,21 +61,32 @@ pub fn system_table() -> NonNull<SystemTable> {
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-///
-/// You must make sure that exit_boot_services will be called before UEFI boot
-/// services are exited.
-pub unsafe fn init(st: &SystemTable) {
+pub fn init(st: &SystemTable) -> Result<()> {
     // Avoid double initialization.
-    if SYSTEM_TABLE.is_some() {
-        return;
+    if unsafe { SYSTEM_TABLE.is_some() } {
+        return Status::SUCCESS.into();
     }
 
-    SYSTEM_TABLE = NonNull::new(st as *const _ as *mut _);
+    // Setup the system table singleton
+    unsafe { SYSTEM_TABLE = NonNull::new(st as *const _ as *mut _) };
 
-    init_logger(st);
-    init_alloc(st);
+    // Setup logging and memory allocation
+    let boot_services = st.boot_services();
+    unsafe {
+        init_logger(st);
+        uefi_alloc::init(boot_services);
+    }
+
+    // Schedule these services to be shut down on exit from UEFI boot services
+    boot_services.create_event(EventType::SIGNAL_EXIT_BOOT_SERVICES,
+                               Tpl::NOTIFY,
+                               Some(exit_boot_services)).map_inner(|_| ())
 }
 
+/// Set up logging
+///
+/// This is unsafe because you must arrange for the logger to be reset with
+/// disable() on exit from UEFI boot services.
 unsafe fn init_logger(st: &SystemTable) {
     let stdout = st.stdout();
 
@@ -88,12 +103,8 @@ unsafe fn init_logger(st: &SystemTable) {
     log::set_max_level(log::LevelFilter::Info);
 }
 
-unsafe fn init_alloc(st: &SystemTable) {
-    uefi_alloc::init(st.boot_services());
-}
-
 /// Notify the utility library that boot services are not safe to call anymore
-pub fn exit_boot_services() {
+fn exit_boot_services(_e: Event) {
     unsafe {
         SYSTEM_TABLE = None;
         if let Some(ref mut logger) = LOGGER {

@@ -62,25 +62,25 @@ pub fn system_table() -> NonNull<SystemTable> {
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
 pub fn init(st: &SystemTable) -> Result<()> {
-    // Avoid double initialization.
-    if unsafe { SYSTEM_TABLE.is_some() } {
-        return Status::SUCCESS.into();
-    }
-
-    // Setup the system table singleton
-    unsafe { SYSTEM_TABLE = NonNull::new(st as *const _ as *mut _) };
-
-    // Setup logging and memory allocation
-    let boot_services = st.boot_services();
     unsafe {
+        // Avoid double initialization.
+        if SYSTEM_TABLE.is_some() {
+            return Status::SUCCESS.into();
+        }
+
+        // Setup the system table singleton
+        SYSTEM_TABLE = NonNull::new(st as *const _ as *mut _);
+
+        // Setup logging and memory allocation
+        let boot_services = st.boot_services();
         init_logger(st);
         uefi_alloc::init(boot_services);
-    }
 
-    // Schedule these services to be shut down on exit from UEFI boot services
-    boot_services.create_event(EventType::SIGNAL_EXIT_BOOT_SERVICES,
-                               Tpl::NOTIFY,
-                               Some(exit_boot_services)).map_inner(|_| ())
+        // Schedule these tools to be disabled on exit from UEFI boot services
+        boot_services.create_event(EventType::SIGNAL_EXIT_BOOT_SERVICES,
+                                   Tpl::NOTIFY,
+                                   Some(exit_boot_services)).map_inner(|_| ())
+    }
 }
 
 /// Set up logging

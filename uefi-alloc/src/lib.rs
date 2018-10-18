@@ -75,7 +75,11 @@ unsafe impl GlobalAlloc for Allocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-        boot_services().as_ref().free_pool(ptr).warning_as_error().unwrap();
+        boot_services()
+            .as_ref()
+            .free_pool(ptr)
+            .warning_as_error()
+            .unwrap();
     }
 }
 

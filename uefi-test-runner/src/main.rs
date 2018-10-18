@@ -20,7 +20,9 @@ mod proto;
 #[no_mangle]
 pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
     // Initialize logging.
-    unsafe { uefi_services::init(st); }
+    unsafe {
+        uefi_services::init(st);
+    }
 
     // Reset the console before running all the other tests.
     st.stdout()

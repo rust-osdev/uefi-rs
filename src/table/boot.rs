@@ -34,7 +34,13 @@ pub struct BootServices {
     free_pool: extern "win64" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
-    create_event: usize,
+    create_event: extern "win64" fn(
+        ty: EventType,
+        notify_tpl: Tpl,
+        notify_func: *mut EventNotifyFn,
+        notify_ctx: *mut c_void,
+        event: *mut Event,
+    ) -> Status,
     set_timer: usize,
     wait_for_event:
         extern "win64" fn(number_of_events: usize, events: *mut Event, out_index: &mut usize)
@@ -212,6 +218,47 @@ impl BootServices {
     /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: *mut u8) -> Result<()> {
         (self.free_pool)(addr).into()
+    }
+
+    /// Creates an event
+    ///
+    /// This function creates a new event of the specified type and returns it.
+    ///
+    /// Events are created in a "waiting" state, and may switch to a "signaled"
+    /// state. If the event type has flag NotifySignal set, this will result in
+    /// a callback for the event being immediately enqueued at the `notify_tpl`
+    /// priority level. If the event type has flag NotifyWait, the notification
+    /// will be delivered next time `wait_for_event` or `check_event` is called.
+    /// In both cases, a `notify_fn` callback must be specified.
+    ///
+    /// Note that the safety of this function relies on aborting panics being
+    /// used, as requested by the uefi-rs documentation.
+    pub fn create_event(
+        &self,
+        event_ty: EventType,
+        notify_tpl: Tpl,
+        notify_fn: Option<fn(Event)>,
+    ) -> Result<Event> {
+        // Prepare storage for the output Event
+        let mut event = unsafe { mem::uninitialized() };
+
+        // Use a trampoline to handle the impedance mismatch between Rust & C
+        unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
+            let notify_fn = ctx as *mut fn(Event);
+            (*notify_fn)(e); // Aborting panics are assumed here
+        }
+        let (notify_func, notify_ctx) = notify_fn
+            .map(|notify_fn| {
+                (
+                    notify_trampoline as *mut EventNotifyFn,
+                    notify_fn as *mut fn(Event) as *mut c_void,
+                )
+            })
+            .unwrap_or((ptr::null_mut(), ptr::null_mut()));
+
+        // Now we're ready to call UEFI
+        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
+            .into_with(|| event)
     }
 
     /// Stops execution until an event is signaled
@@ -596,3 +643,39 @@ impl<'a> SearchType<'a> {
         SearchType::ByProtocol(&P::GUID)
     }
 }
+
+bitflags! {
+    /// Flags describing the type of an UEFI event and its attributes.
+    pub struct EventType: u32 {
+        /// The event is a timer event and may be passed to `BootServices::set_timer()`
+        /// Note that timers only function during boot services time.
+        const TIMER = 0x80000000;
+
+        /// The event is allocated from runtime memory.
+        /// This must be done if the event is to be signaled after ExitBootServices.
+        const RUNTIME = 0x40000000;
+
+        /// Calling wait_for_event or check_event will enqueue the notification
+        /// function if the event is not already in the signaled state.
+        /// Mutually exclusive with NOTIFY_SIGNAL.
+        const NOTIFY_WAIT = 0x00000100;
+
+        /// The notification function will be enqueued when the event is signaled
+        /// Mutually exclusive with NOTIFY_WAIT.
+        const NOTIFY_SIGNAL = 0x00000200;
+
+        /// The event will be signaled at ExitBootServices time.
+        /// This event type should not be combined with any other.
+        /// Its notification function must follow some special rules:
+        /// - Cannot use memory allocation services, directly or indirectly
+        /// - Cannot depend on timer events, since those will be deactivated
+        const SIGNAL_EXIT_BOOT_SERVICES = 0x00000201;
+
+        /// The event will be notified when SetVirtualAddressMap is performed.
+        /// This event type should not be combined with any other.
+        const SIGNAL_VIRTUAL_ADDRESS_CHANGE = 0x60000202;
+    }
+}
+
+/// Raw event notification function
+type EventNotifyFn = unsafe extern "win64" fn(event: Event, context: *mut c_void);

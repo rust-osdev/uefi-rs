@@ -1,6 +1,6 @@
-use super::{cfg, Header, Revision};
 use super::boot::BootServices;
 use super::runtime::RuntimeServices;
+use super::{cfg, Header, Revision};
 use core::slice;
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle};

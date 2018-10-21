@@ -180,10 +180,7 @@ impl BootServices {
     pub fn memory_map<'a>(
         &self,
         buffer: &'a mut [u8],
-    ) -> Result<(
-        MemoryMapKey,
-        impl ExactSizeIterator<Item = &'a MemoryDescriptor>,
-    )> {
+    ) -> Result<(MemoryMapKey, MemoryMapIter<'a>)> {
         let mut map_size = buffer.len();
         let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
@@ -354,20 +351,17 @@ impl BootServices {
         }
     }
 
-    /// Exits the early boot stage.
+    /// Exits the UEFI boot services
     ///
-    /// After calling this function, the boot services functions become invalid.
-    /// Only runtime services may be used.
+    /// This unsafe method is meant to be an implementation detail of the safe
+    /// `BootSystemTable::exit_boot_services()` method, which is why it is not
+    /// public.
     ///
-    /// The handle passed must be the one of the currently executing image.
-    ///
-    /// The application **must** retrieve the current memory map, and pass in a key to ensure it is the latest.
-    /// If the memory map was changed, you must obtain the new memory map,
-    /// and then immediately call this function again.
-    ///
-    /// After you first call this function, the firmware may perform a partial shutdown of boot services.
-    /// You should only call the mmap-related functions in order to update the memory map.
-    pub unsafe fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
+    /// Everything that is explained in the documentation of the high-level
+    /// BootSystemTable is also true here, except that this function is one-shot
+    /// (no automatic retry) and does not prevent you from shooting yourself in
+    /// the foot by calling invalid boot services after a failure.
+    pub(super) unsafe fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
         (self.exit_boot_services)(image, mmap_key).into()
     }
 
@@ -590,8 +584,13 @@ bitflags! {
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
+/// An iterator of memory descriptors
+///
+/// This type is only exposed in interfaces due to current limitations of
+/// `impl Trait` which may be lifted in the future. It is therefore recommended
+/// that you refrain from directly manipulating it in your code.
 #[derive(Debug)]
-struct MemoryMapIter<'a> {
+pub struct MemoryMapIter<'a> {
     buffer: &'a [u8],
     entry_size: usize,
     index: usize,

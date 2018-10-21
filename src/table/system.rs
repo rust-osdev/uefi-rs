@@ -1,9 +1,9 @@
-use super::boot::BootServices;
+use super::boot::{BootServices, MemoryMapIter, MemoryMapKey};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
 use core::slice;
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle};
+use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 
 
 /// Boot-time version of the UEFI System Table
@@ -73,13 +73,79 @@ impl BootSystemTable {
         unsafe { slice::from_raw_parts(self.0.cfg_table, self.0.nr_cfg) }
     }
 
-    // TODO: Provide a way to exit boot services and get a RuntimeSystemTable,
-    //       consuming the BootSystemTable in the process. The interface must
-    //       allow get_memory_map calls and calls to run-time services, but no
-    //       calls to boot-time services since these can be shut down after the
-    //       first attempt.
+    /// Exit the UEFI boot services
+    ///
+    /// After this function completes, the UEFI boot services are shut down and
+    /// cannot be used anymore. Only run-time services can be used. We model
+    /// this by consuming the BootSystemTable and returning a more restricted
+    /// RuntimeSystemTable as an output.
+    ///
+    /// The handle passed must be the one of the currently executing image,
+    /// which is received by the entry point of the UEFI application. In
+    /// addition, the application **must** retrieve the current memory map, and
+    /// pass the associated MemoryMapKey so that the firmware can check that it
+    /// is up to date.
+    ///
+    /// If the application's memory map is not up to date, then the firmware
+    /// ends up in an awkward situation where it may have already shut down some
+    /// of the boot services, but it wants to give the application a chance to
+    /// fetch a newer memory map. This is modeled in the API by the
+    /// `retry_handler`, a user-provided functor which is given as input...
+    ///
+    /// - The new size of the memory map
+    /// - Access to the `memory_map` boot service (as described in the
+    ///   `BootServices` table)
+    ///
+    /// The functor _may_ attempt to use this information to fetch the memory
+    /// map again and return the associated key. It will be repeatedly called
+    /// by `exit_boot_services` implementation as long as it does so but the
+    /// output MemoryMapKey is stale. If the functor chooses to return `None`
+    /// instead, `exit_boot_services` will terminate with an error.
+    ///
+    /// If `exit_boot_services` succeeds, it will return a `RuntimeSystemTable`,
+    /// which is a different view of the UEFI System Table that is more accurate
+    /// than the `BootSystemTable` view after boot services have been exited.
+    pub fn exit_boot_services(
+        self,
+        image: Handle,
+        mmap_key: MemoryMapKey,
+        mut retry_handler: impl FnMut(
+            // Size of the new memory map
+            usize,
+            // Access to the `memory_map` boot service
+            &mut FnMut(
+                &mut [u8]
+            ) -> Result<(MemoryMapKey, MemoryMapIter)>,
+        ) -> Option<MemoryMapKey>
+    ) -> Result<RuntimeSystemTable> {
+        unsafe {
+            let boot_services = self.boot_services();
 
-    /// Clone this UEFI system table handle
+            // Try to exit the UEFI boot services
+            let mut result = boot_services.exit_boot_services(image, mmap_key);
+
+            // If the MapKey is incorrect, give the user a chance to update it
+            while let Err(Status::INVALID_PARAMETER) = result {
+                // Call the user's retry handler
+                let mmap_key_opt = retry_handler(
+                    boot_services.memory_map_size(),
+                    &mut |buf| boot_services.memory_map(buf)
+                );
+
+                // Check if the retry handler provided a new mmap key or gave up
+                if let Some(mmap_key) = mmap_key_opt {
+                    result = boot_services.exit_boot_services(image, mmap_key);
+                } else {
+                    break;
+                }
+            }
+
+            // Declare success or failure
+            result.map_inner(|_| RuntimeSystemTable(self.0))
+        }
+    }
+
+    /// Clone this boot-time UEFI system table interface
     ///
     /// This is unsafe because you must guarantee that the clone will not be
     /// used after boot services are exited. However, the singleton-based

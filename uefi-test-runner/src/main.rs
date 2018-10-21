@@ -18,7 +18,7 @@ mod boot;
 mod proto;
 
 #[no_mangle]
-pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: BootSystemTable) -> Status {
+pub extern "win64" fn uefi_start(image: uefi::Handle, st: BootSystemTable) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
 
@@ -34,13 +34,14 @@ pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: BootSystemTable) -> 
     let bt = st.boot_services();
     boot::test(bt);
 
-    // TODO: test the runtime services.
-    // We would have to call `exit_boot_services` first to ensure things work properly.
-
     // Test all the supported protocols.
     proto::test(&st);
 
-    shutdown(&st);
+    // TODO: test the runtime services.
+    // These work before boot services are exited, but we'd probably want to
+    // test them after exit_boot_services...
+
+    shutdown(image, st);
 }
 
 fn check_revision(rev: uefi::table::Revision) {
@@ -99,7 +100,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     }
 }
 
-fn shutdown(st: &BootSystemTable) -> ! {
+fn shutdown(image: uefi::Handle, st: BootSystemTable) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.
@@ -113,6 +114,31 @@ fn shutdown(st: &BootSystemTable) -> ! {
         info!("Testing complete, shutting down...");
     }
 
-    let rt = st.runtime_services();
+    // Exit boot services as a proof that it works :)
+    use crate::alloc::vec::Vec;
+    let boot = st.boot_services();
+    let mut memory_map_storage = Vec::with_capacity(boot.memory_map_size() + 1024);
+    unsafe { memory_map_storage.set_len(memory_map_storage.capacity()); }
+    let (key, _iter) = boot.memory_map(&mut memory_map_storage[..])
+                           .expect_success("Failed to fetch memory map");
+    let st = st.exit_boot_services(
+        image,
+        key,
+        |map_size, memory_map| {
+            // Can't read the memory map again if it's grown too big
+            if map_size > memory_map_storage.capacity() {
+                return None;
+            }
+
+            // Otherwise, give it another try
+            memory_map(&mut memory_map_storage[..])
+                .warning_as_error()
+                .map(|(key, _iter)| { key })
+                .ok()
+        }
+    ).expect_success("Failed to exit boot services");
+
+    // Shut down the system
+    let rt = unsafe { st.runtime_services() };
     rt.reset(ResetType::Shutdown, Status::SUCCESS, None);
 }

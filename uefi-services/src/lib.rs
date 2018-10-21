@@ -112,6 +112,12 @@ unsafe fn init_logger(st: &BootSystemTable) {
 
 /// Notify the utility library that boot services are not safe to call anymore
 fn exit_boot_services(_e: Event) {
+    // DEBUG: The UEFI spec does not guarantee that this printout will work, as
+    //        the services used by logging might already have been shut down.
+    //        But it works on current OVMF, and can be used as a handy way to
+    //        check that the callback does get called.
+    //
+    // info!("Shutting down the UEFI utility library");
     unsafe {
         SYSTEM_TABLE = None;
         if let Some(ref mut logger) = LOGGER {

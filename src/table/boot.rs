@@ -612,7 +612,7 @@ impl<'a> Iterator for MemoryMapIter<'a> {
 
             self.index += 1;
 
-            let descriptor = unsafe { mem::transmute::<usize, &MemoryDescriptor>(ptr) };
+            let descriptor: &MemoryDescriptor = unsafe { mem::transmute(ptr) };
 
             Some(descriptor)
         } else {

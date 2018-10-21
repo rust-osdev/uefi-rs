@@ -118,13 +118,14 @@ fn shutdown(image: uefi::Handle, st: BootSystemTable) -> ! {
     use crate::alloc::vec::Vec;
     let boot = st.boot_services();
     let mut memory_map_storage = Vec::with_capacity(boot.memory_map_size() + 1024);
-    unsafe { memory_map_storage.set_len(memory_map_storage.capacity()); }
-    let (key, _iter) = boot.memory_map(&mut memory_map_storage[..])
-                           .expect_success("Failed to fetch memory map");
-    let st = st.exit_boot_services(
-        image,
-        key,
-        |map_size, memory_map| {
+    unsafe {
+        memory_map_storage.set_len(memory_map_storage.capacity());
+    }
+    let (key, _iter) = boot
+        .memory_map(&mut memory_map_storage[..])
+        .expect_success("Failed to fetch memory map");
+    let st = st
+        .exit_boot_services(image, key, |map_size, memory_map| {
             // Can't read the memory map again if it's grown too big
             if map_size > memory_map_storage.capacity() {
                 return None;
@@ -133,10 +134,10 @@ fn shutdown(image: uefi::Handle, st: BootSystemTable) -> ! {
             // Otherwise, give it another try
             memory_map(&mut memory_map_storage[..])
                 .warning_as_error()
-                .map(|(key, _iter)| { key })
+                .map(|(key, _iter)| key)
                 .ok()
-        }
-    ).expect_success("Failed to exit boot services");
+        })
+        .expect_success("Failed to exit boot services");
 
     // Shut down the system
     let rt = unsafe { st.runtime_services() };

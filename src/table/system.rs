@@ -5,7 +5,6 @@ use core::slice;
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 
-
 /// Boot-time version of the UEFI System Table
 ///
 /// This is the view of the UEFI System Table that an UEFI application is
@@ -113,10 +112,8 @@ impl BootSystemTable {
             // Size of the new memory map
             usize,
             // Access to the `memory_map` boot service
-            &mut FnMut(
-                &mut [u8]
-            ) -> Result<(MemoryMapKey, MemoryMapIter)>,
-        ) -> Option<MemoryMapKey>
+            &mut FnMut(&mut [u8]) -> Result<(MemoryMapKey, MemoryMapIter)>,
+        ) -> Option<MemoryMapKey>,
     ) -> Result<RuntimeSystemTable> {
         unsafe {
             let boot_services = self.boot_services();
@@ -127,10 +124,9 @@ impl BootSystemTable {
             // If the MapKey is incorrect, give the user a chance to update it
             while let Err(Status::INVALID_PARAMETER) = result {
                 // Call the user's retry handler
-                let mmap_key_opt = retry_handler(
-                    boot_services.memory_map_size(),
-                    &mut |buf| boot_services.memory_map(buf)
-                );
+                let mmap_key_opt = retry_handler(boot_services.memory_map_size(), &mut |buf| {
+                    boot_services.memory_map(buf)
+                });
 
                 // Check if the retry handler provided a new mmap key or gave up
                 if let Some(mmap_key) = mmap_key_opt {
@@ -151,11 +147,10 @@ impl BootSystemTable {
     /// used after boot services are exited. However, the singleton-based
     /// designs that Rust uses for memory allocation, logging, and panic
     /// handling require taking this risk.
-    pub unsafe fn clone(&self) -> Self {
+    pub unsafe fn unsafe_clone(&self) -> Self {
         BootSystemTable(self.0)
     }
 }
-
 
 /// Run-time version of the UEFI System Table
 ///
@@ -165,7 +160,6 @@ impl BootSystemTable {
 /// It does not expose functionality which is unavailable after exiting boot
 /// services, and actions which are very likely to become unsafe after an
 /// operating system has started initializing are marked as such.
-#[derive(Clone, Copy)]
 pub struct RuntimeSystemTable(&'static SystemTable);
 
 // This is unsafe, but it's the best solution we have from now.
@@ -202,7 +196,6 @@ impl RuntimeSystemTable {
         unsafe { slice::from_raw_parts(self.0.cfg_table, self.0.nr_cfg) }
     }
 }
-
 
 /// The system table entry points for accessing the core UEFI system functionality.
 #[repr(C)]

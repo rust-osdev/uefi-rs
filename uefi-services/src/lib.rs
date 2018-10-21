@@ -32,10 +32,10 @@ extern crate log;
 
 use core::ptr::NonNull;
 
-use uefi::{Event, Result};
 use uefi::prelude::*;
-use uefi::table::BootSystemTable;
 use uefi::table::boot::{EventType, Tpl};
+use uefi::table::BootSystemTable;
+use uefi::{Event, Result};
 
 /// Reference to the system table.
 ///
@@ -57,9 +57,9 @@ static mut LOGGER: Option<uefi_logger::Logger> = None;
 /// The returned pointer is only valid until boot services are exited.
 pub fn system_table() -> NonNull<BootSystemTable> {
     unsafe {
-        let table_ref =
-            SYSTEM_TABLE.as_ref()
-                        .expect("The system table handle is not available");
+        let table_ref = SYSTEM_TABLE
+            .as_ref()
+            .expect("The system table handle is not available");
         NonNull::new(table_ref as *const _ as *mut _).unwrap()
     }
 }
@@ -76,7 +76,7 @@ pub fn init(st: &BootSystemTable) -> Result<()> {
         }
 
         // Setup the system table singleton
-        SYSTEM_TABLE = Some(st.clone());
+        SYSTEM_TABLE = Some(st.unsafe_clone());
 
         // Setup logging and memory allocation
         let boot_services = st.boot_services();
@@ -84,9 +84,13 @@ pub fn init(st: &BootSystemTable) -> Result<()> {
         uefi_alloc::init(boot_services);
 
         // Schedule these tools to be disabled on exit from UEFI boot services
-        boot_services.create_event(EventType::SIGNAL_EXIT_BOOT_SERVICES,
-                                   Tpl::NOTIFY,
-                                   Some(exit_boot_services)).map_inner(|_| ())
+        boot_services
+            .create_event(
+                EventType::SIGNAL_EXIT_BOOT_SERVICES,
+                Tpl::NOTIFY,
+                Some(exit_boot_services),
+            )
+            .map_inner(|_| ())
     }
 }
 
@@ -170,7 +174,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
         use uefi::table::runtime::ResetType;
         st.runtime_services()
-          .reset(ResetType::Shutdown, uefi::Status::ABORTED, None);
+            .reset(ResetType::Shutdown, uefi::Status::ABORTED, None);
     }
 
     // If we don't have any shutdown mechanism handy, the best we can do is loop

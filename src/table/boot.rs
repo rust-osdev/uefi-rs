@@ -361,7 +361,11 @@ impl BootServices {
     /// BootSystemTable is also true here, except that this function is one-shot
     /// (no automatic retry) and does not prevent you from shooting yourself in
     /// the foot by calling invalid boot services after a failure.
-    pub(super) unsafe fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
+    pub(super) unsafe fn exit_boot_services(
+        &self,
+        image: Handle,
+        mmap_key: MemoryMapKey,
+    ) -> Result<()> {
         (self.exit_boot_services)(image, mmap_key).into()
     }
 
@@ -648,31 +652,31 @@ bitflags! {
     pub struct EventType: u32 {
         /// The event is a timer event and may be passed to `BootServices::set_timer()`
         /// Note that timers only function during boot services time.
-        const TIMER = 0x80000000;
+        const TIMER = 0x8000_0000;
 
         /// The event is allocated from runtime memory.
         /// This must be done if the event is to be signaled after ExitBootServices.
-        const RUNTIME = 0x40000000;
+        const RUNTIME = 0x4000_0000;
 
         /// Calling wait_for_event or check_event will enqueue the notification
         /// function if the event is not already in the signaled state.
         /// Mutually exclusive with NOTIFY_SIGNAL.
-        const NOTIFY_WAIT = 0x00000100;
+        const NOTIFY_WAIT = 0x0000_0100;
 
         /// The notification function will be enqueued when the event is signaled
         /// Mutually exclusive with NOTIFY_WAIT.
-        const NOTIFY_SIGNAL = 0x00000200;
+        const NOTIFY_SIGNAL = 0x0000_0200;
 
         /// The event will be signaled at ExitBootServices time.
         /// This event type should not be combined with any other.
         /// Its notification function must follow some special rules:
         /// - Cannot use memory allocation services, directly or indirectly
         /// - Cannot depend on timer events, since those will be deactivated
-        const SIGNAL_EXIT_BOOT_SERVICES = 0x00000201;
+        const SIGNAL_EXIT_BOOT_SERVICES = 0x0000_0201;
 
         /// The event will be notified when SetVirtualAddressMap is performed.
         /// This event type should not be combined with any other.
-        const SIGNAL_VIRTUAL_ADDRESS_CHANGE = 0x60000202;
+        const SIGNAL_VIRTUAL_ADDRESS_CHANGE = 0x6000_0202;
     }
 }
 

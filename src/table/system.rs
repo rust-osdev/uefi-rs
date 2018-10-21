@@ -165,10 +165,43 @@ impl BootSystemTable {
 /// It does not expose functionality which is unavailable after exiting boot
 /// services, and actions which are very likely to become unsafe after an
 /// operating system has started initializing are marked as such.
-#[repr(transparent)]
+#[derive(Clone, Copy)]
 pub struct RuntimeSystemTable(&'static SystemTable);
 
-// TODO: Provide a RuntimeSystemTable, paying attention to what's now unsafe
+// This is unsafe, but it's the best solution we have from now.
+#[allow(clippy::mut_from_ref)]
+impl RuntimeSystemTable {
+    /// Return the firmware vendor string
+    pub fn firmware_vendor(&self) -> &CStr16 {
+        unsafe { CStr16::from_ptr(self.0.fw_vendor) }
+    }
+
+    /// Return the firmware revision
+    pub fn firmware_revision(&self) -> Revision {
+        self.0.fw_revision
+    }
+
+    /// Returns the revision of this table, which is defined to be
+    /// the revision of the UEFI specification implemented by the firmware.
+    pub fn uefi_revision(&self) -> Revision {
+        self.0.header.revision
+    }
+
+    /// Access runtime services
+    ///
+    /// This is unsafe because UEFI runtime services require an elaborate
+    /// CPU configuration which may not be preserved by OS loaders. See the
+    /// "Calling Conventions" chapter of the UEFI specification for details.
+    pub unsafe fn runtime_services(&self) -> &RuntimeServices {
+        self.0.runtime
+    }
+
+    /// Returns the config table entries, a linear array of structures
+    /// pointing to other system-specific tables.
+    pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
+        unsafe { slice::from_raw_parts(self.0.cfg_table, self.0.nr_cfg) }
+    }
+}
 
 
 /// The system table entry points for accessing the core UEFI system functionality.

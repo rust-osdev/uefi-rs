@@ -18,9 +18,9 @@ mod boot;
 mod proto;
 
 #[no_mangle]
-pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
+pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: BootSystemTable) -> Status {
     // Initialize utilities (logging, memory allocation...)
-    uefi_services::init(st).expect_success("Failed to initialize utilities");
+    uefi_services::init(&st).expect_success("Failed to initialize utilities");
 
     // Reset the console before running all the other tests.
     st.stdout()
@@ -38,9 +38,9 @@ pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable
     // We would have to call `exit_boot_services` first to ensure things work properly.
 
     // Test all the supported protocols.
-    proto::test(st);
+    proto::test(&st);
 
-    shutdown(st);
+    shutdown(&st);
 }
 
 fn check_revision(rev: uefi::table::Revision) {
@@ -99,7 +99,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     }
 }
 
-fn shutdown(st: &SystemTable) -> ! {
+fn shutdown(st: &BootSystemTable) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.

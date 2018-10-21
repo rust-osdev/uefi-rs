@@ -19,7 +19,7 @@ The following steps allow you to build a simple UEFI app.
 
 ```rust
 #[no_mangle]
-pub extern "win64" fn uefi_start(handle: Handle, system_table: &'static table::SystemTable) -> Status;
+pub extern "win64" fn uefi_start(handle: Handle, system_table: BootSystemTable) -> Status;
 ```
 
 - Copy the `uefi-test-runner/x86_64-uefi.json` target file to your project's root.

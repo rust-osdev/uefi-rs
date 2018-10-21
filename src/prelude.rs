@@ -5,4 +5,4 @@
 pub use crate::{ResultExt, Status};
 
 // Import the basic table types.
-pub use crate::table::{boot::BootServices, runtime::RuntimeServices, SystemTable};
+pub use crate::table::{boot::BootServices, runtime::RuntimeServices, BootSystemTable};

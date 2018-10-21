@@ -1,6 +1,6 @@
-use uefi::table::SystemTable;
+use uefi::table::BootSystemTable;
 
-pub fn test(st: &SystemTable) {
+pub fn test(st: &BootSystemTable) {
     info!("Testing console protocols");
 
     stdout::test(st.stdout());

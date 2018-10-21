@@ -34,7 +34,7 @@ use core::ptr::NonNull;
 
 use uefi::{Event, Result};
 use uefi::prelude::*;
-use uefi::table::SystemTable;
+use uefi::table::BootSystemTable;
 use uefi::table::boot::{EventType, Tpl};
 
 /// Reference to the system table.
@@ -42,7 +42,7 @@ use uefi::table::boot::{EventType, Tpl};
 /// This table is only fully safe to use until UEFI boot services have been exited.
 /// After that, some fields and methods are unsafe to use, see the documentation of
 /// UEFI's ExitBootServices entry point for more details.
-static mut SYSTEM_TABLE: Option<NonNull<SystemTable>> = None;
+static mut SYSTEM_TABLE: Option<BootSystemTable> = None;
 
 /// Global logger object
 static mut LOGGER: Option<uefi_logger::Logger> = None;
@@ -53,15 +53,22 @@ static mut LOGGER: Option<uefi_logger::Logger> = None;
 /// which want a convenient way to access the system table singleton.
 ///
 /// `init` must have been called first by the UEFI app.
-pub fn system_table() -> NonNull<SystemTable> {
-    unsafe { SYSTEM_TABLE.expect("The uefi-services library has not yet been initialized") }
+///
+/// The returned pointer is only valid until boot services are exited.
+pub fn system_table() -> NonNull<BootSystemTable> {
+    unsafe {
+        let table_ref =
+            SYSTEM_TABLE.as_ref()
+                        .expect("The system table handle is not available");
+        NonNull::new(table_ref as *const _ as *mut _).unwrap()
+    }
 }
 
 /// Initialize the UEFI utility library.
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-pub fn init(st: &SystemTable) -> Result<()> {
+pub fn init(st: &BootSystemTable) -> Result<()> {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {
@@ -69,7 +76,7 @@ pub fn init(st: &SystemTable) -> Result<()> {
         }
 
         // Setup the system table singleton
-        SYSTEM_TABLE = NonNull::new(st as *const _ as *mut _);
+        SYSTEM_TABLE = Some(st.clone());
 
         // Setup logging and memory allocation
         let boot_services = st.boot_services();
@@ -87,7 +94,7 @@ pub fn init(st: &SystemTable) -> Result<()> {
 ///
 /// This is unsafe because you must arrange for the logger to be reset with
 /// disable() on exit from UEFI boot services.
-unsafe fn init_logger(st: &SystemTable) {
+unsafe fn init_logger(st: &BootSystemTable) {
     let stdout = st.stdout();
 
     // Construct the logger.
@@ -132,12 +139,8 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     }
 
     // Give the user some time to read the message
-    if let Some(st) = unsafe { SYSTEM_TABLE } {
-        // This is safe if the user makes sure to call exit_boot_services before
-        // exiting UEFI's boot services, as that will reset SYSTEM_TABLE.
-        unsafe {
-            st.as_ref().boot_services().stall(10_000_000);
-        }
+    if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
+        st.boot_services().stall(10_000_000);
     } else {
         let mut dummy = 0u64;
         // FIXME: May need different counter values in debug & release builds
@@ -158,13 +161,10 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     }
 
     // If the system table is available, use UEFI's standard shutdown mechanism
-    if let Some(st) = unsafe { SYSTEM_TABLE } {
+    if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
         use uefi::table::runtime::ResetType;
-        unsafe {
-            st.as_ref()
-                .runtime_services()
-                .reset(ResetType::Shutdown, uefi::Status::ABORTED, None)
-        }
+        st.runtime_services()
+          .reset(ResetType::Shutdown, uefi::Status::ABORTED, None);
     }
 
     // If we don't have any shutdown mechanism handy, the best we can do is loop

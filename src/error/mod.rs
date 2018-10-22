@@ -25,7 +25,7 @@ pub trait ResultExt<T> {
     fn expect_success(self, msg: &str) -> T;
 
     /// Transform the inner output, if any
-    fn map_inner<U>(self, f: impl Fn(T) -> U) -> Result<U>;
+    fn map_inner<U>(self, f: impl FnOnce(T) -> U) -> Result<U>;
 }
 
 impl<T> ResultExt<T> for Result<T> {
@@ -49,7 +49,7 @@ impl<T> ResultExt<T> for Result<T> {
         self.expect(msg).expect(msg)
     }
 
-    fn map_inner<U>(self, f: impl Fn(T) -> U) -> Result<U> {
+    fn map_inner<U>(self, f: impl FnOnce(T) -> U) -> Result<U> {
         self.map(|completion| completion.map(f))
     }
 }

@@ -34,7 +34,7 @@ use core::ptr::NonNull;
 
 use uefi::prelude::*;
 use uefi::table::boot::{EventType, Tpl};
-use uefi::table::BootSystemTable;
+use uefi::table::{Boot, SystemTable};
 use uefi::{Event, Result};
 
 /// Reference to the system table.
@@ -42,7 +42,7 @@ use uefi::{Event, Result};
 /// This table is only fully safe to use until UEFI boot services have been exited.
 /// After that, some fields and methods are unsafe to use, see the documentation of
 /// UEFI's ExitBootServices entry point for more details.
-static mut SYSTEM_TABLE: Option<BootSystemTable> = None;
+static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 
 /// Global logger object
 static mut LOGGER: Option<uefi_logger::Logger> = None;
@@ -55,7 +55,7 @@ static mut LOGGER: Option<uefi_logger::Logger> = None;
 /// `init` must have been called first by the UEFI app.
 ///
 /// The returned pointer is only valid until boot services are exited.
-pub fn system_table() -> NonNull<BootSystemTable> {
+pub fn system_table() -> NonNull<SystemTable<Boot>> {
     unsafe {
         let table_ref = SYSTEM_TABLE
             .as_ref()
@@ -68,7 +68,7 @@ pub fn system_table() -> NonNull<BootSystemTable> {
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-pub fn init(st: &BootSystemTable) -> Result<()> {
+pub fn init(st: &SystemTable<Boot>) -> Result<()> {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {
@@ -98,7 +98,7 @@ pub fn init(st: &BootSystemTable) -> Result<()> {
 ///
 /// This is unsafe because you must arrange for the logger to be reset with
 /// disable() on exit from UEFI boot services.
-unsafe fn init_logger(st: &BootSystemTable) {
+unsafe fn init_logger(st: &SystemTable<Boot>) {
     let stdout = st.stdout();
 
     // Construct the logger.

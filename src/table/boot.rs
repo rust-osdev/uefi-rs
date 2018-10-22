@@ -354,13 +354,13 @@ impl BootServices {
     /// Exits the UEFI boot services
     ///
     /// This unsafe method is meant to be an implementation detail of the safe
-    /// `BootSystemTable::exit_boot_services()` method, which is why it is not
+    /// `SystemTable<Boot>::exit_boot_services()` method, which is why it is not
     /// public.
     ///
     /// Everything that is explained in the documentation of the high-level
-    /// BootSystemTable is also true here, except that this function is one-shot
-    /// (no automatic retry) and does not prevent you from shooting yourself in
-    /// the foot by calling invalid boot services after a failure.
+    /// SystemTable<Boot> method is also true here, except that this function is
+    /// one-shot (no automatic retry) and does not prevent you from shooting
+    /// yourself in the foot by calling invalid boot services after a failure.
     pub(super) unsafe fn exit_boot_services(
         &self,
         image: Handle,

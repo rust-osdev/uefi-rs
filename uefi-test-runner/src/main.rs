@@ -18,7 +18,7 @@ mod boot;
 mod proto;
 
 #[no_mangle]
-pub extern "win64" fn uefi_start(image: uefi::Handle, st: BootSystemTable) -> Status {
+pub extern "win64" fn uefi_start(image: uefi::Handle, st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
 
@@ -100,7 +100,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     }
 }
 
-fn shutdown(image: uefi::Handle, st: BootSystemTable) -> ! {
+fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.

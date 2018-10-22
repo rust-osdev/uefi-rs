@@ -1,83 +1,111 @@
 use super::boot::{BootServices, MemoryMapIter, MemoryMapKey};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
+use core::marker::PhantomData;
 use core::slice;
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 
-/// Boot-time version of the UEFI System Table
-///
-/// This is the view of the UEFI System Table that an UEFI application is
-/// provided with initially. It enables calling all UEFI services, including
-/// so-called boot services, and exchanging information with the standard input,
-/// output and error streams.
-///
-/// Once an UEFI OS loader is ready to take over the system, it can call
-/// `exit_boot_services` to terminate the UEFI boot services. This will consume
-/// the BootSystemTable (enabling the Rust borrow checker to tell you about any
-/// boot service handle that you forgot about) and give you a RuntimeSystemTable
-/// which is more appropriate for post-boot usage.
-#[repr(transparent)]
-pub struct BootSystemTable(&'static SystemTable);
+/// Marker trait used to provide different views of the UEFI System Table
+pub trait SystemTableView {}
 
-// This is unsafe, but it's the best solution we have from now.
-#[allow(clippy::mut_from_ref)]
-impl BootSystemTable {
+/// Marker struct associated with the boot view of the UEFI System Table
+pub struct Boot;
+impl SystemTableView for Boot {}
+
+/// Marker struct associated with the run-time view of the UEFI System Table
+pub struct Runtime;
+impl SystemTableView for Runtime {}
+
+/// UEFI System Table interface
+///
+/// The UEFI System Table is the gateway to all UEFI services which an UEFI
+/// application is provided access to on startup. However, not all UEFI services
+/// will remain accessible forever.
+///
+/// Some services, called "boot services", may only be called during a bootstrap
+/// stage where the UEFI firmware still has control of the hardware, and will
+/// become unavailable once the firmware hands over control of the hardware to
+/// an operating system loader. Others, called "runtime services", may still be
+/// used after that point, but require a rather specific CPU configuration which
+/// an operating system loader is unlikely to preserve.
+///
+/// We handle this state transition by providing two different views of the UEFI
+/// system table, the "Boot" view and the "Runtime" view. An UEFI application
+/// is initially provided with access to the "Boot" view, and may transition
+/// to the "Runtime" view through the ExitBootServices mechanism that is
+/// documented in the UEFI spec. At that point, the boot view of the system
+/// table will be destroyed (which conveniently invalidates all references to
+/// UEFI boot services in the eye of the Rust borrow checker) and a runtime view
+/// will be provided to replace it.
+#[repr(transparent)]
+pub struct SystemTable<View: SystemTableView> {
+    table: &'static SystemTableImpl,
+    _marker: PhantomData<View>,
+}
+
+// These parts of the UEFI System Table interface will always be available
+impl<View: SystemTableView> SystemTable<View> {
     /// Return the firmware vendor string
     pub fn firmware_vendor(&self) -> &CStr16 {
-        unsafe { CStr16::from_ptr(self.0.fw_vendor) }
+        unsafe { CStr16::from_ptr(self.table.fw_vendor) }
     }
 
     /// Return the firmware revision
     pub fn firmware_revision(&self) -> Revision {
-        self.0.fw_revision
+        self.table.fw_revision
     }
 
     /// Returns the revision of this table, which is defined to be
     /// the revision of the UEFI specification implemented by the firmware.
     pub fn uefi_revision(&self) -> Revision {
-        self.0.header.revision
-    }
-
-    /// Returns the standard input protocol.
-    pub fn stdin(&self) -> &mut text::Input {
-        unsafe { &mut *self.0.stdin }
-    }
-
-    /// Returns the standard output protocol.
-    pub fn stdout(&self) -> &mut text::Output {
-        let stdout_ptr = self.0.stdout as *const _ as *mut _;
-        unsafe { &mut *stdout_ptr }
-    }
-
-    /// Returns the standard error protocol.
-    pub fn stderr(&self) -> &mut text::Output {
-        let stderr_ptr = self.0.stderr as *const _ as *mut _;
-        unsafe { &mut *stderr_ptr }
-    }
-
-    /// Access runtime services
-    pub fn runtime_services(&self) -> &RuntimeServices {
-        self.0.runtime
-    }
-
-    /// Access boot services
-    pub fn boot_services(&self) -> &BootServices {
-        unsafe { &*self.0.boot }
+        self.table.header.revision
     }
 
     /// Returns the config table entries, a linear array of structures
     /// pointing to other system-specific tables.
     pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
-        unsafe { slice::from_raw_parts(self.0.cfg_table, self.0.nr_cfg) }
+        unsafe { slice::from_raw_parts(self.table.cfg_table, self.table.nr_cfg) }
+    }
+}
+
+// These parts of the UEFI System Table interface may only be used until boot
+// services are exited and hardware control is handed over to the OS loader
+#[allow(clippy::mut_from_ref)]
+impl SystemTable<Boot> {
+    /// Returns the standard input protocol.
+    pub fn stdin(&self) -> &mut text::Input {
+        unsafe { &mut *self.table.stdin }
+    }
+
+    /// Returns the standard output protocol.
+    pub fn stdout(&self) -> &mut text::Output {
+        let stdout_ptr = self.table.stdout as *const _ as *mut _;
+        unsafe { &mut *stdout_ptr }
+    }
+
+    /// Returns the standard error protocol.
+    pub fn stderr(&self) -> &mut text::Output {
+        let stderr_ptr = self.table.stderr as *const _ as *mut _;
+        unsafe { &mut *stderr_ptr }
+    }
+
+    /// Access runtime services
+    pub fn runtime_services(&self) -> &RuntimeServices {
+        self.table.runtime
+    }
+
+    /// Access boot services
+    pub fn boot_services(&self) -> &BootServices {
+        unsafe { &*self.table.boot }
     }
 
     /// Exit the UEFI boot services
     ///
     /// After this function completes, the UEFI boot services are shut down and
     /// cannot be used anymore. Only run-time services can be used. We model
-    /// this by consuming the BootSystemTable and returning a more restricted
-    /// RuntimeSystemTable as an output.
+    /// this by consuming the SystemTable<Boot> view and returning a more
+    /// restricted SystemTable<Runtime> view as an output.
     ///
     /// The handle passed must be the one of the currently executing image,
     /// which is received by the entry point of the UEFI application. In
@@ -101,9 +129,9 @@ impl BootSystemTable {
     /// output MemoryMapKey is stale. If the functor chooses to return `None`
     /// instead, `exit_boot_services` will terminate with an error.
     ///
-    /// If `exit_boot_services` succeeds, it will return a `RuntimeSystemTable`,
-    /// which is a different view of the UEFI System Table that is more accurate
-    /// than the `BootSystemTable` view after boot services have been exited.
+    /// If `exit_boot_services` succeeds, it will return a runtime view of the
+    /// system table which more accurately reflects the state of the UEFI
+    /// firmware following exit from boot services.
     pub fn exit_boot_services(
         self,
         image: Handle,
@@ -114,7 +142,7 @@ impl BootSystemTable {
             // Access to the `memory_map` boot service
             &mut FnMut(&mut [u8]) -> Result<(MemoryMapKey, MemoryMapIter)>,
         ) -> Option<MemoryMapKey>,
-    ) -> Result<RuntimeSystemTable> {
+    ) -> Result<SystemTable<Runtime>> {
         unsafe {
             let boot_services = self.boot_services();
 
@@ -137,7 +165,10 @@ impl BootSystemTable {
             }
 
             // Declare success or failure
-            result.map_inner(|_| RuntimeSystemTable(self.0))
+            result.map_inner(|_| SystemTable {
+                table: self.table,
+                _marker: PhantomData,
+            })
         }
     }
 
@@ -148,58 +179,29 @@ impl BootSystemTable {
     /// designs that Rust uses for memory allocation, logging, and panic
     /// handling require taking this risk.
     pub unsafe fn unsafe_clone(&self) -> Self {
-        BootSystemTable(self.0)
+        SystemTable {
+            table: self.table,
+            _marker: PhantomData,
+        }
     }
 }
 
-/// Run-time version of the UEFI System Table
-///
-/// This is the view of the UEFI System Table that an UEFI application has after
-/// exiting the boot services.
-///
-/// It does not expose functionality which is unavailable after exiting boot
-/// services, and actions which are very likely to become unsafe after an
-/// operating system has started initializing are marked as such.
-pub struct RuntimeSystemTable(&'static SystemTable);
-
-// This is unsafe, but it's the best solution we have from now.
-#[allow(clippy::mut_from_ref)]
-impl RuntimeSystemTable {
-    /// Return the firmware vendor string
-    pub fn firmware_vendor(&self) -> &CStr16 {
-        unsafe { CStr16::from_ptr(self.0.fw_vendor) }
-    }
-
-    /// Return the firmware revision
-    pub fn firmware_revision(&self) -> Revision {
-        self.0.fw_revision
-    }
-
-    /// Returns the revision of this table, which is defined to be
-    /// the revision of the UEFI specification implemented by the firmware.
-    pub fn uefi_revision(&self) -> Revision {
-        self.0.header.revision
-    }
-
+// These parts of the UEFI System Table interface may only be used after exit
+// from UEFI boot services
+impl SystemTable<Runtime> {
     /// Access runtime services
     ///
     /// This is unsafe because UEFI runtime services require an elaborate
     /// CPU configuration which may not be preserved by OS loaders. See the
     /// "Calling Conventions" chapter of the UEFI specification for details.
     pub unsafe fn runtime_services(&self) -> &RuntimeServices {
-        self.0.runtime
-    }
-
-    /// Returns the config table entries, a linear array of structures
-    /// pointing to other system-specific tables.
-    pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
-        unsafe { slice::from_raw_parts(self.0.cfg_table, self.0.nr_cfg) }
+        self.table.runtime
     }
 }
 
-/// The system table entry points for accessing the core UEFI system functionality.
+/// The actual UEFI system table
 #[repr(C)]
-struct SystemTable {
+struct SystemTableImpl {
     header: Header,
     /// Null-terminated string representing the firmware's vendor.
     fw_vendor: *const Char16,
@@ -221,6 +223,6 @@ struct SystemTable {
     cfg_table: *const cfg::ConfigTableEntry,
 }
 
-impl super::Table for SystemTable {
+impl<View: SystemTableView> super::Table for SystemTable<View> {
     const SIGNATURE: u64 = 0x5453_5953_2049_4249;
 }

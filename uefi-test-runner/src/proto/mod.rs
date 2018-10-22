@@ -3,7 +3,7 @@ use uefi_exts::BootServicesExt;
 
 use uefi::proto;
 
-pub fn test(st: &BootSystemTable) {
+pub fn test(st: &SystemTable<Boot>) {
     info!("Testing various protocols");
 
     let bt = st.boot_services();

@@ -159,8 +159,7 @@ impl SystemTable<Boot> {
                             table: self.table,
                             _marker: PhantomData,
                         };
-                        comp.map(|_| (st, mmap_iter))
-                            .with_status(mmap_status)
+                        comp.map(|_| (st, mmap_iter)).with_status(mmap_status)
                     });
                 }
             }

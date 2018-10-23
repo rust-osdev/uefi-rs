@@ -1,10 +1,10 @@
-use super::boot::{BootServices, MemoryMapIter, MemoryMapKey};
+use super::boot::{BootServices, MemoryMapIter};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
 use core::marker::PhantomData;
 use core::slice;
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
+use crate::{CStr16, Char16, Handle, Result, Status};
 
 /// Marker trait used to provide different views of the UEFI System Table
 pub trait SystemTableView {}
@@ -102,73 +102,68 @@ impl SystemTable<Boot> {
 
     /// Exit the UEFI boot services
     ///
-    /// After this function completes, the UEFI boot services are shut down and
-    /// cannot be used anymore. Only run-time services can be used. We model
-    /// this by consuming the SystemTable<Boot> view and returning a more
-    /// restricted SystemTable<Runtime> view as an output.
+    /// After this function completes, UEFI hands over control of the hardware
+    /// to the executing OS loader, which implies that the UEFI boot services
+    /// are shut down and cannot be used anymore. Only UEFI configuration tables
+    /// and run-time services can be used, and the latter requires special care
+    /// from the OS loader. We model this situation by consuming the
+    /// `SystemTable<Boot>` view of the System Table and returning a more
+    /// restricted `SystemTable<Runtime>` view as an output.
     ///
     /// The handle passed must be the one of the currently executing image,
     /// which is received by the entry point of the UEFI application. In
-    /// addition, the application **must** retrieve the current memory map, and
-    /// pass the associated MemoryMapKey so that the firmware can check that it
-    /// is up to date.
+    /// addition, the application must provide storage for a memory map, which
+    /// will be retrieved automatically (as having an up-to-date memory map is a
+    /// prerequisite for exiting UEFI boot services).
     ///
-    /// If the application's memory map is not up to date, then the firmware
-    /// ends up in an awkward situation where it may have already shut down some
-    /// of the boot services, but it wants to give the application a chance to
-    /// fetch a newer memory map. This is modeled in the API by the
-    /// `retry_handler`, a user-provided functor which is given as input...
-    ///
-    /// - The new size of the memory map
-    /// - Access to the `memory_map` boot service (as described in the
-    ///   `BootServices` table)
-    ///
-    /// The functor _may_ attempt to use this information to fetch the memory
-    /// map again and return the associated key. It will be repeatedly called
-    /// by `exit_boot_services` implementation as long as it does so but the
-    /// output MemoryMapKey is stale. If the functor chooses to return `None`
-    /// instead, `exit_boot_services` will terminate with an error.
+    /// The size of the memory map can be estimated by calling
+    /// `BootServices::memory_map_size()`. But the memory map can grow under the
+    /// hood between the moment where this size estimate is returned and the
+    /// moment where boot services are exited, and calling the UEFI memory
+    /// allocator will not be possible after the first attempt to exit the boot
+    /// services. Therefore, UEFI applications are advised to allocate storage
+    /// for the memory map right before exiting boot services, and to allocate a
+    /// bit more storage than requested by memory_map_size.
     ///
     /// If `exit_boot_services` succeeds, it will return a runtime view of the
     /// system table which more accurately reflects the state of the UEFI
-    /// firmware following exit from boot services.
-    pub fn exit_boot_services(
+    /// firmware following exit from boot services, along with a high-level
+    /// iterator to the UEFI memory map.
+    pub fn exit_boot_services<'a>(
         self,
         image: Handle,
-        mmap_key: MemoryMapKey,
-        mut retry_handler: impl FnMut(
-            // Size of the new memory map
-            usize,
-            // Access to the `memory_map` boot service
-            &mut FnMut(&mut [u8]) -> Result<(MemoryMapKey, MemoryMapIter)>,
-        ) -> Option<MemoryMapKey>,
-    ) -> Result<SystemTable<Runtime>> {
+        mmap_buf: &'a mut [u8],
+    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'a>)> {
         unsafe {
             let boot_services = self.boot_services();
 
-            // Try to exit the UEFI boot services
-            let mut result = boot_services.exit_boot_services(image, mmap_key);
+            loop {
+                // Fetch a memory map, propagate errors and split the completion
+                // FIXME: This sad pointer hack works around a current
+                //        limitation of the NLL analysis (see Rust bug 51526).
+                let mmap_buf = &mut *(mmap_buf as *mut [u8]);
+                let mmap_comp = boot_services.memory_map(mmap_buf)?;
+                let ((mmap_key, mmap_iter), mmap_status) = mmap_comp.split();
 
-            // If the MapKey is incorrect, give the user a chance to update it
-            while let Err(Status::INVALID_PARAMETER) = result {
-                // Call the user's retry handler
-                let mmap_key_opt = retry_handler(boot_services.memory_map_size(), &mut |buf| {
-                    boot_services.memory_map(buf)
-                });
+                // Try to exit boot services using this memory map key
+                let result = boot_services.exit_boot_services(image, mmap_key);
 
-                // Check if the retry handler provided a new mmap key or gave up
-                if let Some(mmap_key) = mmap_key_opt {
-                    result = boot_services.exit_boot_services(image, mmap_key);
+                // Did we fail because the memory map was updated concurrently?
+                if let Err(Status::INVALID_PARAMETER) = result {
+                    // If so, fetch another memory map and try again
+                    continue;
                 } else {
-                    break;
+                    // If not, report the outcome of the operation
+                    return result.map(|comp| {
+                        let st = SystemTable {
+                            table: self.table,
+                            _marker: PhantomData,
+                        };
+                        comp.map(|_| (st, mmap_iter))
+                            .with_status(mmap_status)
+                    });
                 }
             }
-
-            // Declare success or failure
-            result.map_inner(|_| SystemTable {
-                table: self.table,
-                _marker: PhantomData,
-            })
         }
     }
 

@@ -117,10 +117,11 @@ fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
     // Exit boot services as a proof that it works :)
     use crate::alloc::vec::Vec;
     let max_mmap_size = st.boot_services().memory_map_size() + 1024;
-    let mut mmap_storage = Vec::with_capacity(max_mmap_size);
-    unsafe {
+    let mut mmap_storage = unsafe {
+        let mut mmap_storage = Vec::with_capacity(max_mmap_size);
         mmap_storage.set_len(max_mmap_size);
-    }
+        mmap_storage.into_boxed_slice()
+    };
     let (st, _iter) = st
         .exit_boot_services(image, &mut mmap_storage[..])
         .expect_success("Failed to exit boot services");

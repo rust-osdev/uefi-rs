@@ -18,9 +18,9 @@ mod boot;
 mod proto;
 
 #[no_mangle]
-pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable) -> Status {
-    // Initialize logging.
-    uefi_services::init(st);
+pub extern "win64" fn uefi_start(image: uefi::Handle, st: SystemTable<Boot>) -> Status {
+    // Initialize utilities (logging, memory allocation...)
+    uefi_services::init(&st).expect_success("Failed to initialize utilities");
 
     // Reset the console before running all the other tests.
     st.stdout()
@@ -31,16 +31,17 @@ pub extern "win64" fn uefi_start(_handle: uefi::Handle, st: &'static SystemTable
     check_revision(st.uefi_revision());
 
     // Test all the boot services.
-    let bt = st.boot;
+    let bt = st.boot_services();
     boot::test(bt);
 
-    // TODO: test the runtime services.
-    // We would have to call `exit_boot_services` first to ensure things work properly.
-
     // Test all the supported protocols.
-    proto::test(st);
+    proto::test(&st);
 
-    shutdown(st);
+    // TODO: test the runtime services.
+    // These work before boot services are exited, but we'd probably want to
+    // test them after exit_boot_services...
+
+    shutdown(image, st);
 }
 
 fn check_revision(rev: uefi::table::Revision) {
@@ -64,10 +65,10 @@ fn check_revision(rev: uefi::table::Revision) {
 fn check_screenshot(bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
         // Access the serial port (in a QEMU environment, it should always be there)
-        let mut serial = bt
+        let serial = bt
             .find_protocol::<Serial>()
             .expect("Could not find serial port");
-        let serial = unsafe { serial.as_mut() };
+        let serial = unsafe { &mut *serial.get() };
 
         // Set a large timeout to avoid problems with Travis
         let mut io_mode = *serial.io_mode();
@@ -99,7 +100,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     }
 }
 
-fn shutdown(st: &SystemTable) -> ! {
+fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.
@@ -108,11 +109,24 @@ fn shutdown(st: &SystemTable) -> ! {
     // Inform the user, and give him time to read on real hardware
     if cfg!(not(feature = "qemu")) {
         info!("Testing complete, shutting down in 3 seconds...");
-        st.boot.stall(3_000_000);
+        st.boot_services().stall(3_000_000);
     } else {
         info!("Testing complete, shutting down...");
     }
 
-    let rt = st.runtime;
+    // Exit boot services as a proof that it works :)
+    use crate::alloc::vec::Vec;
+    let max_mmap_size = st.boot_services().memory_map_size() + 1024;
+    let mut mmap_storage = unsafe {
+        let mut mmap_storage = Vec::with_capacity(max_mmap_size);
+        mmap_storage.set_len(max_mmap_size);
+        mmap_storage.into_boxed_slice()
+    };
+    let (st, _iter) = st
+        .exit_boot_services(image, &mut mmap_storage[..])
+        .expect_success("Failed to exit boot services");
+
+    // Shut down the system
+    let rt = unsafe { st.runtime_services() };
     rt.reset(ResetType::Shutdown, Status::SUCCESS, None);
 }

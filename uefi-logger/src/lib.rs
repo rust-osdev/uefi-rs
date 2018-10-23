@@ -21,31 +21,45 @@ use uefi::proto::console::text::Output;
 
 extern crate log;
 
-use core::cell::UnsafeCell;
 use core::fmt::{self, Write};
+use core::ptr::NonNull;
 
 /// Logging implementation which writes to a UEFI output stream.
+///
+/// If this logger is used as a global logger, you must disable it using the
+/// `disable` method before exiting UEFI boot services in order to prevent
+/// undefined behaviour from inadvertent logging.
 pub struct Logger {
-    writer: UnsafeCell<&'static mut Output>,
+    writer: Option<NonNull<Output<'static>>>,
 }
 
 impl Logger {
     /// Creates a new logger.
-    pub fn new(output: &'static mut Output) -> Self {
+    ///
+    /// You must arrange for the `disable` method to be called or for this logger
+    /// to be otherwise discarded before boot services are exited.
+    pub unsafe fn new(output: &mut Output) -> Self {
         Logger {
-            writer: UnsafeCell::new(output),
+            writer: NonNull::new(output as *const _ as *mut _),
         }
+    }
+
+    /// Disable the logger
+    pub fn disable(&mut self) {
+        self.writer = None;
     }
 }
 
-impl log::Log for Logger {
+impl<'boot> log::Log for Logger {
     fn enabled(&self, _metadata: &log::Metadata) -> bool {
         true
     }
 
     fn log(&self, record: &log::Record) {
-        let writer = unsafe { &mut *self.writer.get() };
-        DecoratedLog::write(writer, record.level(), record.args()).unwrap();
+        if let Some(mut ptr) = self.writer {
+            let writer = unsafe { ptr.as_mut() };
+            DecoratedLog::write(writer, record.level(), record.args()).unwrap();
+        }
     }
 
     fn flush(&self) {

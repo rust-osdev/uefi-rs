@@ -7,6 +7,7 @@
 
 use bitflags::bitflags;
 use core::mem;
+use core::ptr;
 use crate::prelude::*;
 use crate::{CStr16, Char16, Result, Status};
 use ucs2;
@@ -22,10 +23,8 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub(super) unsafe fn new(ptr: usize) -> Self {
-        let ptr = ptr as *mut FileImpl;
-        let inner = &mut *ptr;
-        File { inner }
+    pub(super) unsafe fn new(ptr: *mut FileImpl) -> Self {
+        File { inner: &mut *ptr }
     }
 
     /// Try to open a file relative to this file/directory.
@@ -58,7 +57,7 @@ impl<'a> File<'a> {
             Err(Status::INVALID_PARAMETER)
         } else {
             let mut buf = [0u16; BUF_SIZE + 1];
-            let mut ptr = 0usize;
+            let mut ptr = ptr::null_mut();
 
             let len = ucs2::encode(filename, &mut buf)?;
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
@@ -70,9 +69,7 @@ impl<'a> File<'a> {
                 open_mode,
                 attributes,
             )
-            .into_with(|| File {
-                inner: unsafe { &mut *(ptr as *mut FileImpl) },
-            })
+            .into_with(|| unsafe { File::new(ptr) })
         }
     }
 
@@ -175,11 +172,11 @@ impl<'a> Drop for File<'a> {
 
 /// The function pointer table for the File protocol.
 #[repr(C)]
-struct FileImpl {
+pub(super) struct FileImpl {
     revision: u64,
     open: extern "win64" fn(
         this: &mut FileImpl,
-        new_handle: &mut usize,
+        new_handle: &mut *mut FileImpl,
         filename: *const Char16,
         open_mode: FileMode,
         attributes: FileAttribute,

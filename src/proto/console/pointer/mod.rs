@@ -5,14 +5,14 @@ use crate::{Event, Result, Status};
 
 /// Provides information about a pointer device.
 #[repr(C)]
-pub struct Pointer {
+pub struct Pointer<'boot> {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,
     wait_for_input: Event,
-    mode: &'static PointerMode,
+    mode: &'boot PointerMode,
 }
 
-impl Pointer {
+impl<'boot> Pointer<'boot> {
     /// Resets the pointer device hardware.
     ///
     /// The `extended_verification` parameter is used to request that UEFI
@@ -55,7 +55,7 @@ impl Pointer {
 }
 
 impl_proto! {
-    protocol Pointer {
+    protocol Pointer<'boot> {
         GUID = 0x31878c87, 0xb75, 0x11d5, [0x9a, 0x4f, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d];
     }
 }

@@ -3,10 +3,10 @@ use uefi_exts::BootServicesExt;
 
 use uefi::proto;
 
-pub fn test(st: &SystemTable) {
+pub fn test(st: &SystemTable<Boot>) {
     info!("Testing various protocols");
 
-    let bt = st.boot;
+    let bt = st.boot_services();
 
     find_protocol(bt);
 
@@ -15,7 +15,7 @@ pub fn test(st: &SystemTable) {
 }
 
 fn find_protocol(bt: &BootServices) {
-    type SearchedProtocol = proto::console::text::Output;
+    type SearchedProtocol<'a> = proto::console::text::Output<'a>;
 
     let handles = bt
         .find_handles::<SearchedProtocol>()

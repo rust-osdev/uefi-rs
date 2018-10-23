@@ -33,7 +33,7 @@ use crate::{Completion, Result, Status};
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
-pub struct GraphicsOutput {
+pub struct GraphicsOutput<'boot> {
     query_mode:
         extern "win64" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo)
             -> Status,
@@ -42,7 +42,7 @@ pub struct GraphicsOutput {
     #[allow(clippy::type_complexity)]
     blt: extern "win64" fn(
         this: &mut GraphicsOutput,
-        buffer: usize,
+        buffer: *mut BltPixel,
         op: u32,
         source_x: usize,
         source_y: usize,
@@ -52,10 +52,10 @@ pub struct GraphicsOutput {
         height: usize,
         stride: usize,
     ) -> Status,
-    mode: &'static ModeData,
+    mode: &'boot ModeData<'boot>,
 }
 
-impl GraphicsOutput {
+impl<'boot> GraphicsOutput<'boot> {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
     fn query_mode(&self, index: u32) -> Result<Mode> {
@@ -63,7 +63,7 @@ impl GraphicsOutput {
         let mut info = ptr::null();
 
         (self.query_mode)(self, index, &mut info_sz, &mut info).into_with(|| {
-            let info = unsafe { &*info };
+            let info = unsafe { *info };
             Mode {
                 index,
                 info_sz,
@@ -103,7 +103,7 @@ impl GraphicsOutput {
                 self.check_framebuffer_region((dest_x, dest_y), (width, height));
                 (self.blt)(
                     self,
-                    &color as *const _ as usize,
+                    &color as *const _ as *mut _,
                     0,
                     0,
                     0,
@@ -126,7 +126,7 @@ impl GraphicsOutput {
                 match dest_region {
                     BltRegion::Full => (self.blt)(
                         self,
-                        buffer.as_mut_ptr() as usize,
+                        buffer.as_mut_ptr(),
                         1,
                         src_x,
                         src_y,
@@ -142,7 +142,7 @@ impl GraphicsOutput {
                         px_stride,
                     } => (self.blt)(
                         self,
-                        buffer.as_mut_ptr() as usize,
+                        buffer.as_mut_ptr(),
                         1,
                         src_x,
                         src_y,
@@ -166,7 +166,7 @@ impl GraphicsOutput {
                 match src_region {
                     BltRegion::Full => (self.blt)(
                         self,
-                        buffer.as_ptr() as usize,
+                        buffer.as_ptr() as *mut _,
                         2,
                         0,
                         0,
@@ -182,7 +182,7 @@ impl GraphicsOutput {
                         px_stride,
                     } => (self.blt)(
                         self,
-                        buffer.as_ptr() as usize,
+                        buffer.as_ptr() as *mut _,
                         2,
                         src_x,
                         src_y,
@@ -203,7 +203,16 @@ impl GraphicsOutput {
                 self.check_framebuffer_region((src_x, src_y), (width, height));
                 self.check_framebuffer_region((dest_x, dest_y), (width, height));
                 (self.blt)(
-                    self, 0usize, 3, src_x, src_y, dest_x, dest_y, width, height, 0,
+                    self,
+                    ptr::null_mut(),
+                    3,
+                    src_x,
+                    src_y,
+                    dest_x,
+                    dest_y,
+                    width,
+                    height,
+                    0,
                 )
                 .into()
             }
@@ -269,19 +278,19 @@ impl GraphicsOutput {
 }
 
 impl_proto! {
-    protocol GraphicsOutput {
+    protocol GraphicsOutput<'boot> {
         GUID = 0x9042a9de, 0x23dc, 0x4a38, [0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a];
     }
 }
 
 #[repr(C)]
-struct ModeData {
+struct ModeData<'a> {
     // Number of modes which the GOP supports.
     max_mode: u32,
     // Current mode.
     mode: u32,
     // Information about the current mode.
-    info: &'static ModeInfo,
+    info: &'a ModeInfo,
     // Size of the above structure.
     info_sz: usize,
     // Physical address of the frame buffer.
@@ -329,7 +338,7 @@ pub struct PixelBitmask {
 pub struct Mode {
     index: u32,
     info_sz: usize,
-    info: &'static ModeInfo,
+    info: ModeInfo,
 }
 
 impl Mode {
@@ -342,7 +351,7 @@ impl Mode {
 
     /// Returns a reference to the mode info structure.
     pub fn info(&self) -> &ModeInfo {
-        self.info
+        &self.info
     }
 }
 
@@ -391,7 +400,7 @@ impl ModeInfo {
 
 /// Iterator for graphics modes.
 struct ModeIter<'a> {
-    gop: &'a GraphicsOutput,
+    gop: &'a GraphicsOutput<'a>,
     current: u32,
     max: u32,
 }

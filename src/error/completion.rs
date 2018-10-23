@@ -52,7 +52,7 @@ impl<T> Completion<T> {
     }
 
     /// Transform the inner value without unwrapping the Completion
-    pub fn map<U>(self, f: impl Fn(T) -> U) -> Completion<U> {
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Completion<U> {
         match self {
             Completion::Success(res) => Completion::Success(f(res)),
             Completion::Warning(res, stat) => Completion::Warning(f(res), stat),

@@ -30,50 +30,80 @@ extern crate uefi_alloc;
 #[macro_use]
 extern crate log;
 
-use uefi::table::SystemTable;
+use core::ptr::NonNull;
+
+use uefi::prelude::*;
+use uefi::table::boot::{EventType, Tpl};
+use uefi::table::{Boot, SystemTable};
+use uefi::{Event, Result};
 
 /// Reference to the system table.
-static mut SYSTEM_TABLE: Option<&'static SystemTable> = None;
+///
+/// This table is only fully safe to use until UEFI boot services have been exited.
+/// After that, some fields and methods are unsafe to use, see the documentation of
+/// UEFI's ExitBootServices entry point for more details.
+static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 
-/// Obtains a reference to the system table.
+/// Global logger object
+static mut LOGGER: Option<uefi_logger::Logger> = None;
+
+/// Obtains a pointer to the system table.
 ///
 /// This is meant to be used by higher-level libraries,
 /// which want a convenient way to access the system table singleton.
 ///
 /// `init` must have been called first by the UEFI app.
-pub fn system_table() -> &'static SystemTable {
-    unsafe { SYSTEM_TABLE.expect("The uefi-services library has not yet been initialized") }
+///
+/// The returned pointer is only valid until boot services are exited.
+pub fn system_table() -> NonNull<SystemTable<Boot>> {
+    unsafe {
+        let table_ref = SYSTEM_TABLE
+            .as_ref()
+            .expect("The system table handle is not available");
+        NonNull::new(table_ref as *const _ as *mut _).unwrap()
+    }
 }
 
 /// Initialize the UEFI utility library.
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-pub fn init(st: &'static SystemTable) {
+pub fn init(st: &SystemTable<Boot>) -> Result<()> {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {
-            return;
+            return Status::SUCCESS.into();
         }
 
-        SYSTEM_TABLE = Some(st);
-    }
+        // Setup the system table singleton
+        SYSTEM_TABLE = Some(st.unsafe_clone());
 
-    init_logger();
-    init_alloc();
+        // Setup logging and memory allocation
+        let boot_services = st.boot_services();
+        init_logger(st);
+        uefi_alloc::init(boot_services);
+
+        // Schedule these tools to be disabled on exit from UEFI boot services
+        boot_services
+            .create_event(
+                EventType::SIGNAL_EXIT_BOOT_SERVICES,
+                Tpl::NOTIFY,
+                Some(exit_boot_services),
+            )
+            .map_inner(|_| ())
+    }
 }
 
-fn init_logger() {
-    let st = system_table();
-
-    static mut LOGGER: Option<uefi_logger::Logger> = None;
-
+/// Set up logging
+///
+/// This is unsafe because you must arrange for the logger to be reset with
+/// disable() on exit from UEFI boot services.
+unsafe fn init_logger(st: &SystemTable<Boot>) {
     let stdout = st.stdout();
 
     // Construct the logger.
-    let logger = unsafe {
+    let logger = {
         LOGGER = Some(uefi_logger::Logger::new(stdout));
-
         LOGGER.as_ref().unwrap()
     };
 
@@ -84,10 +114,21 @@ fn init_logger() {
     log::set_max_level(log::LevelFilter::Info);
 }
 
-fn init_alloc() {
-    let st = system_table();
-
-    uefi_alloc::init(st.boot);
+/// Notify the utility library that boot services are not safe to call anymore
+fn exit_boot_services(_e: Event) {
+    // DEBUG: The UEFI spec does not guarantee that this printout will work, as
+    //        the services used by logging might already have been shut down.
+    //        But it works on current OVMF, and can be used as a handy way to
+    //        check that the callback does get called.
+    //
+    // info!("Shutting down the UEFI utility library");
+    unsafe {
+        SYSTEM_TABLE = None;
+        if let Some(ref mut logger) = LOGGER {
+            logger.disable();
+        }
+    }
+    uefi_alloc::exit_boot_services();
 }
 
 #[lang = "eh_personality"]
@@ -108,9 +149,8 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     }
 
     // Give the user some time to read the message
-    if let Some(st) = unsafe { SYSTEM_TABLE } {
-        // FIXME: Check if boot-time services have been exited too
-        st.boot.stall(10_000_000);
+    if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
+        st.boot_services().stall(10_000_000);
     } else {
         let mut dummy = 0u64;
         // FIXME: May need different counter values in debug & release builds
@@ -131,10 +171,10 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     }
 
     // If the system table is available, use UEFI's standard shutdown mechanism
-    if let Some(st) = unsafe { SYSTEM_TABLE } {
+    if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
         use uefi::table::runtime::ResetType;
-        st.runtime
-            .reset(ResetType::Shutdown, uefi::Status::ABORTED, None)
+        st.runtime_services()
+            .reset(ResetType::Shutdown, uefi::Status::ABORTED, None);
     }
 
     // If we don't have any shutdown mechanism handy, the best we can do is loop

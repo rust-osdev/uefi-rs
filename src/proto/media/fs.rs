@@ -1,8 +1,8 @@
 //! File system support protocols.
 
+use super::file::{File, FileImpl};
+use core::ptr;
 use crate::{Result, Status};
-
-use super::file::File;
 
 /// Allows access to a FAT-12/16/32 file system.
 ///
@@ -11,7 +11,7 @@ use super::file::File;
 #[repr(C)]
 pub struct SimpleFileSystem {
     revision: u64,
-    open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut usize) -> Status,
+    open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
 }
 
 impl SimpleFileSystem {
@@ -26,7 +26,7 @@ impl SimpleFileSystem {
     /// * `uefi::Status::OUT_OF_RESOURCES` - The volume was not opened
     /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
     pub fn open_volume(&mut self) -> Result<File> {
-        let mut ptr = 0usize;
+        let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr).into_with(|| unsafe { File::new(ptr) })
     }
 }

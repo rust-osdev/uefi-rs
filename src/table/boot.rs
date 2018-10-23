@@ -2,6 +2,8 @@
 
 use super::Header;
 use bitflags::bitflags;
+use core::cell::UnsafeCell;
+use core::ffi::c_void;
 use core::{mem, ptr, result};
 use crate::proto::Protocol;
 use crate::{Event, Guid, Handle, Result, Status};
@@ -12,22 +14,33 @@ pub struct BootServices {
     header: Header,
 
     // Task Priority services
-    raise_tpl: extern "win64" fn(Tpl) -> Tpl,
-    restore_tpl: extern "win64" fn(Tpl),
+    raise_tpl: extern "win64" fn(new_tpl: Tpl) -> Tpl,
+    restore_tpl: extern "win64" fn(old_tpl: Tpl),
 
     // Memory allocation functions
     allocate_pages:
         extern "win64" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64)
             -> Status,
-    free_pages: extern "win64" fn(u64, usize) -> Status,
-    memory_map:
-        extern "win64" fn(size: &mut usize, usize, key: &mut MemoryMapKey, &mut usize, &mut u32)
-            -> Status,
-    allocate_pool: extern "win64" fn(MemoryType, usize, addr: &mut usize) -> Status,
-    free_pool: extern "win64" fn(buffer: usize) -> Status,
+    free_pages: extern "win64" fn(addr: u64, pages: usize) -> Status,
+    memory_map: extern "win64" fn(
+        size: &mut usize,
+        map: *mut MemoryDescriptor,
+        key: &mut MemoryMapKey,
+        desc_size: &mut usize,
+        desc_version: &mut u32,
+    ) -> Status,
+    allocate_pool:
+        extern "win64" fn(pool_type: MemoryType, size: usize, buffer: &mut *mut u8) -> Status,
+    free_pool: extern "win64" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
-    create_event: usize,
+    create_event: extern "win64" fn(
+        ty: EventType,
+        notify_tpl: Tpl,
+        notify_func: Option<EventNotifyFn>,
+        notify_ctx: *mut c_void,
+        event: *mut Event,
+    ) -> Status,
     set_timer: usize,
     wait_for_event:
         extern "win64" fn(number_of_events: usize, events: *mut Event, out_index: &mut usize)
@@ -41,13 +54,14 @@ pub struct BootServices {
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
     handle_protocol:
-        extern "win64" fn(handle: Handle, proto: *const Guid, out_proto: &mut usize) -> Status,
+        extern "win64" fn(handle: Handle, proto: *const Guid, out_proto: &mut *mut c_void)
+            -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
     locate_handle: extern "win64" fn(
         search_ty: i32,
         proto: *const Guid,
-        key: *mut (),
+        key: *mut c_void,
         buf_sz: &mut usize,
         buf: *mut Handle,
     ) -> Status,
@@ -59,11 +73,11 @@ pub struct BootServices {
     start_image: usize,
     exit: usize,
     unload_image: usize,
-    exit_boot_services: extern "win64" fn(Handle, MemoryMapKey) -> Status,
+    exit_boot_services: extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
-    stall: extern "win64" fn(usize) -> Status,
+    stall: extern "win64" fn(microseconds: usize) -> Status,
     set_watchdog_timer: extern "win64" fn(
         timeout: usize,
         watchdog_code: u64,
@@ -111,24 +125,26 @@ impl BootServices {
 
     /// Allocates memory pages from the system.
     ///
-    /// UEFI OS loaders should allocate memory of the type `LoaderData`.
+    /// UEFI OS loaders should allocate memory of the type `LoaderData`. An u64
+    /// is returned even on 32-bit platforms because some hardware configurations
+    /// like Intel PAE enable 64-bit physical addressing on a 32-bit processor.
     pub fn allocate_pages(
         &self,
         ty: AllocateType,
         mem_ty: MemoryType,
         count: usize,
-    ) -> Result<usize> {
+    ) -> Result<u64> {
         let (ty, mut addr) = match ty {
             AllocateType::AnyPages => (0, 0),
             AllocateType::MaxAddress(addr) => (1, addr as u64),
             AllocateType::Address(addr) => (2, addr as u64),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with(|| addr as usize)
+        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
-    pub fn free_pages(&self, addr: usize, count: usize) -> Result<()> {
-        (self.free_pages)(addr as u64, count).into()
+    pub fn free_pages(&self, addr: u64, count: usize) -> Result<()> {
+        (self.free_pages)(addr, count).into()
     }
 
     /// Retrieves the size, in bytes, of the current memory map.
@@ -144,7 +160,7 @@ impl BootServices {
 
         let status = (self.memory_map)(
             &mut map_size,
-            0,
+            ptr::null_mut(),
             &mut map_key,
             &mut entry_size,
             &mut entry_version,
@@ -164,12 +180,9 @@ impl BootServices {
     pub fn memory_map<'a>(
         &self,
         buffer: &'a mut [u8],
-    ) -> Result<(
-        MemoryMapKey,
-        impl ExactSizeIterator<Item = &'a MemoryDescriptor>,
-    )> {
+    ) -> Result<(MemoryMapKey, MemoryMapIter<'a>)> {
         let mut map_size = buffer.len();
-        let map_buffer = buffer.as_ptr() as usize;
+        let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
@@ -193,15 +206,56 @@ impl BootServices {
         })
     }
 
-    /// Allocates from a memory pool. The address is 8-byte aligned.
-    pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<usize> {
-        let mut buffer = 0;
+    /// Allocates from a memory pool. The pointer will be 8-byte aligned.
+    pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
+        let mut buffer = ptr::null_mut();
         (self.allocate_pool)(mem_ty, size, &mut buffer).into_with(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
-    pub fn free_pool(&self, addr: usize) -> Result<()> {
+    pub fn free_pool(&self, addr: *mut u8) -> Result<()> {
         (self.free_pool)(addr).into()
+    }
+
+    /// Creates an event
+    ///
+    /// This function creates a new event of the specified type and returns it.
+    ///
+    /// Events are created in a "waiting" state, and may switch to a "signaled"
+    /// state. If the event type has flag NotifySignal set, this will result in
+    /// a callback for the event being immediately enqueued at the `notify_tpl`
+    /// priority level. If the event type has flag NotifyWait, the notification
+    /// will be delivered next time `wait_for_event` or `check_event` is called.
+    /// In both cases, a `notify_fn` callback must be specified.
+    ///
+    /// Note that the safety of this function relies on aborting panics being
+    /// used, as requested by the uefi-rs documentation.
+    pub fn create_event(
+        &self,
+        event_ty: EventType,
+        notify_tpl: Tpl,
+        notify_fn: Option<fn(Event)>,
+    ) -> Result<Event> {
+        // Prepare storage for the output Event
+        let mut event = unsafe { mem::uninitialized() };
+
+        // Use a trampoline to handle the impedance mismatch between Rust & C
+        unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
+            let notify_fn: fn(Event) = core::mem::transmute(ctx);
+            notify_fn(e); // Aborting panics are assumed here
+        }
+        let (notify_func, notify_ctx) = notify_fn
+            .map(|notify_fn| {
+                (
+                    Some(notify_trampoline as EventNotifyFn),
+                    notify_fn as fn(Event) as *mut c_void,
+                )
+            })
+            .unwrap_or((None, ptr::null_mut()));
+
+        // Now we're ready to call UEFI
+        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
+            .into_with(|| event)
     }
 
     /// Stops execution until an event is signaled
@@ -245,10 +299,17 @@ impl BootServices {
     ///
     /// This function attempts to get the protocol implementation of a handle,
     /// based on the protocol GUID.
-    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<ptr::NonNull<P>> {
-        let mut ptr = 0usize;
+    ///
+    /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
+    /// provides no mechanism to protect against concurrent usage. Such protections
+    /// must be implemented by user-level code, for example via a global HashSet.
+    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&UnsafeCell<P>> {
+        let mut ptr = ptr::null_mut();
         match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
-            Status::SUCCESS => ptr::NonNull::new(ptr as *mut P),
+            Status::SUCCESS => {
+                let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+                Some(unsafe { &*ptr })
+            }
             _ => None,
         }
     }
@@ -290,20 +351,21 @@ impl BootServices {
         }
     }
 
-    /// Exits the early boot stage.
+    /// Exits the UEFI boot services
     ///
-    /// After calling this function, the boot services functions become invalid.
-    /// Only runtime services may be used.
+    /// This unsafe method is meant to be an implementation detail of the safe
+    /// `SystemTable<Boot>::exit_boot_services()` method, which is why it is not
+    /// public.
     ///
-    /// The handle passed must be the one of the currently executing image.
-    ///
-    /// The application **must** retrieve the current memory map, and pass in a key to ensure it is the latest.
-    /// If the memory map was changed, you must obtain the new memory map,
-    /// and then immediately call this function again.
-    ///
-    /// After you first call this function, the firmware may perform a partial shutdown of boot services.
-    /// You should only call the mmap-related functions in order to update the memory map.
-    pub unsafe fn exit_boot_services(&self, image: Handle, mmap_key: MemoryMapKey) -> Result<()> {
+    /// Everything that is explained in the documentation of the high-level
+    /// SystemTable<Boot> method is also true here, except that this function is
+    /// one-shot (no automatic retry) and does not prevent you from shooting
+    /// yourself in the foot by calling invalid boot services after a failure.
+    pub(super) unsafe fn exit_boot_services(
+        &self,
+        image: Handle,
+        mmap_key: MemoryMapKey,
+    ) -> Result<()> {
         (self.exit_boot_services)(image, mmap_key).into()
     }
 
@@ -526,8 +588,13 @@ bitflags! {
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
+/// An iterator of memory descriptors
+///
+/// This type is only exposed in interfaces due to current limitations of
+/// `impl Trait` which may be lifted in the future. It is therefore recommended
+/// that you refrain from directly manipulating it in your code.
 #[derive(Debug)]
-struct MemoryMapIter<'a> {
+pub struct MemoryMapIter<'a> {
     buffer: &'a [u8],
     entry_size: usize,
     index: usize,
@@ -549,7 +616,7 @@ impl<'a> Iterator for MemoryMapIter<'a> {
 
             self.index += 1;
 
-            let descriptor = unsafe { mem::transmute::<usize, &MemoryDescriptor>(ptr) };
+            let descriptor: &MemoryDescriptor = unsafe { mem::transmute(ptr) };
 
             Some(descriptor)
         } else {
@@ -579,3 +646,39 @@ impl<'a> SearchType<'a> {
         SearchType::ByProtocol(&P::GUID)
     }
 }
+
+bitflags! {
+    /// Flags describing the type of an UEFI event and its attributes.
+    pub struct EventType: u32 {
+        /// The event is a timer event and may be passed to `BootServices::set_timer()`
+        /// Note that timers only function during boot services time.
+        const TIMER = 0x8000_0000;
+
+        /// The event is allocated from runtime memory.
+        /// This must be done if the event is to be signaled after ExitBootServices.
+        const RUNTIME = 0x4000_0000;
+
+        /// Calling wait_for_event or check_event will enqueue the notification
+        /// function if the event is not already in the signaled state.
+        /// Mutually exclusive with NOTIFY_SIGNAL.
+        const NOTIFY_WAIT = 0x0000_0100;
+
+        /// The notification function will be enqueued when the event is signaled
+        /// Mutually exclusive with NOTIFY_WAIT.
+        const NOTIFY_SIGNAL = 0x0000_0200;
+
+        /// The event will be signaled at ExitBootServices time.
+        /// This event type should not be combined with any other.
+        /// Its notification function must follow some special rules:
+        /// - Cannot use memory allocation services, directly or indirectly
+        /// - Cannot depend on timer events, since those will be deactivated
+        const SIGNAL_EXIT_BOOT_SERVICES = 0x0000_0201;
+
+        /// The event will be notified when SetVirtualAddressMap is performed.
+        /// This event type should not be combined with any other.
+        const SIGNAL_VIRTUAL_ADDRESS_CHANGE = 0x6000_0202;
+    }
+}
+
+/// Raw event notification function
+type EventNotifyFn = unsafe extern "win64" fn(event: Event, context: *mut c_void);

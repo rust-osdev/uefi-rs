@@ -33,4 +33,21 @@ macro_rules! impl_proto {
         // Most UEFI functions do not support multithreaded access.
         impl !Sync for $p {}
     };
+    (
+        protocol $p:ident<'boot> {
+            GUID = $a:expr, $b:expr, $c:expr, $d:expr;
+        }
+    ) => {
+        impl<'boot> $crate::proto::Protocol for $p<'boot> {
+            #[doc(hidden)]
+            // These literals aren't meant to be human-readable.
+            #[allow(clippy::unreadable_literal)]
+            const GUID: $crate::Guid = $crate::Guid::from_values($a, $b, $c, $d);
+        }
+
+        // Most UEFI functions expect to be called on the bootstrap processor.
+        impl<'boot> !Send for $p<'boot> {}
+        // Most UEFI functions do not support multithreaded access.
+        impl<'boot> !Sync for $p<'boot> {}
+    };
 }

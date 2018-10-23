@@ -1,11 +1,11 @@
-use uefi::table::SystemTable;
+use uefi::prelude::*;
 
-pub fn test(st: &SystemTable) {
+pub fn test(st: &SystemTable<Boot>) {
     info!("Testing console protocols");
 
     stdout::test(st.stdout());
 
-    let bt = st.boot;
+    let bt = st.boot_services();
     serial::test(bt);
     gop::test(bt);
     pointer::test(bt);

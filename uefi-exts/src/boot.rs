@@ -1,9 +1,9 @@
+use core::cell::UnsafeCell;
 use uefi::prelude::*;
 use uefi::proto::Protocol;
 use uefi::table::boot::{BootServices, SearchType};
 use uefi::{Handle, Result};
 
-use core::ptr::NonNull;
 use crate::alloc::vec::Vec;
 
 /// Utility functions for the UEFI boot services.
@@ -12,7 +12,9 @@ pub trait BootServicesExt {
     fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>>;
 
     /// Returns a protocol implementation, if present on the system.
-    fn find_protocol<P: Protocol>(&self) -> Option<NonNull<P>>;
+    ///
+    /// The caveats of `BootServices::handle_protocol()` also apply here.
+    fn find_protocol<P: Protocol>(&self) -> Option<&UnsafeCell<P>>;
 }
 
 impl BootServicesExt for BootServices {
@@ -43,7 +45,7 @@ impl BootServicesExt for BootServices {
             .map(|completion| completion.with_status(status2))
     }
 
-    fn find_protocol<P: Protocol>(&self) -> Option<NonNull<P>> {
+    fn find_protocol<P: Protocol>(&self) -> Option<&UnsafeCell<P>> {
         // Retrieve all handles implementing this.
         self.find_handles::<P>()
             // Convert to an option.

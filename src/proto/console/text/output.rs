@@ -13,11 +13,11 @@ pub struct Output<'boot> {
     test_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
     query_mode: extern "win64" fn(
         this: &Output,
-        mode: i32,
+        mode: usize,
         columns: &mut usize,
         rows: &mut usize,
     ) -> Status,
-    set_mode: extern "win64" fn(this: &mut Output, mode: i32) -> Status,
+    set_mode: extern "win64" fn(this: &mut Output, mode: usize) -> Status,
     set_attribute: extern "win64" fn(this: &mut Output, attribute: usize) -> Status,
     clear_screen: extern "win64" fn(this: &mut Output) -> Status,
     set_cursor_position: extern "win64" fn(this: &mut Output, column: usize, row: usize) -> Status,
@@ -59,7 +59,7 @@ impl<'boot> Output<'boot> {
     /// Returns an iterator of all supported text modes.
     // TODO: Bring back impl Trait once the story around bounds improves
     pub fn modes<'a>(&'a mut self) -> OutputModeIter<'a, 'boot> {
-        let max = self.data.max_mode;
+        let max = self.data.max_mode as usize;
         OutputModeIter {
             output: self,
             current: 0,
@@ -77,9 +77,22 @@ impl<'boot> Output<'boot> {
     /// If you want to iterate over all text modes supported by the device,
     /// consider using the iterator produced by `modes()` as a more ergonomic
     /// alternative to this method.
-    fn query_mode(&self, index: i32) -> Result<(usize, usize)> {
+    fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
         (self.query_mode)(self, index, &mut columns, &mut rows).into_with(|| (columns, rows))
+    }
+
+    /// Returns the the current text mode.
+    pub fn current_mode(&self) -> Result<Option<OutputMode>> {
+        match self.data.mode {
+            -1 => Ok(None.into()),
+            n if n > 0 => {
+                let index = n as usize;
+                self.query_mode(index)
+                    .map_inner(|dims| Some(OutputMode { index, dims }))
+            }
+            _ => unreachable!(),
+        }
     }
 
     /// Sets a mode as current.
@@ -87,11 +100,9 @@ impl<'boot> Output<'boot> {
         (self.set_mode)(self, mode.index).into()
     }
 
-    /// Returns the the current text mode.
-    pub fn current_mode(&self) -> Result<OutputMode> {
-        let index = self.data.mode;
-        self.query_mode(index)
-            .map_inner(|dims| OutputMode { index, dims })
+    /// Returns whether the cursor is currently shown or not.
+    pub fn cursor_visible(&self) -> bool {
+        self.data.cursor_visible
     }
 
     /// Make the cursor visible or invisible.
@@ -102,13 +113,8 @@ impl<'boot> Output<'boot> {
         (self.enable_cursor)(self, visible).into()
     }
 
-    /// Returns whether the cursor is currently shown or not.
-    pub fn cursor_visible(&self) -> bool {
-        self.data.cursor_visible
-    }
-
     /// Returns the column and row of the cursor.
-    pub fn get_cursor_position(&self) -> (usize, usize) {
+    pub fn cursor_position(&self) -> (usize, usize) {
         let column = self.data.cursor_column;
         let row = self.data.cursor_row;
         (column as usize, row as usize)
@@ -194,14 +200,14 @@ impl<'boot> fmt::Write for Output<'boot> {
 /// The text mode (resolution) of the output device.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct OutputMode {
-    index: i32,
+    index: usize,
     dims: (usize, usize),
 }
 
 impl OutputMode {
     /// Returns the index of this mode.
     #[inline]
-    pub fn index(&self) -> i32 {
+    pub fn index(&self) -> usize {
         self.index
     }
 
@@ -221,8 +227,8 @@ impl OutputMode {
 /// An iterator of the text modes (possibly) supported by a device.
 pub struct OutputModeIter<'a, 'b: 'a> {
     output: &'a mut Output<'b>,
-    current: i32,
-    max: i32,
+    current: usize,
+    max: usize,
 }
 
 impl<'a, 'b> Iterator for OutputModeIter<'a, 'b> {
@@ -251,6 +257,7 @@ struct OutputData {
     /// The number of modes supported by the device.
     max_mode: i32,
     /// The current output mode.
+    /// Negative index -1 is used to notify that no valid mode is configured
     mode: i32,
     /// The current character output attribute.
     attribute: i32,

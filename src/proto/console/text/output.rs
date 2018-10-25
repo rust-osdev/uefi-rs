@@ -9,8 +9,8 @@ use core::fmt;
 #[repr(C)]
 pub struct Output<'boot> {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
-    output_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
-    test_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
+    output_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,
+    test_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,
     query_mode: extern "win64" fn(
         this: &Output,
         mode: usize,
@@ -41,7 +41,7 @@ impl<'boot> Output<'boot> {
 
     /// Writes a string to the output device.
     pub fn output_string(&mut self, string: &CStr16) -> Result<()> {
-        (self.output_string)(self, string.as_ptr()).into()
+        unsafe { (self.output_string)(self, string.as_ptr()) }.into()
     }
 
     /// Checks if a string contains only supported characters.
@@ -50,7 +50,7 @@ impl<'boot> Output<'boot> {
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
     pub fn test_string(&mut self, string: &CStr16) -> bool {
-        match (self.test_string)(self, string.as_ptr()) {
+        match unsafe { (self.test_string)(self, string.as_ptr()) } {
             Status::SUCCESS => true,
             _ => false,
         }

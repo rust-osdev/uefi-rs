@@ -27,8 +27,8 @@ pub struct Serial<'boot> {
     ) -> Status,
     set_control_bits: extern "win64" fn(&mut Serial, ControlBits) -> Status,
     get_control_bits: extern "win64" fn(&Serial, &mut ControlBits) -> Status,
-    write: extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
-    read: extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
+    write: unsafe extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
+    read: unsafe extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
     io_mode: &'boot IoMode,
 }
 
@@ -93,7 +93,7 @@ impl<'boot> Serial<'boot> {
     pub fn read(&mut self, data: &mut [u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        match (self.read)(self, &mut buffer_size, data.as_mut_ptr()) {
+        match unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) } {
             s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
             other => other.into_with(|| buffer_size),
         }
@@ -109,7 +109,7 @@ impl<'boot> Serial<'boot> {
     pub fn write(&mut self, data: &[u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        match (self.write)(self, &mut buffer_size, data.as_ptr()) {
+        match unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) } {
             s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
             other => other.into_with(|| buffer_size),
         }

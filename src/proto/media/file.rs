@@ -18,13 +18,11 @@ use ucs2;
 /// Dropping this structure will result in the file handle being closed.
 ///
 /// Files have names, and a fixed size.
-pub struct File<'a> {
-    inner: &'a mut FileImpl,
-}
+pub struct File<'a>(&'a mut FileImpl);
 
 impl<'a> File<'a> {
     pub(super) unsafe fn new(ptr: *mut FileImpl) -> Self {
-        File { inner: &mut *ptr }
+        File(&mut *ptr)
     }
 
     /// Try to open a file relative to this file/directory.
@@ -62,14 +60,8 @@ impl<'a> File<'a> {
             let len = ucs2::encode(filename, &mut buf)?;
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
 
-            (self.inner.open)(
-                self.inner,
-                &mut ptr,
-                filename.as_ptr(),
-                open_mode,
-                attributes,
-            )
-            .into_with(|| unsafe { File::new(ptr) })
+            unsafe { (self.0.open)(self.0, &mut ptr, filename.as_ptr(), open_mode, attributes) }
+                .into_with(|| unsafe { File::new(ptr) })
         }
     }
 
@@ -81,7 +73,7 @@ impl<'a> File<'a> {
     /// # Errors
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     pub fn delete(self) -> Result<()> {
-        let result = (self.inner.delete)(self.inner).into();
+        let result = (self.0.delete)(self.0).into();
 
         mem::forget(self);
 
@@ -101,7 +93,7 @@ impl<'a> File<'a> {
     /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
-        (self.inner.read)(self.inner, &mut buffer_size, buffer.as_mut_ptr())
+        unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) }
             .into_with(|| buffer_size)
     }
 
@@ -121,7 +113,8 @@ impl<'a> File<'a> {
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn write(&mut self, buffer: &[u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
-        (self.inner.write)(self.inner, &mut buffer_size, buffer.as_ptr()).into_with(|| buffer_size)
+        unsafe { (self.0.write)(self.0, &mut buffer_size, buffer.as_ptr()) }
+            .into_with(|| buffer_size)
     }
 
     /// Get the file's current position
@@ -130,7 +123,7 @@ impl<'a> File<'a> {
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.inner.get_position)(self.inner, &mut pos).into_with(|| pos)
+        (self.0.get_position)(self.0, &mut pos).into_with(|| pos)
     }
 
     /// Sets the file's current position
@@ -145,7 +138,7 @@ impl<'a> File<'a> {
     /// # Errors
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
     pub fn set_position(&mut self, position: u64) -> Result<()> {
-        (self.inner.set_position)(self.inner, position).into()
+        (self.0.set_position)(self.0, position).into()
     }
 
     /// Flushes all modified data associated with the file handle to the device
@@ -158,13 +151,13 @@ impl<'a> File<'a> {
     /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn flush(&mut self) -> Result<()> {
-        (self.inner.flush)(self.inner).into()
+        (self.0.flush)(self.0).into()
     }
 }
 
 impl<'a> Drop for File<'a> {
     fn drop(&mut self) {
-        let result: Result<()> = (self.inner.close)(self.inner).into();
+        let result: Result<()> = (self.0.close)(self.0).into();
         // The spec says this always succeeds.
         result.expect_success("Failed to close file");
     }
@@ -174,7 +167,7 @@ impl<'a> Drop for File<'a> {
 #[repr(C)]
 pub(super) struct FileImpl {
     revision: u64,
-    open: extern "win64" fn(
+    open: unsafe extern "win64" fn(
         this: &mut FileImpl,
         new_handle: &mut *mut FileImpl,
         filename: *const Char16,
@@ -183,9 +176,12 @@ pub(super) struct FileImpl {
     ) -> Status,
     close: extern "win64" fn(this: &mut FileImpl) -> Status,
     delete: extern "win64" fn(this: &mut FileImpl) -> Status,
-    read:
-        extern "win64" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,
-    write: extern "win64" fn(
+    read: unsafe extern "win64" fn(
+        this: &mut FileImpl,
+        buffer_size: &mut usize,
+        buffer: *mut u8,
+    ) -> Status,
+    write: unsafe extern "win64" fn(
         this: &mut FileImpl,
         buffer_size: &mut usize,
         buffer: *const u8,
@@ -199,6 +195,8 @@ pub(super) struct FileImpl {
 
 bitflags! {
     /// Usage flags describing what is possible to do with the file.
+    /// FIXME: Not all FileMode combinations make sense, and only CREATE allows
+    ///        for attributes. An enum might be more appropriate...
     pub struct FileMode: u64 {
         /// The file can be read from.
         const READ = 1;

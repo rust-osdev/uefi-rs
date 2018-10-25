@@ -43,7 +43,7 @@ pub struct GraphicsOutput<'boot> {
     set_mode: extern "win64" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
     #[allow(clippy::type_complexity)]
-    blt: extern "win64" fn(
+    blt: unsafe extern "win64" fn(
         this: &mut GraphicsOutput,
         buffer: *mut BltPixel,
         op: u32,
@@ -97,127 +97,129 @@ impl<'boot> GraphicsOutput<'boot> {
     /// Every operation requires different parameters.
     pub fn blt(&mut self, op: BltOp) -> Result<()> {
         // Demultiplex the operation type.
-        match op {
-            BltOp::VideoFill {
-                color,
-                dest: (dest_x, dest_y),
-                dims: (width, height),
-            } => {
-                self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                (self.blt)(
-                    self,
-                    &color as *const _ as *mut _,
-                    0,
-                    0,
-                    0,
-                    dest_x,
-                    dest_y,
-                    width,
-                    height,
-                    0,
-                )
-                .into()
-            }
-            BltOp::VideoToBltBuffer {
-                buffer,
-                src: (src_x, src_y),
-                dest: dest_region,
-                dims: (width, height),
-            } => {
-                self.check_framebuffer_region((src_x, src_y), (width, height));
-                self.check_blt_buffer_region(dest_region, (width, height), buffer.len());
-                match dest_region {
-                    BltRegion::Full => (self.blt)(
+        unsafe {
+            match op {
+                BltOp::VideoFill {
+                    color,
+                    dest: (dest_x, dest_y),
+                    dims: (width, height),
+                } => {
+                    self.check_framebuffer_region((dest_x, dest_y), (width, height));
+                    (self.blt)(
                         self,
-                        buffer.as_mut_ptr(),
-                        1,
-                        src_x,
-                        src_y,
+                        &color as *const _ as *mut _,
                         0,
                         0,
-                        width,
-                        height,
                         0,
-                    )
-                    .into(),
-                    BltRegion::SubRectangle {
-                        coords: (dest_x, dest_y),
-                        px_stride,
-                    } => (self.blt)(
-                        self,
-                        buffer.as_mut_ptr(),
-                        1,
-                        src_x,
-                        src_y,
                         dest_x,
                         dest_y,
                         width,
                         height,
-                        px_stride * core::mem::size_of::<BltPixel>(),
+                        0,
                     )
-                    .into(),
+                    .into()
                 }
-            }
-            BltOp::BufferToVideo {
-                buffer,
-                src: src_region,
-                dest: (dest_x, dest_y),
-                dims: (width, height),
-            } => {
-                self.check_blt_buffer_region(src_region, (width, height), buffer.len());
-                self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                match src_region {
-                    BltRegion::Full => (self.blt)(
+                BltOp::VideoToBltBuffer {
+                    buffer,
+                    src: (src_x, src_y),
+                    dest: dest_region,
+                    dims: (width, height),
+                } => {
+                    self.check_framebuffer_region((src_x, src_y), (width, height));
+                    self.check_blt_buffer_region(dest_region, (width, height), buffer.len());
+                    match dest_region {
+                        BltRegion::Full => (self.blt)(
+                            self,
+                            buffer.as_mut_ptr(),
+                            1,
+                            src_x,
+                            src_y,
+                            0,
+                            0,
+                            width,
+                            height,
+                            0,
+                        )
+                        .into(),
+                        BltRegion::SubRectangle {
+                            coords: (dest_x, dest_y),
+                            px_stride,
+                        } => (self.blt)(
+                            self,
+                            buffer.as_mut_ptr(),
+                            1,
+                            src_x,
+                            src_y,
+                            dest_x,
+                            dest_y,
+                            width,
+                            height,
+                            px_stride * core::mem::size_of::<BltPixel>(),
+                        )
+                        .into(),
+                    }
+                }
+                BltOp::BufferToVideo {
+                    buffer,
+                    src: src_region,
+                    dest: (dest_x, dest_y),
+                    dims: (width, height),
+                } => {
+                    self.check_blt_buffer_region(src_region, (width, height), buffer.len());
+                    self.check_framebuffer_region((dest_x, dest_y), (width, height));
+                    match src_region {
+                        BltRegion::Full => (self.blt)(
+                            self,
+                            buffer.as_ptr() as *mut _,
+                            2,
+                            0,
+                            0,
+                            dest_x,
+                            dest_y,
+                            width,
+                            height,
+                            0,
+                        )
+                        .into(),
+                        BltRegion::SubRectangle {
+                            coords: (src_x, src_y),
+                            px_stride,
+                        } => (self.blt)(
+                            self,
+                            buffer.as_ptr() as *mut _,
+                            2,
+                            src_x,
+                            src_y,
+                            dest_x,
+                            dest_y,
+                            width,
+                            height,
+                            px_stride * core::mem::size_of::<BltPixel>(),
+                        )
+                        .into(),
+                    }
+                }
+                BltOp::VideoToVideo {
+                    src: (src_x, src_y),
+                    dest: (dest_x, dest_y),
+                    dims: (width, height),
+                } => {
+                    self.check_framebuffer_region((src_x, src_y), (width, height));
+                    self.check_framebuffer_region((dest_x, dest_y), (width, height));
+                    (self.blt)(
                         self,
-                        buffer.as_ptr() as *mut _,
-                        2,
-                        0,
-                        0,
-                        dest_x,
-                        dest_y,
-                        width,
-                        height,
-                        0,
-                    )
-                    .into(),
-                    BltRegion::SubRectangle {
-                        coords: (src_x, src_y),
-                        px_stride,
-                    } => (self.blt)(
-                        self,
-                        buffer.as_ptr() as *mut _,
-                        2,
+                        ptr::null_mut(),
+                        3,
                         src_x,
                         src_y,
                         dest_x,
                         dest_y,
                         width,
                         height,
-                        px_stride * core::mem::size_of::<BltPixel>(),
+                        0,
                     )
-                    .into(),
+                    .into()
                 }
-            }
-            BltOp::VideoToVideo {
-                src: (src_x, src_y),
-                dest: (dest_x, dest_y),
-                dims: (width, height),
-            } => {
-                self.check_framebuffer_region((src_x, src_y), (width, height));
-                self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                (self.blt)(
-                    self,
-                    ptr::null_mut(),
-                    3,
-                    src_x,
-                    src_y,
-                    dest_x,
-                    dest_y,
-                    width,
-                    height,
-                    0,
-                )
-                .into()
             }
         }
     }

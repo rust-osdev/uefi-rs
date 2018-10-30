@@ -20,7 +20,7 @@ members = [
     "uefi-exts",
 ]
 
-[profile.debug]
+[profile.dev]
 panic = "abort"
 
 [profile.release]

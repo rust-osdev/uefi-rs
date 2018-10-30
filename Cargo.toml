@@ -19,3 +19,9 @@ members = [
     "uefi-services",
     "uefi-exts",
 ]
+
+[profile.debug]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

@@ -227,9 +227,6 @@ impl BootServices {
     /// priority level. If the event type has flag NotifyWait, the notification
     /// will be delivered next time `wait_for_event` or `check_event` is called.
     /// In both cases, a `notify_fn` callback must be specified.
-    ///
-    /// Note that the safety of this function relies on aborting panics being
-    /// used, as requested by the uefi-rs documentation.
     pub fn create_event(
         &self,
         event_ty: EventType,
@@ -242,7 +239,7 @@ impl BootServices {
         // Use a trampoline to handle the impedance mismatch between Rust & C
         unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
             let notify_fn: fn(Event) = core::mem::transmute(ctx);
-            notify_fn(e); // Aborting panics are assumed here
+            notify_fn(e); // SAFETY: Aborting panics are assumed here
         }
         let (notify_func, notify_ctx) = notify_fn
             .map(|notify_fn| {

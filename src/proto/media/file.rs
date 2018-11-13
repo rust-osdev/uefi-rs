@@ -193,18 +193,21 @@ pub(super) struct FileImpl {
     flush: extern "win64" fn(this: &mut FileImpl) -> Status,
 }
 
-bitflags! {
-    /// Usage flags describing what is possible to do with the file.
-    /// FIXME: Not all FileMode combinations make sense, and only CREATE allows
-    ///        for attributes. An enum might be more appropriate...
-    pub struct FileMode: u64 {
-        /// The file can be read from.
-        const READ = 1;
-        /// The file can be written to.
-        const WRITE = 1 << 1;
-        /// The file will be created if not found.
-        const CREATE = 1 << 63;
-    }
+/// Usage flags describing what is possible to do with the file.
+///
+/// SAFETY: Using a repr(C) enum is safe here because this type is only sent to
+///         the UEFI implementation, and never received from it.
+///
+#[repr(u64)]
+pub enum FileMode {
+    /// The file can be read from
+    Read = 1,
+
+    /// The file can be read from and written to
+    ReadWrite = 2 | 1,
+
+    /// The file can be read, written, and will be created if it does not exist
+    CreateReadWrite = (1 << 63) | 2 | 1,
 }
 
 bitflags! {

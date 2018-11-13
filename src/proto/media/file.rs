@@ -10,6 +10,7 @@ use crate::{CStr16, Char16, Result, Status};
 use bitflags::bitflags;
 use core::mem;
 use core::ptr;
+use core::result;
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing
@@ -18,6 +19,9 @@ use ucs2;
 /// Dropping this structure will result in the file handle being closed.
 ///
 /// Files have names, and a fixed size.
+///
+/// FIXME: Currently, directories also map into this, but they are different
+///        enough to warrant a dedicated API.
 pub struct File<'a>(&'a mut FileImpl);
 
 impl<'a> File<'a> {
@@ -70,7 +74,7 @@ impl<'a> File<'a> {
 
     /// Closes and deletes this file
     ///
-    /// # Errors
+    /// # Warnings
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     pub fn delete(self) -> Result<()> {
         let result = (self.0.delete)(self.0).into();
@@ -82,15 +86,22 @@ impl<'a> File<'a> {
 
     /// Read data from file
     ///
-    /// Try to read as much as possible into `buffer`. Returns the number of bytes read
+    /// Try to read as much as possible into `buffer`. Returns the number of bytes read.
+    ///
+    /// When the File is actually a directory, the behaviour of this function changes completely,
+    /// and directory entries (type EFI_FILE_INFO) are read into the buffer one by one instead.
+    ///
+    /// FIXME: Currently, there is no nice API for this latter mechanism.
     ///
     /// # Arguments
     /// * `buffer`  The target buffer of the read operation
     ///
     /// # Errors
     /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error, the file was deleted,
+    ///                                      or the end of the file was reached before the `read()`.
     /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
+    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry.
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
         let mut buffer_size = buffer.len();
         unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) }
@@ -99,27 +110,36 @@ impl<'a> File<'a> {
 
     /// Write data to file
     ///
-    /// Write `buffer` to file, increment the file pointer and return number of bytes written
+    /// Write `buffer` to file, increment the file pointer.
+    ///
+    /// If an error occurs, returns the number of bytes that were actually written. If no error
+    /// occured, the entire buffer is guaranteed to have been written successfully.
+    ///
+    /// Opened directories cannot be written to.
     ///
     /// # Arguments
     /// * `buffer`  Buffer to write to file
     ///
     /// # Errors
+    /// * `uefi::Status::UNSUPPORTED`        Attempted to write in a directory.
     /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error or the file was deleted.
     /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
     /// * `uefi::Status::WRITE_PROTECTED`    Attempt to write to readonly file
     /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only.
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
-    pub fn write(&mut self, buffer: &[u8]) -> Result<usize> {
+    pub fn write(&mut self, buffer: &[u8]) -> result::Result<(), (Status, usize)> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.0.write)(self.0, &mut buffer_size, buffer.as_ptr()) }
-            .into_with(|| buffer_size)
+        match unsafe { (self.0.write)(self.0, &mut buffer_size, buffer.as_ptr()) } {
+            Status::SUCCESS => Ok(()),
+            error => Err((error, buffer_size)),
+        }
     }
 
     /// Get the file's current position
     ///
     /// # Errors
+    /// * `uefi::Status::UNSUPPORTED`    Attempted to get the position of an opened directory
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
@@ -129,13 +149,19 @@ impl<'a> File<'a> {
     /// Sets the file's current position
     ///
     /// Set the position of this file handle to the absolute position specified by `position`.
-    /// Seeking is not permitted outside the bounds of the file, except in the case
-    /// of 0xFFFFFFFFFFFFFFFF, in which case the position is set to the end of the file
+    ///
+    /// Seeking past the end of the file is allowed, it will trigger file growth on the next write.
+    ///
+    /// The special value 0xFFFF_FFFF_FFFF_FFFF may be used to seek to the end of the file.
+    ///
+    /// Seeking directories is only allowed with the special value 0, which has the effect of
+    /// resetting the enumeration of directory entries.
     ///
     /// # Arguments
     /// * `position` The new absolution position of the file handle
     ///
     /// # Errors
+    /// * `uefi::Status::UNSUPPORTED`    Attempted a nonzero seek on a directory.
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
     pub fn set_position(&mut self, position: u64) -> Result<()> {
         (self.0.set_position)(self.0, position).into()

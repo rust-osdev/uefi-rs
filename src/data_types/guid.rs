@@ -55,3 +55,10 @@ impl fmt::Display for Guid {
         )
     }
 }
+
+/// Several entities in the UEFI specification can be referred to by their GUID,
+/// this trait is a building block to interface this in uefi-rs.
+pub trait Identify {
+    /// Unique protocol identifier.
+    const GUID: Guid;
+}

@@ -15,7 +15,7 @@ pub struct Handle(*mut c_void);
 pub struct Event(*mut c_void);
 
 mod guid;
-pub use self::guid::Guid;
+pub use self::guid::{Guid, Identify};
 
 pub mod chars;
 pub use self::chars::{Char16, Char8};

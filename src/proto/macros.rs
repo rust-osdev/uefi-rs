@@ -21,12 +21,14 @@ macro_rules! impl_proto {
             GUID = $a:expr, $b:expr, $c:expr, $d:expr;
         }
     ) => {
-        impl $crate::proto::Protocol for $p {
+        impl $crate::Identify for $p {
             #[doc(hidden)]
             // These literals aren't meant to be human-readable.
             #[allow(clippy::unreadable_literal)]
             const GUID: $crate::Guid = $crate::Guid::from_values($a, $b, $c, $d);
         }
+
+        impl $crate::proto::Protocol for $p {}
 
         // Most UEFI functions expect to be called on the bootstrap processor.
         impl !Send for $p {}
@@ -38,12 +40,14 @@ macro_rules! impl_proto {
             GUID = $a:expr, $b:expr, $c:expr, $d:expr;
         }
     ) => {
-        impl<'boot> $crate::proto::Protocol for $p<'boot> {
+        impl<'boot> $crate::Identify for $p<'boot> {
             #[doc(hidden)]
             // These literals aren't meant to be human-readable.
             #[allow(clippy::unreadable_literal)]
             const GUID: $crate::Guid = $crate::Guid::from_values($a, $b, $c, $d);
         }
+
+        impl<'boot> $crate::proto::Protocol for $p<'boot> {}
 
         // Most UEFI functions expect to be called on the bootstrap processor.
         impl<'boot> !Send for $p<'boot> {}

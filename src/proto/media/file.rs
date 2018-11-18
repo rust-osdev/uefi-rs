@@ -5,12 +5,16 @@
 //! `/` on that volume, and with that file it is possible to enumerate and open
 //! all the other files on that volume.
 
+use crate::data_types::chars::NUL_16;
 use crate::prelude::*;
-use crate::{CStr16, Char16, Result, Status};
+use crate::table::runtime::Time;
+use crate::{CStr16, Char16, Guid, Identify, Result, Status};
 use bitflags::bitflags;
+use core::convert::TryInto;
 use core::mem;
 use core::ptr;
 use core::result;
+use core::slice;
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing
@@ -253,3 +257,130 @@ bitflags! {
         const VALID_ATTR = 0x37;
     }
 }
+
+/// Common trait for data structures that can be used with
+/// EFI_FILE_PROTOCOL.GetInfo() or EFI_FILE_PROTOCOL.SetInfo()
+trait FileProtocolInfo: Identify {}
+
+/// Generic file information
+#[repr(C)]
+pub struct FileInfo {
+    size: u64,
+    file_size: u64,
+    physical_size: u64,
+    create_time: Time,
+    last_access_time: Time,
+    modification_time: Time,
+    attribute: FileAttribute,
+    file_name: [Char16],
+}
+
+impl FileInfo {
+    /// Create a FileInfo structure
+    ///
+    /// The structure will be created in-place within the provided storage
+    /// buffer. The buffer must be large enough to hold the complete FileInfo
+    /// structure, including a null-terminated UCS-2 version of the file_name
+    /// string. A [u64] is requested because we need 64-bit alignment.
+    ///
+    pub fn new<'a>(
+        storage: &'a mut [u64],
+        file_size: u64,
+        physical_size: u64,
+        create_time: Time,
+        last_access_time: Time,
+        modification_time: Time,
+        attribute: FileAttribute,
+        file_name: &str,
+    ) -> result::Result<&'a mut FileInfo, FileInfoCreationError> {
+        // First, make sure that the user-provided storage is large enough
+        const HEADER_SIZE: usize = 3 * mem::size_of::<u64>()
+            + 3 * mem::size_of::<Time>()
+            + mem::size_of::<FileAttribute>();
+        let file_name_length_ucs2 = file_name.chars().count() + 1;
+        let file_name_size = file_name_length_ucs2 * mem::size_of::<u16>();
+        let file_info_size = HEADER_SIZE + file_name_size;
+        if file_info_size > storage.len() * mem::size_of::<u64>() {
+            return Err(FileInfoCreationError::InsufficientStorage(file_info_size));
+        }
+
+        // Next, build a suitably sized &mut FileInfo pointing into the storage.
+        // It is okay to do this, even if the FileInfo fields will get random
+        // invalid values, because no field has a nontrivial Drop impl, so we
+        // can overwrite them in safe code without risking Rust code interaction
+        // with the uninitialized value.
+        let file_info_ptr = unsafe {
+            slice::from_raw_parts_mut(storage.as_mut_ptr() as *mut u16, file_name_length_ucs2)
+                as *mut [u16] as *mut FileInfo
+        };
+        let file_info = unsafe { &mut *file_info_ptr };
+        debug_assert!(file_info.file_name.len() == file_name_length_ucs2);
+
+        // Finally, we can initialize the resulting FileInfo
+        file_info.size = file_info_size as u64;
+        file_info.file_size = file_size;
+        file_info.physical_size = physical_size;
+        file_info.create_time = create_time;
+        file_info.last_access_time = last_access_time;
+        file_info.modification_time = modification_time;
+        file_info.attribute = attribute;
+        for (target, ch) in file_info.file_name.iter_mut().zip(file_name.chars()) {
+            *target = ch
+                .try_into()
+                .map_err(|_| FileInfoCreationError::InvalidChar(ch))?;
+        }
+        file_info.file_name[file_name_length_ucs2 - 1] = NUL_16;
+        Ok(file_info)
+    }
+
+    /// Query the file size (number of bytes stored in the file)
+    pub fn file_size(&self) -> u64 {
+        self.file_size
+    }
+
+    /// Query the physical size (number of bytes used on the device)
+    pub fn physical_size(&self) -> u64 {
+        self.physical_size
+    }
+
+    /// Query the creation time
+    pub fn create_time(&self) -> &Time {
+        &self.create_time
+    }
+
+    /// Query the last access time
+    pub fn last_access_time(&self) -> &Time {
+        &self.last_access_time
+    }
+
+    /// Query the modification time
+    pub fn modification_time(&self) -> &Time {
+        &self.modification_time
+    }
+
+    /// Query the attributes
+    pub fn attribute(&self) -> FileAttribute {
+        self.attribute
+    }
+}
+
+/// The enum enumerates the things that can go wrong when creating a FileInfo
+pub enum FileInfoCreationError {
+    /// The provided buffer was too small to hold the FileInfo. You need at
+    /// least the indicated buffer size (in bytes).
+    InsufficientStorage(usize),
+
+    /// The suggested file name contains invalid code points (not in UCS-2)
+    InvalidChar(char),
+}
+
+impl Identify for FileInfo {
+    const GUID: Guid = Guid::from_values(
+        0x0957_6e92,
+        0x6d3f,
+        0x11d2,
+        [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
+    );
+}
+
+impl FileProtocolInfo for FileInfo {}

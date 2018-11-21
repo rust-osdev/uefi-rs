@@ -23,10 +23,10 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
+use crate::{Completion, Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
-use crate::{Completion, Result, Status};
 
 /// Provides access to the video hardware's frame buffer.
 ///
@@ -34,9 +34,12 @@ use crate::{Completion, Result, Status};
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
 pub struct GraphicsOutput<'boot> {
-    query_mode:
-        extern "win64" fn(&GraphicsOutput, mode: u32, info_sz: &mut usize, &mut *const ModeInfo)
-            -> Status,
+    query_mode: extern "win64" fn(
+        &GraphicsOutput,
+        mode: u32,
+        info_sz: &mut usize,
+        &mut *const ModeInfo,
+    ) -> Status,
     set_mode: extern "win64" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
     #[allow(clippy::type_complexity)]

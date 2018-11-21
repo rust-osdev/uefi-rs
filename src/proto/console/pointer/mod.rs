@@ -1,7 +1,7 @@
 //! Pointer device access.
 
-use core::mem;
 use crate::{Event, Result, Status};
+use core::mem;
 
 /// Provides information about a pointer device.
 #[repr(C)]

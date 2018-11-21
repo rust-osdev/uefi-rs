@@ -1,6 +1,6 @@
-use core::fmt;
 use crate::prelude::*;
 use crate::{CStr16, Char16, Completion, Result, Status};
+use core::fmt;
 
 /// Interface for text-based output devices.
 ///
@@ -11,8 +11,12 @@ pub struct Output<'boot> {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
     output_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
     test_string: extern "win64" fn(this: &Output, string: *const Char16) -> Status,
-    query_mode: extern "win64" fn(this: &Output, mode: i32, columns: &mut usize, rows: &mut usize)
-        -> Status,
+    query_mode: extern "win64" fn(
+        this: &Output,
+        mode: i32,
+        columns: &mut usize,
+        rows: &mut usize,
+    ) -> Status,
     set_mode: extern "win64" fn(this: &mut Output, mode: i32) -> Status,
     set_attribute: extern "win64" fn(this: &mut Output, attribute: usize) -> Status,
     clear_screen: extern "win64" fn(this: &mut Output) -> Status,

@@ -110,7 +110,7 @@ impl<'a, W: fmt::Write> fmt::Write for DecoratedLog<'a, W> {
         // beginning of a line of output.
         let first = lines.next().unwrap_or("");
         if self.at_line_start {
-            write!(self.backend, "{}: ", self.log_level);
+            write!(self.backend, "{}: ", self.log_level)?;
             self.at_line_start = false;
         }
         write!(self.backend, "{}", first)?;
@@ -118,14 +118,14 @@ impl<'a, W: fmt::Write> fmt::Write for DecoratedLog<'a, W> {
         // For the remainder of the line iterator (if any), we know that we are
         // truly at the beginning of lines of output.
         for line in lines {
-            write!(self.backend, "\n{}: {}", self.log_level, line);
+            write!(self.backend, "\n{}: {}", self.log_level, line)?;
         }
 
         // If the string ends with a newline character, we must 1/propagate it
         // to the output (it was swallowed by the iteration) and 2/prepare to
         // write the log level of the beginning of the next line (if any).
         if let Some('\n') = s.chars().next_back() {
-            writeln!(self.backend);
+            writeln!(self.backend)?;
             self.at_line_start = true;
         }
         Ok(())

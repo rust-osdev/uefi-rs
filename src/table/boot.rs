@@ -1,12 +1,12 @@
 //! UEFI services available during boot.
 
 use super::Header;
+use crate::proto::Protocol;
+use crate::{Event, Guid, Handle, Result, Status};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::{mem, ptr, result};
-use crate::proto::Protocol;
-use crate::{Event, Guid, Handle, Result, Status};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -18,9 +18,12 @@ pub struct BootServices {
     restore_tpl: extern "win64" fn(old_tpl: Tpl),
 
     // Memory allocation functions
-    allocate_pages:
-        extern "win64" fn(alloc_ty: u32, mem_ty: MemoryType, count: usize, addr: &mut u64)
-            -> Status,
+    allocate_pages: extern "win64" fn(
+        alloc_ty: u32,
+        mem_ty: MemoryType,
+        count: usize,
+        addr: &mut u64,
+    ) -> Status,
     free_pages: extern "win64" fn(addr: u64, pages: usize) -> Status,
     memory_map: extern "win64" fn(
         size: &mut usize,
@@ -42,9 +45,11 @@ pub struct BootServices {
         event: *mut Event,
     ) -> Status,
     set_timer: usize,
-    wait_for_event:
-        extern "win64" fn(number_of_events: usize, events: *mut Event, out_index: &mut usize)
-            -> Status,
+    wait_for_event: extern "win64" fn(
+        number_of_events: usize,
+        events: *mut Event,
+        out_index: &mut usize,
+    ) -> Status,
     signal_event: usize,
     close_event: usize,
     check_event: usize,
@@ -53,9 +58,11 @@ pub struct BootServices {
     install_protocol_interface: usize,
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
-    handle_protocol:
-        extern "win64" fn(handle: Handle, proto: *const Guid, out_proto: &mut *mut c_void)
-            -> Status,
+    handle_protocol: extern "win64" fn(
+        handle: Handle,
+        proto: *const Guid,
+        out_proto: &mut *mut c_void,
+    ) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
     locate_handle: extern "win64" fn(

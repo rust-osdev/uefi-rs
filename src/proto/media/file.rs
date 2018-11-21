@@ -5,11 +5,11 @@
 //! `/` on that volume, and with that file it is possible to enumerate and open
 //! all the other files on that volume.
 
+use crate::prelude::*;
+use crate::{CStr16, Char16, Result, Status};
 use bitflags::bitflags;
 use core::mem;
 use core::ptr;
-use crate::prelude::*;
-use crate::{CStr16, Char16, Result, Status};
 use ucs2;
 
 /// A file represents an abstraction of some contiguous block of data residing
@@ -185,8 +185,11 @@ pub(super) struct FileImpl {
     delete: extern "win64" fn(this: &mut FileImpl) -> Status,
     read:
         extern "win64" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *mut u8) -> Status,
-    write: extern "win64" fn(this: &mut FileImpl, buffer_size: &mut usize, buffer: *const u8)
-        -> Status,
+    write: extern "win64" fn(
+        this: &mut FileImpl,
+        buffer_size: &mut usize,
+        buffer: *const u8,
+    ) -> Status,
     get_position: extern "win64" fn(this: &mut FileImpl, position: &mut u64) -> Status,
     set_position: extern "win64" fn(this: &mut FileImpl, position: u64) -> Status,
     get_info: usize,

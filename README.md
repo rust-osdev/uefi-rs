@@ -1,6 +1,6 @@
 # uefi-rs
 
-[![Build Status](https://travis-ci.org/GabrielMajeri/uefi-rs.svg?branch=master)](https://travis-ci.org/GabrielMajeri/uefi-rs)
+[![Build Status](https://travis-ci.org/rust-osdev/uefi-rs.svg?branch=master)](https://travis-ci.org/rust-osdev/uefi-rs)
 
 ## Description
 

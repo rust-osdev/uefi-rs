@@ -315,7 +315,7 @@ impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
     fn new_impl<'a>(
         mut storage: &'a mut [u8],
         header: Header,
-        name: &str
+        name: &str,
     ) -> result::Result<&'a mut Self, FileInfoCreationError> {
         // Compute the degree of storage misalignment. mem::align_of does not
         // support dynamically sized types, so we must help it a bit.
@@ -338,7 +338,9 @@ impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
 
         // Write the header at the beginning of the storage
         let header_ptr = storage.as_mut_ptr() as *mut Header;
-        unsafe { header_ptr.write(header); }
+        unsafe {
+            header_ptr.write(header);
+        }
 
         // At this point, our storage contains a correct header, followed by
         // random rubbish. It is okay to reinterpret the rubbish as Char16s

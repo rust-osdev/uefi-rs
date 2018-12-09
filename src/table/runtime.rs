@@ -2,6 +2,7 @@
 
 use super::Header;
 use crate::{Result, Status};
+use bitflags::bitflags;
 use core::mem;
 use core::ptr;
 
@@ -98,6 +99,7 @@ bitflags! {
 
 impl Time {
     /// Build an UEFI time struct
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         year: u16,
         month: u8,

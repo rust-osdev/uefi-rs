@@ -261,7 +261,7 @@ bitflags! {
 }
 
 /// Common trait for data structures that can be used with
-/// EFI_FILE_PROTOCOL.GetInfo() or EFI_FILE_PROTOCOL.SetInfo().
+/// File::set_info() or File::set_info().
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 ///

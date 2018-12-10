@@ -173,6 +173,58 @@ impl<'a> File<'a> {
         (self.0.set_position)(self.0, position).into()
     }
 
+    /// Queries some information about a file
+    ///
+    /// The information will be written into a user-provided buffer.
+    /// If the buffer is too small, the required buffer size will be returned as part of the error.
+    ///
+    /// # Arguments
+    /// * `buffer`  Buffer that the information should be written into
+    ///
+    /// # Errors
+    /// * `uefi::Status::UNSUPPORTED`        The file does not possess this information type
+    /// * `uefi::Status::NO_MEDIA`           The device has no medium
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED`   The file system structures are corrupted
+    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small for the requested
+    pub fn get_info<Info: FileProtocolInfo>(
+        &mut self,
+        buffer: &mut [u8],
+    ) -> result::Result<&mut Info, (Status, usize)> {
+        let mut buffer_size = buffer.len();
+        match unsafe {
+            (self.0.get_info)(self.0, &Info::GUID, &mut buffer_size, buffer.as_mut_ptr())
+        } {
+            Status::SUCCESS => Ok(unsafe { Info::from_uefi(buffer.as_ptr() as *mut c_void) }),
+            Status::BUFFER_TOO_SMALL => Err((Status::BUFFER_TOO_SMALL, buffer_size)),
+            other => Err((other, 0)),
+        }
+    }
+
+    /// Sets some information about a file
+    ///
+    /// There are various restrictions on the information that may be modified using this method.
+    /// The simplest one is that it is usually not possible to call it on read-only media. Further
+    /// restrictions specific to a given given information type are described in the corresponding
+    /// FileProtocolInfo type.
+    ///
+    /// # Arguments
+    /// * `info`  Info that should be set for the file
+    ///
+    /// # Errors
+    /// * `uefi::Status::UNSUPPORTED`       The file does not possess this information type
+    /// * `uefi::Status::NO_MEDIA`          The device has no medium
+    /// * `uefi::Status::DEVICE_ERROR`      The device reported an error
+    /// * `uefi::Status::VOLUME_CORRUPTED`  The file system structures are corrupted
+    /// * `uefi::Status::WRITE_PROTECTED`   Attempted to set information on a read-only media
+    /// * `uefi::Status::ACCESS_DENIED`     Requested change is invalid for this information type
+    /// * `uefi::Status::VOLUME_FULL`       Not enough space left on the volume to change the info
+    pub fn set_info<Info: FileProtocolInfo>(&mut self, info: &Info) -> Result<()> {
+        let info_ptr = info as *const Info as *const c_void;
+        let info_size = mem::size_of_val(&info);
+        unsafe { (self.0.set_info)(self.0, &Info::GUID, info_size, info_ptr).into() }
+    }
+
     /// Flushes all modified data associated with the file handle to the device
     ///
     /// # Errors
@@ -229,8 +281,8 @@ pub(super) struct FileImpl {
     set_info: unsafe extern "win64" fn(
         this: &mut FileImpl,
         information_type: &Guid,
-        buffer_size: &usize,
-        buffer: *const u8,
+        buffer_size: usize,
+        buffer: *const c_void,
     ) -> Status,
     flush: extern "win64" fn(this: &mut FileImpl) -> Status,
 }
@@ -275,9 +327,9 @@ bitflags! {
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 ///
-trait FileProtocolInfo: Identify {
+pub trait FileProtocolInfo: Identify {
     /// Turn an UEFI-provided pointer-to-base into a Rust-style fat reference
-    unsafe fn from_uefi<'a>(ptr: *const c_void) -> &'a Self;
+    unsafe fn from_uefi<'a>(ptr: *mut c_void) -> &'a mut Self;
 }
 
 /// Dynamically sized FileProtocolInfo with a header and an UCS-2 name
@@ -382,14 +434,14 @@ impl<Header: FileProtocolInfoHeader> Identify for NamedFileProtocolInfo<Header> 
 
 impl<Header: FileProtocolInfoHeader> FileProtocolInfo for NamedFileProtocolInfo<Header> {
     #[allow(clippy::cast_ptr_alignment)]
-    unsafe fn from_uefi<'a>(raw_ptr: *const c_void) -> &'a Self {
-        let byte_ptr = raw_ptr as *const u8;
-        let name_ptr = byte_ptr.add(mem::size_of::<Header>()) as *const Char16;
+    unsafe fn from_uefi<'a>(raw_ptr: *mut c_void) -> &'a mut Self {
+        let byte_ptr = raw_ptr as *mut u8;
+        let name_ptr = byte_ptr.add(mem::size_of::<Header>()) as *mut Char16;
         let name = CStr16::from_ptr(name_ptr);
         let name_len = name.to_u16_slice_with_nul().len();
-        let fat_ptr = slice::from_raw_parts(raw_ptr as *const Char16, name_len);
-        let self_ptr = fat_ptr as *const [Char16] as *const Self;
-        &*self_ptr
+        let fat_ptr = slice::from_raw_parts_mut(raw_ptr as *mut Char16, name_len);
+        let self_ptr = fat_ptr as *mut [Char16] as *mut Self;
+        &mut *self_ptr
     }
 }
 
@@ -438,6 +490,10 @@ unsafe impl FileProtocolInfoHeader for FileInfoHeader {
 ///   file’s actual type.
 /// - A value of zero in create_time, last_access, or modification_time causes
 ///   the fields to be ignored (and not updated).
+/// - It is forbidden to change the name of a file to the name of another
+///   existing file in the same directory.
+/// - If a file is read-only, the only allowed change is to remove the read-only
+///   attribute. Other changes must be carried out in a separate transaction.
 ///
 pub type FileInfo = NamedFileProtocolInfo<FileInfoHeader>;
 

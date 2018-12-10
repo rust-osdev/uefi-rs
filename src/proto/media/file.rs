@@ -220,8 +220,18 @@ pub(super) struct FileImpl {
     ) -> Status,
     get_position: extern "win64" fn(this: &mut FileImpl, position: &mut u64) -> Status,
     set_position: extern "win64" fn(this: &mut FileImpl, position: u64) -> Status,
-    get_info: usize,
-    set_info: usize,
+    get_info: unsafe extern "win64" fn(
+        this: &mut FileImpl,
+        information_type: &Guid,
+        buffer_size: &mut usize,
+        buffer: *mut u8,
+    ) -> Status,
+    set_info: unsafe extern "win64" fn(
+        this: &mut FileImpl,
+        information_type: &Guid,
+        buffer_size: &usize,
+        buffer: *const u8,
+    ) -> Status,
     flush: extern "win64" fn(this: &mut FileImpl) -> Status,
 }
 

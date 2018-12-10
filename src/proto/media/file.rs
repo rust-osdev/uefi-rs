@@ -26,8 +26,8 @@ use ucs2;
 ///
 /// Files have names, and a fixed size.
 ///
-/// FIXME: Currently, directories also map into this, but they are different
-///        enough to warrant a dedicated API.
+/// A File may also be used to access a directory, although doing so is awkward. If you know that
+/// a file is a directory, consider wrapping it into a Directory for improved ergonomics.
 pub struct File<'a>(&'a mut FileImpl);
 
 impl<'a> File<'a> {
@@ -92,12 +92,17 @@ impl<'a> File<'a> {
 
     /// Read data from file
     ///
-    /// Try to read as much as possible into `buffer`. Returns the number of bytes read.
+    /// If the file is not a directory, try to read as much as possible into `buffer`. Returns the
+    /// number of bytes that were actually read.
     ///
-    /// When the File is actually a directory, the behaviour of this function changes completely,
-    /// and directory entries (type EFI_FILE_INFO) are read into the buffer one by one instead.
+    /// If the file is a directory, try to read the next directory entry, which is a FileInfo, into
+    /// `buffer`. If it is too small, report the required buffer size as part of the error. If there
+    /// are no more directory entries, report success as if zero bytes were read. Note that you
+    /// should provide a buffer which is suitably aligned for holding a FileInfo in this case, or
+    /// be prepared to only manipulate your data via ptr::read_unaligned.
     ///
-    /// FIXME: Currently, there is no nice API for this latter mechanism.
+    /// Because enumerating directory entries is so involved, it is recommended to wrap the File
+    /// into a Directory if you intend to do it.
     ///
     /// # Arguments
     /// * `buffer`  The target buffer of the read operation
@@ -108,10 +113,13 @@ impl<'a> File<'a> {
     ///                                      or the end of the file was reached before the `read()`.
     /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
     /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry.
-    pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
+    pub fn read(&mut self, buffer: &mut [u8]) -> result::Result<usize, (Status, usize)> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) }
-            .into_with(|| buffer_size)
+        match unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) } {
+            Status::SUCCESS => Ok(buffer_size),
+            e @ Status::BUFFER_TOO_SMALL => Err((e, buffer_size)),
+            other => Err((other, 0)),
+        }
     }
 
     /// Write data to file
@@ -247,6 +255,98 @@ impl<'a> Drop for File<'a> {
     }
 }
 
+/// File wrapper for handling directories
+///
+/// The File abstraction can handle directories, but does so in a very roundabout way. A dedicated
+/// abstraction for directory handling that wraps the unintuitive File API is therefore desirable.
+pub struct Directory<'a>(File<'a>);
+
+impl<'a> Directory<'a> {
+    /// Wrap a File handle into a Directory
+    ///
+    /// You should have made sure that the file is indeed a directory beforehand, using
+    /// `file.get_info<FileInfo>(...)`. We cannot do it for you because this requires an unbounded
+    /// amount of memory and we refrain from calling the UEFI allocator implicitly.
+    pub unsafe fn from_file(file: File<'a>) -> Self {
+        Directory(file)
+    }
+
+    /// Close this directory handle. Same as dropping this structure.
+    pub fn close(self) {}
+
+    /// Closes and deletes this directory
+    ///
+    /// This simply forwards to the underlying `File::delete` implementation
+    pub fn delete(self) -> Result<()> {
+        self.0.delete()
+    }
+
+    /// Read the next directory entry
+    ///
+    /// Try to read the next directory entry into `buffer`. If the buffer is too small, report the
+    /// required buffer size as part of the error. If there are no more directory entries, return
+    /// an empty optional.
+    ///
+    /// You should make sure that the buffer is correctly aligned for storing a FileInfo. If it
+    /// isn't, the first few bytes of storage will be skipped to correct the alignment. Please note
+    /// that this reduces the effective storage capacity of the buffer.
+    ///
+    /// # Arguments
+    /// * `buffer`  The target buffer of the read operation
+    ///
+    /// # Errors
+    /// * `uefi::Status::NO_MEDIA`           The device has no media
+    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error, the file was deleted,
+    ///                                      or the end of the file was reached before the `read()`.
+    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
+    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry.
+    pub fn read_entry(
+        &mut self,
+        mut buffer: &mut [u8],
+    ) -> result::Result<Option<&'a mut FileInfo>, (Status, usize)> {
+        // Correct the alignment of the buffer
+        buffer = FileInfo::realign_storage(buffer);
+
+        // Read the directory entry into the aligned storage
+        self.0.read(buffer).map(|size| {
+            if size != 0 {
+                unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr() as *mut c_void)) }
+            } else {
+                None
+            }
+        })
+    }
+
+    /// Start over the process of enumerating directory entries
+    pub fn reset_entry_readout(&mut self) -> Result<()> {
+        self.0.set_position(0)
+    }
+
+    /// Queries some information about a directory
+    ///
+    /// This simply forwards to the underlying `File::get_info` implementation
+    pub fn get_info<Info: FileProtocolInfo>(
+        &mut self,
+        buffer: &mut [u8],
+    ) -> result::Result<&mut Info, (Status, usize)> {
+        self.0.get_info::<Info>(buffer)
+    }
+
+    /// Sets some information about a directory
+    ///
+    /// This simply forwards to the underlying `File::set_info` implementation
+    pub fn set_info<Info: FileProtocolInfo>(&mut self, info: &Info) -> Result<()> {
+        self.0.set_info(info)
+    }
+
+    /// Flushes all modified data associated with the directory to the device
+    ///
+    /// This simply forwards to the underlying `File::flush` implementation
+    pub fn flush(&mut self) -> Result<()> {
+        self.0.flush()
+    }
+}
+
 /// The function pointer table for the File protocol.
 #[repr(C)]
 pub(super) struct FileImpl {
@@ -326,7 +426,6 @@ bitflags! {
 /// File::set_info() or File::set_info().
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
-///
 pub trait FileProtocolInfo: Identify {
     /// Turn an UEFI-provided pointer-to-base into a Rust-style fat reference
     unsafe fn from_uefi<'a>(ptr: *mut c_void) -> &'a mut Self;
@@ -343,7 +442,6 @@ pub trait FileProtocolInfo: Identify {
 /// The reason why this struct covers the whole DST, as opposed to the [Char16]
 /// part only, is that pointers to DSTs are created in a rather unintuitive way
 /// that is best kept centralized in one place.
-///
 #[repr(C)]
 pub struct NamedFileProtocolInfo<Header: FileProtocolInfoHeader> {
     header: Header,
@@ -356,13 +454,34 @@ pub struct NamedFileProtocolInfo<Header: FileProtocolInfoHeader> {
 ///
 /// - The GUID matches an info structure definition in the UEFI File Protocol
 /// - The header type's data layout matches the UEFI specification
-///
 pub unsafe trait FileProtocolInfoHeader {
     /// GUID of the full NamedFileProtocolInfo
     const GUID: Guid;
 }
 
 impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
+    /// Correct the alignment of a storage buffer for this type by discarding the first few bytes
+    ///
+    /// Return an empty slice if the storage is not large enough to perform this operation
+    fn realign_storage(mut storage: &mut [u8]) -> &mut [u8] {
+        // Compute the degree of storage misalignment. mem::align_of does not
+        // support dynamically sized types, so we must help it a bit.
+        let storage_address = storage.as_ptr() as usize;
+        let info_alignment = cmp::max(mem::align_of::<Header>(), mem::align_of::<Char16>());
+        let storage_misalignment = storage_address % info_alignment;
+        let realignment_padding = info_alignment - storage_misalignment;
+
+        // Return an empty slice if the storage is too small to be realigned
+        if storage.len() < realignment_padding {
+            return &mut [];
+        }
+
+        // If the storage is large enough, realign it and return
+        storage = &mut storage[realignment_padding..];
+        debug_assert_eq!((storage.as_ptr() as usize) % info_alignment, 0);
+        storage
+    }
+
     /// Create a NamedFileProtocolInfo structure in user-provided storage
     ///
     /// The structure will be created in-place within the provided storage
@@ -372,31 +491,22 @@ impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
     /// The buffer should be suitably aligned for the full data structure. If
     /// it is not, some bytes at the beginning of the buffer will not be used,
     /// resulting in a reduction of effective storage capacity.
-    ///
     #[allow(clippy::cast_ptr_alignment)]
     fn new_impl<'a>(
         mut storage: &'a mut [u8],
         header: Header,
         name: &str,
     ) -> result::Result<&'a mut Self, FileInfoCreationError> {
-        // Compute the degree of storage misalignment. mem::align_of does not
-        // support dynamically sized types, so we must help it a bit.
-        let storage_address = storage.as_ptr() as usize;
-        let info_alignment = cmp::max(mem::align_of::<Header>(), mem::align_of::<Char16>());
-        let storage_misalignment = storage_address % info_alignment;
-        let realignment_padding = info_alignment - storage_misalignment;
+        // Try to realign the storage in preparation for storing this type
+        storage = Self::realign_storage(storage);
 
         // Make sure that the storage is large enough for our needs
         let name_length_ucs2 = name.chars().count() + 1;
         let name_size = name_length_ucs2 * mem::size_of::<Char16>();
         let info_size = mem::size_of::<Header>() + name_size;
-        if realignment_padding + info_size > storage.len() {
+        if storage.len() < info_size {
             return Err(FileInfoCreationError::InsufficientStorage(info_size));
         }
-
-        // Work on a correctly aligned subset of the storage
-        storage = &mut storage[realignment_padding..];
-        debug_assert_eq!((storage.as_ptr() as usize) % info_alignment, 0);
 
         // Write the header at the beginning of the storage
         let header_ptr = storage.as_mut_ptr() as *mut Header;
@@ -494,7 +604,6 @@ unsafe impl FileProtocolInfoHeader for FileInfoHeader {
 ///   existing file in the same directory.
 /// - If a file is read-only, the only allowed change is to remove the read-only
 ///   attribute. Other changes must be carried out in a separate transaction.
-///
 pub type FileInfo = NamedFileProtocolInfo<FileInfoHeader>;
 
 impl FileInfo {
@@ -594,7 +703,6 @@ unsafe impl FileProtocolInfoHeader for FileSystemInfoHeader {
 ///
 /// Please note that only the system volume's volume label may be set using
 /// this information structure. Consider using FileSystemVolumeLabel instead.
-///
 pub type FileSystemInfo = NamedFileProtocolInfo<FileSystemInfoHeader>;
 
 impl FileSystemInfo {
@@ -607,7 +715,6 @@ impl FileSystemInfo {
     /// The buffer should be suitably aligned for the full data structure. If
     /// it is not, some bytes at the beginning of the buffer will not be used,
     /// resulting in a reduction of effective storage capacity.
-    ///
     #[allow(clippy::too_many_arguments)]
     pub fn new<'a>(
         storage: &'a mut [u8],
@@ -671,7 +778,6 @@ unsafe impl FileProtocolInfoHeader for FileSystemVolumeLabelHeader {
 /// System volume label
 ///
 /// May only be obtained on the root directory's file handle.
-///
 pub type FileSystemVolumeLabel = NamedFileProtocolInfo<FileSystemVolumeLabelHeader>;
 
 impl FileSystemVolumeLabel {
@@ -684,7 +790,6 @@ impl FileSystemVolumeLabel {
     /// The buffer should be suitably aligned for the full data structure. If
     /// it is not, some bytes at the beginning of the buffer will not be used,
     /// resulting in a reduction of effective storage capacity.
-    ///
     pub fn new<'a>(
         storage: &'a mut [u8],
         volume_label: &str,

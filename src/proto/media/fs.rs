@@ -1,6 +1,6 @@
 //! File system support protocols.
 
-use super::file::{File, FileImpl};
+use super::file::{Directory, File, FileImpl};
 use crate::{Result, Status};
 use core::ptr;
 
@@ -25,9 +25,10 @@ impl SimpleFileSystem {
     /// * `uefi::Status::ACCESS_DENIED` - The service denied access to the file
     /// * `uefi::Status::OUT_OF_RESOURCES` - The volume was not opened
     /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
-    pub fn open_volume(&mut self) -> Result<File> {
+    pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
-        (self.open_volume)(self, &mut ptr).into_with(|| unsafe { File::new(ptr) })
+        (self.open_volume)(self, &mut ptr)
+            .into_with(|| unsafe { Directory::from_file(File::new(ptr)) })
     }
 }
 

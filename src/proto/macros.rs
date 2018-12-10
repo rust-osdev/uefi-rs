@@ -21,7 +21,7 @@ macro_rules! impl_proto {
             GUID = $a:expr, $b:expr, $c:expr, $d:expr;
         }
     ) => {
-        impl $crate::Identify for $p {
+        unsafe impl $crate::Identify for $p {
             #[doc(hidden)]
             // These literals aren't meant to be human-readable.
             #[allow(clippy::unreadable_literal)]
@@ -40,7 +40,7 @@ macro_rules! impl_proto {
             GUID = $a:expr, $b:expr, $c:expr, $d:expr;
         }
     ) => {
-        impl<'boot> $crate::Identify for $p<'boot> {
+        unsafe impl<'boot> $crate::Identify for $p<'boot> {
             #[doc(hidden)]
             // These literals aren't meant to be human-readable.
             #[allow(clippy::unreadable_literal)]

@@ -428,7 +428,7 @@ impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
     }
 }
 
-impl<Header: FileProtocolInfoHeader> Identify for NamedFileProtocolInfo<Header> {
+unsafe impl<Header: FileProtocolInfoHeader> Identify for NamedFileProtocolInfo<Header> {
     const GUID: Guid = Header::GUID;
 }
 

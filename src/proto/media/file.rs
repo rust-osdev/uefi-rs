@@ -271,6 +271,18 @@ impl<'a> Directory<'a> {
         Directory(file)
     }
 
+    /// Try to open a file relative to this directory.
+    ///
+    /// This simply forwards to the underlying `File::open` implementation
+    pub fn open(
+        &mut self,
+        filename: &str,
+        open_mode: FileMode,
+        attributes: FileAttribute,
+    ) -> Result<File> {
+        self.0.open(filename, open_mode, attributes)
+    }
+
     /// Close this directory handle. Same as dropping this structure.
     pub fn close(self) {}
 

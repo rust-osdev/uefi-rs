@@ -404,6 +404,7 @@ pub(super) struct FileImpl {
 /// SAFETY: Using a repr(C) enum is safe here because this type is only sent to
 ///         the UEFI implementation, and never received from it.
 ///
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u64)]
 pub enum FileMode {
     /// The file can be read from

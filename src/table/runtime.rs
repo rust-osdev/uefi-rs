@@ -72,6 +72,7 @@ impl super::Table for RuntimeServices {
 }
 
 /// The current time information
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct Time {
     year: u16,  // 1900 - 9999
@@ -185,6 +186,7 @@ impl Time {
 }
 
 /// Real time clock capabilities
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct TimeCapabilities {
     /// Reporting resolution of the clock in counts per second. 1 for a normal

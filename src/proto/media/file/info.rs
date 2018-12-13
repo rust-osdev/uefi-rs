@@ -1,7 +1,7 @@
-use super::{FileAttribute};
-use crate::{Char16, CStr16, Guid, Identify};
+use super::FileAttribute;
 use crate::data_types::chars::NUL_16;
 use crate::table::runtime::Time;
+use crate::{CStr16, Char16, Guid, Identify};
 use core::cmp;
 use core::convert::TryInto;
 use core::ffi::c_void;

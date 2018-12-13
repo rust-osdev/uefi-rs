@@ -1,5 +1,5 @@
-use crate::{Result, Status};
 use super::{File, FileAttribute, FileInfo, FileMode, FileProtocolInfo, FromUefi};
+use crate::{Result, Status};
 use core::ffi::c_void;
 use core::result;
 

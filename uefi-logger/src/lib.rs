@@ -52,7 +52,7 @@ impl Logger {
 
 impl<'boot> log::Log for Logger {
     fn enabled(&self, _metadata: &log::Metadata) -> bool {
-        true
+        self.writer.is_some()
     }
 
     fn log(&self, record: &log::Record) {

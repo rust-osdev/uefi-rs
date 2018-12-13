@@ -439,8 +439,15 @@ bitflags! {
 /// File::set_info() or File::set_info().
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
-pub trait FileProtocolInfo: Identify {
-    /// Turn an UEFI-provided pointer-to-base into a Rust-style fat reference
+pub trait FileProtocolInfo: Identify + FromUefi {}
+
+/// Trait for going from an UEFI-originated pointer to a Rust reference
+///
+/// This is trivial for Sized types, but requires some work when operating on
+/// dynamic-sized types like NamedFileProtocolInfo, as the second member of the
+/// fat pointer must be reconstructed using hidden UEFI-provided metadata.
+pub trait FromUefi {
+    /// Turn an UEFI-provided pointer-to-base into a (possibly fat) Rust reference
     unsafe fn from_uefi<'a>(ptr: *mut c_void) -> &'a mut Self;
 }
 
@@ -456,23 +463,12 @@ pub trait FileProtocolInfo: Identify {
 /// part only, is that pointers to DSTs are created in a rather unintuitive way
 /// that is best kept centralized in one place.
 #[repr(C)]
-pub struct NamedFileProtocolInfo<Header: FileProtocolInfoHeader> {
+pub struct NamedFileProtocolInfo<Header> {
     header: Header,
     name: [Char16],
 }
 
-/// Common properties of headers that can be used inside NamedFileProtocolInfo
-///
-/// The safety of NamedFileProtocolInfo relies on the following conditions:
-///
-/// - The GUID matches an info structure definition in the UEFI File Protocol
-/// - The header type's data layout matches the UEFI specification
-pub unsafe trait FileProtocolInfoHeader {
-    /// GUID of the full NamedFileProtocolInfo
-    const GUID: Guid;
-}
-
-impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
+impl<Header> NamedFileProtocolInfo<Header> {
     /// Correct the alignment of a storage buffer for this type by discarding the first few bytes
     ///
     /// Return an empty slice if the storage is not large enough to perform this operation
@@ -551,11 +547,7 @@ impl<Header: FileProtocolInfoHeader> NamedFileProtocolInfo<Header> {
     }
 }
 
-unsafe impl<Header: FileProtocolInfoHeader> Identify for NamedFileProtocolInfo<Header> {
-    const GUID: Guid = Header::GUID;
-}
-
-impl<Header: FileProtocolInfoHeader> FileProtocolInfo for NamedFileProtocolInfo<Header> {
+impl<Header> FromUefi for NamedFileProtocolInfo<Header> {
     #[allow(clippy::cast_ptr_alignment)]
     unsafe fn from_uefi<'a>(raw_ptr: *mut c_void) -> &'a mut Self {
         let byte_ptr = raw_ptr as *mut u8;
@@ -579,27 +571,6 @@ pub enum FileInfoCreationError {
     InvalidChar(char),
 }
 
-/// Header for generic file information
-#[repr(C)]
-pub struct FileInfoHeader {
-    size: u64,
-    file_size: u64,
-    physical_size: u64,
-    create_time: Time,
-    last_access_time: Time,
-    modification_time: Time,
-    attribute: FileAttribute,
-}
-
-unsafe impl FileProtocolInfoHeader for FileInfoHeader {
-    const GUID: Guid = Guid::from_values(
-        0x0957_6e92,
-        0x6d3f,
-        0x11d2,
-        [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
-    );
-}
-
 /// Generic file information
 ///
 /// The following rules apply when using this struct with set_info():
@@ -618,6 +589,27 @@ unsafe impl FileProtocolInfoHeader for FileInfoHeader {
 /// - If a file is read-only, the only allowed change is to remove the read-only
 ///   attribute. Other changes must be carried out in a separate transaction.
 pub type FileInfo = NamedFileProtocolInfo<FileInfoHeader>;
+
+/// Header for generic file information
+#[repr(C)]
+pub struct FileInfoHeader {
+    size: u64,
+    file_size: u64,
+    physical_size: u64,
+    create_time: Time,
+    last_access_time: Time,
+    modification_time: Time,
+    attribute: FileAttribute,
+}
+
+unsafe impl Identify for FileInfo {
+    const GUID: Guid = Guid::from_values(
+        0x0957_6e92,
+        0x6d3f,
+        0x11d2,
+        [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
+    );
+}
 
 impl FileInfo {
     /// Create a FileInfo structure
@@ -691,6 +683,16 @@ impl FileInfo {
     }
 }
 
+impl FileProtocolInfo for FileInfo {}
+
+/// System volume information
+///
+/// May only be obtained on the root directory's file handle.
+///
+/// Please note that only the system volume's volume label may be set using
+/// this information structure. Consider using FileSystemVolumeLabel instead.
+pub type FileSystemInfo = NamedFileProtocolInfo<FileSystemInfoHeader>;
+
 /// Header for system volume information
 #[repr(C)]
 pub struct FileSystemInfoHeader {
@@ -701,7 +703,7 @@ pub struct FileSystemInfoHeader {
     block_size: u32,
 }
 
-unsafe impl FileProtocolInfoHeader for FileSystemInfoHeader {
+unsafe impl Identify for FileSystemInfo {
     const GUID: Guid = Guid::from_values(
         0x0957_6e93,
         0x6d3f,
@@ -709,14 +711,6 @@ unsafe impl FileProtocolInfoHeader for FileSystemInfoHeader {
         [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
     );
 }
-
-/// System volume information
-///
-/// May only be obtained on the root directory's file handle.
-///
-/// Please note that only the system volume's volume label may be set using
-/// this information structure. Consider using FileSystemVolumeLabel instead.
-pub type FileSystemInfo = NamedFileProtocolInfo<FileSystemInfoHeader>;
 
 impl FileSystemInfo {
     /// Create a FileSystemInfo structure
@@ -775,11 +769,18 @@ impl FileSystemInfo {
     }
 }
 
+impl FileProtocolInfo for FileSystemInfo {}
+
+/// System volume label
+///
+/// May only be obtained on the root directory's file handle.
+pub type FileSystemVolumeLabel = NamedFileProtocolInfo<FileSystemVolumeLabelHeader>;
+
 /// Header for system volume label information
 #[repr(C)]
 pub struct FileSystemVolumeLabelHeader {}
 
-unsafe impl FileProtocolInfoHeader for FileSystemVolumeLabelHeader {
+unsafe impl Identify for FileSystemVolumeLabel {
     const GUID: Guid = Guid::from_values(
         0xdb47_d7d3,
         0xfe81,
@@ -787,11 +788,6 @@ unsafe impl FileProtocolInfoHeader for FileSystemVolumeLabelHeader {
         [0x9a, 0x35, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d],
     );
 }
-
-/// System volume label
-///
-/// May only be obtained on the root directory's file handle.
-pub type FileSystemVolumeLabel = NamedFileProtocolInfo<FileSystemVolumeLabelHeader>;
 
 impl FileSystemVolumeLabel {
     /// Create a FileSystemVolumeLabel structure
@@ -816,3 +812,5 @@ impl FileSystemVolumeLabel {
         unsafe { CStr16::from_ptr(&self.name[0]) }
     }
 }
+
+impl FileProtocolInfo for FileSystemVolumeLabel {}

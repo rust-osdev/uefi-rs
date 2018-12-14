@@ -475,6 +475,9 @@ pub enum Tpl: usize => {
     HIGH_LEVEL  = 31,
 }}
 
+/// RAII guard for task priority level changes
+///
+/// Will automatically restore the former task priority level when dropped.
 pub struct TplGuard<'a> {
     boot_services: &'a BootServices,
     old_tpl: Tpl,

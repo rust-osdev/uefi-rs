@@ -58,14 +58,11 @@ pub struct BootServices {
     install_protocol_interface: usize,
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
-    handle_protocol: extern "win64" fn(
-        handle: Handle,
-        proto: *const Guid,
-        out_proto: &mut *mut c_void,
-    ) -> Status,
+    handle_protocol:
+        extern "win64" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
-    locate_handle: extern "win64" fn(
+    locate_handle: unsafe extern "win64" fn(
         search_ty: i32,
         proto: *const Guid,
         key: *mut c_void,
@@ -355,7 +352,7 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
         };
 
-        let status = (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer);
+        let status = unsafe { (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
 
         // Must convert the returned size (in bytes) to length (number of elements).
         let buffer_len = buffer_size / handle_size;

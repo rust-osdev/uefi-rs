@@ -110,8 +110,8 @@ pub struct BootServices {
     calculate_crc32: usize,
 
     // Misc services
-    copy_mem: extern "win64" fn(dest: *mut u8, src: *const u8, len: usize),
-    set_mem: extern "win64" fn(buffer: *mut u8, len: usize, value: u8),
+    copy_mem: unsafe extern "win64" fn(dest: *mut u8, src: *const u8, len: usize),
+    set_mem: unsafe extern "win64" fn(buffer: *mut u8, len: usize, value: u8),
 
     // New event functions (UEFI 2.0 or newer)
     create_event_ex: usize,

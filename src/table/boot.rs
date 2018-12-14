@@ -83,7 +83,7 @@ pub struct BootServices {
     // Misc services
     get_next_monotonic_count: usize,
     stall: extern "win64" fn(microseconds: usize) -> Status,
-    set_watchdog_timer: extern "win64" fn(
+    set_watchdog_timer: unsafe extern "win64" fn(
         timeout: usize,
         watchdog_code: u64,
         data_size: usize,
@@ -403,8 +403,7 @@ impl BootServices {
     /// allows you to change what will be logged when the timer expires.
     ///
     /// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
-    /// firmware use. You should therefore only use them if instructed to do so
-    /// by firmware-specific documentation. Higher values can be used freely.
+    /// firmware use. Higher values can be used freely by applications.
     ///
     /// If provided, the watchdog data must be a null-terminated string
     /// optionally followed by other binary data.
@@ -414,17 +413,22 @@ impl BootServices {
         watchdog_code: u64,
         data: Option<&mut [u16]>,
     ) -> Result<()> {
+        assert!(
+            watchdog_code > 0xffff,
+            "Invalid use of a reserved firmware watchdog code"
+        );
+
         let (data_len, data) = data
             .map(|d| {
                 assert!(
                     d.contains(&0),
-                    "Watchdog data must contain a null-terminated string"
+                    "Watchdog data must start with a null-terminated string"
                 );
                 (d.len(), d.as_mut_ptr())
             })
             .unwrap_or((0, ptr::null_mut()));
 
-        (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data).into()
+        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
     }
 
     /// Copies memory from source to destination. The buffers can overlap.

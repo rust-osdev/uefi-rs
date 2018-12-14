@@ -10,8 +10,10 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
+use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
+use uefi::table::boot::MemoryDescriptor;
 use uefi_exts::BootServicesExt;
 
 mod boot;
@@ -61,7 +63,6 @@ fn check_revision(rev: uefi::table::Revision) {
 /// This functionality is very specific to our QEMU-based test runner. Outside
 /// of it, we just pause the tests for a couple of seconds to allow visual
 /// inspection of the output.
-///
 fn check_screenshot(bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
         // Access the serial port (in a QEMU environment, it should always be there)
@@ -115,7 +116,8 @@ fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
     }
 
     // Exit boot services as a proof that it works :)
-    let max_mmap_size = st.boot_services().memory_map_size() + 1024;
+    let max_mmap_size =
+        st.boot_services().memory_map_size() + 8 * mem::size_of::<MemoryDescriptor>();
     let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
     let (st, _iter) = st
         .exit_boot_services(image, &mut mmap_storage[..])

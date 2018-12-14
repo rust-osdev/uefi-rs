@@ -5,7 +5,7 @@ use core::mem;
 #[repr(C)]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut Key) -> Status,
+    read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut RawKey) -> Status,
     wait_for_key: Event,
 }
 
@@ -35,7 +35,7 @@ impl Input {
 
         match (self.read_key_stroke)(self, &mut key) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with(|| Some(key)),
+            other => other.into_with(|| Some(key.into())),
         }
     }
 
@@ -46,11 +46,31 @@ impl Input {
     }
 }
 
-/// A key read from the console.
+/// A key read from the console (high-level version)
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Key {
+    /// The key is associated with a printable Unicode character
+    Printable(Char16),
+
+    /// The key is special (arrow, function, multimedia...)
+    Special(ScanCode),
+}
+
+impl From<RawKey> for Key {
+    fn from(k: RawKey) -> Key {
+        if k.scan_code == ScanCode::NULL {
+            Key::Printable(k.unicode_char)
+        } else {
+            Key::Special(k.scan_code)
+        }
+    }
+}
+
+/// A key read from the console (UEFI version)
 #[repr(C)]
-pub struct Key {
+pub struct RawKey {
     /// The key's scan code.
+    /// or 0 if printable
     pub scan_code: ScanCode,
     /// Associated Unicode character,
     /// or 0 if not printable.

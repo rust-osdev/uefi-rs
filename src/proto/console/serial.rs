@@ -27,8 +27,8 @@ pub struct Serial<'boot> {
     ) -> Status,
     set_control_bits: extern "win64" fn(&mut Serial, ControlBits) -> Status,
     get_control_bits: extern "win64" fn(&Serial, &mut ControlBits) -> Status,
-    write: extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
-    read: extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
+    write: unsafe extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
+    read: unsafe extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
     io_mode: &'boot IoMode,
 }
 
@@ -36,6 +36,11 @@ impl<'boot> Serial<'boot> {
     /// Reset the device.
     pub fn reset(&mut self) -> Result<()> {
         (self.reset)(self).into()
+    }
+
+    /// Returns the current I/O mode.
+    pub fn io_mode(&self) -> &IoMode {
+        self.io_mode
     }
 
     /// Sets the device's new attributes.
@@ -64,34 +69,18 @@ impl<'boot> Serial<'boot> {
         .into()
     }
 
-    /// Sets the device's new control bits.
-    ///
-    /// Not all bits can be modified with this function. A mask of the allowed
-    /// bits is stored in the [`ControlBits::SETTABLE`] constant.
-    pub fn set_control_bits(&mut self, bits: ControlBits) -> Result<()> {
-        (self.set_control_bits)(self, bits).into()
-    }
-
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
         (self.get_control_bits)(self, &mut bits).into_with(|| bits)
     }
 
-    /// Writes data to this device.
+    /// Sets the device's new control bits.
     ///
-    /// Returns the number of bytes actually written to the device.
-    /// In the case of a timeout, this number will be smaller than
-    /// the buffer's size.
-    ///
-    /// Unlike UEFI, we handle timeouts as warnings, not errors
-    pub fn write(&mut self, data: &[u8]) -> Result<usize> {
-        let mut buffer_size = data.len();
-
-        match (self.write)(self, &mut buffer_size, data.as_ptr()) {
-            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
-            other => other.into_with(|| buffer_size),
-        }
+    /// Not all bits can be modified with this function. A mask of the allowed
+    /// bits is stored in the [`ControlBits::SETTABLE`] constant.
+    pub fn set_control_bits(&mut self, bits: ControlBits) -> Result<()> {
+        (self.set_control_bits)(self, bits).into()
     }
 
     /// Reads data from this device.
@@ -104,15 +93,26 @@ impl<'boot> Serial<'boot> {
     pub fn read(&mut self, data: &mut [u8]) -> Result<usize> {
         let mut buffer_size = data.len();
 
-        match (self.read)(self, &mut buffer_size, data.as_mut_ptr()) {
+        match unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) } {
             s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
             other => other.into_with(|| buffer_size),
         }
     }
 
-    /// Returns the current I/O mode.
-    pub fn io_mode(&self) -> &IoMode {
-        self.io_mode
+    /// Writes data to this device.
+    ///
+    /// Returns the number of bytes actually written to the device.
+    /// In the case of a timeout, this number will be smaller than
+    /// the buffer's size.
+    ///
+    /// Unlike UEFI, we handle timeouts as warnings, not errors
+    pub fn write(&mut self, data: &[u8]) -> Result<usize> {
+        let mut buffer_size = data.len();
+
+        match unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) } {
+            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
+            other => other.into_with(|| buffer_size),
+        }
     }
 }
 

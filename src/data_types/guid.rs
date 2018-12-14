@@ -55,3 +55,14 @@ impl fmt::Display for Guid {
         )
     }
 }
+
+/// Several entities in the UEFI specification can be referred to by their GUID,
+/// this trait is a building block to interface them in uefi-rs.
+///
+/// Implementing it is unsafe, because attaching an incorrect GUID to a type can
+/// lead to type unsafety on both the Rust and UEFI side.
+///
+pub unsafe trait Identify {
+    /// Unique protocol identifier.
+    const GUID: Guid;
+}

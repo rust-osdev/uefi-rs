@@ -13,6 +13,8 @@
 #[repr(C)]
 pub struct DebugSupport {
     isa: ProcessorArch,
+    // FIXME: Add the mising parts of the interface. Beware that it features
+    //        unsafety in the form of an unchecked processor index.
 }
 
 impl DebugSupport {

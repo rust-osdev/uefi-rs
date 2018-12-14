@@ -8,13 +8,10 @@
 //! and are usually retrieved from a standard UEFI table or
 //! by querying a handle.
 
-use crate::Guid;
+use crate::Identify;
 
 /// Common trait implemented by all standard UEFI protocols.
-pub trait Protocol {
-    /// Unique protocol identifier.
-    const GUID: Guid;
-}
+pub trait Protocol: Identify {}
 
 #[macro_use]
 mod macros;

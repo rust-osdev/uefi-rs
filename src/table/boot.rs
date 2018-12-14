@@ -77,7 +77,8 @@ pub struct BootServices {
     start_image: usize,
     exit: usize,
     unload_image: usize,
-    exit_boot_services: extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
+    exit_boot_services:
+        unsafe extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,

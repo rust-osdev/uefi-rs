@@ -14,8 +14,8 @@ pub struct BootServices {
     header: Header,
 
     // Task Priority services
-    raise_tpl: extern "win64" fn(new_tpl: Tpl) -> Tpl,
-    restore_tpl: extern "win64" fn(old_tpl: Tpl),
+    raise_tpl: unsafe extern "win64" fn(new_tpl: Tpl) -> Tpl,
+    restore_tpl: unsafe extern "win64" fn(old_tpl: Tpl),
 
     // Memory allocation functions
     allocate_pages: extern "win64" fn(
@@ -121,13 +121,18 @@ pub struct BootServices {
 
 impl BootServices {
     /// Raises a task's priority level and returns its previous level.
-    pub fn raise_tpl(&self, tpl: Tpl) -> Tpl {
-        (self.raise_tpl)(tpl)
-    }
-
-    /// Restores a task’s priority level to its previous value.
-    pub fn restore_tpl(&self, old_tpl: Tpl) {
-        (self.restore_tpl)(old_tpl)
+    ///
+    /// The effect of calling raise_tpl with a Tpl that is below the current one
+    /// (which, sadly, cannot be queried) is undefined by the UEFI spec, which
+    /// also warns against remaining at high Tpls for extended periods of time.
+    ///
+    /// This function outputs an RAII guard that will automatically restore the
+    /// original Tpl when dropped.
+    pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
+        TplGuard {
+            boot_services: self,
+            old_tpl: (self.raise_tpl)(tpl),
+        }
     }
 
     /// Allocates memory pages from the system.
@@ -465,6 +470,17 @@ pub enum Tpl: usize => {
     /// Even processor interrupts are disable at this level.
     HIGH_LEVEL  = 31,
 }}
+
+pub struct TplGuard<'a> {
+    boot_services: &'a BootServices,
+    old_tpl: Tpl,
+}
+
+impl Drop for TplGuard<'_> {
+    fn drop(&mut self) {
+        unsafe { (self.boot_services.restore_tpl)(self.old_tpl); }
+    }
+}
 
 /// Type of allocation to perform.
 #[derive(Debug, Copy, Clone)]

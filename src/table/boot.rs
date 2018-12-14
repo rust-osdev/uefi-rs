@@ -45,7 +45,7 @@ pub struct BootServices {
         event: &mut Event,
     ) -> Status,
     set_timer: usize,
-    wait_for_event: extern "win64" fn(
+    wait_for_event: unsafe extern "win64" fn(
         number_of_events: usize,
         events: *mut Event,
         out_index: &mut usize,
@@ -303,7 +303,7 @@ impl BootServices {
     pub fn wait_for_event(&self, events: &mut [Event]) -> result::Result<usize, (Status, usize)> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
-        match (self.wait_for_event)(number_of_events, events, &mut index) {
+        match unsafe { (self.wait_for_event)(number_of_events, events, &mut index) } {
             Status::SUCCESS => Ok(index),
             s @ Status::INVALID_PARAMETER => Err((s, index)),
             error => Err((error, 0)),

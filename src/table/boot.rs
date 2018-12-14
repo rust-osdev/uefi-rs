@@ -37,12 +37,12 @@ pub struct BootServices {
     free_pool: extern "win64" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
-    create_event: extern "win64" fn(
+    create_event: unsafe extern "win64" fn(
         ty: EventType,
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
         notify_ctx: *mut c_void,
-        event: *mut Event,
+        event: &mut Event,
     ) -> Status,
     set_timer: usize,
     wait_for_event: extern "win64" fn(
@@ -256,7 +256,7 @@ impl BootServices {
 
         // Use a trampoline to handle the impedance mismatch between Rust & C
         unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
-            let notify_fn: fn(Event) = core::mem::transmute(ctx);
+            let notify_fn: fn(Event) = mem::transmute(ctx);
             notify_fn(e); // SAFETY: Aborting panics are assumed here
         }
         let (notify_func, notify_ctx) = notify_fn
@@ -269,7 +269,7 @@ impl BootServices {
             .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
-        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
+        unsafe { (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event) }
             .into_with(|| event)
     }
 

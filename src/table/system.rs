@@ -129,6 +129,8 @@ impl SystemTable<Boot> {
     /// system table which more accurately reflects the state of the UEFI
     /// firmware following exit from boot services, along with a high-level
     /// iterator to the UEFI memory map.
+    ///
+    /// FIXME: UB will occur if mmap_buf is not well aligned
     pub fn exit_boot_services<'a>(
         self,
         image: Handle,

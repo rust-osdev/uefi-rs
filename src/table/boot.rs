@@ -25,7 +25,7 @@ pub struct BootServices {
         addr: &mut u64,
     ) -> Status,
     free_pages: extern "win64" fn(addr: u64, pages: usize) -> Status,
-    memory_map: extern "win64" fn(
+    get_memory_map: unsafe extern "win64" fn(
         size: &mut usize,
         map: *mut MemoryDescriptor,
         key: &mut MemoryMapKey,
@@ -170,13 +170,15 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        let status = (self.memory_map)(
-            &mut map_size,
-            ptr::null_mut(),
-            &mut map_key,
-            &mut entry_size,
-            &mut entry_version,
-        );
+        let status = unsafe {
+            (self.get_memory_map)(
+                &mut map_size,
+                ptr::null_mut(),
+                &mut map_key,
+                &mut entry_size,
+                &mut entry_version,
+            )
+        };
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
 
         map_size * entry_size
@@ -201,13 +203,15 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        (self.memory_map)(
-            &mut map_size,
-            map_buffer,
-            &mut map_key,
-            &mut entry_size,
-            &mut entry_version,
-        )
+        unsafe {
+            (self.get_memory_map)(
+                &mut map_size,
+                map_buffer,
+                &mut map_key,
+                &mut entry_size,
+                &mut entry_version,
+            )
+        }
         .into_with(move || {
             let len = map_size / entry_size;
             let iter = MemoryMapIter {
@@ -478,7 +482,9 @@ pub struct TplGuard<'a> {
 
 impl Drop for TplGuard<'_> {
     fn drop(&mut self) {
-        unsafe { (self.boot_services.restore_tpl)(self.old_tpl); }
+        unsafe {
+            (self.boot_services.restore_tpl)(self.old_tpl);
+        }
     }
 }
 
@@ -636,7 +642,7 @@ impl<'a> Iterator for MemoryMapIter<'a> {
 
             self.index += 1;
 
-            let descriptor: &MemoryDescriptor = unsafe { mem::transmute(ptr) };
+            let descriptor = unsafe { &*(ptr as *const MemoryDescriptor) };
 
             Some(descriptor)
         } else {

@@ -184,6 +184,8 @@ impl BootServices {
     ///
     /// The returned key is a unique identifier of the current configuration of memory.
     /// Any allocations or such will change the memory map's key.
+    ///
+    /// FIXME: The input buffer must be properly aligned or UB will occur.
     pub fn memory_map<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -422,7 +424,6 @@ impl BootServices {
     ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
-    ///
     pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
         (self.copy_mem)(dest, src, size);
     }
@@ -431,7 +432,6 @@ impl BootServices {
     ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
-    ///
     pub unsafe fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.set_mem)(buffer, size, value);
     }

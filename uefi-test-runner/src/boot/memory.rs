@@ -25,13 +25,8 @@ fn allocate_pages(bt: &BootServices) {
 
     assert_eq!(pgs % 4096, 0, "Page pointer is not page-aligned");
 
-    // Simple page structure to test this code.
-    #[repr(C, align(4096))]
-    struct Page([u8; 4096]);
-
-    let page: &Page = unsafe { mem::transmute(pgs) };
-
-    let mut buf = page.0;
+    // Reinterprete the page as an array of bytes
+    let buf = unsafe { &mut *(pgs as *mut [u8; 4096]) };
 
     // If these don't fail then we properly allocated some memory.
     buf[0] = 0xF0;

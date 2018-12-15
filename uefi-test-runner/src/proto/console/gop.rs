@@ -21,7 +21,7 @@ pub fn test(bt: &BootServices) {
 
 // Set a larger graphics mode.
 fn set_graphics_mode(gop: &mut GraphicsOutput) {
-    // We know for sure QEMU has a 1024x768, mode.
+    // We know for sure QEMU has a 1024x768 mode.
     let mode = gop
         .modes()
         .map(|mode| mode.expect("Warnings encountered while querying mode"))

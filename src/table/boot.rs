@@ -14,8 +14,8 @@ pub struct BootServices {
     header: Header,
 
     // Task Priority services
-    raise_tpl: extern "win64" fn(new_tpl: Tpl) -> Tpl,
-    restore_tpl: extern "win64" fn(old_tpl: Tpl),
+    raise_tpl: unsafe extern "win64" fn(new_tpl: Tpl) -> Tpl,
+    restore_tpl: unsafe extern "win64" fn(old_tpl: Tpl),
 
     // Memory allocation functions
     allocate_pages: extern "win64" fn(
@@ -25,7 +25,7 @@ pub struct BootServices {
         addr: &mut u64,
     ) -> Status,
     free_pages: extern "win64" fn(addr: u64, pages: usize) -> Status,
-    memory_map: extern "win64" fn(
+    get_memory_map: unsafe extern "win64" fn(
         size: &mut usize,
         map: *mut MemoryDescriptor,
         key: &mut MemoryMapKey,
@@ -37,15 +37,15 @@ pub struct BootServices {
     free_pool: extern "win64" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
-    create_event: extern "win64" fn(
+    create_event: unsafe extern "win64" fn(
         ty: EventType,
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
         notify_ctx: *mut c_void,
-        event: *mut Event,
+        event: &mut Event,
     ) -> Status,
     set_timer: usize,
-    wait_for_event: extern "win64" fn(
+    wait_for_event: unsafe extern "win64" fn(
         number_of_events: usize,
         events: *mut Event,
         out_index: &mut usize,
@@ -58,14 +58,11 @@ pub struct BootServices {
     install_protocol_interface: usize,
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
-    handle_protocol: extern "win64" fn(
-        handle: Handle,
-        proto: *const Guid,
-        out_proto: &mut *mut c_void,
-    ) -> Status,
+    handle_protocol:
+        extern "win64" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
-    locate_handle: extern "win64" fn(
+    locate_handle: unsafe extern "win64" fn(
         search_ty: i32,
         proto: *const Guid,
         key: *mut c_void,
@@ -80,12 +77,13 @@ pub struct BootServices {
     start_image: usize,
     exit: usize,
     unload_image: usize,
-    exit_boot_services: extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
+    exit_boot_services:
+        unsafe extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
     stall: extern "win64" fn(microseconds: usize) -> Status,
-    set_watchdog_timer: extern "win64" fn(
+    set_watchdog_timer: unsafe extern "win64" fn(
         timeout: usize,
         watchdog_code: u64,
         data_size: usize,
@@ -112,8 +110,8 @@ pub struct BootServices {
     calculate_crc32: usize,
 
     // Misc services
-    copy_mem: extern "win64" fn(dest: *mut u8, src: *const u8, len: usize),
-    set_mem: extern "win64" fn(buffer: *mut u8, len: usize, value: u8),
+    copy_mem: unsafe extern "win64" fn(dest: *mut u8, src: *const u8, len: usize),
+    set_mem: unsafe extern "win64" fn(buffer: *mut u8, len: usize, value: u8),
 
     // New event functions (UEFI 2.0 or newer)
     create_event_ex: usize,
@@ -121,13 +119,18 @@ pub struct BootServices {
 
 impl BootServices {
     /// Raises a task's priority level and returns its previous level.
-    pub fn raise_tpl(&self, tpl: Tpl) -> Tpl {
-        (self.raise_tpl)(tpl)
-    }
-
-    /// Restores a task’s priority level to its previous value.
-    pub fn restore_tpl(&self, old_tpl: Tpl) {
-        (self.restore_tpl)(old_tpl)
+    ///
+    /// The effect of calling raise_tpl with a Tpl that is below the current one
+    /// (which, sadly, cannot be queried) is undefined by the UEFI spec, which
+    /// also warns against remaining at high Tpls for extended periods of time.
+    ///
+    /// This function outputs an RAII guard that will automatically restore the
+    /// original Tpl when dropped.
+    pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
+        TplGuard {
+            boot_services: self,
+            old_tpl: (self.raise_tpl)(tpl),
+        }
     }
 
     /// Allocates memory pages from the system.
@@ -165,13 +168,15 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        let status = (self.memory_map)(
-            &mut map_size,
-            ptr::null_mut(),
-            &mut map_key,
-            &mut entry_size,
-            &mut entry_version,
-        );
+        let status = unsafe {
+            (self.get_memory_map)(
+                &mut map_size,
+                ptr::null_mut(),
+                &mut map_key,
+                &mut entry_size,
+                &mut entry_version,
+            )
+        };
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
 
         map_size * entry_size
@@ -184,6 +189,8 @@ impl BootServices {
     ///
     /// The returned key is a unique identifier of the current configuration of memory.
     /// Any allocations or such will change the memory map's key.
+    ///
+    /// FIXME: The input buffer must be properly aligned or UB will occur.
     pub fn memory_map<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -194,13 +201,15 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        (self.memory_map)(
-            &mut map_size,
-            map_buffer,
-            &mut map_key,
-            &mut entry_size,
-            &mut entry_version,
-        )
+        unsafe {
+            (self.get_memory_map)(
+                &mut map_size,
+                map_buffer,
+                &mut map_key,
+                &mut entry_size,
+                &mut entry_version,
+            )
+        }
         .into_with(move || {
             let len = map_size / entry_size;
             let iter = MemoryMapIter {
@@ -245,7 +254,7 @@ impl BootServices {
 
         // Use a trampoline to handle the impedance mismatch between Rust & C
         unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
-            let notify_fn: fn(Event) = core::mem::transmute(ctx);
+            let notify_fn: fn(Event) = mem::transmute(ctx);
             notify_fn(e); // SAFETY: Aborting panics are assumed here
         }
         let (notify_func, notify_ctx) = notify_fn
@@ -258,7 +267,7 @@ impl BootServices {
             .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
-        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
+        unsafe { (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event) }
             .into_with(|| event)
     }
 
@@ -292,7 +301,7 @@ impl BootServices {
     pub fn wait_for_event(&self, events: &mut [Event]) -> result::Result<usize, (Status, usize)> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
-        match (self.wait_for_event)(number_of_events, events, &mut index) {
+        match unsafe { (self.wait_for_event)(number_of_events, events, &mut index) } {
             Status::SUCCESS => Ok(index),
             s @ Status::INVALID_PARAMETER => Err((s, index)),
             error => Err((error, 0)),
@@ -344,7 +353,7 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
         };
 
-        let status = (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer);
+        let status = unsafe { (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
 
         // Must convert the returned size (in bytes) to length (number of elements).
         let buffer_len = buffer_size / handle_size;
@@ -394,8 +403,7 @@ impl BootServices {
     /// allows you to change what will be logged when the timer expires.
     ///
     /// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
-    /// firmware use. You should therefore only use them if instructed to do so
-    /// by firmware-specific documentation. Higher values can be used freely.
+    /// firmware use. Higher values can be used freely by applications.
     ///
     /// If provided, the watchdog data must be a null-terminated string
     /// optionally followed by other binary data.
@@ -405,24 +413,28 @@ impl BootServices {
         watchdog_code: u64,
         data: Option<&mut [u16]>,
     ) -> Result<()> {
+        assert!(
+            watchdog_code > 0xffff,
+            "Invalid use of a reserved firmware watchdog code"
+        );
+
         let (data_len, data) = data
             .map(|d| {
                 assert!(
                     d.contains(&0),
-                    "Watchdog data must contain a null-terminated string"
+                    "Watchdog data must start with a null-terminated string"
                 );
                 (d.len(), d.as_mut_ptr())
             })
             .unwrap_or((0, ptr::null_mut()));
 
-        (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data).into()
+        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
     }
 
     /// Copies memory from source to destination. The buffers can overlap.
     ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
-    ///
     pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
         (self.copy_mem)(dest, src, size);
     }
@@ -431,7 +443,6 @@ impl BootServices {
     ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
-    ///
     pub unsafe fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.set_mem)(buffer, size, value);
     }
@@ -465,6 +476,22 @@ pub enum Tpl: usize => {
     /// Even processor interrupts are disable at this level.
     HIGH_LEVEL  = 31,
 }}
+
+/// RAII guard for task priority level changes
+///
+/// Will automatically restore the former task priority level when dropped.
+pub struct TplGuard<'a> {
+    boot_services: &'a BootServices,
+    old_tpl: Tpl,
+}
+
+impl Drop for TplGuard<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            (self.boot_services.restore_tpl)(self.old_tpl);
+        }
+    }
+}
 
 /// Type of allocation to perform.
 #[derive(Debug, Copy, Clone)]
@@ -620,7 +647,7 @@ impl<'a> Iterator for MemoryMapIter<'a> {
 
             self.index += 1;
 
-            let descriptor: &MemoryDescriptor = unsafe { mem::transmute(ptr) };
+            let descriptor = unsafe { &*(ptr as *const MemoryDescriptor) };
 
             Some(descriptor)
         } else {

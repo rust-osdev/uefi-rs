@@ -6,6 +6,8 @@ This file documents the process of building and running the test suite.
 
 Besides all the requirements for building a UEFI app, you will also need:
 
+- [cargo-xbuild](https://github.com/rust-osdev/cargo-xbuild)  (can be installed using cargo: `cargo install cargo-xbuild`)
+
 - [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
 - [Python 3](https://www.python.org): at least version 3.6 is required.
 - [OVMF](https://github.com/tianocore/tianocore.github.io/wiki/OVMF):

@@ -116,6 +116,8 @@ impl SystemTable<Boot> {
     /// will be retrieved automatically (as having an up-to-date memory map is a
     /// prerequisite for exiting UEFI boot services).
     ///
+    /// The storage must be aligned like a `MemoryDescriptor`.
+    ///
     /// The size of the memory map can be estimated by calling
     /// `BootServices::memory_map_size()`. But the memory map can grow under the
     /// hood between the moment where this size estimate is returned and the
@@ -129,8 +131,6 @@ impl SystemTable<Boot> {
     /// system table which more accurately reflects the state of the UEFI
     /// firmware following exit from boot services, along with a high-level
     /// iterator to the UEFI memory map.
-    ///
-    /// FIXME: UB will occur if mmap_buf is not well aligned
     pub fn exit_boot_services<'a>(
         self,
         image: Handle,

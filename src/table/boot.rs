@@ -187,10 +187,10 @@ impl BootServices {
     /// The allocated buffer should be big enough to contain the memory map,
     /// and a way of estimating how big it should be is by calling `memory_map_size`.
     ///
+    /// The buffer must be aligned like a `MemoryDescriptor`.
+    ///
     /// The returned key is a unique identifier of the current configuration of memory.
     /// Any allocations or such will change the memory map's key.
-    ///
-    /// FIXME: The input buffer must be properly aligned or UB will occur.
     pub fn memory_map<'a>(
         &self,
         buffer: &'a mut [u8],
@@ -200,6 +200,12 @@ impl BootServices {
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
+
+        assert_eq!(
+            (map_buffer as usize) % mem::align_of::<MemoryDescriptor>(),
+            0,
+            "Memory map buffers must be aligned like a MemoryDescriptor"
+        );
 
         unsafe {
             (self.get_memory_map)(

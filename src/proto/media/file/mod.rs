@@ -18,7 +18,9 @@ use core::result;
 use ucs2;
 
 pub use self::dir::Directory;
-pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
+pub use self::info::{
+    Align, FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi,
+};
 
 /// A file represents an abstraction of some contiguous block of data residing
 /// on a volume.
@@ -187,6 +189,8 @@ impl<'a> File<'a> {
     /// The information will be written into a user-provided buffer.
     /// If the buffer is too small, the required buffer size will be returned as part of the error.
     ///
+    /// The buffer must be aligned on an `<Info as Align>::alignment()` boundary.
+    ///
     /// # Arguments
     /// * `buffer`  Buffer that the information should be written into
     ///
@@ -201,6 +205,7 @@ impl<'a> File<'a> {
         buffer: &mut [u8],
     ) -> result::Result<&mut Info, (Status, usize)> {
         let mut buffer_size = buffer.len();
+        Info::assert_aligned(buffer);
         match unsafe {
             (self.0.get_info)(self.0, &Info::GUID, &mut buffer_size, buffer.as_mut_ptr())
         } {

@@ -1,4 +1,4 @@
-use super::{File, FileAttribute, FileInfo, FileMode, FileProtocolInfo, FromUefi};
+use super::{Align, File, FileAttribute, FileInfo, FileMode, FileProtocolInfo, FromUefi};
 use crate::{Result, Status};
 use core::ffi::c_void;
 use core::result;
@@ -47,9 +47,8 @@ impl<'a> Directory<'a> {
     /// required buffer size as part of the error. If there are no more directory entries, return
     /// an empty optional.
     ///
-    /// You should make sure that the buffer is correctly aligned for storing a FileInfo. If it
-    /// isn't, the first few bytes of storage will be skipped to correct the alignment. Please note
-    /// that this reduces the effective storage capacity of the buffer.
+    /// The input buffer must be correctly aligned for a `FileInfo`. You can query the required
+    /// alignment through the Align trait (`<FileInfo as Align>::alignment()`).
     ///
     /// # Arguments
     /// * `buffer`  The target buffer of the read operation
@@ -62,10 +61,10 @@ impl<'a> Directory<'a> {
     /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry.
     pub fn read_entry(
         &mut self,
-        mut buffer: &mut [u8],
+        buffer: &mut [u8],
     ) -> result::Result<Option<&'a mut FileInfo>, (Status, usize)> {
-        // Correct the alignment of the buffer
-        buffer = FileInfo::realign_storage(buffer);
+        // Make sure that the storage is properly aligned
+        FileInfo::assert_aligned(buffer);
 
         // Read the directory entry into the aligned storage
         self.0.read(buffer).map(|size| {

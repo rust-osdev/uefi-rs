@@ -13,7 +13,24 @@ use core::slice;
 /// File::set_info() or File::set_info().
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
-pub trait FileProtocolInfo: Identify + FromUefi {}
+pub trait FileProtocolInfo: Align + Identify + FromUefi {}
+
+/// Trait for querying the alignment of a struct
+///
+/// Needed for dynamic-sized types because `mem::align_of` has a `Sized` bound (due to `dyn Trait`)
+pub trait Align {
+    /// Required memory alignment for this type
+    fn alignment() -> usize;
+
+    /// Assert that some storage is correctly aligned for this type
+    fn assert_aligned(storage: &mut [u8]) {
+        assert_eq!(
+            (storage.as_ptr() as usize) % Self::alignment(),
+            0,
+            "The provided storage is not correctly aligned for this type"
+        )
+    }
+}
 
 /// Trait for going from an UEFI-originated pointer to a Rust reference
 ///
@@ -43,45 +60,22 @@ pub struct NamedFileProtocolInfo<Header> {
 }
 
 impl<Header> NamedFileProtocolInfo<Header> {
-    /// Correct the alignment of a storage buffer for this type by discarding the first few bytes
-    ///
-    /// Return an empty slice if the storage is not large enough to perform this operation
-    pub fn realign_storage(mut storage: &mut [u8]) -> &mut [u8] {
-        // Compute the degree of storage misalignment. mem::align_of does not
-        // support dynamically sized types, so we must help it a bit.
-        let storage_address = storage.as_ptr() as usize;
-        let info_alignment = cmp::max(mem::align_of::<Header>(), mem::align_of::<Char16>());
-        let storage_misalignment = storage_address % info_alignment;
-        let realignment_padding = info_alignment - storage_misalignment;
-
-        // Return an empty slice if the storage is too small to be realigned
-        if storage.len() < realignment_padding {
-            return &mut [];
-        }
-
-        // If the storage is large enough, realign it and return
-        storage = &mut storage[realignment_padding..];
-        debug_assert_eq!((storage.as_ptr() as usize) % info_alignment, 0);
-        storage
-    }
-
     /// Create a NamedFileProtocolInfo structure in user-provided storage
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
     /// including a null-terminated UCS-2 version of the "name" string.
     ///
-    /// The buffer should be suitably aligned for the full data structure. If
-    /// it is not, some bytes at the beginning of the buffer will not be used,
-    /// resulting in a reduction of effective storage capacity.
+    /// The buffer must be correctly aligned. You can query the required alignment using the
+    /// `alignment()` method of the `Align` trait that this struct implements.
     #[allow(clippy::cast_ptr_alignment)]
     fn new_impl<'a>(
-        mut storage: &'a mut [u8],
+        storage: &'a mut [u8],
         header: Header,
         name: &str,
     ) -> result::Result<&'a mut Self, FileInfoCreationError> {
-        // Try to realign the storage in preparation for storing this type
-        storage = Self::realign_storage(storage);
+        // Make sure that the storage is properly aligned
+        Self::assert_aligned(storage);
 
         // Make sure that the storage is large enough for our needs
         let name_length_ucs2 = name.chars().count() + 1;
@@ -118,6 +112,12 @@ impl<Header> NamedFileProtocolInfo<Header> {
         }
         info.name[name_length_ucs2 - 1] = NUL_16;
         Ok(info)
+    }
+}
+
+impl<Header> Align for NamedFileProtocolInfo<Header> {
+    fn alignment() -> usize {
+        cmp::max(mem::align_of::<Header>(), mem::align_of::<Char16>())
     }
 }
 

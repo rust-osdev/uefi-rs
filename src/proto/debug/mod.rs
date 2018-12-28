@@ -11,6 +11,8 @@
 
 /// The debugging support protocol allows debuggers to connect to a UEFI machine.
 #[repr(C)]
+#[derive(Identify, Protocol)]
+#[unsafe_guid(0x2755_590c, 0x6f3c, 0x42fa, 0x9ea4, 0xa3ba_543c_da25)]
 pub struct DebugSupport {
     isa: ProcessorArch,
     // FIXME: Add the mising parts of the interface. Beware that it features
@@ -50,9 +52,3 @@ pub enum ProcessorArch: u32 => {
     /// RISC-V 128-bit
     RISCV_128   = 0x5128,
 }}
-
-impl_proto! {
-    protocol DebugSupport {
-        GUID = 0x2755590C, 0x6F3C, 0x42FA, [0x9E, 0xA4, 0xA3, 0xBA, 0x54, 0x3C, 0xDA, 0x25];
-    }
-}

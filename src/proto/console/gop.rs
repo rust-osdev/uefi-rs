@@ -33,6 +33,8 @@ use core::ptr;
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
+#[derive(Identify, Protocol)]
+#[unsafe_guid(0x9042_a9de, 0x23dc, 0x4a38, 0x96fb, 0x7ade_d080_516a)]
 pub struct GraphicsOutput<'boot> {
     query_mode: extern "win64" fn(
         &GraphicsOutput,
@@ -279,12 +281,6 @@ impl<'boot> GraphicsOutput<'boot> {
             size,
             _lifetime: PhantomData,
         }
-    }
-}
-
-impl_proto! {
-    protocol GraphicsOutput<'boot> {
-        GUID = 0x9042a9de, 0x23dc, 0x4a38, [0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a];
     }
 }
 

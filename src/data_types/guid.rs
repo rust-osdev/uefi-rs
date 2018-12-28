@@ -1,14 +1,13 @@
 use core::fmt;
 
-/// A globally unique identifier.
+/// A globally unique identifier
 ///
-/// GUIDs are used by to identify protocols and other objects.
+/// GUIDs are used by UEFI to identify protocols and other objects. They are
+/// mostly like variant 2 UUIDs as specified by RFC 4122, but differ from them
+/// in that the first 3 fields are little endian instead of big endian.
 ///
-/// The difference from regular UUIDs is that the first 3 fields are
-/// always encoded as little endian.
-///
-/// The `Display` formatter prints GUIDs in the UEFI-defined format:
-/// `aabbccdd-eeff-gghh-iijj-kkllmmnnoopp`
+/// The `Display` formatter prints GUIDs in the canonical format defined by
+/// RFC 4122, which is also used by UEFI.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct Guid {
@@ -18,17 +17,43 @@ pub struct Guid {
     b: u16,
     /// The high field of the timestamp multiplexed with the version number.
     c: u16,
-    /// Contains:
+    /// Contains, in this order:
     /// - The high field of the clock sequence multiplexed with the variant.
     /// - The low field of the clock sequence.
-    /// - Spatially unique node identifier.
+    /// - The spatially unique node identifier.
     d: [u8; 8],
 }
 
 impl Guid {
-    /// Creates a new GUID from its component values.
-    pub const fn from_values(a: u32, b: u16, c: u16, d: [u8; 8]) -> Self {
-        Guid { a, b, c, d }
+    /// Creates a new GUID from its canonical representation
+    //
+    // FIXME: An unwieldy array of bytes must be used for the node ID until one
+    //        can assert that an u64 has its high 16-bits cleared in a const fn.
+    //        Once that is done, we can take an u64 to be even closer to the
+    //        canonical UUID/GUID format.
+    //
+    pub const fn from_values(
+        time_low: u32,
+        time_mid: u16,
+        time_high_and_version: u16,
+        clock_seq_and_variant: u16,
+        node: [u8; 6],
+    ) -> Self {
+        Guid {
+            a: time_low,
+            b: time_mid,
+            c: time_high_and_version,
+            d: [
+                (clock_seq_and_variant / 0x100) as u8,
+                (clock_seq_and_variant % 0x100) as u8,
+                node[0],
+                node[1],
+                node[2],
+                node[3],
+                node[4],
+                node[5],
+            ],
+        }
     }
 }
 
@@ -62,6 +87,13 @@ impl fmt::Display for Guid {
 /// Implementing it is unsafe, because attaching an incorrect GUID to a type can
 /// lead to type unsafety on both the Rust and UEFI side.
 ///
+/// You can derive Identify as follows:
+///
+/// ```
+/// #[derive(Identify)]
+/// #[unsafe_guid(0x1234_5678, 0x9abc, 0xdef0, 0x1234, 0x5678_9abc_def0)]
+/// struct LabeledThing {}
+/// ```
 pub unsafe trait Identify {
     /// Unique protocol identifier.
     const GUID: Guid;

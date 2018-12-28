@@ -32,6 +32,9 @@
 #![deny(clippy::all)]
 
 #[macro_use]
+extern crate uefi_derive;
+
+#[macro_use]
 pub mod data_types;
 pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
 

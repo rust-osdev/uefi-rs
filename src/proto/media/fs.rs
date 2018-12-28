@@ -9,6 +9,8 @@ use core::ptr;
 /// This interface is implemented by some storage devices
 /// to allow file access to the contained file systems.
 #[repr(C)]
+#[derive(Identify, Protocol)]
+#[unsafe_guid(0x0964_e5b22, 0x6459, 0x11d2, 0x8e39, 0x00a0_c969_723b)]
 pub struct SimpleFileSystem {
     revision: u64,
     open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
@@ -29,11 +31,5 @@ impl SimpleFileSystem {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)
             .into_with(|| unsafe { Directory::from_file(File::new(ptr)) })
-    }
-}
-
-impl_proto! {
-    protocol SimpleFileSystem {
-        GUID = 0x0964E5B22, 0x6459, 0x11D2, [0x8E, 0x39, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B];
     }
 }

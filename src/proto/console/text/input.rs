@@ -3,6 +3,8 @@ use core::mem;
 
 /// Interface for text-based input devices.
 #[repr(C)]
+#[derive(Identify, Protocol)]
+#[unsafe_guid(0x3874_77c1, 0x69c7, 0x11d2, 0x8e39, 0x00a0_c969_723b)]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut RawKey) -> Status,
@@ -139,9 +141,3 @@ pub enum ScanCode: u16 => #[allow(missing_docs)] {
     RECOVERY        = 0x105,
     EJECT           = 0x106,
 }}
-
-impl_proto! {
-    protocol Input {
-        GUID = 0x387477c1, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
-    }
-}

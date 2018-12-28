@@ -11,6 +11,8 @@ use bitflags::bitflags;
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
 #[repr(C)]
+#[derive(Identify, Protocol)]
+#[unsafe_guid(0xbb25_cf6f, 0xf1d4, 0x11d2, 0x9a0c, 0x0090_273f_c1fd)]
 pub struct Serial<'boot> {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
@@ -113,12 +115,6 @@ impl<'boot> Serial<'boot> {
             s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
             other => other.into_with(|| buffer_size),
         }
-    }
-}
-
-impl_proto! {
-    protocol Serial<'boot> {
-        GUID = 0xBB25CF6F, 0xF1D4, 0x11D2, [0x9A, 0x0C, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0xFD];
     }
 }
 

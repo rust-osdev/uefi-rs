@@ -13,11 +13,11 @@ ucs2 = "0.1"
 
 [workspace]
 members = [
-    "uefi-test-runner",
-    "uefi-logger",
     "uefi-alloc",
-    "uefi-services",
     "uefi-exts",
+    "uefi-logger",
+    "uefi-services",
+    "uefi-test-runner",
 ]
 
 [profile.dev]

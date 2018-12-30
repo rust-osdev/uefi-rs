@@ -12,7 +12,7 @@ use bitflags::bitflags;
 /// check for input/output, some data might be lost.
 #[repr(C)]
 #[derive(Identify, Protocol)]
-#[unsafe_guid(0xbb25_cf6f, 0xf1d4, 0x11d2, 0x9a0c, 0x0090_273f_c1fd)]
+#[unsafe_guid = "bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd"]
 pub struct Serial<'boot> {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.

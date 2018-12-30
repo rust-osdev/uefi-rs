@@ -4,7 +4,7 @@ extern crate proc_macro;
 
 use proc_macro::{Span, TokenStream};
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Ident, Lit, Meta, NestedMeta};
+use syn::{parse_macro_input, DeriveInput, Ident, Lit, Meta};
 
 // Custom derive for the Identify trait
 #[proc_macro_derive(Identify, attributes(unsafe_guid))]
@@ -12,7 +12,7 @@ pub fn derive_identify_impl(item: TokenStream) -> TokenStream {
     // Parse the input using Syn
     let item = parse_macro_input!(item as DeriveInput);
 
-    // Look for struct-wide #[unsafe_guid(...)] attributes
+    // Look for struct-wide #[unsafe_guid = "..."] attributes
     let guid_ident = Ident::new("unsafe_guid", Span::call_site().into());
     let guid_attrs = item
         .attrs
@@ -24,7 +24,7 @@ pub fn derive_identify_impl(item: TokenStream) -> TokenStream {
     let guid_attr = match guid_attrs.len() {
         0 => panic!(
             "In order to derive Identify, the type's GUID must be specified. \
-             You can set it using the #[unsafe_guid(...)] attribute."
+             You can set it using the #[unsafe_guid = \"...\"] attribute."
         ),
         1 => &guid_attrs[0],
         n => panic!(
@@ -33,33 +33,41 @@ pub fn derive_identify_impl(item: TokenStream) -> TokenStream {
         ),
     };
 
-    // The unsafe_guid attribute must use the MetaList syntax
-    let guid_list = match guid_attr.parse_meta() {
-        Ok(Meta::List(list)) => list,
-        _ => panic!("The unsafe_guid attribute is spelled #[unsafe_guid(...)]"),
+    // The unsafe_guid attribute must use the MetaNameValue syntax with a string argument
+    let guid_lit = match guid_attr.parse_meta() {
+        Ok(Meta::NameValue(nv)) => nv.lit,
+        _ => panic!("The unsafe_guid attribute is spelled #[unsafe_guid = \"...\"]"),
+    };
+    let guid_str = match guid_lit {
+        Lit::Str(s) => s.value(),
+        _ => panic!("The unsafe_guid attribute is spelled #[unsafe_guid = \"...\"]"),
     };
 
-    // The unsafe_guid attribute takes 5 integer inputs of variable width
-    let guid_elems = guid_list.nested;
-    if guid_elems.len() != 5 {
+    // We expect a GUID in canonical form, such as "12345678-9abc-def0-fedc-ba9876543210"
+    let mut guid_hex_iter = guid_str.split('-');
+    let guid_component_count = guid_hex_iter.clone().count();
+    if guid_component_count != 5 {
         panic!(
-            "The unsafe_guid attribute takes 5 parameters, but {} were provided.",
-            guid_elems.len()
+            "\"{}\" is not a canonical GUID (expected 5 hyphen-separated components, found {})",
+            guid_str, guid_component_count
         );
     }
-    let mut guid_elems_iter = guid_elems.iter();
-    let mut next_guid_int = |num_bits: u32| -> u64 {
-        let val_64 = match guid_elems_iter.next().unwrap() {
-            NestedMeta::Literal(Lit::Int(x)) => x.value(),
-            _ => panic!("Inputs to unsafe_guid must be integer literals."),
+    let mut next_guid_int = |expected_num_bits: u32| -> u64 {
+        let guid_hex_component = guid_hex_iter.next().unwrap();
+        let guid_component = match u64::from_str_radix(guid_hex_component, 16) {
+            Ok(number) => number,
+            _ => panic!(
+                "GUID component \"{}\" is not a hexadecimal number",
+                guid_hex_component
+            ),
         };
-        if val_64.leading_zeros() < 64 - num_bits {
+        if guid_component.leading_zeros() < 64 - expected_num_bits {
             panic!(
-                "The unsafe_guid input {:x} is not a valid {}-bit integer.",
-                val_64, num_bits
+                "GUID component \"{}\" is not a {}-bit hexadecimal number",
+                guid_hex_component, expected_num_bits
             );
         }
-        val_64
+        guid_component
     };
 
     // These are, in order, a 32-bit interger, three 16-bit ones, and a 48-bit one

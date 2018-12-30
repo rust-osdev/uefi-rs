@@ -10,7 +10,7 @@ use core::ptr;
 /// to allow file access to the contained file systems.
 #[repr(C)]
 #[derive(Identify, Protocol)]
-#[unsafe_guid(0x0964_e5b22, 0x6459, 0x11d2, 0x8e39, 0x00a0_c969_723b)]
+#[unsafe_guid = "964e5b22-6459-11d2-8e39-00a0c969723b"]
 pub struct SimpleFileSystem {
     revision: u64,
     open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,

@@ -6,7 +6,7 @@ use core::mem;
 /// Provides information about a pointer device.
 #[repr(C)]
 #[derive(Identify, Protocol)]
-#[unsafe_guid(0x3187_8c87, 0xb75, 0x11d5, 0x9a4f, 0x0090_273f_c14d)]
+#[unsafe_guid = "31878c87-0b75-11d5-9a4f-0090273fc14d"]
 pub struct Pointer<'boot> {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,

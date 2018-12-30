@@ -34,7 +34,7 @@ use core::ptr;
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
 #[derive(Identify, Protocol)]
-#[unsafe_guid(0x9042_a9de, 0x23dc, 0x4a38, 0x96fb, 0x7ade_d080_516a)]
+#[unsafe_guid = "9042a9de-23dc-4a38-96fb-7aded080516a"]
 pub struct GraphicsOutput<'boot> {
     query_mode: extern "win64" fn(
         &GraphicsOutput,

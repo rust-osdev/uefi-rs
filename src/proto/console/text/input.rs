@@ -4,7 +4,7 @@ use core::mem;
 /// Interface for text-based input devices.
 #[repr(C)]
 #[derive(Identify, Protocol)]
-#[unsafe_guid(0x3874_77c1, 0x69c7, 0x11d2, 0x8e39, 0x00a0_c969_723b)]
+#[unsafe_guid = "387477c1-69c7-11d2-8e39-00a0c969723b"]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut RawKey) -> Status,

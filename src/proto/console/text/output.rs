@@ -8,7 +8,7 @@ use core::fmt;
 /// standard Rust constructs like the write!() and writeln!() macros.
 #[repr(C)]
 #[derive(Identify, Protocol)]
-#[unsafe_guid(0x3874_77c2, 0x69c7, 0x11d2, 0x8e39, 0x00a0_c969_723b)]
+#[unsafe_guid = "387477c2-69c7-11d2-8e39-00a0c969723b"]
 pub struct Output<'boot> {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
     output_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,

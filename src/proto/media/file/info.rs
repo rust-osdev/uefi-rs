@@ -1,7 +1,7 @@
 use super::FileAttribute;
 use crate::data_types::chars::NUL_16;
 use crate::table::runtime::Time;
-use crate::{CStr16, Char16, Guid, Identify};
+use crate::{unsafe_guid, CStr16, Char16, Identify};
 use core::cmp;
 use core::convert::TryInto;
 use core::ffi::c_void;
@@ -162,6 +162,7 @@ pub enum FileInfoCreationError {
 ///   existing file in the same directory.
 /// - If a file is read-only, the only allowed change is to remove the read-only
 ///   attribute. Other changes must be carried out in a separate transaction.
+#[unsafe_guid("09576e92-6d3f-11d2-8e39-00a0c969723b")]
 pub type FileInfo = NamedFileProtocolInfo<FileInfoHeader>;
 
 /// Header for generic file information
@@ -174,16 +175,6 @@ pub struct FileInfoHeader {
     last_access_time: Time,
     modification_time: Time,
     attribute: FileAttribute,
-}
-
-unsafe impl Identify for FileInfo {
-    const GUID: Guid = Guid::from_values(
-        0x0957_6e92,
-        0x6d3f,
-        0x11d2,
-        0x8e39,
-        [0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
-    );
 }
 
 impl FileInfo {
@@ -266,6 +257,7 @@ impl FileProtocolInfo for FileInfo {}
 ///
 /// Please note that only the system volume's volume label may be set using
 /// this information structure. Consider using FileSystemVolumeLabel instead.
+#[unsafe_guid("09576e93-6d3f-11d2-8e39-00a0c969723b")]
 pub type FileSystemInfo = NamedFileProtocolInfo<FileSystemInfoHeader>;
 
 /// Header for system volume information
@@ -276,16 +268,6 @@ pub struct FileSystemInfoHeader {
     volume_size: u64,
     free_space: u64,
     block_size: u32,
-}
-
-unsafe impl Identify for FileSystemInfo {
-    const GUID: Guid = Guid::from_values(
-        0x0957_6e93,
-        0x6d3f,
-        0x11d2,
-        0x8e39,
-        [0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
-    );
 }
 
 impl FileSystemInfo {
@@ -350,21 +332,12 @@ impl FileProtocolInfo for FileSystemInfo {}
 /// System volume label
 ///
 /// May only be obtained on the root directory's file handle.
+#[unsafe_guid("db47d7d3-fe81-11d3-9a35-0090273fc14d")]
 pub type FileSystemVolumeLabel = NamedFileProtocolInfo<FileSystemVolumeLabelHeader>;
 
 /// Header for system volume label information
 #[repr(C)]
 pub struct FileSystemVolumeLabelHeader {}
-
-unsafe impl Identify for FileSystemVolumeLabel {
-    const GUID: Guid = Guid::from_values(
-        0xdb47_d7d3,
-        0xfe81,
-        0x11d3,
-        0x9a35,
-        [0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d],
-    );
-}
 
 impl FileSystemVolumeLabel {
     /// Create a FileSystemVolumeLabel structure

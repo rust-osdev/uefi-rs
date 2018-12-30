@@ -1,12 +1,13 @@
 //! Pointer device access.
 
-use crate::{Event, Identify, Protocol, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Event, Result, Status};
 use core::mem;
 
 /// Provides information about a pointer device.
 #[repr(C)]
-#[derive(Identify, Protocol)]
-#[unsafe_guid = "31878c87-0b75-11d5-9a4f-0090273fc14d"]
+#[unsafe_guid("31878c87-0b75-11d5-9a4f-0090273fc14d")]
+#[derive(Protocol)]
 pub struct Pointer<'boot> {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,

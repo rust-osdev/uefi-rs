@@ -1,10 +1,11 @@
-use crate::{Char16, Event, Identify, Protocol, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Char16, Event, Result, Status};
 use core::mem;
 
 /// Interface for text-based input devices.
 #[repr(C)]
-#[derive(Identify, Protocol)]
-#[unsafe_guid = "387477c1-69c7-11d2-8e39-00a0c969723b"]
+#[unsafe_guid("387477c1-69c7-11d2-8e39-00a0c969723b")]
+#[derive(Protocol)]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut RawKey) -> Status,

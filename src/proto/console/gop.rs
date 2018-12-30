@@ -23,7 +23,8 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
-use crate::{Completion, Identify, Protocol, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Completion, Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
@@ -33,8 +34,8 @@ use core::ptr;
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
-#[derive(Identify, Protocol)]
-#[unsafe_guid = "9042a9de-23dc-4a38-96fb-7aded080516a"]
+#[unsafe_guid("9042a9de-23dc-4a38-96fb-7aded080516a")]
+#[derive(Protocol)]
 pub struct GraphicsOutput<'boot> {
     query_mode: extern "win64" fn(
         &GraphicsOutput,

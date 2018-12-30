@@ -2,75 +2,70 @@
 
 extern crate proc_macro;
 
-use proc_macro::{Span, TokenStream};
-use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Ident, Lit, Meta};
+use proc_macro::TokenStream;
+use quote::{quote, TokenStreamExt};
+use syn::parse::{Parse, ParseStream};
+use syn::{parse_macro_input, DeriveInput, Generics, Ident, ItemType, LitStr};
 
-// Custom derive for the Identify trait
-#[proc_macro_derive(Identify, attributes(unsafe_guid))]
-pub fn derive_identify_impl(item: TokenStream) -> TokenStream {
-    // Parse the input using Syn
-    let item = parse_macro_input!(item as DeriveInput);
+/// Parses a type definition, extracts its identifier and generic parameters
+struct TypeDefinition {
+    ident: Ident,
+    generics: Generics,
+}
 
-    // Look for struct-wide #[unsafe_guid = "..."] attributes
-    let guid_ident = Ident::new("unsafe_guid", Span::call_site().into());
-    let guid_attrs = item
-        .attrs
-        .iter()
-        .filter(|attr| attr.path.is_ident(guid_ident.clone()))
-        .collect::<Vec<_>>();
+impl Parse for TypeDefinition {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if let Ok(d) = DeriveInput::parse(input) {
+            Ok(Self {
+                ident: d.ident,
+                generics: d.generics,
+            })
+        } else if let Ok(t) = ItemType::parse(input) {
+            Ok(Self {
+                ident: t.ident,
+                generics: t.generics,
+            })
+        } else {
+            Err(input.error("Input is not an alias, enum, struct or union definition"))
+        }
+    }
+}
 
-    // There must be exactly one such attribute
-    let guid_attr = match guid_attrs.len() {
-        0 => panic!(
-            "In order to derive Identify, the type's GUID must be specified. \
-             You can set it using the #[unsafe_guid = \"...\"] attribute."
-        ),
-        1 => &guid_attrs[0],
-        n => panic!(
-            "Expected a single unsafe_guid attribute, found {} of them.",
-            n
-        ),
-    };
+/// unsafe_guid attribute macro, implements the Identify trait for any type
+/// (mostly works like a custom derive, but also supports type aliases)
+#[proc_macro_attribute]
+pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
+    // Parse the arguments and input using Syn
+    let guid_str = parse_macro_input!(args as LitStr).value();
+    let mut result: proc_macro2::TokenStream = input.clone().into();
+    let type_definition = parse_macro_input!(input as TypeDefinition);
 
-    // The unsafe_guid attribute must use the MetaNameValue syntax with a string argument
-    let guid_lit = match guid_attr.parse_meta() {
-        Ok(Meta::NameValue(nv)) => nv.lit,
-        _ => panic!("The unsafe_guid attribute is spelled #[unsafe_guid = \"...\"]"),
-    };
-    let guid_str = match guid_lit {
-        Lit::Str(s) => s.value(),
-        _ => panic!("The unsafe_guid attribute is spelled #[unsafe_guid = \"...\"]"),
-    };
-
-    // We expect a GUID in canonical form, such as "12345678-9abc-def0-fedc-ba9876543210"
-    let mut guid_hex_iter = guid_str.split('-');
-    let guid_component_count = guid_hex_iter.clone().count();
-    if guid_component_count != 5 {
+    // We expect a canonical GUID string, such as "12345678-9abc-def0-fedc-ba9876543210"
+    if guid_str.len() != 36 {
         panic!(
-            "\"{}\" is not a canonical GUID (expected 5 hyphen-separated components, found {})",
-            guid_str, guid_component_count
+            "\"{}\" is not a canonical GUID string (expected 36 bytes, found {})",
+            guid_str, guid_str.len()
         );
     }
-    let mut next_guid_int = |expected_num_bits: u32| -> u64 {
+    let mut guid_hex_iter = guid_str.split('-');
+    let mut next_guid_int = |expected_num_bits: usize| -> u64 {
         let guid_hex_component = guid_hex_iter.next().unwrap();
-        let guid_component = match u64::from_str_radix(guid_hex_component, 16) {
+        if guid_hex_component.len() != expected_num_bits / 4 {
+            panic!(
+                "GUID component \"{}\" is not a {}-bit hexadecimal string",
+                guid_hex_component, expected_num_bits
+            );
+        }
+        match u64::from_str_radix(guid_hex_component, 16) {
             Ok(number) => number,
             _ => panic!(
                 "GUID component \"{}\" is not a hexadecimal number",
                 guid_hex_component
             ),
-        };
-        if guid_component.leading_zeros() < 64 - expected_num_bits {
-            panic!(
-                "GUID component \"{}\" is not a {}-bit hexadecimal number",
-                guid_hex_component, expected_num_bits
-            );
         }
-        guid_component
     };
 
-    // These are, in order, a 32-bit interger, three 16-bit ones, and a 48-bit one
+    // These are, in order, a 32-bit integer, three 16-bit ones, and a 48-bit one
     let time_low = next_guid_int(32) as u32;
     let time_mid = next_guid_int(16) as u16;
     let time_high_and_version = next_guid_int(16) as u16;
@@ -88,9 +83,9 @@ pub fn derive_identify_impl(item: TokenStream) -> TokenStream {
     ];
 
     // At this point, we know everything we need to implement Identify
-    let ident = item.ident.clone();
-    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
-    let result = quote! {
+    let ident = type_definition.ident.clone();
+    let (impl_generics, ty_generics, where_clause) = type_definition.generics.split_for_impl();
+    result.append_all(quote! {
         unsafe impl #impl_generics crate::Identify for #ident #ty_generics #where_clause {
             #[doc(hidden)]
             #[allow(clippy::unreadable_literal)]
@@ -102,11 +97,11 @@ pub fn derive_identify_impl(item: TokenStream) -> TokenStream {
                 [#(#node),*],
             );
         }
-    };
+    });
     result.into()
 }
 
-// Custom derive for the Protocol trait
+/// Custom derive for the Protocol trait
 #[proc_macro_derive(Protocol)]
 pub fn derive_protocol(item: TokenStream) -> TokenStream {
     // Parse the input using Syn

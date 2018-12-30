@@ -9,12 +9,13 @@
 //!
 //! [udk]: https://firmware.intel.com/develop/intel-uefi-tools-and-utilities/intel-uefi-development-kit-debugger-tool
 
-use crate::{Identify, Protocol};
+use crate::proto::Protocol;
+use crate::unsafe_guid;
 
 /// The debugging support protocol allows debuggers to connect to a UEFI machine.
 #[repr(C)]
-#[derive(Identify, Protocol)]
-#[unsafe_guid = "2755590c-6f3c-42fa-9ea4-a3ba543cda25"]
+#[unsafe_guid("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
+#[derive(Protocol)]
 pub struct DebugSupport {
     isa: ProcessorArch,
     // FIXME: Add the mising parts of the interface. Beware that it features

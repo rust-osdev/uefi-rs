@@ -18,11 +18,13 @@ use crate::Identify;
 /// Protocol's GUID using the following syntax:
 ///
 /// ```
-/// #[derive(Identify, Protocol)]
-/// #[unsafe_guid(0x1234_5678, 0x9abc, 0xdef0, 0x1234, 0x5678_9abc_def0)]
+/// #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]
+/// #[derive(Protocol)]
 /// struct DummyProtocol {}
 /// ```
 pub trait Protocol: Identify {}
+
+pub use uefi_derive::Protocol;
 
 pub mod console;
 pub mod debug;

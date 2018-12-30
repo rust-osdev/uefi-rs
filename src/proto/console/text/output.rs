@@ -1,5 +1,6 @@
 use crate::prelude::*;
-use crate::{CStr16, Char16, Completion, Identify, Protocol, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, CStr16, Char16, Completion, Result, Status};
 use core::fmt;
 
 /// Interface for text-based output devices.
@@ -7,8 +8,8 @@ use core::fmt;
 /// It implements the fmt::Write trait, so you can use it to print text with
 /// standard Rust constructs like the write!() and writeln!() macros.
 #[repr(C)]
-#[derive(Identify, Protocol)]
-#[unsafe_guid = "387477c2-69c7-11d2-8e39-00a0c969723b"]
+#[unsafe_guid("387477c2-69c7-11d2-8e39-00a0c969723b")]
+#[derive(Protocol)]
 pub struct Output<'boot> {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
     output_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,

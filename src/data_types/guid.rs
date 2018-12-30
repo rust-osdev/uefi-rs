@@ -84,9 +84,9 @@ impl fmt::Display for Guid {
 /// Several entities in the UEFI specification can be referred to by their GUID,
 /// this trait is a building block to interface them in uefi-rs.
 ///
-/// In general, you should never need to use the Identify trait directly, but
-/// instead go for more specific traits such as Protocol or FileProtocolInfo
-/// which specify in which circumstances a Identity-tagged trait should be used.
+/// You should never need to use the Identify trait directly, but instead go for
+/// for more specific traits such as Protocol or FileProtocolInfo, which
+/// indicate in which circumstances a Identity-tagged type should be used.
 ///
 /// Implementing Identify is unsafe because attaching an incorrect GUID to a
 /// type can lead to type unsafety on both the Rust and UEFI side.

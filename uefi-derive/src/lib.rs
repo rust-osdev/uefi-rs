@@ -44,7 +44,8 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
     if guid_str.len() != 36 {
         panic!(
             "\"{}\" is not a canonical GUID string (expected 36 bytes, found {})",
-            guid_str, guid_str.len()
+            guid_str,
+            guid_str.len()
         );
     }
     let mut guid_hex_iter = guid_str.split('-');

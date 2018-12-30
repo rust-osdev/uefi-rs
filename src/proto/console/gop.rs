@@ -23,7 +23,7 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
-use crate::{Completion, Result, Status};
+use crate::{Completion, Identify, Protocol, Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;

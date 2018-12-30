@@ -1,6 +1,6 @@
 //! Pointer device access.
 
-use crate::{Event, Result, Status};
+use crate::{Event, Identify, Protocol, Result, Status};
 use core::mem;
 
 /// Provides information about a pointer device.

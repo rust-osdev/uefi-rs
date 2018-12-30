@@ -9,6 +9,8 @@
 //!
 //! [udk]: https://firmware.intel.com/develop/intel-uefi-tools-and-utilities/intel-uefi-development-kit-debugger-tool
 
+use crate::{Identify, Protocol};
+
 /// The debugging support protocol allows debuggers to connect to a UEFI machine.
 #[repr(C)]
 #[derive(Identify, Protocol)]

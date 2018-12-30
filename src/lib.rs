@@ -31,8 +31,7 @@
 #![warn(missing_docs, unused)]
 #![deny(clippy::all)]
 
-#[macro_use]
-extern crate uefi_derive;
+pub use uefi_derive::{Identify, Protocol};
 
 #[macro_use]
 pub mod data_types;

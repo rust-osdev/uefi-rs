@@ -1,7 +1,7 @@
 //! File system support protocols.
 
 use super::file::{Directory, File, FileImpl};
-use crate::{Result, Status};
+use crate::{Identify, Protocol, Result, Status};
 use core::ptr;
 
 /// Allows access to a FAT-12/16/32 file system.

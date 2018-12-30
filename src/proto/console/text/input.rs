@@ -1,4 +1,4 @@
-use crate::{Char16, Event, Result, Status};
+use crate::{Char16, Event, Identify, Protocol, Result, Status};
 use core::mem;
 
 /// Interface for text-based input devices.

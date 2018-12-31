@@ -3,10 +3,10 @@ use crate::{Result, Status};
 use core::ffi::c_void;
 use core::result;
 
-/// File wrapper for handling directories
+/// `File` wrapper for handling directories
 ///
-/// The File abstraction can handle directories, but does so in a very roundabout way. A dedicated
-/// abstraction for directory handling that wraps the unintuitive File API is therefore desirable.
+/// The `File` abstraction can handle directories, but does so in a very roundabout way.
+/// A dedicated abstraction for directory handling is therefore desirable.
 pub struct Directory<'a>(File<'a>);
 
 impl<'a> Directory<'a> {
@@ -48,7 +48,7 @@ impl<'a> Directory<'a> {
     /// an empty optional.
     ///
     /// The input buffer must be correctly aligned for a `FileInfo`. You can query the required
-    /// alignment through the Align trait (`<FileInfo as Align>::alignment()`).
+    /// alignment through the `Align` trait (`<FileInfo as Align>::alignment()`).
     ///
     /// # Arguments
     /// * `buffer`  The target buffer of the read operation

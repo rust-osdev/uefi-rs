@@ -458,21 +458,21 @@ impl From<u32> for BltPixel {
     }
 }
 
-/// Region of the BltBuffer which we are operating on
+/// Region of the `BltBuffer` which we are operating on
 ///
-/// Some Blt operations can operate on either the full BltBuffer or a
+/// Some `Blt` operations can operate on either the full `BltBuffer` or a
 /// sub-rectangle of it, but require the stride to be known in the latter case.
 #[derive(Clone, Copy, Debug)]
 pub enum BltRegion {
-    /// Operate on the full BltBuffer
+    /// Operate on the full `BltBuffer`
     Full,
 
-    /// Operate on a sub-rectangle of the BltBuffer
+    /// Operate on a sub-rectangle of the `BltBuffer`
     SubRectangle {
-        /// Coordinate of the rectangle in the BltBuffer
+        /// Coordinate of the rectangle in the `BltBuffer`
         coords: (usize, usize),
 
-        /// Stride (length of each row of the BltBuffer) in **pixels**
+        /// Stride (length of each row of the `BltBuffer`) in **pixels**
         px_stride: usize,
     },
 }

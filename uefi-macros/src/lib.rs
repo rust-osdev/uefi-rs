@@ -102,7 +102,7 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
     result.into()
 }
 
-/// Custom derive for the Protocol trait
+/// Custom derive for the `Protocol` trait
 #[proc_macro_derive(Protocol)]
 pub fn derive_protocol(item: TokenStream) -> TokenStream {
     // Parse the input using Syn
@@ -112,7 +112,7 @@ pub fn derive_protocol(item: TokenStream) -> TokenStream {
     let ident = item.ident.clone();
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
     let result = quote! {
-        // Mark this as a Protocol implementation
+        // Mark this as a `Protocol` implementation
         impl #impl_generics crate::proto::Protocol for #ident #ty_generics #where_clause {}
 
         // Most UEFI functions expect to be called on the bootstrap processor.

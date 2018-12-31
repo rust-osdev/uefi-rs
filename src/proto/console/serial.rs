@@ -1,6 +1,7 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
-use crate::{Completion, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Completion, Result, Status};
 use bitflags::bitflags;
 
 /// Provides access to a serial I/O device.
@@ -11,6 +12,8 @@ use bitflags::bitflags;
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
 #[repr(C)]
+#[unsafe_guid("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd")]
+#[derive(Protocol)]
 pub struct Serial<'boot> {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
@@ -113,12 +116,6 @@ impl<'boot> Serial<'boot> {
             s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
             other => other.into_with(|| buffer_size),
         }
-    }
-}
-
-impl_proto! {
-    protocol Serial<'boot> {
-        GUID = 0xBB25CF6F, 0xF1D4, 0x11D2, [0x9A, 0x0C, 0x00, 0x90, 0x27, 0x3F, 0xC1, 0xFD];
     }
 }
 

@@ -10,14 +10,16 @@ edition = "2018"
 bitflags = "1"
 log = { version = "0.4", default-features = false }
 ucs2 = "0.1"
+uefi-macros = { path = "uefi-macros" }
 
 [workspace]
 members = [
-    "uefi-test-runner",
-    "uefi-logger",
     "uefi-alloc",
-    "uefi-services",
     "uefi-exts",
+    "uefi-logger",
+    "uefi-macros",
+    "uefi-services",
+    "uefi-test-runner",
 ]
 
 [profile.dev]

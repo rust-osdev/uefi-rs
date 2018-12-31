@@ -1,12 +1,15 @@
 use crate::prelude::*;
-use crate::{CStr16, Char16, Completion, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, CStr16, Char16, Completion, Result, Status};
 use core::fmt;
 
 /// Interface for text-based output devices.
 ///
 /// It implements the fmt::Write trait, so you can use it to print text with
-/// standard Rust constructs like the write!() and writeln!() macros.
+/// standard Rust constructs like the `write!()` and `writeln!()` macros.
 #[repr(C)]
+#[unsafe_guid("387477c2-69c7-11d2-8e39-00a0c969723b")]
+#[derive(Protocol)]
 pub struct Output<'boot> {
     reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
     output_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,
@@ -45,7 +48,6 @@ impl<'boot> Output<'boot> {
     }
 
     /// Checks if a string contains only supported characters.
-    /// True indicates success.
     ///
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
@@ -267,12 +269,6 @@ struct OutputData {
     cursor_row: i32,
     /// Whether the cursor is currently visible or not.
     cursor_visible: bool,
-}
-
-impl_proto! {
-    protocol Output<'boot> {
-        GUID = 0x387477c2, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
-    }
 }
 
 /// Colors for the UEFI console.

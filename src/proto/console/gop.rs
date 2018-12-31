@@ -1,7 +1,7 @@
 //! Graphics output protocol.
 //!
 //! The UEFI GOP is meant to replace existing VGA hardware.
-//! It can be used in the boot environment as well at runtime,
+//! It can be used in the boot environment as well as at runtime,
 //! until a high-performance driver is loaded by the OS.
 //!
 //! The GOP provides access to a hardware frame buffer and allows UEFI apps
@@ -23,7 +23,8 @@
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
 
-use crate::{Completion, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Completion, Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
@@ -33,6 +34,8 @@ use core::ptr;
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
+#[unsafe_guid("9042a9de-23dc-4a38-96fb-7aded080516a")]
+#[derive(Protocol)]
 pub struct GraphicsOutput<'boot> {
     query_mode: extern "win64" fn(
         &GraphicsOutput,
@@ -87,7 +90,7 @@ impl<'boot> GraphicsOutput<'boot> {
     /// Sets the video device into the specified mode, clearing visible portions
     /// of the output display to black.
     ///
-    /// This function **will** invalidate the current framebuffer and change the current mode.
+    /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
         (self.set_mode)(self, mode.index).into()
     }
@@ -279,12 +282,6 @@ impl<'boot> GraphicsOutput<'boot> {
             size,
             _lifetime: PhantomData,
         }
-    }
-}
-
-impl_proto! {
-    protocol GraphicsOutput<'boot> {
-        GUID = 0x9042a9de, 0x23dc, 0x4a38, [0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a];
     }
 }
 

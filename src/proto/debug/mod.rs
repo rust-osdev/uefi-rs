@@ -9,8 +9,13 @@
 //!
 //! [udk]: https://firmware.intel.com/develop/intel-uefi-tools-and-utilities/intel-uefi-development-kit-debugger-tool
 
+use crate::proto::Protocol;
+use crate::unsafe_guid;
+
 /// The debugging support protocol allows debuggers to connect to a UEFI machine.
 #[repr(C)]
+#[unsafe_guid("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
+#[derive(Protocol)]
 pub struct DebugSupport {
     isa: ProcessorArch,
     // FIXME: Add the mising parts of the interface. Beware that it features
@@ -50,9 +55,3 @@ pub enum ProcessorArch: u32 => {
     /// RISC-V 128-bit
     RISCV_128   = 0x5128,
 }}
-
-impl_proto! {
-    protocol DebugSupport {
-        GUID = 0x2755590C, 0x6F3C, 0x42FA, [0x9E, 0xA4, 0xA3, 0xBA, 0x54, 0x3C, 0xDA, 0x25];
-    }
-}

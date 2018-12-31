@@ -1,7 +1,8 @@
 //! File system support protocols.
 
 use super::file::{Directory, File, FileImpl};
-use crate::{Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Result, Status};
 use core::ptr;
 
 /// Allows access to a FAT-12/16/32 file system.
@@ -9,6 +10,8 @@ use core::ptr;
 /// This interface is implemented by some storage devices
 /// to allow file access to the contained file systems.
 #[repr(C)]
+#[unsafe_guid("964e5b22-6459-11d2-8e39-00a0c969723b")]
+#[derive(Protocol)]
 pub struct SimpleFileSystem {
     revision: u64,
     open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
@@ -29,11 +32,5 @@ impl SimpleFileSystem {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)
             .into_with(|| unsafe { Directory::from_file(File::new(ptr)) })
-    }
-}
-
-impl_proto! {
-    protocol SimpleFileSystem {
-        GUID = 0x0964E5B22, 0x6459, 0x11D2, [0x8E, 0x39, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B];
     }
 }

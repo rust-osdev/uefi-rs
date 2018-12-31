@@ -1,8 +1,11 @@
-use crate::{Char16, Event, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Char16, Event, Result, Status};
 use core::mem;
 
 /// Interface for text-based input devices.
 #[repr(C)]
+#[unsafe_guid("387477c1-69c7-11d2-8e39-00a0c969723b")]
+#[derive(Protocol)]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut RawKey) -> Status,
@@ -24,7 +27,7 @@ impl Input {
 
     /// Reads the next keystroke from the input device, if any.
     ///
-    /// Use wait_for_key_event() with the BootServices::wait_for_event()
+    /// Use `wait_for_key_event()` with the `BootServices::wait_for_event()`
     /// interface in order to wait for a key to be pressed.
     ///
     /// # Errors
@@ -39,8 +42,8 @@ impl Input {
         }
     }
 
-    /// Event to use with BootServices::wait_for_event() to wait for a key to be
-    /// available
+    /// Event to be used with `BootServices::wait_for_event()` in order to wait
+    /// for a key to be available
     pub fn wait_for_key_event(&self) -> Event {
         self.wait_for_key
     }
@@ -139,9 +142,3 @@ pub enum ScanCode: u16 => #[allow(missing_docs)] {
     RECOVERY        = 0x105,
     EJECT           = 0x106,
 }}
-
-impl_proto! {
-    protocol Input {
-        GUID = 0x387477c1, 0x69c7, 0x11d2, [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b];
-    }
-}

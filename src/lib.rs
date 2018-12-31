@@ -33,7 +33,8 @@
 
 #[macro_use]
 pub mod data_types;
-pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
+pub(crate) use self::data_types::{unsafe_guid, Identify};
+pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
 
 mod error;
 pub use self::error::{Completion, Result, ResultExt, Status};

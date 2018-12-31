@@ -120,12 +120,12 @@ pub struct BootServices {
 impl BootServices {
     /// Raises a task's priority level and returns its previous level.
     ///
-    /// The effect of calling raise_tpl with a Tpl that is below the current one
-    /// (which, sadly, cannot be queried) is undefined by the UEFI spec, which
-    /// also warns against remaining at high Tpls for extended periods of time.
+    /// The effect of calling `raise_tpl` with a `Tpl` that is below the current
+    /// one (which, sadly, cannot be queried) is undefined by the UEFI spec,
+    /// which also warns against remaining at high `Tpl`s for a long time.
     ///
     /// This function outputs an RAII guard that will automatically restore the
-    /// original Tpl when dropped.
+    /// original `Tpl` when dropped.
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
         TplGuard {
             boot_services: self,
@@ -135,7 +135,7 @@ impl BootServices {
 
     /// Allocates memory pages from the system.
     ///
-    /// UEFI OS loaders should allocate memory of the type `LoaderData`. An u64
+    /// UEFI OS loaders should allocate memory of the type `LoaderData`. An `u64`
     /// is returned even on 32-bit platforms because some hardware configurations
     /// like Intel PAE enable 64-bit physical addressing on a 32-bit processor.
     pub fn allocate_pages(
@@ -244,19 +244,22 @@ impl BootServices {
     /// This function creates a new event of the specified type and returns it.
     ///
     /// Events are created in a "waiting" state, and may switch to a "signaled"
-    /// state. If the event type has flag NotifySignal set, this will result in
+    /// state. If the event type has flag `NotifySignal` set, this will result in
     /// a callback for the event being immediately enqueued at the `notify_tpl`
-    /// priority level. If the event type has flag NotifyWait, the notification
+    /// priority level. If the event type has flag `NotifyWait`, the notification
     /// will be delivered next time `wait_for_event` or `check_event` is called.
     /// In both cases, a `notify_fn` callback must be specified.
-    pub fn create_event(
+    ///
+    /// This function is unsafe because callbacks must handle exit from boot
+    /// services correctly.
+    pub unsafe fn create_event(
         &self,
         event_ty: EventType,
         notify_tpl: Tpl,
         notify_fn: Option<fn(Event)>,
     ) -> Result<Event> {
         // Prepare storage for the output Event
-        let mut event = unsafe { mem::uninitialized() };
+        let mut event = mem::uninitialized();
 
         // Use a trampoline to handle the impedance mismatch between Rust & C
         unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
@@ -273,22 +276,22 @@ impl BootServices {
             .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
-        unsafe { (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event) }
+        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
             .into_with(|| event)
     }
 
     /// Stops execution until an event is signaled
     ///
-    /// This function must be called at priority level Tpl::APPLICATION. If an
+    /// This function must be called at priority level `Tpl::APPLICATION`. If an
     /// attempt is made to call it at any other priority level, an `Unsupported`
     /// error is returned.
     ///
-    /// The input Event slice is repeatedly iterated from first to last until an
-    /// event is signaled or an error is detected. The following checks are
+    /// The input `Event` slice is repeatedly iterated from first to last until
+    /// an event is signaled or an error is detected. The following checks are
     /// performed on each event:
     ///
-    /// * If an event is of type NotifySignal, then an `InvalidParameter` error
-    ///   is returned together with the index of the event that caused the failure.
+    /// * If an event is of type `NotifySignal`, then an `InvalidParameter`
+    ///   error is returned with the index of the eve,t that caused the failure.
     /// * If an event is in the signaled state, the signaled state is cleared
     ///   and the index of the event that was signaled is returned.
     /// * If an event is not in the signaled state but does have a notification
@@ -320,8 +323,9 @@ impl BootServices {
     /// based on the protocol GUID.
     ///
     /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
-    /// provides no mechanism to protect against concurrent usage. Such protections
-    /// must be implemented by user-level code, for example via a global HashSet.
+    /// provides no mechanism to protect against concurrent usage. Such
+    /// protections must be implemented by user-level code, for example via a
+    /// global `HashSet`.
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
@@ -377,8 +381,8 @@ impl BootServices {
     /// public.
     ///
     /// Everything that is explained in the documentation of the high-level
-    /// SystemTable<Boot> method is also true here, except that this function is
-    /// one-shot (no automatic retry) and does not prevent you from shooting
+    /// `SystemTable<Boot>` method is also true here, except that this function
+    /// is one-shot (no automatic retry) and does not prevent you from shooting
     /// yourself in the foot by calling invalid boot services after a failure.
     pub(super) unsafe fn exit_boot_services(
         &self,
@@ -697,11 +701,11 @@ bitflags! {
 
         /// Calling wait_for_event or check_event will enqueue the notification
         /// function if the event is not already in the signaled state.
-        /// Mutually exclusive with NOTIFY_SIGNAL.
+        /// Mutually exclusive with `NOTIFY_SIGNAL`.
         const NOTIFY_WAIT = 0x0000_0100;
 
         /// The notification function will be enqueued when the event is signaled
-        /// Mutually exclusive with NOTIFY_WAIT.
+        /// Mutually exclusive with `NOTIFY_WAIT`.
         const NOTIFY_SIGNAL = 0x0000_0200;
 
         /// The event will be signaled at ExitBootServices time.

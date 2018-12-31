@@ -2,8 +2,8 @@
 mod status;
 pub use self::status::Status;
 
-/// Completions are used to model operations which have completed, but may have
-/// encountered non-fatal errors ("warnings") along the way
+/// `Completion`s are used to model operations which have completed, but may
+/// have encountered non-fatal errors ("warnings") along the way
 mod completion;
 pub use self::completion::Completion;
 

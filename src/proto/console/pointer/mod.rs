@@ -1,10 +1,13 @@
 //! Pointer device access.
 
-use crate::{Event, Result, Status};
+use crate::proto::Protocol;
+use crate::{unsafe_guid, Event, Result, Status};
 use core::mem;
 
 /// Provides information about a pointer device.
 #[repr(C)]
+#[unsafe_guid("31878c87-0b75-11d5-9a4f-0090273fc14d")]
+#[derive(Protocol)]
 pub struct Pointer<'boot> {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,
@@ -28,7 +31,7 @@ impl<'boot> Pointer<'boot> {
     /// Retrieves the pointer device's current state, if a state change occured
     /// since the last time this function was called.
     ///
-    /// Use wait_for_input_event() with the BootServices::wait_for_event()
+    /// Use `wait_for_input_event()` with the `BootServices::wait_for_event()`
     /// interface in order to wait for input from the pointer device.
     ///
     /// # Errors
@@ -42,8 +45,8 @@ impl<'boot> Pointer<'boot> {
         }
     }
 
-    /// Event to use with BootServices::wait_for_event() to wait for input from
-    /// the pointer device
+    /// Event to be used with `BootServices::wait_for_event()` in order to wait
+    /// for input from the pointer device
     pub fn wait_for_input_event(&self) -> Event {
         self.wait_for_input
     }
@@ -51,12 +54,6 @@ impl<'boot> Pointer<'boot> {
     /// Returns a reference to the pointer device information.
     pub fn mode(&self) -> &PointerMode {
         self.mode
-    }
-}
-
-impl_proto! {
-    protocol Pointer<'boot> {
-        GUID = 0x31878c87, 0xb75, 0x11d5, [0x9a, 0x4f, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d];
     }
 }
 

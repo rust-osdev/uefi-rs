@@ -129,10 +129,8 @@ impl Status {
     where
         F: FnOnce() -> T,
     {
-        if self.is_success() {
-            Ok(Completion::Success(f()))
-        } else if self.is_warning() {
-            Ok(Completion::Warning(f(), self))
+        if !self.is_error() {
+            Ok(Completion::new(self, f()))
         } else {
             Err(self)
         }

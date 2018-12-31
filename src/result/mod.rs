@@ -30,9 +30,9 @@ pub trait ResultExt<T> {
 
 impl<T> ResultExt<T> for Result<T> {
     fn warning_as_error(self) -> core::result::Result<T, Status> {
-        match self {
-            Ok(Completion::Success(v)) => Ok(v),
-            Ok(Completion::Warning(_, s)) => Err(s),
+        match self.map(|comp| comp.split()) {
+            Ok((Status::SUCCESS, res)) => Ok(res),
+            Ok((s, _)) => Err(s),
             Err(s) => Err(s),
         }
     }

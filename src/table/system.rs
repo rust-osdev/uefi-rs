@@ -145,7 +145,7 @@ impl SystemTable<Boot> {
                 //        limitation of the NLL analysis (see Rust bug 51526).
                 let mmap_buf = &mut *(mmap_buf as *mut [u8]);
                 let mmap_comp = boot_services.memory_map(mmap_buf)?;
-                let ((mmap_key, mmap_iter), mmap_status) = mmap_comp.split();
+                let (mmap_status, (mmap_key, mmap_iter)) = mmap_comp.split();
 
                 // Try to exit boot services using this memory map key
                 let result = boot_services.exit_boot_services(image, mmap_key);

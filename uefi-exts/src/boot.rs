@@ -23,7 +23,7 @@ impl BootServicesExt for BootServices {
         let search_type = SearchType::from_proto::<P>();
 
         // Determine how much we need to allocate.
-        let (buffer_size, status1) = self.locate_handle(search_type, None)?.split();
+        let (status1, buffer_size) = self.locate_handle(search_type, None)?.split();
 
         // Allocate a large enough buffer.
         let mut buffer = Vec::with_capacity(buffer_size);
@@ -33,7 +33,7 @@ impl BootServicesExt for BootServices {
         }
 
         // Perform the search.
-        let (buffer_size, status2) = self.locate_handle(search_type, Some(&mut buffer))?.split();
+        let (status2, buffer_size) = self.locate_handle(search_type, Some(&mut buffer))?.split();
 
         // Once the vector has been filled, update its size.
         unsafe {

@@ -5,57 +5,54 @@ use log::warn;
 /// problems may have been encountered along the way
 #[must_use]
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Completion<T> {
-    /// The operation completed without problems
-    Success(T),
-
-    /// The operation completed, but some non-fatal issues were encountered
-    Warning(T, Status),
+pub struct Completion<T> {
+    status: Status,
+    result: T,
 }
 
 impl<T> Completion<T> {
-    /// Split the completion into a (status, value) pair
-    pub fn split(self) -> (T, Status) {
-        match self {
-            Completion::Success(res) => (res, Status::SUCCESS),
-            Completion::Warning(res, stat) => (res, stat),
+    /// Build a completion from a non-warning status and a function result
+    pub fn new(status: Status, result: T) -> Self {
+        Self {
+            status,
+            result,
         }
+    }
+
+    /// Split this completion into its inner status and result data
+    pub fn split(self) -> (Status, T) {
+        (self.status, self.result)
     }
 
     /// Access the inner value, logging the warning if there is any
     pub fn log(self) -> T {
-        match self {
-            Completion::Success(res) => res,
-            Completion::Warning(res, stat) => {
-                log_warning(stat);
-                res
-            }
+        if self.status != Status::SUCCESS {
+            log_warning(self.status);
         }
+        self.result
     }
 
     /// Assume that no warning occured, panic if not
     pub fn unwrap(self) -> T {
-        match self {
-            Completion::Success(res) => res,
-            Completion::Warning(_, w) => {
-                unwrap_failed("Called `Completion::unwrap()` on a `Warning` value", w)
-            }
+        if self.status != Status::SUCCESS {
+            unwrap_failed("Called `Completion::unwrap()` on a `Warning` value", self.status);
         }
+        self.result
     }
 
     /// Assume that no warning occured, panic with provided message if not
     pub fn expect(self, msg: &str) -> T {
-        match self {
-            Completion::Success(res) => res,
-            Completion::Warning(_, w) => unwrap_failed(msg, w),
+        if self.status != Status::SUCCESS {
+            unwrap_failed(msg, self.status);
         }
+        self.result
     }
 
     /// Transform the inner value without unwrapping the Completion
     pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Completion<U> {
-        match self {
-            Completion::Success(res) => Completion::Success(f(res)),
-            Completion::Warning(res, stat) => Completion::Warning(f(res), stat),
+        Completion {
+            status: self.status,
+            result: f(self.result),
         }
     }
 
@@ -67,14 +64,20 @@ impl<T> Completion<T> {
         if extra_status.is_success() {
             self
         } else {
-            Completion::Warning(self.log(), extra_status)
+            Completion {
+                status: extra_status,
+                result: self.log(),
+            }
         }
     }
 }
 
 impl<T> From<T> for Completion<T> {
-    fn from(res: T) -> Self {
-        Completion::Success(res)
+    fn from(result: T) -> Self {
+        Completion {
+            status: Status::SUCCESS,
+            result,
+        }
     }
 }
 

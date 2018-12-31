@@ -97,7 +97,7 @@ impl<'boot> Serial<'boot> {
         let mut buffer_size = data.len();
 
         match unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) } {
-            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
+            s @ Status::TIMEOUT => Ok(Completion::new(s, buffer_size)),
             other => other.into_with(|| buffer_size),
         }
     }
@@ -113,7 +113,7 @@ impl<'boot> Serial<'boot> {
         let mut buffer_size = data.len();
 
         match unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) } {
-            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
+            s @ Status::TIMEOUT => Ok(Completion::new(s, buffer_size)),
             other => other.into_with(|| buffer_size),
         }
     }

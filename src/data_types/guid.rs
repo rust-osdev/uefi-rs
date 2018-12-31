@@ -105,4 +105,4 @@ pub unsafe trait Identify {
     const GUID: Guid;
 }
 
-pub use uefi_derive::unsafe_guid;
+pub use uefi_macros::unsafe_guid;

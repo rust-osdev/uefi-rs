@@ -1,5 +1,5 @@
 [package]
-name = "uefi-derive"
+name = "uefi-macros"
 version = "0.1.0"
 authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
 edition = "2018"

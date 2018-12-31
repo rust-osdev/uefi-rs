@@ -24,7 +24,7 @@ use crate::Identify;
 /// ```
 pub trait Protocol: Identify {}
 
-pub use uefi_derive::Protocol;
+pub use uefi_macros::Protocol;
 
 pub mod console;
 pub mod debug;

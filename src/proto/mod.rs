@@ -12,10 +12,10 @@ use crate::Identify;
 
 /// Common trait implemented by all standard UEFI protocols
 ///
-/// According to the UEFI's specification, protocols are !Send (they expect to
-/// be run on the bootstrap processor) and !Sync (they are not thread-safe).
-/// You can derive the Protocol trait, add these bounds, and specify the
-/// Protocol's GUID using the following syntax:
+/// According to the UEFI's specification, protocols are `!Send` (they expect to
+/// be run on the bootstrap processor) and `!Sync` (they are not thread-safe).
+/// You can derive the `Protocol` trait, add these bounds and specify the
+/// protocol's GUID using the following syntax:
 ///
 /// ```
 /// #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]

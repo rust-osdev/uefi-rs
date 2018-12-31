@@ -63,7 +63,6 @@ impl<T> Completion<T> {
     ///
     /// Since this type only has storage for one warning, if two warnings must
     /// be stored, one of them will be spilled into the logs.
-    ///
     pub fn with_status(self, extra_status: Status) -> Self {
         if extra_status.is_success() {
             self

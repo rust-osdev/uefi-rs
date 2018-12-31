@@ -17,9 +17,8 @@ pub enum FromSliceWithNulError {
 
 /// A Latin-1 null-terminated string
 ///
-/// This type is largely inspired by std::ffi::CStr, see documentation of CStr
-/// for more details on its semantics.
-///
+/// This type is largely inspired by `std::ffi::CStr`, see the documentation of
+/// `CStr` for more details on its semantics.
 #[repr(transparent)]
 pub struct CStr8([Char8]);
 
@@ -71,9 +70,8 @@ impl CStr8 {
 
 /// An UCS-2 null-terminated string
 ///
-/// This type is largely inspired by std::ffi::CStr, see documentation of CStr
-/// for more details on its semantics.
-///
+/// This type is largely inspired by `std::ffi::CStr`, see the documentation of
+/// `CStr` for more details on its semantics.
 #[repr(transparent)]
 pub struct CStr16([Char16]);
 

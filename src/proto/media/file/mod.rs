@@ -29,8 +29,9 @@ pub use self::info::{
 ///
 /// Files have names, and a fixed size.
 ///
-/// A File may also be used to access a directory, although doing so is awkward. If you know that
-/// a file is a directory, consider wrapping it into a Directory for improved ergonomics.
+/// A `File` may also be used to access a directory, but the interface for doing
+/// so is awkward. If you know that a file is a directory, consider wrapping it
+/// into a `Directory` for improved ergonomics.
 pub struct File<'a>(&'a mut FileImpl);
 
 impl<'a> File<'a> {
@@ -42,9 +43,8 @@ impl<'a> File<'a> {
     ///
     /// # Arguments
     /// * `filename`    Path of file to open, relative to this File
-    /// * `open_mode`   The mode to open the file with. Valid
-    ///     combinations are READ, READ | WRITE and READ | WRITE | CREATE
-    /// * `attributes`  Only valid when FILE_MODE_CREATE is used as a mode
+    /// * `open_mode`   The mode to open the file with
+    /// * `attributes`  Only valid when `FILE_MODE_CREATE` is used as a mode
     ///
     /// # Errors
     /// * `uefi::Status::INVALID_PARAMETER`  The filename exceeds the maximum length of 255 chars
@@ -98,14 +98,14 @@ impl<'a> File<'a> {
     /// If the file is not a directory, try to read as much as possible into `buffer`. Returns the
     /// number of bytes that were actually read.
     ///
-    /// If the file is a directory, try to read the next directory entry, which is a FileInfo, into
-    /// `buffer`. If it is too small, report the required buffer size as part of the error. If there
-    /// are no more directory entries, report success as if zero bytes were read. Note that you
-    /// should provide a buffer which is suitably aligned for holding a FileInfo in this case, or
-    /// be prepared to only manipulate your data via ptr::read_unaligned.
+    /// If the file is a directory, try to read the next directory entry, which is a `FileInfo`,
+    /// into `buffer`. If it is too small, report the required buffer size as part of the error.
+    /// If there are no more directory entries, report success as if zero bytes were read. You
+    /// should provide a buffer which is suitably aligned for holding a `FileInfo` in this case, or
+    /// be prepared to only manipulate your data via `ptr::read_unaligned()`.
     ///
-    /// Because enumerating directory entries is so involved, it is recommended to wrap the File
-    /// into a Directory if you intend to do it.
+    /// Because enumerating directory entries is so involved, it is recommended to wrap the `File`
+    /// into a `Directory` if you intend to do it.
     ///
     /// # Arguments
     /// * `buffer`  The target buffer of the read operation
@@ -219,8 +219,8 @@ impl<'a> File<'a> {
     ///
     /// There are various restrictions on the information that may be modified using this method.
     /// The simplest one is that it is usually not possible to call it on read-only media. Further
-    /// restrictions specific to a given given information type are described in the corresponding
-    /// FileProtocolInfo type.
+    /// restrictions specific to a given information type are described in the corresponding
+    /// `FileProtocolInfo` type documentation.
     ///
     /// # Arguments
     /// * `info`  Info that should be set for the file
@@ -305,7 +305,6 @@ pub(super) struct FileImpl {
 ///
 /// SAFETY: Using a repr(C) enum is safe here because this type is only sent to
 ///         the UEFI implementation, and never received from it.
-///
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u64)]
 pub enum FileMode {

@@ -10,7 +10,7 @@ use core::result;
 use core::slice;
 
 /// Common trait for data structures that can be used with
-/// File::set_info() or File::set_info().
+/// `File::set_info()` or `File::set_info()`.
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 pub trait FileProtocolInfo: Align + Identify + FromUefi {}
@@ -34,25 +34,25 @@ pub trait Align {
 
 /// Trait for going from an UEFI-originated pointer to a Rust reference
 ///
-/// This is trivial for Sized types, but requires some work when operating on
-/// dynamic-sized types like NamedFileProtocolInfo, as the second member of the
-/// fat pointer must be reconstructed using hidden UEFI-provided metadata.
+/// This is trivial for `Sized` types, but requires some work when operating on
+/// dynamic-sized types like `NamedFileProtocolInfo`, as the second member of
+/// the fat pointer must be reconstructed using hidden UEFI-provided metadata.
 pub trait FromUefi {
     /// Turn an UEFI-provided pointer-to-base into a (possibly fat) Rust reference
     unsafe fn from_uefi<'a>(ptr: *mut c_void) -> &'a mut Self;
 }
 
-/// Dynamically sized FileProtocolInfo with a header and an UCS-2 name
+/// Dynamically sized `FileProtocolInfo` with a header and an UCS-2 name
 ///
-/// All struct that can currently be queried via Get/SetInfo can be described as
-/// a (possibly empty) header followed by a variable-sized name.
+/// All structs that can currently be queried via Get/SetInfo can be described
+/// as a (possibly empty) header followed by a variable-sized name.
 ///
 /// Since such dynamic-sized types are a bit unpleasant to handle in Rust today,
 /// this generic struct was created to deduplicate the relevant code.
 ///
-/// The reason why this struct covers the whole DST, as opposed to the [Char16]
-/// part only, is that pointers to DSTs are created in a rather unintuitive way
-/// that is best kept centralized in one place.
+/// The reason why this struct covers the whole DST, as opposed to the
+/// `[Char16]` part only, is that pointers to DSTs are created in a rather
+/// unintuitive way that is best kept centralized in one place.
 #[repr(C)]
 pub struct NamedFileProtocolInfo<Header> {
     header: Header,
@@ -60,14 +60,15 @@ pub struct NamedFileProtocolInfo<Header> {
 }
 
 impl<Header> NamedFileProtocolInfo<Header> {
-    /// Create a NamedFileProtocolInfo structure in user-provided storage
+    /// Create a `NamedFileProtocolInfo` structure in user-provided storage
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the "name" string.
+    /// including a null-terminated UCS-2 version of the `name` string.
     ///
-    /// The buffer must be correctly aligned. You can query the required alignment using the
-    /// `alignment()` method of the `Align` trait that this struct implements.
+    /// The buffer must be correctly aligned. You can query the required
+    /// alignment using the `alignment()` method of the `Align` trait that this
+    /// struct implements.
     #[allow(clippy::cast_ptr_alignment)]
     fn new_impl<'a>(
         storage: &'a mut [u8],
@@ -134,9 +135,9 @@ impl<Header> FromUefi for NamedFileProtocolInfo<Header> {
     }
 }
 
-/// Errors that can occur when creating a FileProtocolInfo
+/// Errors that can occur when creating a `FileProtocolInfo`
 pub enum FileInfoCreationError {
-    /// The provided buffer was too small to hold the FileInfo. You need at
+    /// The provided buffer was too small to hold the `FileInfo`. You need at
     /// least the indicated buffer size (in bytes). Please remember that using
     /// a misaligned buffer will cause a decrease of usable storage capacity.
     InsufficientStorage(usize),
@@ -147,14 +148,14 @@ pub enum FileInfoCreationError {
 
 /// Generic file information
 ///
-/// The following rules apply when using this struct with set_info():
+/// The following rules apply when using this struct with `set_info()`:
 ///
 /// - On directories, the file size is determined by the contents of the
-///   directory and cannot be changed by setting file_size. On directories,
-///   file_size is ignored during a set_info().
-/// - The physical_size is determined by the file_size and cannot be changed.
-///   This value is ignored during a set_info() request.
-/// - The FileAttribute::DIRECTORY bit cannot be changed. It must match the
+///   directory and cannot be changed by setting `file_size`. This member is
+///   ignored by `set_info()`.
+/// - The `physical_size` is determined by the `file_size` and cannot be
+///   changed. This member is ignored by `set_info()`.
+/// - The `FileAttribute::DIRECTORY` bit cannot be changed. It must match the
 ///   file’s actual type.
 /// - A value of zero in create_time, last_access, or modification_time causes
 ///   the fields to be ignored (and not updated).
@@ -178,16 +179,15 @@ pub struct FileInfoHeader {
 }
 
 impl FileInfo {
-    /// Create a FileInfo structure
+    /// Create a `FileInfo` structure
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the "name" string.
+    /// including a null-terminated UCS-2 version of the `name` string.
     ///
-    /// The buffer should be suitably aligned for the full data structure. If
-    /// it is not, some bytes at the beginning of the buffer will not be used,
-    /// resulting in a reduction of effective storage capacity.
-    ///
+    /// The buffer must be correctly aligned. You can query the required
+    /// alignment using the `alignment()` method of the `Align` trait that this
+    /// struct implements.
     #[allow(clippy::too_many_arguments)]
     pub fn new<'a>(
         storage: &'a mut [u8],
@@ -256,7 +256,7 @@ impl FileProtocolInfo for FileInfo {}
 /// May only be obtained on the root directory's file handle.
 ///
 /// Please note that only the system volume's volume label may be set using
-/// this information structure. Consider using FileSystemVolumeLabel instead.
+/// this information structure. Consider using `FileSystemVolumeLabel` instead.
 #[unsafe_guid("09576e93-6d3f-11d2-8e39-00a0c969723b")]
 pub type FileSystemInfo = NamedFileProtocolInfo<FileSystemInfoHeader>;
 
@@ -271,15 +271,15 @@ pub struct FileSystemInfoHeader {
 }
 
 impl FileSystemInfo {
-    /// Create a FileSystemInfo structure
+    /// Create a `FileSystemInfo` structure
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the "name" string.
+    /// including a null-terminated UCS-2 version of the `name` string.
     ///
-    /// The buffer should be suitably aligned for the full data structure. If
-    /// it is not, some bytes at the beginning of the buffer will not be used,
-    /// resulting in a reduction of effective storage capacity.
+    /// The buffer must be correctly aligned. You can query the required
+    /// alignment using the `alignment()` method of the `Align` trait that this
+    /// struct implements.
     #[allow(clippy::too_many_arguments)]
     pub fn new<'a>(
         storage: &'a mut [u8],
@@ -340,15 +340,15 @@ pub type FileSystemVolumeLabel = NamedFileProtocolInfo<FileSystemVolumeLabelHead
 pub struct FileSystemVolumeLabelHeader {}
 
 impl FileSystemVolumeLabel {
-    /// Create a FileSystemVolumeLabel structure
+    /// Create a `FileSystemVolumeLabel` structure
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the "name" string.
+    /// including a null-terminated UCS-2 version of the `name` string.
     ///
-    /// The buffer should be suitably aligned for the full data structure. If
-    /// it is not, some bytes at the beginning of the buffer will not be used,
-    /// resulting in a reduction of effective storage capacity.
+    /// The buffer must be correctly aligned. You can query the required
+    /// alignment using the `alignment()` method of the `Align` trait that this
+    /// struct implements.
     pub fn new<'a>(
         storage: &'a mut [u8],
         volume_label: &str,

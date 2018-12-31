@@ -31,7 +31,7 @@ impl Parse for TypeDefinition {
     }
 }
 
-/// unsafe_guid attribute macro, implements the Identify trait for any type
+/// `unsafe_guid` attribute macro, implements the `Identify` trait for any type
 /// (mostly works like a custom derive, but also supports type aliases)
 #[proc_macro_attribute]
 pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -66,7 +66,7 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
-    // These are, in order, a 32-bit integer, three 16-bit ones, and a 48-bit one
+    // The GUID string is composed of a 32-bit integer, three 16-bit ones, and a 48-bit one
     let time_low = next_guid_int(32) as u32;
     let time_mid = next_guid_int(16) as u16;
     let time_high_and_version = next_guid_int(16) as u16;

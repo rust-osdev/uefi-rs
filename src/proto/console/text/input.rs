@@ -27,7 +27,7 @@ impl Input {
 
     /// Reads the next keystroke from the input device, if any.
     ///
-    /// Use wait_for_key_event() with the BootServices::wait_for_event()
+    /// Use `wait_for_key_event()` with the `BootServices::wait_for_event()`
     /// interface in order to wait for a key to be pressed.
     ///
     /// # Errors
@@ -42,8 +42,8 @@ impl Input {
         }
     }
 
-    /// Event to use with BootServices::wait_for_event() to wait for a key to be
-    /// available
+    /// Event to be used with `BootServices::wait_for_event()` in order to wait
+    /// for a key to be available
     pub fn wait_for_key_event(&self) -> Event {
         self.wait_for_key
     }

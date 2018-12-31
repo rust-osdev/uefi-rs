@@ -1,7 +1,7 @@
 //! Graphics output protocol.
 //!
 //! The UEFI GOP is meant to replace existing VGA hardware.
-//! It can be used in the boot environment as well at runtime,
+//! It can be used in the boot environment as well as at runtime,
 //! until a high-performance driver is loaded by the OS.
 //!
 //! The GOP provides access to a hardware frame buffer and allows UEFI apps
@@ -90,7 +90,7 @@ impl<'boot> GraphicsOutput<'boot> {
     /// Sets the video device into the specified mode, clearing visible portions
     /// of the output display to black.
     ///
-    /// This function **will** invalidate the current framebuffer and change the current mode.
+    /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
         (self.set_mode)(self, mode.index).into()
     }

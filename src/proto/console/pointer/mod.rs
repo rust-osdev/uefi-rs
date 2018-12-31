@@ -31,7 +31,7 @@ impl<'boot> Pointer<'boot> {
     /// Retrieves the pointer device's current state, if a state change occured
     /// since the last time this function was called.
     ///
-    /// Use wait_for_input_event() with the BootServices::wait_for_event()
+    /// Use `wait_for_input_event()` with the `BootServices::wait_for_event()`
     /// interface in order to wait for input from the pointer device.
     ///
     /// # Errors
@@ -45,8 +45,8 @@ impl<'boot> Pointer<'boot> {
         }
     }
 
-    /// Event to use with BootServices::wait_for_event() to wait for input from
-    /// the pointer device
+    /// Event to be used with `BootServices::wait_for_event()` in order to wait
+    /// for input from the pointer device
     pub fn wait_for_input_event(&self) -> Event {
         self.wait_for_input
     }

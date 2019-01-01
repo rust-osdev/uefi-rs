@@ -1,4 +1,5 @@
-use super::{Completion, Result};
+use super::{Completion, Error, Result};
+use core::fmt::Debug;
 use core::ops;
 use ucs2;
 
@@ -125,41 +126,69 @@ impl Status {
 
     /// Converts this status code into a result with a given value.
     #[inline]
-    pub fn into_with<T, F>(self, f: F) -> Result<T>
-    where
-        F: FnOnce() -> T,
-    {
+    pub fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if !self.is_error() {
-            Ok(Completion::new(self, f()))
+            Ok(Completion::new(self, val()))
         } else {
-            Err(self)
+            Err(self.into())
+        }
+    }
+
+    /// Converts this status code into a result with a given error payload
+    #[inline]
+    pub fn into_with_err<T, ErrData: Debug>(
+        self,
+        err: impl FnOnce() -> ErrData,
+    ) -> Result<(), ErrData> {
+        if !self.is_error() {
+            Ok(self.into())
+        } else {
+            Err(Error::new(self, err()))
+        }
+    }
+
+    /// Convert this status code into a result with a given value and error payload
+    #[inline]
+    pub fn into_with<T, ErrData: Debug>(
+        self,
+        val: impl FnOnce() -> T,
+        err: impl FnOnce() -> ErrData,
+    ) -> Result<T, ErrData> {
+        if !self.is_error() {
+            Ok(Completion::new(self, val()))
+        } else {
+            Err(Error::new(self, err()))
         }
     }
 }
 
-impl Into<Result<()>> for Status {
+// An UEFI status is equivalent to a Result with no data or rerror payload
+
+impl Into<Result<(), ()>> for Status {
     #[inline]
-    fn into(self) -> Result<()> {
-        self.into_with(|| ())
+    fn into(self) -> Result<(), ()> {
+        self.into_with(|| (), || ())
     }
 }
 
 impl ops::Try for Status {
     type Ok = Completion<()>;
-    type Error = Status;
+    type Error = Error<()>;
 
-    fn into_result(self) -> Result<()> {
+    fn into_result(self) -> Result<(), ()> {
         self.into()
     }
 
     fn from_error(error: Self::Error) -> Self {
-        error
+        error.status()
     }
 
-    fn from_ok(_: Self::Ok) -> Self {
-        Status::SUCCESS
+    fn from_ok(ok: Self::Ok) -> Self {
+        ok.status()
     }
 }
+
+// FIXME: This conversion will go away along with usage of the ucs2 crate
 
 impl From<ucs2::Error> for Status {
     fn from(other: ucs2::Error) -> Self {

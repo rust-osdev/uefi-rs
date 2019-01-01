@@ -41,7 +41,7 @@ impl BootServicesExt for BootServices {
         }
 
         status1
-            .into_with(|| buffer)
+            .into_with_val(|| buffer)
             .map(|completion| completion.with_status(status2))
     }
 

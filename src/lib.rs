@@ -37,7 +37,7 @@ pub(crate) use self::data_types::{unsafe_guid, Identify};
 pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
 
 mod result;
-pub use self::result::{Completion, Result, ResultExt, Status};
+pub use self::result::{Completion, Result, ResultExt, ResultExt2, Status};
 
 pub mod table;
 

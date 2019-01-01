@@ -2,7 +2,7 @@ use super::boot::{BootServices, MemoryMapIter};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, Status};
+use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 use core::marker::PhantomData;
 use core::slice;
 
@@ -151,7 +151,7 @@ impl SystemTable<Boot> {
                 let result = boot_services.exit_boot_services(image, mmap_key);
 
                 // Did we fail because the memory map was updated concurrently?
-                if let Err(Status::INVALID_PARAMETER) = result {
+                if result.status() == Status::INVALID_PARAMETER {
                     // If so, fetch another memory map and try again
                     continue;
                 } else {

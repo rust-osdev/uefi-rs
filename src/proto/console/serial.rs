@@ -75,7 +75,7 @@ impl<'boot> Serial<'boot> {
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
-        (self.get_control_bits)(self, &mut bits).into_with(|| bits)
+        (self.get_control_bits)(self, &mut bits).into_with_val(|| bits)
     }
 
     /// Sets the device's new control bits.
@@ -98,7 +98,7 @@ impl<'boot> Serial<'boot> {
 
         match unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) } {
             s @ Status::TIMEOUT => Ok(Completion::new(s, buffer_size)),
-            other => other.into_with(|| buffer_size),
+            other => other.into_with_val(|| buffer_size),
         }
     }
 
@@ -114,7 +114,7 @@ impl<'boot> Serial<'boot> {
 
         match unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) } {
             s @ Status::TIMEOUT => Ok(Completion::new(s, buffer_size)),
-            other => other.into_with(|| buffer_size),
+            other => other.into_with_val(|| buffer_size),
         }
     }
 }

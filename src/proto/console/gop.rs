@@ -68,7 +68,7 @@ impl<'boot> GraphicsOutput<'boot> {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with(|| {
+        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with_val(|| {
             let info = unsafe { *info };
             Mode {
                 index,

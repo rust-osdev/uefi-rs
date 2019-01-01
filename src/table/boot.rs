@@ -149,7 +149,7 @@ impl BootServices {
             AllocateType::MaxAddress(addr) => (1, addr as u64),
             AllocateType::Address(addr) => (2, addr as u64),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with(|| addr)
+        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
@@ -216,7 +216,7 @@ impl BootServices {
                 &mut entry_version,
             )
         }
-        .into_with(move || {
+        .into_with_val(move || {
             let len = map_size / entry_size;
             let iter = MemoryMapIter {
                 buffer,
@@ -231,7 +231,7 @@ impl BootServices {
     /// Allocates from a memory pool. The pointer will be 8-byte aligned.
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        (self.allocate_pool)(mem_ty, size, &mut buffer).into_with(|| buffer)
+        (self.allocate_pool)(mem_ty, size, &mut buffer).into_with_val(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
@@ -277,7 +277,7 @@ impl BootServices {
 
         // Now we're ready to call UEFI
         (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
-            .into_with(|| event)
+            .into_with_val(|| event)
     }
 
     /// Stops execution until an event is signaled
@@ -370,7 +370,7 @@ impl BootServices {
 
         match (buffer, status) {
             (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
-            (_, other_status) => other_status.into_with(|| buffer_len),
+            (_, other_status) => other_status.into_with_val(|| buffer_len),
         }
     }
 

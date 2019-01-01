@@ -13,10 +13,12 @@ pub struct Completion<T> {
 impl<T> Completion<T> {
     /// Build a completion from a non-warning status and a function result
     pub fn new(status: Status, result: T) -> Self {
-        Self {
-            status,
-            result,
-        }
+        Self { status, result }
+    }
+
+    /// Extract the status of this completion
+    pub fn status(&self) -> Status {
+        self.status
     }
 
     /// Split this completion into its inner status and result data
@@ -35,7 +37,10 @@ impl<T> Completion<T> {
     /// Assume that no warning occured, panic if not
     pub fn unwrap(self) -> T {
         if self.status != Status::SUCCESS {
-            unwrap_failed("Called `Completion::unwrap()` on a `Warning` value", self.status);
+            unwrap_failed(
+                "Called `Completion::unwrap()` on a `Warning` value",
+                self.status,
+            );
         }
         self.result
     }
@@ -72,6 +77,14 @@ impl<T> Completion<T> {
     }
 }
 
+// Completions can be built from either a status or a payload
+
+impl From<Status> for Completion<()> {
+    fn from(status: Status) -> Self {
+        Completion { status, result: () }
+    }
+}
+
 impl<T> From<T> for Completion<T> {
     fn from(result: T) -> Self {
         Completion {
@@ -82,6 +95,7 @@ impl<T> From<T> for Completion<T> {
 }
 
 // These are separate functions to reduce the code size of the methods
+
 #[inline(never)]
 #[cold]
 fn unwrap_failed(msg: &str, warning: Status) -> ! {

@@ -41,7 +41,7 @@ impl<'boot> Pointer<'boot> {
 
         match (self.get_state)(self, &mut pointer_state) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with(|| Some(pointer_state)),
+            other => other.into_with_val(|| Some(pointer_state)),
         }
     }
 

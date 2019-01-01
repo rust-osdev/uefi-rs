@@ -65,7 +65,7 @@ impl<'a> File<'a> {
     ) -> Result<File> {
         const BUF_SIZE: usize = 255;
         if filename.len() > BUF_SIZE {
-            Err(Status::INVALID_PARAMETER)
+            Err(Status::INVALID_PARAMETER.into())
         } else {
             let mut buf = [0u16; BUF_SIZE + 1];
             let mut ptr = ptr::null_mut();
@@ -74,7 +74,7 @@ impl<'a> File<'a> {
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
 
             unsafe { (self.0.open)(self.0, &mut ptr, filename.as_ptr(), open_mode, attributes) }
-                .into_with(|| unsafe { File::new(ptr) })
+                .into_with_val(|| unsafe { File::new(ptr) })
         }
     }
 
@@ -160,7 +160,7 @@ impl<'a> File<'a> {
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.0.get_position)(self.0, &mut pos).into_with(|| pos)
+        (self.0.get_position)(self.0, &mut pos).into_with_val(|| pos)
     }
 
     /// Sets the file's current position

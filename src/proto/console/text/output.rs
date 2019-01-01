@@ -81,7 +81,7 @@ impl<'boot> Output<'boot> {
     /// alternative to this method.
     fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
-        (self.query_mode)(self, index, &mut columns, &mut rows).into_with(|| (columns, rows))
+        (self.query_mode)(self, index, &mut columns, &mut rows).into_with_val(|| (columns, rows))
     }
 
     /// Returns the the current text mode.
@@ -138,7 +138,7 @@ impl<'boot> Output<'boot> {
         let bgc = background as usize;
 
         if bgc >= 8 {
-            Err(Status::DEVICE_ERROR)
+            Status::INVALID_PARAMETER.into()
         } else {
             let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
             (self.set_attribute)(self, attr).into()

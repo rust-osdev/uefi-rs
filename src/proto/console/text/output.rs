@@ -30,7 +30,7 @@ pub struct Output<'boot> {
 
 impl<'boot> Output<'boot> {
     /// Resets and clears the text output device hardware.
-    pub fn reset(&mut self, extended: bool) -> Result<()> {
+    pub fn reset(&mut self, extended: bool) -> Result {
         (self.reset)(self, extended).into()
     }
 
@@ -38,12 +38,12 @@ impl<'boot> Output<'boot> {
     ///
     /// The background is set to the current background color.
     /// The cursor is moved to (0, 0).
-    pub fn clear(&mut self) -> Result<()> {
+    pub fn clear(&mut self) -> Result {
         (self.clear_screen)(self).into()
     }
 
     /// Writes a string to the output device.
-    pub fn output_string(&mut self, string: &CStr16) -> Result<()> {
+    pub fn output_string(&mut self, string: &CStr16) -> Result {
         unsafe { (self.output_string)(self, string.as_ptr()) }.into()
     }
 
@@ -51,10 +51,11 @@ impl<'boot> Output<'boot> {
     ///
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
-    pub fn test_string(&mut self, string: &CStr16) -> bool {
+    pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
         match unsafe { (self.test_string)(self, string.as_ptr()) } {
-            Status::SUCCESS => true,
-            _ => false,
+            Status::SUCCESS => Ok(true.into()),
+            Status::UNSUPPORTED => Ok(false.into()),
+            other => Err(other.into()),
         }
     }
 
@@ -98,7 +99,7 @@ impl<'boot> Output<'boot> {
     }
 
     /// Sets a mode as current.
-    pub fn set_mode(&mut self, mode: OutputMode) -> Result<()> {
+    pub fn set_mode(&mut self, mode: OutputMode) -> Result {
         (self.set_mode)(self, mode.index).into()
     }
 
@@ -111,7 +112,7 @@ impl<'boot> Output<'boot> {
     ///
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
-    pub fn enable_cursor(&mut self, visible: bool) -> Result<()> {
+    pub fn enable_cursor(&mut self, visible: bool) -> Result {
         (self.enable_cursor)(self, visible).into()
     }
 
@@ -125,7 +126,7 @@ impl<'boot> Output<'boot> {
     /// Sets the cursor's position, relative to the top-left corner, which is (0, 0).
     ///
     /// This function will fail if the cursor's new position would exceed the screen's bounds.
-    pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result<()> {
+    pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result {
         (self.set_cursor_position)(self, column, row).into()
     }
 
@@ -133,7 +134,7 @@ impl<'boot> Output<'boot> {
     ///
     /// Note that for the foreground color you can choose any color.
     /// The background must be one of the first 8 colors.
-    pub fn set_color(&mut self, foreground: Color, background: Color) -> Result<()> {
+    pub fn set_color(&mut self, foreground: Color, background: Color) -> Result {
         let fgc = foreground as usize;
         let bgc = background as usize;
 

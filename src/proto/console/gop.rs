@@ -91,14 +91,14 @@ impl<'boot> GraphicsOutput<'boot> {
     /// of the output display to black.
     ///
     /// This function will invalidate the current framebuffer.
-    pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
+    pub fn set_mode(&mut self, mode: &Mode) -> Result {
         (self.set_mode)(self, mode.index).into()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
     ///
     /// Every operation requires different parameters.
-    pub fn blt(&mut self, op: BltOp) -> Result<()> {
+    pub fn blt(&mut self, op: BltOp) -> Result {
         // Demultiplex the operation type.
         unsafe {
             match op {

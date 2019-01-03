@@ -6,7 +6,8 @@ use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
     info!("Running pointer protocol test");
-    if let Some(pointer) = bt.find_protocol::<Pointer>() {
+    if let Ok(pointer) = bt.find_protocol::<Pointer>() {
+        let pointer = pointer.expect("Warning encountered while opening pointer protocol");
         let pointer = unsafe { &mut *pointer.get() };
 
         pointer

@@ -44,7 +44,7 @@ impl RuntimeServices {
     ///
     /// During runtime, if a PC-AT CMOS device is present in the platform, the
     /// caller must synchronize access to the device before calling set_time.
-    pub unsafe fn set_time(&mut self, time: &Time) -> Result<()> {
+    pub unsafe fn set_time(&mut self, time: &Time) -> Result {
         (self.set_time)(time).into()
     }
 

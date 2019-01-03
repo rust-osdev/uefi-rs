@@ -6,7 +6,7 @@ use crate::{Event, Guid, Handle, Result, Status};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
-use core::{mem, ptr, result};
+use core::{mem, ptr};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -153,7 +153,7 @@ impl BootServices {
     }
 
     /// Frees memory pages allocated by UEFI.
-    pub fn free_pages(&self, addr: u64, count: usize) -> Result<()> {
+    pub fn free_pages(&self, addr: u64, count: usize) -> Result {
         (self.free_pages)(addr, count).into()
     }
 
@@ -235,7 +235,7 @@ impl BootServices {
     }
 
     /// Frees memory allocated from a pool.
-    pub fn free_pool(&self, addr: *mut u8) -> Result<()> {
+    pub fn free_pool(&self, addr: *mut u8) -> Result {
         (self.free_pool)(addr).into()
     }
 
@@ -307,14 +307,14 @@ impl BootServices {
     /// To check if an event is signaled without waiting, an already signaled
     /// event can be used as the last event in the slice being checked, or the
     /// check_event() interface may be used.
-    pub fn wait_for_event(&self, events: &mut [Event]) -> result::Result<usize, (Status, usize)> {
+    pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
-        match unsafe { (self.wait_for_event)(number_of_events, events, &mut index) } {
-            Status::SUCCESS => Ok(index),
-            s @ Status::INVALID_PARAMETER => Err((s, index)),
-            error => Err((error, 0)),
-        }
+        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }
+            .into_with(
+                || index,
+                |s| if s == Status::INVALID_PARAMETER { Some(index) } else { None },
+            )
     }
 
     /// Query a handle for a certain protocol.
@@ -326,15 +326,13 @@ impl BootServices {
     /// provides no mechanism to protect against concurrent usage. Such
     /// protections must be implemented by user-level code, for example via a
     /// global `HashSet`.
-    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&UnsafeCell<P>> {
+    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
-            Status::SUCCESS => {
+        (self.handle_protocol)(handle, &P::GUID, &mut ptr)
+            .into_with_val(|| {
                 let ptr = ptr as *mut P as *mut UnsafeCell<P>;
-                Some(unsafe { &*ptr })
-            }
-            _ => None,
-        }
+                unsafe { &*ptr }
+            })
     }
 
     /// Enumerates all handles installed on the system which match a certain query.
@@ -388,7 +386,7 @@ impl BootServices {
         &self,
         image: Handle,
         mmap_key: MemoryMapKey,
-    ) -> Result<()> {
+    ) -> Result {
         (self.exit_boot_services)(image, mmap_key).into()
     }
 
@@ -422,7 +420,7 @@ impl BootServices {
         timeout: usize,
         watchdog_code: u64,
         data: Option<&mut [u16]>,
-    ) -> Result<()> {
+    ) -> Result {
         assert!(
             watchdog_code > 0xffff,
             "Invalid use of a reserved firmware watchdog code"

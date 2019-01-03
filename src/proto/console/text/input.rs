@@ -21,7 +21,7 @@ impl Input {
     /// # Errors
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
-    pub fn reset(&mut self, extended_verification: bool) -> Result<()> {
+    pub fn reset(&mut self, extended_verification: bool) -> Result {
         (self.reset)(self, extended_verification).into()
     }
 

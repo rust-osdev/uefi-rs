@@ -93,11 +93,10 @@ impl<'boot> Serial<'boot> {
     /// bytes were actually read from the device.
     pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }
-            .into_with(
-                || debug_assert_eq!(buffer_size, data.len()),
-                |_| buffer_size
-            )
+        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }.into_with(
+            || debug_assert_eq!(buffer_size, data.len()),
+            |_| buffer_size,
+        )
     }
 
     /// Writes data to this device.
@@ -107,11 +106,10 @@ impl<'boot> Serial<'boot> {
     /// were actually written to the device.
     pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }
-            .into_with(
-                || debug_assert_eq!(buffer_size, data.len()),
-                |_| buffer_size
-            )
+        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }.into_with(
+            || debug_assert_eq!(buffer_size, data.len()),
+            |_| buffer_size,
+        )
     }
 }
 

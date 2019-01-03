@@ -310,11 +310,16 @@ impl BootServices {
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
-        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }
-            .into_with(
-                || index,
-                |s| if s == Status::INVALID_PARAMETER { Some(index) } else { None },
-            )
+        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }.into_with(
+            || index,
+            |s| {
+                if s == Status::INVALID_PARAMETER {
+                    Some(index)
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     /// Query a handle for a certain protocol.
@@ -328,11 +333,10 @@ impl BootServices {
     /// global `HashSet`.
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr)
-            .into_with_val(|| {
-                let ptr = ptr as *mut P as *mut UnsafeCell<P>;
-                unsafe { &*ptr }
-            })
+        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
+            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+            unsafe { &*ptr }
+        })
     }
 
     /// Enumerates all handles installed on the system which match a certain query.

@@ -54,7 +54,7 @@ impl<'boot> Output<'boot> {
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
         match unsafe { (self.test_string)(self, string.as_ptr()) } {
             Status::UNSUPPORTED => Ok(false.into()),
-            other => other.into_with_val(|| true)
+            other => other.into_with_val(|| true),
         }
     }
 

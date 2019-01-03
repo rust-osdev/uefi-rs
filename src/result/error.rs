@@ -11,10 +11,7 @@ pub struct Error<Data: Debug = ()> {
 
 impl<Data: Debug> Error<Data> {
     pub fn new(status: Status, data: Data) -> Self {
-        Self {
-            status,
-            data,
-        }
+        Self { status, data }
     }
 
     pub fn status(&self) -> Status {

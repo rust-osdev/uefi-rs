@@ -1,6 +1,6 @@
 use super::{Align, File, FileAttribute, FileInfo, FileMode, FileProtocolInfo, FromUefi};
-use crate::Result;
 use crate::prelude::*;
+use crate::Result;
 use core::ffi::c_void;
 
 /// `File` wrapper for handling directories

@@ -116,11 +116,16 @@ impl<'imp> File<'imp> {
     ///                                      and the required buffer size is provided as output.
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) }
-            .into_with(
-                || buffer_size,
-                |s| if s == Status::BUFFER_TOO_SMALL { Some(buffer_size) } else { None },
-            )
+        unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) }.into_with(
+            || buffer_size,
+            |s| {
+                if s == Status::BUFFER_TOO_SMALL {
+                    Some(buffer_size)
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     /// Write data to file
@@ -205,7 +210,13 @@ impl<'imp> File<'imp> {
         unsafe { (self.0.get_info)(self.0, &Info::GUID, &mut buffer_size, buffer.as_mut_ptr()) }
             .into_with(
                 || unsafe { Info::from_uefi(buffer.as_ptr() as *mut c_void) },
-                |s| if s == Status::BUFFER_TOO_SMALL { Some(buffer_size) } else { None },
+                |s| {
+                    if s == Status::BUFFER_TOO_SMALL {
+                        Some(buffer_size)
+                    } else {
+                        None
+                    }
+                },
             )
     }
 

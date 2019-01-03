@@ -10,7 +10,6 @@
 ///!
 ///! Convenience methods are also provided via extension traits to ease working
 ///! with this complex type in everyday usage.
-
 use core::fmt::Debug;
 
 /// `Completion`s are used to model operations which have completed, but may
@@ -27,7 +26,8 @@ mod status;
 pub use self::status::Status;
 
 /// Return type of most UEFI functions. Both success and error payloads are optional
-pub type Result<Output=(), ErrData=()> = core::result::Result<Completion<Output>, Error<ErrData>>;
+pub type Result<Output = (), ErrData = ()> =
+    core::result::Result<Completion<Output>, Error<ErrData>>;
 
 /// Extension trait for Result which helps dealing with UEFI's warnings
 pub trait ResultExt<Output, ErrData: Debug> {

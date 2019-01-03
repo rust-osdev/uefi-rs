@@ -6,7 +6,7 @@ use uefi_exts::BootServicesExt;
 pub fn test(bt: &BootServices) {
     info!("Running graphics output protocol test");
     if let Ok(gop) = bt.find_protocol::<GraphicsOutput>() {
-        let gop = gop.expect("Warning encountered while opening GOP");
+        let gop = gop.expect("Warnings encountered while opening GOP");
         let gop = unsafe { &mut *gop.get() };
 
         set_graphics_mode(gop);
@@ -25,7 +25,7 @@ fn set_graphics_mode(gop: &mut GraphicsOutput) {
     // We know for sure QEMU has a 1024x768 mode.
     let mode = gop
         .modes()
-        .map(|mode| mode.expect("Warning encountered while querying mode"))
+        .map(|mode| mode.expect("Warnings encountered while querying mode"))
         .find(|ref mode| {
             let info = mode.info();
             info.resolution() == (1024, 768)

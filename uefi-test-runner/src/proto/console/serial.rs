@@ -6,7 +6,7 @@ use uefi_exts::BootServicesExt;
 pub fn test(bt: &BootServices) {
     info!("Running serial protocol test");
     if let Ok(serial) = bt.find_protocol::<Serial>() {
-        let serial = serial.expect("Warning encountered while opening serial protocol");
+        let serial = serial.expect("Warnings encountered while opening serial protocol");
         let serial = unsafe { &mut *serial.get() };
 
         let old_ctrl_bits = serial

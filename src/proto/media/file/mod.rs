@@ -31,9 +31,9 @@ pub use self::info::{
 /// A `File` may also be used to access a directory, but the interface for doing
 /// so is awkward. If you know that a file is a directory, consider wrapping it
 /// into a `Directory` for improved ergonomics.
-pub struct File<'a>(&'a mut FileImpl);
+pub struct File<'imp>(&'imp mut FileImpl);
 
-impl<'a> File<'a> {
+impl<'imp> File<'imp> {
     pub(super) unsafe fn new(ptr: *mut FileImpl) -> Self {
         File(&mut *ptr)
     }
@@ -247,7 +247,7 @@ impl<'a> File<'a> {
     }
 }
 
-impl<'a> Drop for File<'a> {
+impl<'imp> Drop for File<'imp> {
     fn drop(&mut self) {
         let result: Result = (self.0.close)(self.0).into();
         // The spec says this always succeeds.

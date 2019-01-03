@@ -38,7 +38,7 @@ pub trait Align {
 /// the fat pointer must be reconstructed using hidden UEFI-provided metadata.
 pub trait FromUefi {
     /// Turn an UEFI-provided pointer-to-base into a (possibly fat) Rust reference
-    unsafe fn from_uefi<'a>(ptr: *mut c_void) -> &'a mut Self;
+    unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self;
 }
 
 /// Dynamically sized `FileProtocolInfo` with a header and an UCS-2 name
@@ -123,12 +123,12 @@ impl<Header> Align for NamedFileProtocolInfo<Header> {
 
 impl<Header> FromUefi for NamedFileProtocolInfo<Header> {
     #[allow(clippy::cast_ptr_alignment)]
-    unsafe fn from_uefi<'a>(raw_ptr: *mut c_void) -> &'a mut Self {
-        let byte_ptr = raw_ptr as *mut u8;
+    unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self {
+        let byte_ptr = ptr as *mut u8;
         let name_ptr = byte_ptr.add(mem::size_of::<Header>()) as *mut Char16;
         let name = CStr16::from_ptr(name_ptr);
         let name_len = name.to_u16_slice_with_nul().len();
-        let fat_ptr = slice::from_raw_parts_mut(raw_ptr as *mut Char16, name_len);
+        let fat_ptr = slice::from_raw_parts_mut(ptr as *mut Char16, name_len);
         let self_ptr = fat_ptr as *mut [Char16] as *mut Self;
         &mut *self_ptr
     }

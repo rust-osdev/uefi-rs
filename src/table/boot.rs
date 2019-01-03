@@ -191,10 +191,10 @@ impl BootServices {
     ///
     /// The returned key is a unique identifier of the current configuration of memory.
     /// Any allocations or such will change the memory map's key.
-    pub fn memory_map<'a>(
+    pub fn memory_map<'buf>(
         &self,
-        buffer: &'a mut [u8],
-    ) -> Result<(MemoryMapKey, MemoryMapIter<'a>)> {
+        buffer: &'buf mut [u8],
+    ) -> Result<(MemoryMapKey, MemoryMapIter<'buf>)> {
         let mut map_size = buffer.len();
         let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
@@ -488,8 +488,8 @@ pub enum Tpl: usize => {
 /// RAII guard for task priority level changes
 ///
 /// Will automatically restore the former task priority level when dropped.
-pub struct TplGuard<'a> {
-    boot_services: &'a BootServices,
+pub struct TplGuard<'boot> {
+    boot_services: &'boot BootServices,
     old_tpl: Tpl,
 }
 
@@ -633,15 +633,15 @@ pub struct MemoryMapKey(usize);
 /// `impl Trait` which may be lifted in the future. It is therefore recommended
 /// that you refrain from directly manipulating it in your code.
 #[derive(Debug)]
-pub struct MemoryMapIter<'a> {
-    buffer: &'a [u8],
+pub struct MemoryMapIter<'buf> {
+    buffer: &'buf [u8],
     entry_size: usize,
     index: usize,
     len: usize,
 }
 
-impl<'a> Iterator for MemoryMapIter<'a> {
-    type Item = &'a MemoryDescriptor;
+impl<'buf> Iterator for MemoryMapIter<'buf> {
+    type Item = &'buf MemoryDescriptor;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let sz = self.len - self.index;
@@ -664,22 +664,22 @@ impl<'a> Iterator for MemoryMapIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for MemoryMapIter<'a> {}
+impl<'buf> ExactSizeIterator for MemoryMapIter<'buf> {}
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]
-pub enum SearchType<'a> {
+pub enum SearchType<'guid> {
     /// Return all handles present on the system.
     AllHandles,
     /// Returns all handles supporting a certain protocol, specified by its GUID.
     ///
     /// If the protocol implements the `Protocol` interface,
     /// you can use the `from_proto` function to construct a new `SearchType`.
-    ByProtocol(&'a Guid),
+    ByProtocol(&'guid Guid),
     // TODO: add ByRegisterNotify once the corresponding function is implemented.
 }
 
-impl<'a> SearchType<'a> {
+impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
     pub fn from_proto<P: Protocol>() -> Self {
         SearchType::ByProtocol(&P::GUID)

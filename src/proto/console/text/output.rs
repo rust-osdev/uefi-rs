@@ -61,7 +61,7 @@ impl<'boot> Output<'boot> {
 
     /// Returns an iterator of all supported text modes.
     // TODO: Bring back impl Trait once the story around bounds improves
-    pub fn modes<'a>(&'a mut self) -> OutputModeIter<'a, 'boot> {
+    pub fn modes<'out>(&'out mut self) -> OutputModeIter<'out, 'boot> {
         let max = self.data.max_mode as usize;
         OutputModeIter {
             output: self,
@@ -228,13 +228,13 @@ impl OutputMode {
 }
 
 /// An iterator of the text modes (possibly) supported by a device.
-pub struct OutputModeIter<'a, 'b: 'a> {
-    output: &'a mut Output<'b>,
+pub struct OutputModeIter<'out, 'boot: 'out> {
+    output: &'out mut Output<'boot>,
     current: usize,
     max: usize,
 }
 
-impl<'a, 'b> Iterator for OutputModeIter<'a, 'b> {
+impl<'out, 'boot> Iterator for OutputModeIter<'out, 'boot> {
     type Item = Completion<OutputMode>;
 
     fn next(&mut self) -> Option<Self::Item> {

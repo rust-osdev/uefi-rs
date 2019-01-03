@@ -131,11 +131,11 @@ impl SystemTable<Boot> {
     /// system table which more accurately reflects the state of the UEFI
     /// firmware following exit from boot services, along with a high-level
     /// iterator to the UEFI memory map.
-    pub fn exit_boot_services<'a>(
+    pub fn exit_boot_services<'buf>(
         self,
         image: Handle,
-        mmap_buf: &'a mut [u8],
-    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'a>)> {
+        mmap_buf: &'buf mut [u8],
+    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'buf>)> {
         unsafe {
             let boot_services = self.boot_services();
 

@@ -7,15 +7,15 @@ use core::ffi::c_void;
 ///
 /// The `File` abstraction can handle directories, but does so in a very roundabout way.
 /// A dedicated abstraction for directory handling is therefore desirable.
-pub struct Directory<'a>(File<'a>);
+pub struct Directory<'file>(File<'file>);
 
-impl<'a> Directory<'a> {
+impl<'file> Directory<'file> {
     /// Wrap a File handle into a Directory
     ///
     /// You should have made sure that the file is indeed a directory beforehand, using
     /// `file.get_info<FileInfo>(...)`. We cannot do it for you because this requires an unbounded
     /// amount of memory and we refrain from calling the UEFI allocator implicitly.
-    pub unsafe fn from_file(file: File<'a>) -> Self {
+    pub unsafe fn from_file(file: File<'file>) -> Self {
         Directory(file)
     }
 

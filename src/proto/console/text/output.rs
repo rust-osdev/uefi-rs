@@ -53,9 +53,8 @@ impl<'boot> Output<'boot> {
     /// some unsupported characters.
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
         match unsafe { (self.test_string)(self, string.as_ptr()) } {
-            Status::SUCCESS => Ok(true.into()),
             Status::UNSUPPORTED => Ok(false.into()),
-            other => Err(other.into()),
+            other => other.into_with_val(|| true)
         }
     }
 

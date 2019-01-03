@@ -136,14 +136,14 @@ impl Status {
 
     /// Converts this status code into a result with a given error payload
     #[inline]
-    pub fn into_with_err<T, ErrData: Debug>(
+    pub fn into_with_err<ErrData: Debug>(
         self,
-        err: impl FnOnce() -> ErrData,
+        err: impl FnOnce(Status) -> ErrData,
     ) -> Result<(), ErrData> {
         if !self.is_error() {
             Ok(self.into())
         } else {
-            Err(Error::new(self, err()))
+            Err(Error::new(self, err(self)))
         }
     }
 
@@ -152,12 +152,12 @@ impl Status {
     pub fn into_with<T, ErrData: Debug>(
         self,
         val: impl FnOnce() -> T,
-        err: impl FnOnce() -> ErrData,
+        err: impl FnOnce(Status) -> ErrData,
     ) -> Result<T, ErrData> {
         if !self.is_error() {
             Ok(Completion::new(self, val()))
         } else {
-            Err(Error::new(self, err()))
+            Err(Error::new(self, err(self)))
         }
     }
 }
@@ -167,7 +167,7 @@ impl Status {
 impl Into<Result<(), ()>> for Status {
     #[inline]
     fn into(self) -> Result<(), ()> {
-        self.into_with(|| (), || ())
+        self.into_with(|| (), |_| ())
     }
 }
 

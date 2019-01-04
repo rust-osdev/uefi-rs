@@ -137,12 +137,10 @@ impl<'boot> Output<'boot> {
         let fgc = foreground as usize;
         let bgc = background as usize;
 
-        if bgc >= 8 {
-            Status::INVALID_PARAMETER.into()
-        } else {
-            let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
-            (self.set_attribute)(self, attr).into()
-        }
+        assert!(bgc < 8, "An invalid background color was requested");
+
+        let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
+        (self.set_attribute)(self, attr).into()
     }
 }
 

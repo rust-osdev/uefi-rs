@@ -1,7 +1,7 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use crate::proto::Protocol;
-use crate::{unsafe_guid, Completion, Result, Status};
+use crate::{unsafe_guid, Result, Status};
 use bitflags::bitflags;
 
 /// Provides access to a serial I/O device.
@@ -37,7 +37,7 @@ pub struct Serial<'boot> {
 
 impl<'boot> Serial<'boot> {
     /// Reset the device.
-    pub fn reset(&mut self) -> Result<()> {
+    pub fn reset(&mut self) -> Result {
         (self.reset)(self).into()
     }
 
@@ -59,7 +59,7 @@ impl<'boot> Serial<'boot> {
     /// - if either `baud_rate` or `receive_fifo_depth` is less than
     ///   the device's minimum, an error will be returned;
     ///   this value will be rounded down to the nearest value supported by the device;
-    pub fn set_attributes(&mut self, mode: &IoMode) -> Result<()> {
+    pub fn set_attributes(&mut self, mode: &IoMode) -> Result {
         (self.set_attributes)(
             self,
             mode.baud_rate,
@@ -75,47 +75,41 @@ impl<'boot> Serial<'boot> {
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
-        (self.get_control_bits)(self, &mut bits).into_with(|| bits)
+        (self.get_control_bits)(self, &mut bits).into_with_val(|| bits)
     }
 
     /// Sets the device's new control bits.
     ///
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
-    pub fn set_control_bits(&mut self, bits: ControlBits) -> Result<()> {
+    pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
         (self.set_control_bits)(self, bits).into()
     }
 
     /// Reads data from this device.
     ///
-    /// Returns the number of bytes actually read from the device.
-    /// In the case of a timeout or buffer overrun, this number will be smaller
-    /// than the buffer's size.
-    ///
-    /// Unlike UEFI, we handle timeouts as warnings, not errors
-    pub fn read(&mut self, data: &mut [u8]) -> Result<usize> {
+    /// This operation will block until the buffer has been filled with data or
+    /// an error occurs. In the latter case, the error will indicate how many
+    /// bytes were actually read from the device.
+    pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-
-        match unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) } {
-            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
-            other => other.into_with(|| buffer_size),
-        }
+        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }.into_with(
+            || debug_assert_eq!(buffer_size, data.len()),
+            |_| buffer_size,
+        )
     }
 
     /// Writes data to this device.
     ///
-    /// Returns the number of bytes actually written to the device.
-    /// In the case of a timeout, this number will be smaller than
-    /// the buffer's size.
-    ///
-    /// Unlike UEFI, we handle timeouts as warnings, not errors
-    pub fn write(&mut self, data: &[u8]) -> Result<usize> {
+    /// This operation will block until the data has been fully written or an
+    /// error occurs. In the latter case, the error will indicate how many bytes
+    /// were actually written to the device.
+    pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-
-        match unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) } {
-            s @ Status::TIMEOUT => Ok(Completion::Warning(buffer_size, s)),
-            other => other.into_with(|| buffer_size),
-        }
+        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }.into_with(
+            || debug_assert_eq!(buffer_size, data.len()),
+            |_| buffer_size,
+        )
     }
 }
 

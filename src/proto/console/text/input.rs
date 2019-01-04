@@ -21,7 +21,7 @@ impl Input {
     /// # Errors
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
-    pub fn reset(&mut self, extended_verification: bool) -> Result<()> {
+    pub fn reset(&mut self, extended_verification: bool) -> Result {
         (self.reset)(self, extended_verification).into()
     }
 
@@ -38,7 +38,7 @@ impl Input {
 
         match (self.read_key_stroke)(self, &mut key) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with(|| Some(key.into())),
+            other => other.into_with_val(|| Some(key.into())),
         }
     }
 

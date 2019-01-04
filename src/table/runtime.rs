@@ -30,21 +30,21 @@ impl RuntimeServices {
     /// Query the current time and date information
     pub fn get_time(&self) -> Result<Time> {
         let mut time = unsafe { mem::uninitialized() };
-        unsafe { (self.get_time)(&mut time, ptr::null_mut()) }.into_with(|| time)
+        unsafe { (self.get_time)(&mut time, ptr::null_mut()) }.into_with_val(|| time)
     }
 
     /// Query the current time and date information and the RTC capabilities
     pub fn get_time_and_caps(&self) -> Result<(Time, TimeCapabilities)> {
         let mut time = unsafe { mem::uninitialized() };
         let mut caps = unsafe { mem::uninitialized() };
-        unsafe { (self.get_time)(&mut time, &mut caps as *mut _) }.into_with(|| (time, caps))
+        unsafe { (self.get_time)(&mut time, &mut caps as *mut _) }.into_with_val(|| (time, caps))
     }
 
     /// Sets the current local time and date information
     ///
     /// During runtime, if a PC-AT CMOS device is present in the platform, the
     /// caller must synchronize access to the device before calling set_time.
-    pub unsafe fn set_time(&mut self, time: &Time) -> Result<()> {
+    pub unsafe fn set_time(&mut self, time: &Time) -> Result {
         (self.set_time)(time).into()
     }
 

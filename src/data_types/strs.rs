@@ -24,7 +24,7 @@ pub struct CStr8([Char8]);
 
 impl CStr8 {
     /// Wraps a raw UEFI string with a safe C string wrapper
-    pub unsafe fn from_ptr<'a>(ptr: *const Char8) -> &'a Self {
+    pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
         let mut len = 0;
         while *ptr.add(len) != NUL_8 {
             len += 1
@@ -77,7 +77,7 @@ pub struct CStr16([Char16]);
 
 impl CStr16 {
     /// Wraps a raw UEFI string with a safe C string wrapper
-    pub unsafe fn from_ptr<'a>(ptr: *const Char16) -> &'a Self {
+    pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;
         while *ptr.add(len) != NUL_16 {
             len += 1

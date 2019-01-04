@@ -24,7 +24,7 @@ impl<'boot> Pointer<'boot> {
     /// # Errors
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
-    pub fn reset(&mut self, extended_verification: bool) -> Result<()> {
+    pub fn reset(&mut self, extended_verification: bool) -> Result {
         (self.reset)(self, extended_verification).into()
     }
 
@@ -41,7 +41,7 @@ impl<'boot> Pointer<'boot> {
 
         match (self.get_state)(self, &mut pointer_state) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with(|| Some(pointer_state)),
+            other => other.into_with_val(|| Some(pointer_state)),
         }
     }
 

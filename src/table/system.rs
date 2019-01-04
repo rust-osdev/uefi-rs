@@ -2,7 +2,7 @@ use super::boot::{BootServices, MemoryMapIter};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, Status};
+use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 use core::marker::PhantomData;
 use core::slice;
 
@@ -131,11 +131,11 @@ impl SystemTable<Boot> {
     /// system table which more accurately reflects the state of the UEFI
     /// firmware following exit from boot services, along with a high-level
     /// iterator to the UEFI memory map.
-    pub fn exit_boot_services<'a>(
+    pub fn exit_boot_services<'buf>(
         self,
         image: Handle,
-        mmap_buf: &'a mut [u8],
-    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'a>)> {
+        mmap_buf: &'buf mut [u8],
+    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'buf>)> {
         unsafe {
             let boot_services = self.boot_services();
 
@@ -145,13 +145,13 @@ impl SystemTable<Boot> {
                 //        limitation of the NLL analysis (see Rust bug 51526).
                 let mmap_buf = &mut *(mmap_buf as *mut [u8]);
                 let mmap_comp = boot_services.memory_map(mmap_buf)?;
-                let ((mmap_key, mmap_iter), mmap_status) = mmap_comp.split();
+                let (mmap_status, (mmap_key, mmap_iter)) = mmap_comp.split();
 
                 // Try to exit boot services using this memory map key
                 let result = boot_services.exit_boot_services(image, mmap_key);
 
                 // Did we fail because the memory map was updated concurrently?
-                if let Err(Status::INVALID_PARAMETER) = result {
+                if result.status() == Status::INVALID_PARAMETER {
                     // If so, fetch another memory map and try again
                     continue;
                 } else {

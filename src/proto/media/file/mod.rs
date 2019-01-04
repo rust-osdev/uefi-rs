@@ -14,7 +14,6 @@ use bitflags::bitflags;
 use core::ffi::c_void;
 use core::mem;
 use core::ptr;
-use core::result;
 use ucs2;
 
 pub use self::dir::Directory;
@@ -32,9 +31,9 @@ pub use self::info::{
 /// A `File` may also be used to access a directory, but the interface for doing
 /// so is awkward. If you know that a file is a directory, consider wrapping it
 /// into a `Directory` for improved ergonomics.
-pub struct File<'a>(&'a mut FileImpl);
+pub struct File<'imp>(&'imp mut FileImpl);
 
-impl<'a> File<'a> {
+impl<'imp> File<'imp> {
     pub(super) unsafe fn new(ptr: *mut FileImpl) -> Self {
         File(&mut *ptr)
     }
@@ -65,7 +64,7 @@ impl<'a> File<'a> {
     ) -> Result<File> {
         const BUF_SIZE: usize = 255;
         if filename.len() > BUF_SIZE {
-            Err(Status::INVALID_PARAMETER)
+            Err(Status::INVALID_PARAMETER.into())
         } else {
             let mut buf = [0u16; BUF_SIZE + 1];
             let mut ptr = ptr::null_mut();
@@ -74,7 +73,7 @@ impl<'a> File<'a> {
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
 
             unsafe { (self.0.open)(self.0, &mut ptr, filename.as_ptr(), open_mode, attributes) }
-                .into_with(|| unsafe { File::new(ptr) })
+                .into_with_val(|| unsafe { File::new(ptr) })
         }
     }
 
@@ -85,11 +84,9 @@ impl<'a> File<'a> {
     ///
     /// # Warnings
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
-    pub fn delete(self) -> Result<()> {
+    pub fn delete(self) -> Result {
         let result = (self.0.delete)(self.0).into();
-
         mem::forget(self);
-
         result
     }
 
@@ -115,14 +112,20 @@ impl<'a> File<'a> {
     /// * `uefi::Status::DEVICE_ERROR`       The device reported an error, the file was deleted,
     ///                                      or the end of the file was reached before the `read()`.
     /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry.
-    pub fn read(&mut self, buffer: &mut [u8]) -> result::Result<usize, (Status, usize)> {
+    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry,
+    ///                                      and the required buffer size is provided as output.
+    pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
-        match unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) } {
-            Status::SUCCESS => Ok(buffer_size),
-            e @ Status::BUFFER_TOO_SMALL => Err((e, buffer_size)),
-            other => Err((other, 0)),
-        }
+        unsafe { (self.0.read)(self.0, &mut buffer_size, buffer.as_mut_ptr()) }.into_with(
+            || buffer_size,
+            |s| {
+                if s == Status::BUFFER_TOO_SMALL {
+                    Some(buffer_size)
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     /// Write data to file
@@ -145,12 +148,10 @@ impl<'a> File<'a> {
     /// * `uefi::Status::WRITE_PROTECTED`    Attempt to write to readonly file
     /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only.
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
-    pub fn write(&mut self, buffer: &[u8]) -> result::Result<(), (Status, usize)> {
+    pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
-        match unsafe { (self.0.write)(self.0, &mut buffer_size, buffer.as_ptr()) } {
-            Status::SUCCESS => Ok(()),
-            error => Err((error, buffer_size)),
-        }
+        unsafe { (self.0.write)(self.0, &mut buffer_size, buffer.as_ptr()) }
+            .into_with_err(|_| buffer_size)
     }
 
     /// Get the file's current position
@@ -160,7 +161,7 @@ impl<'a> File<'a> {
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.0.get_position)(self.0, &mut pos).into_with(|| pos)
+        (self.0.get_position)(self.0, &mut pos).into_with_val(|| pos)
     }
 
     /// Sets the file's current position
@@ -180,7 +181,7 @@ impl<'a> File<'a> {
     /// # Errors
     /// * `uefi::Status::UNSUPPORTED`    Attempted a nonzero seek on a directory.
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
-    pub fn set_position(&mut self, position: u64) -> Result<()> {
+    pub fn set_position(&mut self, position: u64) -> Result {
         (self.0.set_position)(self.0, position).into()
     }
 
@@ -200,19 +201,23 @@ impl<'a> File<'a> {
     /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
     /// * `uefi::Status::VOLUME_CORRUPTED`   The file system structures are corrupted
     /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small for the requested
-    pub fn get_info<Info: FileProtocolInfo>(
+    pub fn get_info<'buf, Info: FileProtocolInfo>(
         &mut self,
-        buffer: &mut [u8],
-    ) -> result::Result<&mut Info, (Status, usize)> {
+        buffer: &'buf mut [u8],
+    ) -> Result<&'buf mut Info, Option<usize>> {
         let mut buffer_size = buffer.len();
         Info::assert_aligned(buffer);
-        match unsafe {
-            (self.0.get_info)(self.0, &Info::GUID, &mut buffer_size, buffer.as_mut_ptr())
-        } {
-            Status::SUCCESS => Ok(unsafe { Info::from_uefi(buffer.as_ptr() as *mut c_void) }),
-            Status::BUFFER_TOO_SMALL => Err((Status::BUFFER_TOO_SMALL, buffer_size)),
-            other => Err((other, 0)),
-        }
+        unsafe { (self.0.get_info)(self.0, &Info::GUID, &mut buffer_size, buffer.as_mut_ptr()) }
+            .into_with(
+                || unsafe { Info::from_uefi(buffer.as_ptr() as *mut c_void) },
+                |s| {
+                    if s == Status::BUFFER_TOO_SMALL {
+                        Some(buffer_size)
+                    } else {
+                        None
+                    }
+                },
+            )
     }
 
     /// Sets some information about a file
@@ -233,7 +238,7 @@ impl<'a> File<'a> {
     /// * `uefi::Status::WRITE_PROTECTED`   Attempted to set information on a read-only media
     /// * `uefi::Status::ACCESS_DENIED`     Requested change is invalid for this information type
     /// * `uefi::Status::VOLUME_FULL`       Not enough space left on the volume to change the info
-    pub fn set_info<Info: FileProtocolInfo>(&mut self, info: &Info) -> Result<()> {
+    pub fn set_info<Info: FileProtocolInfo>(&mut self, info: &Info) -> Result {
         let info_ptr = info as *const Info as *const c_void;
         let info_size = mem::size_of_val(&info);
         unsafe { (self.0.set_info)(self.0, &Info::GUID, info_size, info_ptr).into() }
@@ -248,14 +253,14 @@ impl<'a> File<'a> {
     /// * `uefi::Status::WRITE_PROTECTED`    The file or medium is write protected
     /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
-    pub fn flush(&mut self) -> Result<()> {
+    pub fn flush(&mut self) -> Result {
         (self.0.flush)(self.0).into()
     }
 }
 
-impl<'a> Drop for File<'a> {
+impl<'imp> Drop for File<'imp> {
     fn drop(&mut self) {
-        let result: Result<()> = (self.0.close)(self.0).into();
+        let result: Result = (self.0.close)(self.0).into();
         // The spec says this always succeeds.
         result.expect_success("Failed to close file");
     }

@@ -6,7 +6,6 @@ use core::cmp;
 use core::convert::TryInto;
 use core::ffi::c_void;
 use core::mem;
-use core::result;
 use core::slice;
 
 /// Common trait for data structures that can be used with
@@ -39,7 +38,7 @@ pub trait Align {
 /// the fat pointer must be reconstructed using hidden UEFI-provided metadata.
 pub trait FromUefi {
     /// Turn an UEFI-provided pointer-to-base into a (possibly fat) Rust reference
-    unsafe fn from_uefi<'a>(ptr: *mut c_void) -> &'a mut Self;
+    unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self;
 }
 
 /// Dynamically sized `FileProtocolInfo` with a header and an UCS-2 name
@@ -70,11 +69,11 @@ impl<Header> NamedFileProtocolInfo<Header> {
     /// alignment using the `alignment()` method of the `Align` trait that this
     /// struct implements.
     #[allow(clippy::cast_ptr_alignment)]
-    fn new_impl<'a>(
-        storage: &'a mut [u8],
+    fn new_impl<'buf>(
+        storage: &'buf mut [u8],
         header: Header,
         name: &str,
-    ) -> result::Result<&'a mut Self, FileInfoCreationError> {
+    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         // Make sure that the storage is properly aligned
         Self::assert_aligned(storage);
 
@@ -124,12 +123,12 @@ impl<Header> Align for NamedFileProtocolInfo<Header> {
 
 impl<Header> FromUefi for NamedFileProtocolInfo<Header> {
     #[allow(clippy::cast_ptr_alignment)]
-    unsafe fn from_uefi<'a>(raw_ptr: *mut c_void) -> &'a mut Self {
-        let byte_ptr = raw_ptr as *mut u8;
+    unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self {
+        let byte_ptr = ptr as *mut u8;
         let name_ptr = byte_ptr.add(mem::size_of::<Header>()) as *mut Char16;
         let name = CStr16::from_ptr(name_ptr);
         let name_len = name.to_u16_slice_with_nul().len();
-        let fat_ptr = slice::from_raw_parts_mut(raw_ptr as *mut Char16, name_len);
+        let fat_ptr = slice::from_raw_parts_mut(ptr as *mut Char16, name_len);
         let self_ptr = fat_ptr as *mut [Char16] as *mut Self;
         &mut *self_ptr
     }
@@ -189,8 +188,8 @@ impl FileInfo {
     /// alignment using the `alignment()` method of the `Align` trait that this
     /// struct implements.
     #[allow(clippy::too_many_arguments)]
-    pub fn new<'a>(
-        storage: &'a mut [u8],
+    pub fn new<'buf>(
+        storage: &'buf mut [u8],
         file_size: u64,
         physical_size: u64,
         create_time: Time,
@@ -198,7 +197,7 @@ impl FileInfo {
         modification_time: Time,
         attribute: FileAttribute,
         file_name: &str,
-    ) -> result::Result<&'a mut Self, FileInfoCreationError> {
+    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         let header = FileInfoHeader {
             size: 0,
             file_size,
@@ -281,14 +280,14 @@ impl FileSystemInfo {
     /// alignment using the `alignment()` method of the `Align` trait that this
     /// struct implements.
     #[allow(clippy::too_many_arguments)]
-    pub fn new<'a>(
-        storage: &'a mut [u8],
+    pub fn new<'buf>(
+        storage: &'buf mut [u8],
         read_only: bool,
         volume_size: u64,
         free_space: u64,
         block_size: u32,
         volume_label: &str,
-    ) -> result::Result<&'a mut Self, FileInfoCreationError> {
+    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         let header = FileSystemInfoHeader {
             size: 0,
             read_only,
@@ -349,10 +348,10 @@ impl FileSystemVolumeLabel {
     /// The buffer must be correctly aligned. You can query the required
     /// alignment using the `alignment()` method of the `Align` trait that this
     /// struct implements.
-    pub fn new<'a>(
-        storage: &'a mut [u8],
+    pub fn new<'buf>(
+        storage: &'buf mut [u8],
         volume_label: &str,
-    ) -> result::Result<&'a mut Self, FileInfoCreationError> {
+    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         let header = FileSystemVolumeLabelHeader {};
         Self::new_impl(storage, header, volume_label)
     }

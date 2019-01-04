@@ -6,7 +6,7 @@ use crate::{Event, Guid, Handle, Result, Status};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
-use core::{mem, ptr, result};
+use core::{mem, ptr};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -149,11 +149,11 @@ impl BootServices {
             AllocateType::MaxAddress(addr) => (1, addr as u64),
             AllocateType::Address(addr) => (2, addr as u64),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with(|| addr)
+        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
-    pub fn free_pages(&self, addr: u64, count: usize) -> Result<()> {
+    pub fn free_pages(&self, addr: u64, count: usize) -> Result {
         (self.free_pages)(addr, count).into()
     }
 
@@ -191,10 +191,10 @@ impl BootServices {
     ///
     /// The returned key is a unique identifier of the current configuration of memory.
     /// Any allocations or such will change the memory map's key.
-    pub fn memory_map<'a>(
+    pub fn memory_map<'buf>(
         &self,
-        buffer: &'a mut [u8],
-    ) -> Result<(MemoryMapKey, MemoryMapIter<'a>)> {
+        buffer: &'buf mut [u8],
+    ) -> Result<(MemoryMapKey, MemoryMapIter<'buf>)> {
         let mut map_size = buffer.len();
         let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
@@ -216,7 +216,7 @@ impl BootServices {
                 &mut entry_version,
             )
         }
-        .into_with(move || {
+        .into_with_val(move || {
             let len = map_size / entry_size;
             let iter = MemoryMapIter {
                 buffer,
@@ -231,11 +231,11 @@ impl BootServices {
     /// Allocates from a memory pool. The pointer will be 8-byte aligned.
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        (self.allocate_pool)(mem_ty, size, &mut buffer).into_with(|| buffer)
+        (self.allocate_pool)(mem_ty, size, &mut buffer).into_with_val(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
-    pub fn free_pool(&self, addr: *mut u8) -> Result<()> {
+    pub fn free_pool(&self, addr: *mut u8) -> Result {
         (self.free_pool)(addr).into()
     }
 
@@ -277,7 +277,7 @@ impl BootServices {
 
         // Now we're ready to call UEFI
         (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
-            .into_with(|| event)
+            .into_with_val(|| event)
     }
 
     /// Stops execution until an event is signaled
@@ -307,14 +307,19 @@ impl BootServices {
     /// To check if an event is signaled without waiting, an already signaled
     /// event can be used as the last event in the slice being checked, or the
     /// check_event() interface may be used.
-    pub fn wait_for_event(&self, events: &mut [Event]) -> result::Result<usize, (Status, usize)> {
+    pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = unsafe { mem::uninitialized() };
-        match unsafe { (self.wait_for_event)(number_of_events, events, &mut index) } {
-            Status::SUCCESS => Ok(index),
-            s @ Status::INVALID_PARAMETER => Err((s, index)),
-            error => Err((error, 0)),
-        }
+        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }.into_with(
+            || index,
+            |s| {
+                if s == Status::INVALID_PARAMETER {
+                    Some(index)
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     /// Query a handle for a certain protocol.
@@ -326,15 +331,12 @@ impl BootServices {
     /// provides no mechanism to protect against concurrent usage. Such
     /// protections must be implemented by user-level code, for example via a
     /// global `HashSet`.
-    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Option<&UnsafeCell<P>> {
+    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        match (self.handle_protocol)(handle, &P::GUID, &mut ptr) {
-            Status::SUCCESS => {
-                let ptr = ptr as *mut P as *mut UnsafeCell<P>;
-                Some(unsafe { &*ptr })
-            }
-            _ => None,
-        }
+        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
+            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+            unsafe { &*ptr }
+        })
     }
 
     /// Enumerates all handles installed on the system which match a certain query.
@@ -370,7 +372,7 @@ impl BootServices {
 
         match (buffer, status) {
             (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
-            (_, other_status) => other_status.into_with(|| buffer_len),
+            (_, other_status) => other_status.into_with_val(|| buffer_len),
         }
     }
 
@@ -388,7 +390,7 @@ impl BootServices {
         &self,
         image: Handle,
         mmap_key: MemoryMapKey,
-    ) -> Result<()> {
+    ) -> Result {
         (self.exit_boot_services)(image, mmap_key).into()
     }
 
@@ -422,7 +424,7 @@ impl BootServices {
         timeout: usize,
         watchdog_code: u64,
         data: Option<&mut [u16]>,
-    ) -> Result<()> {
+    ) -> Result {
         assert!(
             watchdog_code > 0xffff,
             "Invalid use of a reserved firmware watchdog code"
@@ -490,8 +492,8 @@ pub enum Tpl: usize => {
 /// RAII guard for task priority level changes
 ///
 /// Will automatically restore the former task priority level when dropped.
-pub struct TplGuard<'a> {
-    boot_services: &'a BootServices,
+pub struct TplGuard<'boot> {
+    boot_services: &'boot BootServices,
     old_tpl: Tpl,
 }
 
@@ -635,15 +637,15 @@ pub struct MemoryMapKey(usize);
 /// `impl Trait` which may be lifted in the future. It is therefore recommended
 /// that you refrain from directly manipulating it in your code.
 #[derive(Debug)]
-pub struct MemoryMapIter<'a> {
-    buffer: &'a [u8],
+pub struct MemoryMapIter<'buf> {
+    buffer: &'buf [u8],
     entry_size: usize,
     index: usize,
     len: usize,
 }
 
-impl<'a> Iterator for MemoryMapIter<'a> {
-    type Item = &'a MemoryDescriptor;
+impl<'buf> Iterator for MemoryMapIter<'buf> {
+    type Item = &'buf MemoryDescriptor;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let sz = self.len - self.index;
@@ -666,22 +668,22 @@ impl<'a> Iterator for MemoryMapIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for MemoryMapIter<'a> {}
+impl<'buf> ExactSizeIterator for MemoryMapIter<'buf> {}
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]
-pub enum SearchType<'a> {
+pub enum SearchType<'guid> {
     /// Return all handles present on the system.
     AllHandles,
     /// Returns all handles supporting a certain protocol, specified by its GUID.
     ///
     /// If the protocol implements the `Protocol` interface,
     /// you can use the `from_proto` function to construct a new `SearchType`.
-    ByProtocol(&'a Guid),
+    ByProtocol(&'guid Guid),
     // TODO: add ByRegisterNotify once the corresponding function is implemented.
 }
 
-impl<'a> SearchType<'a> {
+impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
     pub fn from_proto<P: Protocol>() -> Self {
         SearchType::ByProtocol(&P::GUID)

@@ -50,7 +50,7 @@ fn center_text(stdout: &mut Output) {
     stdout
         .enable_cursor(true)
         .warning_as_error()
-        .unwrap_or_else(|s| match s {
+        .unwrap_or_else(|e| match e.status() {
             Status::UNSUPPORTED => info!("Cursor visibility control unavailable"),
             _ => panic!("Failed to show cursor"),
         });
@@ -61,7 +61,7 @@ fn center_text(stdout: &mut Output) {
     stdout
         .enable_cursor(false)
         .warning_as_error()
-        .unwrap_or_else(|s| match s {
+        .unwrap_or_else(|e| match e.status() {
             Status::UNSUPPORTED => info!("Cursor visibility control unavailable"),
             _ => panic!("Failed to hide cursor"),
         });

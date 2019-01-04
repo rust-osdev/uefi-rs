@@ -68,7 +68,7 @@ impl<'boot> GraphicsOutput<'boot> {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with(|| {
+        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with_val(|| {
             let info = unsafe { *info };
             Mode {
                 index,
@@ -79,7 +79,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns information about all available graphics modes.
-    pub fn modes<'a>(&'a self) -> impl Iterator<Item = Completion<Mode>> + 'a {
+    pub fn modes<'gop>(&'gop self) -> impl Iterator<Item = Completion<Mode>> + 'gop {
         ModeIter {
             gop: self,
             current: 0,
@@ -91,14 +91,14 @@ impl<'boot> GraphicsOutput<'boot> {
     /// of the output display to black.
     ///
     /// This function will invalidate the current framebuffer.
-    pub fn set_mode(&mut self, mode: &Mode) -> Result<()> {
+    pub fn set_mode(&mut self, mode: &Mode) -> Result {
         (self.set_mode)(self, mode.index).into()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
     ///
     /// Every operation requires different parameters.
-    pub fn blt(&mut self, op: BltOp) -> Result<()> {
+    pub fn blt(&mut self, op: BltOp) -> Result {
         // Demultiplex the operation type.
         unsafe {
             match op {
@@ -286,13 +286,13 @@ impl<'boot> GraphicsOutput<'boot> {
 }
 
 #[repr(C)]
-struct ModeData<'a> {
+struct ModeData<'info> {
     // Number of modes which the GOP supports.
     max_mode: u32,
     // Current mode.
     mode: u32,
     // Information about the current mode.
-    info: &'a ModeInfo,
+    info: &'info ModeInfo,
     // Size of the above structure.
     info_sz: usize,
     // Physical address of the frame buffer.
@@ -401,13 +401,13 @@ impl ModeInfo {
 }
 
 /// Iterator for graphics modes.
-struct ModeIter<'a> {
-    gop: &'a GraphicsOutput<'a>,
+struct ModeIter<'gop> {
+    gop: &'gop GraphicsOutput<'gop>,
     current: u32,
     max: u32,
 }
 
-impl<'a> Iterator for ModeIter<'a> {
+impl<'gop> Iterator for ModeIter<'gop> {
     type Item = Completion<Mode>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -479,7 +479,7 @@ pub enum BltRegion {
 
 /// Blit operation to perform.
 #[derive(Debug)]
-pub enum BltOp<'a> {
+pub enum BltOp<'buf> {
     /// Fills a rectangle of video display with a pixel color.
     VideoFill {
         /// The color to fill with.
@@ -492,7 +492,7 @@ pub enum BltOp<'a> {
     /// Reads data from the video display to the buffer.
     VideoToBltBuffer {
         /// Buffer into which to copy data.
-        buffer: &'a mut [BltPixel],
+        buffer: &'buf mut [BltPixel],
         /// Coordinates of the source rectangle, in the frame buffer.
         src: (usize, usize),
         /// Location of the destination rectangle in the user-provided buffer
@@ -504,7 +504,7 @@ pub enum BltOp<'a> {
     /// Delta must be the stride (count of bytes in a row) of the buffer.
     BufferToVideo {
         /// Buffer from which to copy data.
-        buffer: &'a [BltPixel],
+        buffer: &'buf [BltPixel],
         /// Location of the source rectangle in the user-provided buffer.
         src: BltRegion,
         /// Coordinates of the destination rectangle, in the frame buffer.
@@ -525,13 +525,13 @@ pub enum BltOp<'a> {
 }
 
 /// Direct access to a memory-mapped frame buffer
-pub struct FrameBuffer<'a> {
+pub struct FrameBuffer<'gop> {
     base: *mut u8,
     size: usize,
-    _lifetime: PhantomData<&'a mut u8>,
+    _lifetime: PhantomData<&'gop mut u8>,
 }
 
-impl<'a> FrameBuffer<'a> {
+impl<'gop> FrameBuffer<'gop> {
     /// Access the raw framebuffer pointer
     ///
     /// To use this pointer safely and correctly, you must...

@@ -5,7 +5,8 @@ use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
     info!("Running serial protocol test");
-    if let Some(serial) = bt.find_protocol::<Serial>() {
+    if let Ok(serial) = bt.find_protocol::<Serial>() {
+        let serial = serial.expect("Warnings encountered while opening serial protocol");
         let serial = unsafe { &mut *serial.get() };
 
         let old_ctrl_bits = serial
@@ -28,18 +29,16 @@ pub fn test(bt: &BootServices) {
         const OUTPUT: &[u8] = b"Hello world!";
         const MSG_LEN: usize = OUTPUT.len();
 
-        let len = serial
+        serial
             .write(OUTPUT)
             .expect_success("Failed to write to serial port");
-        assert_eq!(len, MSG_LEN, "Bad serial port write length");
 
         let mut input = [0u8; MSG_LEN];
-        let len = serial
+        serial
             .read(&mut input)
             .expect_success("Failed to read from serial port");
-        assert_eq!(len, MSG_LEN, "Bad serial port read length");
 
-        assert_eq!(&OUTPUT[..], &input[..MSG_LEN]);
+        assert_eq!(&OUTPUT[..], &input[..]);
 
         // Clean up after ourselves
         serial

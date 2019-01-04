@@ -68,7 +68,7 @@ pub fn system_table() -> NonNull<SystemTable<Boot>> {
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-pub fn init(st: &SystemTable<Boot>) -> Result<()> {
+pub fn init(st: &SystemTable<Boot>) -> Result {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {

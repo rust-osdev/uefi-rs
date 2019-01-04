@@ -30,6 +30,11 @@ This project contains multiple sub-crates:
 - `uefi` (top directory): defines the standard UEFI tables / interfaces.
   The objective is to stay unopionated and safely wrap most interfaces.
 
+- `uefi-exts`: extension traits providing utility functions for common patterns.
+  - Requires the `alloc` crate (either use `uefi-alloc` or your own custom allocator).
+
+- `uefi-macros`: procedural macros that are used to derive some traits in `uefi`.
+
 - `uefi-services`: provides a panic handler, and initializes some helper crates:
   - `uefi-logger`: logging implementation for the standard [log] crate.
     - Prints output to console.
@@ -37,9 +42,6 @@ This project contains multiple sub-crates:
   - `uefi-alloc`: implements a global allocator using UEFI functions.
     - This allows you to allocate objects on the heap.
     - There's no guarantee of the efficiency of UEFI's allocator.
-
-- `uefi-exts`: extension traits providing utility functions for common patterns.
-  - Requires the `alloc` crate (either use `uefi-alloc` or your own custom allocator).
 
 - `uefi-test-runner`: a UEFI application that runs unit / integration tests.
 

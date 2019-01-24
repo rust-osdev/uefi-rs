@@ -564,7 +564,7 @@ pub enum MemoryType: u32 => {
 
 /// A structure describing a region of memory.
 #[derive(Debug, Copy, Clone)]
-#[repr(C, packed)]
+#[repr(C)]
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,

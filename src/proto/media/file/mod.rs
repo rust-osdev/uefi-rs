@@ -201,7 +201,7 @@ impl<'imp> File<'imp> {
     /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
     /// * `uefi::Status::VOLUME_CORRUPTED`   The file system structures are corrupted
     /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small for the requested
-    pub fn get_info<'buf, Info: FileProtocolInfo>(
+    pub fn get_info<'buf, Info: FileProtocolInfo + ?Sized>(
         &mut self,
         buffer: &'buf mut [u8],
     ) -> Result<&'buf mut Info, Option<usize>> {
@@ -238,7 +238,7 @@ impl<'imp> File<'imp> {
     /// * `uefi::Status::WRITE_PROTECTED`   Attempted to set information on a read-only media
     /// * `uefi::Status::ACCESS_DENIED`     Requested change is invalid for this information type
     /// * `uefi::Status::VOLUME_FULL`       Not enough space left on the volume to change the info
-    pub fn set_info<Info: FileProtocolInfo>(&mut self, info: &Info) -> Result {
+    pub fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = info as *const Info as *const c_void;
         let info_size = mem::size_of_val(&info);
         unsafe { (self.0.set_info)(self.0, &Info::GUID, info_size, info_ptr).into() }

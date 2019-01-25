@@ -2,7 +2,7 @@
 //!
 //! This includes the system table types, `Status` codes, etc.
 
-pub use crate::{ResultExt, ResultExt2, Status};
+pub use crate::{ResultExt, Status};
 
 // Import the basic table types.
 pub use crate::table::boot::BootServices;

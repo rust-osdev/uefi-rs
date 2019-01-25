@@ -85,7 +85,7 @@ impl<'file> Directory<'file> {
     /// Queries some information about a directory
     ///
     /// This simply forwards to the underlying `File::get_info` implementation
-    pub fn get_info<'buf, Info: FileProtocolInfo>(
+    pub fn get_info<'buf, Info: FileProtocolInfo + ?Sized>(
         &mut self,
         buffer: &'buf mut [u8],
     ) -> Result<&'buf mut Info, Option<usize>> {
@@ -95,7 +95,7 @@ impl<'file> Directory<'file> {
     /// Sets some information about a directory
     ///
     /// This simply forwards to the underlying `File::set_info` implementation
-    pub fn set_info<Info: FileProtocolInfo>(&mut self, info: &Info) -> Result {
+    pub fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         self.0.set_info(info)
     }
 

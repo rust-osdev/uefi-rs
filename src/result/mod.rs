@@ -48,12 +48,11 @@ pub trait ResultExt<Output, ErrData: Debug> {
 
     /// Transform the ErrData value to ()
     fn discard_errdata(self) -> Result<Output>;
-}
 
-/// Extension trait for results with no error payload
-pub trait ResultExt2<Output> {
     /// Treat warnings as errors
-    fn warning_as_error(self) -> core::result::Result<Output, Error<()>>;
+    fn warning_as_error(self) -> core::result::Result<Output, Error<ErrData>>
+    where
+        ErrData: Default;
 }
 
 impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrData> {
@@ -86,13 +85,14 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
             Err(e) => Err(e.status().into()),
         }
     }
-}
 
-impl<Output> ResultExt2<Output> for Result<Output, ()> {
-    fn warning_as_error(self) -> core::result::Result<Output, Error<()>> {
+    fn warning_as_error(self) -> core::result::Result<Output, Error<ErrData>>
+    where
+        ErrData: Default,
+    {
         match self.map(|comp| comp.split()) {
             Ok((Status::SUCCESS, res)) => Ok(res),
-            Ok((s, _)) => Err(s.into()),
+            Ok((s, _)) => Err(Error::new(s, Default::default())),
             Err(e) => Err(e),
         }
     }

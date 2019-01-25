@@ -46,6 +46,9 @@ pub trait ResultExt<Output, ErrData: Debug> {
     /// Transform the inner output, if any
     fn map_inner<Mapped>(self, f: impl FnOnce(Output) -> Mapped) -> Result<Mapped, ErrData>;
 
+    /// Transform the ErrData value to ()
+    fn discard_errdata(self) -> Result<Output>;
+
     /// Treat warnings as errors
     fn warning_as_error(self) -> core::result::Result<Output, Error<ErrData>>
     where
@@ -74,6 +77,13 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
 
     fn map_inner<Mapped>(self, f: impl FnOnce(Output) -> Mapped) -> Result<Mapped, ErrData> {
         self.map(|completion| completion.map(f))
+    }
+
+    fn discard_errdata(self) -> Result<Output> {
+        match self {
+            Ok(o) => Ok(o),
+            Err(e) => Err(e.status().into()),
+        }
     }
 
     fn warning_as_error(self) -> core::result::Result<Output, Error<ErrData>>

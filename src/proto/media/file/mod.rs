@@ -17,9 +17,7 @@ use core::ptr;
 use ucs2;
 
 pub use self::dir::Directory;
-pub use self::info::{
-    FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi,
-};
+pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
 
 /// A file represents an abstraction of some contiguous block of data residing
 /// on a volume.

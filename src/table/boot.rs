@@ -1,9 +1,9 @@
 //! UEFI services available during boot.
 
 use super::Header;
-use crate::{Event, Guid, Handle, Result, Status};
 use crate::data_types::Align;
 use crate::proto::Protocol;
+use crate::{Event, Guid, Handle, Result, Status};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;

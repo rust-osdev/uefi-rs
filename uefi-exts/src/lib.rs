@@ -9,4 +9,7 @@
 extern crate alloc;
 
 mod boot;
+mod file;
+
 pub use self::boot::BootServicesExt;
+pub use self::file::FileExt;

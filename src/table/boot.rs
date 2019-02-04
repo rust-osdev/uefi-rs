@@ -1,8 +1,9 @@
 //! UEFI services available during boot.
 
 use super::Header;
-use crate::proto::Protocol;
 use crate::{Event, Guid, Handle, Result, Status};
+use crate::data_types::Align;
+use crate::proto::Protocol;
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -196,6 +197,8 @@ impl BootServices {
         buffer: &'buf mut [u8],
     ) -> Result<(MemoryMapKey, MemoryMapIter<'buf>)> {
         let mut map_size = buffer.len();
+        MemoryDescriptor::assert_aligned(buffer);
+        #[allow(clippy::cast_ptr_alignment)]
         let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
@@ -590,6 +593,12 @@ impl Default for MemoryDescriptor {
             page_count: 0,
             att: MemoryAttribute::empty(),
         }
+    }
+}
+
+impl Align for MemoryDescriptor {
+    fn alignment() -> usize {
+        mem::align_of::<Self>()
     }
 }
 

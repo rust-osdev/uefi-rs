@@ -1,5 +1,5 @@
 use super::FileAttribute;
-use crate::data_types::chars::NUL_16;
+use crate::data_types::{Align, chars::NUL_16};
 use crate::table::runtime::Time;
 use crate::{unsafe_guid, CStr16, Char16, Identify};
 use core::cmp;
@@ -13,23 +13,6 @@ use core::slice;
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 pub trait FileProtocolInfo: Align + Identify + FromUefi {}
-
-/// Trait for querying the alignment of a struct
-///
-/// Needed for dynamic-sized types because `mem::align_of` has a `Sized` bound (due to `dyn Trait`)
-pub trait Align {
-    /// Required memory alignment for this type
-    fn alignment() -> usize;
-
-    /// Assert that some storage is correctly aligned for this type
-    fn assert_aligned(storage: &mut [u8]) {
-        assert_eq!(
-            (storage.as_ptr() as usize) % Self::alignment(),
-            0,
-            "The provided storage is not correctly aligned for this type"
-        )
-    }
-}
 
 /// Trait for going from an UEFI-originated pointer to a Rust reference
 ///

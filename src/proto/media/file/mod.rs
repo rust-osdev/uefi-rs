@@ -18,7 +18,7 @@ use ucs2;
 
 pub use self::dir::Directory;
 pub use self::info::{
-    Align, FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi,
+    FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi,
 };
 
 /// A file represents an abstraction of some contiguous block of data residing

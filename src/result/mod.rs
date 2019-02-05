@@ -43,6 +43,9 @@ pub trait ResultExt<Output, ErrData: Debug> {
     /// Expect success without warnings, panic with provided message otherwise
     fn expect_success(self, msg: &str) -> Output;
 
+    /// Expect error, panic with provided message otherwise, discarding output
+    fn expect_error(self, msg: &str) -> Error<ErrData>;
+
     /// Transform the inner output, if any
     fn map_inner<Mapped>(self, f: impl FnOnce(Output) -> Mapped) -> Result<Mapped, ErrData>;
 
@@ -73,6 +76,10 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
 
     fn expect_success(self, msg: &str) -> Output {
         self.expect(msg).expect(msg)
+    }
+
+    fn expect_error(self, msg: &str) -> Error<ErrData> {
+        self.map(|completion| completion.status()).expect_err(msg)
     }
 
     fn map_inner<Mapped>(self, f: impl FnOnce(Output) -> Mapped) -> Result<Mapped, ErrData> {

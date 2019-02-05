@@ -1,6 +1,6 @@
 //! File system support protocols.
 
-use super::file::{Directory, File, FileImpl};
+use super::file::{Directory, FileHandle, FileImpl};
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 use core::ptr;
@@ -31,6 +31,6 @@ impl SimpleFileSystem {
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)
-            .into_with_val(|| unsafe { Directory::from_file(File::new(ptr)) })
+            .into_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
     }
 }

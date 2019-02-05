@@ -9,7 +9,7 @@ use core::mem;
 use core::slice;
 
 /// Common trait for data structures that can be used with
-/// `File::set_info()` or `File::set_info()`.
+/// `File::set_info()` or `File::get_info()`.
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 pub trait FileProtocolInfo: Align + Identify + FromUefi {}

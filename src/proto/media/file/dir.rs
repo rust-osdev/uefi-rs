@@ -1,45 +1,24 @@
-use super::{File, FileAttribute, FileInfo, FileMode, FileProtocolInfo, FromUefi};
+use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
 use crate::data_types::Align;
 use crate::prelude::*;
 use crate::Result;
 use core::ffi::c_void;
 
-/// `File` wrapper for handling directories
+/// A `FileHandle` that is also a directory.
 ///
-/// The `File` abstraction can handle directories, but does so in a very roundabout way.
-/// A dedicated abstraction for directory handling is therefore desirable.
-pub struct Directory<'file>(File<'file>);
+/// Use `File::into_type` or `Directory::new` to create a `Directory`. In
+/// addition to supporting the normal `File` operations, `Directory`
+/// supports iterating over its contained files.
+#[repr(transparent)]
+pub struct Directory(RegularFile);
 
-impl<'file> Directory<'file> {
-    /// Wrap a File handle into a Directory
-    ///
-    /// You should have made sure that the file is indeed a directory beforehand, using
-    /// `file.get_info<FileInfo>(...)`. We cannot do it for you because this requires an unbounded
-    /// amount of memory and we refrain from calling the UEFI allocator implicitly.
-    pub unsafe fn from_file(file: File<'file>) -> Self {
-        Directory(file)
-    }
-
-    /// Try to open a file relative to this directory.
-    ///
-    /// This simply forwards to the underlying `File::open` implementation
-    pub fn open(
-        &mut self,
-        filename: &str,
-        open_mode: FileMode,
-        attributes: FileAttribute,
-    ) -> Result<File> {
-        self.0.open(filename, open_mode, attributes)
-    }
-
-    /// Close this directory handle. Same as dropping this structure.
-    pub fn close(self) {}
-
-    /// Closes and deletes this directory
-    ///
-    /// This simply forwards to the underlying `File::delete` implementation
-    pub fn delete(self) -> Result {
-        self.0.delete()
+impl Directory {
+    /// Coverts a `FileHandle` into a `Directory` without checking the file type.
+    /// # Safety
+    /// This function should only be called on files which ARE directories,
+    /// doing otherwise is unsafe.
+    pub unsafe fn new(handle: FileHandle) -> Self {
+        Self(RegularFile::new(handle))
     }
 
     /// Read the next directory entry
@@ -82,28 +61,11 @@ impl<'file> Directory<'file> {
     pub fn reset_entry_readout(&mut self) -> Result {
         self.0.set_position(0)
     }
+}
 
-    /// Queries some information about a directory
-    ///
-    /// This simply forwards to the underlying `File::get_info` implementation
-    pub fn get_info<'buf, Info: FileProtocolInfo + ?Sized>(
-        &mut self,
-        buffer: &'buf mut [u8],
-    ) -> Result<&'buf mut Info, Option<usize>> {
-        self.0.get_info::<Info>(buffer)
-    }
-
-    /// Sets some information about a directory
-    ///
-    /// This simply forwards to the underlying `File::set_info` implementation
-    pub fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
-        self.0.set_info(info)
-    }
-
-    /// Flushes all modified data associated with the directory to the device
-    ///
-    /// This simply forwards to the underlying `File::flush` implementation
-    pub fn flush(&mut self) -> Result {
-        self.0.flush()
+impl File for Directory {
+    #[inline]
+    fn handle(&mut self) -> &mut FileHandle {
+        self.0.handle()
     }
 }

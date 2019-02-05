@@ -23,7 +23,7 @@ pub use self::{dir::Directory, regular::RegularFile};
 
 /// Common interface to `FileHandle`, `RegularFile`, and `Directory`.
 ///
-/// `File` continas all funcationality that is safe to perform on any type of
+/// `File` contains all functionality that is safe to perform on any type of
 /// file handle.
 pub trait File: Sized {
     /// Access the underlying file handle.

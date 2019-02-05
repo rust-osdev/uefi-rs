@@ -10,6 +10,9 @@ use crate::{Result, Status};
 pub struct RegularFile(FileHandle);
 
 impl RegularFile {
+    /// A special position used to seek to the end of a file with `set_position()`.
+    pub const END_OF_FILE: u64 = core::u64::MAX;
+
     /// Coverts a `FileHandle` into a `RegularFile` without checking the file kind.
     /// # Safety
     /// This function should only be called on handles which ARE NOT directories,
@@ -73,7 +76,6 @@ impl RegularFile {
     /// Get the file's current position
     ///
     /// # Errors
-    /// * `uefi::Status::UNSUPPORTED`    Attempted to get the position of an opened directory
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
@@ -85,8 +87,7 @@ impl RegularFile {
     /// Set the position of this file handle to the absolute position specified by `position`.
     ///
     /// Seeking past the end of the file is allowed, it will trigger file growth on the next write.
-    ///
-    /// The special value 0xFFFF_FFFF_FFFF_FFFF may be used to seek to the end of the file.
+    /// Using a position of RegularFile::END_OF_FILE will seek to the end of the file.
     ///
     /// # Arguments
     /// * `position` The new absolution position of the file handle

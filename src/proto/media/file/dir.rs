@@ -1,18 +1,26 @@
-use super::{File, FileInfo, FilesystemObject, FromUefi, RegularFile};
+use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
 use crate::data_types::Align;
 use crate::prelude::*;
 use crate::Result;
 use core::ffi::c_void;
 
-/// A `File` that is also a directory.
+/// A `FileHandle` that is also a directory.
 ///
-/// Use `File::into_kind` or `File::into_directory` to create a `Directory`. In
-/// addition to supporting the normal `FilesystemObject` operations, `Directory`
+/// Use `File::into_type` or `Directory::new` to create a `Directory`. In
+/// addition to supporting the normal `File` operations, `Directory`
 /// supports iterating over its contained files.
 #[repr(transparent)]
-pub struct Directory<'imp>(pub(super) RegularFile<'imp>);
+pub struct Directory(RegularFile);
 
-impl Directory<'_> {
+impl Directory {
+    /// Coverts a `FileHandle` into a `Directory` without checking the file type.
+    /// # Safety
+    /// This function should only be called on files which ARE directories,
+    /// doing otherwise is unsafe.
+    pub unsafe fn new(handle: FileHandle) -> Self {
+        Self(RegularFile::new(handle))
+    }
+
     /// Read the next directory entry
     ///
     /// Try to read the next directory entry into `buffer`. If the buffer is too small, report the
@@ -55,9 +63,9 @@ impl Directory<'_> {
     }
 }
 
-impl<'imp> FilesystemObject<'imp> for Directory<'imp> {
+impl File for Directory {
     #[inline]
-    fn file(&mut self) -> &mut File<'imp> {
-        self.0.file()
+    fn handle(&mut self) -> &mut FileHandle {
+        self.0.handle()
     }
 }

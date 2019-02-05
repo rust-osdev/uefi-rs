@@ -1,6 +1,6 @@
-//! This module provides the `File` structure as well as the more specific `RegularFile` and
-//! `Directory` structures. This module also provides functions for opening, querying, creating,
-//! reading, and writing files.
+//! This module provides the `FileHandle` structure as well as the more specific `RegularFile` and
+//! `Directory` structures. This module also provides the `File` trait for opening, querying,
+//! creating, reading, and writing files.
 //!
 //! Usually a file system implementation will return a "root" directory, representing
 //! `/` on that volume. With that directory, it is possible to enumerate and open
@@ -21,14 +21,14 @@ use ucs2;
 pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
 pub use self::{dir::Directory, regular::RegularFile};
 
-/// Common interface to `File`, `RegularFile`, and `Directory`.
+/// Common interface to `FileHandle`, `RegularFile`, and `Directory`.
 ///
-/// `FilesystemObject` continas all funcationality that is safe to perform on
-/// any kind of file handle.
-pub trait FilesystemObject<'imp>: Sized {
+/// `File` continas all funcationality that is safe to perform on any type of
+/// file handle.
+pub trait File: Sized {
     /// Access the underlying file handle.
     #[doc(hidden)]
-    fn file(&mut self) -> &mut File<'imp>;
+    fn handle(&mut self) -> &mut FileHandle;
 
     /// Try to open a file relative to this file.
     ///
@@ -53,7 +53,7 @@ pub trait FilesystemObject<'imp>: Sized {
         filename: &str,
         open_mode: FileMode,
         attributes: FileAttribute,
-    ) -> Result<File> {
+    ) -> Result<FileHandle> {
         const BUF_SIZE: usize = 255;
         if filename.len() > BUF_SIZE {
             Err(Status::INVALID_PARAMETER.into())
@@ -65,15 +65,15 @@ pub trait FilesystemObject<'imp>: Sized {
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
 
             unsafe {
-                (self.file().0.open)(
-                    self.file().0,
+                (self.imp().open)(
+                    self.imp(),
                     &mut ptr,
                     filename.as_ptr(),
                     open_mode,
                     attributes,
                 )
             }
-            .into_with_val(|| unsafe { File(&mut *ptr) })
+            .into_with_val(|| unsafe { FileHandle::new(ptr) })
         }
     }
 
@@ -85,7 +85,7 @@ pub trait FilesystemObject<'imp>: Sized {
     /// # Warnings
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     fn delete(mut self) -> Result {
-        let result = (self.file().0.delete)(self.file().0).into();
+        let result = (self.imp().delete)(self.imp()).into();
         mem::forget(self);
         result
     }
@@ -113,8 +113,8 @@ pub trait FilesystemObject<'imp>: Sized {
         let mut buffer_size = buffer.len();
         Info::assert_aligned(buffer);
         unsafe {
-            (self.file().0.get_info)(
-                self.file().0,
+            (self.imp().get_info)(
+                self.imp(),
                 &Info::GUID,
                 &mut buffer_size,
                 buffer.as_mut_ptr(),
@@ -153,7 +153,7 @@ pub trait FilesystemObject<'imp>: Sized {
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = info as *const Info as *const c_void;
         let info_size = mem::size_of_val(&info);
-        unsafe { (self.file().0.set_info)(self.file().0, &Info::GUID, info_size, info_ptr).into() }
+        unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).into() }
     }
 
     /// Flushes all modified data associated with the file handle to the device
@@ -166,64 +166,59 @@ pub trait FilesystemObject<'imp>: Sized {
     /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     fn flush(&mut self) -> Result {
-        (self.file().0.flush)(self.file().0).into()
+        (self.imp().flush)(self.imp()).into()
     }
 }
+
+// Internal File helper methods to access the funciton pointer table.
+trait FileInternal: File {
+    fn imp(&mut self) -> &mut FileImpl {
+        unsafe { &mut *self.handle().0 }
+    }
+}
+
+impl<T: File> FileInternal for T {}
 
 /// An opaque handle to some contiguous block of data on a volume.
 ///
-/// A `File` is just a wrapper around a file handle. Under the hood, it can
-/// either be a `RegularFile` or a `Directory`; use the `into_kind` or the
-/// unsafe `into_*` methods to perform the conversion.
+/// A `FileHandle` is just a wrapper around a UEFI file handle. Under the hood, it can either be a
+/// `RegularFile` or a `Directory`; use the `into_type()` or the unsafe
+/// `{RegularFile, Directory}::new()` methods to perform the conversion.
 ///
 /// Dropping this structure will result in the file handle being closed.
 #[repr(transparent)]
-pub struct File<'imp>(pub(super) &'imp mut FileImpl);
+pub struct FileHandle(*mut FileImpl);
 
-impl<'imp> File<'imp> {
+impl FileHandle {
+    pub(super) unsafe fn new(ptr: *mut FileImpl) -> Self {
+        Self(ptr)
+    }
+
     /// Converts `File` into a more specific subtype based on if it is a
     /// directory or not. It does this via a call to `get_position`.
-    pub fn into_kind(self) -> Result<FileKind<'imp>> {
-        use FileKind::*;
+    pub fn into_type(mut self) -> Result<FileType> {
+        use FileType::*;
 
         // get_position fails with EFI_UNSUPPORTED on directories
         let mut pos = 0;
-        match (self.0.get_position)(self.0, &mut pos) {
-            Status::SUCCESS => unsafe { Ok(Regular(self.into_regular_file()).into()) },
-            Status::UNSUPPORTED => unsafe { Ok(Dir(self.into_directory()).into()) },
+        match (self.imp().get_position)(self.imp(), &mut pos) {
+            Status::SUCCESS => unsafe { Ok(Regular(RegularFile::new(self)).into()) },
+            Status::UNSUPPORTED => unsafe { Ok(Dir(Directory::new(self)).into()) },
             s => Err(s.into()),
         }
     }
-
-    /// Coverts a `File` into a `RegularFile` without checking the file kind.
-    /// # Safety
-    /// This function should only be called on files which ARE NOT directories,
-    /// doing otherwise is unsafe.
-    #[inline]
-    pub unsafe fn into_regular_file(self) -> RegularFile<'imp> {
-        RegularFile(self)
-    }
-
-    /// Coverts a `File` into a `Directory` without checking the file kind.
-    /// # Safety
-    /// This function should only be called on files which ARE directories,
-    /// doing otherwise is unsafe.
-    #[inline]
-    pub unsafe fn into_directory(self) -> Directory<'imp> {
-        Directory(self.into_regular_file())
-    }
 }
 
-impl<'imp> FilesystemObject<'imp> for File<'imp> {
+impl File for FileHandle {
     #[inline]
-    fn file(&mut self) -> &mut File<'imp> {
+    fn handle(&mut self) -> &mut FileHandle {
         self
     }
 }
 
-impl Drop for File<'_> {
+impl Drop for FileHandle {
     fn drop(&mut self) {
-        let result: Result = (self.0.close)(self.0).into();
+        let result: Result = (self.imp().close)(self.imp()).into();
         // The spec says this always succeeds.
         result.expect_success("Failed to close file");
     }
@@ -269,12 +264,12 @@ pub(super) struct FileImpl {
     flush: extern "win64" fn(this: &mut FileImpl) -> Status,
 }
 
-/// Disambiguates the file kind. Returned by `File::into_kind()`.
-pub enum FileKind<'file> {
+/// Disambiguates the file type. Returned by `File::into_type()`.
+pub enum FileType {
     /// The file was a regular (data) file.
-    Regular(RegularFile<'file>),
+    Regular(RegularFile),
     /// The file was a directory.
-    Dir(Directory<'file>),
+    Dir(Directory),
 }
 
 /// Usage flags describing what is possible to do with the file.

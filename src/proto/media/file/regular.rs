@@ -1,15 +1,23 @@
-use super::{File, FilesystemObject};
+use super::{File, FileHandle, FileInternal};
 use crate::{Result, Status};
 
-/// A `File` that is also a regular (data) file.
+/// A `FileHandle` that is also a regular (data) file.
 ///
-/// Use `File::into_kind` or `File::into_regular_file` to create a
-/// `RegularFile`. In addition to supporting the normal `FilesystemObject`
-/// operations, `RegularFile` supports direct reading and writing.
+/// Use `FileHandle::into_kind` or `RegularFile::new` to create a `RegularFile`.
+/// In addition to supporting the normal `File` operations, `RegularFile`
+/// supports direct reading and writing.
 #[repr(transparent)]
-pub struct RegularFile<'imp>(pub(super) File<'imp>);
+pub struct RegularFile(FileHandle);
 
-impl RegularFile<'_> {
+impl RegularFile {
+    /// Coverts a `FileHandle` into a `RegularFile` without checking the file kind.
+    /// # Safety
+    /// This function should only be called on handles which ARE NOT directories,
+    /// doing otherwise is unsafe.
+    pub unsafe fn new(handle: FileHandle) -> Self {
+        Self(handle)
+    }
+
     /// Read data from file
     ///
     /// Try to read as much as possible into `buffer`. Returns the number of bytes that were
@@ -27,17 +35,16 @@ impl RegularFile<'_> {
     ///                                      and the required buffer size is provided as output.
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.file().0.read)(self.file().0, &mut buffer_size, buffer.as_mut_ptr()) }
-            .into_with(
-                || buffer_size,
-                |s| {
-                    if s == Status::BUFFER_TOO_SMALL {
-                        Some(buffer_size)
-                    } else {
-                        None
-                    }
-                },
-            )
+        unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) }.into_with(
+            || buffer_size,
+            |s| {
+                if s == Status::BUFFER_TOO_SMALL {
+                    Some(buffer_size)
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     /// Write data to file
@@ -59,7 +66,7 @@ impl RegularFile<'_> {
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.file().0.write)(self.file().0, &mut buffer_size, buffer.as_ptr()) }
+        unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr()) }
             .into_with_err(|_| buffer_size)
     }
 
@@ -70,7 +77,7 @@ impl RegularFile<'_> {
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.file().0.get_position)(self.file().0, &mut pos).into_with_val(|| pos)
+        (self.imp().get_position)(self.imp(), &mut pos).into_with_val(|| pos)
     }
 
     /// Sets the file's current position
@@ -87,13 +94,13 @@ impl RegularFile<'_> {
     /// # Errors
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
     pub fn set_position(&mut self, position: u64) -> Result {
-        (self.file().0.set_position)(self.file().0, position).into()
+        (self.imp().set_position)(self.imp(), position).into()
     }
 }
 
-impl<'imp> FilesystemObject<'imp> for RegularFile<'imp> {
+impl File for RegularFile {
     #[inline]
-    fn file(&mut self) -> &mut File<'imp> {
+    fn handle(&mut self) -> &mut FileHandle {
         &mut self.0
     }
 }

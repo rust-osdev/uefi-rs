@@ -19,9 +19,13 @@ pub trait FileExt: File {
             (_, Some(size)) => size,
         };
 
-        // These unsafe alloc APIs make sure our buffer is correctly aligned,
-        // turning it into a Box<[u8]> makes sure it's freed on error.
-        let layout = Layout::from_size_align(size, Info::alignment()).unwrap();
+        // These unsafe alloc APIs make sure our buffer is correctly aligned. We
+        // round up a size must always be a multiple of alignment. We turn the
+        // pointer into a Box<[u8]>, so it's always freed on error.
+        let layout = Layout::from_size_align(size, Info::alignment())
+            .unwrap()
+            .pad_to_align()
+            .unwrap();
         let buffer_start = unsafe { alloc(layout) };
         let mut buffer = unsafe { Box::from_raw(slice::from_raw_parts_mut(buffer_start, size)) };
 
@@ -34,7 +38,7 @@ pub trait FileExt: File {
                 // is created if and only if buffer is leaked (so no memory can
                 // ever be freed twice).
 
-                assert_eq!(mem::size_of_val(info_ref), size);
+                assert_eq!(mem::size_of_val(info_ref), layout.size());
                 assert_eq!(info_ref as *const Info as *const u8, buffer_start);
                 unsafe { Box::from_raw(info_ref as *mut _) }
             });

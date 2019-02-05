@@ -23,11 +23,13 @@ pub trait Align {
 
     /// Assert that some storage is correctly aligned for this type
     fn assert_aligned(storage: &mut [u8]) {
-        assert_eq!(
-            (storage.as_ptr() as usize) % Self::alignment(),
-            0,
-            "The provided storage is not correctly aligned for this type"
-        )
+        if !storage.is_empty() {
+            assert_eq!(
+                (storage.as_ptr() as usize) % Self::alignment(),
+                0,
+                "The provided storage is not correctly aligned for this type"
+            )
+        }
     }
 }
 

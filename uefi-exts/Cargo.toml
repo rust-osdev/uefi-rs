@@ -7,4 +7,3 @@ edition = "2018"
 
 [dependencies]
 uefi = { path = ".." }
-uefi-services = { path = "../uefi-services" }

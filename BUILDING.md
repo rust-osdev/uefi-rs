@@ -2,8 +2,8 @@
 
 UEFI applications are simple COFF (Windows) executables, with the special
 `EFI_Application` subsystem, and some limitations (such as no dynamic linking).
-
-The `x86_64-uefi.json` file describes a custom target for building UEFI apps.
+[Rust supports building UEFI applications](https://github.com/rust-lang/rust/pull/56769)
+though the `x86_64-unknown-uefi` target.
 
 ## Prerequisites
 
@@ -19,15 +19,12 @@ The following steps allow you to build a simple UEFI app.
 
 ```rust
 #[no_mangle]
-pub extern "win64" fn uefi_start(handle: Handle, system_table: SystemTable<Boot>) -> Status;
+pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status;
 ```
 
-- Copy the `uefi-test-runner/x86_64-uefi.json` target file to your project's root.
-  You can customize it.
+- Build using `cargo xbuild --target x86_64-unknown-uefi`.
 
-- Build using `cargo xbuild --target x86_64-uefi`.
-
-- The `target` directory will contain a `x86_64-uefi` subdirectory,
+- The `target` directory will contain a `x86_64-unknown-uefi` subdirectory,
   where you will find the `uefi_app.efi` file - a normal UEFI executable.
 
 - To run this on a real computer:

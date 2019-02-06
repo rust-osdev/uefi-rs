@@ -23,7 +23,7 @@ SETTINGS = {
     # Run QEMU without showing GUI
     'headless': False,
     # Target to build for.
-    'target': 'x86_64-uefi',
+    'target': 'x86_64-unknown-uefi',
     # Configuration to build.
     'config': 'debug',
     # QEMU executable to use

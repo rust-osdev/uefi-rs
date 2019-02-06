@@ -1,4 +1,3 @@
-use core::cell::UnsafeCell;
 use uefi::proto::Protocol;
 use uefi::table::boot::{BootServices, SearchType};
 use uefi::{Handle, Result};

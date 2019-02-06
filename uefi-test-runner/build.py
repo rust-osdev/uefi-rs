@@ -238,8 +238,6 @@ def main():
     # Clear any Rust flags which might affect the build.
     os.environ['RUSTFLAGS'] = ''
 
-    os.environ['RUST_TARGET_PATH'] = str(WORKSPACE_DIR / 'uefi-test-runner')
-
     usage = '%(prog)s verb [options]'
     desc = 'Build script for UEFI programs'
 

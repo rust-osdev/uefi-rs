@@ -103,7 +103,11 @@ pub struct BootServices {
     // Library services
     protocols_per_handle: usize,
     locate_handle_buffer: usize,
-    locate_protocol: usize,
+    locate_protocol: extern "win64" fn(
+        proto: &Guid,
+        registration: *mut c_void,
+        out_proto: &mut *mut c_void,
+    ) -> Status,
     install_multiple_protocol_interfaces: usize,
     uninstall_multiple_protocol_interfaces: usize,
 
@@ -444,6 +448,17 @@ impl BootServices {
             .unwrap_or((0, ptr::null_mut()));
 
         unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+    }
+
+    /// Returns a protocol implementation, if present on the system.
+    ///
+    /// The caveats of `BootServices::handle_protocol()` also apply here.
+    pub fn locate_protocol<P: Protocol>(&self) -> Result<&UnsafeCell<P>> {
+        let mut ptr = ptr::null_mut();
+        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
+            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+            unsafe { &*ptr }
+        })
     }
 
     /// Copies memory from source to destination. The buffers can overlap.

@@ -2,11 +2,9 @@ use uefi::prelude::*;
 use uefi::proto::console::pointer::Pointer;
 use uefi::table::boot::BootServices;
 
-use uefi_exts::BootServicesExt;
-
 pub fn test(bt: &BootServices) {
     info!("Running pointer protocol test");
-    if let Ok(pointer) = bt.find_protocol::<Pointer>() {
+    if let Ok(pointer) = bt.locate_protocol::<Pointer>() {
         let pointer = pointer.expect("Warnings encountered while opening pointer protocol");
         let pointer = unsafe { &mut *pointer.get() };
 

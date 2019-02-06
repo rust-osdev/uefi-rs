@@ -1,11 +1,10 @@
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
 use uefi::table::boot::BootServices;
-use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
     info!("Running graphics output protocol test");
-    if let Ok(gop) = bt.find_protocol::<GraphicsOutput>() {
+    if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
         let gop = gop.expect("Warnings encountered while opening GOP");
         let gop = unsafe { &mut *gop.get() };
 

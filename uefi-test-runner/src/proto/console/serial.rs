@@ -1,11 +1,10 @@
 use uefi::prelude::*;
 use uefi::proto::console::serial::{ControlBits, Serial};
 use uefi::table::boot::BootServices;
-use uefi_exts::BootServicesExt;
 
 pub fn test(bt: &BootServices) {
     info!("Running serial protocol test");
-    if let Ok(serial) = bt.find_protocol::<Serial>() {
+    if let Ok(serial) = bt.locate_protocol::<Serial>() {
         let serial = serial.expect("Warnings encountered while opening serial protocol");
         let serial = unsafe { &mut *serial.get() };
 

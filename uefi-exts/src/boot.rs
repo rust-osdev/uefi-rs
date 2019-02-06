@@ -9,11 +9,6 @@ use crate::alloc::vec::Vec;
 pub trait BootServicesExt {
     /// Returns all the handles implementing a certain protocol.
     fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>>;
-
-    /// Returns a protocol implementation, if present on the system.
-    ///
-    /// The caveats of `BootServices::handle_protocol()` also apply here.
-    fn find_protocol<P: Protocol>(&self) -> Result<&UnsafeCell<P>>;
 }
 
 impl BootServicesExt for BootServices {
@@ -42,25 +37,6 @@ impl BootServicesExt for BootServices {
         // Emit output, with warnings
         status1
             .into_with_val(|| buffer)
-            .map(|completion| completion.with_status(status2))
-    }
-
-    fn find_protocol<P: Protocol>(&self) -> Result<&UnsafeCell<P>> {
-        // Retrieve all handles implementing this.
-        let (status1, handles) = self.find_handles::<P>()?.split();
-
-        // There should be at least one, otherwise find_handles would have
-        // aborted with a NOT_FOUND error.
-        let handle = *handles.first().unwrap();
-
-        // Similarly, if the search is implemented properly, trying to open
-        // the first output handle should always succeed
-        // FIXME: Consider using the EFI 1.1 LocateProtocol API instead
-        let (status2, protocol) = self.handle_protocol::<P>(handle)?.split();
-
-        // Emit output, with warnings
-        status1
-            .into_with_val(|| protocol)
             .map(|completion| completion.with_status(status2))
     }
 }

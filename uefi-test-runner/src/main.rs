@@ -14,7 +14,6 @@ use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi::table::boot::MemoryDescriptor;
-use uefi_exts::BootServicesExt;
 
 mod boot;
 mod proto;
@@ -67,7 +66,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
         // Access the serial port (in a QEMU environment, it should always be there)
         let serial = bt
-            .find_protocol::<Serial>()
+            .locate_protocol::<Serial>()
             .expect_success("Could not find serial port");
         let serial = unsafe { &mut *serial.get() };
 

@@ -1,5 +1,6 @@
-use alloc::{alloc::alloc, boxed::Box};
-use core::{alloc::Layout, mem, slice};
+use super::allocate_buffer;
+use alloc::{alloc::Layout, boxed::Box};
+use core::mem;
 use uefi::prelude::*;
 use uefi::proto::media::file::{File, FileProtocolInfo};
 use uefi::Result;
@@ -19,15 +20,14 @@ pub trait FileExt: File {
             (_, Some(size)) => size,
         };
 
-        // These unsafe alloc APIs make sure our buffer is correctly aligned. We
-        // round up a size must always be a multiple of alignment. We turn the
-        // pointer into a Box<[u8]>, so it's always freed on error.
+        // We add trailing padding because the size of a rust structure must
+        // always be a multiple of alignment.
         let layout = Layout::from_size_align(size, Info::alignment())
             .unwrap()
             .pad_to_align()
             .unwrap();
-        let buffer_start = unsafe { alloc(layout) };
-        let mut buffer = unsafe { Box::from_raw(slice::from_raw_parts_mut(buffer_start, size)) };
+        let mut buffer = allocate_buffer(layout);
+        let buffer_start = buffer.as_ptr();
 
         let info = self
             .get_info(&mut buffer)

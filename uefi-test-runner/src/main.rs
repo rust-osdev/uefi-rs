@@ -20,7 +20,7 @@ mod boot;
 mod proto;
 
 #[no_mangle]
-pub extern "win64" fn uefi_start(image: uefi::Handle, st: SystemTable<Boot>) -> Status {
+pub extern "C" fn efi_main(image: uefi::Handle, st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
 

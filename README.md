@@ -8,7 +8,9 @@
 OS loaders, hypervisors and other low-level applications. While it started out
 as x86-specific, it has been adopted on other platforms, such as ARM.
 
-This crates makes it easy to write UEFI applications in Rust.
+This crate makes it easy to both:
+  - Write UEFI applications in Rust (via the [`x86_64-unknown-uefi`][rustc-uefi] target)
+  - Call UEFI functions from an OS (usually built with a [custom target][rustc-custom])
 
 The objective is to provide **safe** and **performant** wrappers for UEFI interfaces,
 and allow developers to write idiomatic Rust code.
@@ -20,6 +22,8 @@ and has been tested _only_ with **64-bit** UEFI.
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 [gm-blog]: https://medium.com/@gil0mendes/an-efi-app-a-bit-rusty-82c36b745f49
+[rustc-uefi]: https://github.com/rust-lang/rust/pull/56769
+[rustc-custom]: https://doc.rust-lang.org/rustc/targets/custom.html
 
 ![uefi-rs running in QEMU](https://imgur.com/SFPSVuO.png)
 
@@ -49,7 +53,7 @@ This project contains multiple sub-crates:
 
 ## Building kernels which use UEFI
 
-This crate makes it easy to start buildimg simple applications with UEFI.
+This crate makes it easy to start building simple applications with UEFI.
 However, there are some limitations you should be aware of:
 
 - The global logger / allocator **can only be set once** per binary.
@@ -91,8 +95,6 @@ Use the `build.py` script in the `uefi-test-runner` directory to generate the do
 An example UEFI app is built in the `uefi-test-runner` directory.
 
 Check out the testing [README.md](uefi-test-runner/README.md) for instructions on how to run the crate's tests.
-
-This repo also contains a `x86_64-uefi.json` file, which is a custom Rust target for 64-bit UEFI applications.
 
 ## Building UEFI programs
 

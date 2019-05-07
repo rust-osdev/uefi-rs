@@ -67,7 +67,7 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
     }
 
     fn log_warning(self) -> core::result::Result<Output, Error<ErrData>> {
-        self.map(|completion| completion.log())
+        self.map(Completion::log)
     }
 
     fn unwrap_success(self) -> Output {
@@ -97,7 +97,7 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
     where
         ErrData: Default,
     {
-        match self.map(|comp| comp.split()) {
+        match self.map(Completion::split) {
             Ok((Status::SUCCESS, res)) => Ok(res),
             Ok((s, _)) => Err(Error::new(s, Default::default())),
             Err(e) => Err(e),

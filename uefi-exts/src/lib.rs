@@ -4,7 +4,7 @@
 //! which add utility functions to various UEFI objects.
 
 #![no_std]
-#![feature(alloc, alloc_layout_extra, allocator_api)]
+#![feature(alloc_layout_extra, allocator_api)]
 
 extern crate alloc;
 

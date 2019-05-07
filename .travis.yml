@@ -8,7 +8,7 @@ python: 3.6
 
 install:
   # Manually install nightly Rust
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
   - source "$HOME/.cargo/env"
   - rustc -V
   - cargo -V

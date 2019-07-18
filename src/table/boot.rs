@@ -7,7 +7,8 @@ use crate::{Event, Guid, Handle, Result, Status};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
-use core::{mem, ptr};
+use core::ptr;
+use core::mem::{self, MaybeUninit};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -43,13 +44,13 @@ pub struct BootServices {
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
         notify_ctx: *mut c_void,
-        event: &mut Event,
+        event: *mut Event,
     ) -> Status,
     set_timer: usize,
     wait_for_event: unsafe extern "win64" fn(
         number_of_events: usize,
         events: *mut Event,
-        out_index: &mut usize,
+        out_index: *mut usize,
     ) -> Status,
     signal_event: usize,
     close_event: usize,
@@ -266,7 +267,7 @@ impl BootServices {
         notify_fn: Option<fn(Event)>,
     ) -> Result<Event> {
         // Prepare storage for the output Event
-        let mut event = mem::uninitialized();
+        let mut event = MaybeUninit::<Event>::uninit();
 
         // Use a trampoline to handle the impedance mismatch between Rust & C
         unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
@@ -283,8 +284,8 @@ impl BootServices {
             .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
-        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, &mut event)
-            .into_with_val(|| event)
+        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, event.as_mut_ptr())
+            .into_with_val(|| event.assume_init())
     }
 
     /// Stops execution until an event is signaled
@@ -316,12 +317,12 @@ impl BootServices {
     /// check_event() interface may be used.
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
-        let mut index = unsafe { mem::uninitialized() };
-        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }.into_with(
-            || index,
+        let mut index = MaybeUninit::<usize>::uninit();
+        unsafe { (self.wait_for_event)(number_of_events, events, index.as_mut_ptr()) }.into_with(
+            || unsafe { index.assume_init() },
             |s| {
                 if s == Status::INVALID_PARAMETER {
-                    Some(index)
+                    unsafe { Some(index.assume_init()) }
                 } else {
                     None
                 }

@@ -2,7 +2,7 @@
 
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Event, Result, Status};
-use core::mem;
+use core::mem::MaybeUninit;
 
 /// Provides information about a pointer device.
 #[repr(C)]
@@ -10,7 +10,7 @@ use core::mem;
 #[derive(Protocol)]
 pub struct Pointer<'boot> {
     reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
-    get_state: extern "win64" fn(this: &Pointer, state: &mut PointerState) -> Status,
+    get_state: extern "win64" fn(this: &Pointer, state: *mut PointerState) -> Status,
     wait_for_input: Event,
     mode: &'boot PointerMode,
 }
@@ -37,11 +37,11 @@ impl<'boot> Pointer<'boot> {
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
-        let mut pointer_state = unsafe { mem::uninitialized() };
+        let mut pointer_state = MaybeUninit::<PointerState>::uninit();
 
-        match (self.get_state)(self, &mut pointer_state) {
+        match (self.get_state)(self, pointer_state.as_mut_ptr()) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with_val(|| Some(pointer_state)),
+            other => other.into_with_val(|| unsafe { Some(pointer_state.assume_init()) }),
         }
     }
 

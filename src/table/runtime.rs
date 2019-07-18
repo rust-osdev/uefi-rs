@@ -3,7 +3,7 @@
 use super::Header;
 use crate::{Result, Status};
 use bitflags::bitflags;
-use core::mem;
+use core::mem::MaybeUninit;
 use core::ptr;
 
 /// Contains pointers to all of the runtime services.
@@ -14,7 +14,7 @@ use core::ptr;
 pub struct RuntimeServices {
     header: Header,
     get_time:
-        unsafe extern "win64" fn(time: &mut Time, capabilities: *mut TimeCapabilities) -> Status,
+        unsafe extern "win64" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
     set_time: unsafe extern "win64" fn(time: &Time) -> Status,
     // Skip some useless functions.
     _pad: [usize; 8],
@@ -29,15 +29,15 @@ pub struct RuntimeServices {
 impl RuntimeServices {
     /// Query the current time and date information
     pub fn get_time(&self) -> Result<Time> {
-        let mut time = unsafe { mem::uninitialized() };
-        unsafe { (self.get_time)(&mut time, ptr::null_mut()) }.into_with_val(|| time)
+        let mut time = MaybeUninit::<Time>::uninit();
+        unsafe { (self.get_time)(time.as_mut_ptr(), ptr::null_mut()) }.into_with_val(|| unsafe { time.assume_init() })
     }
 
     /// Query the current time and date information and the RTC capabilities
     pub fn get_time_and_caps(&self) -> Result<(Time, TimeCapabilities)> {
-        let mut time = unsafe { mem::uninitialized() };
-        let mut caps = unsafe { mem::uninitialized() };
-        unsafe { (self.get_time)(&mut time, &mut caps as *mut _) }.into_with_val(|| (time, caps))
+        let mut time = MaybeUninit::<Time>::uninit();
+        let mut caps = MaybeUninit::<TimeCapabilities>::uninit();
+        unsafe { (self.get_time)(time.as_mut_ptr(), caps.as_mut_ptr()) }.into_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
     }
 
     /// Sets the current local time and date information

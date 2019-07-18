@@ -1,6 +1,6 @@
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Char16, Event, Result, Status};
-use core::mem;
+use core::mem::{self, MaybeUninit};
 
 /// Interface for text-based input devices.
 #[repr(C)]
@@ -8,7 +8,7 @@ use core::mem;
 #[derive(Protocol)]
 pub struct Input {
     reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "win64" fn(this: &mut Input, key: &mut RawKey) -> Status,
+    read_key_stroke: extern "win64" fn(this: &mut Input, key: *mut RawKey) -> Status,
     wait_for_key: Event,
 }
 
@@ -34,11 +34,11 @@ impl Input {
     ///
     /// - `DeviceError` if there was an issue with the input device
     pub fn read_key(&mut self) -> Result<Option<Key>> {
-        let mut key = unsafe { mem::uninitialized() };
+        let mut key = MaybeUninit::<RawKey>::uninit();
 
-        match (self.read_key_stroke)(self, &mut key) {
+        match (self.read_key_stroke)(self, key.as_mut_ptr()) {
             Status::NOT_READY => Ok(None.into()),
-            other => other.into_with_val(|| Some(key.into())),
+            other => other.into_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
     }
 

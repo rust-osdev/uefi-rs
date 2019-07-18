@@ -1,6 +1,6 @@
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Char16, Event, Result, Status};
-use core::mem::{self, MaybeUninit};
+use core::mem::MaybeUninit;
 
 /// Interface for text-based input devices.
 #[repr(C)]

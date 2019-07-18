@@ -7,8 +7,8 @@ use crate::{Event, Guid, Handle, Result, Status};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
-use core::ptr;
 use core::mem::{self, MaybeUninit};
+use core::ptr;
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -284,8 +284,14 @@ impl BootServices {
             .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
-        (self.create_event)(event_ty, notify_tpl, notify_func, notify_ctx, event.as_mut_ptr())
-            .into_with_val(|| event.assume_init())
+        (self.create_event)(
+            event_ty,
+            notify_tpl,
+            notify_func,
+            notify_ctx,
+            event.as_mut_ptr(),
+        )
+        .into_with_val(|| event.assume_init())
     }
 
     /// Stops execution until an event is signaled

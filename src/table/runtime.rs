@@ -30,14 +30,16 @@ impl RuntimeServices {
     /// Query the current time and date information
     pub fn get_time(&self) -> Result<Time> {
         let mut time = MaybeUninit::<Time>::uninit();
-        unsafe { (self.get_time)(time.as_mut_ptr(), ptr::null_mut()) }.into_with_val(|| unsafe { time.assume_init() })
+        unsafe { (self.get_time)(time.as_mut_ptr(), ptr::null_mut()) }
+            .into_with_val(|| unsafe { time.assume_init() })
     }
 
     /// Query the current time and date information and the RTC capabilities
     pub fn get_time_and_caps(&self) -> Result<(Time, TimeCapabilities)> {
         let mut time = MaybeUninit::<Time>::uninit();
         let mut caps = MaybeUninit::<TimeCapabilities>::uninit();
-        unsafe { (self.get_time)(time.as_mut_ptr(), caps.as_mut_ptr()) }.into_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
+        unsafe { (self.get_time)(time.as_mut_ptr(), caps.as_mut_ptr()) }
+            .into_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
     }
 
     /// Sets the current local time and date information

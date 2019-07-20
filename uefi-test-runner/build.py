@@ -122,6 +122,9 @@ def run_qemu():
         # Use a modern machine, with acceleration if possible.
         '-machine', 'q35,accel=kvm:tcg',
 
+        # Multi-processor services protocol test needs exactly 3 CPUs.
+        '-smp', '3',
+
         # Allocate some memory.
         '-m', '128M',
 

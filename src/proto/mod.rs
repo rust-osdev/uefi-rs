@@ -29,3 +29,4 @@ pub use uefi_macros::Protocol;
 pub mod console;
 pub mod debug;
 pub mod media;
+pub mod pi;

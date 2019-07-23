@@ -115,6 +115,16 @@ fn test_enable_disable_ap(mps: &MPServices) {
     // Ensure that all CPUs are enabled
     let proc_count = mps.get_number_of_processors().unwrap().unwrap();
     assert_eq!(proc_count.total, proc_count.enabled);
+
+    // Mark second CPU as unhealthy and check it's status
+    mps.enable_disable_ap(1, true, Some(false)).unwrap().unwrap();
+    let pi = mps.get_processor_info(1).unwrap().unwrap();
+    assert_eq!(pi.status_flag.contains(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT), false);
+
+    // Mark second CPU as healthy again and check it's status
+    mps.enable_disable_ap(1, true, Some(true)).unwrap().unwrap();
+    let pi = mps.get_processor_info(1).unwrap().unwrap();
+    assert_eq!(pi.status_flag.contains(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT), true);
 }
 
 fn test_switch_bsp_and_who_am_i(mps: &MPServices) {

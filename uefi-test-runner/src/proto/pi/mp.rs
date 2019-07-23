@@ -1,7 +1,7 @@
 use core::time::Duration;
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicUsize, Ordering};
-use uefi::proto::pi::mp::{MPServices, StatusFlag};
+use uefi::proto::pi::mp::MPServices;
 use uefi::table::boot::BootServices;
 use uefi::Status;
 use core::mem;
@@ -49,14 +49,14 @@ fn test_get_processor_info(mps: &MPServices) {
     assert_eq!(cpu2.processor_id, 2);
 
     // Check that only CPU 0 is BSP
-    assert_eq!(cpu0.status_flag.contains(StatusFlag::PROCESSOR_AS_BSP_BIT), true);
-    assert_eq!(cpu1.status_flag.contains(StatusFlag::PROCESSOR_AS_BSP_BIT), false);
-    assert_eq!(cpu2.status_flag.contains(StatusFlag::PROCESSOR_AS_BSP_BIT), false);
+    assert_eq!(cpu0.is_bsp(), true);
+    assert_eq!(cpu1.is_bsp(), false);
+    assert_eq!(cpu2.is_bsp(), false);
 
     // Check that only the second CPU is disabled
-    assert_eq!(cpu0.status_flag.contains(StatusFlag::PROCESSOR_ENABLED_BIT), true);
-    assert_eq!(cpu1.status_flag.contains(StatusFlag::PROCESSOR_ENABLED_BIT), false);
-    assert_eq!(cpu2.status_flag.contains(StatusFlag::PROCESSOR_ENABLED_BIT), true);
+    assert_eq!(cpu0.is_enabled(), true);
+    assert_eq!(cpu1.is_enabled(), false);
+    assert_eq!(cpu2.is_enabled(), true);
 
     // Enable second CPU back
     mps.enable_disable_ap(1, true, None).unwrap().unwrap();
@@ -118,13 +118,13 @@ fn test_enable_disable_ap(mps: &MPServices) {
 
     // Mark second CPU as unhealthy and check it's status
     mps.enable_disable_ap(1, true, Some(false)).unwrap().unwrap();
-    let pi = mps.get_processor_info(1).unwrap().unwrap();
-    assert_eq!(pi.status_flag.contains(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT), false);
+    let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
+    assert_eq!(cpu1.is_healthy(), false);
 
     // Mark second CPU as healthy again and check it's status
     mps.enable_disable_ap(1, true, Some(true)).unwrap().unwrap();
-    let pi = mps.get_processor_info(1).unwrap().unwrap();
-    assert_eq!(pi.status_flag.contains(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT), true);
+    let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
+    assert_eq!(cpu1.is_healthy(), true);
 }
 
 fn test_switch_bsp_and_who_am_i(mps: &MPServices) {

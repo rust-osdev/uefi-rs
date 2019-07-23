@@ -178,14 +178,23 @@ impl MPServices {
     }
 
     /// Enables or disables an AP from this point onward.
+    ///
+    /// The `healthy` argument can be used to specify the new health status of the AP
+    /// and has the same meaning as the `PROCESSOR_HEALTH_STATUS_BIT` flag in [StatusFlag](StatusFlag).
     pub fn enable_disable_ap(
         &self,
         processor_number: usize,
         enable_ap: bool,
-        health_flag: Option<u32>,
+        healthy: Option<bool>,
     ) -> Result {
-        let health_flag_ptr = match health_flag {
-            Some(val) => &val,
+        let health_flag_raw: u32;
+        let health_flag_ptr = match healthy {
+            Some(healthy) => {
+                let mut sf = StatusFlag::empty();
+                sf.set(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT, healthy);
+                health_flag_raw = sf.bits();
+                &health_flag_raw
+            }
             None => ptr::null(),
         };
         (self.enable_disable_ap)(self, processor_number, enable_ap, health_flag_ptr).into()

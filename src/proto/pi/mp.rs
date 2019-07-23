@@ -1,4 +1,15 @@
 //! Multi-processor management protocols.
+//!
+//! On any system with more than one logical processor we can categorize them as:
+//!
+//! * BSP — bootstrap processor, executes modules that are necessary for booting the system
+//! * AP — application processor, any processor other than the bootstrap processor
+//!
+//! This module contains protocols that provide a generalized way of performing the following tasks on these logical processors:
+//!
+//! * retrieving information of multi-processor environment and MP-related status of specific processors
+//! * dispatching user-provided function to APs
+//! * maintaining MP-related processor status
 
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};

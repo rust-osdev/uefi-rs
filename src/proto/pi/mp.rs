@@ -16,7 +16,7 @@ bitflags! {
     /// if the processor is enabled or disabled, and if
     /// the processor is healthy.
     #[derive(Default)]
-    pub struct StatusFlag: u32 {
+    struct StatusFlag: u32 {
         /// Processor is playing the role of BSP.
         const PROCESSOR_AS_BSP_BIT = 0b00000001;
         /// Processor is enabled.
@@ -42,9 +42,27 @@ pub struct ProcessorInformation {
     /// Unique processor ID determined by system hardware.
     pub processor_id: u64,
     /// Flags indicating BSP, enabled and healthy status.
-    pub status_flag: StatusFlag,
+    status_flag: StatusFlag,
     /// Physical location of the processor.
     pub location: CPUPhysicalLocation,
+}
+
+impl ProcessorInformation {
+    /// Returns `true` if the processor is playing the role of BSP.
+    pub fn is_bsp(&self) -> bool {
+        self.status_flag.contains(StatusFlag::PROCESSOR_AS_BSP_BIT)
+    }
+
+    /// Returns `true` if the processor is enabled.
+    pub fn is_enabled(&self) -> bool {
+        self.status_flag.contains(StatusFlag::PROCESSOR_ENABLED_BIT)
+    }
+
+    /// Returns `true` if the processor is healthy.
+    pub fn is_healthy(&self) -> bool {
+        self.status_flag
+            .contains(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT)
+    }
 }
 
 /// Information about physical location of the processor.
@@ -179,8 +197,7 @@ impl MPServices {
 
     /// Enables or disables an AP from this point onward.
     ///
-    /// The `healthy` argument can be used to specify the new health status of the AP
-    /// and has the same meaning as the `PROCESSOR_HEALTH_STATUS_BIT` flag in [StatusFlag](StatusFlag).
+    /// The `healthy` argument can be used to specify the new health status of the AP.
     pub fn enable_disable_ap(
         &self,
         processor_number: usize,

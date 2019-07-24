@@ -29,11 +29,11 @@ bitflags! {
     #[derive(Default)]
     struct StatusFlag: u32 {
         /// Processor is playing the role of BSP.
-        const PROCESSOR_AS_BSP_BIT = 0b00000001;
+        const PROCESSOR_AS_BSP_BIT = 1;
         /// Processor is enabled.
-        const PROCESSOR_ENABLED_BIT = 0b00000010;
+        const PROCESSOR_ENABLED_BIT = 1 << 1;
         /// Processor is healthy.
-        const PROCESSOR_HEALTH_STATUS_BIT = 0b00000100;
+        const PROCESSOR_HEALTH_STATUS_BIT = 1 << 2;
     }
 }
 

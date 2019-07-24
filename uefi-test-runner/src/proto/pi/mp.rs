@@ -4,7 +4,6 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 use uefi::proto::pi::mp::MPServices;
 use uefi::table::boot::BootServices;
 use uefi::Status;
-use core::mem;
 
 pub fn test(bt: &BootServices) {
     info!("Running UEFI multi-processor services protocol test");
@@ -63,24 +62,24 @@ fn test_get_processor_info(mps: &MPServices) {
 }
 
 extern "win64" fn proc_increment_atomic(arg: *mut c_void) {
-    let counter: &AtomicUsize = unsafe { mem::transmute(arg) };
+    let counter: &AtomicUsize = unsafe { *(arg as *const _) };
     counter.fetch_add(1, Ordering::Relaxed);
 }
 
 extern "win64" fn proc_wait_100ms(arg: *mut c_void) {
-    let bt: &BootServices = unsafe { mem::transmute(arg) };
+    let bt: &BootServices = unsafe { *(arg as *const _) };
     bt.stall(100_000);
 }
 
 fn test_startup_all_aps(mps: &MPServices, bt: &BootServices) {
     // Ensure that APs start up
     let counter = AtomicUsize::new(0);
-    let counter_ptr: *mut c_void = unsafe { mem::transmute(&counter) };
+    let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
     mps.startup_all_aps(false, proc_increment_atomic, counter_ptr, None).unwrap().unwrap();
     assert_eq!(counter.load(Ordering::Relaxed), 2);
 
     // Make sure that timeout works
-    let bt_ptr: *mut c_void = unsafe { mem::transmute(bt) };
+    let bt_ptr: *mut c_void = bt as *const _ as *mut _;
     let ret = mps.startup_all_aps(false, proc_wait_100ms, bt_ptr, Some(Duration::from_millis(50)));
     assert_eq!(ret.map_err(|err| err.status()), Err(Status::TIMEOUT));
 }
@@ -88,13 +87,13 @@ fn test_startup_all_aps(mps: &MPServices, bt: &BootServices) {
 fn test_startup_this_ap(mps: &MPServices, bt: &BootServices) {
     // Ensure that each AP starts up
     let counter = AtomicUsize::new(0);
-    let counter_ptr: *mut c_void = unsafe { mem::transmute(&counter) };
+    let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
     mps.startup_this_ap(1, proc_increment_atomic, counter_ptr, None).unwrap().unwrap();
     mps.startup_this_ap(2, proc_increment_atomic, counter_ptr, None).unwrap().unwrap();
     assert_eq!(counter.load(Ordering::Relaxed), 2);
 
     // Make sure that timeout works for each AP
-    let bt_ptr: *mut c_void = unsafe { mem::transmute(bt) };
+    let bt_ptr: *mut c_void = bt as *const _ as *mut _;
     for i in 1..3 {
         let ret = mps.startup_this_ap(i, proc_wait_100ms, bt_ptr, Some(Duration::from_millis(50)));
         assert_eq!(ret.map_err(|err| err.status()), Err(Status::TIMEOUT));

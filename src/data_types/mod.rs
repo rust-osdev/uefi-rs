@@ -35,7 +35,7 @@ pub trait Align {
 
 mod guid;
 pub use self::guid::Guid;
-pub(crate) use self::guid::{unsafe_guid, Identify};
+pub use self::guid::{unsafe_guid, Identify};
 
 pub mod chars;
 pub use self::chars::{Char16, Char8};

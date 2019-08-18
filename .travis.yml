@@ -15,7 +15,7 @@ install:
   # Required by cargo-xbuild
   - rustup component add rust-src
   # Required by cargo-xclippy
-  - rustup component add clippy
+  - rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
   # For checking the code's formatting
   - rustup component add rustfmt
   # Try installing cargo-xbuild if it's not already installed

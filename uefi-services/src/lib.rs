@@ -157,10 +157,13 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
 
     // If running in QEMU, use the f4 exit port to signal the error and exit
     if cfg!(feature = "qemu") {
-        use x86_64::instructions::port::Port;
-        let mut port = Port::<u32>::new(0xf4);
-        unsafe {
-            port.write(42);
+        #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+        {
+            use x86_64::instructions::port::Port;
+            let mut port = Port::<u32>::new(0xf4);
+            unsafe {
+                port.write(42);
+            }
         }
     }
 
@@ -177,7 +180,11 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     loop {
         unsafe {
             // Try to at least keep CPU from running at 100%
+            #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
             asm!("hlt" :::: "volatile");
+
+            #[cfg(target_arch = "aarch64")]
+            asm!("wfe" :::: "volatile");
         }
     }
 }

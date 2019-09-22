@@ -3,8 +3,18 @@ name = "uefi"
 version = "0.2.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
-publish = false
 edition = "2018"
+exclude = ["uefi-test-runner/**"]
+description = "Safe and easy-to-use wrapper for building UEFI apps"
+repository = "https://github.com/rust-osdev/uefi-rs"
+keywords = ["uefi", "efi"]
+categories = ["embedded", "no-std", "api-bindings"]
+license = "MPL-2.0"
+
+[badges]
+travis-ci = { repository = "rust-osdev/uefi-rs" }
+is-it-maintained-issue-resolution = { repository = "https://github.com/rust-osdev/uefi-rs" }
+is-it-maintained-open-issues = { repository = "https://github.com/rust-osdev/uefi-rs" }
 
 [dependencies]
 bitflags = "1"

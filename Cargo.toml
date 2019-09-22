@@ -17,10 +17,10 @@ is-it-maintained-issue-resolution = { repository = "https://github.com/rust-osde
 is-it-maintained-open-issues = { repository = "https://github.com/rust-osdev/uefi-rs" }
 
 [dependencies]
-bitflags = "1"
-log = { version = "0.4", default-features = false }
-ucs2 = "0.1"
-uefi-macros = { path = "uefi-macros" }
+bitflags = "1.1.0"
+log = { version = "0.4.8", default-features = false }
+ucs2 = "0.1.0"
+uefi-macros = "0.2.0"
 
 [workspace]
 members = [

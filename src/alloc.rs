@@ -1,6 +1,6 @@
-//! `uefi-alloc` implements Rust's global allocator interface using UEFI's memory allocation functions.
+//! This module implements Rust's global allocator interface using UEFI's memory allocation functions.
 //!
-//! Linking this crate in your app will allow you to use Rust's higher-level data structures,
+//! Enabling the `alloc` optional feature in your app will allow you to use Rust's higher-level data structures,
 //! like boxes, vectors, hash maps, linked lists and so on.
 //!
 //! # Usage

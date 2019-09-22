@@ -13,8 +13,8 @@ license = "MPL-2.0"
 
 [badges]
 travis-ci = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-issue-resolution = { repository = "https://github.com/rust-osdev/uefi-rs" }
-is-it-maintained-open-issues = { repository = "https://github.com/rust-osdev/uefi-rs" }
+is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
+is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 
 [dependencies]
 bitflags = "1.1.0"

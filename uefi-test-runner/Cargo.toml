@@ -10,7 +10,7 @@ uefi = { path = ".." }
 uefi-services = { path = "../uefi-services" }
 uefi-exts = { path = "../uefi-exts" }
 
-log = { version = "0.4", default-features = false }
+log = { version = "0.4.8", default-features = false }
 
 [features]
 qemu = ["uefi-services/qemu"]

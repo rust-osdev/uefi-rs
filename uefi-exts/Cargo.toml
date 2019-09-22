@@ -1,6 +1,6 @@
 [package]
 name = "uefi-exts"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 publish = false
 edition = "2018"

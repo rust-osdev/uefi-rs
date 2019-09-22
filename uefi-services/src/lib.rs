@@ -21,9 +21,6 @@ extern crate rlibc;
 // Core types.
 extern crate uefi;
 
-// Logging support
-extern crate uefi_logger;
-
 #[macro_use]
 extern crate log;
 
@@ -42,7 +39,7 @@ use uefi::{Event, Result};
 static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 
 /// Global logger object
-static mut LOGGER: Option<uefi_logger::Logger> = None;
+static mut LOGGER: Option<uefi::logger::Logger> = None;
 
 /// Obtains a pointer to the system table.
 ///
@@ -100,7 +97,7 @@ unsafe fn init_logger(st: &SystemTable<Boot>) {
 
     // Construct the logger.
     let logger = {
-        LOGGER = Some(uefi_logger::Logger::new(stdout));
+        LOGGER = Some(uefi::logger::Logger::new(stdout));
         LOGGER.as_ref().unwrap()
     };
 

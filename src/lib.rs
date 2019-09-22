@@ -46,3 +46,6 @@ pub mod prelude;
 
 #[cfg(feature = "alloc")]
 pub mod alloc;
+
+#[cfg(feature = "logger")]
+pub mod logger;

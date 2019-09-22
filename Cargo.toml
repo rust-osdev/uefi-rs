@@ -19,6 +19,7 @@ is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 [features]
 default = []
 alloc = []
+logger = []
 
 [dependencies]
 bitflags = "1.1.0"
@@ -29,7 +30,6 @@ uefi-macros = "0.2.0"
 [workspace]
 members = [
     "uefi-exts",
-    "uefi-logger",
     "uefi-macros",
     "uefi-services",
     "uefi-test-runner",

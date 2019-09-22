@@ -6,11 +6,11 @@ publish = false
 edition = "2018"
 
 [dependencies]
-rlibc = "1"
-x86_64 = "0.2"
+rlibc = "1.0.0"
+x86_64 = "0.7.5"
 
 uefi = { path = "..", features = ["alloc", "logger"] }
-log = { version = "0.4", default-features = false }
+log = { version = "0.4.8", default-features = false }
 
 [features]
 # Enable QEMU-specific functionality

@@ -43,3 +43,6 @@ pub mod table;
 pub mod proto;
 
 pub mod prelude;
+
+#[cfg(feature = "alloc")]
+pub mod alloc;

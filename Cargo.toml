@@ -16,6 +16,10 @@ travis-ci = { repository = "rust-osdev/uefi-rs" }
 is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
 is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 
+[features]
+default = []
+alloc = []
+
 [dependencies]
 bitflags = "1.1.0"
 log = { version = "0.4.8", default-features = false }
@@ -24,7 +28,6 @@ uefi-macros = "0.2.0"
 
 [workspace]
 members = [
-    "uefi-alloc",
     "uefi-exts",
     "uefi-logger",
     "uefi-macros",

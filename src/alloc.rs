@@ -11,16 +11,11 @@
 //! Call the `exit_boot_services` function before exiting UEFI boot services.
 //! Failure to do so will turn subsequent allocation into undefined behaviour.
 
-// Enable additional lints.
-#![warn(missing_docs)]
-#![deny(clippy::all)]
-#![no_std]
-
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
 
-use uefi::prelude::*;
-use uefi::table::boot::{BootServices, MemoryType};
+use crate::prelude::*;
+use crate::table::boot::{BootServices, MemoryType};
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.
 ///

@@ -24,9 +24,6 @@ extern crate uefi;
 // Logging support
 extern crate uefi_logger;
 
-// Allocator support.
-extern crate uefi_alloc;
-
 #[macro_use]
 extern crate log;
 
@@ -81,7 +78,7 @@ pub fn init(st: &SystemTable<Boot>) -> Result {
         // Setup logging and memory allocation
         let boot_services = st.boot_services();
         init_logger(st);
-        uefi_alloc::init(boot_services);
+        uefi::alloc::init(boot_services);
 
         // Schedule these tools to be disabled on exit from UEFI boot services
         boot_services
@@ -128,7 +125,7 @@ fn exit_boot_services(_e: Event) {
             logger.disable();
         }
     }
-    uefi_alloc::exit_boot_services();
+    uefi::alloc::exit_boot_services();
 }
 
 #[lang = "eh_personality"]

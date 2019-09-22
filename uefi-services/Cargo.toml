@@ -9,8 +9,7 @@ edition = "2018"
 rlibc = "1"
 x86_64 = "0.2"
 
-uefi = { path = ".." }
-uefi-alloc = { path = "../uefi-alloc" }
+uefi = { path = "..", features = ["alloc"] }
 uefi-logger = { path = "../uefi-logger" }
 log = { version = "0.4", default-features = false }
 

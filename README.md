@@ -1,5 +1,8 @@
 # uefi-rs
 
+[![Crates.io](https://img.shields.io/crates/v/uefi)](https://crates.io/crates/uefi)
+![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
+![License](https://img.shields.io/github/license/rust-osdev/uefi-rs)
 [![Build Status](https://travis-ci.org/rust-osdev/uefi-rs.svg?branch=master)](https://travis-ci.org/rust-osdev/uefi-rs)
 
 ## Description

@@ -25,6 +25,8 @@ static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
 
 /// Initializes the allocator.
 ///
+/// # Safety
+///
 /// This function is unsafe because you _must_ make sure that exit_boot_services
 /// will be called when UEFI boot services will be exited.
 pub unsafe fn init(boot_services: &BootServices) {

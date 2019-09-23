@@ -18,8 +18,10 @@ The following steps allow you to build a simple UEFI app.
   and make sure you have an entry point function which matches the one below:
 
 ```rust
-#[no_mangle]
-pub extern "C" fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status;
+use uefi::prelude::*;
+
+#[entry]
+fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status;
 ```
 
 - Build using `cargo xbuild --target x86_64-unknown-uefi`.

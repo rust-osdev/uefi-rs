@@ -82,18 +82,13 @@ uses UEFI to set up an environment for it.
 
 ## Documentation
 
+The docs for the latest published crate version can be found at
+[docs.rs/uefi/](https://docs.rs/uefi/)
+
 This crate's documentation is fairly minimal, and you are encouraged to refer to
 the [UEFI specification][spec] for detailed information.
 
 [spec]: http://www.uefi.org/specifications
-
-### rustdoc
-
-Use the `build.py` script in the `uefi-test-runner` directory to generate the documentation:
-
-```sh
-./build.py doc
-```
 
 ## Sample code
 

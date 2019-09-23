@@ -5,7 +5,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
-use syn::{parse_macro_input, DeriveInput, Generics, Ident, ItemType, LitStr};
+use syn::{parse_macro_input, DeriveInput, Generics, Ident, ItemFn, ItemType, LitStr};
 
 /// Parses a type definition, extracts its identifier and generic parameters
 struct TypeDefinition {
@@ -121,5 +121,27 @@ pub fn derive_protocol(item: TokenStream) -> TokenStream {
         // Most UEFI functions do not support multithreaded access.
         impl #impl_generics !Sync for #ident #ty_generics #where_clause {}
     };
+    result.into()
+}
+
+/// Custom attribute for a UEFI executable entrypoint
+#[proc_macro_attribute]
+pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
+    // This code is inspired by the approach in this embedded Rust crate:
+    // https://github.com/rust-embedded/cortex-m-rt/blob/965bf1e3291571e7e3b34834864117dc020fb391/macros/src/lib.rs#L85
+
+    if !args.is_empty() {
+        panic!("This attribute accepts no arguments");
+    }
+
+    let f = parse_macro_input!(input as ItemFn);
+
+    let entry_fn_ident = &f.sig.ident;
+
+    let result = quote!(
+        static _UEFI_ENTRY_POINT_TYPE_CHECK: extern "win64" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status = #entry_fn_ident;
+        #[no_mangle]
+        pub extern "win64" #f
+    );
     result.into()
 }

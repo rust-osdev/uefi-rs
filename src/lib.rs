@@ -23,12 +23,17 @@
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
 
+#![cfg_attr(feature = "exts", feature(allocator_api, alloc_layout_extra))]
 #![feature(optin_builtin_traits)]
 #![feature(try_trait)]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]
 #![deny(clippy::all)]
+
+// `uefi-exts` requires access to memory allocation APIs.
+#[cfg(feature = "exts")]
+extern crate alloc as alloc_api;
 
 #[macro_use]
 pub mod data_types;
@@ -46,6 +51,9 @@ pub mod prelude;
 
 #[cfg(feature = "alloc")]
 pub mod alloc;
+
+#[cfg(feature = "exts")]
+pub mod exts;
 
 #[cfg(feature = "logger")]
 pub mod logger;

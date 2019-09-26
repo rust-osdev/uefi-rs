@@ -44,9 +44,8 @@ This project contains multiple sub-crates:
   - `logger`: logging implementation for the standard [log] crate.
     - Prints output to console.
     - No buffering is done: this is not a high-performance logger.
-
-- `uefi-exts`: extension traits providing utility functions for common patterns.
-  - Requires the `alloc` crate (either enable the `alloc` optional feature or your own custom allocator).
+  - `exts`: extensions providing utility functions for common patterns.
+    - Requires the `alloc` crate (either enable the `alloc` optional feature or your own custom allocator).
 
 - `uefi-macros`: procedural macros that are used to derive some traits in `uefi`.
 

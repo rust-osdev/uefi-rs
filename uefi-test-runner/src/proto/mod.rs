@@ -1,5 +1,4 @@
 use uefi::prelude::*;
-use uefi_exts::BootServicesExt;
 
 use uefi::proto;
 

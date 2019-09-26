@@ -4,6 +4,8 @@ use super::Header;
 use crate::data_types::Align;
 use crate::proto::Protocol;
 use crate::{Event, Guid, Handle, Result, Status};
+#[cfg(feature = "exts")]
+use alloc_api::vec::Vec;
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -482,6 +484,38 @@ impl BootServices {
     /// invariants of the Rust type system.
     pub unsafe fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.set_mem)(buffer, size, value);
+    }
+}
+
+#[cfg(feature = "exts")]
+impl BootServices {
+    /// Returns all the handles implementing a certain protocol.
+    pub fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>> {
+        // Search by protocol.
+        let search_type = SearchType::from_proto::<P>();
+
+        // Determine how much we need to allocate.
+        let (status1, buffer_size) = self.locate_handle(search_type, None)?.split();
+
+        // Allocate a large enough buffer.
+        let mut buffer = Vec::with_capacity(buffer_size);
+
+        unsafe {
+            buffer.set_len(buffer_size);
+        }
+
+        // Perform the search.
+        let (status2, buffer_size) = self.locate_handle(search_type, Some(&mut buffer))?.split();
+
+        // Once the vector has been filled, update its size.
+        unsafe {
+            buffer.set_len(buffer_size);
+        }
+
+        // Emit output, with warnings
+        status1
+            .into_with_val(|| buffer)
+            .map(|completion| completion.with_status(status2))
     }
 }
 

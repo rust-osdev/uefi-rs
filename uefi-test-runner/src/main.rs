@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 #![feature(asm)]
-#![feature(const_slice_len)]
 #![feature(slice_patterns)]
 
 #[macro_use]

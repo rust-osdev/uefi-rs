@@ -61,12 +61,12 @@ fn test_get_processor_info(mps: &MPServices) {
     mps.enable_disable_ap(1, true, None).unwrap().unwrap();
 }
 
-extern "win64" fn proc_increment_atomic(arg: *mut c_void) {
+extern "efiapi" fn proc_increment_atomic(arg: *mut c_void) {
     let counter: &AtomicUsize = unsafe { &*(arg as *const _) };
     counter.fetch_add(1, Ordering::Relaxed);
 }
 
-extern "win64" fn proc_wait_100ms(arg: *mut c_void) {
+extern "efiapi" fn proc_wait_100ms(arg: *mut c_void) {
     let bt: &BootServices = unsafe { &*(arg as *const _) };
     bt.stall(100_000);
 }

@@ -37,16 +37,16 @@ use core::ptr;
 #[unsafe_guid("9042a9de-23dc-4a38-96fb-7aded080516a")]
 #[derive(Protocol)]
 pub struct GraphicsOutput<'boot> {
-    query_mode: extern "win64" fn(
+    query_mode: extern "efiapi" fn(
         &GraphicsOutput,
         mode: u32,
         info_sz: &mut usize,
         &mut *const ModeInfo,
     ) -> Status,
-    set_mode: extern "win64" fn(&mut GraphicsOutput, mode: u32) -> Status,
+    set_mode: extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
     #[allow(clippy::type_complexity)]
-    blt: unsafe extern "win64" fn(
+    blt: unsafe extern "efiapi" fn(
         this: &mut GraphicsOutput,
         buffer: *mut BltPixel,
         op: u32,

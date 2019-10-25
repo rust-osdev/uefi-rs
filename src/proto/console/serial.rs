@@ -18,8 +18,8 @@ pub struct Serial<'boot> {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
     revision: u32,
-    reset: extern "win64" fn(&mut Serial) -> Status,
-    set_attributes: extern "win64" fn(
+    reset: extern "efiapi" fn(&mut Serial) -> Status,
+    set_attributes: extern "efiapi" fn(
         &Serial,
         baud_rate: u64,
         receive_fifo_depth: u32,
@@ -28,10 +28,10 @@ pub struct Serial<'boot> {
         data_bits: u8,
         stop_bits_type: StopBits,
     ) -> Status,
-    set_control_bits: extern "win64" fn(&mut Serial, ControlBits) -> Status,
-    get_control_bits: extern "win64" fn(&Serial, &mut ControlBits) -> Status,
-    write: unsafe extern "win64" fn(&mut Serial, &mut usize, *const u8) -> Status,
-    read: unsafe extern "win64" fn(&mut Serial, &mut usize, *mut u8) -> Status,
+    set_control_bits: extern "efiapi" fn(&mut Serial, ControlBits) -> Status,
+    get_control_bits: extern "efiapi" fn(&Serial, &mut ControlBits) -> Status,
+    write: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *const u8) -> Status,
+    read: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *mut u8) -> Status,
     io_mode: &'boot IoMode,
 }
 

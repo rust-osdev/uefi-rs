@@ -26,6 +26,7 @@
 #![cfg_attr(feature = "exts", feature(allocator_api, alloc_layout_extra))]
 #![feature(optin_builtin_traits)]
 #![feature(try_trait)]
+#![feature(abi_efiapi)]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]

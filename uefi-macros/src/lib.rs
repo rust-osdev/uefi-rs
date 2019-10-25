@@ -139,9 +139,9 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     let entry_fn_ident = &f.sig.ident;
 
     let result = quote!(
-        static _UEFI_ENTRY_POINT_TYPE_CHECK: extern "win64" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status = #entry_fn_ident;
+        static _UEFI_ENTRY_POINT_TYPE_CHECK: extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status = #entry_fn_ident;
         #[no_mangle]
-        pub extern "win64" #f
+        pub extern "efiapi" #f
     );
     result.into()
 }

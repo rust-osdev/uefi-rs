@@ -24,6 +24,12 @@ pub struct CStr8([Char8]);
 
 impl CStr8 {
     /// Wraps a raw UEFI string with a safe C string wrapper
+    ///
+    /// # Safety
+    ///
+    /// The function will start accessing memory from `ptr` until the first
+    /// null byte. It's the callers responsability to ensure `ptr` points to
+    /// a valid string, in accessible memory.
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
         let mut len = 0;
         while *ptr.add(len) != NUL_8 {
@@ -47,6 +53,11 @@ impl CStr8 {
     }
 
     /// Unsafely creates a C string wrapper from bytes
+    ///
+    /// # Safety
+    ///
+    /// It's the callers responsability to ensure chars is a valid Latin-1
+    /// null-terminated string, with no interior null bytes.
     pub unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
         &*(chars as *const [u8] as *const Self)
     }
@@ -77,6 +88,12 @@ pub struct CStr16([Char16]);
 
 impl CStr16 {
     /// Wraps a raw UEFI string with a safe C string wrapper
+    ///
+    /// # Safety
+    ///
+    /// The function will start accessing memory from `ptr` until the first
+    /// null byte. It's the callers responsability to ensure `ptr` points to
+    /// a valid string, in accessible memory.
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;
         while *ptr.add(len) != NUL_16 {
@@ -110,6 +127,11 @@ impl CStr16 {
     }
 
     /// Unsafely creates a C string wrapper from a u16 slice.
+    ///
+    /// # Safety
+    ///
+    /// It's the callers responsability to ensure chars is a valid UCS-2
+    /// null-terminated string, with no interior null bytes.
     pub unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
         &*(codes as *const [u16] as *const Self)
     }

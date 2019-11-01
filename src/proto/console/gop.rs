@@ -550,6 +550,8 @@ impl<'gop> FrameBuffer<'gop> {
 
     /// Modify the i-th byte of the frame buffer
     ///
+    /// # Safety
+    ///
     /// This operation is unsafe because...
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
@@ -560,6 +562,8 @@ impl<'gop> FrameBuffer<'gop> {
     }
 
     /// Read the i-th byte of the frame buffer
+    ///
+    /// # Safety
     ///
     /// This operation is unsafe because...
     /// - You must honor the pixel format and stride specified by the mode info
@@ -575,6 +579,8 @@ impl<'gop> FrameBuffer<'gop> {
     /// We only recommend using this method with [u8; N] arrays. Once Rust has
     /// const generics, it will be deprecated and replaced with a write_bytes()
     /// method that only accepts [u8; N] input.
+    ///
+    /// # Safety
     ///
     /// This operation is unsafe because...
     /// - It is your reponsibility to make sure that the value type makes sense
@@ -594,6 +600,8 @@ impl<'gop> FrameBuffer<'gop> {
     /// We only recommend using this method with [u8; N] arrays. Once Rust has
     /// const generics, it will be deprecated and replaced with a read_bytes()
     /// method that only accepts [u8; N] input.
+    ///
+    /// # Safety
     ///
     /// This operation is unsafe because...
     /// - It is your reponsibility to make sure that the value type makes sense

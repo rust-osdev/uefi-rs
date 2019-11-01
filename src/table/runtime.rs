@@ -45,7 +45,12 @@ impl RuntimeServices {
     /// Sets the current local time and date information
     ///
     /// During runtime, if a PC-AT CMOS device is present in the platform, the
-    /// caller must synchronize access to the device before calling set_time.
+    /// caller must synchronize access to the device before calling `set_time`.
+    ///
+    /// # Safety
+    ///
+    /// Undefined behavior could happen if multiple tasks try to
+    /// use this function at the same time without synchronisation.
     pub unsafe fn set_time(&mut self, time: &Time) -> Result {
         (self.set_time)(time).into()
     }

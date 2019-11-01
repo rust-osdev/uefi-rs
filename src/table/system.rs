@@ -170,6 +170,8 @@ impl SystemTable<Boot> {
 
     /// Clone this boot-time UEFI system table interface
     ///
+    /// # Safety
+    ///
     /// This is unsafe because you must guarantee that the clone will not be
     /// used after boot services are exited. However, the singleton-based
     /// designs that Rust uses for memory allocation, logging, and panic
@@ -186,6 +188,8 @@ impl SystemTable<Boot> {
 // from UEFI boot services
 impl SystemTable<Runtime> {
     /// Access runtime services
+    ///
+    /// # Safety
     ///
     /// This is unsafe because UEFI runtime services require an elaborate
     /// CPU configuration which may not be preserved by OS loaders. See the

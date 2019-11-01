@@ -134,6 +134,12 @@ impl BootServices {
     ///
     /// This function outputs an RAII guard that will automatically restore the
     /// original `Tpl` when dropped.
+    ///
+    /// # Safety
+    ///
+    /// Raising a task's priority level can affect other running tasks and
+    /// critical processes run by UEFI. The highest priority level is the
+    /// most dangerous, since it disables interrupts.
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
         TplGuard {
             boot_services: self,
@@ -259,6 +265,8 @@ impl BootServices {
     /// priority level. If the event type has flag `NotifyWait`, the notification
     /// will be delivered next time `wait_for_event` or `check_event` is called.
     /// In both cases, a `notify_fn` callback must be specified.
+    ///
+    /// # Safety
     ///
     /// This function is unsafe because callbacks must handle exit from boot
     /// services correctly.
@@ -472,6 +480,8 @@ impl BootServices {
 
     /// Copies memory from source to destination. The buffers can overlap.
     ///
+    /// # Safety
+    ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
     pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
@@ -479,6 +489,8 @@ impl BootServices {
     }
 
     /// Sets a buffer to a certain value.
+    ///
+    /// # Safety
     ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.

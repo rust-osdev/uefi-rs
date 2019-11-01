@@ -31,6 +31,11 @@ impl Logger {
     ///
     /// You must arrange for the `disable` method to be called or for this logger
     /// to be otherwise discarded before boot services are exited.
+    ///
+    /// # Safety
+    ///
+    /// Undefined behaviour may occur if this logger is still active after the
+    /// application has exited the boot services stage.
     pub unsafe fn new(output: &mut Output) -> Self {
         Logger {
             writer: NonNull::new(output as *const _ as *mut _),

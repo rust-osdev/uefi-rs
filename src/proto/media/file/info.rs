@@ -21,6 +21,11 @@ pub trait FileProtocolInfo: Align + Identify + FromUefi {}
 /// the fat pointer must be reconstructed using hidden UEFI-provided metadata.
 pub trait FromUefi {
     /// Turn an UEFI-provided pointer-to-base into a (possibly fat) Rust reference
+    ///
+    /// # Safety
+    ///
+    /// This function can lead to undefined behavior if the given pointer is not
+    /// pointing to a valid object of the specified type.
     unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self;
 }
 

@@ -18,6 +18,7 @@ The following steps allow you to build a simple UEFI app.
   and make sure you have an entry point function which matches the one below:
 
 ```rust
+#![feature(abi_efiapi)]
 use uefi::prelude::*;
 
 #[entry]

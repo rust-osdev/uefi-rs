@@ -1,6 +1,6 @@
 [package]
 name = "uefi-macros"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
 edition = "2018"
 description = "Procedural macros for the uefi-rs crate"

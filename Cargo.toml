@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.3.2"
+version = "0.4.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 edition = "2018"
@@ -30,7 +30,7 @@ logger = []
 bitflags = "1.1.0"
 log = { version = "0.4.8", default-features = false }
 ucs2 = "0.1.0"
-uefi-macros = "0.2.1"
+uefi-macros = "0.3.0"
 
 [workspace]
 members = [

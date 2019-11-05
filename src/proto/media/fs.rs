@@ -14,7 +14,7 @@ use core::ptr;
 #[derive(Protocol)]
 pub struct SimpleFileSystem {
     revision: u64,
-    open_volume: extern "win64" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
+    open_volume: extern "efiapi" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
 }
 
 impl SimpleFileSystem {

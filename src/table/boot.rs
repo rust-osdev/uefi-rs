@@ -18,18 +18,18 @@ pub struct BootServices {
     header: Header,
 
     // Task Priority services
-    raise_tpl: unsafe extern "win64" fn(new_tpl: Tpl) -> Tpl,
-    restore_tpl: unsafe extern "win64" fn(old_tpl: Tpl),
+    raise_tpl: unsafe extern "efiapi" fn(new_tpl: Tpl) -> Tpl,
+    restore_tpl: unsafe extern "efiapi" fn(old_tpl: Tpl),
 
     // Memory allocation functions
-    allocate_pages: extern "win64" fn(
+    allocate_pages: extern "efiapi" fn(
         alloc_ty: u32,
         mem_ty: MemoryType,
         count: usize,
         addr: &mut u64,
     ) -> Status,
-    free_pages: extern "win64" fn(addr: u64, pages: usize) -> Status,
-    get_memory_map: unsafe extern "win64" fn(
+    free_pages: extern "efiapi" fn(addr: u64, pages: usize) -> Status,
+    get_memory_map: unsafe extern "efiapi" fn(
         size: &mut usize,
         map: *mut MemoryDescriptor,
         key: &mut MemoryMapKey,
@@ -37,11 +37,11 @@ pub struct BootServices {
         desc_version: &mut u32,
     ) -> Status,
     allocate_pool:
-        extern "win64" fn(pool_type: MemoryType, size: usize, buffer: &mut *mut u8) -> Status,
-    free_pool: extern "win64" fn(buffer: *mut u8) -> Status,
+        extern "efiapi" fn(pool_type: MemoryType, size: usize, buffer: &mut *mut u8) -> Status,
+    free_pool: extern "efiapi" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
-    create_event: unsafe extern "win64" fn(
+    create_event: unsafe extern "efiapi" fn(
         ty: EventType,
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
@@ -49,7 +49,7 @@ pub struct BootServices {
         event: *mut Event,
     ) -> Status,
     set_timer: usize,
-    wait_for_event: unsafe extern "win64" fn(
+    wait_for_event: unsafe extern "efiapi" fn(
         number_of_events: usize,
         events: *mut Event,
         out_index: *mut usize,
@@ -63,10 +63,10 @@ pub struct BootServices {
     reinstall_protocol_interface: usize,
     uninstall_protocol_interface: usize,
     handle_protocol:
-        extern "win64" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
+        extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
     register_protocol_notify: usize,
-    locate_handle: unsafe extern "win64" fn(
+    locate_handle: unsafe extern "efiapi" fn(
         search_ty: i32,
         proto: *const Guid,
         key: *mut c_void,
@@ -82,12 +82,12 @@ pub struct BootServices {
     exit: usize,
     unload_image: usize,
     exit_boot_services:
-        unsafe extern "win64" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
+        unsafe extern "efiapi" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
-    stall: extern "win64" fn(microseconds: usize) -> Status,
-    set_watchdog_timer: unsafe extern "win64" fn(
+    stall: extern "efiapi" fn(microseconds: usize) -> Status,
+    set_watchdog_timer: unsafe extern "efiapi" fn(
         timeout: usize,
         watchdog_code: u64,
         data_size: usize,
@@ -106,7 +106,7 @@ pub struct BootServices {
     // Library services
     protocols_per_handle: usize,
     locate_handle_buffer: usize,
-    locate_protocol: extern "win64" fn(
+    locate_protocol: extern "efiapi" fn(
         proto: &Guid,
         registration: *mut c_void,
         out_proto: &mut *mut c_void,
@@ -118,8 +118,8 @@ pub struct BootServices {
     calculate_crc32: usize,
 
     // Misc services
-    copy_mem: unsafe extern "win64" fn(dest: *mut u8, src: *const u8, len: usize),
-    set_mem: unsafe extern "win64" fn(buffer: *mut u8, len: usize, value: u8),
+    copy_mem: unsafe extern "efiapi" fn(dest: *mut u8, src: *const u8, len: usize),
+    set_mem: unsafe extern "efiapi" fn(buffer: *mut u8, len: usize, value: u8),
 
     // New event functions (UEFI 2.0 or newer)
     create_event_ex: usize,
@@ -280,7 +280,7 @@ impl BootServices {
         let mut event = MaybeUninit::<Event>::uninit();
 
         // Use a trampoline to handle the impedance mismatch between Rust & C
-        unsafe extern "win64" fn notify_trampoline(e: Event, ctx: *mut c_void) {
+        unsafe extern "efiapi" fn notify_trampoline(e: Event, ctx: *mut c_void) {
             let notify_fn: fn(Event) = mem::transmute(ctx);
             notify_fn(e); // SAFETY: Aborting panics are assumed here
         }
@@ -801,4 +801,4 @@ bitflags! {
 }
 
 /// Raw event notification function
-type EventNotifyFn = unsafe extern "win64" fn(event: Event, context: *mut c_void);
+type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c_void);

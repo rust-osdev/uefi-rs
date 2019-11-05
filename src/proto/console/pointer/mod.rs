@@ -9,8 +9,8 @@ use core::mem::MaybeUninit;
 #[unsafe_guid("31878c87-0b75-11d5-9a4f-0090273fc14d")]
 #[derive(Protocol)]
 pub struct Pointer<'boot> {
-    reset: extern "win64" fn(this: &mut Pointer, ext_verif: bool) -> Status,
-    get_state: extern "win64" fn(this: &Pointer, state: *mut PointerState) -> Status,
+    reset: extern "efiapi" fn(this: &mut Pointer, ext_verif: bool) -> Status,
+    get_state: extern "efiapi" fn(this: &Pointer, state: *mut PointerState) -> Status,
     wait_for_input: Event,
     mode: &'boot PointerMode,
 }

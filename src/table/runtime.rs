@@ -14,11 +14,11 @@ use core::ptr;
 pub struct RuntimeServices {
     header: Header,
     get_time:
-        unsafe extern "win64" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
-    set_time: unsafe extern "win64" fn(time: &Time) -> Status,
+        unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
+    set_time: unsafe extern "efiapi" fn(time: &Time) -> Status,
     // Skip some useless functions.
     _pad: [usize; 8],
-    reset: unsafe extern "win64" fn(
+    reset: unsafe extern "efiapi" fn(
         rt: ResetType,
         status: Status,
         data_size: usize,

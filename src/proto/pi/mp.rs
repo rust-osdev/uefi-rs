@@ -20,7 +20,7 @@ use core::ptr;
 use core::time::Duration;
 
 /// Callback to be called on the AP.
-pub type Procedure = extern "win64" fn(*mut c_void);
+pub type Procedure = extern "efiapi" fn(*mut c_void);
 
 bitflags! {
     /// Flags indicating if the processor is BSP or AP,
@@ -94,17 +94,17 @@ pub struct CPUPhysicalLocation {
 #[unsafe_guid("3fdda605-a76e-4f46-ad29-12f4531b3d08")]
 #[derive(Protocol)]
 pub struct MPServices {
-    get_number_of_processors: extern "win64" fn(
+    get_number_of_processors: extern "efiapi" fn(
         this: *const MPServices,
         number_of_processors: *mut usize,
         number_of_enabled_processors: *mut usize,
     ) -> Status,
-    get_processor_info: extern "win64" fn(
+    get_processor_info: extern "efiapi" fn(
         this: *const MPServices,
         processor_number: usize,
         processor_info_buffer: *mut ProcessorInformation,
     ) -> Status,
-    startup_all_aps: extern "win64" fn(
+    startup_all_aps: extern "efiapi" fn(
         this: *const MPServices,
         procedure: Procedure,
         single_thread: bool,
@@ -113,7 +113,7 @@ pub struct MPServices {
         procedure_argument: *mut c_void,
         failed_cpu_list: *mut *mut usize,
     ) -> Status,
-    startup_this_ap: extern "win64" fn(
+    startup_this_ap: extern "efiapi" fn(
         this: *const MPServices,
         procedure: Procedure,
         processor_number: usize,
@@ -122,18 +122,18 @@ pub struct MPServices {
         procedure_argument: *mut c_void,
         finished: *mut bool,
     ) -> Status,
-    switch_bsp: extern "win64" fn(
+    switch_bsp: extern "efiapi" fn(
         this: *const MPServices,
         processor_number: usize,
         enable_old_bsp: bool,
     ) -> Status,
-    enable_disable_ap: extern "win64" fn(
+    enable_disable_ap: extern "efiapi" fn(
         this: *const MPServices,
         processor_number: usize,
         enable_ap: bool,
         health_flag: *const u32,
     ) -> Status,
-    who_am_i: extern "win64" fn(this: *const MPServices, processor_number: *mut usize) -> Status,
+    who_am_i: extern "efiapi" fn(this: *const MPServices, processor_number: *mut usize) -> Status,
 }
 
 impl MPServices {

@@ -11,20 +11,20 @@ use core::fmt;
 #[unsafe_guid("387477c2-69c7-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct Output<'boot> {
-    reset: extern "win64" fn(this: &Output, extended: bool) -> Status,
-    output_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,
-    test_string: unsafe extern "win64" fn(this: &Output, string: *const Char16) -> Status,
-    query_mode: extern "win64" fn(
+    reset: extern "efiapi" fn(this: &Output, extended: bool) -> Status,
+    output_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
+    test_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
+    query_mode: extern "efiapi" fn(
         this: &Output,
         mode: usize,
         columns: &mut usize,
         rows: &mut usize,
     ) -> Status,
-    set_mode: extern "win64" fn(this: &mut Output, mode: usize) -> Status,
-    set_attribute: extern "win64" fn(this: &mut Output, attribute: usize) -> Status,
-    clear_screen: extern "win64" fn(this: &mut Output) -> Status,
-    set_cursor_position: extern "win64" fn(this: &mut Output, column: usize, row: usize) -> Status,
-    enable_cursor: extern "win64" fn(this: &mut Output, visible: bool) -> Status,
+    set_mode: extern "efiapi" fn(this: &mut Output, mode: usize) -> Status,
+    set_attribute: extern "efiapi" fn(this: &mut Output, attribute: usize) -> Status,
+    clear_screen: extern "efiapi" fn(this: &mut Output) -> Status,
+    set_cursor_position: extern "efiapi" fn(this: &mut Output, column: usize, row: usize) -> Status,
+    enable_cursor: extern "efiapi" fn(this: &mut Output, visible: bool) -> Status,
     data: &'boot OutputData,
 }
 

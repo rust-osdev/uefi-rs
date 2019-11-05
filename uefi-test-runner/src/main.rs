@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(asm)]
 #![feature(slice_patterns)]
+#![feature(abi_efiapi)]
 
 #[macro_use]
 extern crate log;

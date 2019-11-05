@@ -271,40 +271,40 @@ impl Drop for FileHandle {
 #[repr(C)]
 pub(super) struct FileImpl {
     revision: u64,
-    open: unsafe extern "win64" fn(
+    open: unsafe extern "efiapi" fn(
         this: &mut FileImpl,
         new_handle: &mut *mut FileImpl,
         filename: *const Char16,
         open_mode: FileMode,
         attributes: FileAttribute,
     ) -> Status,
-    close: extern "win64" fn(this: &mut FileImpl) -> Status,
-    delete: extern "win64" fn(this: &mut FileImpl) -> Status,
-    read: unsafe extern "win64" fn(
+    close: extern "efiapi" fn(this: &mut FileImpl) -> Status,
+    delete: extern "efiapi" fn(this: &mut FileImpl) -> Status,
+    read: unsafe extern "efiapi" fn(
         this: &mut FileImpl,
         buffer_size: &mut usize,
         buffer: *mut u8,
     ) -> Status,
-    write: unsafe extern "win64" fn(
+    write: unsafe extern "efiapi" fn(
         this: &mut FileImpl,
         buffer_size: &mut usize,
         buffer: *const u8,
     ) -> Status,
-    get_position: extern "win64" fn(this: &mut FileImpl, position: &mut u64) -> Status,
-    set_position: extern "win64" fn(this: &mut FileImpl, position: u64) -> Status,
-    get_info: unsafe extern "win64" fn(
+    get_position: extern "efiapi" fn(this: &mut FileImpl, position: &mut u64) -> Status,
+    set_position: extern "efiapi" fn(this: &mut FileImpl, position: u64) -> Status,
+    get_info: unsafe extern "efiapi" fn(
         this: &mut FileImpl,
         information_type: &Guid,
         buffer_size: &mut usize,
         buffer: *mut u8,
     ) -> Status,
-    set_info: unsafe extern "win64" fn(
+    set_info: unsafe extern "efiapi" fn(
         this: &mut FileImpl,
         information_type: &Guid,
         buffer_size: usize,
         buffer: *const c_void,
     ) -> Status,
-    flush: extern "win64" fn(this: &mut FileImpl) -> Status,
+    flush: extern "efiapi" fn(this: &mut FileImpl) -> Status,
 }
 
 /// Disambiguates the file type. Returned by `File::into_type()`.

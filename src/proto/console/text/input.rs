@@ -7,8 +7,8 @@ use core::mem::MaybeUninit;
 #[unsafe_guid("387477c1-69c7-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct Input {
-    reset: extern "win64" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "win64" fn(this: &mut Input, key: *mut RawKey) -> Status,
+    reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
+    read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut RawKey) -> Status,
     wait_for_key: Event,
 }
 

@@ -194,8 +194,6 @@ impl From<ucs2::Error> for Status {
     fn from(other: ucs2::Error) -> Self {
         use ucs2::Error;
         match other {
-            Error::InvalidData => Status::INVALID_PARAMETER,
-            Error::BufferUnderflow => Status::BAD_BUFFER_SIZE,
             Error::BufferOverflow => Status::BUFFER_TOO_SMALL,
             Error::MultiByte => Status::UNSUPPORTED,
         }

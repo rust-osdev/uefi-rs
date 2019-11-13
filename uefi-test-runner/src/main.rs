@@ -17,9 +17,6 @@ use uefi::table::boot::MemoryDescriptor;
 mod boot;
 mod proto;
 
-#[no_mangle]
-pub static _fltused: u32 = 0;
-
 #[entry]
 fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)

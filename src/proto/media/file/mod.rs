@@ -189,8 +189,7 @@ pub trait File: Sized {
         // always be a multiple of alignment.
         let layout = Layout::from_size_align(size, Info::alignment())
             .unwrap()
-            .pad_to_align()
-            .unwrap();
+            .pad_to_align();
         let mut buffer = crate::exts::allocate_buffer(layout);
         let buffer_start = buffer.as_ptr();
 

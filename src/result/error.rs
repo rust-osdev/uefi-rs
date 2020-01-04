@@ -10,14 +10,18 @@ pub struct Error<Data: Debug = ()> {
 }
 
 impl<Data: Debug> Error<Data> {
+    
+    /// Construct an error from an inner status and payload data
     pub fn new(status: Status, data: Data) -> Self {
         Self { status, data }
     }
 
+    /// Return the inner status for this error
     pub fn status(&self) -> Status {
         self.status
     }
 
+    /// Return the data for this error
     pub fn data(&self) -> &Data {
         &self.data
     }

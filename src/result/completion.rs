@@ -94,6 +94,30 @@ impl<T> From<T> for Completion<T> {
     }
 }
 
+/// Completions can be 'tried' using the '?' operator. Error status codes get 
+/// translated to `Result::Err(E)`, and success (possibly with warning) get 
+/// translated to `Result::Ok((Status, T))`.
+impl<T> core::ops::Try for Completion<T> {
+    type Ok = (Status, T);
+    type Error = Status;
+
+    fn into_result(self) -> Result<Self::Ok, Self::Error> {
+        if self.status.is_error() {
+            Err(self.status)
+        } else {
+            Ok((self.status, self.result))
+        }
+    }
+
+    fn from_error(_error: Status) -> Self {
+        unimplemented!()
+    }
+
+    fn from_ok(_result: (Status, T)) -> Self {
+        unimplemented!()
+    }
+}
+
 // These are separate functions to reduce the code size of the methods
 
 #[inline(never)]

@@ -27,7 +27,7 @@ SOFTWARE.
 
 set -e
 
-VERSION=3.0.0
+VERSION=4.2.0
 ARCHES=x86_64
 TARGETS=${QEMU_TARGETS:=$(echo $ARCHES | sed 's#$# #;s#\([^ ]*\) #\1-softmmu \1-linux-user #g')}
 
@@ -43,8 +43,8 @@ cd $HOME
 rm -rf qemu
 
 # Checking for a tarball before downloading makes testing easier :-)
-test -f "qemu-$VERSION.tar.bz2" || wget "http://wiki.qemu-project.org/download/qemu-$VERSION.tar.bz2"
-tar -xf "qemu-$VERSION.tar.bz2"
+test -f "qemu-$VERSION.tar.xz" || wget "https://download.qemu.org/qemu-$VERSION.tar.xz"
+tar -xf "qemu-$VERSION.tar.xz"
 cd "qemu-$VERSION"
 
 ./configure \

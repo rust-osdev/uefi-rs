@@ -17,6 +17,9 @@ use uefi::table::boot::MemoryDescriptor;
 mod boot;
 mod proto;
 
+#[no_mangle]
+extern "C" fn __rust_probestack() {}
+
 #[entry]
 fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)

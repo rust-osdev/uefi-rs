@@ -2,7 +2,7 @@ use super::Status;
 use log::warn;
 
 /// This type is used when an UEFI operation has completed, but some non-fatal
-/// problems may have been encountered along the way
+/// problems (UEFI warnings) may have been encountered along the way
 #[must_use]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Completion<T> {
@@ -11,8 +11,11 @@ pub struct Completion<T> {
 }
 
 impl<T> Completion<T> {
-    /// Build a completion from a non-warning status and a function result
+    /// Build a completion from a non-error status and a function result
     pub fn new(status: Status, result: T) -> Self {
+        if status.is_error() {
+            built_with_error(status);
+        }
         Self { status, result }
     }
 
@@ -38,7 +41,7 @@ impl<T> Completion<T> {
     pub fn unwrap(self) -> T {
         if self.status != Status::SUCCESS {
             unwrap_failed(
-                "Called `Completion::unwrap()` on a `Warning` value",
+                "Called `Completion::unwrap()` with a warning status",
                 self.status,
             );
         }
@@ -69,10 +72,7 @@ impl<T> Completion<T> {
         if extra_status.is_success() {
             self
         } else {
-            Completion {
-                status: extra_status,
-                result: self.log(),
-            }
+            Completion::new(extra_status, self.log())
         }
     }
 }
@@ -81,20 +81,23 @@ impl<T> Completion<T> {
 
 impl From<Status> for Completion<()> {
     fn from(status: Status) -> Self {
-        Completion { status, result: () }
+        Completion::new(status, ())
     }
 }
 
 impl<T> From<T> for Completion<T> {
     fn from(result: T) -> Self {
-        Completion {
-            status: Status::SUCCESS,
-            result,
-        }
+        Completion::new(Status::SUCCESS, result)
     }
 }
 
 // These are separate functions to reduce the code size of the methods
+
+#[inline(never)]
+#[cold]
+fn built_with_error(error: Status) -> ! {
+    panic!("Completion was incorrectly built with error status: {:?}", error)
+}
 
 #[inline(never)]
 #[cold]

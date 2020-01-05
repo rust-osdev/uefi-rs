@@ -25,7 +25,7 @@ pub use self::error::Error;
 mod status;
 pub use self::status::Status;
 
-/// Return type of most UEFI functions. Both success and error payloads are optional
+/// Return type of most UEFI functions. Both success and error payloads are optional.
 pub type Result<Output = (), ErrData = ()> =
     core::result::Result<Completion<Output>, Error<ErrData>>;
 

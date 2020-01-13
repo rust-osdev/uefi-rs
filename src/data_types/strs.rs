@@ -174,7 +174,7 @@ impl<'a> Iterator for CStr16Iter<'a> {
     type Item = &'a Char16;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos >= self.inner.0.len() {
+        if self.pos >= self.inner.0.len() - 1 {
             None
         } else {
             self.pos += 1;
@@ -185,22 +185,13 @@ impl<'a> Iterator for CStr16Iter<'a> {
 
 impl fmt::Debug for CStr16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for c in self.iter() {
-            if *c == NUL_16 {
-                break;
-            }
-            <Char16 as fmt::Debug>::fmt(&c, f)?;
-        }
-        Ok(())
+        write!(f, "CStr16({:?})", &self.0)
     }
 }
 
 impl fmt::Display for CStr16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for c in self.iter() {
-            if *c == NUL_16 {
-                break;
-            }
             <Char16 as fmt::Display>::fmt(&c, f)?;
         }
         Ok(())

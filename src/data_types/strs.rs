@@ -1,5 +1,7 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use core::convert::TryInto;
+use core::fmt;
+use core::iter::Iterator;
 use core::result::Result;
 use core::slice;
 
@@ -150,5 +152,48 @@ impl CStr16 {
     /// Converts this C string to a u16 slice containing the trailing 0 char
     pub fn to_u16_slice_with_nul(&self) -> &[u16] {
         unsafe { &*(&self.0 as *const [Char16] as *const [u16]) }
+    }
+
+    /// Returns an iterator over this C string
+    pub fn iter<'a>(&'a self) -> CStr16Iter<'a> {
+        CStr16Iter {
+            inner: self,
+            pos: 0,
+        }
+    }
+}
+
+/// An iterator over `CStr16`.
+#[derive(Debug)]
+pub struct CStr16Iter<'a> {
+    inner: &'a CStr16,
+    pos: usize,
+}
+
+impl<'a> Iterator for CStr16Iter<'a> {
+    type Item = &'a Char16;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.inner.0.len() - 1 {
+            None
+        } else {
+            self.pos += 1;
+            self.inner.0.get(self.pos - 1)
+        }
+    }
+}
+
+impl fmt::Debug for CStr16 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "CStr16({:?})", &self.0)
+    }
+}
+
+impl fmt::Display for CStr16 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for c in self.iter() {
+            <Char16 as fmt::Display>::fmt(&c, f)?;
+        }
+        Ok(())
     }
 }

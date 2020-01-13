@@ -633,6 +633,9 @@ pub enum MemoryType: u32 => {
     PERSISTENT_MEMORY       = 14,
 }}
 
+/// Memory descriptor version number
+pub const MEMORY_DESCRIPTOR_VERSION: u32 = 1;
+
 /// A structure describing a region of memory.
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]

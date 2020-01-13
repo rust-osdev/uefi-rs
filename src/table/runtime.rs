@@ -1,6 +1,7 @@
 //! UEFI services available at runtime, even after the OS boots.
 
 use super::Header;
+use crate::table::boot::MemoryDescriptor;
 use crate::{Result, Status};
 use bitflags::bitflags;
 use core::mem::MaybeUninit;
@@ -17,9 +18,17 @@ pub struct RuntimeServices {
         unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
     set_time: unsafe extern "efiapi" fn(time: &Time) -> Status,
     // Skip some useless functions.
-    _pad: [usize; 8],
+    _pad: [usize; 2],
+    set_virtual_address_map: unsafe extern "efiapi" fn(
+        map_size: usize,
+        desc_size: usize,
+        desc_version: u32,
+        virtual_map: *mut MemoryDescriptor,
+    ) -> Status,
+    _pad2: [usize; 5],
     reset: unsafe extern "efiapi" fn(
         rt: ResetType,
+
         status: Status,
         data_size: usize,
         data: *const u8,
@@ -53,6 +62,23 @@ impl RuntimeServices {
     /// use this function at the same time without synchronisation.
     pub unsafe fn set_time(&mut self, time: &Time) -> Result {
         (self.set_time)(time).into()
+    }
+
+    /// Changes the runtime addressing mode of EFI firmware from physical to virtual.
+    ///
+    /// # Safety
+    ///
+    /// Setting new virtual memory map is unsafe and may cause undefined behaviors.
+    pub unsafe fn set_virtual_address_map(&self, map: &mut [MemoryDescriptor]) -> Result {
+        // Unsafe Code Guidelines guarantees that there is no padding in an array or a slice
+        // between its elements if the element type is `repr(C)`, which is our case.
+        //
+        // See https://rust-lang.github.io/unsafe-code-guidelines/layout/arrays-and-slices.html
+        let map_size = core::mem::size_of_val(map);
+        let entry_size = core::mem::size_of::<MemoryDescriptor>();
+        let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
+        let map_ptr = map.as_mut_ptr();
+        (self.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).into()
     }
 
     /// Resets the computer.

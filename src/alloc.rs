@@ -49,7 +49,7 @@ pub fn exit_boot_services() {
 
 /// Allocator which uses the UEFI pool allocation functions.
 ///
-/// Only valid for as long as the UEFI runtime services are available.
+/// Only valid for as long as the UEFI boot services are available.
 pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {

@@ -1,10 +1,11 @@
 [package]
 name = "uefi"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 edition = "2018"
 exclude = [
+    ".cargo/**",
     "uefi-macros/**",
     "uefi-services/**",
     "uefi-test-runner/**",

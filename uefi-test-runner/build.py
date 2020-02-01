@@ -29,8 +29,8 @@ SETTINGS = {
     # QEMU executable to use
     'qemu_binary': 'qemu-system-x86_64',
     # Path to directory containing `OVMF_{CODE/VARS}.fd`.
-    # TODO: use installed OVMF, if available.
-    'ovmf_dir': WORKSPACE_DIR / 'uefi-test-runner',
+    # `find_ovmf` function will try to find one if this isn't specified.
+    'ovmf_dir': None,
 }
 
 # Path to target directory. If None, it will be initialized with information
@@ -112,17 +112,50 @@ def doc():
         '--package', 'uefi-services',
     ])
 
+def ovmf_files(ovmf_dir):
+    'Returns the tuple of paths to OVMF_CODE.fd and OVMF_VARS.fd given the directory'
+    return ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
+
+def check_ovmf_dir(ovmf_dir):
+    'Check whether the given directory contains necessary OVMF files'
+    ovmf_code, ovmf_vars = ovmf_files(ovmf_dir)
+    return ovmf_code.is_file() and ovmf_vars.is_file()
+
+def find_ovmf():
+    'Find path to OVMF files'
+
+    # If the path is specified in the settings, use it.
+    if SETTINGS['ovmf_dir'] is not None:
+        ovmf_dir = SETTINGS['ovmf_dir']
+        if check_ovmf_dir(ovmf_dir):
+            return ovmf_dir
+        raise FileNotFoundError(f'OVMF files not found in `{ovmf_dir}`')
+
+    # Check whether the test runner directory contains the files.
+    ovmf_dir = WORKSPACE_DIR / 'uefi-test-runner'
+    if check_ovmf_dir(ovmf_dir):
+        return ovmf_dir
+
+    if sys.platform.startswith('linux'):
+        possible_paths = [
+            # Most distros, including CentOS, Fedora, Debian, and Ubuntu.
+            Path('/usr/share/OVMF'),
+            # Arch Linux
+            Path('/usr/share/ovmf/x64'),
+        ]
+        for path in possible_paths:
+            if check_ovmf_dir(path):
+                return path
+
+    raise FileNotFoundError(f'OVMF files not found anywhere')
+
 def run_qemu():
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
     build('--features', 'qemu')
 
-    ovmf_dir = SETTINGS['ovmf_dir']
-    ovmf_code, ovmf_vars = ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
-
-    if not ovmf_code.is_file():
-        raise FileNotFoundError(f'OVMF_CODE.fd not found in the `{ovmf_dir}` directory')
+    ovmf_code, ovmf_vars = ovmf_files(find_ovmf())
 
     examples_dir = build_dir() / 'examples'
 

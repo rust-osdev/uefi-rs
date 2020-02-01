@@ -33,9 +33,23 @@ SETTINGS = {
     'ovmf_dir': WORKSPACE_DIR / 'uefi-test-runner',
 }
 
+# Path to target directory. If None, it will be initialized with information
+# from cargo metadata at the first time target_dir function is invoked.
+TARGET_DIR = None
+
+def target_dir():
+    'Returns the target directory'
+    global TARGET_DIR
+    if TARGET_DIR is None:
+        cmd = ['cargo', 'metadata', '--format-version=1']
+        result = sp.run(cmd, stdout=sp.PIPE)
+        result.check_returncode()
+        TARGET_DIR = Path(json.loads(result.stdout)['target_directory'])
+    return TARGET_DIR
+
 def build_dir():
     'Returns the directory where Cargo places the build artifacts'
-    return WORKSPACE_DIR / 'target' / SETTINGS['target'] / SETTINGS['config']
+    return target_dir() / SETTINGS['target'] / SETTINGS['config']
 
 def esp_dir():
     'Returns the directory where we will build the emulated UEFI system partition'

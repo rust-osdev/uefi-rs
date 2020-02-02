@@ -155,7 +155,7 @@ impl CStr16 {
     }
 
     /// Returns an iterator over this C string
-    pub fn iter<'a>(&'a self) -> CStr16Iter<'a> {
+    pub fn iter(&self) -> CStr16Iter {
         CStr16Iter {
             inner: self,
             pos: 0,

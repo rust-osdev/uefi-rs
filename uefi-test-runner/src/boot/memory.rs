@@ -9,6 +9,7 @@ pub fn test(bt: &BootServices) {
 
     allocate_pages(bt);
     vec_alloc();
+    alloc_alignment();
     memmove(bt);
 
     memory_map(bt);
@@ -45,6 +46,17 @@ fn vec_alloc() {
     values.sort();
 
     assert_eq!(values[..], [-5, 0, 4, 16, 23], "Failed to sort vector");
+}
+
+// Simple test to ensure our custom allocator works with correct alignment.
+fn alloc_alignment() {
+    info!("Allocating a structure with alignment to 0x100");
+
+    #[repr(align(0x100))]
+    struct Block([u8; 0x100]);
+
+    let value = vec![Block([1; 0x100])];
+    assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
 }
 
 // Test that the `memmove` / `memset` functions work.

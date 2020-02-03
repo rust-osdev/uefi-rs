@@ -99,6 +99,7 @@ fn memory_map(bt: &BootServices) {
     let phys_start = first_desc.phys_start;
     let page_count = first_desc.page_count;
 
+    #[cfg(target_arch = "x86_64")]
     assert_eq!(phys_start, 0, "Memory does not start at address 0");
     assert!(page_count != 0, "Memory map entry has zero size");
 }

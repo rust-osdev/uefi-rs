@@ -28,7 +28,7 @@ SOFTWARE.
 set -e
 
 VERSION=4.2.0
-ARCHES=x86_64
+ARCHES='x86_64 aarch64'
 TARGETS=${QEMU_TARGETS:=$(echo $ARCHES | sed 's#$# #;s#\([^ ]*\) #\1-softmmu \1-linux-user #g')}
 
 if echo "$VERSION $TARGETS" | cmp --silent $HOME/qemu/.build -; then

@@ -22,15 +22,35 @@ SETTINGS = {
     'verbose': False,
     # Run QEMU without showing GUI
     'headless': False,
-    # Target to build for.
-    'target': 'x86_64-unknown-uefi',
     # Configuration to build.
     'config': 'debug',
-    # QEMU executable to use
-    'qemu_binary': 'qemu-system-x86_64',
     # Path to directory containing `OVMF_{CODE/VARS}.fd`.
     # `find_ovmf` function will try to find one if this isn't specified.
     'ovmf_dir': None,
+}
+
+# Choose a specific one on main()
+ARCH_CONFIG = {
+    'x86_64': {
+        'arch': 'x86_64',
+        'target': 'x86_64-unknown-uefi',
+        'qemu_binary': 'qemu-system-x86_64',
+        'qemu_flags': [
+            '-machine', 'q35,accel=kvm:tcg',
+            '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
+        ],
+        'efi': 'BootX64.efi',
+    },
+    'aarch64': {
+        'arch': 'aarch64',
+        'target': 'aarch64-unknown-uefi.json',
+        'qemu_binary': 'qemu-system-aarch64',
+        'qemu_flags': [
+            '-machine', 'virt,accel=kvm:tcg',
+            '-cpu', 'cortex-a57',
+        ],
+        'efi': 'BootAA64.efi',
+    }
 }
 
 # Path to target directory. If None, it will be initialized with information
@@ -49,7 +69,10 @@ def target_dir():
 
 def build_dir():
     'Returns the directory where Cargo places the build artifacts'
-    return target_dir() / SETTINGS['target'] / SETTINGS['config']
+    target = ARCH_CONFIG['target']
+    if target.endswith('.json'):
+        target = target[:-5]
+    return target_dir() / target / SETTINGS['config']
 
 def esp_dir():
     'Returns the directory where we will build the emulated UEFI system partition'
@@ -58,7 +81,7 @@ def esp_dir():
 def run_xtool(tool, *flags):
     'Runs cargo-x<tool> with certain arguments.'
 
-    cmd = ['cargo', tool, '--target', SETTINGS['target'], *flags]
+    cmd = ['cargo', tool, '--target', ARCH_CONFIG['target'], *flags]
 
     if SETTINGS['verbose']:
         print(' '.join(cmd))
@@ -92,7 +115,7 @@ def build(*test_flags):
     boot_dir = esp_dir() / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
 
-    output_file = boot_dir / 'BootX64.efi'
+    output_file = boot_dir / ARCH_CONFIG['efi']
 
     shutil.copy2(built_file, output_file)
 
@@ -132,7 +155,7 @@ def find_ovmf():
         raise FileNotFoundError(f'OVMF files not found in `{ovmf_dir}`')
 
     # Check whether the test runner directory contains the files.
-    ovmf_dir = WORKSPACE_DIR / 'uefi-test-runner'
+    ovmf_dir = WORKSPACE_DIR / 'uefi-test-runner' / 'ovmf' / ARCH_CONFIG['arch']
     if check_ovmf_dir(ovmf_dir):
         return ovmf_dir
 
@@ -166,9 +189,6 @@ def run_qemu():
         # QEMU by defaults enables a ton of devices which slow down boot.
         '-nodefaults',
 
-        # Use a modern machine, with acceleration if possible.
-        '-machine', 'q35,accel=kvm:tcg',
-
         # Multi-processor services protocol test needs exactly 3 CPUs.
         '-smp', '3',
 
@@ -189,9 +209,6 @@ def run_qemu():
         # the UEFI stdout and stdin to that port too.
         '-serial', 'stdio',
 
-        # Map the QEMU exit signal to port f4
-        '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
-
         # Map the QEMU monitor to a pair of named pipes
         '-qmp', f'pipe:{qemu_monitor_pipe}',
 
@@ -200,6 +217,8 @@ def run_qemu():
         #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
     ]
 
+    qemu_flags.extend(ARCH_CONFIG['qemu_flags'])
+
     # When running in headless mode we don't have video, but we can still have
     # QEMU emulate a display and take screenshots from it.
     qemu_flags.extend(['-vga', 'std'])
@@ -207,7 +226,7 @@ def run_qemu():
         # Do not attach a window to QEMU's display
         qemu_flags.extend(['-display', 'none'])
 
-    cmd = [SETTINGS['qemu_binary']] + qemu_flags
+    cmd = [ARCH_CONFIG['qemu_binary']] + qemu_flags
 
     if SETTINGS['verbose']:
         print(' '.join(cmd))
@@ -301,6 +320,9 @@ def main():
     parser.add_argument('verb', help='command to run', type=str,
                         choices=['build', 'run', 'doc', 'clippy'])
 
+    parser.add_argument('--arch', help='target architecture',
+                        choices=['x86_64', 'aarch64'])
+
     parser.add_argument('--verbose', '-v', help='print commands before executing them',
                         action='store_true')
 
@@ -311,6 +333,10 @@ def main():
                         action='store_true')
 
     opts = parser.parse_args()
+
+    # Arch
+    global ARCH_CONFIG
+    ARCH_CONFIG = ARCH_CONFIG[opts.arch]
 
     # Check if we need to enable verbose mode
     SETTINGS['verbose'] = opts.verbose

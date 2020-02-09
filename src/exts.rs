@@ -1,10 +1,10 @@
 //! Utility functions for the most common UEFI patterns.
 
 use alloc_api::{
-    alloc::{handle_alloc_error, Alloc, Global, Layout},
-    boxed::Box,
+    alloc::{AllocRef, Global, handle_alloc_error},
+    boxed::Box
 };
-use core::slice;
+use core::{alloc::Layout, slice};
 
 /// Creates a boxed byte buffer using the standard allocator
 ///

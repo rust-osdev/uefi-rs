@@ -161,9 +161,11 @@ impl<'boot> fmt::Write for Output<'boot> {
 
             let text = CStr16::from_u16_with_nul(codes).map_err(|_| fmt::Error)?;
 
-            self.output_string(text)
-                .warning_as_error()
-                .map_err(|_| fmt::Error)
+            match self.output_string(text).warning_as_error() {
+                Ok(_) => Ok(()),
+                Err(e) if e.status() == Status::DEVICE_ERROR => Ok(()),
+                Err(_) => Err(fmt::Error),
+            }
         };
 
         // This closure converts a character to UCS-2 and adds it to the buffer,

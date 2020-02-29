@@ -56,7 +56,13 @@ impl<'boot> log::Log for Logger {
     fn log(&self, record: &log::Record) {
         if let Some(mut ptr) = self.writer {
             let writer = unsafe { ptr.as_mut() };
-            DecoratedLog::write(writer, record.level(), record.args()).unwrap();
+            // FIXME: Some UEFI firmware implementations e.g. VrtualBox's implementation
+            // occasionally report a EFI_DEVICE_ERROR with some text dropped out within
+            // SimpleTextOutput protocol, which is a firmware bug. In that case, we will
+            // get a `fmt::Error` here. Since the `log` crate gives no other option to
+            // deal with output errors, we ignore the `Result` here to prevent potential
+            // panics from happening.
+            DecoratedLog::write(writer, record.level(), record.args()).unwrap_or_default();
         }
     }
 

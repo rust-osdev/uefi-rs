@@ -56,7 +56,7 @@ impl<'boot> log::Log for Logger {
     fn log(&self, record: &log::Record) {
         if let Some(mut ptr) = self.writer {
             let writer = unsafe { ptr.as_mut() };
-            DecoratedLog::write(writer, record.level(), record.args()).unwrap();
+            DecoratedLog::write(writer, record.level(), record.args()).unwrap_or_default();
         }
     }
 

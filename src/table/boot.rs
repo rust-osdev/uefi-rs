@@ -48,7 +48,11 @@ pub struct BootServices {
         notify_ctx: *mut c_void,
         event: *mut Event,
     ) -> Status,
-    set_timer: usize,
+    set_timer: unsafe extern "efiapi" fn(
+        event: Event,
+        ty: u32,
+        trigger_time: u64
+    ) -> Status,
     wait_for_event: unsafe extern "efiapi" fn(
         number_of_events: usize,
         events: *mut Event,
@@ -344,6 +348,16 @@ impl BootServices {
                 }
             },
         )
+    }
+
+    /// Sets the trigger for `EventType::TIMER` event.
+    pub fn set_timer(&self, event: Event, trigger_time: TimerTrigger) -> Result {
+        let (ty, time) = match trigger_time {
+            TimerTrigger::Cancel => (0, 0),
+            TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
+            TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
+        };
+        unsafe { (self.set_timer)(event, ty, time) }.into()
     }
 
     /// Query a handle for a certain protocol.
@@ -805,3 +819,17 @@ bitflags! {
 
 /// Raw event notification function
 type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c_void);
+
+/// Timer events manipulation
+pub enum TimerTrigger {
+    /// Cancel event's timer
+    Cancel,
+    /// The event is to be signaled periodically.
+    /// Parameter is the period in 100ns units.
+    /// Delay of 0 will be signalled on every timer tick.
+    Periodic(u64),
+    /// The event is to be signaled once in 100ns units.
+    /// Parameter is the delay in 100ns units.
+    /// Delay of 0 will be signalled on next timer tick.
+    Relative(u64),
+}

@@ -4,9 +4,7 @@ use crate::{
     data_types::{CStr16, Char16},
     proto::Protocol,
     table::boot::MemoryType,
-    unsafe_guid,
-    Handle,
-    Status,
+    unsafe_guid, Handle, Status,
 };
 use core::ffi::c_void;
 
@@ -52,7 +50,8 @@ impl LoadedImage {
     /// option, this is the command line that was used to execute it as a string.
     pub fn load_options<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a str, LoadOptionsError> {
         let ucs2_slice = unsafe { CStr16::from_ptr(self.load_options).to_u16_slice() };
-        let length = ucs2::decode(ucs2_slice, buffer).map_err(|_| LoadOptionsError::BufferTooSmall)?;
+        let length =
+            ucs2::decode(ucs2_slice, buffer).map_err(|_| LoadOptionsError::BufferTooSmall)?;
         core::str::from_utf8(&buffer[0..length]).map_err(|_| LoadOptionsError::NotValidUtf8)
     }
 }

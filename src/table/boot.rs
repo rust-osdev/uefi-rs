@@ -48,11 +48,7 @@ pub struct BootServices {
         notify_ctx: *mut c_void,
         event: *mut Event,
     ) -> Status,
-    set_timer: unsafe extern "efiapi" fn(
-        event: Event,
-        ty: u32,
-        trigger_time: u64
-    ) -> Status,
+    set_timer: unsafe extern "efiapi" fn(event: Event, ty: u32, trigger_time: u64) -> Status,
     wait_for_event: unsafe extern "efiapi" fn(
         number_of_events: usize,
         events: *mut Event,

@@ -1,8 +1,8 @@
 //! Utility functions for the most common UEFI patterns.
 
 use alloc_api::{
-    alloc::{AllocRef, Global, handle_alloc_error},
-    boxed::Box
+    alloc::{handle_alloc_error, AllocRef, Global},
+    boxed::Box,
 };
 use core::{alloc::Layout, slice};
 

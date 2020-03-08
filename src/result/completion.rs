@@ -96,7 +96,10 @@ impl<T> From<T> for Completion<T> {
 #[inline(never)]
 #[cold]
 fn built_with_error(error: Status) -> ! {
-    panic!("Completion was incorrectly built with error status: {:?}", error)
+    panic!(
+        "Completion was incorrectly built with error status: {:?}",
+        error
+    )
 }
 
 #[inline(never)]

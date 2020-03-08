@@ -1,7 +1,6 @@
 use super::{Completion, Error, Result};
 use core::fmt::Debug;
 use core::ops;
-use ucs2;
 
 /// Bit indicating that an UEFI status code is an error
 const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);

@@ -1,0 +1,19 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: ./build.py build
+      working-directory: ./uefi-test-runner
+    - name: Run tests
+      run: ./build.py run
+      working-directory: ./uefi-test-runner

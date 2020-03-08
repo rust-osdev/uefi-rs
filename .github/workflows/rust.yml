@@ -27,7 +27,10 @@ jobs:
         git checkout travis-temp
         # Move the firmware files to the right directory
         mv -v *.fd uefi-test-runner
-
+    
+    - name: Install qemu
+      run: sudo apt install qemu -y
+  
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:

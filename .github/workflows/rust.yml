@@ -11,9 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install cargo-xbuild
+      run: hash cargo-xbuild || cargo install cargo-xbuild
+      # TODO: cache the built cargo-xbuild binary
+        
     - name: Build
       run: ./build.py build
       working-directory: ./uefi-test-runner
+
     - name: Run tests
       run: ./build.py run
       working-directory: ./uefi-test-runner

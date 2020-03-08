@@ -12,6 +12,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+      # TODO: cache Rust binaries
+
     - name: Install cargo-xbuild
       run: hash cargo-xbuild || cargo install cargo-xbuild
       # TODO: cache the built cargo-xbuild binary

@@ -17,7 +17,7 @@ pub fn allocate_buffer(layout: Layout) -> Box<[u8]> {
     }
     unsafe {
         match Global.alloc(layout) {
-            Ok(mem) => Box::from_raw(slice::from_raw_parts_mut(mem.as_ptr(), layout.size())),
+            Ok((mem, len)) => Box::from_raw(slice::from_raw_parts_mut(mem.as_ptr(), len)),
             Err(_) => handle_alloc_error(layout),
         }
     }

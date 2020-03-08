@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: Checkout sources
       uses: actions/checkout@v2
-    
+
     - name: Download OVMF
       run: |
         # Save the current branch
@@ -29,10 +29,10 @@ jobs:
         git checkout travis-temp
         # Move the firmware files to the right directory
         mv -v *.fd uefi-test-runner
-    
+
     - name: Install qemu
       run: sudo apt-get install qemu -y
-  
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
@@ -52,7 +52,7 @@ jobs:
     - name: Run tests
       run: ./build.py run --headless
       working-directory: ./uefi-test-runner
-      
+
   lints:
     name: Lints
     runs-on: ubuntu-latest
@@ -63,9 +63,10 @@ jobs:
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
+            profile: minimal
             toolchain: nightly
-            override: true
             components: rustfmt, clippy
+            override: true
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
@@ -73,8 +74,6 @@ jobs:
           command: fmt
           args: --all -- --check
 
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
+      - uses: actions-rs/clippy-check@v1
         with:
-          command: clippy
-          args: -- -D warnings
+          token: ${{ secrets.GITHUB_TOKEN }}

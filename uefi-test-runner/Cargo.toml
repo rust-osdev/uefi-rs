@@ -6,8 +6,8 @@ publish = false
 edition = "2018"
 
 [dependencies]
-uefi = { version = "0.4.2", features = ['exts'] }
-uefi-services = "0.2.0"
+uefi = { path = "..", features = ['exts'] }
+uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.8", default-features = false }
 

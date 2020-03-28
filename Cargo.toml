@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.4.3"
+version = "0.4.4"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 edition = "2018"

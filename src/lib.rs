@@ -27,6 +27,7 @@
 #![feature(optin_builtin_traits)]
 #![feature(try_trait)]
 #![feature(abi_efiapi)]
+#![feature(negative_impls)]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]

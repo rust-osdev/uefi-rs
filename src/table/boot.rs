@@ -193,7 +193,7 @@ impl BootServices {
         };
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
 
-        map_size * entry_size
+        map_size
     }
 
     /// Retrieves the current memory map.

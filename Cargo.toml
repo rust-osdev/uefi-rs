@@ -26,6 +26,9 @@ default = []
 alloc = []
 exts = []
 logger = []
+# Ignore text output errors in logger as a workaround for firmware issues that
+# were observed on the VirtualBox UEFI implementation (see uefi-rs#121)
+ignore-logger-errors = []
 
 [dependencies]
 bitflags = "1.2.1"

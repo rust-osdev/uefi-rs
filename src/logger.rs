@@ -56,13 +56,26 @@ impl<'boot> log::Log for Logger {
     fn log(&self, record: &log::Record) {
         if let Some(mut ptr) = self.writer {
             let writer = unsafe { ptr.as_mut() };
-            // FIXME: Some UEFI firmware implementations e.g. VrtualBox's implementation
-            // occasionally report a EFI_DEVICE_ERROR with some text dropped out within
-            // SimpleTextOutput protocol, which is a firmware bug. In that case, we will
-            // get a `fmt::Error` here. Since the `log` crate gives no other option to
-            // deal with output errors, we ignore the `Result` here to prevent potential
-            // panics from happening.
-            DecoratedLog::write(writer, record.level(), record.args()).unwrap_or_default();
+            let result = DecoratedLog::write(writer, record.level(), record.args());
+
+            // Some UEFI implementations, such as the one used by VirtualBox,
+            // may intermittently drop out some text from SimpleTextOutput and
+            // report an EFI_DEVICE_ERROR. This will be reported here as an
+            // `fmt::Error`, and given how the `log` crate is designed, our main
+            // choices when that happens are to ignore the error or panic.
+            //
+            // Ignoring errors is bad, especially when they represent loss of
+            // precious early-boot system diagnosis data, so we panic by
+            // default. But if you experience this problem and want your UEFI
+            // application to keep running when it happens, you can enable the
+            // `ignore-logger-error` cargo feature. If you do so, logging errors
+            // will be ignored by `uefi-rs` instead.
+            //
+            if cfg!(feature = "ignore-logger-errors") {
+                core::mem::drop(result)
+            } else {
+                result.unwrap()
+            }
         }
     }
 

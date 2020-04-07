@@ -28,6 +28,8 @@
 #![feature(try_trait)]
 #![feature(abi_efiapi)]
 #![feature(negative_impls)]
+#![feature(const_fn)]
+#![feature(const_panic)]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]

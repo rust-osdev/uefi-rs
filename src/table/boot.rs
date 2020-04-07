@@ -646,6 +646,15 @@ pub enum MemoryType: u32 => {
     PERSISTENT_MEMORY       = 14,
 }}
 
+impl MemoryType {
+    /// Construct a custom `MemoryType`. Values in the range `0x80000000..=0xffffffff` are free for use if you are
+    /// an OS loader.
+    pub const fn custom(value: u32) -> MemoryType {
+        assert!(value >= 0x80000000);
+        MemoryType(value)
+    }
+}
+
 /// Memory descriptor version number
 pub const MEMORY_DESCRIPTOR_VERSION: u32 = 1;
 

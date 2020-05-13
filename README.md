@@ -4,7 +4,7 @@
 [![Docs.rs](https://docs.rs/uefi/badge.svg)](https://docs.rs/uefi)
 ![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
 ![License](https://img.shields.io/github/license/rust-osdev/uefi-rs)
-[![Build Status](https://travis-ci.org/rust-osdev/uefi-rs.svg?branch=master)](https://travis-ci.org/rust-osdev/uefi-rs)
+![Build status](https://github.com/rust-osdev/uefi-rs/workflows/Rust/badge.svg)
 
 ## Description
 

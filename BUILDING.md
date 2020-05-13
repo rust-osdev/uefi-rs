@@ -16,14 +16,16 @@ The following steps allow you to build a simple UEFI app.
 
 - Create a new `#![no_std]` binary, add `#![no_main]` to use a custom entry point,
   and make sure you have an entry point function which matches the one below:
+  ```rust
+  #![feature(abi_efiapi)]
+  use uefi::prelude::*;
 
-```rust
-#![feature(abi_efiapi)]
-use uefi::prelude::*;
-
-#[entry]
-fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status;
-```
+  #[entry]
+  fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status;
+  ```
+  You will also want to add a dependency to the
+  [`compiler-builtins`](https://github.com/rust-lang/compiler-builtins) crate,
+  to avoid linking errors.
 
 - Build using `cargo xbuild --target x86_64-unknown-uefi`.
 

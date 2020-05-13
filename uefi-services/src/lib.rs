@@ -11,12 +11,9 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(asm)]
+#![feature(llvm_asm)]
 #![feature(lang_items)]
 #![feature(panic_info_message)]
-
-// These crates are required.
-extern crate rlibc;
 
 // Core types.
 extern crate uefi;
@@ -177,7 +174,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     loop {
         unsafe {
             // Try to at least keep CPU from running at 100%
-            asm!("hlt" :::: "volatile");
+            llvm_asm!("hlt" :::: "volatile");
         }
     }
 }

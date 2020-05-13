@@ -71,9 +71,7 @@ impl<'boot> log::Log for Logger {
             // `ignore-logger-error` cargo feature. If you do so, logging errors
             // will be ignored by `uefi-rs` instead.
             //
-            if cfg!(feature = "ignore-logger-errors") {
-                core::mem::drop(result)
-            } else {
+            if !cfg!(feature = "ignore-logger-errors") {
                 result.unwrap()
             }
         }

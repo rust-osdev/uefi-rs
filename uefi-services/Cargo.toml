@@ -1,6 +1,6 @@
 [package]
 name = "uefi-services"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 edition = "2018"
 description = "Higher-level utilities for uefi-rs"
@@ -17,7 +17,7 @@ is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 [dependencies]
 x86_64 = "0.8.3"
 
-uefi = { version = "0.4.4", features = ["alloc", "logger"] }
+uefi = { version = "0.4.5", features = ["alloc", "logger"] }
 log = { version = "0.4.8", default-features = false }
 
 [features]

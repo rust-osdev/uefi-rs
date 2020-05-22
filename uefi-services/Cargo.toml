@@ -1,6 +1,6 @@
 [package]
 name = "uefi-services"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 edition = "2018"
 description = "Higher-level utilities for uefi-rs"

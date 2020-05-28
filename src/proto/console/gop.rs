@@ -451,8 +451,8 @@ impl From<u32> for BltPixel {
     fn from(color: u32) -> Self {
         Self {
             blue: (color & 0x00_00_FF) as u8,
-            green: (color & 0x00_FF_00 >> 8) as u8,
-            red: (color & 0xFF_00_00 >> 16) as u8,
+            green: ((color & 0x00_FF_00) >> 8) as u8,
+            red: ((color & 0xFF_00_00) >> 16) as u8,
             _reserved: 0,
         }
     }

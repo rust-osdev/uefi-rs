@@ -3,8 +3,6 @@
 #![feature(asm)]
 #![feature(abi_efiapi)]
 
-extern crate compiler_builtins;
-
 #[macro_use]
 extern crate log;
 #[macro_use]

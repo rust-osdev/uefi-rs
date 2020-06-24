@@ -11,7 +11,5 @@ uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.8", default-features = false }
 
-compiler_builtins = { git = "https://github.com/rust-lang/compiler-builtins" }
-
 [features]
 qemu = ["uefi-services/qemu"]

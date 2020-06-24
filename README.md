@@ -100,9 +100,14 @@ Check out the testing [README.md](uefi-test-runner/README.md) for instructions o
 
 For instructions on how to create your own UEFI apps, see the [BUILDING.md](BUILDING.md) file.
 
+## Contributing
+
+We welcome issues and pull requests! For instructions on how to set up a development
+environment and how to add new protocols, check out [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 The code in this repository is licensed under the Mozilla Public License 2.
 This license allows you to use the crate in proprietary programs, but any modifications to the files must be open-sourced.
 
-The full text of the license is available in the `LICENSE` file.
+The full text of the license is available in the [license file](LICENSE).

@@ -74,3 +74,56 @@ low-level environment that UEFI operates in:
 - Pointers may only be NULL where UEFI explicitly allows for it
 - When an UEFI function fails, nothing can be assumed about the state of data
   behind `*mut` pointers.
+
+## Adding new protocols
+
+UEFI protocols are represented in memory as tables of function pointers,
+each of which takes the protocol itself as first parameter.
+
+In `uefi-rs`, protocols are simply `struct`s containing `extern "efiapi" fn`s.
+It's imperative to add `#[repr(C)]` to ensure the functions are laid out in memory
+in the order the UEFI spec requires.
+
+Each protocol also has a Globally Unique Identifier (in the C API, they're usually
+found in a `EFI_*_PROTOCOL_GUID` define). In Rust, we store the GUID as an associated
+constant, by implementing the unsafe trait `uefi::proto::Identify`. For convenience,
+this is done through the `unsafe_guid` macro.
+
+Finally, you should derive the `Protocol` trait. This is a marker trait,
+extending `Identify`, which is used as a generic bound in the functions which retrieve
+protocol implementations.
+
+An example protocol declaration:
+
+```rust
+/// Protocol which does something.
+#[repr(C)]
+#[unsafe_guid("abcdefgh-1234-5678-9012-123456789abc")]
+#[derive(Protocol)]
+pub struct NewProtocol {
+  some_entry_point: extern "efiapi" fn(
+    this: *const NewProtocol,
+    some_parameter: SomeType,
+    some_other_parameter: SomeOtherType,
+  ) -> Status,
+  some_other_entry_point: extern "efiapi" fn(
+    this: *mut NewProtocol,
+    another_parameter: AnotherType,
+  ) -> SomeOtherResult,
+  // ...
+}
+```
+
+There should also be an `impl` block providing safe access to the functions:
+
+```rust
+impl NewProtocol {
+  /// This function does something.
+  pub fn do_something(&self, a: SomeType, b: SomeOtherType) -> Result {
+    // Call the wrapped function
+    let status = unsafe { (self.some_entry_point)(self, a, b) };
+    // `Status` provides a helper function for converting to `Result`
+    status.into()
+  }
+}
+```

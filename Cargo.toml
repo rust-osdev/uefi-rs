@@ -48,3 +48,7 @@ panic = "abort"
 
 [profile.release]
 panic = "abort"
+
+[patch.crates-io]
+uefi-macros = { path = "uefi-macros" }
+uefi = { path = "." }

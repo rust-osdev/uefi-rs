@@ -1,5 +1,0 @@
-paths = [
-    ".",
-    "uefi-macros",
-    "uefi-services",
-]

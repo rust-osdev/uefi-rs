@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(asm)]
 #![feature(abi_efiapi)]
+#![feature(core_intrinsics)]
 
 extern crate no_std_compat as std;
 
@@ -23,6 +24,9 @@ fn main(_image: Handle, _st: SystemTable<Boot>) -> Result {
         log::info!("{}: {}", k, v);
     }
 
+    unsafe {
+        log::info!("{}", core::intrinsics::sinf64(1337.0));
+    }
     Ok(Completion::from(()))
 }
 
@@ -64,5 +68,3 @@ fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
     let rt = unsafe { st.runtime_services() };
     rt.reset(ResetType::Shutdown, Status::SUCCESS, None)
 }
-
-mod managed_main;

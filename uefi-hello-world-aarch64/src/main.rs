@@ -2,13 +2,12 @@
 #![no_main]
 #![feature(asm)]
 #![feature(abi_efiapi)]
-#![feature(core_intrinsics)]
 
-extern crate no_std_compat as std;
+extern crate alloc;
 
-use std::collections::{BTreeMap, HashMap};
-use std::mem;
-use std::prelude::v1::*;
+use alloc::collections::BTreeMap;
+use alloc::vec;
+use core::mem;
 
 use uefi::prelude::*;
 use uefi::table::boot::MemoryDescriptor;
@@ -24,9 +23,6 @@ fn main(_image: Handle, _st: SystemTable<Boot>) -> Result {
         log::info!("{}: {}", k, v);
     }
 
-    unsafe {
-        log::info!("{}", core::intrinsics::sinf64(1337.0));
-    }
     Ok(Completion::from(()))
 }
 

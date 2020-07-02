@@ -9,9 +9,6 @@ edition = "2018"
 uefi = { path = "..", features = ['exts'] }
 uefi-services = { path = "../uefi-services" }
 log = { version = "0.4.8", default-features = false }
-no-std-compat = "0.4.0"
 
 [features]
 qemu = ["uefi-services/qemu"]
-default = ["std"]
-std = ["no-std-compat/alloc", "no-std-compat/compat_hash", "no-std-compat/compat_sync", "no-std-compat/compat_macros"]

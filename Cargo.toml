@@ -9,6 +9,7 @@ exclude = [
     "uefi-macros/**",
     "uefi-services/**",
     "uefi-test-runner/**",
+    "uefi-hello-world-aarch64/**"
 ]
 description = "Safe and easy-to-use wrapper for building UEFI apps"
 repository = "https://github.com/rust-osdev/uefi-rs"
@@ -41,6 +42,7 @@ members = [
     "uefi-macros",
     "uefi-services",
     "uefi-test-runner",
+    "uefi-hello-world-aarch64"
 ]
 
 [profile.dev]

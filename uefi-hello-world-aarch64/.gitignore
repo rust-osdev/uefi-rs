@@ -1,0 +1,6 @@
+# Python cache files.
+/__pycache__
+
+# OVMF images, which provide a UEFI firmware for QEMU.
+/OVMF_CODE.fd
+/OVMF_VARS.fd

@@ -13,7 +13,7 @@ use uefi::prelude::*;
 use uefi::table::boot::MemoryDescriptor;
 use uefi::{Completion, Result};
 
-fn main(_image: Handle, _st: SystemTable<Boot>) -> Result {
+fn main(_image: Handle, _st: &mut SystemTable<Boot>) -> Result {
     let mut map = BTreeMap::new();
 
     map.insert("hello", "world");
@@ -27,17 +27,16 @@ fn main(_image: Handle, _st: SystemTable<Boot>) -> Result {
 }
 
 #[entry]
-fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
+fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&st).expect_success("Failed to initialize utilities");
 
     // Reset the console before running all the other tests.
-    st.clone()
-        .stdout()
+    st.stdout()
         .reset(false)
         .expect_success("Failed to reset stdout");
 
-    match main(image, st.clone()) {
+    match main(image, &mut st) {
         Err(err) => panic!("Received an error: {:#?}", err),
         Ok(_ret) => {
             shutdown(image, st);

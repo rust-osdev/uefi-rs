@@ -1,19 +1,24 @@
+use core::marker::PhantomData;
+use core::slice;
+
+use crate::proto::console::text;
+use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
+
 use super::boot::{BootServices, MemoryMapIter};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
-use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
-use core::marker::PhantomData;
-use core::slice;
 
 /// Marker trait used to provide different views of the UEFI System Table
 pub trait SystemTableView {}
 
 /// Marker struct associated with the boot view of the UEFI System Table
+#[derive(Clone)]
 pub struct Boot;
+
 impl SystemTableView for Boot {}
 
 /// Marker struct associated with the run-time view of the UEFI System Table
+#[derive(Clone)]
 pub struct Runtime;
 impl SystemTableView for Runtime {}
 
@@ -39,6 +44,7 @@ impl SystemTableView for Runtime {}
 /// UEFI boot services in the eye of the Rust borrow checker) and a runtime view
 /// will be provided to replace it.
 #[repr(transparent)]
+#[derive(Clone)]
 pub struct SystemTable<View: SystemTableView> {
     table: &'static SystemTableImpl,
     _marker: PhantomData<View>,

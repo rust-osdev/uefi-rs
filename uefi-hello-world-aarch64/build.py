@@ -245,17 +245,8 @@ def run_qemu():
             # the UEFI stdout and stdin to that port too.
             '-serial', 'stdio',
 
-            # Map the QEMU exit signal to port f4
-            '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
-
             # Map the QEMU monitor to a pair of named pipes
             '-qmp', f'pipe:{qemu_monitor_pipe}',
-
-            # OVMF debug builds can output information to a serial `debugcon`.
-            # Only enable when debugging UEFI boot:
-            '-debugcon', 'file:debug.log',
-
-            '-global', 'isa-debugcon.iobase=0x402',
         ]
 
     # When running in headless mode we don't have video, but we can still have

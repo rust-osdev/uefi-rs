@@ -15,13 +15,14 @@
 #![feature(lang_items)]
 #![feature(panic_info_message)]
 
+#[macro_use]
+extern crate log;
 // Core types.
 extern crate uefi;
 
-#[macro_use]
-extern crate log;
-
 use core::ptr::NonNull;
+
+use cfg_if::cfg_if;
 
 use uefi::prelude::*;
 use uefi::table::boot::{EventType, Tpl};
@@ -154,10 +155,16 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
 
     // If running in QEMU, use the f4 exit port to signal the error and exit
     if cfg!(feature = "qemu") {
-        use x86_64::instructions::port::Port;
-        let mut port = Port::<u32>::new(0xf4);
-        unsafe {
-            port.write(42);
+        cfg_if! {
+             if #[cfg(target_arch = "x86_64")] {
+                  use x86_64::instructions::port::Port;
+                  let mut port = Port::<u32>::new(0xf4);
+                  unsafe {
+                      port.write(42);
+                  }
+            } else if #[cfg(target_arch = "aarch64")] {
+                  // unimplemented!();
+            }
         }
     }
 
@@ -171,11 +178,26 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     // If we don't have any shutdown mechanism handy, the best we can do is loop
     error!("Could not shut down, please power off the system manually...");
 
-    loop {
-        unsafe {
-            // Try to at least keep CPU from running at 100%
-            llvm_asm!("hlt" :::: "volatile");
-        }
+    cfg_if! {
+      if #[cfg(target_arch = "x86_64")] {
+          loop {
+              unsafe {
+                  // Try to at least keep CPU from running at 100%
+                  llvm_asm!("hlt" :::: "volatile");
+              }
+          }
+      } else if #[cfg(target_arch = "aarch64")] {
+          loop {
+              unsafe {
+                  // Try to at least keep CPU from running at 100%
+                  llvm_asm!("hlt 420" :::: "volatile");
+              }
+          }
+      } else {
+          loop {
+            // just run forever dammit how do you return never anyway
+          }
+      }
     }
 }
 

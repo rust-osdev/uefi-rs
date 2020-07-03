@@ -1,10 +1,12 @@
+use core::marker::PhantomData;
+use core::slice;
+
+use crate::proto::console::text;
+use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
+
 use super::boot::{BootServices, MemoryMapIter};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
-use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
-use core::marker::PhantomData;
-use core::slice;
 
 /// Marker trait used to provide different views of the UEFI System Table
 pub trait SystemTableView {}

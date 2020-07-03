@@ -1,0 +1,25 @@
+{
+  "arch": "aarch64",
+  "data-layout": "e-m:e-i64:64-f80:128-n8:16:32:64-S128",
+  "default-hidden-visibility": true,
+  "emit-debug-gdb-scripts": false,
+  "exe-suffix": ".efi",
+  "executables": true,
+  "is-like-windows": true,
+  "linker": "rust-lld",
+  "linker-flavor": "lld-link",
+  "llvm-target": "aarch64-pc-windows-msvc",
+  "os": "uefi",
+  "panic-strategy": "abort",
+  "pre-link-args": {
+    "lld-link": [
+      "/subsystem:EFI_Application",
+      "/entry:efi_main",
+      "/machine:arm64"
+    ]
+  },
+  "stack_probes": true,
+  "target-c-int-width": "32",
+  "target-endian": "little",
+  "target-pointer-width": "64"
+}

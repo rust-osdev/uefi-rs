@@ -9,7 +9,7 @@ Besides all the [core library requirements](https://github.com/rust-osdev/uefi-r
 - [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
 - [Python 3](https://www.python.org): at least version 3.6 is required.
 - [OVMF](https://github.com/tianocore/tianocore.github.io/wiki/OVMF):
-  You need to extract `OVMF_CODE.fd` and `OVMF_VARS.fd` to the same directory as the `build.py` file.
+  You need to extract `QEMU_EFI-pflash.raw` and `vars-template-pflash.raw` to the same directory as the `build.py` file.
   Alternatively, install OVMF using your distro's package manager and change the paths in the script file.
   **Note**: if your distro's OVMF version is too old / does not provide these files,
   you can download [Gerd Hoffmann's builds](https://www.kraxel.org/repos/) and extract them in the local directory.

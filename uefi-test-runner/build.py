@@ -18,17 +18,22 @@ WORKSPACE_DIR = Path(__file__).resolve().parents[1]
 
 # Try changing these with command line flags, where possible
 SETTINGS = {
+    # Architecture to build for
+    'arch': 'x86_64',
     # Print commands before running them.
     'verbose': False,
     # Run QEMU without showing GUI
     'headless': False,
-    # Target to build for.
-    'target': 'x86_64-unknown-uefi',
     # Configuration to build.
     'config': 'debug',
     # QEMU executable to use
-    'qemu_binary': 'qemu-system-x86_64',
-    # Path to directory containing `OVMF_{CODE/VARS}.fd`.
+    # Indexed by the `arch` setting
+    'qemu_binary': {
+        'x86_64': 'qemu-system-x86_64',
+        'aarch64': 'qemu-system-aarch64',
+    },
+    # Path to directory containing `OVMF_{CODE/VARS}.fd` (for x86_64),
+    # or `*-pflash.raw` (for AArch64).
     # `find_ovmf` function will try to find one if this isn't specified.
     'ovmf_dir': None,
 }
@@ -42,14 +47,17 @@ def target_dir():
     global TARGET_DIR
     if TARGET_DIR is None:
         cmd = ['cargo', 'metadata', '--format-version=1']
-        result = sp.run(cmd, stdout=sp.PIPE)
-        result.check_returncode()
+        result = sp.run(cmd, stdout=sp.PIPE, check=True)
         TARGET_DIR = Path(json.loads(result.stdout)['target_directory'])
     return TARGET_DIR
 
+def get_target_triple():
+    arch = SETTINGS['arch']
+    return f'{arch}-unknown-uefi'
+
 def build_dir():
     'Returns the directory where Cargo places the build artifacts'
-    return target_dir() / SETTINGS['target'] / SETTINGS['config']
+    return target_dir() / get_target_triple() / SETTINGS['config']
 
 def esp_dir():
     'Returns the directory where we will build the emulated UEFI system partition'
@@ -58,12 +66,18 @@ def esp_dir():
 def run_xtool(tool, *flags):
     'Runs cargo-x<tool> with certain arguments.'
 
-    cmd = ['cargo', tool, '--target', SETTINGS['target'], *flags]
+    target = get_target_triple()
+    # Custom targets need to be given by relative path, instead of only by name
+    # We need to append a `.json` to turn the triple into a path
+    if SETTINGS['arch'] == 'aarch64':
+        target += '.json'
+
+    cmd = ['cargo', tool, '--target', target, *flags]
 
     if SETTINGS['verbose']:
         print(' '.join(cmd))
 
-    sp.run(cmd).check_returncode()
+    sp.run(cmd, check=True)
 
 def run_xbuild(*flags):
     'Runs cargo-xbuild with certain arguments.'
@@ -74,7 +88,7 @@ def run_xclippy(*flags):
     run_xtool('xclippy', *flags)
 
 def build(*test_flags):
-    'Builds the tests and examples.'
+    'Builds the test crate.'
 
     xbuild_args = [
         '--package', 'uefi-test-runner',
@@ -92,7 +106,11 @@ def build(*test_flags):
     boot_dir = esp_dir() / 'EFI' / 'Boot'
     boot_dir.mkdir(parents=True, exist_ok=True)
 
-    output_file = boot_dir / 'BootX64.efi'
+    arch = SETTINGS['arch']
+    if arch == 'x86_64':
+        output_file = boot_dir / 'BootX64.efi'
+    elif arch == 'aarch64':
+        output_file = boot_dir / 'BootAA64.efi'
 
     shutil.copy2(built_file, output_file)
 
@@ -106,15 +124,17 @@ def doc():
     sp.run([
         'cargo', 'doc', '--no-deps',
         '--package', 'uefi',
-        '--package', 'uefi-exts',
-        '--package', 'uefi-alloc',
-        '--package', 'uefi-logger',
+        '--package', 'uefi-macros',
         '--package', 'uefi-services',
-    ])
+    ], check=True)
 
 def ovmf_files(ovmf_dir):
-    'Returns the tuple of paths to OVMF_CODE.fd and OVMF_VARS.fd given the directory'
-    return ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
+    'Returns the tuple of paths to the OVMF code and vars firmware files, given the directory'
+    if SETTINGS['arch'] == 'x86_64':
+        return ovmf_dir / 'OVMF_CODE.fd', ovmf_dir / 'OVMF_VARS.fd'
+    if SETTINGS['arch'] == 'aarch64':
+        return ovmf_dir / 'QEMU_EFI-pflash.raw', ovmf_dir / 'vars-template-pflash.raw'
+    raise NotImplementedError('Target arch not supported')
 
 def check_ovmf_dir(ovmf_dir):
     'Check whether the given directory contains necessary OVMF files'
@@ -157,48 +177,71 @@ def run_qemu():
 
     ovmf_code, ovmf_vars = ovmf_files(find_ovmf())
 
-    examples_dir = build_dir() / 'examples'
-
     qemu_monitor_pipe = 'qemu-monitor'
+
+    arch = SETTINGS['arch']
 
     qemu_flags = [
         # Disable default devices.
         # QEMU by defaults enables a ton of devices which slow down boot.
         '-nodefaults',
+    ]
 
-        # Use a modern machine, with acceleration if possible.
-        '-machine', 'q35,accel=kvm:tcg',
+    ovmf_vars_readonly = 'on'
+    if arch == 'aarch64':
+        # The OVMF implementation for AArch64 won't boot unless the
+        # vars file is writeable.
+        ovmf_vars_readonly = 'off'
 
-        # Multi-processor services protocol test needs exactly 3 CPUs.
-        '-smp', '3',
+    if arch == 'x86_64':
+        qemu_flags.extend([
+            # Use a modern machine, with acceleration if possible.
+            '-machine', 'q35,accel=kvm:tcg',
 
-        # Allocate some memory.
-        '-m', '128M',
+            # Multi-processor services protocol test needs exactly 3 CPUs.
+            '-smp', '3',
 
+            # Allocate some memory.
+            '-m', '128M',
+        ])
+    elif arch == 'aarch64':
+        qemu_flags.extend([
+            # Use a generic ARM environment. Sadly qemu can't emulate a RPi 4 like machine though
+            '-machine', 'virt',
+
+            # A72 is a very generic 64-bit ARM CPU in the wild
+            '-cpu', 'cortex-a72',
+        ])
+    else:
+        raise NotImplementedError('Unknown arch')
+
+    qemu_flags.extend([
         # Set up OVMF.
         '-drive', f'if=pflash,format=raw,file={ovmf_code},readonly=on',
-        '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly=on',
+        '-drive', f'if=pflash,format=raw,file={ovmf_vars},readonly={ovmf_vars_readonly}',
 
         # Mount a local directory as a FAT partition.
         '-drive', f'format=raw,file=fat:rw:{esp_dir()}',
-
-        # Mount the built examples directory.
-        '-drive', f'format=raw,file=fat:rw:{examples_dir}',
 
         # Connect the serial port to the host. OVMF is kind enough to connect
         # the UEFI stdout and stdin to that port too.
         '-serial', 'stdio',
 
-        # Map the QEMU exit signal to port f4
-        '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
-
         # Map the QEMU monitor to a pair of named pipes
         '-qmp', f'pipe:{qemu_monitor_pipe}',
+    ])
 
-        # OVMF debug builds can output information to a serial `debugcon`.
-        # Only enable when debugging UEFI boot:
-        #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
-    ]
+    # For now these only work on x86_64
+    if arch == 'x86_64':
+        # Enable debug features
+        qemu_flags.extend([
+            # Map the QEMU exit signal to port f4
+            '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04',
+
+            # OVMF debug builds can output information to a serial `debugcon`.
+            # Only enable when debugging UEFI boot:
+            #'-debugcon', 'file:debug.log', '-global', 'isa-debugcon.iobase=0x402',
+        ])
 
     # When running in headless mode we don't have video, but we can still have
     # QEMU emulate a display and take screenshots from it.
@@ -207,7 +250,8 @@ def run_qemu():
         # Do not attach a window to QEMU's display
         qemu_flags.extend(['-display', 'none'])
 
-    cmd = [SETTINGS['qemu_binary']] + qemu_flags
+    qemu_binary = SETTINGS['qemu_binary'][arch]
+    cmd = [qemu_binary] + qemu_flags
 
     if SETTINGS['verbose']:
         print(' '.join(cmd))
@@ -273,7 +317,7 @@ def run_qemu():
     finally:
         try:
             # Wait for QEMU to finish
-            status = qemu.wait(15)
+            status = qemu.wait()
         except sp.TimeoutExpired:
             print('Tests are taking too long to run, killing QEMU', file=sys.stderr)
             qemu.kill()
@@ -293,13 +337,15 @@ def main():
     # Clear any Rust flags which might affect the build.
     os.environ['RUSTFLAGS'] = ''
 
-    usage = '%(prog)s verb [options]'
     desc = 'Build script for UEFI programs'
 
-    parser = argparse.ArgumentParser(usage=usage, description=desc)
+    parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument('verb', help='command to run', type=str,
                         choices=['build', 'run', 'doc', 'clippy'])
+
+    parser.add_argument('--target', help='target to build for (default: %(default)s)', type=str,
+                        choices=['x86_64', 'aarch64'], default='x86_64')
 
     parser.add_argument('--verbose', '-v', help='print commands before executing them',
                         action='store_true')
@@ -312,6 +358,7 @@ def main():
 
     opts = parser.parse_args()
 
+    SETTINGS['arch'] = opts.target
     # Check if we need to enable verbose mode
     SETTINGS['verbose'] = opts.verbose
     SETTINGS['headless'] = opts.headless

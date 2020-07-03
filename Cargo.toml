@@ -42,7 +42,6 @@ members = [
     "uefi-macros",
     "uefi-services",
     "uefi-test-runner",
-    "uefi-hello-world-aarch64"
 ]
 
 [profile.dev]

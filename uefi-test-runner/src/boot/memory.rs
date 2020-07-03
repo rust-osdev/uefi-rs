@@ -108,9 +108,11 @@ fn memory_map(bt: &BootServices) {
     // This is pretty much a sanity test to ensure returned memory isn't filled with random values.
     let first_desc = desc_iter.next().unwrap();
 
-    let phys_start = first_desc.phys_start;
+    #[cfg(target_arch = "x86_64")]
+    {
+        let phys_start = first_desc.phys_start;
+        assert_eq!(phys_start, 0, "Memory does not start at address 0");
+    }
     let page_count = first_desc.page_count;
-
-    assert_eq!(phys_start, 0, "Memory does not start at address 0");
     assert!(page_count != 0, "Memory map entry has zero size");
 }

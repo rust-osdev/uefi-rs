@@ -4,3 +4,5 @@
 # OVMF images, which provide a UEFI firmware for QEMU.
 /OVMF_CODE.fd
 /OVMF_VARS.fd
+/QEMU_EFI-pflash.raw
+/vars-template-pflash.raw

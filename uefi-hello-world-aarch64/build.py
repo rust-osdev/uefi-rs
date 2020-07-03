@@ -44,7 +44,7 @@ SETTINGS = {
     # Path to directory containing `OVMF_{CODE/VARS}.fd`.
     # `find_ovmf` function will try to find one if this isn't specified.
     'ovmf': {
-        'dir': WORKSPACE_DIR / 'arch' / ARCH / 'ovmf',  # e.g. ${WORKSPACE}/arch/aarch64/ovmf
+        'dir': CURRENT_DIR,  # e.g. ${WORKSPACE}/arch/aarch64/ovmf
         # these two firmware blobs are extracted from kraxel's repo, aka https://www.kraxel.org/repos/jenkins/edk2/
         'firmware': {
             'code': 'QEMU_EFI-pflash.raw',

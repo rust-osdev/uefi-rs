@@ -26,6 +26,8 @@ SETTINGS = {
     'headless': False,
     # Configuration to build.
     'config': 'debug',
+    # Disables some tests which don't work in our CI setup
+    'ci': False,
     # QEMU executable to use
     # Indexed by the `arch` setting
     'qemu_binary': {
@@ -97,6 +99,9 @@ def build(*test_flags):
 
     if SETTINGS['config'] == 'release':
         xbuild_args.append('--release')
+
+    if SETTINGS['ci']:
+        xbuild_args.extend(['--features', 'ci'])
 
     run_xbuild(*xbuild_args)
 
@@ -356,6 +361,9 @@ def main():
     parser.add_argument('--release', help='build in release mode',
                         action='store_true')
 
+    parser.add_argument('--ci', help='disables some tests which currently break CI',
+                        action='store_true')
+
     opts = parser.parse_args()
 
     SETTINGS['arch'] = opts.target
@@ -363,6 +371,7 @@ def main():
     SETTINGS['verbose'] = opts.verbose
     SETTINGS['headless'] = opts.headless
     SETTINGS['config'] = 'release' if opts.release else 'debug'
+    SETTINGS['ci'] = opts.ci
 
     verb = opts.verb
 

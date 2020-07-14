@@ -52,7 +52,7 @@ jobs:
       working-directory: ./uefi-test-runner
 
     - name: Run tests
-      run: ./build.py run --headless
+      run: ./build.py run --headless --ci
       working-directory: ./uefi-test-runner
 
   lints:

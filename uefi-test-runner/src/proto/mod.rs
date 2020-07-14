@@ -11,6 +11,7 @@ pub fn test(st: &SystemTable<Boot>) {
 
     console::test(st);
     debug::test(bt);
+    media::test(bt);
     pi::test(bt);
 }
 
@@ -29,4 +30,5 @@ fn find_protocol(bt: &BootServices) {
 
 mod console;
 mod debug;
+mod media;
 mod pi;

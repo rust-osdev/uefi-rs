@@ -4,6 +4,7 @@ use super::Header;
 use crate::table::boot::MemoryDescriptor;
 use crate::{Result, Status};
 use bitflags::bitflags;
+use core::fmt;
 use core::mem::MaybeUninit;
 use core::ptr;
 
@@ -103,7 +104,7 @@ impl super::Table for RuntimeServices {
 }
 
 /// The current time information
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct Time {
     year: u16,  // 1900 - 9999
@@ -213,6 +214,14 @@ impl Time {
     /// Query the daylight savings time information
     pub fn daylight(&self) -> Daylight {
         self.daylight
+    }
+}
+
+impl fmt::Debug for Time {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}-{} ", self.year, self.month, self.day)?;
+        write!(f, "{}:{}:{}.{} ", self.hour, self.minute, self.second, self.nanosecond)?;
+        write!(f, "{} {:?}", self.time_zone, self.daylight)
     }
 }
 

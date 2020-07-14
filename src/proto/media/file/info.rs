@@ -40,6 +40,7 @@ pub trait FromUefi {
 /// The reason why this struct covers the whole DST, as opposed to the
 /// `[Char16]` part only, is that pointers to DSTs are created in a rather
 /// unintuitive way that is best kept centralized in one place.
+#[derive(Debug)]
 #[repr(C)]
 pub struct NamedFileProtocolInfo<Header> {
     header: Header,
@@ -154,6 +155,7 @@ pub enum FileInfoCreationError {
 pub type FileInfo = NamedFileProtocolInfo<FileInfoHeader>;
 
 /// Header for generic file information
+#[derive(Debug)]
 #[repr(C)]
 pub struct FileInfoHeader {
     size: u64,
@@ -248,6 +250,7 @@ impl FileProtocolInfo for FileInfo {}
 pub type FileSystemInfo = NamedFileProtocolInfo<FileSystemInfoHeader>;
 
 /// Header for system volume information
+#[derive(Debug)]
 #[repr(C)]
 pub struct FileSystemInfoHeader {
     size: u64,
@@ -323,6 +326,7 @@ impl FileProtocolInfo for FileSystemInfo {}
 pub type FileSystemVolumeLabel = NamedFileProtocolInfo<FileSystemVolumeLabelHeader>;
 
 /// Header for system volume label information
+#[derive(Debug)]
 #[repr(C)]
 pub struct FileSystemVolumeLabelHeader {}
 

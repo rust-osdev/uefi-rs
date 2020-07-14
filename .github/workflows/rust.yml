@@ -31,7 +31,9 @@ jobs:
         mv -v *.fd uefi-test-runner
 
     - name: Install qemu
-      run: sudo apt-get install qemu -y
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu -y
 
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
@@ -74,6 +76,7 @@ jobs:
           command: fmt
           args: --all -- --check
 
-      - uses: actions-rs/clippy-check@v1
+      - name: Run clippy
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

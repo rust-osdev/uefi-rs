@@ -16,15 +16,15 @@ pub fn test(bt: &BootServices) {
                         info
                     } else {
                         // We've reached the end of the directory
-                        break
+                        break;
                     }
-                },
+                }
                 Err(error) => {
                     // Buffer is not big enough, allocate a bigger one and try again.
                     let min_size = error.data().unwrap();
                     buffer.resize(min_size, 0);
                     continue;
-                },
+                }
             };
             info!("Root directory entry: {:?}", file_info);
         }

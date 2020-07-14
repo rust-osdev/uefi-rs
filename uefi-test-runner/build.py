@@ -26,6 +26,8 @@ SETTINGS = {
     'headless': False,
     # Configuration to build.
     'config': 'debug',
+    # Disables some tests which don't work in our CI setup
+    'ci': False,
     # QEMU executable to use
     # Indexed by the `arch` setting
     'qemu_binary': {
@@ -97,6 +99,9 @@ def build(*test_flags):
 
     if SETTINGS['config'] == 'release':
         xbuild_args.append('--release')
+
+    if SETTINGS['ci']:
+        xbuild_args.extend(['--features', 'ci'])
 
     run_xbuild(*xbuild_args)
 
@@ -195,15 +200,17 @@ def run_qemu():
 
     if arch == 'x86_64':
         qemu_flags.extend([
-            # Use a modern machine, with acceleration if possible.
-            '-machine', 'q35,accel=kvm:tcg',
-
+            # Use a modern machine,.
+            '-machine', 'q35',
             # Multi-processor services protocol test needs exactly 3 CPUs.
             '-smp', '3',
 
             # Allocate some memory.
             '-m', '128M',
         ])
+        if not SETTINGS['ci']:
+            # Enable acceleration if possible.
+            qemu_flags.append('--enable-kvm')
     elif arch == 'aarch64':
         qemu_flags.extend([
             # Use a generic ARM environment. Sadly qemu can't emulate a RPi 4 like machine though
@@ -356,6 +363,9 @@ def main():
     parser.add_argument('--release', help='build in release mode',
                         action='store_true')
 
+    parser.add_argument('--ci', help='disables some tests which currently break CI',
+                        action='store_true')
+
     opts = parser.parse_args()
 
     SETTINGS['arch'] = opts.target
@@ -363,6 +373,7 @@ def main():
     SETTINGS['verbose'] = opts.verbose
     SETTINGS['headless'] = opts.headless
     SETTINGS['config'] = 'release' if opts.release else 'debug'
+    SETTINGS['ci'] = opts.ci
 
     verb = opts.verb
 

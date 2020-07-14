@@ -12,4 +12,7 @@ uefi-services = { path = "../uefi-services" }
 log = { version = "0.4.8", default-features = false }
 
 [features]
+# This feature should only be enabled in our CI, it disables some tests
+# which currently fail in that environment (see #103 for discussion).
+ci = []
 qemu = ["uefi-services/qemu"]

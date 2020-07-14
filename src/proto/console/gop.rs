@@ -1,6 +1,6 @@
 //! Graphics output protocol.
 //!
-//! The UEFI GOP is meant to replace existing VGA hardware.
+//! The UEFI GOP is meant to replace existing [VGA][vga] hardware interfaces.
 //! It can be used in the boot environment as well as at runtime,
 //! until a high-performance driver is loaded by the OS.
 //!
@@ -11,17 +11,48 @@
 //! to exist and be used on the system. There is a GOP implementation for every
 //! unique GPU in the system which supports UEFI.
 //!
+//! This protocol _can_ be used after boot services are exited.
+//!
+//! [vga]: https://en.wikipedia.org/wiki/Video_Graphics_Array
+//!
 //! # Definitions
 //!
-//! All graphics operations use a coordinate system where
-//! the top-left of the screen is mapped to the point (0, 0),
-//! and `y` increases going down.
+//! All graphics operations use a coordinate system where the top-left of the screen
+//! is mapped to the point (0, 0), and `y` increases going down.
 //!
 //! Rectangles are defined by their top-left corner, and their width and height.
 //!
 //! The stride is understood as the length in bytes of a scan line / row of a buffer.
 //! In theory, a buffer with a width of 640 should have (640 * 4) bytes per row,
 //! but in practice there might be some extra padding used for efficiency.
+//!
+//! Frame buffers represent the graphics card's image buffers, backing the displays.
+//!
+//! Blits (**bl**ock **t**ransfer) can do high-speed memory copy between
+//! the frame buffer and itself, or to and from some other buffers.
+//!
+//! # Blitting
+//!
+//! On certain hardware, the frame buffer is in a opaque format,
+//! or cannot be accessed by the CPU. In those cases, it is not possible
+//! to draw directly to the frame buffer. You must draw to another buffer
+//! with a known pixel format, and then submit a blit command to copy that buffer
+//! into the back buffer.
+//!
+//! Blitting can also copy a rectangle from the frame buffer to
+//! another rectangle in the frame buffer, or move data out of the frame buffer
+//! into a CPU-visible buffer. It can also do very fast color fills.
+//!
+//! The source and destination rectangles must always be of the same size:
+//! no stretching / squashing will be done.
+//!
+//! # Animations
+//!
+//! UEFI does not mention if double buffering is used, nor how often
+//! the frame buffer gets sent to the screen, but it's safe to assume that
+//! the graphics card will re-draw the buffer at around the monitor's refresh rate.
+//! You will have to implement your own double buffering if you want to
+//! avoid tearing with animations.
 
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Completion, Result, Status};

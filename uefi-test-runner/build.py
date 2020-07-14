@@ -200,15 +200,17 @@ def run_qemu():
 
     if arch == 'x86_64':
         qemu_flags.extend([
-            # Use a modern machine, with acceleration if possible.
-            '-machine', 'q35,accel=kvm:tcg',
-
+            # Use a modern machine,.
+            '-machine', 'q35',
             # Multi-processor services protocol test needs exactly 3 CPUs.
             '-smp', '3',
 
             # Allocate some memory.
             '-m', '128M',
         ])
+        if not SETTINGS['ci']:
+            # Enable acceleration if possible.
+            qemu_flags.append('--enable-kvm')
     elif arch == 'aarch64':
         qemu_flags.extend([
             # Use a generic ARM environment. Sadly qemu can't emulate a RPi 4 like machine though

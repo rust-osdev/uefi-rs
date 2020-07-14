@@ -46,6 +46,11 @@ pub enum LoadOptionsError {
 }
 
 impl LoadedImage {
+    /// Returns a handle to the storage device on which the image is located.
+    pub fn device(&self) -> Handle {
+        self.device_handle
+    }
+
     /// Get the load options of the given image. If the image was executed from the EFI shell, or from a boot
     /// option, this is the command line that was used to execute it as a string.
     pub fn load_options<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a str, LoadOptionsError> {

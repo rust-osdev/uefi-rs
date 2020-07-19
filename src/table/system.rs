@@ -186,8 +186,9 @@ impl SystemTable<Boot> {
     }
 }
 
-// These parts of the UEFI System Table interface may only be used after exit
-// from UEFI boot services
+// These parts of the SystemTable struct are only visible after exit from UEFI
+// boot services. They provide unsafe access to the UEFI runtime services, which
+// which were already available before but in safe form.
 impl SystemTable<Runtime> {
     /// Access runtime services
     ///

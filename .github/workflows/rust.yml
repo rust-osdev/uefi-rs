@@ -77,4 +77,5 @@ jobs:
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
         with:
+          args: --target x86_64-unknown-uefi
           token: ${{ secrets.GITHUB_TOKEN }}

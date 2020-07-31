@@ -11,6 +11,11 @@ uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.8", default-features = false }
 
+# When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
+# does not automatically get enabled. Therefore, we have to manually add support for
+# the memory functions.
+rlibc = "1"
+
 [features]
 # This feature should only be enabled in our CI, it disables some tests
 # which currently fail in that environment (see #103 for discussion).

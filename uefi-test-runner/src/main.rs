@@ -8,6 +8,9 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
+// Keep this line to ensure the `mem*` functions are linked in.
+extern crate rlibc;
+
 use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;

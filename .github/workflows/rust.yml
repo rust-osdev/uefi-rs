@@ -45,10 +45,6 @@ jobs:
           components: rust-src
       # TODO: cache Rust binaries
 
-    - name: Install cargo-xbuild
-      run: hash cargo-xbuild || cargo install cargo-xbuild
-      # TODO: cache the built cargo-xbuild binary
-
     - name: Build
       run: ./build.py build
       working-directory: ./uefi-test-runner

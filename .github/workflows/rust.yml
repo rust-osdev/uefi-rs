@@ -65,7 +65,7 @@ jobs:
         with:
             profile: minimal
             toolchain: nightly
-            components: rustfmt, clippy
+            components: rustfmt, clippy, rust-src
             override: true
 
       - name: Run cargo fmt

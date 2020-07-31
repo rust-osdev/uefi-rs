@@ -45,10 +45,6 @@ jobs:
           components: rust-src
       # TODO: cache Rust binaries
 
-    - name: Install cargo-xbuild
-      run: hash cargo-xbuild || cargo install cargo-xbuild
-      # TODO: cache the built cargo-xbuild binary
-
     - name: Build
       run: ./build.py build
       working-directory: ./uefi-test-runner
@@ -69,7 +65,7 @@ jobs:
         with:
             profile: minimal
             toolchain: nightly
-            components: rustfmt, clippy
+            components: rustfmt, clippy, rust-src
             override: true
 
       - name: Run cargo fmt
@@ -81,4 +77,5 @@ jobs:
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
         with:
+          args: --target x86_64-unknown-uefi
           token: ${{ secrets.GITHUB_TOKEN }}

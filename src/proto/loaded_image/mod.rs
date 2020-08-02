@@ -59,4 +59,9 @@ impl LoadedImage {
             ucs2::decode(ucs2_slice, buffer).map_err(|_| LoadOptionsError::BufferTooSmall)?;
         core::str::from_utf8(&buffer[0..length]).map_err(|_| LoadOptionsError::NotValidUtf8)
     }
+
+    /// Get (image_base, image_size) for the loaded image.
+    pub fn image_info(&self) -> (usize, u64) {
+        (self.image_base, self.image_size)
+    }
 }

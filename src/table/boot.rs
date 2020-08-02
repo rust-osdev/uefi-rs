@@ -196,6 +196,15 @@ impl BootServices {
         map_size
     }
 
+    /// Retrieves the size, in bytes, of each descriptor of the current memory map.
+    ///
+    /// This value is not always the same as `size_of::<MemoryDescriptor>` because each descriptor
+    /// may contain some paddings. You should use this function instead of using `size_of`.
+    pub fn memory_map_descriptor_size(&self) -> usize {
+        // Don't use vec! or box! because not everyone enables `alloc` feature of this crate.
+        unimplemented!();
+    }
+
     /// Retrieves the current memory map.
     ///
     /// The allocated buffer should be big enough to contain the memory map,

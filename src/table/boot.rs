@@ -222,7 +222,7 @@ impl BootServices {
 
         assert_eq!(status, Status::SUCCESS);
 
-        self.free_pool(buf as *mut _);
+        self.free_pool(buf as *mut _)?.unwrap();
 
         status.into_with_val(move || entry_size)
     }

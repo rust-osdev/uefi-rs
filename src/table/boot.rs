@@ -200,9 +200,31 @@ impl BootServices {
     ///
     /// This value is not always the same as `size_of::<MemoryDescriptor>` because each descriptor
     /// may contain some paddings. You should use this function instead of using `size_of`.
-    pub fn memory_map_descriptor_size(&self) -> usize {
-        // Don't use vec! or box! because not everyone enables `alloc` feature of this crate.
-        unimplemented!();
+    pub fn memory_map_descriptor_size(&self) -> Result<usize> {
+        let mut map_size = 0;
+        let mut map_key = MemoryMapKey(0);
+        let mut entry_size = 0;
+        let mut entry_version = 0;
+        let buf = self
+            .allocate_pool(MemoryType::LOADER_DATA, self.memory_map_size() * 2)?
+            .unwrap();
+        let mut buf = buf as *mut MemoryDescriptor;
+
+        let status = unsafe {
+            (self.get_memory_map)(
+                &mut map_size,
+                buf,
+                &mut map_key,
+                &mut entry_size,
+                &mut entry_version,
+            )
+        };
+
+        assert_eq!(status, Status::SUCCESS);
+
+        self.free_pool(buf as *mut _);
+
+        status.into_with_val(move || entry_size)
     }
 
     /// Retrieves the current memory map.

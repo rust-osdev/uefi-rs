@@ -208,7 +208,7 @@ impl BootServices {
         let buf = self
             .allocate_pool(MemoryType::LOADER_DATA, map_size)?
             .unwrap();
-        let mut buf = buf as *mut MemoryDescriptor;
+        let buf = buf as *mut MemoryDescriptor;
 
         let status = unsafe {
             (self.get_memory_map)(

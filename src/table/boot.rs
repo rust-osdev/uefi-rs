@@ -201,12 +201,12 @@ impl BootServices {
     /// This value is not always the same as `size_of::<MemoryDescriptor>` because each descriptor
     /// may contain some paddings. You should use this function instead of using `size_of`.
     pub fn memory_map_descriptor_size(&self) -> Result<usize> {
-        let mut map_size = 0;
+        let mut map_size = self.memory_map_size() * 2;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
         let buf = self
-            .allocate_pool(MemoryType::LOADER_DATA, self.memory_map_size() * 2)?
+            .allocate_pool(MemoryType::LOADER_DATA, map_size)?
             .unwrap();
         let mut buf = buf as *mut MemoryDescriptor;
 

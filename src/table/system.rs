@@ -4,7 +4,7 @@ use core::slice;
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 
-use super::boot::{BootServices, MemoryMapIter};
+use super::boot::{BootServices, MemoryDescriptor};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
 
@@ -137,7 +137,10 @@ impl SystemTable<Boot> {
         self,
         image: Handle,
         mmap_buf: &'buf mut [u8],
-    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'buf>)> {
+    ) -> Result<(
+        SystemTable<Runtime>,
+        impl Iterator<Item = &'buf MemoryDescriptor>,
+    )> {
         unsafe {
             let boot_services = self.boot_services();
 

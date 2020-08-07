@@ -9,12 +9,12 @@ edition = "2018"
 uefi = { path = "..", features = ['exts'] }
 uefi-services = { path = "../uefi-services" }
 
-log = { version = "0.4.8", default-features = false }
+log = { version = "0.4.11", default-features = false }
 
 # When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
 # does not automatically get enabled. Therefore, we have to manually add support for
 # the memory functions.
-rlibc = "1"
+rlibc = "1.0.0"
 
 [features]
 # This feature should only be enabled in our CI, it disables some tests

@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.4.7"
+version = "0.5.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 edition = "2018"
@@ -33,7 +33,7 @@ ignore-logger-errors = []
 
 [dependencies]
 bitflags = "1.2.1"
-log = { version = "0.4.8", default-features = false }
+log = { version = "0.4.11", default-features = false }
 ucs2 = "0.3.1"
 uefi-macros = "0.3.2"
 

@@ -211,7 +211,10 @@ impl BootServices {
     pub fn memory_map<'buf>(
         &self,
         buffer: &'buf mut [u8],
-    ) -> Result<(MemoryMapKey, impl Iterator<Item = &'buf MemoryDescriptor>)> {
+    ) -> Result<(
+        MemoryMapKey,
+        impl Iterator<Item = &'buf MemoryDescriptor> + Clone,
+    )> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
         #[allow(clippy::cast_ptr_alignment)]
@@ -734,7 +737,7 @@ bitflags! {
 pub struct MemoryMapKey(usize);
 
 /// An iterator of memory descriptors
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct MemoryMapIter<'buf> {
     buffer: &'buf [u8],
     entry_size: usize,

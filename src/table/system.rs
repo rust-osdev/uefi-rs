@@ -139,7 +139,7 @@ impl SystemTable<Boot> {
         mmap_buf: &'buf mut [u8],
     ) -> Result<(
         SystemTable<Runtime>,
-        impl Iterator<Item = &'buf MemoryDescriptor> + Clone,
+        impl ExactSizeIterator<Item = &'buf MemoryDescriptor> + Clone,
     )> {
         unsafe {
             let boot_services = self.boot_services();

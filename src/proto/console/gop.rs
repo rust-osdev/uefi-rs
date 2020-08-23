@@ -110,7 +110,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns information about all available graphics modes.
-    pub fn modes<'gop>(&'gop self) -> impl Iterator<Item = Completion<Mode>> + 'gop {
+    pub fn modes<'gop>(&'gop self) -> impl ExactSizeIterator<Item = Completion<Mode>> + 'gop {
         ModeIter {
             gop: self,
             current: 0,
@@ -451,7 +451,14 @@ impl<'gop> Iterator for ModeIter<'gop> {
             None
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = (self.max - self.current) as usize;
+        (size, Some(size))
+    }
 }
+
+impl ExactSizeIterator for ModeIter<'_> {}
 
 /// Format of pixel data used for blitting.
 ///

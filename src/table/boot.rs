@@ -213,7 +213,7 @@ impl BootServices {
         buffer: &'buf mut [u8],
     ) -> Result<(
         MemoryMapKey,
-        impl Iterator<Item = &'buf MemoryDescriptor> + Clone,
+        impl ExactSizeIterator<Item = &'buf MemoryDescriptor> + Clone,
     )> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
@@ -769,7 +769,7 @@ impl<'buf> Iterator for MemoryMapIter<'buf> {
     }
 }
 
-impl<'buf> ExactSizeIterator for MemoryMapIter<'buf> {}
+impl ExactSizeIterator for MemoryMapIter<'_> {}
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]

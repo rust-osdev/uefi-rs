@@ -4,6 +4,7 @@ use uefi::proto::console::text::{Color, Output};
 pub fn test(stdout: &mut Output) {
     info!("Running text output protocol test");
 
+    get_current_mode(stdout);
     change_text_mode(stdout);
     change_color(stdout);
     center_text(stdout);
@@ -21,6 +22,12 @@ pub fn test(stdout: &mut Output) {
 
     // Should clean up after us.
     stdout.reset(false).unwrap_success();
+}
+
+// Retrieves and prints the current output mode.
+fn get_current_mode(stdout: &mut Output) {
+    let current_mode = stdout.current_mode().unwrap_success();
+    info!("UEFI standard output current mode: {:?}", current_mode);
 }
 
 // Switch to the maximum supported text mode.

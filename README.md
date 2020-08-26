@@ -19,12 +19,12 @@ This crate makes it easy to both:
 The objective is to provide **safe** and **performant** wrappers for UEFI interfaces,
 and allow developers to write idiomatic Rust code.
 
-Check out @gilomendes [blog post on getting started with UEFI in Rust][gm-blog].
+Check out @gil0mendes [blog post on getting started with UEFI in Rust][gm-blog].
 
 **Note**: this crate currently has only been tested with **64-bit** UEFI on x86/ARM.
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
-[gm-blog]: https://medium.com/@gil0mendes/an-efi-app-a-bit-rusty-82c36b745f49
+[gm-blog]: https://gil0mendes.io/blog/an-efi-app-a-bit-rusty/
 [rustc-custom]: https://doc.rust-lang.org/rustc/targets/custom.html
 
 ![uefi-rs running in QEMU](https://imgur.com/SFPSVuO.png)

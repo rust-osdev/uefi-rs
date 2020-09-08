@@ -11,6 +11,7 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
+#![feature(asm)]
 #![feature(lang_items)]
 #![feature(panic_info_message)]
 

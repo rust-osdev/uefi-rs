@@ -11,7 +11,7 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(llvm_asm)]
+#![feature(asm)]
 #![feature(lang_items)]
 #![feature(panic_info_message)]
 
@@ -183,14 +183,14 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
           loop {
               unsafe {
                   // Try to at least keep CPU from running at 100%
-                  llvm_asm!("hlt" :::: "volatile");
+                  asm!("hlt",options(nomem,nostack));
               }
           }
       } else if #[cfg(target_arch = "aarch64")] {
           loop {
               unsafe {
                   // Try to at least keep CPU from running at 100%
-                  llvm_asm!("hlt 420" :::: "volatile");
+                  asm!("hlt 420",options(nomem,nostack));
               }
           }
       } else {

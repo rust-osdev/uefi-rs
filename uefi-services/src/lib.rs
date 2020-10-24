@@ -126,6 +126,7 @@ fn exit_boot_services(_e: Event) {
 #[lang = "eh_personality"]
 fn eh_personality() {}
 
+#[cfg(not(feature = "no_panic_handler"))]
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     if let Some(location) = info.location() {

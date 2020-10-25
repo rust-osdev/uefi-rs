@@ -43,7 +43,7 @@ fn vec_alloc() {
 
     let mut values = vec![-5, 16, 23, 4, 0];
 
-    values.sort();
+    values.sort_unstable();
 
     assert_eq!(values[..], [-5, 0, 4, 16, 23], "Failed to sort vector");
 }

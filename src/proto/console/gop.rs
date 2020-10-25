@@ -110,7 +110,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns information about all available graphics modes.
-    pub fn modes<'gop>(&'gop self) -> impl ExactSizeIterator<Item = Completion<Mode>> + 'gop {
+    pub fn modes(&'_ self) -> impl ExactSizeIterator<Item = Completion<Mode>> + '_ {
         ModeIter {
             gop: self,
             current: 0,

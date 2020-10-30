@@ -25,3 +25,4 @@ x86_64 = "0.12.1"
 [features]
 # Enable QEMU-specific functionality
 qemu = []
+no_panic_handler = []

@@ -24,7 +24,7 @@
 //! therefore all the network protocols will be unavailable.
 
 #![cfg_attr(feature = "exts", feature(allocator_api, alloc_layout_extra))]
-#![feature(optin_builtin_traits)]
+#![feature(auto_traits)]
 #![feature(try_trait)]
 #![feature(abi_efiapi)]
 #![feature(negative_impls)]

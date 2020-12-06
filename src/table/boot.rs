@@ -421,11 +421,13 @@ impl BootServices {
     }
 
     pub fn locate_device_path<P: Protocol>(&self, device_path: &mut DevicePath) -> Result<Handle> {
-        let handle: *mut Handle = ptr::null_mut();
-        let device_path_ptr = &mut (device_path as *mut DevicePath);
-        unsafe { 
-            (self.locate_device_path)(&P::GUID, device_path_ptr, handle).into_with_val(|| { 
-                *handle
+        unsafe {
+            // this assumes we're in a 64bit environment
+            let mut handle = Handle::uninitialized();
+            log::info!("{:p}", handle.0);
+            let mut device_path_ptr = device_path as *mut DevicePath;
+            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).into_with_val(|| {
+                handle
             })
         }
     }

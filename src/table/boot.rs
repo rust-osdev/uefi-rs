@@ -423,7 +423,6 @@ impl BootServices {
     /// Locates the handle to a device on the device path that supports the specified protocol.
     pub fn locate_device_path<P: Protocol>(&self, device_path: &mut DevicePath) -> Result<Handle> {
         unsafe {
-            // this assumes we're in a 64bit environment
             let mut handle = Handle::uninitialized();
             let mut device_path_ptr = device_path as *mut DevicePath;
             (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).into_with_val(|| {

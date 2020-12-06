@@ -420,6 +420,7 @@ impl BootServices {
         }
     }
 
+    /// Locates the handle to a device on the device path that supports the specified protocol.
     pub fn locate_device_path<P: Protocol>(&self, device_path: &mut DevicePath) -> Result<Handle> {
         unsafe {
             // this assumes we're in a 64bit environment

@@ -2,13 +2,20 @@
 
 use crate::{proto::Protocol, unsafe_guid};
 
-/// DevicePath protocol. This can be opened on a `LoadedImage.device()` handle using the `HandleProtocol` boot service.
+/// DevicePath protocol. This can be opened on a `LoadedImage.device()` handle 
+/// using the `HandleProtocol` boot service.
 #[repr(C)]
 #[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct DevicePath {
+    /// Type of device
     pub device_type: DeviceType,
+    /// Sub type of device
     pub sub_type: DeviceSubType,
+    /// Tata related to device path
+    ///
+    /// The device_type and sub_type determine the
+    /// kind of data, and it size.
     pub length: [u8; 2],
 }
 

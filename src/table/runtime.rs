@@ -144,9 +144,9 @@ impl Time {
         time_zone: i16,
         daylight: Daylight,
     ) -> Self {
-        assert!(year >= 1900 && year <= 9999);
-        assert!(month >= 1 && month <= 12);
-        assert!(day >= 1 && day <= 31);
+        assert!((1900..=9999).contains(&year));
+        assert!((1..=12).contains(&month));
+        assert!((1..=31).contains(&day));
         assert!(hour <= 23);
         assert!(minute <= 59);
         assert!(second <= 59);

@@ -2,7 +2,7 @@
 
 use crate::{proto::Protocol, unsafe_guid};
 
-/// DevicePath protocol. This can be opened on a `LoadedImage.device()` handle 
+/// DevicePath protocol. This can be opened on a `LoadedImage.device()` handle
 /// using the `HandleProtocol` boot service.
 #[repr(C)]
 #[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]

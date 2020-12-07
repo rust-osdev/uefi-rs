@@ -2,7 +2,7 @@
 //!
 //! This module defines the basic data types that are used throughout uefi-rs
 
-use core::{mem::MaybeUninit, ffi::c_void};
+use core::{ffi::c_void, mem::MaybeUninit};
 
 /// Opaque handle to an UEFI entity (protocol, image...)
 #[derive(Clone, Copy)]

@@ -2,7 +2,7 @@
 
 use super::Header;
 use crate::data_types::Align;
-use crate::proto::{Protocol, loaded_image::DevicePath};
+use crate::proto::{loaded_image::DevicePath, Protocol};
 use crate::{Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::vec::Vec;
@@ -74,9 +74,9 @@ pub struct BootServices {
         buf: *mut Handle,
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
-        proto: &Guid, 
-        device_path: &mut *mut DevicePath, 
-        out_handle: *mut Handle
+        proto: &Guid,
+        device_path: &mut *mut DevicePath,
+        out_handle: *mut Handle,
     ) -> Status,
     install_configuration_table: usize,
 
@@ -425,9 +425,8 @@ impl BootServices {
         unsafe {
             let mut handle = Handle::uninitialized();
             let mut device_path_ptr = device_path as *mut DevicePath;
-            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).into_with_val(|| {
-                handle
-            })
+            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
+                .into_with_val(|| handle)
         }
     }
 

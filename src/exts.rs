@@ -17,12 +17,12 @@ pub fn allocate_buffer(layout: Layout) -> Box<[u8]> {
         handle_alloc_error(layout);
     }
     unsafe {
-        let data =  alloc(layout);
+        let data = alloc(layout);
         if data.is_null() {
             handle_alloc_error(layout);
         }
         let len = layout.size();
         let slice = slice::from_raw_parts_mut(data, len);
-        Box::from_raw(slice.as_mut())
+        Box::from_raw(slice)
     }
 }

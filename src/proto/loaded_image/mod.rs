@@ -1,5 +1,5 @@
 mod device_path;
-pub use self::{device_path::DevicePath, LoadedImage};
+pub use self::device_path::DevicePath;
 
 use crate::{
     data_types::{CStr16, Char16},

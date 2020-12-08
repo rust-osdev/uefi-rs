@@ -2,12 +2,18 @@
 //!
 //! This module defines the basic data types that are used throughout uefi-rs
 
-use core::ffi::c_void;
+use core::{ffi::c_void, mem::MaybeUninit};
 
 /// Opaque handle to an UEFI entity (protocol, image...)
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Handle(*mut c_void);
+
+impl Handle {
+    pub(crate) unsafe fn uninitialized() -> Self {
+        MaybeUninit::zeroed().assume_init()
+    }
+}
 
 /// Handle to an event structure
 #[derive(Clone, Copy)]

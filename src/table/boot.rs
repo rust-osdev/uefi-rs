@@ -2,7 +2,7 @@
 
 use super::Header;
 use crate::data_types::Align;
-use crate::proto::Protocol;
+use crate::proto::{loaded_image::DevicePath, Protocol};
 use crate::{Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::vec::Vec;
@@ -73,7 +73,11 @@ pub struct BootServices {
         buf_sz: &mut usize,
         buf: *mut Handle,
     ) -> Status,
-    locate_device_path: usize,
+    locate_device_path: unsafe extern "efiapi" fn(
+        proto: &Guid,
+        device_path: &mut *mut DevicePath,
+        out_handle: *mut Handle,
+    ) -> Status,
     install_configuration_table: usize,
 
     // Image services
@@ -413,6 +417,16 @@ impl BootServices {
         match (buffer, status) {
             (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
             (_, other_status) => other_status.into_with_val(|| buffer_len),
+        }
+    }
+
+    /// Locates the handle to a device on the device path that supports the specified protocol.
+    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut DevicePath) -> Result<Handle> {
+        unsafe {
+            let mut handle = Handle::uninitialized();
+            let mut device_path_ptr = device_path as *mut DevicePath;
+            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
+                .into_with_val(|| handle)
         }
     }
 

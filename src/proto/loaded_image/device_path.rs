@@ -1,4 +1,4 @@
-//! Device path protocol
+//! `DevicePath` protocol
 
 use crate::{proto::Protocol, unsafe_guid};
 
@@ -12,10 +12,10 @@ pub struct DevicePath {
     pub device_type: DeviceType,
     /// Sub type of device
     pub sub_type: DeviceSubType,
-    /// Tata related to device path
+    /// Data related to device path
     ///
     /// The device_type and sub_type determine the
-    /// kind of data, and it size.
+    /// kind of data, and its size.
     pub length: [u8; 2],
 }
 

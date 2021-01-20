@@ -1,7 +1,7 @@
-//! Loaded image protocol.
+//! `LoadedImage` protocol.
 //!
-//! This module also contains the corollary type DevicePath, which is
-//! used to emulate `EFI_DEVICE_PATH_PROTOCOL`.
+//! This module also contains the corollary type `DevicePath`, which is
+//! used to wrap an `EFI_DEVICE_PATH_PROTOCOL`.
 
 mod device_path;
 pub use self::device_path::DevicePath;
@@ -14,7 +14,7 @@ use crate::{
 };
 use core::{ffi::c_void, str};
 
-/// The Loaded Image protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
+/// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
 #[repr(C)]
 #[unsafe_guid("5b1b31a1-9562-11d2-8e3f-00a0c969723b")]
 #[derive(Protocol)]
@@ -38,7 +38,7 @@ pub struct LoadedImage {
     image_code_type: MemoryType,
     image_data_type: MemoryType,
     /// This is a callback that a loaded image can use to do cleanup. It is called by the
-    /// UnloadImage boot service.
+    /// `UnloadImage` boot service.
     unload: extern "efiapi" fn(image_handle: Handle) -> Status,
 }
 

@@ -751,7 +751,6 @@ bitflags! {
 pub struct MemoryMapKey(usize);
 
 /// An iterator of memory descriptors
-#[repr(C)]
 #[derive(Debug, Clone)]
 struct MemoryMapIter<'buf> {
     buffer: &'buf [u8],

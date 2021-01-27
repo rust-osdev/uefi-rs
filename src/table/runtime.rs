@@ -7,6 +7,7 @@ use bitflags::bitflags;
 use core::fmt;
 use core::mem::MaybeUninit;
 use core::ptr;
+use uefi_sys::{EFI_MEMORY_DESCRIPTOR, EFI_RUNTIME_SERVICES, EFI_TIME, EFI_TIME_CAPABILITIES};
 
 /// Contains pointers to all of the runtime services.
 ///
@@ -14,42 +15,39 @@ use core::ptr;
 /// even after the UEFI OS loader and OS have taken control of the platform.
 #[repr(C)]
 pub struct RuntimeServices {
-    header: Header,
-    get_time:
-        unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
-    set_time: unsafe extern "efiapi" fn(time: &Time) -> Status,
-    // Skip some useless functions.
-    _pad: [usize; 2],
-    set_virtual_address_map: unsafe extern "efiapi" fn(
-        map_size: usize,
-        desc_size: usize,
-        desc_version: u32,
-        virtual_map: *mut MemoryDescriptor,
-    ) -> Status,
-    _pad2: [usize; 5],
-    reset: unsafe extern "efiapi" fn(
-        rt: ResetType,
-
-        status: Status,
-        data_size: usize,
-        data: *const u8,
-    ) -> !,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_RUNTIME_SERVICES,
 }
 
 impl RuntimeServices {
+    /// Query the table header
+    pub fn header(&self) -> Header {
+        Header { raw: self.raw.Hdr }
+    }
+
     /// Query the current time and date information
     pub fn get_time(&self) -> Result<Time> {
         let mut time = MaybeUninit::<Time>::uninit();
-        unsafe { (self.get_time)(time.as_mut_ptr(), ptr::null_mut()) }
-            .into_with_val(|| unsafe { time.assume_init() })
+        Status::from_raw_api(unsafe {
+            self.raw.GetTime.unwrap()(
+                time.as_mut_ptr() as *mut Time as *mut EFI_TIME,
+                ptr::null_mut(),
+            )
+        })
+        .into_with_val(|| unsafe { time.assume_init() })
     }
 
     /// Query the current time and date information and the RTC capabilities
     pub fn get_time_and_caps(&self) -> Result<(Time, TimeCapabilities)> {
         let mut time = MaybeUninit::<Time>::uninit();
         let mut caps = MaybeUninit::<TimeCapabilities>::uninit();
-        unsafe { (self.get_time)(time.as_mut_ptr(), caps.as_mut_ptr()) }
-            .into_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
+        Status::from_raw_api(unsafe {
+            self.raw.GetTime.unwrap()(
+                time.as_mut_ptr() as *mut Time as *mut EFI_TIME,
+                caps.as_mut_ptr() as *mut TimeCapabilities as *mut EFI_TIME_CAPABILITIES,
+            )
+        })
+        .into_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
     }
 
     /// Sets the current local time and date information
@@ -62,7 +60,10 @@ impl RuntimeServices {
     /// Undefined behavior could happen if multiple tasks try to
     /// use this function at the same time without synchronisation.
     pub unsafe fn set_time(&mut self, time: &Time) -> Result {
-        (self.set_time)(time).into()
+        Status::from_raw_api(self.raw.SetTime.unwrap()(
+            time as *const Time as *mut Time as *mut EFI_TIME,
+        ))
+        .into()
     }
 
     /// Changes the runtime addressing mode of EFI firmware from physical to virtual.
@@ -77,9 +78,15 @@ impl RuntimeServices {
         // See https://rust-lang.github.io/unsafe-code-guidelines/layout/arrays-and-slices.html
         let map_size = core::mem::size_of_val(map);
         let entry_size = core::mem::size_of::<MemoryDescriptor>();
-        let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
+        let entry_version = crate::table::boot::EFI_MEMORY_DESCRIPTOR_VERSION;
         let map_ptr = map.as_mut_ptr();
-        (self.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).into()
+        Status::from_raw_api(self.raw.SetVirtualAddressMap.unwrap()(
+            map_size as _,
+            entry_size as _,
+            entry_version,
+            map_ptr as *mut MemoryDescriptor as *mut EFI_MEMORY_DESCRIPTOR,
+        ))
+        .into()
     }
 
     /// Resets the computer.
@@ -95,7 +102,16 @@ impl RuntimeServices {
             None => (0, ptr::null()),
         };
 
-        unsafe { (self.reset)(rt, status, size, data) }
+        unsafe {
+            self.raw.ResetSystem.unwrap()(
+                rt as _,
+                status.0 as _,
+                size as _,
+                data as *mut u8 as *mut core::ffi::c_void,
+            )
+        }
+        // the raw signature is returning unit
+        loop {}
     }
 }
 
@@ -107,17 +123,8 @@ impl super::Table for RuntimeServices {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct Time {
-    year: u16,  // 1900 - 9999
-    month: u8,  // 1 - 12
-    day: u8,    // 1 - 31
-    hour: u8,   // 0 - 23
-    minute: u8, // 0 - 59
-    second: u8, // 0 - 59
-    _pad1: u8,
-    nanosecond: u32, // 0 - 999_999_999
-    time_zone: i16,  // -1440 to 1440, or 2047 if unspecified
-    daylight: Daylight,
-    _pad2: u8,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_TIME,
 }
 
 bitflags! {
@@ -153,79 +160,83 @@ impl Time {
         assert!(nanosecond <= 999_999_999);
         assert!((time_zone >= -1440 && time_zone <= 1440) || time_zone == 2047);
         Self {
-            year,
-            month,
-            day,
-            hour,
-            minute,
-            second,
-            _pad1: 0,
-            nanosecond,
-            time_zone,
-            daylight,
-            _pad2: 0,
+            raw: EFI_TIME {
+                Year: year,
+                Month: month,
+                Day: day,
+                Hour: hour,
+                Minute: minute,
+                Second: second,
+                Pad1: 0,
+                Nanosecond: nanosecond,
+                TimeZone: time_zone,
+                Daylight: daylight.bits(),
+                Pad2: 0,
+            },
         }
     }
 
     /// Query the year
     pub fn year(&self) -> u16 {
-        self.year
+        self.raw.Year
     }
 
     /// Query the month
     pub fn month(&self) -> u8 {
-        self.month
+        self.raw.Month
     }
 
     /// Query the day
     pub fn day(&self) -> u8 {
-        self.day
+        self.raw.Day
     }
 
     /// Query the hour
     pub fn hour(&self) -> u8 {
-        self.hour
+        self.raw.Hour
     }
 
     /// Query the minute
     pub fn minute(&self) -> u8 {
-        self.minute
+        self.raw.Minute
     }
 
     /// Query the second
     pub fn second(&self) -> u8 {
-        self.second
+        self.raw.Second
     }
 
     /// Query the nanosecond
     pub fn nanosecond(&self) -> u32 {
-        self.nanosecond
+        self.raw.Nanosecond
     }
 
     /// Query the time offset in minutes from UTC, or None if using local time
     pub fn time_zone(&self) -> Option<i16> {
-        if self.time_zone == 2047 {
+        if self.raw.TimeZone == 2047 {
             None
         } else {
-            Some(self.time_zone)
+            Some(self.raw.TimeZone)
         }
     }
 
     /// Query the daylight savings time information
     pub fn daylight(&self) -> Daylight {
-        self.daylight
+        Daylight {
+            bits: self.raw.Daylight,
+        }
     }
 }
 
 impl fmt::Debug for Time {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}-{}-{} ", self.year, self.month, self.day)?;
+        write!(f, "{}-{}-{} ", self.raw.Year, self.raw.Month, self.raw.Day)?;
         write!(
             f,
             "{}:{}:{}.{} ",
-            self.hour, self.minute, self.second, self.nanosecond
+            self.raw.Hour, self.raw.Minute, self.raw.Second, self.raw.Nanosecond
         )?;
-        write!(f, "{} {:?}", self.time_zone, self.daylight)
+        write!(f, "{} {:?}", self.raw.TimeZone, self.raw.Daylight)
     }
 }
 
@@ -233,18 +244,28 @@ impl fmt::Debug for Time {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct TimeCapabilities {
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_TIME_CAPABILITIES,
+}
+
+impl TimeCapabilities {
     /// Reporting resolution of the clock in counts per second. 1 for a normal
-    /// PC-AT CMOS RTC device, which reports the time with 1-second resolution.
-    pub resolution: u32,
+    /// PC-AT CMOS RTC device, which reports the time with 1-second resolution
+    pub fn resolution(&self) -> u32 {
+        self.raw.Resolution
+    }
 
     /// Timekeeping accuracy in units of 1e-6 parts per million.
-    pub accuracy: u32,
+    pub fn accuracy(&self) -> u32 {
+        self.raw.Accuracy
+    }
 
     /// Whether a time set operation clears the device's time below the
     /// "resolution" reporting level. False for normal PC-AT CMOS RTC devices.
-    pub sets_to_zero: bool,
+    pub fn sets_to_zero(&self) -> bool {
+        self.raw.SetsToZero != 0
+    }
 }
-
 /// The type of system reset.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u32)]

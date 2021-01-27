@@ -90,7 +90,7 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
         unsafe impl #impl_generics crate::Identify for #ident #ty_generics #where_clause {
             #[doc(hidden)]
             #[allow(clippy::unreadable_literal)]
-            const GUID : crate::Guid = crate::Guid::from_values(
+            const UNIQUE_GUID : crate::Guid = crate::Guid::from_values(
                 #time_low,
                 #time_mid,
                 #time_high_and_version,

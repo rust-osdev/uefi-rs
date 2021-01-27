@@ -11,13 +11,14 @@ mod info;
 mod regular;
 
 use crate::prelude::*;
-use crate::{CStr16, Char16, Guid, Result, Status};
+use crate::{CStr16, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::{alloc::Layout, boxed::Box};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::mem;
 use core::ptr;
+use uefi_sys::EFI_FILE_PROTOCOL;
 
 pub use self::info::{
     FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi,
@@ -68,16 +69,16 @@ pub trait File: Sized {
             let len = ucs2::encode(filename, &mut buf)?;
             let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
 
-            unsafe {
-                (self.imp().open)(
-                    self.imp(),
+            Status::from_raw_api(unsafe {
+                self.imp().raw.Open.unwrap()(
+                    &mut self.imp().raw,
                     &mut ptr,
-                    filename.as_ptr(),
-                    open_mode,
-                    attributes,
+                    filename.as_ptr() as *mut u16,
+                    open_mode as _,
+                    attributes.bits,
                 )
-            }
-            .into_with_val(|| unsafe { FileHandle::new(ptr) })
+            })
+            .into_with_val(|| unsafe { FileHandle::new(ptr as *mut _ as *mut _) })
         }
     }
 
@@ -89,7 +90,9 @@ pub trait File: Sized {
     /// # Warnings
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     fn delete(mut self) -> Result {
-        let result = (self.imp().delete)(self.imp()).into();
+        let result =
+            Status::from_raw_api(unsafe { self.imp().raw.Delete.unwrap()(self.imp() as *mut _ as *mut _) })
+                .into();
         mem::forget(self);
         result
     }
@@ -116,14 +119,14 @@ pub trait File: Sized {
     ) -> Result<&'buf mut Info, Option<usize>> {
         let mut buffer_size = buffer.len();
         Info::assert_aligned(buffer);
-        unsafe {
-            (self.imp().get_info)(
-                self.imp(),
-                &Info::GUID,
-                &mut buffer_size,
-                buffer.as_mut_ptr(),
+        Status::from_raw_api(unsafe {
+            self.imp().raw.GetInfo.unwrap()(
+                self.imp() as *mut _ as *mut _,
+                &Info::UNIQUE_GUID as *const _ as *mut _,
+                &mut buffer_size as *mut _ as *mut _,
+                buffer.as_mut_ptr() as *mut _,
             )
-        }
+        })
         .into_with(
             || unsafe { Info::from_uefi(buffer.as_ptr() as *mut c_void) },
             |s| {
@@ -157,7 +160,15 @@ pub trait File: Sized {
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = info as *const Info as *const c_void;
         let info_size = mem::size_of_val(&info);
-        unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).into() }
+        Status(unsafe {
+            self.imp().raw.SetInfo.unwrap()(
+                self.imp() as *mut _ as *mut _,
+                &Info::UNIQUE_GUID as *const _ as *mut _,
+                info_size as _,
+                info_ptr as *const _ as *mut _,
+            )
+        } as _)
+        .into()
     }
 
     /// Flushes all modified data associated with the file handle to the device
@@ -170,7 +181,7 @@ pub trait File: Sized {
     /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     fn flush(&mut self) -> Result {
-        (self.imp().flush)(self.imp()).into()
+        Status(unsafe { self.imp().raw.Flush.unwrap()(self.imp() as *mut _ as *mut _) } as _).into()
     }
 
     #[cfg(feature = "exts")]
@@ -245,7 +256,10 @@ impl FileHandle {
 
         // get_position fails with EFI_UNSUPPORTED on directories
         let mut pos = 0;
-        match (self.imp().get_position)(self.imp(), &mut pos) {
+        match Status(unsafe {
+            self.imp().raw.GetPosition.unwrap()(self.imp() as *mut _ as *mut _, &mut pos)
+        } as _)
+        {
             Status::SUCCESS => unsafe { Ok(Regular(RegularFile::new(self)).into()) },
             Status::UNSUPPORTED => unsafe { Ok(Dir(Directory::new(self)).into()) },
             s => Err(s.into()),
@@ -262,7 +276,9 @@ impl File for FileHandle {
 
 impl Drop for FileHandle {
     fn drop(&mut self) {
-        let result: Result = (self.imp().close)(self.imp()).into();
+        let result: Result =
+            Status::from_raw_api(unsafe { self.imp().raw.Close.unwrap()(self.imp() as *mut _ as *mut _) })
+                .into();
         // The spec says this always succeeds.
         result.expect_success("Failed to close file");
     }
@@ -271,41 +287,8 @@ impl Drop for FileHandle {
 /// The function pointer table for the File protocol.
 #[repr(C)]
 pub(super) struct FileImpl {
-    revision: u64,
-    open: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        new_handle: &mut *mut FileImpl,
-        filename: *const Char16,
-        open_mode: FileMode,
-        attributes: FileAttribute,
-    ) -> Status,
-    close: extern "efiapi" fn(this: &mut FileImpl) -> Status,
-    delete: extern "efiapi" fn(this: &mut FileImpl) -> Status,
-    read: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        buffer_size: &mut usize,
-        buffer: *mut u8,
-    ) -> Status,
-    write: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        buffer_size: &mut usize,
-        buffer: *const u8,
-    ) -> Status,
-    get_position: extern "efiapi" fn(this: &mut FileImpl, position: &mut u64) -> Status,
-    set_position: extern "efiapi" fn(this: &mut FileImpl, position: u64) -> Status,
-    get_info: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        information_type: &Guid,
-        buffer_size: &mut usize,
-        buffer: *mut u8,
-    ) -> Status,
-    set_info: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        information_type: &Guid,
-        buffer_size: usize,
-        buffer: *const c_void,
-    ) -> Status,
-    flush: extern "efiapi" fn(this: &mut FileImpl) -> Status,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_FILE_PROTOCOL,
 }
 
 /// Disambiguates the file type. Returned by `File::into_type()`.

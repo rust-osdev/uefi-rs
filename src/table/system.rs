@@ -1,5 +1,6 @@
 use core::marker::PhantomData;
 use core::slice;
+use uefi_sys::EFI_SYSTEM_TABLE;
 
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
@@ -50,24 +51,29 @@ pub struct SystemTable<View: SystemTableView> {
 impl<View: SystemTableView> SystemTable<View> {
     /// Return the firmware vendor string
     pub fn firmware_vendor(&self) -> &CStr16 {
-        unsafe { CStr16::from_ptr(self.table.fw_vendor) }
+        unsafe { CStr16::from_ptr(self.table.fw_vendor()) }
     }
 
     /// Return the firmware revision
     pub fn firmware_revision(&self) -> Revision {
-        self.table.fw_revision
+        self.table.fw_revision()
     }
 
     /// Returns the revision of this table, which is defined to be
     /// the revision of the UEFI specification implemented by the firmware.
     pub fn uefi_revision(&self) -> Revision {
-        self.table.header.revision
+        self.table.header().revision()
     }
 
     /// Returns the config table entries, a linear array of structures
     /// pointing to other system-specific tables.
     pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
-        unsafe { slice::from_raw_parts(self.table.cfg_table, self.table.nr_cfg) }
+        unsafe {
+            slice::from_raw_parts(
+                self.table.cfg_table(),
+                self.table.raw.NumberOfTableEntries as _,
+            )
+        }
     }
 }
 
@@ -77,29 +83,29 @@ impl<View: SystemTableView> SystemTable<View> {
 impl SystemTable<Boot> {
     /// Returns the standard input protocol.
     pub fn stdin(&self) -> &mut text::Input {
-        unsafe { &mut *self.table.stdin }
+        unsafe { &mut *self.table.stdin() }
     }
 
     /// Returns the standard output protocol.
     pub fn stdout(&self) -> &mut text::Output {
-        let stdout_ptr = self.table.stdout as *const _ as *mut _;
+        let stdout_ptr = self.table.stdout() as *const _ as *mut _;
         unsafe { &mut *stdout_ptr }
     }
 
     /// Returns the standard error protocol.
     pub fn stderr(&self) -> &mut text::Output {
-        let stderr_ptr = self.table.stderr as *const _ as *mut _;
+        let stderr_ptr = self.table.stderr() as *const _ as *mut _;
         unsafe { &mut *stderr_ptr }
     }
 
     /// Access runtime services
     pub fn runtime_services(&self) -> &RuntimeServices {
-        self.table.runtime
+        self.table.runtime()
     }
 
     /// Access boot services
     pub fn boot_services(&self) -> &BootServices {
-        unsafe { &*self.table.boot }
+        unsafe { &*self.table.boot() }
     }
 
     /// Exit the UEFI boot services
@@ -201,32 +207,64 @@ impl SystemTable<Runtime> {
     /// CPU configuration which may not be preserved by OS loaders. See the
     /// "Calling Conventions" chapter of the UEFI specification for details.
     pub unsafe fn runtime_services(&self) -> &RuntimeServices {
-        self.table.runtime
+        self.table.runtime()
     }
 }
 
 /// The actual UEFI system table
 #[repr(C)]
 struct SystemTableImpl {
-    header: Header,
-    /// Null-terminated string representing the firmware's vendor.
-    fw_vendor: *const Char16,
-    /// Revision of the UEFI specification the firmware conforms to.
-    fw_revision: Revision,
-    stdin_handle: Handle,
-    stdin: *mut text::Input,
-    stdout_handle: Handle,
-    stdout: *mut text::Output<'static>,
-    stderr_handle: Handle,
-    stderr: *mut text::Output<'static>,
-    /// Runtime services table.
-    runtime: &'static RuntimeServices,
-    /// Boot services table.
-    boot: *const BootServices,
-    /// Number of entires in the configuration table.
-    nr_cfg: usize,
-    /// Pointer to beginning of the array.
-    cfg_table: *const cfg::ConfigTableEntry,
+    pub raw: EFI_SYSTEM_TABLE,
+}
+
+impl SystemTableImpl {
+    fn header(&self) -> Header {
+        Header { raw: self.raw.Hdr }
+    }
+
+    fn fw_vendor(&self) -> *const Char16 {
+        self.raw.FirmwareVendor as *const _
+    }
+
+    fn fw_revision(&self) -> Revision {
+        unsafe { core::mem::transmute(self.raw.FirmwareRevision) }
+    }
+
+    fn stdin_handle(&self) -> Handle {
+        unsafe { core::mem::transmute(self.raw.ConsoleInHandle) }
+    }
+
+    fn stdin(&self) -> *mut text::Input {
+        self.raw.ConIn as *mut _
+    }
+
+    fn stdout_handle(&self) -> Handle {
+        unsafe { core::mem::transmute(self.raw.ConsoleOutHandle) }
+    }
+
+    fn stdout(&self) -> *mut text::Output<'static> {
+        self.raw.ConOut as *mut _
+    }
+
+    fn stderr_handle(&self) -> Handle {
+        unsafe { core::mem::transmute(self.raw.StandardErrorHandle) }
+    }
+
+    fn stderr(&self) -> *mut text::Output<'static> {
+        self.raw.StdErr as *mut _
+    }
+
+    fn cfg_table(&self) -> *const cfg::ConfigTableEntry {
+        self.raw.ConfigurationTable as *mut _ as *const _
+    }
+
+    fn runtime(&self) -> &'static RuntimeServices {
+        unsafe { &*(self.raw.RuntimeServices as *mut RuntimeServices) }
+    }
+
+    fn boot(&self) -> *const BootServices {
+        unsafe { &*(self.raw.BootServices as *mut BootServices) }
+    }
 }
 
 impl<View: SystemTableView> super::Table for SystemTable<View> {

@@ -1,8 +1,8 @@
 use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
-use crate::data_types::Align;
 use crate::prelude::*;
 use crate::Result;
 use core::ffi::c_void;
+use uefi_sys::data_types::Align;
 
 /// A `FileHandle` that is also a directory.
 ///

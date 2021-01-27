@@ -1,15 +1,15 @@
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Char16, Event, Result, Status};
 use core::mem::MaybeUninit;
+use uefi_sys::{EFI_INPUT_KEY, EFI_SIMPLE_TEXT_INPUT_PROTOCOL};
 
 /// Interface for text-based input devices.
 #[repr(C)]
 #[unsafe_guid("387477c1-69c7-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct Input {
-    reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut RawKey) -> Status,
-    wait_for_key: Event,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_SIMPLE_TEXT_INPUT_PROTOCOL,
 }
 
 impl Input {
@@ -22,7 +22,8 @@ impl Input {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).into()
+        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw, extended_verification as u8) })
+            .into()
     }
 
     /// Reads the next keystroke from the input device, if any.
@@ -36,7 +37,12 @@ impl Input {
     pub fn read_key(&mut self) -> Result<Option<Key>> {
         let mut key = MaybeUninit::<RawKey>::uninit();
 
-        match (self.read_key_stroke)(self, key.as_mut_ptr()) {
+        match Status::from_raw_api(unsafe {
+            self.raw.ReadKeyStroke.unwrap()(
+                &mut self.raw,
+                key.as_mut_ptr() as *mut RawKey as *mut EFI_INPUT_KEY,
+            )
+        }) {
             Status::NOT_READY => Ok(None.into()),
             other => other.into_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
@@ -45,7 +51,7 @@ impl Input {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for a key to be available
     pub fn wait_for_key_event(&self) -> Event {
-        self.wait_for_key
+        unsafe { core::mem::transmute(self.raw.WaitForKey) }
     }
 }
 
@@ -61,10 +67,10 @@ pub enum Key {
 
 impl From<RawKey> for Key {
     fn from(k: RawKey) -> Key {
-        if k.scan_code == ScanCode::NULL {
-            Key::Printable(k.unicode_char)
+        if k.scan_code() == ScanCode::NULL {
+            Key::Printable(k.unicode_char())
         } else {
-            Key::Special(k.scan_code)
+            Key::Special(k.scan_code())
         }
     }
 }
@@ -72,12 +78,21 @@ impl From<RawKey> for Key {
 /// A key read from the console (UEFI version)
 #[repr(C)]
 pub struct RawKey {
+    pub raw: EFI_INPUT_KEY,
+}
+
+impl RawKey {
     /// The key's scan code.
     /// or 0 if printable
-    pub scan_code: ScanCode,
+    pub fn scan_code(&self) -> ScanCode {
+        ScanCode(self.raw.ScanCode)
+    }
+
     /// Associated Unicode character,
     /// or 0 if not printable.
-    pub unicode_char: Char16,
+    pub fn unicode_char(&self) -> Char16 {
+        unsafe { core::mem::transmute(self.raw.UnicodeChar) }
+    }
 }
 
 newtype_enum! {

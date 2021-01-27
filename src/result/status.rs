@@ -160,6 +160,11 @@ impl Status {
             Err(Error::new(self, err(self)))
         }
     }
+
+    #[inline]
+    pub(crate) fn from_raw_api(result: u64) -> Self {
+        Self(result as usize)
+    }
 }
 
 // An UEFI status is equivalent to a Result with no data or rerror payload

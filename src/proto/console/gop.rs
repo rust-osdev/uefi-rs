@@ -59,6 +59,10 @@ use crate::{unsafe_guid, Completion, Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
+use uefi_sys::{
+    EFI_GRAPHICS_OUTPUT_BLT_PIXEL, EFI_GRAPHICS_OUTPUT_MODE_INFORMATION,
+    EFI_GRAPHICS_OUTPUT_PROTOCOL, EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE, EFI_PIXEL_BITMASK,
+};
 
 /// Provides access to the video hardware's frame buffer.
 ///
@@ -68,45 +72,39 @@ use core::ptr;
 #[unsafe_guid("9042a9de-23dc-4a38-96fb-7aded080516a")]
 #[derive(Protocol)]
 pub struct GraphicsOutput<'boot> {
-    query_mode: extern "efiapi" fn(
-        &GraphicsOutput,
-        mode: u32,
-        info_sz: &mut usize,
-        &mut *const ModeInfo,
-    ) -> Status,
-    set_mode: extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
-    // Clippy correctly complains that this is too complicated, but we can't change the spec.
-    #[allow(clippy::type_complexity)]
-    blt: unsafe extern "efiapi" fn(
-        this: &mut GraphicsOutput,
-        buffer: *mut BltPixel,
-        op: u32,
-        source_x: usize,
-        source_y: usize,
-        dest_x: usize,
-        dest_y: usize,
-        width: usize,
-        height: usize,
-        stride: usize,
-    ) -> Status,
-    mode: &'boot ModeData<'boot>,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_GRAPHICS_OUTPUT_PROTOCOL,
+    _marker: PhantomData<&'boot ()>,
 }
 
 impl<'boot> GraphicsOutput<'boot> {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
     fn query_mode(&self, index: u32) -> Result<Mode> {
-        let mut info_sz = 0;
-        let mut info = ptr::null();
+        let mut info_sz = 0usize;
+        let mut info: *mut EFI_GRAPHICS_OUTPUT_MODE_INFORMATION =
+            ptr::null::<EFI_GRAPHICS_OUTPUT_MODE_INFORMATION>() as *mut _;
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with_val(|| {
+        Status::from_raw_api(unsafe {
+            self.raw.QueryMode.unwrap()(
+                self as *const _ as *mut _,
+                index,
+                &mut info_sz as *mut _ as *mut _,
+                &mut info as _,
+            )
+        })
+        .into_with_val(|| {
             let info = unsafe { *info };
             Mode {
                 index,
                 info_sz,
-                info,
+                info: ModeInfo { raw: info },
             }
         })
+    }
+
+    fn mode(&self) -> &'boot ModeData<'boot> {
+        unsafe { core::mem::transmute(self.raw.Mode) }
     }
 
     /// Returns information about all available graphics modes.
@@ -114,7 +112,7 @@ impl<'boot> GraphicsOutput<'boot> {
         ModeIter {
             gop: self,
             current: 0,
-            max: self.mode.max_mode,
+            max: self.mode().max_mode(),
         }
     }
 
@@ -123,7 +121,7 @@ impl<'boot> GraphicsOutput<'boot> {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
-        (self.set_mode)(self, mode.index).into()
+        Status::from_raw_api(unsafe { self.raw.SetMode.unwrap()(&mut self.raw, mode.index) }).into()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
@@ -139,18 +137,18 @@ impl<'boot> GraphicsOutput<'boot> {
                     dims: (width, height),
                 } => {
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                    (self.blt)(
-                        self,
+                    Status::from_raw_api(self.raw.Blt.unwrap()(
+                        &mut self.raw,
                         &color as *const _ as *mut _,
                         0,
                         0,
                         0,
-                        dest_x,
-                        dest_y,
-                        width,
-                        height,
+                        dest_x as _,
+                        dest_y as _,
+                        width as _,
+                        height as _,
                         0,
-                    )
+                    ))
                     .into()
                 }
                 BltOp::VideoToBltBuffer {
@@ -162,34 +160,34 @@ impl<'boot> GraphicsOutput<'boot> {
                     self.check_framebuffer_region((src_x, src_y), (width, height));
                     self.check_blt_buffer_region(dest_region, (width, height), buffer.len());
                     match dest_region {
-                        BltRegion::Full => (self.blt)(
-                            self,
-                            buffer.as_mut_ptr(),
+                        BltRegion::Full => Status::from_raw_api(self.raw.Blt.unwrap()(
+                            &mut self.raw,
+                            buffer.as_mut_ptr() as *mut _ as *mut _,
                             1,
-                            src_x,
-                            src_y,
+                            src_x as _,
+                            src_y as _,
                             0,
                             0,
-                            width,
-                            height,
+                            width as _,
+                            height as _,
                             0,
-                        )
+                        ))
                         .into(),
                         BltRegion::SubRectangle {
                             coords: (dest_x, dest_y),
                             px_stride,
-                        } => (self.blt)(
-                            self,
-                            buffer.as_mut_ptr(),
+                        } => Status::from_raw_api(self.raw.Blt.unwrap()(
+                            &mut self.raw,
+                            buffer.as_mut_ptr() as *mut _ as *mut _,
                             1,
-                            src_x,
-                            src_y,
-                            dest_x,
-                            dest_y,
-                            width,
-                            height,
-                            px_stride * core::mem::size_of::<BltPixel>(),
-                        )
+                            src_x as _,
+                            src_y as _,
+                            dest_x as _,
+                            dest_y as _,
+                            width as _,
+                            height as _,
+                            (px_stride * core::mem::size_of::<BltPixel>()) as _,
+                        ))
                         .into(),
                     }
                 }
@@ -202,34 +200,34 @@ impl<'boot> GraphicsOutput<'boot> {
                     self.check_blt_buffer_region(src_region, (width, height), buffer.len());
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
                     match src_region {
-                        BltRegion::Full => (self.blt)(
-                            self,
+                        BltRegion::Full => Status::from_raw_api(self.raw.Blt.unwrap()(
+                            &mut self.raw,
                             buffer.as_ptr() as *mut _,
                             2,
                             0,
                             0,
-                            dest_x,
-                            dest_y,
-                            width,
-                            height,
+                            dest_x as _,
+                            dest_y as _,
+                            width as _,
+                            height as _,
                             0,
-                        )
+                        ))
                         .into(),
                         BltRegion::SubRectangle {
                             coords: (src_x, src_y),
                             px_stride,
-                        } => (self.blt)(
-                            self,
+                        } => Status::from_raw_api(self.raw.Blt.unwrap()(
+                            &mut self.raw,
                             buffer.as_ptr() as *mut _,
                             2,
-                            src_x,
-                            src_y,
-                            dest_x,
-                            dest_y,
-                            width,
-                            height,
-                            px_stride * core::mem::size_of::<BltPixel>(),
-                        )
+                            src_x as _,
+                            src_y as _,
+                            dest_x as _,
+                            dest_y as _,
+                            width as _,
+                            height as _,
+                            (px_stride * core::mem::size_of::<BltPixel>()) as _,
+                        ))
                         .into(),
                     }
                 }
@@ -240,18 +238,18 @@ impl<'boot> GraphicsOutput<'boot> {
                 } => {
                     self.check_framebuffer_region((src_x, src_y), (width, height));
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                    (self.blt)(
-                        self,
+                    Status::from_raw_api(self.raw.Blt.unwrap()(
+                        &mut self.raw,
                         ptr::null_mut(),
                         3,
-                        src_x,
-                        src_y,
-                        dest_x,
-                        dest_y,
-                        width,
-                        height,
+                        src_x as _,
+                        src_y as _,
+                        dest_x as _,
+                        dest_y as _,
+                        width as _,
+                        height as _,
                         0,
-                    )
+                    ))
                     .into()
                 }
             }
@@ -296,17 +294,18 @@ impl<'boot> GraphicsOutput<'boot> {
 
     /// Returns the frame buffer information for the current mode.
     pub fn current_mode_info(&self) -> ModeInfo {
-        *self.mode.info
+        *self.mode().info()
     }
 
     /// Access the frame buffer directly
     pub fn frame_buffer(&mut self) -> FrameBuffer {
+        let mode = self.mode();
         assert!(
-            self.mode.info.format != PixelFormat::BltOnly,
+            mode.info().pixel_format() != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
-        let base = self.mode.fb_address as *mut u8;
-        let size = self.mode.fb_size;
+        let base = mode.fb_address() as *mut u8;
+        let size = mode.fb_size();
 
         FrameBuffer {
             base,
@@ -318,18 +317,40 @@ impl<'boot> GraphicsOutput<'boot> {
 
 #[repr(C)]
 struct ModeData<'info> {
-    // Number of modes which the GOP supports.
-    max_mode: u32,
-    // Current mode.
-    mode: u32,
-    // Information about the current mode.
-    info: &'info ModeInfo,
-    // Size of the above structure.
-    info_sz: usize,
-    // Physical address of the frame buffer.
-    fb_address: u64,
-    // Size in bytes. Equal to (pixel size) * height * stride.
-    fb_size: usize,
+    pub raw: EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE,
+    _marker: PhantomData<&'info ()>,
+}
+
+impl<'info> ModeData<'info> {
+    /// Number of modes which the GOP supports.
+    pub fn max_mode(&self) -> u32 {
+        self.raw.MaxMode
+    }
+
+    /// Current mode.
+    pub fn mode(&self) -> u32 {
+        self.raw.Mode
+    }
+
+    /// Information about the current mode.
+    pub fn info(&self) -> &'info ModeInfo {
+        unsafe { core::mem::transmute(self.raw.Info) }
+    }
+
+    /// Size of the above structure.
+    pub fn info_sz(&self) -> usize {
+        self.raw.SizeOfInfo as _
+    }
+
+    /// Physical address of the frame buffer.
+    pub fn fb_address(&self) -> u64 {
+        self.raw.FrameBufferBase
+    }
+
+    /// Size in bytes. Equal to (pixel size) * height * stride.
+    pub fn fb_size(&self) -> usize {
+        self.raw.FrameBufferSize as _
+    }
 }
 
 /// Represents the format of the pixels in a frame buffer.
@@ -357,14 +378,23 @@ pub enum PixelFormat {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct PixelBitmask {
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_PIXEL_BITMASK,
+}
+
+impl PixelBitmask {
     /// The bits indicating the red channel.
-    pub red: u32,
+    pub fn red(&self) -> u32 {
+        self.raw.RedMask
+    }
     /// The bits indicating the green channel.
-    pub green: u32,
+    pub fn green(&self) -> u32 {
+        self.raw.GreenMask
+    }
     /// The bits indicating the blue channel.
-    pub blue: u32,
-    /// The reserved bits, which are ignored by the video hardware.
-    pub reserved: u32,
+    pub fn blue(&self) -> u32 {
+        self.raw.BlueMask
+    }
 }
 
 /// Represents a graphics mode compatible with a given graphics device.
@@ -392,13 +422,8 @@ impl Mode {
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct ModeInfo {
-    // The only known version, associated with the current spec, is 0.
-    version: u32,
-    hor_res: u32,
-    ver_res: u32,
-    format: PixelFormat,
-    mask: PixelBitmask,
-    stride: u32,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_GRAPHICS_OUTPUT_MODE_INFORMATION,
 }
 
 impl ModeInfo {
@@ -406,18 +431,23 @@ impl ModeInfo {
     ///
     /// On desktop monitors, this usually means (width, height).
     pub fn resolution(&self) -> (usize, usize) {
-        (self.hor_res as usize, self.ver_res as usize)
+        (
+            self.raw.HorizontalResolution as usize,
+            self.raw.VerticalResolution as usize,
+        )
     }
 
     /// Returns the format of the frame buffer.
     pub fn pixel_format(&self) -> PixelFormat {
-        self.format
+        unsafe { core::mem::transmute(self.raw.PixelFormat) }
     }
 
     /// Returns the bitmask of the custom pixel format, if available.
     pub fn pixel_bitmask(&self) -> Option<PixelBitmask> {
-        match self.format {
-            PixelFormat::Bitmask => Some(self.mask),
+        match self.pixel_format() {
+            PixelFormat::Bitmask => Some(PixelBitmask {
+                raw: self.raw.PixelInformation,
+            }),
             _ => None,
         }
     }
@@ -427,7 +457,7 @@ impl ModeInfo {
     /// Due to performance reasons, the stride might not be equal to the width,
     /// instead the stride might be bigger for better alignment.
     pub fn stride(&self) -> usize {
-        self.stride as usize
+        self.raw.PixelsPerScanLine as _
     }
 }
 
@@ -467,32 +497,30 @@ impl ExactSizeIterator for ModeIter<'_> {}
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct BltPixel {
-    pub blue: u8,
-    pub green: u8,
-    pub red: u8,
-    _reserved: u8,
+    pub raw: EFI_GRAPHICS_OUTPUT_BLT_PIXEL,
 }
 
 impl BltPixel {
     /// Create a new pixel from RGB values.
     pub fn new(red: u8, green: u8, blue: u8) -> Self {
         Self {
-            red,
-            green,
-            blue,
-            _reserved: 0,
+            raw: EFI_GRAPHICS_OUTPUT_BLT_PIXEL {
+                Red: red,
+                Green: green,
+                Blue: blue,
+                Reserved: 0,
+            },
         }
     }
 }
 
 impl From<u32> for BltPixel {
     fn from(color: u32) -> Self {
-        Self {
-            blue: (color & 0x00_00_FF) as u8,
-            green: ((color & 0x00_FF_00) >> 8) as u8,
-            red: ((color & 0xFF_00_00) >> 16) as u8,
-            _reserved: 0,
-        }
+        Self::new(
+            (color & 0x00_00_FF) as u8,
+            ((color & 0x00_FF_00) >> 8) as u8,
+            ((color & 0xFF_00_00) >> 16) as u8,
+        )
     }
 }
 

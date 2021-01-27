@@ -12,6 +12,7 @@
 use crate::Guid;
 use bitflags::bitflags;
 use core::ffi::c_void;
+use uefi_sys::EFI_CONFIGURATION_TABLE;
 
 /// Contains a set of GUID / pointer for a vendor-specific table.
 ///
@@ -19,12 +20,22 @@ use core::ffi::c_void;
 #[derive(Debug)]
 #[repr(C)]
 pub struct ConfigTableEntry {
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_CONFIGURATION_TABLE,
+}
+
+impl ConfigTableEntry {
     /// The GUID identifying this table.
-    pub guid: Guid,
+    pub fn guid(&self) -> Guid {
+        self.raw.VendorGuid
+    }
+
     /// The starting address of this table.
     ///
     /// Whether this is a physical or virtual address depends on the table.
-    pub address: *const c_void,
+    pub fn address(&self) -> *const c_void {
+        self.raw.VendorTable
+    }
 }
 
 /// Entry pointing to the old ACPI 1 RSDP.

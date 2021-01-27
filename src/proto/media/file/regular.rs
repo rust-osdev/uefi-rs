@@ -38,7 +38,14 @@ impl RegularFile {
     ///                                      and the required buffer size is provided as output.
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) }.into_with(
+        Status(unsafe {
+            self.imp().raw.Read.unwrap()(
+                self.imp() as *mut _ as *mut _,
+                &mut buffer_size as *mut _ as *mut _,
+                buffer.as_mut_ptr() as *mut _,
+            )
+        } as _)
+        .into_with(
             || buffer_size,
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {
@@ -69,8 +76,14 @@ impl RegularFile {
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr()) }
-            .into_with_err(|_| buffer_size)
+        Status(unsafe {
+            self.imp().raw.Write.unwrap()(
+                self.imp() as *mut _ as *mut _,
+                &mut buffer_size as *mut _ as *mut _,
+                buffer.as_ptr() as *mut _,
+            )
+        } as _)
+        .into_with_err(|_| buffer_size)
     }
 
     /// Get the file's current position
@@ -79,7 +92,10 @@ impl RegularFile {
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.imp().get_position)(self.imp(), &mut pos).into_with_val(|| pos)
+        Status(unsafe {
+            self.imp().raw.GetPosition.unwrap()(self.imp() as *mut _ as *mut _, &mut pos)
+        } as _)
+        .into_with_val(|| pos)
     }
 
     /// Sets the file's current position
@@ -95,7 +111,10 @@ impl RegularFile {
     /// # Errors
     /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
     pub fn set_position(&mut self, position: u64) -> Result {
-        (self.imp().set_position)(self.imp(), position).into()
+        Status(unsafe {
+            self.imp().raw.SetPosition.unwrap()(self.imp() as *mut _ as *mut _, position)
+        } as _)
+        .into()
     }
 }
 

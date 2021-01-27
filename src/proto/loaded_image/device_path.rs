@@ -2,21 +2,36 @@
 
 use crate::{proto::Protocol, unsafe_guid};
 
+use uefi_sys::EFI_DEVICE_PATH_PROTOCOL;
+
 /// DevicePath protocol. This can be opened on a `LoadedImage.device()` handle
 /// using the `HandleProtocol` boot service.
 #[repr(C)]
 #[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct DevicePath {
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_DEVICE_PATH_PROTOCOL,
+}
+
+impl DevicePath {
     /// Type of device
-    pub device_type: DeviceType,
+    pub fn device_type(&self) -> DeviceType {
+        unsafe { core::mem::transmute(self.raw.Type) }
+    }
+
     /// Sub type of device
-    pub sub_type: DeviceSubType,
-    /// Tata related to device path
+    pub fn sub_type(&self) -> DeviceSubType {
+        unsafe { core::mem::transmute(self.raw.SubType) }
+    }
+
+    /// Data related to device path
     ///
     /// The device_type and sub_type determine the
     /// kind of data, and it size.
-    pub length: [u8; 2],
+    pub fn length(&self) -> [u8; 2] {
+        self.raw.Length
+    }
 }
 
 /// Type identifier for a DevicePath

@@ -1,9 +1,10 @@
 //! File system support protocols.
 
-use super::file::{Directory, FileHandle, FileImpl};
+use super::file::{Directory, FileHandle};
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 use core::ptr;
+use uefi_sys::EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
 
 /// Allows access to a FAT-12/16/32 file system.
 ///
@@ -13,9 +14,8 @@ use core::ptr;
 #[unsafe_guid("964e5b22-6459-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct SimpleFileSystem {
-    revision: u64,
-    open_volume:
-        extern "efiapi" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_SIMPLE_FILE_SYSTEM_PROTOCOL,
 }
 
 impl SimpleFileSystem {
@@ -31,7 +31,7 @@ impl SimpleFileSystem {
     /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
-        (self.open_volume)(self, &mut ptr)
-            .into_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
+        Status(unsafe { self.raw.OpenVolume.unwrap()(self as *mut _ as *mut _, &mut ptr) } as _)
+            .into_with_val(|| unsafe { Directory::new(FileHandle::new(ptr as *mut _)) })
     }
 }

@@ -11,21 +11,21 @@
 
 use crate::proto::Protocol;
 use crate::unsafe_guid;
+use uefi_sys::EFI_DEBUG_SUPPORT_PROTOCOL;
 
 /// The debugging support protocol allows debuggers to connect to a UEFI machine.
 #[repr(C)]
 #[unsafe_guid("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
 #[derive(Protocol)]
 pub struct DebugSupport {
-    isa: ProcessorArch,
-    // FIXME: Add the mising parts of the interface. Beware that it features
-    //        unsafety in the form of an unchecked processor index.
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_DEBUG_SUPPORT_PROTOCOL,
 }
 
 impl DebugSupport {
     /// Returns the processor architecture of the running CPU.
     pub fn arch(&self) -> ProcessorArch {
-        self.isa
+        ProcessorArch(self.raw.Isa)
     }
 }
 

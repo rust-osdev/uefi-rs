@@ -1,7 +1,9 @@
 use crate::prelude::*;
 use crate::proto::Protocol;
-use crate::{unsafe_guid, CStr16, Char16, Completion, Result, Status};
+use crate::{unsafe_guid, CStr16, Completion, Result, Status};
 use core::fmt;
+use core::marker::PhantomData;
+use uefi_sys::{EFI_SIMPLE_TEXT_OUTPUT_MODE, EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL};
 
 /// Interface for text-based output devices.
 ///
@@ -11,27 +13,15 @@ use core::fmt;
 #[unsafe_guid("387477c2-69c7-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct Output<'boot> {
-    reset: extern "efiapi" fn(this: &Output, extended: bool) -> Status,
-    output_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
-    test_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
-    query_mode: extern "efiapi" fn(
-        this: &Output,
-        mode: usize,
-        columns: &mut usize,
-        rows: &mut usize,
-    ) -> Status,
-    set_mode: extern "efiapi" fn(this: &mut Output, mode: usize) -> Status,
-    set_attribute: extern "efiapi" fn(this: &mut Output, attribute: usize) -> Status,
-    clear_screen: extern "efiapi" fn(this: &mut Output) -> Status,
-    set_cursor_position: extern "efiapi" fn(this: &mut Output, column: usize, row: usize) -> Status,
-    enable_cursor: extern "efiapi" fn(this: &mut Output, visible: bool) -> Status,
-    data: &'boot OutputData,
+    /// Unsafe raw type extracted from EDK2
+    raw: EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL,
+    _marker: PhantomData<&'boot ()>,
 }
 
 impl<'boot> Output<'boot> {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
-        (self.reset)(self, extended).into()
+        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw, extended as u8) }).into()
     }
 
     /// Clears the output screen.
@@ -39,12 +29,13 @@ impl<'boot> Output<'boot> {
     /// The background is set to the current background color.
     /// The cursor is moved to (0, 0).
     pub fn clear(&mut self) -> Result {
-        (self.clear_screen)(self).into()
+        Status::from_raw_api(unsafe { self.raw.ClearScreen.unwrap()(&mut self.raw) }).into()
     }
 
     /// Writes a string to the output device.
     pub fn output_string(&mut self, string: &CStr16) -> Result {
-        unsafe { (self.output_string)(self, string.as_ptr()) }.into()
+        Status::from_raw_api(unsafe { self.raw.OutputString.unwrap()(&mut self.raw, string.as_ptr() as _) })
+            .into()
     }
 
     /// Checks if a string contains only supported characters.
@@ -52,7 +43,9 @@ impl<'boot> Output<'boot> {
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
-        match unsafe { (self.test_string)(self, string.as_ptr()) } {
+        match Status::from_raw_api(unsafe {
+            self.raw.TestString.unwrap()(&mut self.raw, string.as_ptr() as _)
+        }) {
             Status::UNSUPPORTED => Ok(false.into()),
             other => other.into_with_val(|| true),
         }
@@ -61,7 +54,7 @@ impl<'boot> Output<'boot> {
     /// Returns an iterator of all supported text modes.
     // TODO: Bring back impl Trait once the story around bounds improves
     pub fn modes<'out>(&'out mut self) -> OutputModeIter<'out, 'boot> {
-        let max = self.data.max_mode as usize;
+        let max = unsafe { *self.raw.Mode }.MaxMode as usize;
         OutputModeIter {
             output: self,
             current: 0,
@@ -80,13 +73,21 @@ impl<'boot> Output<'boot> {
     /// consider using the iterator produced by `modes()` as a more ergonomic
     /// alternative to this method.
     fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
-        let (mut columns, mut rows) = (0, 0);
-        (self.query_mode)(self, index, &mut columns, &mut rows).into_with_val(|| (columns, rows))
+        let (mut columns, mut rows) = (0usize, 0usize);
+        Status::from_raw_api(unsafe {
+            self.raw.QueryMode.unwrap()(
+                self as *const _ as *mut _,
+                index as _,
+                &mut columns as *mut _ as *mut _,
+                &mut rows as *mut _ as *mut _,
+            )
+        })
+        .into_with_val(|| (columns, rows))
     }
 
     /// Returns the the current text mode.
     pub fn current_mode(&self) -> Result<Option<OutputMode>> {
-        match self.data.mode {
+        match unsafe { *self.raw.Mode }.Mode {
             -1 => Ok(None.into()),
             n if n >= 0 => {
                 let index = n as usize;
@@ -99,12 +100,12 @@ impl<'boot> Output<'boot> {
 
     /// Sets a mode as current.
     pub fn set_mode(&mut self, mode: OutputMode) -> Result {
-        (self.set_mode)(self, mode.index).into()
+        Status::from_raw_api(unsafe { self.raw.SetMode.unwrap()(&mut self.raw, mode.index as _) }).into()
     }
 
     /// Returns whether the cursor is currently shown or not.
     pub fn cursor_visible(&self) -> bool {
-        self.data.cursor_visible
+        unsafe { *self.raw.Mode }.CursorVisible != 0
     }
 
     /// Make the cursor visible or invisible.
@@ -112,13 +113,14 @@ impl<'boot> Output<'boot> {
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result {
-        (self.enable_cursor)(self, visible).into()
+        Status::from_raw_api(unsafe { self.raw.EnableCursor.unwrap()(&mut self.raw, visible as _) }).into()
     }
 
     /// Returns the column and row of the cursor.
     pub fn cursor_position(&self) -> (usize, usize) {
-        let column = self.data.cursor_column;
-        let row = self.data.cursor_row;
+        let mode = unsafe { *self.raw.Mode };
+        let column = mode.CursorColumn;
+        let row = mode.CursorRow;
         (column as usize, row as usize)
     }
 
@@ -126,7 +128,10 @@ impl<'boot> Output<'boot> {
     ///
     /// This function will fail if the cursor's new position would exceed the screen's bounds.
     pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result {
-        (self.set_cursor_position)(self, column, row).into()
+        Status::from_raw_api(unsafe {
+            self.raw.SetCursorPosition.unwrap()(&mut self.raw, column as _, row as _)
+        })
+        .into()
     }
 
     /// Sets the text and background colors for the console.
@@ -140,7 +145,7 @@ impl<'boot> Output<'boot> {
         assert!(bgc < 8, "An invalid background color was requested");
 
         let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
-        (self.set_attribute)(self, attr).into()
+        Status::from_raw_api(unsafe { self.raw.SetAttribute.unwrap()(&mut self.raw, attr as _) }).into()
     }
 }
 
@@ -254,19 +259,8 @@ impl<'out, 'boot> Iterator for OutputModeIter<'out, 'boot> {
 #[derive(Debug)]
 #[repr(C)]
 struct OutputData {
-    /// The number of modes supported by the device.
-    max_mode: i32,
-    /// The current output mode.
-    /// Negative index -1 is used to notify that no valid mode is configured
-    mode: i32,
-    /// The current character output attribute.
-    attribute: i32,
-    /// The cursor’s column.
-    cursor_column: i32,
-    /// The cursor’s row.
-    cursor_row: i32,
-    /// Whether the cursor is currently visible or not.
-    cursor_visible: bool,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_SIMPLE_TEXT_OUTPUT_MODE,
 }
 
 /// Colors for the UEFI console.

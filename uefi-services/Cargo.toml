@@ -15,9 +15,11 @@ is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
 is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 
 [dependencies]
-uefi = { version = "0.7.0", features = ["alloc", "logger"] }
 log = { version = "0.4.11", default-features = false }
 cfg-if = "1.0.0"
+
+[dependencies.uefi]
+path = "../"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86_64 = "0.13.1"

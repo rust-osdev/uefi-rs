@@ -1,5 +1,5 @@
 use super::FileAttribute;
-use crate::data_types::{chars::NUL_16, Align};
+use crate::data_types::chars::NUL_16;
 use crate::table::runtime::Time;
 use crate::{unsafe_guid, CStr16, Char16, Identify};
 use core::cmp;
@@ -7,6 +7,7 @@ use core::convert::TryInto;
 use core::ffi::c_void;
 use core::mem;
 use core::slice;
+use uefi_sys::data_types::Align;
 
 /// Common trait for data structures that can be used with
 /// `File::set_info()` or `File::get_info()`.

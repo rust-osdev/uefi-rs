@@ -3,6 +3,8 @@
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 use bitflags::bitflags;
+use core::marker::PhantomData;
+use uefi_sys::{EFI_SERIAL_IO_MODE, EFI_SERIAL_IO_PROTOCOL};
 
 /// Provides access to a serial I/O device.
 ///
@@ -15,35 +17,20 @@ use bitflags::bitflags;
 #[unsafe_guid("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd")]
 #[derive(Protocol)]
 pub struct Serial<'boot> {
-    // Revision of this protocol, only 1.0 is currently defined.
-    // Future versions will be backwards compatible.
-    revision: u32,
-    reset: extern "efiapi" fn(&mut Serial) -> Status,
-    set_attributes: extern "efiapi" fn(
-        &Serial,
-        baud_rate: u64,
-        receive_fifo_depth: u32,
-        timeout: u32,
-        parity: Parity,
-        data_bits: u8,
-        stop_bits_type: StopBits,
-    ) -> Status,
-    set_control_bits: extern "efiapi" fn(&mut Serial, ControlBits) -> Status,
-    get_control_bits: extern "efiapi" fn(&Serial, &mut ControlBits) -> Status,
-    write: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *const u8) -> Status,
-    read: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *mut u8) -> Status,
-    io_mode: &'boot IoMode,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_SERIAL_IO_PROTOCOL,
+    _marker: PhantomData<&'boot ()>,
 }
 
 impl<'boot> Serial<'boot> {
     /// Reset the device.
     pub fn reset(&mut self) -> Result {
-        (self.reset)(self).into()
+        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw) }).into()
     }
 
     /// Returns the current I/O mode.
     pub fn io_mode(&self) -> &IoMode {
-        self.io_mode
+        unsafe { core::mem::transmute(self.raw.Mode) }
     }
 
     /// Sets the device's new attributes.
@@ -60,22 +47,27 @@ impl<'boot> Serial<'boot> {
     ///   the device's minimum, an error will be returned;
     ///   this value will be rounded down to the nearest value supported by the device;
     pub fn set_attributes(&mut self, mode: &IoMode) -> Result {
-        (self.set_attributes)(
-            self,
-            mode.baud_rate,
-            mode.receive_fifo_depth,
-            mode.timeout,
-            mode.parity,
-            mode.data_bits as u8,
-            mode.stop_bits,
-        )
+        Status::from_raw_api(unsafe {
+            self.raw.SetAttributes.unwrap()(
+                &mut self.raw,
+                mode.baud_rate(),
+                mode.receive_fifo_depth(),
+                mode.timeout(),
+                mode.parity() as _,
+                mode.data_bits() as u8,
+                mode.stop_bits() as _,
+            )
+        })
         .into()
     }
 
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
-        (self.get_control_bits)(self, &mut bits).into_with_val(|| bits)
+        Status::from_raw_api(unsafe {
+            self.raw.GetControl.unwrap()(self as *const _ as *mut _, &mut bits as *mut _ as *mut _)
+        })
+        .into_with_val(|| bits)
     }
 
     /// Sets the device's new control bits.
@@ -83,7 +75,7 @@ impl<'boot> Serial<'boot> {
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
-        (self.set_control_bits)(self, bits).into()
+        Status::from_raw_api(unsafe { self.raw.SetControl.unwrap()(&mut self.raw, bits.bits) }).into()
     }
 
     /// Reads data from this device.
@@ -93,7 +85,14 @@ impl<'boot> Serial<'boot> {
     /// bytes were actually read from the device.
     pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }.into_with(
+        Status::from_raw_api(unsafe {
+            self.raw.Read.unwrap()(
+                &mut self.raw,
+                &mut buffer_size as *mut _ as *mut _,
+                data.as_mut_ptr() as *mut _ as *mut _,
+            )
+        })
+        .into_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
@@ -106,7 +105,14 @@ impl<'boot> Serial<'boot> {
     /// were actually written to the device.
     pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }.into_with(
+        Status::from_raw_api(unsafe {
+            self.raw.Write.unwrap()(
+                &mut self.raw,
+                &mut buffer_size as *mut _ as *mut _,
+                data.as_ptr() as *const _ as *mut _,
+            )
+        })
+        .into_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
@@ -127,21 +133,42 @@ impl<'boot> Serial<'boot> {
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct IoMode {
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_SERIAL_IO_MODE,
+}
+
+impl IoMode {
     /// Bitmask of the control bits that this device supports.
-    pub control_mask: ControlBits,
+    pub fn control_mask(&self) -> ControlBits {
+        ControlBits {
+            bits: self.raw.ControlMask,
+        }
+    }
     /// If applicable, the number of microseconds to wait before assuming an
     /// operation timed out.
-    pub timeout: u32,
+    pub fn timeout(&self) -> u32 {
+        self.raw.Timeout
+    }
     /// Device's baud rate, or 0 if unknown.
-    pub baud_rate: u64,
+    pub fn baud_rate(&self) -> u64 {
+        self.raw.BaudRate
+    }
     /// Size in character's of the device's buffer.
-    pub receive_fifo_depth: u32,
+    pub fn receive_fifo_depth(&self) -> u32 {
+        self.raw.ReceiveFifoDepth
+    }
     /// Number of data bits in each character.
-    pub data_bits: u32,
+    pub fn data_bits(&self) -> u32 {
+        self.raw.DataBits
+    }
     /// If applicable, the parity that is computed or checked for each character.
-    pub parity: Parity,
+    pub fn parity(&self) -> Parity {
+        unsafe { core::mem::transmute(self.raw.Parity) }
+    }
     /// If applicable, the number of stop bits per character.
-    pub stop_bits: StopBits,
+    pub fn stop_bits(&self) -> StopBits {
+        unsafe { core::mem::transmute(self.raw.StopBits) }
+    }
 }
 
 bitflags! {

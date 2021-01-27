@@ -1,7 +1,5 @@
 //! UEFI services available during boot.
 
-use super::Header;
-use crate::data_types::Align;
 use crate::proto::{loaded_image::DevicePath, Protocol};
 use crate::{Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
@@ -11,122 +9,15 @@ use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::mem::{self, MaybeUninit};
 use core::ptr;
+use uefi_sys::data_types::Align;
+pub use uefi_sys::EFI_MEMORY_DESCRIPTOR_VERSION;
+use uefi_sys::{EFI_BOOT_SERVICES, EFI_DEVICE_PATH_PROTOCOL, EFI_MEMORY_DESCRIPTOR};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
 pub struct BootServices {
-    header: Header,
-
-    // Task Priority services
-    raise_tpl: unsafe extern "efiapi" fn(new_tpl: Tpl) -> Tpl,
-    restore_tpl: unsafe extern "efiapi" fn(old_tpl: Tpl),
-
-    // Memory allocation functions
-    allocate_pages: extern "efiapi" fn(
-        alloc_ty: u32,
-        mem_ty: MemoryType,
-        count: usize,
-        addr: &mut u64,
-    ) -> Status,
-    free_pages: extern "efiapi" fn(addr: u64, pages: usize) -> Status,
-    get_memory_map: unsafe extern "efiapi" fn(
-        size: &mut usize,
-        map: *mut MemoryDescriptor,
-        key: &mut MemoryMapKey,
-        desc_size: &mut usize,
-        desc_version: &mut u32,
-    ) -> Status,
-    allocate_pool:
-        extern "efiapi" fn(pool_type: MemoryType, size: usize, buffer: &mut *mut u8) -> Status,
-    free_pool: extern "efiapi" fn(buffer: *mut u8) -> Status,
-
-    // Event & timer functions
-    create_event: unsafe extern "efiapi" fn(
-        ty: EventType,
-        notify_tpl: Tpl,
-        notify_func: Option<EventNotifyFn>,
-        notify_ctx: *mut c_void,
-        event: *mut Event,
-    ) -> Status,
-    set_timer: unsafe extern "efiapi" fn(event: Event, ty: u32, trigger_time: u64) -> Status,
-    wait_for_event: unsafe extern "efiapi" fn(
-        number_of_events: usize,
-        events: *mut Event,
-        out_index: *mut usize,
-    ) -> Status,
-    signal_event: usize,
-    close_event: usize,
-    check_event: usize,
-
-    // Protocol handlers
-    install_protocol_interface: usize,
-    reinstall_protocol_interface: usize,
-    uninstall_protocol_interface: usize,
-    handle_protocol:
-        extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
-    _reserved: usize,
-    register_protocol_notify: usize,
-    locate_handle: unsafe extern "efiapi" fn(
-        search_ty: i32,
-        proto: *const Guid,
-        key: *mut c_void,
-        buf_sz: &mut usize,
-        buf: *mut Handle,
-    ) -> Status,
-    locate_device_path: unsafe extern "efiapi" fn(
-        proto: &Guid,
-        device_path: &mut *mut DevicePath,
-        out_handle: *mut Handle,
-    ) -> Status,
-    install_configuration_table: usize,
-
-    // Image services
-    load_image: usize,
-    start_image: usize,
-    exit: usize,
-    unload_image: usize,
-    exit_boot_services:
-        unsafe extern "efiapi" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
-
-    // Misc services
-    get_next_monotonic_count: usize,
-    stall: extern "efiapi" fn(microseconds: usize) -> Status,
-    set_watchdog_timer: unsafe extern "efiapi" fn(
-        timeout: usize,
-        watchdog_code: u64,
-        data_size: usize,
-        watchdog_data: *const u16,
-    ) -> Status,
-
-    // Driver support services
-    connect_controller: usize,
-    disconnect_controller: usize,
-
-    // Protocol open / close services
-    open_protocol: usize,
-    close_protocol: usize,
-    open_protocol_information: usize,
-
-    // Library services
-    protocols_per_handle: usize,
-    locate_handle_buffer: usize,
-    locate_protocol: extern "efiapi" fn(
-        proto: &Guid,
-        registration: *mut c_void,
-        out_proto: &mut *mut c_void,
-    ) -> Status,
-    install_multiple_protocol_interfaces: usize,
-    uninstall_multiple_protocol_interfaces: usize,
-
-    // CRC services
-    calculate_crc32: usize,
-
-    // Misc services
-    copy_mem: unsafe extern "efiapi" fn(dest: *mut u8, src: *const u8, len: usize),
-    set_mem: unsafe extern "efiapi" fn(buffer: *mut u8, len: usize, value: u8),
-
-    // New event functions (UEFI 2.0 or newer)
-    create_event_ex: usize,
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_BOOT_SERVICES,
 }
 
 impl BootServices {
@@ -147,7 +38,7 @@ impl BootServices {
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
         TplGuard {
             boot_services: self,
-            old_tpl: (self.raise_tpl)(tpl),
+            old_tpl: Tpl(self.raw.RaiseTPL.unwrap()(tpl.0 as _) as _),
         }
     }
 
@@ -167,12 +58,15 @@ impl BootServices {
             AllocateType::MaxAddress(addr) => (1, addr as u64),
             AllocateType::Address(addr) => (2, addr as u64),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with_val(|| addr)
+        Status::from_raw_api(unsafe {
+            self.raw.AllocatePages.unwrap()(ty, mem_ty.0, count as _, &mut addr)
+        })
+        .into_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
     pub fn free_pages(&self, addr: u64, count: usize) -> Result {
-        (self.free_pages)(addr, count).into()
+        Status::from_raw_api(unsafe { self.raw.FreePages.unwrap()(addr, count as _) }).into()
     }
 
     /// Retrieves the size, in bytes, of the current memory map.
@@ -186,18 +80,18 @@ impl BootServices {
         let mut entry_size = 0;
         let mut entry_version = 0;
 
-        let status = unsafe {
-            (self.get_memory_map)(
+        let status = Status::from_raw_api(unsafe {
+            self.raw.GetMemoryMap.unwrap()(
                 &mut map_size,
                 ptr::null_mut(),
-                &mut map_key,
+                &mut map_key as *mut MemoryMapKey as *mut u64,
                 &mut entry_size,
                 &mut entry_version,
             )
-        };
+        });
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
 
-        map_size
+        map_size as _
     }
 
     /// Retrieves the current memory map.
@@ -224,7 +118,7 @@ impl BootServices {
         #[allow(clippy::cast_ptr_alignment)]
         let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
         let mut map_key = MemoryMapKey(0);
-        let mut entry_size = 0;
+        let mut entry_size = 0usize;
         let mut entry_version = 0;
 
         assert_eq!(
@@ -233,15 +127,15 @@ impl BootServices {
             "Memory map buffers must be aligned like a MemoryDescriptor"
         );
 
-        unsafe {
-            (self.get_memory_map)(
-                &mut map_size,
-                map_buffer,
-                &mut map_key,
-                &mut entry_size,
+        Status::from_raw_api(unsafe {
+            self.raw.GetMemoryMap.unwrap()(
+                &mut map_size as *mut usize as _,
+                map_buffer as *mut MemoryDescriptor as *mut EFI_MEMORY_DESCRIPTOR,
+                &mut map_key as *mut MemoryMapKey as *mut u64,
+                &mut entry_size as *mut _ as *mut u64,
                 &mut entry_version,
             )
-        }
+        })
         .into_with_val(move || {
             let len = map_size / entry_size;
             let iter = MemoryMapIter {
@@ -257,12 +151,13 @@ impl BootServices {
     /// Allocates from a memory pool. The pointer will be 8-byte aligned.
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        (self.allocate_pool)(mem_ty, size, &mut buffer).into_with_val(|| buffer)
+        Status::from_raw_api(unsafe { self.raw.AllocatePool.unwrap()(mem_ty.0, size as _, &mut buffer) })
+            .into_with_val(|| buffer as _)
     }
 
     /// Frees memory allocated from a pool.
     pub fn free_pool(&self, addr: *mut u8) -> Result {
-        (self.free_pool)(addr).into()
+        Status::from_raw_api(unsafe { self.raw.FreePool.unwrap()(addr as _) }).into()
     }
 
     /// Creates an event
@@ -304,13 +199,13 @@ impl BootServices {
             .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
-        (self.create_event)(
-            event_ty,
-            notify_tpl,
-            notify_func,
+        Status::from_raw_api(self.raw.CreateEvent.unwrap()(
+            event_ty.bits,
+            notify_tpl.0 as _,
+            core::mem::transmute(notify_func),
             notify_ctx,
-            event.as_mut_ptr(),
-        )
+            event.as_mut_ptr() as _,
+        ))
         .into_with_val(|| event.assume_init())
     }
 
@@ -344,7 +239,14 @@ impl BootServices {
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = MaybeUninit::<usize>::uninit();
-        unsafe { (self.wait_for_event)(number_of_events, events, index.as_mut_ptr()) }.into_with(
+        Status::from_raw_api(unsafe {
+            self.raw.WaitForEvent.unwrap()(
+                number_of_events as _,
+                events as *mut Event as *mut *mut c_void,
+                index.as_mut_ptr() as _,
+            )
+        })
+        .into_with(
             || unsafe { index.assume_init() },
             |s| {
                 if s == Status::INVALID_PARAMETER {
@@ -363,7 +265,8 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.set_timer)(event, ty, time) }.into()
+        Status::from_raw_api(unsafe { self.raw.SetTimer.unwrap()(core::mem::transmute(event), ty, time) })
+            .into()
     }
 
     /// Query a handle for a certain protocol.
@@ -377,7 +280,14 @@ impl BootServices {
     /// global `HashSet`.
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
+        Status::from_raw_api(unsafe {
+            self.raw.HandleProtocol.unwrap()(
+                core::mem::transmute(handle),
+                &P::UNIQUE_GUID as *const _ as *mut _,
+                &mut ptr,
+            )
+        })
+        .into_with_val(|| {
             let ptr = ptr as *mut P as *mut UnsafeCell<P>;
             unsafe { &*ptr }
         })
@@ -406,15 +316,23 @@ impl BootServices {
         // Obtain the needed data from the parameters.
         let (ty, guid, key) = match search_ty {
             SearchType::AllHandles => (0, ptr::null(), ptr::null_mut()),
-            SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
+            SearchType::ByProtocol(guid) => (2, guid as *const Guid, ptr::null_mut()),
         };
 
-        let status = unsafe { (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
+        let status = unsafe {
+            self.raw.LocateHandle.unwrap()(
+                ty,
+                guid as _,
+                key,
+                &mut buffer_size as *mut usize as _,
+                buffer as _,
+            )
+        };
 
         // Must convert the returned size (in bytes) to length (number of elements).
         let buffer_len = buffer_size / handle_size;
 
-        match (buffer, status) {
+        match (buffer, Status::from_raw_api(status)) {
             (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
             (_, other_status) => other_status.into_with_val(|| buffer_len),
         }
@@ -425,8 +343,12 @@ impl BootServices {
         unsafe {
             let mut handle = Handle::uninitialized();
             let mut device_path_ptr = device_path as *mut DevicePath;
-            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
-                .into_with_val(|| handle)
+            Status::from_raw_api(self.raw.LocateDevicePath.unwrap()(
+                &P::UNIQUE_GUID as *const _ as *mut _,
+                &mut device_path_ptr as *mut *mut DevicePath as *mut *mut EFI_DEVICE_PATH_PROTOCOL,
+                &mut handle as *mut Handle as *mut *mut c_void,
+            ))
+            .into_with_val(|| handle)
         }
     }
 
@@ -445,14 +367,21 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        (self.exit_boot_services)(image, mmap_key).into()
+        Status::from_raw_api(self.raw.ExitBootServices.unwrap()(
+            core::mem::transmute(image),
+            mmap_key.0 as _,
+        ))
+        .into()
     }
 
     /// Stalls the processor for an amount of time.
     ///
     /// The time is in microseconds.
     pub fn stall(&self, time: usize) {
-        assert_eq!((self.stall)(time), Status::SUCCESS);
+        assert_eq!(
+            Status::from_raw_api(unsafe { self.raw.Stall.unwrap()(time as _) }),
+            Status::SUCCESS
+        );
     }
 
     /// Set the watchdog timer.
@@ -494,7 +423,10 @@ impl BootServices {
             })
             .unwrap_or((0, ptr::null_mut()));
 
-        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+        Status::from_raw_api(unsafe {
+            self.raw.SetWatchdogTimer.unwrap()(timeout as _, watchdog_code, data_len as _, data)
+        })
+        .into()
     }
 
     /// Returns a protocol implementation, if present on the system.
@@ -502,7 +434,14 @@ impl BootServices {
     /// The caveats of `BootServices::handle_protocol()` also apply here.
     pub fn locate_protocol<P: Protocol>(&self) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
+        Status::from_raw_api(unsafe {
+            self.raw.LocateProtocol.unwrap()(
+                &P::UNIQUE_GUID as *const _ as *mut _,
+                ptr::null_mut(),
+                &mut ptr,
+            )
+        })
+        .into_with_val(|| {
             let ptr = ptr as *mut P as *mut UnsafeCell<P>;
             unsafe { &*ptr }
         })
@@ -515,7 +454,7 @@ impl BootServices {
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
     pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
-        (self.copy_mem)(dest, src, size);
+        (self.raw.CopyMem.unwrap())(dest as _, src as _, size as _);
     }
 
     /// Sets a buffer to a certain value.
@@ -525,7 +464,7 @@ impl BootServices {
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
     pub unsafe fn memset(&self, buffer: *mut u8, size: usize, value: u8) {
-        (self.set_mem)(buffer, size, value);
+        self.raw.SetMem.unwrap()(buffer as _, size as _, value);
     }
 }
 
@@ -601,7 +540,7 @@ pub struct TplGuard<'boot> {
 impl Drop for TplGuard<'_> {
     fn drop(&mut self) {
         unsafe {
-            (self.boot_services.restore_tpl)(self.old_tpl);
+            (self.boot_services.raw.RestoreTPL.unwrap())(self.old_tpl.0 as _);
         }
     }
 }
@@ -672,36 +611,47 @@ impl MemoryType {
     }
 }
 
-/// Memory descriptor version number
-pub const MEMORY_DESCRIPTOR_VERSION: u32 = 1;
-
 /// A structure describing a region of memory.
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct MemoryDescriptor {
+    /// Unsafe raw type extracted from EDK2
+    pub raw: EFI_MEMORY_DESCRIPTOR,
+}
+
+impl MemoryDescriptor {
     /// Type of memory occupying this range.
-    pub ty: MemoryType,
+    pub fn memory_type(&self) -> MemoryType {
+        MemoryType(self.raw.Type)
+    }
+
     /// Skip 4 bytes as UEFI declares items in structs should be naturally aligned
-    padding: u32,
-    /// Starting physical address.
-    pub phys_start: u64,
+    pub fn physical_start(&self) -> u64 {
+        self.raw.PhysicalStart
+    }
+
     /// Starting virtual address.
-    pub virt_start: u64,
+    pub fn virtual_start(&self) -> u64 {
+        self.raw.VirtualStart
+    }
+
     /// Number of 4 KiB pages contained in this range.
-    pub page_count: u64,
+    pub fn number_of_pages(&self) -> u64 {
+        self.raw.NumberOfPages
+    }
+
     /// The capability attributes of this memory range.
-    pub att: MemoryAttribute,
+    pub fn attributes(&self) -> MemoryAttribute {
+        MemoryAttribute {
+            bits: self.raw.Attribute,
+        }
+    }
 }
 
 impl Default for MemoryDescriptor {
-    fn default() -> MemoryDescriptor {
-        MemoryDescriptor {
-            ty: MemoryType::RESERVED,
-            padding: 0,
-            phys_start: 0,
-            virt_start: 0,
-            page_count: 0,
-            att: MemoryAttribute::empty(),
+    fn default() -> Self {
+        Self {
+            raw: Default::default(),
         }
     }
 }
@@ -801,7 +751,7 @@ pub enum SearchType<'guid> {
 impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
     pub fn from_proto<P: Protocol>() -> Self {
-        SearchType::ByProtocol(&P::GUID)
+        SearchType::ByProtocol(&P::UNIQUE_GUID)
     }
 }
 

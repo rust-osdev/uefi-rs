@@ -16,7 +16,7 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v2
       with:
-        submodules: recursive
+        submodules: true
 
     - name: Download OVMF
       run: |

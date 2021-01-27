@@ -1,0 +1,3 @@
+[submodule "uefi-sys/external/edk2"]
+	path = uefi-sys/external/edk2
+	url = https://github.com/tianocore/edk2

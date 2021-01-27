@@ -265,7 +265,7 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        Status::from_raw_api(unsafe { self.raw.SetTimer.unwrap()(core::mem::transmute(event), ty, time) })
+        Status::from_raw_api(unsafe { self.raw.SetTimer.unwrap()(event.0, ty, time) })
             .into()
     }
 
@@ -282,7 +282,7 @@ impl BootServices {
         let mut ptr = ptr::null_mut();
         Status::from_raw_api(unsafe {
             self.raw.HandleProtocol.unwrap()(
-                core::mem::transmute(handle),
+                handle.0,
                 &P::UNIQUE_GUID as *const _ as *mut _,
                 &mut ptr,
             )
@@ -368,7 +368,7 @@ impl BootServices {
         mmap_key: MemoryMapKey,
     ) -> Result {
         Status::from_raw_api(self.raw.ExitBootServices.unwrap()(
-            core::mem::transmute(image),
+            image.0,
             mmap_key.0 as _,
         ))
         .into()

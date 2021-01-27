@@ -227,11 +227,11 @@ impl SystemTableImpl {
     }
 
     fn fw_revision(&self) -> Revision {
-        unsafe { core::mem::transmute(self.raw.FirmwareRevision) }
+        Revision(self.raw.FirmwareRevision)
     }
 
     fn stdin_handle(&self) -> Handle {
-        unsafe { core::mem::transmute(self.raw.ConsoleInHandle) }
+        Handle(self.raw.ConsoleInHandle)
     }
 
     fn stdin(&self) -> *mut text::Input {
@@ -239,7 +239,7 @@ impl SystemTableImpl {
     }
 
     fn stdout_handle(&self) -> Handle {
-        unsafe { core::mem::transmute(self.raw.ConsoleOutHandle) }
+        Handle(self.raw.ConsoleOutHandle)
     }
 
     fn stdout(&self) -> *mut text::Output<'static> {
@@ -247,7 +247,7 @@ impl SystemTableImpl {
     }
 
     fn stderr_handle(&self) -> Handle {
-        unsafe { core::mem::transmute(self.raw.StandardErrorHandle) }
+        Handle(self.raw.StandardErrorHandle)
     }
 
     fn stderr(&self) -> *mut text::Output<'static> {

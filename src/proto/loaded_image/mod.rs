@@ -31,7 +31,7 @@ pub enum LoadOptionsError {
 impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
     pub fn device(&self) -> Handle {
-        unsafe { core::mem::transmute(self.raw.DeviceHandle) }
+        Handle(self.raw.DeviceHandle)
     }
 
     /// Get the load options of the given image. If the image was executed from the EFI shell, or from a boot

@@ -7,7 +7,7 @@ use core::fmt;
 /// The minor revision number is incremented on minor changes,
 /// it is stored as a two-digit binary-coded decimal.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Revision(u32);
+pub struct Revision(pub (crate) u32);
 
 impl Revision {
     /// Creates a new revision.

@@ -7,7 +7,7 @@ use core::{ffi::c_void, mem::MaybeUninit};
 /// Opaque handle to an UEFI entity (protocol, image...)
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-pub struct Handle(*mut c_void);
+pub struct Handle(pub (crate) *mut c_void);
 
 impl Handle {
     pub(crate) unsafe fn uninitialized() -> Self {
@@ -18,7 +18,7 @@ impl Handle {
 /// Handle to an event structure
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-pub struct Event(*mut c_void);
+pub struct Event(pub (crate) *mut c_void);
 
 mod guid;
 pub use self::guid::Guid;

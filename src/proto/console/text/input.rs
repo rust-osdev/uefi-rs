@@ -22,8 +22,10 @@ impl Input {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw, extended_verification as u8) })
-            .into()
+        Status::from_raw_api(unsafe {
+            self.raw.Reset.unwrap()(&mut self.raw, extended_verification as u8)
+        })
+        .into()
     }
 
     /// Reads the next keystroke from the input device, if any.
@@ -51,7 +53,7 @@ impl Input {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for a key to be available
     pub fn wait_for_key_event(&self) -> Event {
-        unsafe { core::mem::transmute(self.raw.WaitForKey) }
+        Event(self.raw.WaitForKey)
     }
 }
 
@@ -91,7 +93,7 @@ impl RawKey {
     /// Associated Unicode character,
     /// or 0 if not printable.
     pub fn unicode_char(&self) -> Char16 {
-        unsafe { core::mem::transmute(self.raw.UnicodeChar) }
+        Char16(self.raw.UnicodeChar)
     }
 }
 

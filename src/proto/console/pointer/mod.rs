@@ -55,7 +55,7 @@ impl<'boot> Pointer<'boot> {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for input from the pointer device
     pub fn wait_for_input_event(&self) -> Event {
-        unsafe { core::mem::transmute(self.raw.WaitForInput) }
+        Event(self.raw.WaitForInput)
     }
 
     /// Returns a reference to the pointer device information.

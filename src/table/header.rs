@@ -17,7 +17,7 @@ impl Header {
 
     /// Revision of the spec this table conforms to.
     pub fn revision(&self) -> Revision {
-        unsafe { core::mem::transmute(self.raw.Revision) }
+        Revision(self.raw.Revision)
     }
 
     /// The size in bytes of the entire table.

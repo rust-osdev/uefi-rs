@@ -110,8 +110,7 @@ impl RuntimeServices {
                 data as *mut u8 as *mut core::ffi::c_void,
             )
         }
-        // the raw signature is returning unit
-        loop {}
+        panic!("The impossible happened, ResetSystem did not reset the system.")
     }
 }
 

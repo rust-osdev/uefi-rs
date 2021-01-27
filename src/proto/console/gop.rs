@@ -104,7 +104,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     fn mode(&self) -> &'boot ModeData<'boot> {
-        unsafe { core::mem::transmute(self.raw.Mode) }
+        unsafe { &*(self.raw.Mode as *const ModeData) }
     }
 
     /// Returns information about all available graphics modes.
@@ -334,7 +334,7 @@ impl<'info> ModeData<'info> {
 
     /// Information about the current mode.
     pub fn info(&self) -> &'info ModeInfo {
-        unsafe { core::mem::transmute(self.raw.Info) }
+        unsafe { &*(self.raw.Info as *const ModeInfo) }
     }
 
     /// Size of the above structure.

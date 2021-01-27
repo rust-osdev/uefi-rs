@@ -30,7 +30,7 @@ impl<'boot> Serial<'boot> {
 
     /// Returns the current I/O mode.
     pub fn io_mode(&self) -> &IoMode {
-        unsafe { core::mem::transmute(self.raw.Mode) }
+        unsafe { &*(self.raw.Mode as *const IoMode) }
     }
 
     /// Sets the device's new attributes.

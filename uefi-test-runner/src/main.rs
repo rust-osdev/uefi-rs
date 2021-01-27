@@ -73,7 +73,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
 
         // Set a large timeout to avoid problems with Travis
         let mut io_mode = *serial.io_mode();
-        io_mode.timeout = 10_000_000;
+        io_mode.raw.Timeout = 10_000_000;
         serial
             .set_attributes(&io_mode)
             .expect_success("Failed to configure serial port timeout");

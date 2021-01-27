@@ -1,0 +1,18 @@
+[package]
+name = "uefi-sys"
+version = "0.1.0"
+authors = ["Hussein Ait-Lahcen <hussein.aitlahcen@gmail.com>"]
+edition = "2018"
+description = "Raw uefi data/function types extracted from https://github.com/tianocore/edk2"
+repository = "https://github.com/rust-osdev/uefi-rs"
+keywords = ["uefi", "efi"]
+categories = ["embedded", "no-std", "api-bindings"]
+license = "MPL-2.0"
+build = "build.rs"
+
+[dependencies]
+cty = "0.2.1"
+
+[build-dependencies.bindgen]
+version = "0.56.0"
+default-features = false

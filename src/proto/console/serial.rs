@@ -75,7 +75,8 @@ impl<'boot> Serial<'boot> {
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
-        Status::from_raw_api(unsafe { self.raw.SetControl.unwrap()(&mut self.raw, bits.bits) }).into()
+        Status::from_raw_api(unsafe { self.raw.SetControl.unwrap()(&mut self.raw, bits.bits) })
+            .into()
     }
 
     /// Reads data from this device.

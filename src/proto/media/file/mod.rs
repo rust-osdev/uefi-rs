@@ -90,9 +90,10 @@ pub trait File: Sized {
     /// # Warnings
     /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
     fn delete(mut self) -> Result {
-        let result =
-            Status::from_raw_api(unsafe { self.imp().raw.Delete.unwrap()(self.imp() as *mut _ as *mut _) })
-                .into();
+        let result = Status::from_raw_api(unsafe {
+            self.imp().raw.Delete.unwrap()(self.imp() as *mut _ as *mut _)
+        })
+        .into();
         mem::forget(self);
         result
     }
@@ -276,9 +277,10 @@ impl File for FileHandle {
 
 impl Drop for FileHandle {
     fn drop(&mut self) {
-        let result: Result =
-            Status::from_raw_api(unsafe { self.imp().raw.Close.unwrap()(self.imp() as *mut _ as *mut _) })
-                .into();
+        let result: Result = Status::from_raw_api(unsafe {
+            self.imp().raw.Close.unwrap()(self.imp() as *mut _ as *mut _)
+        })
+        .into();
         // The spec says this always succeeds.
         result.expect_success("Failed to close file");
     }

@@ -26,8 +26,10 @@ impl<'boot> Pointer<'boot> {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw, extended_verification as u8) })
-            .into()
+        Status::from_raw_api(unsafe {
+            self.raw.Reset.unwrap()(&mut self.raw, extended_verification as u8)
+        })
+        .into()
     }
 
     /// Retrieves the pointer device's current state, if a state change occured

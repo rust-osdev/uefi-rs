@@ -63,7 +63,7 @@ pub const NUL_8: Char8 = Char8(0);
 /// An UCS-2 code point
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct Char16(pub (crate) u16);
+pub struct Char16(pub(crate) u16);
 
 impl TryFrom<char> for Char16 {
     type Error = CharConversionError;

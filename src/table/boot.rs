@@ -151,8 +151,10 @@ impl BootServices {
     /// Allocates from a memory pool. The pointer will be 8-byte aligned.
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        Status::from_raw_api(unsafe { self.raw.AllocatePool.unwrap()(mem_ty.0, size as _, &mut buffer) })
-            .into_with_val(|| buffer as _)
+        Status::from_raw_api(unsafe {
+            self.raw.AllocatePool.unwrap()(mem_ty.0, size as _, &mut buffer)
+        })
+        .into_with_val(|| buffer as _)
     }
 
     /// Frees memory allocated from a pool.
@@ -265,8 +267,7 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        Status::from_raw_api(unsafe { self.raw.SetTimer.unwrap()(event.0, ty, time) })
-            .into()
+        Status::from_raw_api(unsafe { self.raw.SetTimer.unwrap()(event.0, ty, time) }).into()
     }
 
     /// Query a handle for a certain protocol.
@@ -367,11 +368,7 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        Status::from_raw_api(self.raw.ExitBootServices.unwrap()(
-            image.0,
-            mmap_key.0 as _,
-        ))
-        .into()
+        Status::from_raw_api(self.raw.ExitBootServices.unwrap()(image.0, mmap_key.0 as _)).into()
     }
 
     /// Stalls the processor for an amount of time.

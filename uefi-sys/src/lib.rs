@@ -1,6 +1,5 @@
 #![no_std]
 #![feature(abi_efiapi)]
-
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
@@ -9,7 +8,7 @@ pub mod data_types;
 
 use data_types::*;
 
-/* 
+/*
     We manually generate this type because of a rust issue
     with nested structure containing nested #[align] pragmas
 */

@@ -21,7 +21,8 @@ pub struct Output<'boot> {
 impl<'boot> Output<'boot> {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
-        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw, extended as u8) }).into()
+        Status::from_raw_api(unsafe { self.raw.Reset.unwrap()(&mut self.raw, extended as u8) })
+            .into()
     }
 
     /// Clears the output screen.
@@ -34,8 +35,10 @@ impl<'boot> Output<'boot> {
 
     /// Writes a string to the output device.
     pub fn output_string(&mut self, string: &CStr16) -> Result {
-        Status::from_raw_api(unsafe { self.raw.OutputString.unwrap()(&mut self.raw, string.as_ptr() as _) })
-            .into()
+        Status::from_raw_api(unsafe {
+            self.raw.OutputString.unwrap()(&mut self.raw, string.as_ptr() as _)
+        })
+        .into()
     }
 
     /// Checks if a string contains only supported characters.
@@ -100,7 +103,8 @@ impl<'boot> Output<'boot> {
 
     /// Sets a mode as current.
     pub fn set_mode(&mut self, mode: OutputMode) -> Result {
-        Status::from_raw_api(unsafe { self.raw.SetMode.unwrap()(&mut self.raw, mode.index as _) }).into()
+        Status::from_raw_api(unsafe { self.raw.SetMode.unwrap()(&mut self.raw, mode.index as _) })
+            .into()
     }
 
     /// Returns whether the cursor is currently shown or not.
@@ -113,7 +117,8 @@ impl<'boot> Output<'boot> {
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result {
-        Status::from_raw_api(unsafe { self.raw.EnableCursor.unwrap()(&mut self.raw, visible as _) }).into()
+        Status::from_raw_api(unsafe { self.raw.EnableCursor.unwrap()(&mut self.raw, visible as _) })
+            .into()
     }
 
     /// Returns the column and row of the cursor.
@@ -145,7 +150,8 @@ impl<'boot> Output<'boot> {
         assert!(bgc < 8, "An invalid background color was requested");
 
         let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
-        Status::from_raw_api(unsafe { self.raw.SetAttribute.unwrap()(&mut self.raw, attr as _) }).into()
+        Status::from_raw_api(unsafe { self.raw.SetAttribute.unwrap()(&mut self.raw, attr as _) })
+            .into()
     }
 }
 

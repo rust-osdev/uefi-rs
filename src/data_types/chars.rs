@@ -27,9 +27,9 @@ impl TryFrom<char> for Char8 {
     }
 }
 
-impl Into<char> for Char8 {
-    fn into(self) -> char {
-        self.0 as char
+impl From<Char8> for char {
+    fn from(char: Char8) -> char {
+        char.0 as char
     }
 }
 
@@ -39,9 +39,9 @@ impl From<u8> for Char8 {
     }
 }
 
-impl Into<u8> for Char8 {
-    fn into(self) -> u8 {
-        self.0 as u8
+impl From<Char8> for u8 {
+    fn from(char: Char8) -> u8 {
+        char.0
     }
 }
 
@@ -78,9 +78,9 @@ impl TryFrom<char> for Char16 {
     }
 }
 
-impl Into<char> for Char16 {
-    fn into(self) -> char {
-        u32::from(self.0).try_into().unwrap()
+impl From<Char16> for char {
+    fn from(char: Char16) -> char {
+        u32::from(char.0).try_into().unwrap()
     }
 }
 
@@ -98,9 +98,9 @@ impl TryFrom<u16> for Char16 {
     }
 }
 
-impl Into<u16> for Char16 {
-    fn into(self) -> u16 {
-        self.0 as u16
+impl From<Char16> for u16 {
+    fn from(char: Char16) -> u16 {
+        char.0 as u16
     }
 }
 

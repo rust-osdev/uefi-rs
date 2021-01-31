@@ -164,10 +164,10 @@ impl Status {
 
 // An UEFI status is equivalent to a Result with no data or rerror payload
 
-impl Into<Result<(), ()>> for Status {
+impl From<Status> for Result<(), ()> {
     #[inline]
-    fn into(self) -> Result<(), ()> {
-        self.into_with(|| (), |_| ())
+    fn from(status: Status) -> Result<(), ()> {
+        status.into_with(|| (), |_| ())
     }
 }
 

@@ -24,10 +24,10 @@ pub struct DevicePath {
 #[derive(Debug)]
 pub enum DeviceType {
     Hardware = 0x01,
-    ACPI = 0x02,
+    Acpi = 0x02,
     Messaging = 0x03,
     Media = 0x04,
-    BIOSBootSpec = 0x05,
+    BiosBootSpec = 0x05,
     End = 0x7F,
 }
 

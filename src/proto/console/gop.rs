@@ -337,9 +337,9 @@ struct ModeData<'info> {
 #[repr(u32)]
 pub enum PixelFormat {
     /// Each pixel is 32-bit long, with 24-bit RGB, and the last byte is reserved.
-    RGB = 0,
+    Rgb = 0,
     /// Each pixel is 32-bit long, with 24-bit BGR, and the last byte is reserved.
-    BGR,
+    Bgr,
     /// Custom pixel format, check the associated bitmask.
     Bitmask,
     /// The graphics mode does not support drawing directly to the frame buffer.

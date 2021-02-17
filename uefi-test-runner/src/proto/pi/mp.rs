@@ -1,13 +1,13 @@
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use core::time::Duration;
-use uefi::proto::pi::mp::MPServices;
+use uefi::proto::pi::mp::MpServices;
 use uefi::table::boot::BootServices;
 use uefi::Status;
 
 pub fn test(bt: &BootServices) {
     info!("Running UEFI multi-processor services protocol test");
-    if let Ok(mp_support) = bt.locate_protocol::<MPServices>() {
+    if let Ok(mp_support) = bt.locate_protocol::<MpServices>() {
         let mp_support = mp_support
             .expect("Warnings encountered while opening multi-processor services protocol");
         let mp_support = unsafe { &mut *mp_support.get() };
@@ -23,7 +23,7 @@ pub fn test(bt: &BootServices) {
     }
 }
 
-fn test_get_number_of_processors(mps: &MPServices) {
+fn test_get_number_of_processors(mps: &MpServices) {
     let proc_count = mps.get_number_of_processors().unwrap().unwrap();
 
     // There should be exactly 3 CPUs
@@ -33,7 +33,7 @@ fn test_get_number_of_processors(mps: &MPServices) {
     assert_eq!(proc_count.total, proc_count.enabled);
 }
 
-fn test_get_processor_info(mps: &MPServices) {
+fn test_get_processor_info(mps: &MpServices) {
     // Disable second CPU for this test
     mps.enable_disable_ap(1, false, None).unwrap().unwrap();
 
@@ -71,7 +71,7 @@ extern "efiapi" fn proc_wait_100ms(arg: *mut c_void) {
     bt.stall(100_000);
 }
 
-fn test_startup_all_aps(mps: &MPServices, bt: &BootServices) {
+fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
     // Ensure that APs start up
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
@@ -91,7 +91,7 @@ fn test_startup_all_aps(mps: &MPServices, bt: &BootServices) {
     assert_eq!(ret.map_err(|err| err.status()), Err(Status::TIMEOUT));
 }
 
-fn test_startup_this_ap(mps: &MPServices, bt: &BootServices) {
+fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
     // Ensure that each AP starts up
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
@@ -111,7 +111,7 @@ fn test_startup_this_ap(mps: &MPServices, bt: &BootServices) {
     }
 }
 
-fn test_enable_disable_ap(mps: &MPServices) {
+fn test_enable_disable_ap(mps: &MpServices) {
     // Disable second CPU
     mps.enable_disable_ap(1, false, None).unwrap().unwrap();
 
@@ -139,7 +139,7 @@ fn test_enable_disable_ap(mps: &MPServices) {
     assert_eq!(cpu1.is_healthy(), true);
 }
 
-fn test_switch_bsp_and_who_am_i(mps: &MPServices) {
+fn test_switch_bsp_and_who_am_i(mps: &MpServices) {
     // This test breaks CI. See #103.
     if cfg!(feature = "ci") {
         return;

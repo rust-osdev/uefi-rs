@@ -55,7 +55,7 @@ pub struct ProcessorInformation {
     /// Flags indicating BSP, enabled and healthy status.
     status_flag: StatusFlag,
     /// Physical location of the processor.
-    pub location: CPUPhysicalLocation,
+    pub location: CpuPhysicalLocation,
 }
 
 impl ProcessorInformation {
@@ -79,7 +79,7 @@ impl ProcessorInformation {
 /// Information about physical location of the processor.
 #[repr(C)]
 #[derive(Default, Debug)]
-pub struct CPUPhysicalLocation {
+pub struct CpuPhysicalLocation {
     /// Zero-based physical package number that identifies
     /// the cartridge of the processor.
     pub package: u32,
@@ -93,19 +93,19 @@ pub struct CPUPhysicalLocation {
 #[repr(C)]
 #[unsafe_guid("3fdda605-a76e-4f46-ad29-12f4531b3d08")]
 #[derive(Protocol)]
-pub struct MPServices {
+pub struct MpServices {
     get_number_of_processors: extern "efiapi" fn(
-        this: *const MPServices,
+        this: *const MpServices,
         number_of_processors: *mut usize,
         number_of_enabled_processors: *mut usize,
     ) -> Status,
     get_processor_info: extern "efiapi" fn(
-        this: *const MPServices,
+        this: *const MpServices,
         processor_number: usize,
         processor_info_buffer: *mut ProcessorInformation,
     ) -> Status,
     startup_all_aps: extern "efiapi" fn(
-        this: *const MPServices,
+        this: *const MpServices,
         procedure: Procedure,
         single_thread: bool,
         wait_event: *mut c_void,
@@ -114,7 +114,7 @@ pub struct MPServices {
         failed_cpu_list: *mut *mut usize,
     ) -> Status,
     startup_this_ap: extern "efiapi" fn(
-        this: *const MPServices,
+        this: *const MpServices,
         procedure: Procedure,
         processor_number: usize,
         wait_event: *mut c_void,
@@ -123,20 +123,20 @@ pub struct MPServices {
         finished: *mut bool,
     ) -> Status,
     switch_bsp: extern "efiapi" fn(
-        this: *const MPServices,
+        this: *const MpServices,
         processor_number: usize,
         enable_old_bsp: bool,
     ) -> Status,
     enable_disable_ap: extern "efiapi" fn(
-        this: *const MPServices,
+        this: *const MpServices,
         processor_number: usize,
         enable_ap: bool,
         health_flag: *const u32,
     ) -> Status,
-    who_am_i: extern "efiapi" fn(this: *const MPServices, processor_number: *mut usize) -> Status,
+    who_am_i: extern "efiapi" fn(this: *const MpServices, processor_number: *mut usize) -> Status,
 }
 
-impl MPServices {
+impl MpServices {
     /// Retrieves the number of logical processors and the number of enabled logical processors in the system.
     pub fn get_number_of_processors(&self) -> Result<ProcessorCount> {
         let mut total: usize = 0;

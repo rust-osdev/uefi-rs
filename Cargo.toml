@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 edition = "2018"
@@ -9,7 +9,6 @@ exclude = [
     "uefi-macros/**",
     "uefi-services/**",
     "uefi-test-runner/**",
-    "uefi-hello-world-aarch64/**"
 ]
 description = "Safe and easy-to-use wrapper for building UEFI apps"
 repository = "https://github.com/rust-osdev/uefi-rs"

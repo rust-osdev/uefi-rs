@@ -14,12 +14,12 @@ pub struct BlockIO {
     read_blocks: extern "efiapi" fn(
         this: &BlockIO,
         media_id: u32,
-        lba: LBA,
+        lba: Lba,
         buffer_size: usize,
         buffer: *mut u8,
     ) -> Status,
     write_blocks:
-        extern "efiapi" fn(this: &BlockIO, media_id: u32, lba: LBA, buffer: *const u8) -> Status,
+        extern "efiapi" fn(this: &BlockIO, media_id: u32, lba: Lba, buffer: *const u8) -> Status,
     flush_blocks: extern "efiapi" fn(this: &BlockIO) -> Status,
 }
 
@@ -57,7 +57,7 @@ impl BlockIO {
     ///     the device.
     /// * `uefi::Status::INVALID_PARAMETER`  The read request contains LBAs that are not valid, or the buffer is not on
     ///     proper alignment.
-    pub fn read_blocks(&self, media_id: u32, lba: LBA, buffer: &mut [u8]) -> Result {
+    pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
         let mut buffer_size = buffer.len();
         (self.read_blocks)(self, media_id, lba, buffer_size, buffer.as_mut_ptr()).into()
     }
@@ -79,7 +79,7 @@ impl BlockIO {
     ///     of the device.
     /// * `uefi::Status::INVALID_PARAMETER`     The write request contains LBAs that are not valid, or the buffer is not
     ///     on proper alignment.
-    pub fn write_blocks(&mut self, media_id: u32, lba: LBA, buffer: &[u8]) -> Result {
+    pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
         let mut buffer_size = buffer.len();
         (self.write_blocks)(self, media_id, lba, buffer.as_ptr()).into()
     }
@@ -95,7 +95,7 @@ impl BlockIO {
 }
 
 /// EFI LBA type
-type LBA = u64;
+pub type Lba = u64;
 
 /// Media information structure
 #[repr(C)]
@@ -110,10 +110,10 @@ pub struct BlockIOMedia {
 
     block_size: u32,
     io_align: u32,
-    last_block: LBA,
+    last_block: Lba,
 
     // Revision 2
-    lowest_aligned_lba: LBA,
+    lowest_aligned_lba: Lba,
     logical_blocks_per_physical_block: u32,
 
     // Revision 3
@@ -164,12 +164,12 @@ impl BlockIOMedia {
     }
 
     /// The last LBA on the device. If the media changes, then this field is updated.
-    pub fn last_block(&self) -> LBA {
+    pub fn last_block(&self) -> Lba {
         self.last_block
     }
 
     /// Returns the first LBA that is aligned to a physical block boundary.
-    pub fn lowest_aligned_lba(&self) -> LBA {
+    pub fn lowest_aligned_lba(&self) -> Lba {
         self.lowest_aligned_lba
     }
 

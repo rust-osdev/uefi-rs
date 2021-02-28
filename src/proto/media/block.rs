@@ -3,6 +3,7 @@
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 
+/// The Block I/O protocol.
 #[repr(C)]
 #[unsafe_guid("964e5b21-6459-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
@@ -58,7 +59,7 @@ impl BlockIO {
     /// * `uefi::Status::INVALID_PARAMETER`  The read request contains LBAs that are not valid, or the buffer is not on
     ///     proper alignment.
     pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
-        let mut buffer_size = buffer.len();
+        let buffer_size = buffer.len();
         (self.read_blocks)(self, media_id, lba, buffer_size, buffer.as_mut_ptr()).into()
     }
 
@@ -80,7 +81,7 @@ impl BlockIO {
     /// * `uefi::Status::INVALID_PARAMETER`     The write request contains LBAs that are not valid, or the buffer is not
     ///     on proper alignment.
     pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
-        let mut buffer_size = buffer.len();
+        let buffer_size = buffer.len();
         (self.write_blocks)(self, media_id, lba, buffer.as_ptr()).into()
     }
 

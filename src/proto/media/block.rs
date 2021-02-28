@@ -19,8 +19,13 @@ pub struct BlockIO {
         buffer_size: usize,
         buffer: *mut u8,
     ) -> Status,
-    write_blocks:
-        extern "efiapi" fn(this: &BlockIO, media_id: u32, lba: Lba, buffer: *const u8) -> Status,
+    write_blocks: extern "efiapi" fn(
+        this: &BlockIO,
+        media_id: u32,
+        lba: Lba,
+        buffer_size: usize,
+        buffer: *const u8,
+    ) -> Status,
     flush_blocks: extern "efiapi" fn(this: &BlockIO) -> Status,
 }
 
@@ -82,7 +87,7 @@ impl BlockIO {
     ///     on proper alignment.
     pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
         let buffer_size = buffer.len();
-        (self.write_blocks)(self, media_id, lba, buffer.as_ptr()).into()
+        (self.write_blocks)(self, media_id, lba, buffer_size, buffer.as_ptr()).into()
     }
 
     /// Flushes all modified data to a physical block device.

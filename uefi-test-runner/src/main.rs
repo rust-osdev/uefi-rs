@@ -34,6 +34,12 @@ fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
 
     // Test all the boot services.
     let bt = st.boot_services();
+
+    // Try retrieving a handle to the file system the image was booted from.
+    bt.get_image_file_system(image)
+        .expect("Failed to retrieve boot file system")
+        .unwrap();
+
     boot::test(bt);
 
     // Test all the supported protocols.

@@ -1,8 +1,11 @@
 //! UEFI services available during boot.
 
 use super::Header;
-use crate::data_types::Align;
-use crate::proto::{loaded_image::DevicePath, Protocol};
+use crate::proto::{
+    loaded_image::{DevicePath, LoadedImage},
+    Protocol,
+};
+use crate::{data_types::Align, proto::media::fs::SimpleFileSystem};
 use crate::{Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::vec::Vec;
@@ -558,6 +561,34 @@ impl BootServices {
         status1
             .into_with_val(|| buffer)
             .map(|completion| completion.with_status(status2))
+    }
+
+    /// Retrieves the `SimpleFileSystem` protocol associated with
+    /// the device the given image was loaded from.
+    ///
+    /// You can retrieve the SFS protocol associated with the boot partition
+    /// by passing the image handle received by the UEFI entry point to this function.
+    pub fn get_image_file_system(
+        &self,
+        image_handle: Handle,
+    ) -> Result<&UnsafeCell<SimpleFileSystem>> {
+        let loaded_image = self
+            .handle_protocol::<LoadedImage>(image_handle)?
+            .expect("Failed to retrieve `LoadedImage` protocol from handle");
+        let loaded_image = unsafe { &*loaded_image.get() };
+
+        let device_handle = loaded_image.device();
+
+        let device_path = self
+            .handle_protocol::<DevicePath>(device_handle)?
+            .expect("Failed to retrieve `DevicePath` protocol from image's device handle");
+        let device_path = unsafe { &mut *device_path.get() };
+
+        let device_handle = self
+            .locate_device_path::<SimpleFileSystem>(device_path)?
+            .expect("Failed to locate `SimpleFileSystem` protocol on device path");
+
+        self.handle_protocol::<SimpleFileSystem>(device_handle)
     }
 }
 

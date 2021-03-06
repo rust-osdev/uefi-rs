@@ -21,7 +21,7 @@ pub struct DevicePath {
 
 /// Type identifier for a DevicePath
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DeviceType {
     /// Hardware Device Path.
     ///
@@ -65,4 +65,20 @@ pub enum DeviceSubType {
     EndInstance = 0x01,
     /// End Entire Device Path
     EndEntire = 0xFF,
+}
+
+/// ACPI Device Path
+#[repr(C)]
+pub struct AcpiDevicePath {
+    /// Type of device, which is ACPI Device Path
+    pub device_type: DeviceType,
+    /// Sub type of the device, which is ACPI Device Path
+    pub sub_type: DeviceSubType,
+    /// Device's PnP hardware ID stored in a numeric 32-bit compressed EISA-type ID. This value must match the
+    /// corresponding _HID in the ACPI name space.
+    pub hid: u32,
+    /// Unique ID that is required by ACPI if two devices have the same _HID. This value must also match the
+    /// corresponding _UID/_HID pair in the ACPI name space. Only the 32-bit numeric value type of _UID is supported;
+    /// thus strings must not be used for the _UID in the ACPI name space.
+    pub uid: u32,
 }

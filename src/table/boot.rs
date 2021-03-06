@@ -1,10 +1,7 @@
 //! UEFI services available during boot.
 
 use super::Header;
-use crate::proto::{
-    loaded_image::{DevicePath, LoadedImage},
-    Protocol,
-};
+use crate::proto::{device_path::DevicePath, loaded_image::LoadedImage, Protocol};
 use crate::{data_types::Align, proto::media::fs::SimpleFileSystem};
 use crate::{Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]

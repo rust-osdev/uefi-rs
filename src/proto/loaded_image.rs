@@ -1,10 +1,4 @@
 //! `LoadedImage` protocol.
-//!
-//! This module also contains the corollary type `DevicePath`, which is
-//! used to wrap an `EFI_DEVICE_PATH_PROTOCOL`.
-
-mod device_path;
-pub use self::device_path::DevicePath;
 
 use crate::{
     data_types::{CStr16, Char16},

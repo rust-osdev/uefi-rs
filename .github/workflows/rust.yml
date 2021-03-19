@@ -35,7 +35,7 @@ jobs:
     - name: Install qemu
       run: |
         sudo apt-get update
-        sudo apt-get install qemu -y
+        sudo apt-get install qemu-system-x86 -y
 
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1

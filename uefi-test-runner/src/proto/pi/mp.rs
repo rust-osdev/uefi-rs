@@ -9,6 +9,11 @@ use uefi::Status;
 const NUM_CPUS: usize = 4;
 
 pub fn test(bt: &BootServices) {
+    // These tests break CI. See #103.
+    if cfg!(feature = "ci") {
+        return;
+    }
+
     info!("Running UEFI multi-processor services protocol test");
     if let Ok(mp_support) = bt.locate_protocol::<MpServices>() {
         let mp_support = mp_support
@@ -142,11 +147,6 @@ fn test_enable_disable_ap(mps: &MpServices) {
 }
 
 fn test_switch_bsp_and_who_am_i(mps: &MpServices) {
-    // This test breaks CI. See #103.
-    if cfg!(feature = "ci") {
-        return;
-    }
-
     // Normally BSP starts on on CPU 0
     let proc_number = mps.who_am_i().unwrap().unwrap();
     assert_eq!(proc_number, 0);

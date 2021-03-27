@@ -3,7 +3,7 @@ use crate::{Result, Status};
 
 /// A `FileHandle` that is also a regular (data) file.
 ///
-/// Use `FileHandle::into_kind` or `RegularFile::new` to create a `RegularFile`.
+/// Use `FileHandle::into_type` or `RegularFile::new` to create a `RegularFile`.
 /// In addition to supporting the normal `File` operations, `RegularFile`
 /// supports direct reading and writing.
 #[repr(transparent)]

@@ -129,6 +129,16 @@ fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
         .exit_boot_services(image, &mut mmap_storage[..])
         .expect_success("Failed to exit boot services");
 
+    #[cfg(target_arch = "x86_64")]
+    {
+        if cfg!(feature = "qemu") {
+            use qemu_exit::QEMUExit;
+            let custom_exit_success = 3;
+            let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
+            qemu_exit_handle.exit_success();
+        }
+    }
+
     // Shut down the system
     let rt = unsafe { st.runtime_services() };
     rt.reset(ResetType::Shutdown, Status::SUCCESS, None);

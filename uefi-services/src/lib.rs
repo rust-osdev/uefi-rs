@@ -157,14 +157,13 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     // If running in QEMU, use the f4 exit port to signal the error and exit
     if cfg!(feature = "qemu") {
         cfg_if! {
-             if #[cfg(target_arch = "x86_64")] {
-                  use x86_64::instructions::port::Port;
-                  let mut port = Port::<u32>::new(0xf4);
-                  unsafe {
-                      port.write(42);
-                  }
+            if #[cfg(target_arch = "x86_64")] {
+                use qemu_exit::QEMUExit;
+                let custom_exit_success = 3;
+                let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
+                qemu_exit_handle.exit_failure();
             } else if #[cfg(target_arch = "aarch64")] {
-                  // unimplemented!();
+                // unimplemented!();
             }
         }
     }

@@ -202,15 +202,19 @@ def run_qemu():
         qemu_flags.extend([
             # Use a modern machine,.
             '-machine', 'q35',
-            # Multi-processor services protocol test needs exactly 3 CPUs.
-            '-smp', '3',
+
+            # Multi-processor services protocol test needs exactly 4 CPUs.
+            '-smp', '4',
 
             # Allocate some memory.
-            '-m', '128M',
+            '-m', '256M',
         ])
         if not SETTINGS['ci']:
             # Enable acceleration if possible.
             qemu_flags.append('--enable-kvm')
+        else:
+            # Exit instead of rebooting
+            qemu_flags.append('-no-reboot')
     elif arch == 'aarch64':
         qemu_flags.extend([
             # Use a generic ARM environment. Sadly qemu can't emulate a RPi 4 like machine though
@@ -335,7 +339,7 @@ def run_qemu():
         os.remove(monitor_output_path)
 
         # Throw an exception if QEMU failed
-        if status != 0:
+        if status != 0 and status != 3:
             raise sp.CalledProcessError(cmd=cmd, returncode=status)
 
 def main():

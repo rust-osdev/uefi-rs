@@ -16,26 +16,10 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v2
 
-    - name: Download OVMF
-      run: |
-        # Save the current branch
-        git branch travis-temp
-        # Checkout the firmware branch
-        git fetch origin ovmf:ovmf
-        git checkout ovmf
-        # Download it with Git LFS
-        git lfs pull
-        # Copy it to the local directory
-        cp -v x86_64/*.fd .
-        # Checkout the original repo back
-        git checkout travis-temp
-        # Move the firmware files to the right directory
-        mv -v *.fd uefi-test-runner
-
-    - name: Install qemu
+    - name: Install qemu and OVMF
       run: |
         sudo apt-get update
-        sudo apt-get install qemu -y
+        sudo apt-get install qemu-system-x86 ovmf -y
 
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1

@@ -212,6 +212,9 @@ def run_qemu():
         if not SETTINGS['ci']:
             # Enable acceleration if possible.
             qemu_flags.append('--enable-kvm')
+        else:
+            # Exit instead of rebooting
+            qemu_flags.append('-no-reboot')
     elif arch == 'aarch64':
         qemu_flags.extend([
             # Use a generic ARM environment. Sadly qemu can't emulate a RPi 4 like machine though

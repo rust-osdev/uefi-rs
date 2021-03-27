@@ -15,6 +15,7 @@ log = { version = "0.4.11", default-features = false }
 # does not automatically get enabled. Therefore, we have to manually add support for
 # the memory functions.
 rlibc = "1.0.0"
+qemu-exit = "1.0.2"
 
 [features]
 # This feature should only be enabled in our CI, it disables some tests

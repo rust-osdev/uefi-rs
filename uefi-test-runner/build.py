@@ -339,7 +339,7 @@ def run_qemu():
         os.remove(monitor_output_path)
 
         # Throw an exception if QEMU failed
-        if status != 0:
+        if status != 0 and status != 3:
             raise sp.CalledProcessError(cmd=cmd, returncode=status)
 
 def main():

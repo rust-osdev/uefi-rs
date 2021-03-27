@@ -42,7 +42,7 @@ pub fn test(bt: &BootServices) {
             .read(&mut input)
             .expect_success("Failed to read from serial port");
 
-        assert_eq!(&OUTPUT[..], &input[..]);
+        assert_eq!(OUTPUT, &input[..]);
 
         // Clean up after ourselves
         serial

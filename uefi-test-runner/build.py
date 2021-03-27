@@ -202,11 +202,12 @@ def run_qemu():
         qemu_flags.extend([
             # Use a modern machine,.
             '-machine', 'q35',
-            # Multi-processor services protocol test needs exactly 3 CPUs.
-            '-smp', '3',
+
+            # Multi-processor services protocol test needs exactly 4 CPUs.
+            '-smp', '4',
 
             # Allocate some memory.
-            '-m', '128M',
+            '-m', '256M',
         ])
         if not SETTINGS['ci']:
             # Enable acceleration if possible.

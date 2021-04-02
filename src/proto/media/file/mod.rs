@@ -20,8 +20,8 @@ use core::mem;
 use core::ptr;
 
 pub use self::info::{
-    FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi,
-    NamedFileProtocolInfo,
+    FileInfo, FileInfoHeader, FileProtocolInfo, FileSystemInfo, FileSystemInfoHeader,
+    FileSystemVolumeLabel, FileSystemVolumeLabelHeader, FromUefi, NamedFileProtocolInfo,
 };
 pub use self::{dir::Directory, regular::RegularFile};
 

@@ -444,10 +444,10 @@ impl<'gop> Iterator for ModeIter<'gop> {
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;
         if index < self.max {
-            let m = self.gop.query_mode(index).ok().or_else(|| self.next());
+            let m = self.gop.query_mode(index);
             self.current += 1;
 
-            m
+            m.ok().or_else(|| self.next())
         } else {
             None
         }

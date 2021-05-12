@@ -18,7 +18,7 @@ is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 uefi = { version = "0.8.0", features = ["alloc", "logger"] }
 log = { version = "0.4.11", default-features = false }
 cfg-if = "1.0.0"
-qemu-exit = "1.0.2"
+qemu-exit = "2.0.0"
 
 [features]
 # Enable QEMU-specific functionality

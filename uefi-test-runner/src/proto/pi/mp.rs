@@ -56,14 +56,14 @@ fn test_get_processor_info(mps: &MpServices) {
     assert_eq!(cpu2.processor_id, 2);
 
     // Check that only CPU 0 is BSP
-    assert_eq!(cpu0.is_bsp(), true);
-    assert_eq!(cpu1.is_bsp(), false);
-    assert_eq!(cpu2.is_bsp(), false);
+    assert!(cpu0.is_bsp());
+    assert!(!cpu1.is_bsp());
+    assert!(!cpu2.is_bsp());
 
     // Check that only the second CPU is disabled
-    assert_eq!(cpu0.is_enabled(), true);
-    assert_eq!(cpu1.is_enabled(), false);
-    assert_eq!(cpu2.is_enabled(), true);
+    assert!(cpu0.is_enabled());
+    assert!(!cpu1.is_enabled());
+    assert!(cpu2.is_enabled());
 
     // Enable second CPU back
     mps.enable_disable_ap(1, true, None).unwrap().unwrap();
@@ -138,12 +138,12 @@ fn test_enable_disable_ap(mps: &MpServices) {
         .unwrap()
         .unwrap();
     let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
-    assert_eq!(cpu1.is_healthy(), false);
+    assert!(!cpu1.is_healthy());
 
     // Mark second CPU as healthy again and check it's status
     mps.enable_disable_ap(1, true, Some(true)).unwrap().unwrap();
     let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
-    assert_eq!(cpu1.is_healthy(), true);
+    assert!(cpu1.is_healthy());
 }
 
 fn test_switch_bsp_and_who_am_i(mps: &MpServices) {

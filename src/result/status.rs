@@ -1,6 +1,6 @@
 use super::{Completion, Error, Result};
-use core::{fmt::Debug, num::NonZeroUsize};
 use core::ops::{ControlFlow, FromResidual, Try};
+use core::{fmt::Debug, num::NonZeroUsize};
 
 /// Bit indicating that an UEFI status code is an error
 const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);

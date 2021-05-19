@@ -25,7 +25,8 @@
 
 #![cfg_attr(feature = "exts", feature(allocator_api, alloc_layout_extra))]
 #![feature(auto_traits)]
-#![feature(try_trait)]
+#![feature(control_flow_enum)]
+#![feature(try_trait_v2)]
 #![feature(abi_efiapi)]
 #![feature(negative_impls)]
 #![feature(const_panic)]

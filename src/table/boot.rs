@@ -1,8 +1,10 @@
 //! UEFI services available during boot.
 
 use super::Header;
-use crate::proto::{device_path::DevicePath, loaded_image::LoadedImage, Protocol};
-use crate::{data_types::Align, proto::media::fs::SimpleFileSystem};
+use crate::data_types::Align;
+use crate::proto::{device_path::DevicePath, Protocol};
+#[cfg(feature = "exts")]
+use crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem};
 use crate::{Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::vec::Vec;

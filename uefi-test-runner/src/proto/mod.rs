@@ -13,6 +13,7 @@ pub fn test(st: &SystemTable<Boot>) {
     debug::test(bt);
     media::test(bt);
     pi::test(bt);
+    shim::test(bt);
 }
 
 fn find_protocol(bt: &BootServices) {
@@ -32,3 +33,4 @@ mod console;
 mod debug;
 mod media;
 mod pi;
+mod shim;

@@ -197,6 +197,12 @@ impl FromResidual for Status {
     }
 }
 
+impl<T> FromResidual<StatusResidual> for Result<T, ()> {
+    fn from_residual(r: StatusResidual) -> Self {
+        Err(Status(r.0.into()).into())
+    }
+}
+
 impl FromResidual<core::result::Result<Infallible, Error>> for Status {
     fn from_residual(r: core::result::Result<Infallible, Error>) -> Self {
         match r {

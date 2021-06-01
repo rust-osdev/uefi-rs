@@ -19,7 +19,7 @@ use core::convert::TryInto;
 #[unsafe_guid("605dab50-e046-4300-abb6-3dd810dd8b23")]
 #[derive(Protocol)]
 pub struct ShimLock {
-    verify: extern "efiapi" fn(buffer: *const u8, size: u32) -> Status,
+    verify: extern "sysv64" fn(buffer: *const u8, size: u32) -> Status,
 }
 
 impl ShimLock {

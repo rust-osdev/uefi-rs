@@ -1,11 +1,27 @@
 //! `DevicePath` protocol
+//!
+//! Device Paths are a packed array of Device Path Nodes. Each Node
+//! immediately follows the previous one, and each node may appear on
+//! any byte boundary. The array must be terminated with an End of
+//! Hardware Device Path Node.
+//!
+//! Device Path Nodes are variable-length structures that can represent
+//! different types of paths. For example, a File Path Media Device
+//! Path contains a typical Windows-style path such as
+//! "\efi\boot\bootx64.efi", whereas an ACPI Device Path contains
+//! numeric ACPI IDs.
+//!
+//! A Device Path Node always starts with the `DevicePath` header. The
+//! `device_type` and `sub_type` fields determine the type of data in
+//! the rest of the structure, and the `length` field indicates the
+//! total size of the Node including the header.
 
 use crate::{proto::Protocol, unsafe_guid};
 
 /// Device path protocol.
 ///
 /// This can be opened on a `LoadedImage.device()` handle using the `HandleProtocol` boot service.
-#[repr(C)]
+#[repr(C, packed)]
 #[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct DevicePath {
@@ -66,7 +82,7 @@ pub enum DeviceSubType: u8 => {
 }}
 
 /// ACPI Device Path
-#[repr(C)]
+#[repr(C, packed)]
 pub struct AcpiDevicePath {
     /// Type of device, which is ACPI Device Path
     pub device_type: DeviceType,

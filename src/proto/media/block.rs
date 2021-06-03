@@ -9,7 +9,7 @@ use crate::{unsafe_guid, Result, Status};
 #[derive(Protocol)]
 pub struct BlockIO {
     revision: u64,
-    media: BlockIOMedia,
+    media: *const BlockIOMedia,
 
     reset: extern "efiapi" fn(this: &BlockIO, extended_verification: bool) -> Status,
     read_blocks: extern "efiapi" fn(
@@ -32,7 +32,7 @@ pub struct BlockIO {
 impl BlockIO {
     /// Pointer for block IO media.
     pub fn media(&self) -> &BlockIOMedia {
-        &self.media
+        unsafe { &*self.media }
     }
 
     /// Resets the block device hardware.

@@ -526,7 +526,7 @@ impl BootServices {
     ///
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
-    pub unsafe fn set_mem(&self, buffer: *mut u8, value: u8, size: usize) {
+    pub unsafe fn set_mem(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.set_mem)(buffer, size, value);
     }
 }

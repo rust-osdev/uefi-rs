@@ -59,16 +59,16 @@ fn alloc_alignment() {
     assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
 }
 
-// Test that the `memmove` / `memset` functions work.
+// Test that the `memmove` / `set_mem` functions work.
 fn memmove(bt: &BootServices) {
-    info!("Testing the `memmove` / `memset` functions");
+    info!("Testing the `memmove` / `set_mem` functions");
 
     let src = [1, 2, 3, 4];
     let mut dest = [0u8; 4];
 
     // Fill the buffer with a value
     unsafe {
-        bt.memset(dest.as_mut_ptr(), dest.len(), 1);
+        bt.set_mem(dest.as_mut_ptr(), dest.len(), 1);
     }
 
     assert_eq!(dest, [1; 4], "Failed to set memory");

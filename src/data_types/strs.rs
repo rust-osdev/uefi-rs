@@ -192,7 +192,7 @@ impl fmt::Debug for CStr16 {
 impl fmt::Display for CStr16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for c in self.iter() {
-            <Char16 as fmt::Display>::fmt(&c, f)?;
+            <Char16 as fmt::Display>::fmt(c, f)?;
         }
         Ok(())
     }

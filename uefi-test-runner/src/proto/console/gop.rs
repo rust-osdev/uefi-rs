@@ -25,7 +25,7 @@ fn set_graphics_mode(gop: &mut GraphicsOutput) {
     let mode = gop
         .modes()
         .map(|mode| mode.expect("Warnings encountered while querying mode"))
-        .find(|ref mode| {
+        .find(|mode| {
             let info = mode.info();
             info.resolution() == (1024, 768)
         })

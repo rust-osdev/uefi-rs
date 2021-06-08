@@ -65,6 +65,20 @@ impl LoadedImage {
         }
     }
 
+    /// Set the load options for the image. This can be used prior to
+    /// calling `BootServices.start_image` to control the command line
+    /// passed to the image.
+    ///
+    /// # Safety
+    ///
+    /// This function takes `options` as a raw pointer because the
+    /// load options data is not owned by `LoadedImage`. The caller
+    /// must ensure that the memory lives long enough.
+    pub unsafe fn set_load_options(&mut self, options: *const Char16, size: u32) {
+        self.load_options = options;
+        self.load_options_size = size;
+    }
+
     /// Returns the base address and the size in bytes of the loaded image.
     pub fn info(&self) -> (usize, u64) {
         (self.image_base, self.image_size)

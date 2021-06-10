@@ -109,7 +109,7 @@ pub struct GptPartitionEntry {
 }
 
 impl GptPartitionEntry {
-    /// Get the number of blocks in the partition. Returns None if the
+    /// Get the number of blocks in the partition. Returns `None` if the
     /// end block is before the start block, or if the number doesn't
     /// fit in a `u64`.
     pub fn num_blocks(&self) -> Option<u64> {

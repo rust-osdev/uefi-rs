@@ -73,23 +73,20 @@ impl<View: SystemTableView> SystemTable<View> {
 
 // These parts of the UEFI System Table interface may only be used until boot
 // services are exited and hardware control is handed over to the OS loader
-#[allow(clippy::mut_from_ref)]
 impl SystemTable<Boot> {
     /// Returns the standard input protocol.
-    pub fn stdin(&self) -> &mut text::Input {
+    pub fn stdin(&mut self) -> &mut text::Input {
         unsafe { &mut *self.table.stdin }
     }
 
     /// Returns the standard output protocol.
-    pub fn stdout(&self) -> &mut text::Output {
-        let stdout_ptr = self.table.stdout as *const _ as *mut _;
-        unsafe { &mut *stdout_ptr }
+    pub fn stdout(&mut self) -> &mut text::Output {
+        unsafe { &mut *self.table.stdout.cast() }
     }
 
     /// Returns the standard error protocol.
-    pub fn stderr(&self) -> &mut text::Output {
-        let stderr_ptr = self.table.stderr as *const _ as *mut _;
-        unsafe { &mut *stderr_ptr }
+    pub fn stderr(&mut self) -> &mut text::Output {
+        unsafe { &mut *self.table.stderr.cast() }
     }
 
     /// Access runtime services

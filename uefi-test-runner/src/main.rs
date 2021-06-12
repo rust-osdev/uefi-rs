@@ -20,9 +20,9 @@ mod boot;
 mod proto;
 
 #[entry]
-fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
+fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
-    uefi_services::init(&st).expect_success("Failed to initialize utilities");
+    uefi_services::init(&mut st).expect_success("Failed to initialize utilities");
 
     // Reset the console before running all the other tests.
     st.stdout()
@@ -43,7 +43,7 @@ fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
     boot::test(bt);
 
     // Test all the supported protocols.
-    proto::test(&st);
+    proto::test(&mut st);
 
     // TODO: test the runtime services.
     // These work before boot services are exited, but we'd probably want to
@@ -107,7 +107,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     }
 }
 
-fn shutdown(image: uefi::Handle, st: SystemTable<Boot>) -> ! {
+fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.

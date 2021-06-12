@@ -60,7 +60,7 @@ pub fn system_table() -> NonNull<SystemTable<Boot>> {
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-pub fn init(st: &SystemTable<Boot>) -> Result {
+pub fn init(st: &mut SystemTable<Boot>) -> Result {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {
@@ -71,8 +71,8 @@ pub fn init(st: &SystemTable<Boot>) -> Result {
         SYSTEM_TABLE = Some(st.unsafe_clone());
 
         // Setup logging and memory allocation
-        let boot_services = st.boot_services();
         init_logger(st);
+        let boot_services = st.boot_services();
         uefi::alloc::init(boot_services);
 
         // Schedule these tools to be disabled on exit from UEFI boot services
@@ -90,7 +90,7 @@ pub fn init(st: &SystemTable<Boot>) -> Result {
 ///
 /// This is unsafe because you must arrange for the logger to be reset with
 /// disable() on exit from UEFI boot services.
-unsafe fn init_logger(st: &SystemTable<Boot>) {
+unsafe fn init_logger(st: &mut SystemTable<Boot>) {
     let stdout = st.stdout();
 
     // Construct the logger.

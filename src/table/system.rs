@@ -81,14 +81,12 @@ impl SystemTable<Boot> {
 
     /// Returns the standard output protocol.
     pub fn stdout(&mut self) -> &mut text::Output {
-        let stdout_ptr = self.table.stdout as *mut () as *mut _;
-        unsafe { &mut *stdout_ptr }
+        unsafe { &mut *self.table.stdout.cast() }
     }
 
     /// Returns the standard error protocol.
     pub fn stderr(&mut self) -> &mut text::Output {
-        let stderr_ptr = self.table.stderr as *mut () as *mut _;
-        unsafe { &mut *stderr_ptr }
+        unsafe { &mut *self.table.stderr.cast() }
     }
 
     /// Access runtime services

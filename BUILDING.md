@@ -16,7 +16,7 @@ The following steps allow you to build a simple UEFI app.
   use uefi::prelude::*;
 
   #[entry]
-  fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status;
+  fn efi_main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status;
   ```
   You will also want to add a dependency to the [`rlibc`](https://docs.rs/rlibc/) crate,
   to avoid linking errors.

@@ -9,8 +9,27 @@ on:
     - cron:  '0 0 * * 0-6'
 
 jobs:
+  build:
+    name: Build on AArch64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+      # TODO: cache Rust binaries
+
+    - name: Build
+      run: ./build.py build --target aarch64
+      working-directory: ./uefi-test-runner
+
   build_and_test:
-    name: Build and run tests
+    name: Build and run tests on x86_64
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources

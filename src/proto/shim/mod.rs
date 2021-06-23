@@ -1,5 +1,12 @@
 //! Shim lock protocol.
 
+#![cfg(any(
+    target_arch = "i386",
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+
 use crate::proto::Protocol;
 use crate::result::Error;
 use crate::{unsafe_guid, Result, Status};
@@ -36,6 +43,18 @@ pub struct Hashes {
     pub sha1: [u8; SHA1_DIGEST_SIZE],
 }
 
+// These macros set the correct calling convention for the Shim protocol methods.
+
+#[cfg(any(target_arch = "i386", target_arch = "x86_64"))]
+macro_rules! shim_function {
+    (fn $args:tt -> $return_type:ty) => (extern "sysv64" fn $args -> $return_type)
+}
+
+#[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+macro_rules! shim_function {
+    (fn $args:tt -> $return_type:ty) => (extern "C" fn $args -> $return_type)
+}
+
 /// The Shim lock protocol.
 ///
 /// This protocol is not part of the UEFI specification, but is
@@ -50,15 +69,17 @@ pub struct Hashes {
 #[unsafe_guid("605dab50-e046-4300-abb6-3dd810dd8b23")]
 #[derive(Protocol)]
 pub struct ShimLock {
-    verify: extern "sysv64" fn(buffer: *const u8, size: u32) -> Status,
-    hash: extern "sysv64" fn(
-        buffer: *const u8,
-        size: u32,
-        context: *mut Context,
-        sha256: *mut [u8; SHA256_DIGEST_SIZE],
-        sha1: *mut [u8; SHA1_DIGEST_SIZE],
-    ) -> Status,
-    context: extern "sysv64" fn(buffer: *const u8, size: u32, context: *mut Context) -> Status,
+    verify: shim_function! { fn(buffer: *const u8, size: u32) -> Status },
+    hash: shim_function! {
+        fn(
+            buffer: *const u8,
+            size: u32,
+            context: *mut Context,
+            sha256: *mut [u8; SHA256_DIGEST_SIZE],
+            sha1: *mut [u8; SHA1_DIGEST_SIZE]
+        ) -> Status
+    },
+    context: shim_function! { fn(buffer: *const u8, size: u32, context: *mut Context) -> Status },
 }
 
 impl ShimLock {

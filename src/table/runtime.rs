@@ -1,8 +1,9 @@
 //! UEFI services available at runtime, even after the OS boots.
 
 use super::Header;
+use crate::result::Error;
 use crate::table::boot::MemoryDescriptor;
-use crate::{Result, Status};
+use crate::{CStr16, Char16, Guid, Result, Status};
 use bitflags::bitflags;
 use core::fmt;
 use core::mem::MaybeUninit;
@@ -26,7 +27,27 @@ pub struct RuntimeServices {
         desc_version: u32,
         virtual_map: *mut MemoryDescriptor,
     ) -> Status,
-    _pad2: [usize; 5],
+    _pad2: usize,
+    get_variable: unsafe extern "efiapi" fn(
+        variable_name: *const Char16,
+        vendor_guid: *const Guid,
+        attributes: *mut VariableAttributes,
+        data_size: *mut usize,
+        data: *mut u8,
+    ) -> Status,
+    get_next_variable_name: unsafe extern "efiapi" fn(
+        variable_name_size: *mut usize,
+        variable_name: *mut u16,
+        vendor_guid: *mut Guid,
+    ) -> Status,
+    set_variable: unsafe extern "efiapi" fn(
+        variable_name: *const Char16,
+        vendor_guid: *const Guid,
+        attributes: VariableAttributes,
+        data_size: usize,
+        data: *const u8,
+    ) -> Status,
+    _pad3: usize,
     reset: unsafe extern "efiapi" fn(
         rt: ResetType,
 
@@ -80,6 +101,68 @@ impl RuntimeServices {
         let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
         let map_ptr = map.as_mut_ptr();
         (self.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).into()
+    }
+
+    /// Get the size (in bytes) of a variable. This can be used to find out how
+    /// big of a buffer should be passed in to `get_variable`.
+    pub fn get_variable_size(&self, name: &CStr16, vendor: &Guid) -> Result<usize> {
+        let mut data_size = 0;
+        let status = unsafe {
+            (self.get_variable)(
+                name.as_ptr(),
+                vendor,
+                ptr::null_mut(),
+                &mut data_size,
+                ptr::null_mut(),
+            )
+        };
+
+        if status == Status::BUFFER_TOO_SMALL {
+            Status::SUCCESS.into_with_val(|| data_size)
+        } else {
+            Err(Error::from(status))
+        }
+    }
+
+    /// Get the contents and attributes of a variable. The size of `buf` must
+    /// be at least as big as the variable's size, although it can be
+    /// larger. If it is too small, `BUFFER_TOO_SMALL` is returned.
+    ///
+    /// On success, a tuple containing the variable's value (a slice of `buf`)
+    /// and the variable's attributes is returned.
+    pub fn get_variable<'a>(
+        &self,
+        name: &CStr16,
+        vendor: &Guid,
+        buf: &'a mut [u8],
+    ) -> Result<(&'a [u8], VariableAttributes)> {
+        let mut attributes = VariableAttributes::empty();
+        let mut data_size = buf.len();
+        unsafe {
+            (self.get_variable)(
+                name.as_ptr(),
+                vendor,
+                &mut attributes,
+                &mut data_size,
+                buf.as_mut_ptr(),
+            )
+            .into_with_val(move || (&buf[..data_size], attributes))
+        }
+    }
+
+    /// Set the value of a variable. This can be used to create a new variable,
+    /// update an existing variable, or (when the size of `data` is zero)
+    /// delete a variable.
+    pub fn set_variable(
+        &self,
+        name: &CStr16,
+        vendor: &Guid,
+        attributes: VariableAttributes,
+        data: &[u8],
+    ) -> Result {
+        unsafe {
+            (self.set_variable)(name.as_ptr(), vendor, attributes, data.len(), data.as_ptr()).into()
+        }
     }
 
     /// Resets the computer.
@@ -244,6 +327,52 @@ pub struct TimeCapabilities {
     /// "resolution" reporting level. False for normal PC-AT CMOS RTC devices.
     pub sets_to_zero: bool,
 }
+
+bitflags! {
+    /// Flags describing the attributes of a variable.
+    pub struct VariableAttributes: u32 {
+        /// Variable is maintained across a power cycle.
+        const NON_VOLATILE = 0x01;
+
+        /// Variable is accessible during the time that boot services are
+        /// accessible.
+        const BOOTSERVICE_ACCESS = 0x02;
+
+        /// Variable is accessible during the time that runtime services are
+        /// accessible.
+        const RUNTIME_ACCESS = 0x04;
+
+        /// Variable is stored in the portion of NVR allocated for error
+        /// records.
+        const HARDWARE_ERROR_RECORD = 0x08;
+
+        /// Deprecated.
+        const AUTHENTICATED_WRITE_ACCESS = 0x10;
+
+        /// Variable payload begins with an EFI_VARIABLE_AUTHENTICATION_2
+        /// structure.
+        const TIME_BASED_AUTHENTICATED_WRITE_ACCESS = 0x20;
+
+        /// This is never set in the attributes returned by
+        /// `get_variable`. When passed to `set_variable`, the variable payload
+        /// will be appended to the current value of the variable if supported
+        /// by the firmware.
+        const APPEND_WRITE = 0x40;
+
+        /// Variable payload begins with an EFI_VARIABLE_AUTHENTICATION_3
+        /// structure.
+        const ENHANCED_AUTHENTICATED_ACCESS = 0x80;
+    }
+}
+
+/// Vendor GUID used to access global variables.
+pub const GLOBAL_VARIABLE: Guid = Guid::from_values(
+    0x8be4df61,
+    0x93ca,
+    0x11d2,
+    0xaa0d,
+    [0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c],
+);
 
 /// The type of system reset.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

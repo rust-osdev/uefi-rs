@@ -14,7 +14,7 @@
 
 use crate::proto::console::text::Output;
 
-use core::fmt::{self, Write};
+use core::fmt::Write;
 use core::ptr::NonNull;
 
 /// Logging implementation which writes to a UEFI output stream.
@@ -86,7 +86,7 @@ impl<'boot> log::Log for Logger {
             }
 
             // Actually write the data to UEFI stdout.
-            let result = unsafe { self.writer.unwrap().as_mut() }.write_str(buf.as_str());
+            let result = unsafe { ptr.as_mut() }.write_str(buf.as_str());
             if !cfg!(feature = "ignore-logger-errors") {
                 result.unwrap()
             }

@@ -12,7 +12,7 @@ use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::mem::{self, MaybeUninit};
-use core::ptr;
+use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -121,7 +121,11 @@ pub struct BootServices {
     open_protocol_information: usize,
 
     // Library services
-    protocols_per_handle: usize,
+    protocols_per_handle: unsafe extern "efiapi" fn(
+        handle: Handle,
+        protocol_buffer: *mut *mut *const Guid,
+        protocol_buffer_count: *mut usize,
+    ) -> Status,
     locate_handle_buffer: usize,
     locate_protocol: extern "efiapi" fn(
         proto: &Guid,
@@ -548,6 +552,36 @@ impl BootServices {
         unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
     }
 
+    /// Get the list of protocol interface [`Guids`][Guid] that are installed
+    /// on a [`Handle`].
+    pub fn protocols_per_handle(&self, handle: Handle) -> Result<ProtocolsPerHandle> {
+        let mut protocols = ptr::null_mut();
+        let mut count = 0;
+
+        let mut status = unsafe { (self.protocols_per_handle)(handle, &mut protocols, &mut count) };
+
+        if !status.is_error() {
+            // Ensure that protocols isn't null, and that none of the GUIDs
+            // returned are null.
+            if protocols.is_null() {
+                status = Status::OUT_OF_RESOURCES;
+            } else {
+                let protocols: &[*const Guid] = unsafe { slice::from_raw_parts(protocols, count) };
+                if protocols.iter().any(|ptr| ptr.is_null()) {
+                    status = Status::OUT_OF_RESOURCES;
+                }
+            }
+        }
+
+        status.into_with_val(|| {
+            let protocols = unsafe { slice::from_raw_parts_mut(protocols as *mut &Guid, count) };
+            ProtocolsPerHandle {
+                boot_services: self,
+                protocols,
+            }
+        })
+    }
+
     /// Returns a protocol implementation, if present on the system.
     ///
     /// The caveats of `BootServices::handle_protocol()` also apply here.
@@ -932,4 +966,34 @@ pub enum TimerTrigger {
     /// Parameter is the delay in 100ns units.
     /// Delay of 0 will be signalled on next timer tick.
     Relative(u64),
+}
+
+/// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
+/// returned by [`BootServices::protocols_per_handle`].
+pub struct ProtocolsPerHandle<'a> {
+    // The pointer returned by `protocols_per_handle` has to be free'd with
+    // `free_pool`, so keep a reference to boot services for that purpose.
+    boot_services: &'a BootServices,
+
+    // This is mutable so that it can later be free'd with `free_pool`. Users
+    // should only get an immutable reference though, so the field is not
+    // public.
+    protocols: &'a mut [&'a Guid],
+}
+
+impl<'a> Drop for ProtocolsPerHandle<'a> {
+    fn drop(&mut self) {
+        // Ignore the result, we can't do anything about an error here.
+        let _ = self
+            .boot_services
+            .free_pool(self.protocols.as_mut_ptr() as *mut u8);
+    }
+}
+
+impl<'a> ProtocolsPerHandle<'a> {
+    /// Get the protocol interface [`Guids`][Guid] that are installed on the
+    /// [`Handle`].
+    pub fn protocols(&self) -> &[&Guid] {
+        self.protocols
+    }
 }

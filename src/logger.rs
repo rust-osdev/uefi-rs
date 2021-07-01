@@ -55,8 +55,18 @@ impl<'boot> log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if let Some(mut ptr) = self.writer {
-            let writer = unsafe { ptr.as_mut() };
-            let result = DecoratedLog::write(writer, record.level(), record.args());
+            // Assumption is that 4096 byte is big enough for every possible
+            // log message. Stack is cheap and according to UEFI spec, we have
+            // at least 128KiB available.
+            let mut buf = arrayvec::ArrayString::<4096>::new();
+            let result = writeln!(
+                buf,
+                "[{:>5}]: {:>12}@{:03}: {}",
+                record.level(),
+                record.file().unwrap_or("<unknown>"),
+                record.line().unwrap_or(0),
+                record.args(),
+            );
 
             // Some UEFI implementations, such as the one used by VirtualBox,
             // may intermittently drop out some text from SimpleTextOutput and
@@ -74,6 +84,12 @@ impl<'boot> log::Log for Logger {
             if !cfg!(feature = "ignore-logger-errors") {
                 result.unwrap()
             }
+
+            // Actually write the data to UEFI stdout.
+            let result = unsafe { self.writer.unwrap().as_mut() }.write_str(buf.as_str());
+            if !cfg!(feature = "ignore-logger-errors") {
+                result.unwrap()
+            }
         }
     }
 
@@ -85,64 +101,3 @@ impl<'boot> log::Log for Logger {
 // The logger is not thread-safe, but the UEFI boot environment only uses one processor.
 unsafe impl Sync for Logger {}
 unsafe impl Send for Logger {}
-
-/// Writer wrapper which prints a log level in front of every line of text
-///
-/// This is less easy than it sounds because...
-///
-/// 1. The fmt::Arguments is a rather opaque type, the ~only thing you can do
-///    with it is to hand it to an fmt::Write implementation.
-/// 2. Without using memory allocation, the easy cop-out of writing everything
-///    to a String then post-processing is not available.
-///
-/// Therefore, we need to inject ourselves in the middle of the fmt::Write
-/// machinery and intercept the strings that it sends to the Writer.
-struct DecoratedLog<'writer, W: fmt::Write> {
-    writer: &'writer mut W,
-    log_level: log::Level,
-    at_line_start: bool,
-}
-
-impl<'writer, W: fmt::Write> DecoratedLog<'writer, W> {
-    // Call this method to print a level-annotated log
-    fn write(writer: &'writer mut W, log_level: log::Level, args: &fmt::Arguments) -> fmt::Result {
-        let mut decorated_writer = Self {
-            writer,
-            log_level,
-            at_line_start: true,
-        };
-        writeln!(decorated_writer, "{}", *args)
-    }
-}
-
-impl<'writer, W: fmt::Write> fmt::Write for DecoratedLog<'writer, W> {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        // Split the input string into lines
-        let mut lines = s.lines();
-
-        // The beginning of the input string may actually fall in the middle of
-        // a line of output. We only print the log level if it truly is at the
-        // beginning of a line of output.
-        let first = lines.next().unwrap_or("");
-        if self.at_line_start {
-            write!(self.writer, "{}: ", self.log_level)?;
-            self.at_line_start = false;
-        }
-        write!(self.writer, "{}", first)?;
-
-        // For the remainder of the line iterator (if any), we know that we are
-        // truly at the beginning of lines of output.
-        for line in lines {
-            write!(self.writer, "\n{}: {}", self.log_level, line)?;
-        }
-
-        // If the string ends with a newline character, we must 1/propagate it
-        // to the output (it was swallowed by the iteration) and 2/prepare to
-        // write the log level of the beginning of the next line (if any).
-        if let Some('\n') = s.chars().next_back() {
-            writeln!(self.writer)?;
-            self.at_line_start = true;
-        }
-        Ok(())
-    }
-}

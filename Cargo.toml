@@ -25,7 +25,7 @@ is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 default = []
 alloc = []
 exts = []
-logger = []
+logger = ["arrayvec"]
 # Ignore text output errors in logger as a workaround for firmware issues that
 # were observed on the VirtualBox UEFI implementation (see uefi-rs#121)
 ignore-logger-errors = []
@@ -35,6 +35,8 @@ bitflags = "1.2.1"
 log = { version = "0.4.11", default-features = false }
 ucs2 = "0.3.1"
 uefi-macros = "0.3.2"
+# stack-allocated array (to format strings without heap allocation)
+arrayvec = { version = "0.7.1", default-features = false, optional = true }
 
 [workspace]
 members = [

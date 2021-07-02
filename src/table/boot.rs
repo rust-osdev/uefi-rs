@@ -11,6 +11,7 @@ use alloc_api::vec::Vec;
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
+use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
 use core::{ptr, slice};
 
@@ -700,6 +701,108 @@ impl BootServices {
 
 impl super::Table for BootServices {
     const SIGNATURE: u64 = 0x5652_4553_544f_4f42;
+}
+
+impl Debug for BootServices {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("BootServices")
+            .field("header", &self.header)
+            .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const u64))
+            .field("restore_tpl (fn ptr)", &(self.restore_tpl as *const u64))
+            .field(
+                "allocate_pages (fn ptr)",
+                &(self.allocate_pages as *const u64),
+            )
+            .field(
+                "free_pages (fn ptr)",
+                &(self.free_pages as u64 as *const u64),
+            )
+            .field(
+                "get_memory_map (fn ptr)",
+                &(self.get_memory_map as *const u64),
+            )
+            .field(
+                "allocate_pool (fn ptr)",
+                &(self.allocate_pool as *const u64),
+            )
+            .field("free_pool (fn ptr)", &(self.free_pool as *const u64))
+            .field("create_event (fn ptr)", &(self.create_event as *const u64))
+            .field("set_timer (fn ptr)", &(self.set_timer as *const u64))
+            .field(
+                "wait_for_event (fn ptr)",
+                &(self.wait_for_event as *const u64),
+            )
+            .field("signal_event", &self.signal_event)
+            .field("close_event", &self.close_event)
+            .field("check_event", &self.check_event)
+            .field(
+                "install_protocol_interface",
+                &self.install_protocol_interface,
+            )
+            .field(
+                "reinstall_protocol_interface",
+                &self.reinstall_protocol_interface,
+            )
+            .field(
+                "uninstall_protocol_interface",
+                &self.uninstall_protocol_interface,
+            )
+            .field(
+                "handle_protocol (fn ptr)",
+                &(self.handle_protocol as *const u64),
+            )
+            .field("register_protocol_notify", &self.register_protocol_notify)
+            .field(
+                "locate_handle (fn ptr)",
+                &(self.locate_handle as *const u64),
+            )
+            .field(
+                "locate_device_path (fn ptr)",
+                &(self.locate_device_path as *const u64),
+            )
+            .field(
+                "install_configuration_table",
+                &self.install_configuration_table,
+            )
+            .field("load_image (fn ptr)", &(self.load_image as *const u64))
+            .field("start_image (fn ptr)", &(self.start_image as *const u64))
+            .field("exit", &self.exit)
+            .field("unload_image (fn ptr)", &(self.unload_image as *const u64))
+            .field(
+                "exit_boot_services (fn ptr)",
+                &(self.exit_boot_services as *const u64),
+            )
+            .field("get_next_monotonic_count", &self.get_next_monotonic_count)
+            .field("stall (fn ptr)", &(self.stall as *const u64))
+            .field(
+                "set_watchdog_timer (fn ptr)",
+                &(self.set_watchdog_timer as *const u64),
+            )
+            .field("connect_controller", &self.connect_controller)
+            .field("disconnect_controller", &self.disconnect_controller)
+            .field("open_protocol", &self.open_protocol)
+            .field("close_protocol", &self.close_protocol)
+            .field("open_protocol_information", &self.open_protocol_information)
+            .field("protocols_per_handle", &(self.protocols_per_handle as *const u64))
+            .field("locate_handle_buffer", &self.locate_handle_buffer)
+            .field(
+                "locate_protocol (fn ptr)",
+                &(self.locate_protocol as *const u64),
+            )
+            .field(
+                "install_multiple_protocol_interfaces",
+                &self.install_multiple_protocol_interfaces,
+            )
+            .field(
+                "uninstall_multiple_protocol_interfaces",
+                &self.uninstall_multiple_protocol_interfaces,
+            )
+            .field("calculate_crc32", &self.calculate_crc32)
+            .field("copy_mem (fn ptr)", &(self.copy_mem as *const u64))
+            .field("set_mem (fn ptr)", &(self.set_mem as *const u64))
+            .field("create_event_ex", &self.create_event_ex)
+            .finish()
+    }
 }
 
 newtype_enum! {

@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use core::slice;
+use core::{slice, ptr};
 
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
@@ -7,6 +7,7 @@ use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 use super::boot::{BootServices, MemoryDescriptor};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
+use core::fmt::{Debug, Formatter};
 
 /// Marker trait used to provide different views of the UEFI System Table
 pub trait SystemTableView {}
@@ -41,6 +42,7 @@ impl SystemTableView for Runtime {}
 /// UEFI boot services in the eye of the Rust borrow checker) and a runtime view
 /// will be provided to replace it.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct SystemTable<View: SystemTableView> {
     table: &'static SystemTableImpl,
     _marker: PhantomData<View>,
@@ -186,6 +188,12 @@ impl SystemTable<Boot> {
     }
 }
 
+impl Debug for SystemTable<Boot> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        self.table.fmt(f)
+    }
+}
+
 // These parts of the SystemTable struct are only visible after exit from UEFI
 // boot services. They provide unsafe access to the UEFI runtime services, which
 // which were already available before but in safe form.
@@ -220,7 +228,7 @@ struct SystemTableImpl {
     runtime: &'static RuntimeServices,
     /// Boot services table.
     boot: *const BootServices,
-    /// Number of entires in the configuration table.
+    /// Number of entries in the configuration table.
     nr_cfg: usize,
     /// Pointer to beginning of the array.
     cfg_table: *const cfg::ConfigTableEntry,
@@ -228,4 +236,26 @@ struct SystemTableImpl {
 
 impl<View: SystemTableView> super::Table for SystemTable<View> {
     const SIGNATURE: u64 = 0x5453_5953_2049_4249;
+}
+
+impl Debug for SystemTableImpl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("UefiSystemTable")
+            .field("header", &self.header)
+            .field("fw_vendor", &(unsafe { CStr16::from_ptr(self.fw_vendor) }))
+            .field("fw_revision", &self.fw_revision)
+            .field("stdin_handle", &self.stdin_handle)
+            .field("stdin", &self.stdin)
+            .field("stdout_handle", &self.stdout_handle)
+            .field("stdout", &self.stdout)
+            .field("stderr_handle", &self.stderr_handle)
+            .field("stderr", &self.stderr)
+            .field("runtime", &self.runtime)
+            // a little bit of extra work needed to call debug-fmt on the BootServices
+            // instead of printing the raw pointer
+            .field("boot", &(unsafe { ptr::read(self.boot) }))
+            .field("nf_cfg", &self.nr_cfg)
+            .field("cfg_table", &self.cfg_table)
+            .finish()
+    }
 }

@@ -55,6 +55,51 @@ impl DevicePath {
     pub fn length(&self) -> u16 {
         self.header.length
     }
+
+    /// True if this node ends the entire path.
+    pub fn is_end_entire(&self) -> bool {
+        self.device_type() == DeviceType::END && self.sub_type() == DeviceSubType::END_ENTIRE
+    }
+
+    /// Get an iterator over the [`DevicePath`] nodes starting at
+    /// `self`. Iteration ends when a path is reached where
+    /// [`is_end_entire`][DevicePath::is_end_entire] is true. That ending path
+    /// is not returned by the iterator.
+    pub fn iter(&self) -> DevicePathIterator {
+        DevicePathIterator { path: self }
+    }
+}
+
+/// Iterator over [`DevicePath`] nodes.
+///
+/// Iteration ends when a path is reached where [`DevicePath::is_end_entire`]
+/// is true. That ending path is not returned by the iterator.
+///
+/// This struct is returned by [`DevicePath::iter`].
+pub struct DevicePathIterator<'a> {
+    path: &'a DevicePath,
+}
+
+impl<'a> Iterator for DevicePathIterator<'a> {
+    type Item = &'a DevicePath;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let cur = self.path;
+
+        if cur.is_end_entire() {
+            return None;
+        }
+
+        // Advance self.path to the next entry.
+        let len = cur.header.length;
+        let byte_ptr = cur as *const DevicePath as *const u8;
+        unsafe {
+            let next_path_ptr = byte_ptr.add(len as usize) as *const DevicePath;
+            self.path = &*next_path_ptr;
+        }
+
+        Some(cur)
+    }
 }
 
 newtype_enum! {

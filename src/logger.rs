@@ -113,7 +113,13 @@ struct DecoratedLog<'writer, 'a, W: fmt::Write> {
 
 impl<'writer, 'a, W: fmt::Write> DecoratedLog<'writer, 'a, W> {
     // Call this method to print a level-annotated log
-    fn write(writer: &'writer mut W, log_level: log::Level, args: &fmt::Arguments, file: &'a str, line: u32) -> fmt::Result {
+    fn write(
+        writer: &'writer mut W,
+        log_level: log::Level,
+        args: &fmt::Arguments,
+        file: &'a str,
+        line: u32,
+    ) -> fmt::Result {
         let mut decorated_writer = Self {
             writer,
             log_level,
@@ -135,7 +141,11 @@ impl<'writer, 'a, W: fmt::Write> fmt::Write for DecoratedLog<'writer, 'a, W> {
         // beginning of a line of output.
         let first = lines.next().unwrap_or("");
         if self.at_line_start {
-            write!(self.writer, "[{:>5}]: {:>12}@{:03}: ", self.log_level, self.file, self.line)?;
+            write!(
+                self.writer,
+                "[{:>5}]: {:>12}@{:03}: ",
+                self.log_level, self.file, self.line
+            )?;
             self.at_line_start = false;
         }
         write!(self.writer, "{}", first)?;

@@ -219,13 +219,18 @@ impl Time {
 
 impl fmt::Debug for Time {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}-{}-{} ", self.year, self.month, self.day)?;
+        write!(f, "{:04}-{:02}-{:02} ", self.year, self.month, self.day)?;
         write!(
             f,
-            "{}:{}:{}.{} ",
+            "{:02}:{:02}:{:02}.{:09}",
             self.hour, self.minute, self.second, self.nanosecond
         )?;
-        write!(f, "{} {:?}", self.time_zone, self.daylight)
+        if self.time_zone == 2047 {
+            write!(f, ", Timezone=unspecified")?;
+        } else {
+            write!(f, ", Timezone={}", self.time_zone)?;
+        }
+        write!(f, ", Daylight={:?}", self.daylight)
     }
 }
 

@@ -480,6 +480,18 @@ impl BootServices {
             (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).into()
         }
     }
+    
+    /// Exits the UEFI application and returns control to the UEFI component
+    /// that started the UEFI application.
+    pub fn exit(
+        &self, 
+        image_handle: Handle, 
+        exit_status: Status, 
+        exit_data_size: usize, 
+        exit_data: *mut Char16
+    ) -> Result {
+        (self.exit)(image_handle, exit_status, exit_data_size, exit_data).into()
+    }
 
     /// Exits the UEFI boot services
     ///

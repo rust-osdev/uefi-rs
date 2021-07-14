@@ -5,6 +5,7 @@ use crate::table::boot::MemoryDescriptor;
 use crate::{Result, Status};
 use bitflags::bitflags;
 use core::fmt;
+use core::fmt::Formatter;
 use core::mem::MaybeUninit;
 use core::ptr;
 
@@ -131,6 +132,9 @@ bitflags! {
 }
 
 impl Time {
+    /// Unspecified Timezone/local time.
+    const UNSPECIFIED_TIMEZONE: i16 = 0x07ff;
+
     /// Build an UEFI time struct
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -225,12 +229,42 @@ impl fmt::Debug for Time {
             "{:02}:{:02}:{:02}.{:09}",
             self.hour, self.minute, self.second, self.nanosecond
         )?;
-        if self.time_zone == 2047 {
-            write!(f, ", Timezone=unspecified")?;
+        if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
+            write!(f, ", Timezone=local")?;
         } else {
             write!(f, ", Timezone={}", self.time_zone)?;
         }
         write!(f, ", Daylight={:?}", self.daylight)
+    }
+}
+
+impl fmt::Display for Time {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:04}-{:02}-{:02} ", self.year, self.month, self.day)?;
+        write!(
+            f,
+            "{:02}:{:02}:{:02}.{:09}",
+            self.hour, self.minute, self.second, self.nanosecond
+        )?;
+
+        if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
+            write!(f, " (local)")?;
+        } else {
+            let offset_in_hours = self.time_zone as f32 / 60.0;
+            let integer_part = offset_in_hours as i16;
+            // We can't use "offset_in_hours.fract()" because it is part of `std`.
+            let fraction_part = offset_in_hours - (integer_part as f32);
+            // most time zones
+            if fraction_part == 0.0 {
+                write!(f, "UTC+{}", offset_in_hours)?;
+            }
+            // time zones with 30min offset (and perhaps other special time zones)
+            else {
+                write!(f, "UTC+{:.1}", offset_in_hours)?;
+            }
+        }
+
+        Ok(())
     }
 }
 

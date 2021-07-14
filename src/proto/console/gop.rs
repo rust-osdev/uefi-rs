@@ -275,7 +275,7 @@ impl<'boot> GraphicsOutput<'boot> {
     fn check_blt_buffer_region(&self, region: BltRegion, dims: (usize, usize), buf_length: usize) {
         match region {
             BltRegion::Full => assert!(
-                dims.0.saturating_add(dims.1.saturating_mul(dims.0)) <= buf_length,
+                dims.1.saturating_mul(dims.0) <= buf_length,
                 "BltBuffer access out of bounds"
             ),
             BltRegion::SubRectangle {

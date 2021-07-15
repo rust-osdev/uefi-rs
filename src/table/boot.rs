@@ -96,7 +96,7 @@ pub struct BootServices {
         exit_data_size: *mut usize,
         exit_data: &mut *mut Char16,
     ) -> Status,
-    exit: usize,
+    exit: extern "efiapi" fn (image_handle: Handle, exit_status: Status, exit_data_size: usize, exit_data: *mut Char16) -> Status,
     unload_image: extern "efiapi" fn(image_handle: Handle) -> Status,
     exit_boot_services:
         unsafe extern "efiapi" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
@@ -479,6 +479,18 @@ impl BootServices {
             let mut exit_data: *mut Char16 = ptr::null_mut();
             (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).into()
         }
+    }
+    
+    /// Exits the UEFI application and returns control to the UEFI component
+    /// that started the UEFI application.
+    pub fn exit(
+        &self, 
+        image_handle: Handle, 
+        exit_status: Status, 
+        exit_data_size: usize, 
+        exit_data: *mut Char16
+    ) -> Result {
+        (self.exit)(image_handle, exit_status, exit_data_size, exit_data).into()
     }
 
     /// Exits the UEFI boot services

@@ -32,7 +32,7 @@ pub struct DevicePath {
     /// Data related to device path
     ///
     /// The `device_type` and `sub_type` determine the kind of data, and its size.
-    pub length: [u8; 2],
+    pub length: u16,
 }
 
 newtype_enum! {

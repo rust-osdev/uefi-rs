@@ -488,6 +488,8 @@ impl BootServices {
     /// Exits the UEFI application and returns control to the UEFI component
     /// that started the UEFI application.
     ///
+    /// # Safety
+    ///
     /// This function is unsafe becase the caller is responsible for freeing
     /// any resources allocated by the application before exiting and returning
     /// control.

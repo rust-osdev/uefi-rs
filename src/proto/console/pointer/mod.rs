@@ -61,8 +61,8 @@ impl<'boot> Pointer<'boot> {
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct PointerMode {
-    // The pointer device's resolution on the X/Y/Z axis in counts/mm.
-    // If a value is 0, then the device does _not_ support that axis.
+    /// The pointer device's resolution on the X/Y/Z axis in counts/mm.
+    /// If a value is 0, then the device does _not_ support that axis.
     pub resolution: (u64, u64, u64),
     /// Whether the devices has a left button / right button.
     pub has_button: (bool, bool),

@@ -487,7 +487,11 @@ impl BootServices {
     
     /// Exits the UEFI application and returns control to the UEFI component
     /// that started the UEFI application.
-    pub fn exit(
+    ///
+    /// This function is unsafe becase the caller is responsible for freeing
+    /// any resources allocated by the application before exiting and returning
+    /// control.
+    pub unsafe fn exit(
         &self, 
         image_handle: Handle, 
         exit_status: Status, 

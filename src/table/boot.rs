@@ -713,10 +713,7 @@ impl Debug for BootServices {
                 "allocate_pages (fn ptr)",
                 &(self.allocate_pages as *const u64),
             )
-            .field(
-                "free_pages (fn ptr)",
-                &(self.free_pages as u64 as *const u64),
-            )
+            .field("free_pages (fn ptr)", &(self.free_pages as *const u64))
             .field(
                 "get_memory_map (fn ptr)",
                 &(self.get_memory_map as *const u64),
@@ -783,7 +780,10 @@ impl Debug for BootServices {
             .field("open_protocol", &self.open_protocol)
             .field("close_protocol", &self.close_protocol)
             .field("open_protocol_information", &self.open_protocol_information)
-            .field("protocols_per_handle", &(self.protocols_per_handle as *const u64))
+            .field(
+                "protocols_per_handle",
+                &(self.protocols_per_handle as *const u64),
+            )
             .field("locate_handle_buffer", &self.locate_handle_buffer)
             .field(
                 "locate_protocol (fn ptr)",

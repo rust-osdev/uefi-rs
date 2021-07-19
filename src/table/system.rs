@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use core::{slice, ptr};
+use core::{ptr, slice};
 
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};

@@ -3,6 +3,8 @@ use core::convert::TryInto;
 use core::fmt;
 use core::iter::Iterator;
 use core::result::Result;
+#[cfg(feature = "exts")]
+use crate::alloc_api::string::String;
 use core::slice;
 
 /// Errors which can occur during checked [uN] -> CStrN conversions
@@ -160,6 +162,45 @@ impl CStr16 {
             inner: self,
             pos: 0,
         }
+    }
+
+    /// Write a string slice into the provided buffer. If it fails, then most probably, because
+    /// the buffer is not big enough. In that case, the buffer will contain the correct string
+    /// until the point, where the size was not enough.
+    ///
+    /// ## Example
+    ///
+    /// ```rust
+    /// use uefi::data_types::ArrayString;
+    /// use uefi::{CStr16, Char16};
+    /// let firmware_vendor_c16_str: CStr16 = ...;
+    /// // crate "arrayvec" uses stack-allocated arrays for Strings => no heap
+    /// let mut buf = arrayvec::ArrayString::<128>::new();
+    /// firmware_vendor_c16_str.as_str_in_buf(&mut buf);
+    /// log::info!("as rust str: {}", buf.as_str());
+    /// ```
+    pub fn as_str_in_buf(&self, buf: &mut dyn core::fmt::Write) -> Result<(), ()> {
+        for c16 in self.iter() {
+            let res = buf.write_char(char::from(*c16));
+            if let Err(err) = res {
+                log::error!("Failed to write CStr16 as &str into buffer. Buffer too small? ({})", err);
+                return Err(())
+            }
+        }
+        Ok(())
+    }
+
+    /// Transforms the C16Str to a regular Rust String.
+    /// **WARNING** This will require **heap allocation**, i.e. you need an global allocator.
+    /// If the UEFI boot services are exited, your OS/Kernel needs to provide another allocation
+    /// mechanism!
+    #[cfg(feature = "exts")]
+    pub fn as_string(&self) -> String {
+        let mut buf = String::with_capacity(self.0.len() * 2);
+        for c16 in self.iter() {
+            buf.push(char::from(*c16));
+        }
+        buf
     }
 }
 

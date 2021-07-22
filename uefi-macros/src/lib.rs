@@ -3,6 +3,8 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+
+use proc_macro2::Span;
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
 use syn::{parse_macro_input, DeriveInput, Generics, Ident, ItemFn, ItemType, LitStr};
@@ -87,10 +89,10 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
     let ident = type_definition.ident.clone();
     let (impl_generics, ty_generics, where_clause) = type_definition.generics.split_for_impl();
     result.append_all(quote! {
-        unsafe impl #impl_generics crate::Identify for #ident #ty_generics #where_clause {
+        unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
             #[doc(hidden)]
             #[allow(clippy::unreadable_literal)]
-            const GUID : crate::Guid = crate::Guid::from_values(
+            const GUID: ::uefi::Guid = ::uefi::Guid::from_values(
                 #time_low,
                 #time_mid,
                 #time_high_and_version,
@@ -113,7 +115,7 @@ pub fn derive_protocol(item: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
     let result = quote! {
         // Mark this as a `Protocol` implementation
-        impl #impl_generics crate::proto::Protocol for #ident #ty_generics #where_clause {}
+        impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {}
 
         // Most UEFI functions expect to be called on the bootstrap processor.
         impl #impl_generics !Send for #ident #ty_generics #where_clause {}
@@ -134,14 +136,15 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         panic!("This attribute accepts no arguments");
     }
 
-    let f = parse_macro_input!(input as ItemFn);
+    let mut f = parse_macro_input!(input as ItemFn);
 
-    let entry_fn_ident = &f.sig.ident;
+    // force the exported symbol to be 'efi_main'
+    f.sig.ident = Ident::new("efi_main", Span::call_site());
 
-    let result = quote!(
-        static _UEFI_ENTRY_POINT_TYPE_CHECK: extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status = #entry_fn_ident;
+    let result = quote! {
+        static _UEFI_ENTRY_POINT_TYPE_CHECK: extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status = efi_main;
         #[no_mangle]
         pub extern "efiapi" #f
-    );
+    };
     result.into()
 }

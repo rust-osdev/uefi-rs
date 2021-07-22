@@ -15,11 +15,16 @@ The following steps allow you to build a simple UEFI app.
   #![feature(abi_efiapi)]
   use uefi::prelude::*;
 
+  extern crate rlibc;
+
   #[entry]
-  fn efi_main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status;
+  fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status;
   ```
-  You will also want to add a dependency to the [`rlibc`](https://docs.rs/rlibc/) crate,
-  to avoid linking errors.
+  Note that Rust EFI target requires the entry function to be exported with an `efi_main` symbol,
+  the `#[entry]` macro takes care of that, so the function name is irrelevant.
+
+  You will also want to add a dependency to the [`rlibc`](https://docs.rs/rlibc/) crate and
+  explicitly link it with `extern crate rlibc;` line to avoid linking errors.
 
 - Build using a `nightly` version of the compiler and activate the
   [`build-std`](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std)

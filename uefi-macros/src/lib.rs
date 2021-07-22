@@ -3,10 +3,11 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+
+use proc_macro2::Span;
 use quote::{quote, TokenStreamExt};
 use syn::parse::{Parse, ParseStream};
 use syn::{parse_macro_input, DeriveInput, Generics, Ident, ItemFn, ItemType, LitStr};
-use proc_macro2::Span;
 
 /// Parses a type definition, extracts its identifier and generic parameters
 struct TypeDefinition {

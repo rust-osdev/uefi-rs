@@ -497,7 +497,7 @@ impl BootServices {
         exit_data_size: usize,
         exit_data: *mut Char16
     ) -> ! {
-        (self.exit)(image_handle, exit_status, exit_data_size, exit_data).into()
+        (self.exit)(image_handle, exit_status, exit_data_size, exit_data)
     }
 
     /// Exits the UEFI boot services

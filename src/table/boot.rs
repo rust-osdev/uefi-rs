@@ -12,7 +12,7 @@ use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::mem::{self, MaybeUninit};
-use core::ptr;
+use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -121,7 +121,11 @@ pub struct BootServices {
     open_protocol_information: usize,
 
     // Library services
-    protocols_per_handle: usize,
+    protocols_per_handle: unsafe extern "efiapi" fn(
+        handle: Handle,
+        protocol_buffer: *mut *mut *const Guid,
+        protocol_buffer_count: *mut usize,
+    ) -> Status,
     locate_handle_buffer: usize,
     locate_protocol: extern "efiapi" fn(
         proto: &Guid,

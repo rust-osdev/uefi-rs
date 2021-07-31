@@ -52,6 +52,17 @@ fn test_variables(rt: &RuntimeServices) {
         .expect_success("failed to get variable");
     assert_eq!(data, test_value);
     assert_eq!(attrs, test_attrs);
+
+    info!("Testing variable_keys");
+    let variable_keys = rt
+        .variable_keys()
+        .expect_success("failed to get variable keys");
+    info!("Found {} variables", variable_keys.len());
+    // There are likely a bunch of variables, only print out the first one
+    // during the test to avoid spamming the log.
+    if let Some(key) = variable_keys.first() {
+        info!("First variable: {}", key);
+    }
 }
 
 pub fn test(rt: &RuntimeServices) {

@@ -18,6 +18,18 @@
 
 use crate::{proto::Protocol, unsafe_guid};
 
+/// Header that appears at the start of every [`DevicePath`] node.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C, packed)]
+pub struct DevicePathHeader {
+    /// Type of device
+    pub device_type: DeviceType,
+    /// Sub type of device
+    pub sub_type: DeviceSubType,
+    /// Size (in bytes) of the full [`DevicePath`] instance, including this header.
+    pub length: u16,
+}
+
 /// Device path protocol.
 ///
 /// This can be opened on a `LoadedImage.device()` handle using the `HandleProtocol` boot service.
@@ -25,14 +37,24 @@ use crate::{proto::Protocol, unsafe_guid};
 #[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]
 pub struct DevicePath {
+    header: DevicePathHeader,
+}
+
+impl DevicePath {
     /// Type of device
-    pub device_type: DeviceType,
+    pub fn device_type(&self) -> DeviceType {
+        self.header.device_type
+    }
+
     /// Sub type of device
-    pub sub_type: DeviceSubType,
-    /// Data related to device path
-    ///
-    /// The `device_type` and `sub_type` determine the kind of data, and its size.
-    pub length: u16,
+    pub fn sub_type(&self) -> DeviceSubType {
+        self.header.sub_type
+    }
+
+    /// Size (in bytes) of the full [`DevicePath`] instance, including the header.
+    pub fn length(&self) -> u16 {
+        self.header.length
+    }
 }
 
 newtype_enum! {
@@ -191,10 +213,8 @@ impl DeviceSubType {
 /// ACPI Device Path
 #[repr(C, packed)]
 pub struct AcpiDevicePath {
-    /// Type of device, which is ACPI Device Path
-    pub device_type: DeviceType,
-    /// Sub type of the device, which is ACPI Device Path
-    pub sub_type: DeviceSubType,
+    header: DevicePathHeader,
+
     /// Device's PnP hardware ID stored in a numeric 32-bit compressed EISA-type ID. This value must match the
     /// corresponding _HID in the ACPI name space.
     pub hid: u32,

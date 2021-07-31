@@ -18,6 +18,7 @@ use uefi::table::boot::MemoryDescriptor;
 
 mod boot;
 mod proto;
+mod runtime;
 
 #[entry]
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
@@ -43,11 +44,13 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     boot::test(bt);
 
     // Test all the supported protocols.
-    proto::test(&mut st);
+    proto::test(image, &mut st);
 
-    // TODO: test the runtime services.
-    // These work before boot services are exited, but we'd probably want to
-    // test them after exit_boot_services...
+    // TODO: runtime services work before boot services are exited, but we'd
+    // probably want to test them after exit_boot_services. However,
+    // exit_boot_services is currently called during shutdown.
+
+    runtime::test(st.runtime_services());
 
     shutdown(image, st);
 }

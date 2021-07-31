@@ -39,6 +39,10 @@
 #[cfg(feature = "exts")]
 extern crate alloc as alloc_api;
 
+// allow referring to self as ::uefi for macros to work universally (from this crate and from others)
+// see https://github.com/rust-lang/rust/issues/54647
+extern crate self as uefi;
+
 #[macro_use]
 pub mod data_types;
 pub use self::data_types::{unsafe_guid, Identify};

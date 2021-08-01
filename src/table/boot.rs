@@ -96,10 +96,10 @@ pub struct BootServices {
         exit_data_size: *mut usize,
         exit_data: &mut *mut Char16,
     ) -> Status,
-    exit: extern "efiapi" fn (
-        image_handle: Handle, 
-        exit_status: Status, 
-        exit_data_size: usize, 
+    exit: extern "efiapi" fn(
+        image_handle: Handle,
+        exit_status: Status,
+        exit_data_size: usize,
         exit_data: *mut Char16,
     ) -> !,
     unload_image: extern "efiapi" fn(image_handle: Handle) -> Status,

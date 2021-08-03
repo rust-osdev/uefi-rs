@@ -13,6 +13,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     test_protocols_per_handle(image, bt);
 
     debug::test(bt);
+    device_path::test(image, bt);
     media::test(bt);
     pi::test(bt);
 
@@ -54,6 +55,7 @@ fn test_protocols_per_handle(image: Handle, bt: &BootServices) {
 
 mod console;
 mod debug;
+mod device_path;
 mod media;
 mod pi;
 #[cfg(any(

@@ -5,7 +5,8 @@ use core::iter::Iterator;
 use core::result::Result;
 use core::slice;
 
-/// Errors which can occur during checked [uN] -> CStrN conversions
+/// Errors which can occur during checked `[uN]` -> `CStrN` conversions
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FromSliceWithNulError {
     /// An invalid character was encountered before the end of the slice
     InvalidChar(usize),

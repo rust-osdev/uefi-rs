@@ -1,13 +1,19 @@
 //! UEFI services available at runtime, even after the OS boots.
 
 use super::Header;
+#[cfg(feature = "exts")]
+use crate::data_types::FromSliceWithNulError;
 use crate::result::Error;
 use crate::table::boot::MemoryDescriptor;
 use crate::{CStr16, Char16, Guid, Result, Status};
+#[cfg(feature = "exts")]
+use alloc_api::{vec, vec::Vec};
 use bitflags::bitflags;
-use core::fmt;
+use core::fmt::Formatter;
+#[cfg(feature = "exts")]
+use core::mem;
 use core::mem::MaybeUninit;
-use core::ptr;
+use core::{fmt, ptr};
 
 /// Contains pointers to all of the runtime services.
 ///
@@ -150,6 +156,64 @@ impl RuntimeServices {
         }
     }
 
+    /// Get the names and vendor GUIDs of all currently-set variables.
+    #[cfg(feature = "exts")]
+    pub fn variable_keys(&self) -> Result<Vec<VariableKey>> {
+        let mut all_variables = Vec::new();
+
+        // The initial value of name must start with a null character. Start
+        // out with a reasonable size that likely won't need to be increased.
+        let mut name = vec![0u16; 32];
+        // The initial value of vendor is ignored.
+        let mut vendor = Guid::default();
+
+        let mut status;
+        loop {
+            let mut name_size_in_bytes = name.len() * mem::size_of::<u16>();
+            status = unsafe {
+                (self.get_next_variable_name)(
+                    &mut name_size_in_bytes,
+                    name.as_mut_ptr(),
+                    &mut vendor,
+                )
+            };
+
+            match status {
+                Status::SUCCESS => {
+                    // CStr16::from_u16_with_nul does not allow interior nulls,
+                    // so make the copy exactly the right size.
+                    let name = if let Some(nul_pos) = name.iter().position(|c| *c == 0) {
+                        name[..=nul_pos].to_vec()
+                    } else {
+                        status = Status::ABORTED;
+                        break;
+                    };
+
+                    all_variables.push(VariableKey { name, vendor });
+                }
+                Status::BUFFER_TOO_SMALL => {
+                    // The name buffer passed in was too small, resize it to be
+                    // big enough for the next variable name.
+                    name.resize(name_size_in_bytes / 2, 0);
+                }
+                Status::NOT_FOUND => {
+                    // This status indicates the end of the list. The final
+                    // variable has already been received at this point, so
+                    // no new variable should be added to the output.
+                    status = Status::SUCCESS;
+                    break;
+                }
+                _ => {
+                    // For anything else, an error has occurred so break out of
+                    // the loop and return it.
+                    break;
+                }
+            }
+        }
+
+        status.into_with_val(|| all_variables)
+    }
+
     /// Set the value of a variable. This can be used to create a new variable,
     /// update an existing variable, or (when the size of `data` is zero)
     /// delete a variable.
@@ -214,6 +278,9 @@ bitflags! {
 }
 
 impl Time {
+    /// Unspecified Timezone/local time.
+    const UNSPECIFIED_TIMEZONE: i16 = 0x07ff;
+
     /// Build an UEFI time struct
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -302,13 +369,48 @@ impl Time {
 
 impl fmt::Debug for Time {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}-{}-{} ", self.year, self.month, self.day)?;
+        write!(f, "{:04}-{:02}-{:02} ", self.year, self.month, self.day)?;
         write!(
             f,
-            "{}:{}:{}.{} ",
+            "{:02}:{:02}:{:02}.{:09}",
             self.hour, self.minute, self.second, self.nanosecond
         )?;
-        write!(f, "{} {:?}", self.time_zone, self.daylight)
+        if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
+            write!(f, ", Timezone=local")?;
+        } else {
+            write!(f, ", Timezone={}", self.time_zone)?;
+        }
+        write!(f, ", Daylight={:?}", self.daylight)
+    }
+}
+
+impl fmt::Display for Time {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:04}-{:02}-{:02} ", self.year, self.month, self.day)?;
+        write!(
+            f,
+            "{:02}:{:02}:{:02}.{:09}",
+            self.hour, self.minute, self.second, self.nanosecond
+        )?;
+
+        if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
+            write!(f, " (local)")?;
+        } else {
+            let offset_in_hours = self.time_zone as f32 / 60.0;
+            let integer_part = offset_in_hours as i16;
+            // We can't use "offset_in_hours.fract()" because it is part of `std`.
+            let fraction_part = offset_in_hours - (integer_part as f32);
+            // most time zones
+            if fraction_part == 0.0 {
+                write!(f, "UTC+{}", offset_in_hours)?;
+            }
+            // time zones with 30min offset (and perhaps other special time zones)
+            else {
+                write!(f, "UTC+{:.1}", offset_in_hours)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -373,6 +475,45 @@ pub const GLOBAL_VARIABLE: Guid = Guid::from_values(
     0xaa0d,
     [0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c],
 );
+
+/// Unique key for a variable.
+#[cfg(feature = "exts")]
+#[derive(Debug)]
+pub struct VariableKey {
+    name: Vec<u16>,
+    /// Unique identifier for the vendor.
+    pub vendor: Guid,
+}
+
+#[cfg(feature = "exts")]
+impl VariableKey {
+    /// Name of the variable.
+    pub fn name(&self) -> core::result::Result<&CStr16, FromSliceWithNulError> {
+        CStr16::from_u16_with_nul(&self.name)
+    }
+}
+
+#[cfg(feature = "exts")]
+impl fmt::Display for VariableKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "VariableKey {{ name: ")?;
+
+        match self.name() {
+            Ok(name) => write!(f, "\"{}\"", name)?,
+            Err(err) => write!(f, "Err({:?})", err)?,
+        }
+
+        write!(f, ", vendor: ")?;
+
+        if self.vendor == GLOBAL_VARIABLE {
+            write!(f, "GLOBAL_VARIABLE")?;
+        } else {
+            write!(f, "{}", self.vendor)?;
+        }
+
+        write!(f, " }}")
+    }
+}
 
 /// The type of system reset.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

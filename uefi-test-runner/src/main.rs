@@ -25,6 +25,12 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&mut st).expect_success("Failed to initialize utilities");
 
+    /* unit tests here */
+    /*let mut buf = String::new();
+    st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
+    st.stdout().write_str(buf.as_str()).unwrap();
+    assert_eq!("EDK II", buf.as_str());*/
+
     // Reset the console before running all the other tests.
     st.stdout()
         .reset(false)

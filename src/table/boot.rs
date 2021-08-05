@@ -707,100 +707,124 @@ impl Debug for BootServices {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("BootServices")
             .field("header", &self.header)
-            .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const u64))
-            .field("restore_tpl (fn ptr)", &(self.restore_tpl as *const u64))
+            .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const usize))
+            .field("restore_tpl (fn ptr)", &(self.restore_tpl as *const usize))
             .field(
                 "allocate_pages (fn ptr)",
-                &(self.allocate_pages as *const u64),
+                &(self.allocate_pages as *const usize),
             )
-            .field("free_pages (fn ptr)", &(self.free_pages as *const u64))
+            .field("free_pages (fn ptr)", &(self.free_pages as *const usize))
             .field(
                 "get_memory_map (fn ptr)",
-                &(self.get_memory_map as *const u64),
+                &(self.get_memory_map as *const usize),
             )
             .field(
                 "allocate_pool (fn ptr)",
-                &(self.allocate_pool as *const u64),
+                &(self.allocate_pool as *const usize),
             )
-            .field("free_pool (fn ptr)", &(self.free_pool as *const u64))
-            .field("create_event (fn ptr)", &(self.create_event as *const u64))
-            .field("set_timer (fn ptr)", &(self.set_timer as *const u64))
+            .field("free_pool (fn ptr)", &(self.free_pool as *const usize))
+            .field(
+                "create_event (fn ptr)",
+                &(self.create_event as *const usize),
+            )
+            .field("set_timer (fn ptr)", &(self.set_timer as *const usize))
             .field(
                 "wait_for_event (fn ptr)",
-                &(self.wait_for_event as *const u64),
+                &(self.wait_for_event as *const usize),
             )
-            .field("signal_event", &self.signal_event)
-            .field("close_event", &self.close_event)
-            .field("check_event", &self.check_event)
+            .field("signal_event", &(self.signal_event as *const usize))
+            .field("close_event", &(self.close_event as *const usize))
+            .field("check_event", &(self.check_event as *const usize))
             .field(
                 "install_protocol_interface",
-                &self.install_protocol_interface,
+                &(self.install_protocol_interface as *const usize),
             )
             .field(
                 "reinstall_protocol_interface",
-                &self.reinstall_protocol_interface,
+                &(self.reinstall_protocol_interface as *const usize),
             )
             .field(
                 "uninstall_protocol_interface",
-                &self.uninstall_protocol_interface,
+                &(self.uninstall_protocol_interface as *const usize),
             )
             .field(
                 "handle_protocol (fn ptr)",
-                &(self.handle_protocol as *const u64),
+                &(self.handle_protocol as *const usize),
             )
-            .field("register_protocol_notify", &self.register_protocol_notify)
+            .field(
+                "register_protocol_notify",
+                &(self.register_protocol_notify as *const usize),
+            )
             .field(
                 "locate_handle (fn ptr)",
-                &(self.locate_handle as *const u64),
+                &(self.locate_handle as *const usize),
             )
             .field(
                 "locate_device_path (fn ptr)",
-                &(self.locate_device_path as *const u64),
+                &(self.locate_device_path as *const usize),
             )
             .field(
                 "install_configuration_table",
-                &self.install_configuration_table,
+                &(self.install_configuration_table as *const usize),
             )
-            .field("load_image (fn ptr)", &(self.load_image as *const u64))
-            .field("start_image (fn ptr)", &(self.start_image as *const u64))
-            .field("exit", &self.exit)
-            .field("unload_image (fn ptr)", &(self.unload_image as *const u64))
+            .field("load_image (fn ptr)", &(self.load_image as *const usize))
+            .field("start_image (fn ptr)", &(self.start_image as *const usize))
+            .field("exit", &(self.exit as *const usize))
+            .field(
+                "unload_image (fn ptr)",
+                &(self.unload_image as *const usize),
+            )
             .field(
                 "exit_boot_services (fn ptr)",
-                &(self.exit_boot_services as *const u64),
+                &(self.exit_boot_services as *const usize),
             )
-            .field("get_next_monotonic_count", &self.get_next_monotonic_count)
-            .field("stall (fn ptr)", &(self.stall as *const u64))
+            .field(
+                "get_next_monotonic_count",
+                &(self.get_next_monotonic_count as *const usize),
+            )
+            .field("stall (fn ptr)", &(self.stall as *const usize))
             .field(
                 "set_watchdog_timer (fn ptr)",
-                &(self.set_watchdog_timer as *const u64),
+                &(self.set_watchdog_timer as *const usize),
             )
-            .field("connect_controller", &self.connect_controller)
-            .field("disconnect_controller", &self.disconnect_controller)
-            .field("open_protocol", &self.open_protocol)
-            .field("close_protocol", &self.close_protocol)
-            .field("open_protocol_information", &self.open_protocol_information)
+            .field(
+                "connect_controller",
+                &(self.connect_controller as *const usize),
+            )
+            .field(
+                "disconnect_controller",
+                &(self.disconnect_controller as *const usize),
+            )
+            .field("open_protocol", &(self.open_protocol as *const usize))
+            .field("close_protocol", &(self.close_protocol as *const usize))
+            .field(
+                "open_protocol_information",
+                &(self.open_protocol_information as *const usize),
+            )
             .field(
                 "protocols_per_handle",
-                &(self.protocols_per_handle as *const u64),
+                &(self.protocols_per_handle as *const usize),
             )
-            .field("locate_handle_buffer", &self.locate_handle_buffer)
+            .field(
+                "locate_handle_buffer",
+                &(self.locate_handle_buffer as *const usize),
+            )
             .field(
                 "locate_protocol (fn ptr)",
-                &(self.locate_protocol as *const u64),
+                &(self.locate_protocol as *const usize),
             )
             .field(
                 "install_multiple_protocol_interfaces",
-                &self.install_multiple_protocol_interfaces,
+                &(self.install_multiple_protocol_interfaces as *const usize),
             )
             .field(
                 "uninstall_multiple_protocol_interfaces",
-                &self.uninstall_multiple_protocol_interfaces,
+                &(self.uninstall_multiple_protocol_interfaces as *const usize),
             )
-            .field("calculate_crc32", &self.calculate_crc32)
-            .field("copy_mem (fn ptr)", &(self.copy_mem as *const u64))
-            .field("set_mem (fn ptr)", &(self.set_mem as *const u64))
-            .field("create_event_ex", &self.create_event_ex)
+            .field("calculate_crc32", &(self.calculate_crc32 as *const usize))
+            .field("copy_mem (fn ptr)", &(self.copy_mem as *const usize))
+            .field("set_mem (fn ptr)", &(self.set_mem as *const usize))
+            .field("create_event_ex", &(self.create_event_ex as *const usize))
             .finish()
     }
 }

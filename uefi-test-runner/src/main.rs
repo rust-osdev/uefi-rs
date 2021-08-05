@@ -17,6 +17,9 @@ use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi::table::boot::MemoryDescriptor;
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use runs_inside_qemu::runs_inside_qemu;
+
 mod boot;
 mod proto;
 mod runtime;
@@ -31,6 +34,12 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // output firmware-vendor (CStr16 to Rust string)
     let mut buf = String::new();
     st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        if runs_inside_qemu() {
+            assert_eq!("EDK II", buf.as_str());
+        }
+    }
     info!("Firmware Vendor: {}", buf.as_str());
 
     // Reset the console before running all the other tests.

@@ -1,7 +1,7 @@
 use super::Revision;
+use core::fmt::{Debug, Formatter};
 
 /// All standard UEFI tables begin with a common header.
-#[derive(Debug)]
 #[repr(C)]
 pub struct Header {
     /// Unique identifier for this table.
@@ -15,4 +15,15 @@ pub struct Header {
     pub crc: u32,
     /// Reserved field that must be set to 0.
     _reserved: u32,
+}
+
+impl Debug for Header {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Header")
+            .field("signature", &(self.size as *const u64))
+            .field("revision", &self.revision)
+            .field("size", &self.size)
+            .field("crc", &self.crc)
+            .finish()
+    }
 }

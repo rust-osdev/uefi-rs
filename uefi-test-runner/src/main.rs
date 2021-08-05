@@ -11,6 +11,7 @@ extern crate alloc;
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
 
+use alloc::string::String;
 use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
@@ -25,11 +26,12 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&mut st).expect_success("Failed to initialize utilities");
 
-    /* unit tests here */
-    /*let mut buf = String::new();
+    // unit tests here
+
+    // output firmware-vendor (CStr16 to Rust string)
+    let mut buf = String::new();
     st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
-    st.stdout().write_str(buf.as_str()).unwrap();
-    assert_eq!("EDK II", buf.as_str());*/
+    info!("Firmware Vendor: {}", buf.as_str());
 
     // Reset the console before running all the other tests.
     st.stdout()

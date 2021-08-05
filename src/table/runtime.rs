@@ -9,9 +9,9 @@ use crate::{CStr16, Char16, Guid, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::{vec, vec::Vec};
 use bitflags::bitflags;
+use core::fmt::{Debug, Formatter};
 #[cfg(feature = "exts")]
 use core::mem;
-use core::fmt::{Debug, Formatter};
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
 

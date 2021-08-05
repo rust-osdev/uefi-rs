@@ -1,10 +1,10 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
+#[cfg(feature = "exts")]
+use crate::alloc_api::string::String;
 use core::convert::TryInto;
 use core::fmt;
 use core::iter::Iterator;
 use core::result::Result;
-#[cfg(feature = "exts")]
-use crate::alloc_api::string::String;
 use core::slice;
 
 /// Errors which can occur during checked `[uN]` -> `CStrN` conversions

@@ -1,4 +1,6 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
+#[cfg(feature = "exts")]
+use crate::alloc_api::string::String;
 use core::convert::TryInto;
 use core::fmt;
 use core::iter::Iterator;
@@ -161,6 +163,40 @@ impl CStr16 {
             inner: self,
             pos: 0,
         }
+    }
+
+    /// Writes each [`Char16`] as a [´char´] (4 bytes long in Rust language) into the buffer.
+    /// It is up the the implementer of [`core::fmt::Write`] to convert the char to a string
+    /// with proper encoding/charset. For example, in the case of [`core::alloc::string::String`]
+    /// all Rust chars (UTF-32) get converted to UTF-8.
+    ///
+    /// ## Example
+    ///
+    /// ```ignore
+    /// let firmware_vendor_c16_str: CStr16 = ...;
+    /// // crate "arrayvec" uses stack-allocated arrays for Strings => no heap allocations
+    /// let mut buf = arrayvec::ArrayString::<128>::new();
+    /// firmware_vendor_c16_str.as_str_in_buf(&mut buf);
+    /// log::info!("as rust str: {}", buf.as_str());
+    /// ```
+    pub fn as_str_in_buf(&self, buf: &mut dyn core::fmt::Write) -> core::fmt::Result {
+        for c16 in self.iter() {
+            buf.write_char(char::from(*c16))?;
+        }
+        Ok(())
+    }
+
+    /// Transforms the C16Str to a regular Rust String.
+    /// **WARNING** This will require **heap allocation**, i.e. you need an global allocator.
+    /// If the UEFI boot services are exited, your OS/Kernel needs to provide another allocation
+    /// mechanism!
+    #[cfg(feature = "exts")]
+    pub fn as_string(&self) -> String {
+        let mut buf = String::with_capacity(self.0.len() * 2);
+        for c16 in self.iter() {
+            buf.push(char::from(*c16));
+        }
+        buf
     }
 }
 

@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::proto::Protocol;
 use crate::{unsafe_guid, CStr16, Char16, Completion, Result, Status};
 use core::fmt;
+use core::fmt::{Debug, Formatter};
 
 /// Interface for text-based output devices.
 ///
@@ -194,6 +195,35 @@ impl<'boot> fmt::Write for Output<'boot> {
 
         // Flush the remainder of the buffer
         flush_buffer(&mut buf, &mut i)
+    }
+}
+
+impl<'boot> Debug for Output<'boot> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Output")
+            .field("reset (fn ptr)", &(self.reset as *const u64))
+            .field(
+                "output_string (fn ptr)",
+                &(self.output_string as *const u64),
+            )
+            .field("test_string (fn ptr)", &(self.test_string as *const u64))
+            .field("query_mode (fn ptr)", &(self.query_mode as *const u64))
+            .field("set_mode (fn ptr)", &(self.set_mode as *const u64))
+            .field(
+                "set_attribute (fn ptr)",
+                &(self.set_attribute as *const u64),
+            )
+            .field("clear_screen (fn ptr)", &(self.clear_screen as *const u64))
+            .field(
+                "set_cursor_position (fn ptr)",
+                &(self.set_cursor_position as *const u64),
+            )
+            .field(
+                "enable_cursor (fn ptr)",
+                &(self.enable_cursor as *const u64),
+            )
+            .field("data", &self.data)
+            .finish()
     }
 }
 

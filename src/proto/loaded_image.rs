@@ -27,7 +27,7 @@ pub struct LoadedImage {
     load_options: *const Char16,
 
     // Location where image was loaded
-    image_base: usize,
+    image_base: *const c_void,
     image_size: u64,
     image_code_type: MemoryType,
     image_data_type: MemoryType,
@@ -65,6 +65,34 @@ impl LoadedImage {
         }
     }
 
+    /// Set the image data address and size.
+    ///
+    /// This is useful in the following scenario:
+    /// 1. Secure boot is enabled, so images loaded with `LoadImage` must be
+    ///    signed with an appropriate key known to the firmware.
+    /// 2. The bootloader has its own key embedded, and uses that key to
+    ///    verify the next stage. This key is not known to the firmware, so
+    ///    the next stage's image can't be loaded with `LoadImage`.
+    /// 3. Since image handles are created by `LoadImage`, which we can't
+    ///    call, we have to make use of an existing image handle -- the one
+    ///    passed into the bootloader's entry function. By modifying that
+    ///    image handle (after appropriately verifying the signature of the
+    ///    new data), we can repurpose the image handle for the next stage.
+    ///
+    /// See [shim] for an example of this scenario.
+    ///
+    /// # Safety
+    ///
+    /// This function takes `data` as a raw pointer because the data is not
+    /// owned by `LoadedImage`. The caller must ensure that the memory lives
+    /// long enough.
+    ///
+    /// [shim]: https://github.com/rhboot/shim/blob/4d64389c6c941d21548b06423b8131c872e3c3c7/pe.c#L1143
+    pub unsafe fn set_image(&mut self, data: *const c_void, size: u64) {
+        self.image_base = data;
+        self.image_size = size;
+    }
+
     /// Set the load options for the image. This can be used prior to
     /// calling `BootServices.start_image` to control the command line
     /// passed to the image.
@@ -80,7 +108,7 @@ impl LoadedImage {
     }
 
     /// Returns the base address and the size in bytes of the loaded image.
-    pub fn info(&self) -> (usize, u64) {
+    pub fn info(&self) -> (*const c_void, u64) {
         (self.image_base, self.image_size)
     }
 }

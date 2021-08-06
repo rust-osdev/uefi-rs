@@ -5,7 +5,7 @@
 use core::{ffi::c_void, mem::MaybeUninit};
 
 /// Opaque handle to an UEFI entity (protocol, image...)
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct Handle(*mut c_void);
 

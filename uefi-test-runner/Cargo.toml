@@ -17,9 +17,6 @@ log = { version = "0.4.11", default-features = false }
 rlibc = "1.0.0"
 qemu-exit = "2.0.0"
 
-[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
-runs_inside_qemu = "1.0.2"
-
 [features]
 # This feature should only be enabled in our CI, it disables some tests
 # which currently fail in that environment (see #103 for discussion).

@@ -48,6 +48,12 @@ jobs:
           components: rust-src
       # TODO: cache Rust binaries
 
+    - name: Build template
+      uses: actions-rs/cargo@v1
+      with:
+          command: build
+          args: --target x86_64-unknown-uefi --manifest-path template/Cargo.toml
+
     - name: Build
       run: ./build.py build
       working-directory: ./uefi-test-runner

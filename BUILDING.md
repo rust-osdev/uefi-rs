@@ -5,30 +5,25 @@ UEFI applications are simple COFF (Windows) executables, with the special
 [Rust supports building UEFI applications](https://github.com/rust-lang/rust/pull/56769)
 though the `x86_64-unknown-uefi` target.
 
-## Steps
+## Template
 
-The following steps allow you to build a simple UEFI app.
+The [template](template) subdirectory contains a minimal example of a UEFI
+application. Copy it to a new directory to get started.
 
-- Create a new `#![no_std]` binary, add `#![no_main]` to use a custom entry point,
-  and make sure you have an entry point function which matches the one below:
-  ```rust
-  #![feature(abi_efiapi)]
-  use uefi::prelude::*;
+- [template/.cargo/config](template/.cargo/config) file sets some `build-std` options.
+- [template/Cargo.toml](template/Cargo.toml) shows the necessary
+  dependencies. Note that when creating your project the
+  [`uefi`](https://crates.io/crates/uefi) and
+  [`uefi-services`](https://crates.io/crates/uefi-services) dependencies should
+  be changed to the latest releases on [crates.io](https://crates.io).
+- [template/src/main.rs](template/src/main.rs) has a minimal entry point that
+  initializes services and exits successfully.
 
-  extern crate rlibc;
-
-  #[entry]
-  fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status;
-  ```
-  Note that Rust EFI target requires the entry function to be exported with an `efi_main` symbol,
-  the `#[entry]` macro takes care of that, so the function name is irrelevant.
-
-  You will also want to add a dependency to the [`rlibc`](https://docs.rs/rlibc/) crate and
-  explicitly link it with `extern crate rlibc;` line to avoid linking errors.
+## Building and running
 
 - Build using a `nightly` version of the compiler and activate the
   [`build-std`](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std)
-  Cargo feature: `cargo build -Z build-std --target x86_64-unknown-uefi`.
+  Cargo feature: `cargo +nightly build -Z build-std --target x86_64-unknown-uefi`.
 
 - The `target` directory will contain a `x86_64-unknown-uefi` subdirectory,
   where you will find the `uefi_app.efi` file - a normal UEFI executable.
@@ -40,6 +35,5 @@ The following steps allow you to build a simple UEFI app.
 
 - To run this in QEMU:
   - You will need a recent version of QEMU as well as OVMF to provide UEFI support
-  - Check the `build.py` script for an idea of what arguments to pass to QEMU
-
-You can use the `uefi-test-runner` directory as sample code for building a simple UEFI app.
+  - Check the [`build.py`](uefi-test-runner/build.py) script for an idea of
+    what arguments to pass to QEMU

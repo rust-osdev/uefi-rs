@@ -97,8 +97,9 @@ impl fmt::Display for Guid {
 /// textual format as an argument, and is used in the following way:
 ///
 /// ```
+/// use uefi::unsafe_guid;
 /// #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]
-/// type Emptiness = ();
+/// struct Emptiness;
 /// ```
 pub unsafe trait Identify {
     /// Unique protocol identifier.

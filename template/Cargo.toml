@@ -1,0 +1,12 @@
+[package]
+name = "uefi_app"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+rlibc = "1.0.0"
+
+# In a real application, change these to point to the latest release
+# on crates.io.
+uefi = { path = "..", features = ["exts"] }
+uefi-services = { path = "../uefi-services" }

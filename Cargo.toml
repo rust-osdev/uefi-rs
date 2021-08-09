@@ -38,6 +38,7 @@ uefi-macros = "0.3.2"
 
 [workspace]
 members = [
+    "template",
     "uefi-macros",
     "uefi-services",
     "uefi-test-runner",

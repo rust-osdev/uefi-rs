@@ -69,11 +69,6 @@ def run_tool(tool, *flags):
     'Runs cargo-<tool> with certain arguments.'
 
     target = get_target_triple()
-    # Custom targets need to be given by relative path, instead of only by name
-    # We need to append a `.json` to turn the triple into a path
-    if SETTINGS['arch'] == 'aarch64':
-        target += '.json'
-
     cmd = ['cargo', tool, '--target', target, *flags]
 
     if SETTINGS['verbose']:

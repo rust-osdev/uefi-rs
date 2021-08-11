@@ -48,13 +48,44 @@ jobs:
           components: rust-src
       # TODO: cache Rust binaries
 
+    - name: Build template
+      uses: actions-rs/cargo@v1
+      with:
+          command: build
+          args: --target x86_64-unknown-uefi --manifest-path template/Cargo.toml
+
     - name: Build
       run: ./build.py build
       working-directory: ./uefi-test-runner
 
-    - name: Run tests
+    - name: Run VM tests
       run: ./build.py run --headless --ci
       working-directory: ./uefi-test-runner
+
+  test:
+    name: Run tests and documentation tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            profile: minimal
+            toolchain: nightly
+            components: rust-src
+            override: true
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        env:
+          # This works around "duplicate item in crate core" errors:
+          # https://github.com/rust-lang/wg-cargo-std-aware/issues/56
+          CARGO_PROFILE_DEV_PANIC: unwind
+        with:
+          command: test
+          args: -Zbuild-std=std --target x86_64-unknown-linux-gnu
 
   lints:
     name: Lints

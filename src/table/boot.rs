@@ -11,8 +11,9 @@ use alloc_api::vec::Vec;
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
+use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
-use core::ptr;
+use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
 #[repr(C)]
@@ -96,7 +97,12 @@ pub struct BootServices {
         exit_data_size: *mut usize,
         exit_data: &mut *mut Char16,
     ) -> Status,
-    exit: usize,
+    exit: extern "efiapi" fn(
+        image_handle: Handle,
+        exit_status: Status,
+        exit_data_size: usize,
+        exit_data: *mut Char16,
+    ) -> !,
     unload_image: extern "efiapi" fn(image_handle: Handle) -> Status,
     exit_boot_services:
         unsafe extern "efiapi" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
@@ -121,7 +127,11 @@ pub struct BootServices {
     open_protocol_information: usize,
 
     // Library services
-    protocols_per_handle: usize,
+    protocols_per_handle: unsafe extern "efiapi" fn(
+        handle: Handle,
+        protocol_buffer: *mut *mut *const Guid,
+        protocol_buffer_count: *mut usize,
+    ) -> Status,
     locate_handle_buffer: usize,
     locate_protocol: extern "efiapi" fn(
         proto: &Guid,
@@ -481,6 +491,25 @@ impl BootServices {
         }
     }
 
+    /// Exits the UEFI application and returns control to the UEFI component
+    /// that started the UEFI application.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it is up to the caller to ensure that
+    /// all resources allocated by the application is freed before invoking
+    /// exit and returning control to the UEFI component that started the UEFI
+    /// application.
+    pub unsafe fn exit(
+        &self,
+        image_handle: Handle,
+        exit_status: Status,
+        exit_data_size: usize,
+        exit_data: *mut Char16,
+    ) -> ! {
+        (self.exit)(image_handle, exit_status, exit_data_size, exit_data)
+    }
+
     /// Exits the UEFI boot services
     ///
     /// This unsafe method is meant to be an implementation detail of the safe
@@ -546,6 +575,36 @@ impl BootServices {
             .unwrap_or((0, ptr::null_mut()));
 
         unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+    }
+
+    /// Get the list of protocol interface [`Guids`][Guid] that are installed
+    /// on a [`Handle`].
+    pub fn protocols_per_handle(&self, handle: Handle) -> Result<ProtocolsPerHandle> {
+        let mut protocols = ptr::null_mut();
+        let mut count = 0;
+
+        let mut status = unsafe { (self.protocols_per_handle)(handle, &mut protocols, &mut count) };
+
+        if !status.is_error() {
+            // Ensure that protocols isn't null, and that none of the GUIDs
+            // returned are null.
+            if protocols.is_null() {
+                status = Status::OUT_OF_RESOURCES;
+            } else {
+                let protocols: &[*const Guid] = unsafe { slice::from_raw_parts(protocols, count) };
+                if protocols.iter().any(|ptr| ptr.is_null()) {
+                    status = Status::OUT_OF_RESOURCES;
+                }
+            }
+        }
+
+        status.into_with_val(|| {
+            let protocols = unsafe { slice::from_raw_parts_mut(protocols as *mut &Guid, count) };
+            ProtocolsPerHandle {
+                boot_services: self,
+                protocols,
+            }
+        })
     }
 
     /// Returns a protocol implementation, if present on the system.
@@ -642,6 +701,132 @@ impl BootServices {
 
 impl super::Table for BootServices {
     const SIGNATURE: u64 = 0x5652_4553_544f_4f42;
+}
+
+impl Debug for BootServices {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("BootServices")
+            .field("header", &self.header)
+            .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const usize))
+            .field("restore_tpl (fn ptr)", &(self.restore_tpl as *const usize))
+            .field(
+                "allocate_pages (fn ptr)",
+                &(self.allocate_pages as *const usize),
+            )
+            .field("free_pages (fn ptr)", &(self.free_pages as *const usize))
+            .field(
+                "get_memory_map (fn ptr)",
+                &(self.get_memory_map as *const usize),
+            )
+            .field(
+                "allocate_pool (fn ptr)",
+                &(self.allocate_pool as *const usize),
+            )
+            .field("free_pool (fn ptr)", &(self.free_pool as *const usize))
+            .field(
+                "create_event (fn ptr)",
+                &(self.create_event as *const usize),
+            )
+            .field("set_timer (fn ptr)", &(self.set_timer as *const usize))
+            .field(
+                "wait_for_event (fn ptr)",
+                &(self.wait_for_event as *const usize),
+            )
+            .field("signal_event", &(self.signal_event as *const usize))
+            .field("close_event", &(self.close_event as *const usize))
+            .field("check_event", &(self.check_event as *const usize))
+            .field(
+                "install_protocol_interface",
+                &(self.install_protocol_interface as *const usize),
+            )
+            .field(
+                "reinstall_protocol_interface",
+                &(self.reinstall_protocol_interface as *const usize),
+            )
+            .field(
+                "uninstall_protocol_interface",
+                &(self.uninstall_protocol_interface as *const usize),
+            )
+            .field(
+                "handle_protocol (fn ptr)",
+                &(self.handle_protocol as *const usize),
+            )
+            .field(
+                "register_protocol_notify",
+                &(self.register_protocol_notify as *const usize),
+            )
+            .field(
+                "locate_handle (fn ptr)",
+                &(self.locate_handle as *const usize),
+            )
+            .field(
+                "locate_device_path (fn ptr)",
+                &(self.locate_device_path as *const usize),
+            )
+            .field(
+                "install_configuration_table",
+                &(self.install_configuration_table as *const usize),
+            )
+            .field("load_image (fn ptr)", &(self.load_image as *const usize))
+            .field("start_image (fn ptr)", &(self.start_image as *const usize))
+            .field("exit", &(self.exit as *const usize))
+            .field(
+                "unload_image (fn ptr)",
+                &(self.unload_image as *const usize),
+            )
+            .field(
+                "exit_boot_services (fn ptr)",
+                &(self.exit_boot_services as *const usize),
+            )
+            .field(
+                "get_next_monotonic_count",
+                &(self.get_next_monotonic_count as *const usize),
+            )
+            .field("stall (fn ptr)", &(self.stall as *const usize))
+            .field(
+                "set_watchdog_timer (fn ptr)",
+                &(self.set_watchdog_timer as *const usize),
+            )
+            .field(
+                "connect_controller",
+                &(self.connect_controller as *const usize),
+            )
+            .field(
+                "disconnect_controller",
+                &(self.disconnect_controller as *const usize),
+            )
+            .field("open_protocol", &(self.open_protocol as *const usize))
+            .field("close_protocol", &(self.close_protocol as *const usize))
+            .field(
+                "open_protocol_information",
+                &(self.open_protocol_information as *const usize),
+            )
+            .field(
+                "protocols_per_handle",
+                &(self.protocols_per_handle as *const usize),
+            )
+            .field(
+                "locate_handle_buffer",
+                &(self.locate_handle_buffer as *const usize),
+            )
+            .field(
+                "locate_protocol (fn ptr)",
+                &(self.locate_protocol as *const usize),
+            )
+            .field(
+                "install_multiple_protocol_interfaces",
+                &(self.install_multiple_protocol_interfaces as *const usize),
+            )
+            .field(
+                "uninstall_multiple_protocol_interfaces",
+                &(self.uninstall_multiple_protocol_interfaces as *const usize),
+            )
+            .field("calculate_crc32", &(self.calculate_crc32 as *const usize))
+            .field("copy_mem (fn ptr)", &(self.copy_mem as *const usize))
+            .field("set_mem (fn ptr)", &(self.set_mem as *const usize))
+            .field("create_event_ex", &(self.create_event_ex as *const usize))
+            .finish()
+    }
 }
 
 newtype_enum! {
@@ -932,4 +1117,34 @@ pub enum TimerTrigger {
     /// Parameter is the delay in 100ns units.
     /// Delay of 0 will be signalled on next timer tick.
     Relative(u64),
+}
+
+/// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
+/// returned by [`BootServices::protocols_per_handle`].
+pub struct ProtocolsPerHandle<'a> {
+    // The pointer returned by `protocols_per_handle` has to be free'd with
+    // `free_pool`, so keep a reference to boot services for that purpose.
+    boot_services: &'a BootServices,
+
+    // This is mutable so that it can later be free'd with `free_pool`. Users
+    // should only get an immutable reference though, so the field is not
+    // public.
+    protocols: &'a mut [&'a Guid],
+}
+
+impl<'a> Drop for ProtocolsPerHandle<'a> {
+    fn drop(&mut self) {
+        // Ignore the result, we can't do anything about an error here.
+        let _ = self
+            .boot_services
+            .free_pool(self.protocols.as_mut_ptr() as *mut u8);
+    }
+}
+
+impl<'a> ProtocolsPerHandle<'a> {
+    /// Get the protocol interface [`Guids`][Guid] that are installed on the
+    /// [`Handle`].
+    pub fn protocols(&self) -> &[&Guid] {
+        self.protocols
+    }
 }

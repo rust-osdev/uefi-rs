@@ -5,7 +5,7 @@
 use core::{ffi::c_void, mem::MaybeUninit};
 
 /// Opaque handle to an UEFI entity (protocol, image...)
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
 pub struct Handle(*mut c_void);
 
@@ -50,4 +50,4 @@ pub use self::chars::{Char16, Char8};
 mod enums;
 
 mod strs;
-pub use self::strs::{CStr16, CStr8};
+pub use self::strs::{CStr16, CStr8, FromSliceWithNulError};

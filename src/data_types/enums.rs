@@ -30,8 +30,9 @@
 ///
 /// Usage example:
 /// ```
+/// use uefi::newtype_enum;
 /// newtype_enum! {
-/// #[derive(Cmp, PartialCmp)]
+/// #[derive(Ord, PartialOrd)]
 /// pub enum UnixBool: i32 => #[allow(missing_docs)] {
 ///     FALSE          =  0,
 ///     TRUE           =  1,

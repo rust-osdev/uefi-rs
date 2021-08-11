@@ -18,6 +18,8 @@ use crate::Identify;
 /// protocol's GUID using the following syntax:
 ///
 /// ```
+/// #![feature(negative_impls)]
+/// use uefi::{proto::Protocol, unsafe_guid};
 /// #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]
 /// #[derive(Protocol)]
 /// struct DummyProtocol {}

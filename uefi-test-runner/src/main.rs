@@ -11,6 +11,7 @@ extern crate alloc;
 // Keep this line to ensure the `mem*` functions are linked in.
 extern crate rlibc;
 
+use alloc::string::String;
 use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
@@ -24,6 +25,13 @@ mod runtime;
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi_services::init(&mut st).expect_success("Failed to initialize utilities");
+
+    // unit tests here
+
+    // output firmware-vendor (CStr16 to Rust string)
+    let mut buf = String::new();
+    st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
+    info!("Firmware Vendor: {}", buf.as_str());
 
     // Reset the console before running all the other tests.
     st.stdout()
@@ -44,7 +52,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     boot::test(bt);
 
     // Test all the supported protocols.
-    proto::test(&mut st);
+    proto::test(image, &mut st);
 
     // TODO: runtime services work before boot services are exited, but we'd
     // probably want to test them after exit_boot_services. However,

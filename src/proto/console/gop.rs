@@ -95,7 +95,7 @@ pub struct GraphicsOutput<'boot> {
 impl<'boot> GraphicsOutput<'boot> {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
-    fn query_mode(&self, index: u32) -> Result<Mode> {
+    pub fn query_mode(&self, index: u32) -> Result<Mode> {
         let mut info_sz = 0;
         let mut info = ptr::null();
 

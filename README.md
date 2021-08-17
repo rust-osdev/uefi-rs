@@ -13,7 +13,7 @@ OS loaders, hypervisors and other low-level applications. While it started out
 as x86-specific, it has been adopted on other platforms, such as ARM.
 
 This crate makes it easy to both:
-  - Write UEFI applications in Rust (for `x86_64` or `aarch64`)
+  - Write UEFI applications in Rust (for `i686`, `x86_64`, or `aarch64`)
   - Call UEFI functions from an OS (usually built with a [custom target][rustc-custom])
 
 The objective is to provide **safe** and **performant** wrappers for UEFI interfaces,

@@ -2,8 +2,9 @@
 
 UEFI applications are simple COFF (Windows) executables, with the special
 `EFI_Application` subsystem, and some limitations (such as no dynamic linking).
-[Rust supports building UEFI applications](https://github.com/rust-lang/rust/pull/56769)
-though the `x86_64-unknown-uefi` target.
+Rust supports building UEFI applications for the
+[`aarch64-unknown-uefi`], [`i686-unknown-uefi`], and [`x86_64-unknown-uefi`]
+targets.
 
 ## Template
 
@@ -37,3 +38,7 @@ application. Copy it to a new directory to get started.
   - You will need a recent version of QEMU as well as OVMF to provide UEFI support
   - Check the [`build.py`](uefi-test-runner/build.py) script for an idea of
     what arguments to pass to QEMU
+
+[`aarch64-unknown-uefi`]: https://github.com/rust-lang/rust/blob/HEAD/compiler/rustc_target/src/spec/aarch64_unknown_uefi.rs
+[`i686-unknown-uefi`]: https://github.com/rust-lang/rust/blob/HEAD/compiler/rustc_target/src/spec/i686_unknown_uefi.rs
+[`x86_64-unknown-uefi`]: https://github.com/rust-lang/rust/blob/HEAD/compiler/rustc_target/src/spec/x86_64_unknown_uefi.rs

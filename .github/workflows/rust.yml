@@ -112,7 +112,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --target x86_64-unknown-uefi
+          args: --target x86_64-unknown-uefi -- -Dwarnings
 
       - name: Run cargo doc
         uses: actions-rs/cargo@v1

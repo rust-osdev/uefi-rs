@@ -111,12 +111,12 @@ impl RuntimeServices {
 
     /// Get the size (in bytes) of a variable. This can be used to find out how
     /// big of a buffer should be passed in to `get_variable`.
-    pub fn get_variable_size(&self, name: &CStr16, vendor: &Guid) -> Result<usize> {
+    pub fn get_variable_size(&self, name: &CStr16, vendor: &VariableVendor) -> Result<usize> {
         let mut data_size = 0;
         let status = unsafe {
             (self.get_variable)(
                 name.as_ptr(),
-                vendor,
+                &vendor.0,
                 ptr::null_mut(),
                 &mut data_size,
                 ptr::null_mut(),
@@ -139,7 +139,7 @@ impl RuntimeServices {
     pub fn get_variable<'a>(
         &self,
         name: &CStr16,
-        vendor: &Guid,
+        vendor: &VariableVendor,
         buf: &'a mut [u8],
     ) -> Result<(&'a [u8], VariableAttributes)> {
         let mut attributes = VariableAttributes::empty();
@@ -147,7 +147,7 @@ impl RuntimeServices {
         unsafe {
             (self.get_variable)(
                 name.as_ptr(),
-                vendor,
+                &vendor.0,
                 &mut attributes,
                 &mut data_size,
                 buf.as_mut_ptr(),
@@ -189,7 +189,10 @@ impl RuntimeServices {
                         break;
                     };
 
-                    all_variables.push(VariableKey { name, vendor });
+                    all_variables.push(VariableKey {
+                        name,
+                        vendor: VariableVendor(vendor),
+                    });
                 }
                 Status::BUFFER_TOO_SMALL => {
                     // The name buffer passed in was too small, resize it to be
@@ -220,12 +223,19 @@ impl RuntimeServices {
     pub fn set_variable(
         &self,
         name: &CStr16,
-        vendor: &Guid,
+        vendor: &VariableVendor,
         attributes: VariableAttributes,
         data: &[u8],
     ) -> Result {
         unsafe {
-            (self.set_variable)(name.as_ptr(), vendor, attributes, data.len(), data.as_ptr()).into()
+            (self.set_variable)(
+                name.as_ptr(),
+                &vendor.0,
+                attributes,
+                data.len(),
+                data.as_ptr(),
+            )
+            .into()
         }
     }
 
@@ -482,14 +492,21 @@ bitflags! {
     }
 }
 
-/// Vendor GUID used to access global variables.
-pub const GLOBAL_VARIABLE: Guid = Guid::from_values(
-    0x8be4df61,
-    0x93ca,
-    0x11d2,
-    0xaa0d,
-    [0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c],
-);
+newtype_enum! {
+    /// Variable vendor GUID. This serves as a namespace for variables to
+    /// avoid naming conflicts between vendors. The UEFI specification
+    /// defines some special values, and vendors will define their own.
+    pub enum VariableVendor: Guid => {
+        /// Used to access global variables.
+        GLOBAL_VARIABLE = Guid::from_values(
+            0x8be4df61,
+            0x93ca,
+            0x11d2,
+            0xaa0d,
+            [0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c],
+        ),
+    }
+}
 
 /// Unique key for a variable.
 #[cfg(feature = "exts")]
@@ -497,7 +514,7 @@ pub const GLOBAL_VARIABLE: Guid = Guid::from_values(
 pub struct VariableKey {
     name: Vec<u16>,
     /// Unique identifier for the vendor.
-    pub vendor: Guid,
+    pub vendor: VariableVendor,
 }
 
 #[cfg(feature = "exts")]
@@ -520,10 +537,10 @@ impl fmt::Display for VariableKey {
 
         write!(f, ", vendor: ")?;
 
-        if self.vendor == GLOBAL_VARIABLE {
+        if self.vendor == VariableVendor::GLOBAL_VARIABLE {
             write!(f, "GLOBAL_VARIABLE")?;
         } else {
-            write!(f, "{}", self.vendor)?;
+            write!(f, "{}", self.vendor.0)?;
         }
 
         write!(f, " }}")

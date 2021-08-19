@@ -505,6 +505,15 @@ newtype_enum! {
             0xaa0d,
             [0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c],
         ),
+
+        /// Used to access EFI signature database variables.
+        IMAGE_SECURITY_DATABASE = Guid::from_values(
+            0xd719b2cb,
+            0x3d3a,
+            0x4596,
+            0xa3bc,
+            [0xda, 0xd0, 0x0e, 0x67, 0x65, 0x6f],
+        ),
     }
 }
 

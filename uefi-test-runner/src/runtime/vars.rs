@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use log::info;
 use uefi::prelude::*;
-use uefi::table::runtime::VariableAttributes;
+use uefi::table::runtime::{VariableAttributes, VariableVendor};
 use uefi::{CStr16, Guid};
 
 struct CString16(Vec<u16>);
@@ -27,13 +27,13 @@ fn test_variables(rt: &RuntimeServices) {
     let test_attrs = VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS;
 
     // Arbitrary GUID generated for this test.
-    let vendor = Guid::from_values(
+    let vendor = VariableVendor(Guid::from_values(
         0x9baf21cf,
         0xe187,
         0x497e,
         0xae77,
         [0x5b, 0xd8, 0xb0, 0xe0, 0x97, 0x03],
-    );
+    ));
 
     info!("Testing set_variable");
     rt.set_variable(name.as_cstr16(), &vendor, test_attrs, test_value)

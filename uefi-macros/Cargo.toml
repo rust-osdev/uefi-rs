@@ -2,6 +2,7 @@
 name = "uefi-macros"
 version = "0.3.3"
 authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
+readme = "README.md"
 edition = "2018"
 description = "Procedural macros for the uefi-rs crate"
 repository = "https://github.com/rust-osdev/uefi-rs"

@@ -85,7 +85,7 @@ jobs:
           CARGO_PROFILE_DEV_PANIC: unwind
         with:
           command: test
-          args: -Zbuild-std=std --target x86_64-unknown-linux-gnu
+          args: -Zbuild-std=std --target x86_64-unknown-linux-gnu --features=exts
 
   lints:
     name: Lints
@@ -112,4 +112,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --target x86_64-unknown-uefi
+          args: --target x86_64-unknown-uefi --all-features -- -Dwarnings
+
+      - name: Run cargo doc
+        uses: actions-rs/cargo@v1
+        env:
+          RUSTDOCFLAGS: -Dwarnings
+        with:
+          command: doc
+          args: --target x86_64-unknown-uefi --all-features

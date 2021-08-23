@@ -165,6 +165,11 @@ impl CStr16 {
         }
     }
 
+    /// Get the number of bytes in the string (including the trailing null character).
+    pub fn num_bytes(&self) -> usize {
+        self.0.len() * 2
+    }
+
     /// Writes each [`Char16`] as a [´char´] (4 bytes long in Rust language) into the buffer.
     /// It is up the the implementer of [`core::fmt::Write`] to convert the char to a string
     /// with proper encoding/charset. For example, in the case of [`alloc::string::String`]
@@ -234,5 +239,16 @@ impl fmt::Display for CStr16 {
             <Char16 as fmt::Display>::fmt(c, f)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cstr16_num_bytes() {
+        let s = CStr16::from_u16_with_nul(&[65, 66, 67, 0]).unwrap();
+        assert_eq!(s.num_bytes(), 8);
     }
 }

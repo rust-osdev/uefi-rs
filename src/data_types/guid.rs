@@ -26,19 +26,17 @@ pub struct Guid {
 
 impl Guid {
     /// Creates a new GUID from its canonical representation
-    //
-    // FIXME: An unwieldy array of bytes must be used for the node ID until one
-    //        can assert that an u64 has its high 16-bits cleared in a const fn.
-    //        Once that is done, we can take an u64 to be even closer to the
-    //        canonical UUID/GUID format.
-    //
     pub const fn from_values(
         time_low: u32,
         time_mid: u16,
         time_high_and_version: u16,
         clock_seq_and_variant: u16,
-        node: [u8; 6],
+        node: u64,
     ) -> Self {
+        assert!(node.leading_zeros() >= 16, "node must be a 48-bit integer");
+        // intentional shadowing
+        let node = node.to_be_bytes();
+
         Guid {
             a: time_low,
             b: time_mid,
@@ -46,12 +44,13 @@ impl Guid {
             d: [
                 (clock_seq_and_variant / 0x100) as u8,
                 (clock_seq_and_variant % 0x100) as u8,
-                node[0],
-                node[1],
+                // first two elements of node are ignored, we only want the low 48 bits
                 node[2],
                 node[3],
                 node[4],
                 node[5],
+                node[6],
+                node[7],
             ],
         }
     }

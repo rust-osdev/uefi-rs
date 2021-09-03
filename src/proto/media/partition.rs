@@ -59,7 +59,7 @@ newtype_enum! {
             0x0000,
             0x0000,
             0x0000,
-            [0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            0x000000000000,
         ),
 
         /// EFI System Partition.
@@ -68,7 +68,7 @@ newtype_enum! {
             0xf81f,
             0x11d2,
             0xba4b,
-            [0x00, 0xa0, 0xc9, 0x3e, 0xc9, 0x3b],
+            0x00a0c93ec93b,
         ),
 
         /// Partition containing a legacy MBR.
@@ -77,7 +77,7 @@ newtype_enum! {
             0x33e7,
             0x11d3,
             0x9d69,
-            [0x00, 0x08, 0xc7, 0x81, 0xf3, 0x9f],
+            0x0008c781f39f,
         ),
     }
 }

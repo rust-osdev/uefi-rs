@@ -59,18 +59,17 @@ impl Guid {
 impl fmt::Display for Guid {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let d = {
-            let (low, high) = (u16::from(self.d[0]), u16::from(self.d[1]));
-
-            (low << 8) | high
+            let mut buf = [0u8; 2];
+            buf[..].copy_from_slice(&self.d[0..2]);
+            u16::from_be_bytes(buf)
         };
 
-        // Extract and reverse byte order.
-        let e = self.d[2..8].iter().enumerate().fold(0, |acc, (i, &elem)| {
-            acc | {
-                let shift = (5 - i) * 8;
-                u64::from(elem) << shift
-            }
-        });
+        let e = {
+            let mut buf = [0u8; 8];
+            // first two elements of node are ignored, we only want the low 48 bits
+            buf[2..].copy_from_slice(&self.d[2..8]);
+            u64::from_be_bytes(buf)
+        };
 
         write!(
             fmt,

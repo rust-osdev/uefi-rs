@@ -78,9 +78,6 @@ low-level environment that UEFI operates in:
 ## Adding new protocols
 
 You should start by [forking this repository][fork] and cloning it.
-Due to the way the proc macros for `unsafe_guid` and `derive(Protocol)`
-are implemented, it's not currently possible to add new protocols
-outside of the core `uefi` crate.
 
 UEFI protocols are represented in memory as tables of function pointers,
 each of which takes the protocol itself as first parameter.

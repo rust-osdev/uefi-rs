@@ -30,6 +30,7 @@ Available commands:
 - `run`: (re)build and run
 - `doc`: generate documentation
 - `clippy`: run Clippy
+- `test`: run tests and doctests
 
 Available options:
 

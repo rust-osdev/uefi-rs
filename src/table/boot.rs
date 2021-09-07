@@ -59,7 +59,7 @@ pub struct BootServices {
     ) -> Status,
     signal_event: usize,
     close_event: usize,
-    check_event: usize,
+    check_event: unsafe extern "efiapi" fn(event: Event) -> Status,
 
     // Protocol handlers
     install_protocol_interface: usize,
@@ -337,7 +337,17 @@ impl BootServices {
         .into_with_val(|| event.assume_init())
     }
 
-    /// Stops execution until an event is signaled
+    /// Sets the trigger for `EventType::TIMER` event.
+    pub fn set_timer(&self, event: Event, trigger_time: TimerTrigger) -> Result {
+        let (ty, time) = match trigger_time {
+            TimerTrigger::Cancel => (0, 0),
+            TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
+            TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
+        };
+        unsafe { (self.set_timer)(event, ty, time) }.into()
+    }
+
+    /// Stops execution until an event is signaled.
     ///
     /// This function must be called at priority level `Tpl::APPLICATION`. If an
     /// attempt is made to call it at any other priority level, an `Unsupported`
@@ -379,14 +389,17 @@ impl BootServices {
         )
     }
 
-    /// Sets the trigger for `EventType::TIMER` event.
-    pub fn set_timer(&self, event: Event, trigger_time: TimerTrigger) -> Result {
-        let (ty, time) = match trigger_time {
-            TimerTrigger::Cancel => (0, 0),
-            TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
-            TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
-        };
-        unsafe { (self.set_timer)(event, ty, time) }.into()
+    /// Checks to see if an event is signaled, without blocking execution to wait for it.
+    ///
+    /// The returned value will be `true` if the event is in the signaled state,
+    /// otherwise `false` is returned.
+    pub fn check_event(&self, event: Event) -> Result<bool> {
+        let status = unsafe { (self.check_event)(event) };
+        match status {
+            Status::SUCCESS => Ok(true.into()),
+            Status::NOT_READY => Ok(false.into()),
+            _ => Err(status.into()),
+        }
     }
 
     /// Query a handle for a certain protocol.

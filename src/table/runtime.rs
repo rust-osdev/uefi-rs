@@ -14,7 +14,6 @@ use core::fmt::{Debug, Formatter};
 use core::mem;
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
-
 /// Contains pointers to all of the runtime services.
 ///
 /// This table, and the function pointers it contains are valid
@@ -503,7 +502,7 @@ newtype_enum! {
             0x93ca,
             0x11d2,
             0xaa0d,
-            [0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c],
+            0x00e098032b8c,
         ),
 
         /// Used to access EFI signature database variables.
@@ -512,7 +511,7 @@ newtype_enum! {
             0x3d3a,
             0x4596,
             0xa3bc,
-            [0xda, 0xd0, 0x0e, 0x67, 0x65, 0x6f],
+            0xdad00e67656f,
         ),
     }
 }

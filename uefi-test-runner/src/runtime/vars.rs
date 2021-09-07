@@ -15,7 +15,7 @@ fn test_variables(rt: &RuntimeServices) {
         0xe187,
         0x497e,
         0xae77,
-        [0x5b, 0xd8, 0xb0, 0xe0, 0x97, 0x03],
+        0x5bd8b0e09703,
     ));
 
     info!("Testing set_variable");

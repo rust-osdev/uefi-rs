@@ -73,17 +73,7 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
     let time_mid = next_guid_int(16) as u16;
     let time_high_and_version = next_guid_int(16) as u16;
     let clock_seq_and_variant = next_guid_int(16) as u16;
-    let node_64 = next_guid_int(48);
-
-    // Convert the node ID to an array of bytes to comply with Guid::from_values expectations
-    let node = [
-        (node_64 >> 40) as u8,
-        ((node_64 >> 32) % 0x100) as u8,
-        ((node_64 >> 24) % 0x100) as u8,
-        ((node_64 >> 16) % 0x100) as u8,
-        ((node_64 >> 8) % 0x100) as u8,
-        (node_64 % 0x100) as u8,
-    ];
+    let node = next_guid_int(48);
 
     // At this point, we know everything we need to implement Identify
     let ident = type_definition.ident.clone();
@@ -97,7 +87,7 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
                 #time_mid,
                 #time_high_and_version,
                 #clock_seq_and_variant,
-                [#(#node),*],
+                #node,
             );
         }
     });

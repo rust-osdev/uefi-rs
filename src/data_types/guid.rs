@@ -26,19 +26,17 @@ pub struct Guid {
 
 impl Guid {
     /// Creates a new GUID from its canonical representation
-    //
-    // FIXME: An unwieldy array of bytes must be used for the node ID until one
-    //        can assert that an u64 has its high 16-bits cleared in a const fn.
-    //        Once that is done, we can take an u64 to be even closer to the
-    //        canonical UUID/GUID format.
-    //
     pub const fn from_values(
         time_low: u32,
         time_mid: u16,
         time_high_and_version: u16,
         clock_seq_and_variant: u16,
-        node: [u8; 6],
+        node: u64,
     ) -> Self {
+        assert!(node.leading_zeros() >= 16, "node must be a 48-bit integer");
+        // intentional shadowing
+        let node = node.to_be_bytes();
+
         Guid {
             a: time_low,
             b: time_mid,
@@ -46,12 +44,13 @@ impl Guid {
             d: [
                 (clock_seq_and_variant / 0x100) as u8,
                 (clock_seq_and_variant % 0x100) as u8,
-                node[0],
-                node[1],
+                // first two elements of node are ignored, we only want the low 48 bits
                 node[2],
                 node[3],
                 node[4],
                 node[5],
+                node[6],
+                node[7],
             ],
         }
     }
@@ -60,18 +59,17 @@ impl Guid {
 impl fmt::Display for Guid {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let d = {
-            let (low, high) = (u16::from(self.d[0]), u16::from(self.d[1]));
-
-            (low << 8) | high
+            let mut buf = [0u8; 2];
+            buf[..].copy_from_slice(&self.d[0..2]);
+            u16::from_be_bytes(buf)
         };
 
-        // Extract and reverse byte order.
-        let e = self.d[2..8].iter().enumerate().fold(0, |acc, (i, &elem)| {
-            acc | {
-                let shift = (5 - i) * 8;
-                u64::from(elem) << shift
-            }
-        });
+        let e = {
+            let mut buf = [0u8; 8];
+            // first two elements of node are ignored, we only want the low 48 bits
+            buf[2..].copy_from_slice(&self.d[2..8]);
+            u64::from_be_bytes(buf)
+        };
 
         write!(
             fmt,
@@ -107,3 +105,32 @@ pub unsafe trait Identify {
 }
 
 pub use uefi_macros::unsafe_guid;
+
+#[cfg(test)]
+mod tests {
+    use uefi::unsafe_guid;
+    extern crate alloc;
+    use super::*;
+
+    #[test]
+    fn test_guid_display() {
+        assert_eq!(
+            alloc::format!(
+                "{}",
+                Guid::from_values(0x12345678, 0x9abc, 0xdef0, 0x1234, 0x56789abcdef0)
+            ),
+            "12345678-9abc-def0-1234-56789abcdef0"
+        );
+    }
+
+    #[test]
+    fn test_unsafe_guid() {
+        #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]
+        struct X;
+
+        assert_eq!(
+            X::GUID,
+            Guid::from_values(0x12345678, 0x9abc, 0xdef0, 0x1234, 0x56789abcdef0)
+        );
+    }
+}

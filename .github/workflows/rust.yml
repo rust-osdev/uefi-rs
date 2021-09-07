@@ -79,10 +79,6 @@ jobs:
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
-        env:
-          # This works around "duplicate item in crate core" errors:
-          # https://github.com/rust-lang/wg-cargo-std-aware/issues/56
-          CARGO_PROFILE_DEV_PANIC: unwind
         with:
           command: test
           args: -Zbuild-std=std --target x86_64-unknown-linux-gnu --features=exts

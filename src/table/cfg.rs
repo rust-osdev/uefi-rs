@@ -26,7 +26,7 @@ pub struct ConfigTableEntry {
     /// Whether this is a physical or virtual address depends on the table.
     pub address: *const c_void,
 }
-///ryntto oCP0000 1 RSDP.
+/// Entry pointing to the old ACPI 1 RSDP.
 pub const ACPI_GUID: Guid = Guid::from_values(0xeb9d2d30, 0x2d88, 0x11d3, 0x9a16, 0x0090273fc14d);
 
 ///Entry pointing to the ACPI 2 RSDP.

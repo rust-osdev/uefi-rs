@@ -14,7 +14,7 @@ use core::fmt::{Debug, Formatter};
 use core::mem;
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
-///taporsal t0000e runtime services.
+/// Contains pointers to all of the runtime services.
 ///
 /// This table, and the function pointers it contains are valid
 /// even after the UEFI OS loader and OS have taken control of the platform.

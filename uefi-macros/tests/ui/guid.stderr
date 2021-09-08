@@ -1,0 +1,17 @@
+error: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa" is not a canonical GUID string (expected 36 bytes, found 35)
+ --> $DIR/guid.rs:8:15
+  |
+8 | #[unsafe_guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa")]
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: GUID component "Gaaa" is not a hexadecimal number
+  --> $DIR/guid.rs:12:25
+   |
+12 | #[unsafe_guid("aaaaaaaa-Gaaa-aaaa-aaaa-aaaaaaaaaaaa")]
+   |                         ^^^^
+
+error: GUID component "aaaaaaaaaaaG" is not a hexadecimal number
+  --> $DIR/guid.rs:16:40
+   |
+16 | #[unsafe_guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaG")]
+   |                                        ^^^^^^^^^^^^

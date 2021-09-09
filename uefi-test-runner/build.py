@@ -128,6 +128,48 @@ def doc():
         '--package', 'uefi-services',
     ], check=True)
 
+def get_rustc_cfg():
+    'Run and parse "rustc --print=cfg" as key, val pairs.'
+    output = sp.run([
+        'rustc', '--print=cfg'
+    ], check=True, capture_output=True, text=True).stdout
+    for line in output.splitlines():
+        parts = line.split('=', maxsplit=1)
+        # Only interested in the lines that look like this: key="val"
+        if len(parts) == 2:
+            key = parts[0]
+            val = parts[1]
+            # Strip the quotes
+            if val.startswith('"') and val.endswith('"'):
+                val = val[1:-1]
+            yield key, val
+
+def get_host_target():
+    'Get the host target, e.g. "x86_64-unknown-linux-gnu".'
+    cfg = dict(get_rustc_cfg())
+    arch = cfg['target_arch']
+    vendor = cfg['target_vendor']
+    os = cfg['target_os']
+    env = cfg['target_env']
+    return f'{arch}-{vendor}-{os}-{env}'
+
+def test():
+    'Run tests and doctests using the host target.'
+    repo_dir = Path(__file__).resolve().parent.parent
+    sp.run([
+        'cargo', 'test',
+        # Specifying the manifest path allows this command to
+        # run successfully regardless of the CWD.
+        '--manifest-path', repo_dir / 'Cargo.toml',
+        '-Zbuild-std=std',
+        '--target', get_host_target(),
+        '--features', 'exts',
+        '--package', 'uefi',
+        '--package', 'uefi-macros',
+        # Don't test uefi-services (or the packages that depend on it)
+        # as it has lang items that conflict with `std`.
+    ], check=True)
+
 def ovmf_files(ovmf_dir):
     'Returns the tuple of paths to the OVMF code and vars firmware files, given the directory'
     if SETTINGS['arch'] == 'x86_64':
@@ -348,7 +390,7 @@ def main():
     parser = argparse.ArgumentParser(description=desc)
 
     parser.add_argument('verb', help='command to run', type=str,
-                        choices=['build', 'run', 'doc', 'clippy'])
+                        choices=['build', 'run', 'doc', 'clippy', 'test'])
 
     parser.add_argument('--target', help='target to build for (default: %(default)s)', type=str,
                         choices=['x86_64', 'aarch64'], default='x86_64')
@@ -382,6 +424,8 @@ def main():
         clippy()
     elif verb == 'doc':
         doc()
+    elif verb == 'test':
+        test()
     elif verb == 'run' or verb is None or opts.verb == '':
         # Run the program, by default.
         run_qemu()

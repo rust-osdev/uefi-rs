@@ -3,11 +3,18 @@
 //! It initializes the memory allocation and logging crates,
 //! allowing code to use Rust's data structures and to log errors.
 //!
+//! Logging and allocation are only allowed while boot services are
+//! active. Once runtime services are activated by calling
+//! [`exit_boot_services`], the logger will be disabled and the
+//! allocator will always return null.
+//!
 //! It also stores a global reference to the UEFI system table,
 //! in order to reduce the redundant passing of references to it.
 //!
 //! Library code can simply use global UEFI functions
 //! through the reference provided by `system_table`.
+//!
+//! [`exit_boot_services`]: uefi::table::SystemTable::exit_boot_services
 
 #![no_std]
 #![feature(alloc_error_handler)]

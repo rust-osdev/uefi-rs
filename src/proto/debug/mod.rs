@@ -69,62 +69,63 @@ impl DebugSupport {
         // initially set to a canary value for testing purposes
         let mut max_processor_index: usize = usize::MAX;
 
-        // per the UEFI spec, this method can ONLY return EFI_SUCCESS
-        match (self.get_maximum_processor_index)(self, &mut max_processor_index) {
-            Status::SUCCESS => max_processor_index,
-            _ => unreachable!(), // panic in the case of incorrect implementations
-        }
+        // per the UEFI spec, this call should only return EFI_SUCCESS
+        let _ = (self.get_maximum_processor_index)(self, &mut max_processor_index);
+
+        max_processor_index
     }
 
     /// Registers a function to be called back periodically in interrupt context.
     /// Pass `None` for `callback` to deregister the currently registered function for
-    /// `processor_index`.
+    /// a specified `processor_index`. Will return `Status::INVALID_PARAMETER` if
+    /// `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
-    ///
-    /// # Safety
-    /// It is the responsibility of the caller to ensure that all parameters are correct. There are no
-    /// provisions in this function or in the specification for parameter checking.
-    pub unsafe fn register_periodic_callback(
+    pub fn register_periodic_callback(
         &mut self,
         processor_index: usize,
         callback: Option<extern "efiapi" fn(SystemContext)>,
     ) -> Result {
+        if processor_index > self.get_maximum_processor_index() {
+            return Err(Status::INVALID_PARAMETER.into());
+        }
+
         (self.register_periodic_callback)(self, processor_index, callback).into()
     }
 
     /// Registers a function to be called when a given processor exception occurs.
     /// Pass `None` for `callback` to deregister the currently registered function for a
-    /// given processor exception.
+    /// given `exception_type` and `processor_index`. Will return `Status::INVALID_PARAMETER`
+    /// if `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
-    ///
-    /// # Safety
-    /// It is the responsibility of the caller to ensure that all parameters are correct. There are no
-    /// provisions in this function or in the specification for parameter checking.
-    pub unsafe fn register_exception_callback(
+    pub fn register_exception_callback(
         &mut self,
         processor_index: usize,
         callback: Option<extern "efiapi" fn(ExceptionType, SystemContext)>,
         exception_type: ExceptionType,
     ) -> Result {
+        if processor_index > self.get_maximum_processor_index() {
+            return Err(Status::INVALID_PARAMETER.into());
+        }
+
         (self.register_exception_callback)(self, processor_index, callback, exception_type).into()
     }
 
-    /// Invalidates processor instruction cache for a memory range.
+    /// Invalidates processor instruction cache for a memory range for a given `processor_index`.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
-    ///
-    /// # Safety
-    /// It is the responsibility of the caller to ensure that all parameters are correct. There are no
-    /// provisions in this function or in the specification for parameter checking.
-    pub unsafe fn invalidate_instruction_cache(
+    pub fn invalidate_instruction_cache(
         &mut self,
         processor_index: usize,
         start: *mut c_void,
         length: u64,
     ) -> Result {
-        // per the UEFI spec, this method can ONLY return EFI_SUCCESS
+        if processor_index > self.get_maximum_processor_index() {
+            return Err(Status::INVALID_PARAMETER.into());
+        }
+
+        // per the UEFI spec, this call should only return EFI_SUCCESS
         (self.invalidate_instruction_cache)(self, processor_index, start, length).into()
     }
 }

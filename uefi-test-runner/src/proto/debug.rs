@@ -1,6 +1,7 @@
 use core::ffi::c_void;
 use uefi::proto::debug::{DebugSupport, ExceptionType, ProcessorArch, SystemContext};
 use uefi::table::boot::BootServices;
+use uefi::ResultExt;
 
 pub fn test(bt: &BootServices) {
     info!("Running UEFI debug connection protocol test");
@@ -18,25 +19,76 @@ pub fn test(bt: &BootServices) {
                 assert_ne!(
                     maximum_processor_index,
                     usize::MAX,
-                    "get_maximum_processor_index() returning garbage or not working"
+                    "get_maximum_processor_index() returning garbage, unless you really have 18,446,744,073,709,551,615 processors"
                 );
 
                 info!("- Architecture: {:?}", debug_support.arch());
                 info!("- Maximum Processor Index: {:?}", maximum_processor_index);
 
-                test_register_periodic_callback(debug_support);
-                test_deregister_periodic_callback(debug_support);
-
                 match debug_support.arch() {
+                    // This arm is the only match when testing on QEMU w/ OVMF, regardless of the machine arch.
+                    // The released OVMF builds don't implement the Debug Support Protocol Interface for the
+                    // machine arch, only EBC.
                     ProcessorArch::EBC => {
-                        // for the EBC Debug Support Protocol, there are already exception callbacks registered
-                        test_deregister_exception_callback(debug_support);
-                        test_register_exception_callback(debug_support);
+                        info!("Registering periodic callback");
+                        debug_support
+                            .register_periodic_callback(0, Some(periodic_callback))
+                            .expect_success("Error while registering periodic callback");
+                        info!("Deregistering periodic callback");
+                        debug_support
+                            .register_periodic_callback(0, None)
+                            .expect_success("Error while deregistering periodic callback");
+                        // for the EBC virtual CPU, there are already exception callbacks registered
+                        info!("Deregistering exception callback");
+                        debug_support
+                            .register_exception_callback(0, None, ExceptionType::EXCEPT_EBC_DEBUG)
+                            .expect_success("Error while deregistering exception callback");
+                        info!("Registering exception callback");
+                        debug_support
+                            .register_exception_callback(
+                                0,
+                                Some(exception_callback),
+                                ExceptionType::EXCEPT_EBC_DEBUG,
+                            )
+                            .expect_success("Error while registering exception callback");
                     }
-                    _ => {
-                        test_register_exception_callback(debug_support);
-                        test_deregister_exception_callback(debug_support);
+                    #[cfg(target_arch = "x86_64")]
+                    ProcessorArch::X86_64 => {
+                        info!("Registering exception callback");
+                        debug_support
+                            .register_exception_callback(
+                                0,
+                                Some(exception_callback),
+                                ExceptionType::EXCEPT_X64_DEBUG,
+                            )
+                            .expect_success("Error while registering exception callback");
+                        info!("Deregistering exception callback");
+                        debug_support
+                            .register_exception_callback(0, None, ExceptionType::EXCEPT_X64_DEBUG)
+                            .expect_success("Error while deregistering exception callback");
                     }
+                    #[cfg(target_arch = "aarch64")]
+                    ProcessorArch::AARCH_64 => {
+                        info!("Registering exception callback");
+                        debug_support
+                            .register_exception_callback(
+                                0,
+                                Some(exception_callback),
+                                ExceptionType::EXCEPT_AARCH64_SERROR,
+                            )
+                            .expect_success("Error while registering exception callback");
+                        info!("Deregistering exception callback");
+                        debug_support
+                            .register_exception_callback(
+                                0,
+                                None,
+                                ExceptionType::EXCEPT_AARCH64_SERROR,
+                            )
+                            .expect_success("Error while deregistering exception callback");
+                    }
+                    // if we reach this, we're running on an arch that `build.py` doesn't support
+                    // TODO: Add match arms as we support testing on more archs
+                    _ => unreachable!(),
                 }
 
                 test_invalidate_instruction_cache(debug_support);
@@ -47,58 +99,15 @@ pub fn test(bt: &BootServices) {
     }
 }
 
-#[allow(unused_must_use)]
-fn test_register_periodic_callback(debug_support: &mut DebugSupport) {
-    info!("Registering periodic callback");
-    unsafe {
-        debug_support
-            .register_periodic_callback(0, Some(periodic_callback))
-            .expect("Error while registering periodic callback");
-    }
-}
-
-#[allow(unused_must_use)]
-fn test_deregister_periodic_callback(debug_support: &mut DebugSupport) {
-    info!("Deregistering periodic callback");
-    unsafe {
-        debug_support
-            .register_periodic_callback(0, None)
-            .expect("Error while deregistering periodic callback");
-    }
-}
-
-#[allow(unused_must_use)]
-fn test_register_exception_callback(debug_support: &mut DebugSupport) {
-    info!("Registering exception callback");
-    unsafe {
-        debug_support
-            .register_exception_callback(0, Some(exception_callback), 1)
-            .expect("Error while registering exception callback");
-    }
-}
-
-#[allow(unused_must_use)]
-fn test_deregister_exception_callback(debug_support: &mut DebugSupport) {
-    info!("Deregistering exception callback");
-    unsafe {
-        debug_support
-            .register_exception_callback(0, None, 1)
-            .expect("Error while deregistering exception callback");
-    }
-}
-
-#[allow(unused_must_use)]
-/// Should always pass, since the spec says this always returns EFI_SUCCESS
 fn test_invalidate_instruction_cache(debug_support: &mut DebugSupport) {
     info!("Invalidating instruction cache");
     let mut addr = 0x0;
     let ptr = &mut addr as *mut _ as *mut c_void;
 
-    unsafe {
-        debug_support
-            .invalidate_instruction_cache(0, ptr, 64)
-            .expect("Error occured while invalidating instruction cache");
-    }
+    debug_support
+        .invalidate_instruction_cache(0, ptr, 64)
+        // Should always pass, since the spec says this always returns EFI_SUCCESS
+        .expect_success("Error occured while invalidating instruction cache");
 }
 
 // FIXME: Maybe turn into a closure?

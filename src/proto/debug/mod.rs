@@ -36,18 +36,18 @@ pub struct DebugSupport {
     isa: ProcessorArch,
     get_maximum_processor_index:
         extern "efiapi" fn(this: &mut DebugSupport, max_processor_index: &mut usize) -> Status,
-    register_periodic_callback: extern "efiapi" fn(
+    register_periodic_callback: unsafe extern "efiapi" fn(
         this: &mut DebugSupport,
         processor_index: usize,
-        periodic_callback: Option<extern "efiapi" fn(SystemContext)>,
+        periodic_callback: Option<unsafe extern "efiapi" fn(SystemContext)>,
     ) -> Status,
-    register_exception_callback: extern "efiapi" fn(
+    register_exception_callback: unsafe extern "efiapi" fn(
         this: &mut DebugSupport,
         processor_index: usize,
-        exception_callback: Option<extern "efiapi" fn(ExceptionType, SystemContext)>,
+        exception_callback: Option<unsafe extern "efiapi" fn(ExceptionType, SystemContext)>,
         exception_type: ExceptionType,
     ) -> Status,
-    invalidate_instruction_cache: extern "efiapi" fn(
+    invalidate_instruction_cache: unsafe extern "efiapi" fn(
         this: &mut DebugSupport,
         processor_index: usize,
         start: *mut c_void,
@@ -84,13 +84,14 @@ impl DebugSupport {
     pub fn register_periodic_callback(
         &mut self,
         processor_index: usize,
-        callback: Option<extern "efiapi" fn(SystemContext)>,
+        callback: Option<unsafe extern "efiapi" fn(SystemContext)>,
     ) -> Result {
         if processor_index > self.get_maximum_processor_index() {
             return Err(Status::INVALID_PARAMETER.into());
         }
 
-        (self.register_periodic_callback)(self, processor_index, callback).into()
+        // Safety: As we've validated the `processor_index`, this should always be safe
+        unsafe { (self.register_periodic_callback)(self, processor_index, callback).into() }
     }
 
     /// Registers a function to be called when a given processor exception occurs.
@@ -102,20 +103,27 @@ impl DebugSupport {
     pub fn register_exception_callback(
         &mut self,
         processor_index: usize,
-        callback: Option<extern "efiapi" fn(ExceptionType, SystemContext)>,
+        callback: Option<unsafe extern "efiapi" fn(ExceptionType, SystemContext)>,
         exception_type: ExceptionType,
     ) -> Result {
         if processor_index > self.get_maximum_processor_index() {
             return Err(Status::INVALID_PARAMETER.into());
         }
 
-        (self.register_exception_callback)(self, processor_index, callback, exception_type).into()
+        // Safety: As we've validated the `processor_index`, this should always be safe
+        unsafe {
+            (self.register_exception_callback)(self, processor_index, callback, exception_type)
+                .into()
+        }
     }
 
     /// Invalidates processor instruction cache for a memory range for a given `processor_index`.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
-    pub fn invalidate_instruction_cache(
+    ///
+    /// # Safety
+    /// - `start` must be a c_void ptr to a valid memory address
+    pub unsafe fn invalidate_instruction_cache(
         &mut self,
         processor_index: usize,
         start: *mut c_void,
@@ -126,6 +134,7 @@ impl DebugSupport {
         }
 
         // per the UEFI spec, this call should only return EFI_SUCCESS
+        // Safety: As we've validated the `processor_index`, this should always be safe
         (self.invalidate_instruction_cache)(self, processor_index, start, length).into()
     }
 }

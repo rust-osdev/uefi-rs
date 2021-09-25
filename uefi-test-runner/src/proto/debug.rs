@@ -104,10 +104,12 @@ fn test_invalidate_instruction_cache(debug_support: &mut DebugSupport) {
     let mut addr = 0x0;
     let ptr = &mut addr as *mut _ as *mut c_void;
 
-    debug_support
-        .invalidate_instruction_cache(0, ptr, 64)
-        // Should always pass, since the spec says this always returns EFI_SUCCESS
-        .expect_success("Error occured while invalidating instruction cache");
+    unsafe {
+        debug_support
+            .invalidate_instruction_cache(0, ptr, 64)
+            // Should always pass, since the spec says this always returns EFI_SUCCESS
+            .expect_success("Error occured while invalidating instruction cache");
+    }
 }
 
 // FIXME: Maybe turn into a closure?

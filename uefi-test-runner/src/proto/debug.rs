@@ -112,12 +112,10 @@ fn test_invalidate_instruction_cache(debug_support: &mut DebugSupport) {
     }
 }
 
-// FIXME: Maybe turn into a closure?
 extern "efiapi" fn periodic_callback(context: SystemContext) {
     let _ = context;
 }
 
-// FIXME: Maybe turn into a closure?
 extern "efiapi" fn exception_callback(exception_type: ExceptionType, context: SystemContext) {
     let _ = exception_type;
     let _ = context;

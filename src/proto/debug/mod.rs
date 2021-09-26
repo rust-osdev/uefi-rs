@@ -79,7 +79,7 @@ impl DebugSupport {
     /// Pass `None` for `callback` to deregister the currently registered function for
     /// a specified `processor_index`. Will return `Status::INVALID_PARAMETER` if
     /// `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
-    /// In addition, no portion of the debug agent that runs in interrupt context may make any 
+    /// In addition, no portion of the debug agent that runs in interrupt context may make any
     /// calls to EFI services or other protocol interfaces.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
@@ -100,7 +100,7 @@ impl DebugSupport {
     /// Pass `None` for `callback` to deregister the currently registered function for a
     /// given `exception_type` and `processor_index`. Will return `Status::INVALID_PARAMETER`
     /// if `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
-    /// In addition, no portion of the debug agent that runs in interrupt context may make any 
+    /// In addition, no portion of the debug agent that runs in interrupt context may make any
     /// calls to EFI services or other protocol interfaces.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter

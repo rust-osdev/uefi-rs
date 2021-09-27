@@ -29,7 +29,7 @@ pub fn test(bt: &BootServices) {
                     // This arm is the only match when testing on QEMU w/ OVMF, regardless of the machine arch.
                     // The released OVMF builds don't implement the Debug Support Protocol Interface for the
                     // machine arch, only EBC.
-                    ProcessorArch::EBC => {
+                    ProcessorArch::EBC => unsafe {
                         info!("Registering periodic callback");
                         debug_support
                             .register_periodic_callback(0, Some(periodic_callback))
@@ -51,9 +51,9 @@ pub fn test(bt: &BootServices) {
                                 ExceptionType::EXCEPT_EBC_DEBUG,
                             )
                             .expect_success("Error while registering exception callback");
-                    }
+                    },
                     #[cfg(target_arch = "x86_64")]
-                    ProcessorArch::X86_64 => {
+                    ProcessorArch::X86_64 => unsafe {
                         info!("Registering exception callback");
                         debug_support
                             .register_exception_callback(
@@ -66,9 +66,9 @@ pub fn test(bt: &BootServices) {
                         debug_support
                             .register_exception_callback(0, None, ExceptionType::EXCEPT_X64_DEBUG)
                             .expect_success("Error while deregistering exception callback");
-                    }
+                    },
                     #[cfg(target_arch = "aarch64")]
-                    ProcessorArch::AARCH_64 => {
+                    ProcessorArch::AARCH_64 => unsafe {
                         info!("Registering exception callback");
                         debug_support
                             .register_exception_callback(
@@ -85,7 +85,7 @@ pub fn test(bt: &BootServices) {
                                 ExceptionType::EXCEPT_AARCH64_SERROR,
                             )
                             .expect_success("Error while deregistering exception callback");
-                    }
+                    },
                     // if we reach this, we're running on an arch that `build.py` doesn't support
                     // TODO: Add match arms as we support testing on more archs
                     _ => unreachable!(),

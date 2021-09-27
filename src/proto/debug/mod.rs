@@ -79,11 +79,13 @@ impl DebugSupport {
     /// Pass `None` for `callback` to deregister the currently registered function for
     /// a specified `processor_index`. Will return `Status::INVALID_PARAMETER` if
     /// `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
-    /// In addition, no portion of the debug agent that runs in interrupt context may make any
-    /// calls to EFI services or other protocol interfaces.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
-    pub fn register_periodic_callback(
+    ///
+    /// # Safety
+    /// No portion of the debug agent that runs in interrupt context may make any
+    /// calls to EFI services or other protocol interfaces.
+    pub unsafe fn register_periodic_callback(
         &mut self,
         processor_index: usize,
         callback: Option<unsafe extern "efiapi" fn(SystemContext)>,
@@ -93,18 +95,20 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
-        unsafe { (self.register_periodic_callback)(self, processor_index, callback).into() }
+        (self.register_periodic_callback)(self, processor_index, callback).into()
     }
 
     /// Registers a function to be called when a given processor exception occurs.
     /// Pass `None` for `callback` to deregister the currently registered function for a
     /// given `exception_type` and `processor_index`. Will return `Status::INVALID_PARAMETER`
     /// if `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
-    /// In addition, no portion of the debug agent that runs in interrupt context may make any
-    /// calls to EFI services or other protocol interfaces.
     ///
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
-    pub fn register_exception_callback(
+    ///
+    /// # Safety
+    /// No portion of the debug agent that runs in interrupt context may make any
+    /// calls to EFI services or other protocol interfaces.
+    pub unsafe fn register_exception_callback(
         &mut self,
         processor_index: usize,
         callback: Option<unsafe extern "efiapi" fn(ExceptionType, SystemContext)>,
@@ -115,10 +119,7 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
-        unsafe {
-            (self.register_exception_callback)(self, processor_index, callback, exception_type)
-                .into()
-        }
+        (self.register_exception_callback)(self, processor_index, callback, exception_type).into()
     }
 
     /// Invalidates processor instruction cache for a memory range for a given `processor_index`.
@@ -126,7 +127,7 @@ impl DebugSupport {
     /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
     ///
     /// # Safety
-    /// - `start` must be a c_void ptr to a valid memory address
+    /// `start` must be a c_void ptr to a valid memory address
     pub unsafe fn invalidate_instruction_cache(
         &mut self,
         processor_index: usize,

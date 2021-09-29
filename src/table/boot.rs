@@ -57,8 +57,8 @@ pub struct BootServices {
         events: *mut Event,
         out_index: *mut usize,
     ) -> Status,
-    signal_event: usize,
-    close_event: usize,
+    signal_event: extern "efiapi" fn(event: Event) -> Status,
+    close_event: unsafe extern "efiapi" fn(event: Event) -> Status,
     check_event: unsafe extern "efiapi" fn(event: Event) -> Status,
 
     // Protocol handlers
@@ -387,6 +387,37 @@ impl BootServices {
                 }
             },
         )
+    }
+
+    /// Place 'event' in the signaled stated. If 'event' is already in the signaled state,
+    /// then nothing further occurs and `Status::SUCCESS` is returned. If `event` is of type
+    /// `EventType::NOTIFY_SIGNAL`, then the event's notification function is scheduled to
+    /// be invoked at the event's notification task priority level.
+    ///
+    /// This function may be invoked from any task priority level.
+    ///
+    /// If `event` is part of an event group, then all of the events in the event group are
+    /// also signaled and their notification functions are scheduled.
+    ///
+    /// When signaling an event group, it is possible to create an event in the group, signal
+    /// it, and then close the event to remove it from the group.
+    pub fn signal_event(&self, event: Event) -> Result {
+        (self.signal_event)(event).into()
+    }
+
+    /// Removes `event` from any event group to which it belongs and closes it. If `event` was
+    /// registered with `register_protocol_notify()`, then the corresponding registration will
+    /// be removed. It is safe to call this function within the corresponding notify function.
+    ///
+    ///
+    /// Note: The UEFI Specification v2.9 states that this may only return `EFI_SUCCESS`, but,
+    /// at least for application based on EDK2 (such as OVMF), it may also return `EFI_INVALID_PARAMETER`.
+    ///
+    /// # Safety
+    /// Once the event is closed, it is no longer valid and may not be used again. The firmware
+    /// implementation will have `free`'d the event's memory.
+    pub unsafe fn close_event(&self, event: Event) -> Result {
+        (self.close_event)(event).into()
     }
 
     /// Checks to see if an event is signaled, without blocking execution to wait for it.

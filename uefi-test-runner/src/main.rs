@@ -75,6 +75,28 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
+/// Read from a serial device, retrying up to `max_attempts`.
+///
+/// This shouldn't be needed since the serial device timeout can be set
+/// to a large value, but OVMF doesn't always respect the timeout due to
+/// interaction between the Serial protocol and the Simple Text Input
+/// protocol. This leads to the read timing out very quickly. To avoid
+/// flakiness in the screenshot test, retry the read a few times if it
+/// times out.
+fn read_serial_with_retry(serial: &mut Serial, reply: &mut [u8], max_attempts: usize) {
+    for attempt in 1..=max_attempts {
+        let r = serial.read(&mut reply[..]);
+
+        // Until the last iteration of the loop, ignore timeout errors
+        // and retry. This will also break out of the loop on the first
+        // successful read.
+        if r.status() != Status::TIMEOUT || attempt == max_attempts {
+            r.expect_success("Failed to read host reply");
+            break;
+        }
+    }
+}
+
 /// Ask the test runner to check the current screen output against a reference
 ///
 /// This functionality is very specific to our QEMU-based test runner. Outside
@@ -107,9 +129,8 @@ fn check_screenshot(bt: &BootServices, name: &str) {
 
         // Wait for the host's acknowledgement before moving forward
         let mut reply = [0; 3];
-        serial
-            .read(&mut reply[..])
-            .expect_success("Failed to read host reply");
+        let max_read_attempts = 10;
+        read_serial_with_retry(serial, &mut reply, max_read_attempts);
 
         assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
     } else {

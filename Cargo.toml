@@ -48,3 +48,6 @@ members = [
 [patch.crates-io]
 uefi-macros = { path = "uefi-macros" }
 uefi = { path = "." }
+
+[package.metadata.docs.rs]
+all-features = true

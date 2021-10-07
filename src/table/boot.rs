@@ -362,7 +362,7 @@ impl BootServices {
     ///
     /// # Safety
     ///
-    /// The caller must ensure they are passing a valid `Guid`, if applicable.
+    /// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
     pub unsafe fn create_event_ex(
         &self,
         event_type: EventType,
@@ -387,13 +387,13 @@ impl BootServices {
     }
 
     /// Sets the trigger for `EventType::TIMER` event.
-    pub fn set_timer(&self, event: Event, trigger_time: TimerTrigger) -> Result {
+    pub fn set_timer(&self, event: &Event, trigger_time: TimerTrigger) -> Result {
         let (ty, time) = match trigger_time {
             TimerTrigger::Cancel => (0, 0),
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.set_timer)(event, ty, time) }.into()
+        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.into()
     }
 
     /// Stops execution until an event is signaled.
@@ -450,8 +450,10 @@ impl BootServices {
     ///
     /// When signaling an event group, it is possible to create an event in the group, signal
     /// it, and then close the event to remove it from the group.
-    pub fn signal_event(&self, event: Event) -> Result {
-        (self.signal_event)(event).into()
+    pub fn signal_event(&self, event: &Event) -> Result {
+        // Safety: cloning this event should be safe, as we're directly passing it to firmware
+        // and not keeping the clone around.
+        unsafe { (self.signal_event)(event.unsafe_clone()).into() }
     }
 
     /// Removes `event` from any event group to which it belongs and closes it. If `event` was
@@ -465,8 +467,8 @@ impl BootServices {
     /// # Safety
     /// Once the event is closed, it is no longer valid and may not be used again. The firmware
     /// implementation will have `free`'d the event's memory.
-    pub unsafe fn close_event(&self, event: Event) -> Result {
-        (self.close_event)(event).into()
+    pub fn close_event(&self, event: Event) -> Result {
+        unsafe { (self.close_event)(event).into() }
     }
 
     /// Checks to see if an event is signaled, without blocking execution to wait for it.

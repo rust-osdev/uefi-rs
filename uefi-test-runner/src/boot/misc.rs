@@ -18,8 +18,8 @@ pub fn test(bt: &BootServices) {
 fn test_timer(bt: &BootServices) {
     let timer_event = unsafe { bt.create_event(EventType::TIMER, Tpl::APPLICATION, None, None) }
         .expect_success("Failed to create TIMER event");
-    let mut events = [timer_event];
-    bt.set_timer(timer_event, TimerTrigger::Relative(5_0 /*00 ns */))
+    let mut events = unsafe { [timer_event.unsafe_clone()] };
+    bt.set_timer(&timer_event, TimerTrigger::Relative(5_0 /*00 ns */))
         .expect_success("Failed to set timer");
     bt.wait_for_event(&mut events)
         .expect_success("Wait for event failed");

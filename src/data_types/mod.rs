@@ -16,9 +16,19 @@ impl Handle {
 }
 
 /// Handle to an event structure
-#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Event(*mut c_void);
+
+impl Event {
+    /// Clone this `Event`
+    ///
+    /// # Safety
+    /// When an event is closed by calling `BootServices::close_event`, that event and ALL references and
+    /// pointers to it are invalidated and the underlying memory is freed by firmware.
+    pub unsafe fn unsafe_clone(&self) -> Self {
+        Self(self.0)
+    }
+}
 
 /// Trait for querying the alignment of a struct
 ///

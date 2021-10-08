@@ -315,9 +315,7 @@ impl BootServices {
         &self,
         event_ty: EventType,
         notify_tpl: Tpl,
-        notify_fn: Option<
-            unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>),
-        >,
+        notify_fn: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
     ) -> Result<Event> {
         // Prepare storage for the output Event
@@ -367,9 +365,7 @@ impl BootServices {
         &self,
         event_type: EventType,
         notify_tpl: Tpl,
-        notify_fn: Option<
-            unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>),
-        >,
+        notify_fn: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
         event_group: Option<NonNull<Guid>>,
     ) -> Result<Event> {

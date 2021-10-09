@@ -2,8 +2,6 @@
 #![no_std]
 #![feature(abi_efiapi)]
 
-extern crate rlibc;
-
 use uefi::prelude::*;
 use uefi::ResultExt;
 

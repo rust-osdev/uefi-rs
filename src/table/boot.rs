@@ -459,10 +459,6 @@ impl BootServices {
     ///
     /// Note: The UEFI Specification v2.9 states that this may only return `EFI_SUCCESS`, but,
     /// at least for application based on EDK2 (such as OVMF), it may also return `EFI_INVALID_PARAMETER`.
-    ///
-    /// # Safety
-    /// Once the event is closed, it is no longer valid and may not be used again. The firmware
-    /// implementation will have `free`'d the event's memory.
     pub fn close_event(&self, event: Event) -> Result {
         unsafe { (self.close_event)(event).into() }
     }

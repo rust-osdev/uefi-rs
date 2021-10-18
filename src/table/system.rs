@@ -212,7 +212,7 @@ impl SystemTable<Runtime> {
     /// Changes the runtime addressing mode of EFI firmware from physical to virtual.
     /// It is up to the caller to translate the old SystemTable address to a new virtual
     /// address and provide it for this function.
-    /// See [`get_current_system_table_addr`]
+    /// See ['get_current_system_table_addr']
     ///
     /// # Safety
     ///

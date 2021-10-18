@@ -212,13 +212,13 @@ impl SystemTable<Runtime> {
     /// Changes the runtime addressing mode of EFI firmware from physical to virtual.
     /// It is up to the caller to translate the old SystemTable address to a new virtual
     /// address and provide it for this function.
-    /// See ['get_current_system_table_addr']
+    /// See [`get_current_system_table_addr`]
     ///
     /// # Safety
     ///
     /// Setting new virtual memory map is unsafe and may cause undefined behaviors.
     ///
-    /// ['get_current_system_table_addr']: SystemTable::get_current_system_table_addr
+    /// [`get_current_system_table_addr`]: SystemTable::get_current_system_table_addr
     pub unsafe fn set_virtual_address_map(
         self,
         map: &mut [MemoryDescriptor],

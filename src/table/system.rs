@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 use core::{ptr, slice};
 
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Completion, Handle, Result, ResultExt, Status};
+use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 
 use super::boot::{BootServices, MemoryDescriptor};
 use super::runtime::RuntimeServices;
@@ -212,11 +212,13 @@ impl SystemTable<Runtime> {
     /// Changes the runtime addressing mode of EFI firmware from physical to virtual.
     /// It is up to the caller to translate the old SystemTable address to a new virtual
     /// address and provide it for this function.
-    /// See `get_current_system_table_addr()`
+    /// See [`get_current_system_table_addr`]
     ///
     /// # Safety
     ///
     /// Setting new virtual memory map is unsafe and may cause undefined behaviors.
+    ///
+    /// ['get_current_system_table_addr']: SystemTable::get_current_system_table_addr
     pub unsafe fn set_virtual_address_map(
         self,
         map: &mut [MemoryDescriptor],
@@ -230,27 +232,15 @@ impl SystemTable<Runtime> {
         let entry_size = core::mem::size_of::<MemoryDescriptor>();
         let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
         let map_ptr = map.as_mut_ptr();
-        let result: Result = (self.table.runtime.set_virtual_address_map)(
-            map_size,
-            entry_size,
-            entry_version,
-            map_ptr,
-        )
-        .into();
-        match result {
-            Ok(completion) => {
+        (self.table.runtime.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr)
+            .into_with_val(|| {
                 let new_table_ref =
                     &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
-                Ok(Completion::new(
-                    completion.status(),
-                    Self {
-                        table: new_table_ref,
-                        _marker: PhantomData,
-                    },
-                ))
-            }
-            Err(err) => Err(err),
-        }
+                Self {
+                    table: new_table_ref,
+                    _marker: PhantomData,
+                }
+            })
     }
 
     /// Return the address of the SystemTable that resides in a UEFI runtime services

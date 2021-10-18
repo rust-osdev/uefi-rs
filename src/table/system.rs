@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 use core::{ptr, slice};
 
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, ResultExt, Status, Completion};
+use crate::{CStr16, Char16, Completion, Handle, Result, ResultExt, Status};
 
 use super::boot::{BootServices, MemoryDescriptor};
 use super::runtime::RuntimeServices;
@@ -217,7 +217,11 @@ impl SystemTable<Runtime> {
     /// # Safety
     ///
     /// Setting new virtual memory map is unsafe and may cause undefined behaviors.
-    pub unsafe fn set_virtual_address_map(self, map: &mut [MemoryDescriptor], new_system_table_virtual_addr: u64) -> Result<Self> {
+    pub unsafe fn set_virtual_address_map(
+        self,
+        map: &mut [MemoryDescriptor],
+        new_system_table_virtual_addr: u64,
+    ) -> Result<Self> {
         // Unsafe Code Guidelines guarantees that there is no padding in an array or a slice
         // between its elements if the element type is `repr(C)`, which is our case.
         //
@@ -226,12 +230,25 @@ impl SystemTable<Runtime> {
         let entry_size = core::mem::size_of::<MemoryDescriptor>();
         let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
         let map_ptr = map.as_mut_ptr();
-        let result: Result = (self.table.runtime.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).into();
+        let result: Result = (self.table.runtime.set_virtual_address_map)(
+            map_size,
+            entry_size,
+            entry_version,
+            map_ptr,
+        )
+        .into();
         match result {
             Ok(completion) => {
-                let new_table_ref = &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
-                Ok(Completion::new(completion.status(), Self { table: new_table_ref, _marker: PhantomData }))
-            },
+                let new_table_ref =
+                    &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
+                Ok(Completion::new(
+                    completion.status(),
+                    Self {
+                        table: new_table_ref,
+                        _marker: PhantomData,
+                    },
+                ))
+            }
             Err(err) => Err(err),
         }
     }

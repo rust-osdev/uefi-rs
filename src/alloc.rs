@@ -60,6 +60,8 @@ unsafe impl GlobalAlloc for Allocator {
         let align = layout.align();
 
         if align > 8 {
+            // TODO: https://github.com/rust-osdev/uefi-rs/issues/303
+            #[allow(clippy::question_mark)]
             // allocate more space for alignment
             let ptr = if let Ok(ptr) = boot_services()
                 .as_ref()

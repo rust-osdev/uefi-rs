@@ -737,19 +737,20 @@ impl BootServices {
         let (status1, buffer_size) = self.locate_handle(search_type, None)?.split();
 
         // Allocate a large enough buffer.
-        let mut buffer = Vec::with_capacity(buffer_size);
-
-        unsafe {
-            buffer.set_len(buffer_size);
-        }
+        let mut buffer = Vec::new();
+        buffer.resize_with(buffer_size, || unsafe { Handle::uninitialized() });
 
         // Perform the search.
         let (status2, buffer_size) = self.locate_handle(search_type, Some(&mut buffer))?.split();
 
-        // Once the vector has been filled, update its size.
-        unsafe {
-            buffer.set_len(buffer_size);
-        }
+        // Ensure that the buffer's length matches the number of handles
+        // that were actually filled in. Calling `truncate` only has an
+        // effect if the new length is smaller than the vec's currently
+        // length, and that is sufficient here since if `buffer` is
+        // smaller than the amount of data `locate_handle` wants to
+        // return then `find_handles` will end up returning
+        // `Status::BUFFER_TOO_SMALL` and `buffer` will be dropped.
+        buffer.truncate(buffer_size);
 
         // Emit output, with warnings
         status1

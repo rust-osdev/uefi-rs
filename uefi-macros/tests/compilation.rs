@@ -1,7 +1,6 @@
 use std::env;
 
 #[test]
-#[ignore = "failing in nightly due to github.com/rust-lang/rust/issues/89795"]
 fn ui() {
     let t = trybuild::TestCases::new();
 

@@ -15,6 +15,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     debug::test(image, bt);
     device_path::test(image, bt);
     media::test(image, bt);
+    network::test(bt);
     pi::test(bt);
 
     #[cfg(any(
@@ -57,6 +58,7 @@ mod console;
 mod debug;
 mod device_path;
 mod media;
+mod network;
 mod pi;
 #[cfg(any(
     target_arch = "i386",

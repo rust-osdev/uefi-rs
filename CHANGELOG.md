@@ -15,6 +15,8 @@
   `LoadedImage::load_options_as_cstr16`.
 - Added `Align::offset_up_to_alignment`, `Align::round_up_to_alignment`,
   and `Align::align_buf`.
+- Added `BootServices::connect_controller` and
+  `BootServices::disconnect_controller`.
 
 ### Changed
 

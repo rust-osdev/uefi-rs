@@ -119,8 +119,17 @@ pub struct BootServices {
     ) -> Status,
 
     // Driver support services
-    connect_controller: usize,
-    disconnect_controller: usize,
+    connect_controller: unsafe extern "efiapi" fn(
+        controller: Handle,
+        driver_image: Option<Handle>,
+        remaining_device_path: *const DevicePath,
+        recursive: bool,
+    ) -> Status,
+    disconnect_controller: unsafe extern "efiapi" fn(
+        controller: Handle,
+        driver_image: Option<Handle>,
+        child: Option<Handle>,
+    ) -> Status,
 
     // Protocol open / close services
     open_protocol: extern "efiapi" fn(
@@ -692,6 +701,44 @@ impl BootServices {
             .unwrap_or((0, ptr::null_mut()));
 
         unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+    }
+
+    /// Connect one or more drivers to a controller.
+    ///
+    /// Usually one disconnects and then reconnects certain drivers
+    /// to make them rescan some state that changed, e.g. reconnecting
+    /// a `BlockIO` handle after your app changed the partitions somehow.
+    pub fn connect_controller(
+        &self,
+        controller: Handle,
+        driver_image: Option<Handle>,
+        remaining_device_path: Option<&DevicePath>,
+        recursive: bool,
+    ) -> Result {
+        unsafe {
+            (self.connect_controller)(
+                controller,
+                driver_image,
+                remaining_device_path
+                    .map(|dp| dp as _)
+                    .unwrap_or(ptr::null()),
+                recursive,
+            )
+        }
+        .into_with_err(|_| ())
+    }
+
+    /// Disconnect one or more drivers from a controller.
+    ///
+    /// See [`connect_controller`][Self::connect_controller].
+    pub fn disconnect_controller(
+        &self,
+        controller: Handle,
+        driver_image: Option<Handle>,
+        child: Option<Handle>,
+    ) -> Result {
+        unsafe { (self.disconnect_controller)(controller, driver_image, child) }
+            .into_with_err(|_| ())
     }
 
     /// Open a protocol interface for a handle.

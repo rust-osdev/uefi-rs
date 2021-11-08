@@ -79,7 +79,7 @@ pub struct BootServices {
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
-        device_path: &mut *mut DevicePath,
+        device_path: &mut &DevicePath,
         out_handle: *mut Handle,
     ) -> Status,
     install_configuration_table: usize,
@@ -531,12 +531,19 @@ impl BootServices {
     }
 
     /// Locates the handle to a device on the device path that supports the specified protocol.
-    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut DevicePath) -> Result<Handle> {
+    ///
+    /// The `device_path` is updated to point at the remaining part of the [`DevicePath`] after
+    /// the part that matched the protocol. For example, it can be used with a device path
+    /// that contains a file path to strip off the file system portion of the device path,
+    /// leaving the file path and handle to the file system driver needed to access the file.
+    ///
+    /// If the first node of `device_path` matches the
+    /// protocol, the `device_path` is advanced to the device path terminator node. If `device_path`
+    /// is a multi-instance device path, the function will operate on the first instance.
+    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
         unsafe {
             let mut handle = Handle::uninitialized();
-            let mut device_path_ptr = device_path as *mut DevicePath;
-            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
-                .into_with_val(|| handle)
+            (self.locate_device_path)(&P::GUID, device_path, &mut handle).into_with_val(|| handle)
         }
     }
 
@@ -777,10 +784,10 @@ impl BootServices {
         let device_path = self
             .handle_protocol::<DevicePath>(device_handle)?
             .expect("Failed to retrieve `DevicePath` protocol from image's device handle");
-        let device_path = unsafe { &mut *device_path.get() };
+        let mut device_path = unsafe { &*device_path.get() };
 
         let device_handle = self
-            .locate_device_path::<SimpleFileSystem>(device_path)?
+            .locate_device_path::<SimpleFileSystem>(&mut device_path)?
             .expect("Failed to locate `SimpleFileSystem` protocol on device path");
 
         self.handle_protocol::<SimpleFileSystem>(device_handle)

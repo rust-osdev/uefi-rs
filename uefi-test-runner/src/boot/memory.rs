@@ -91,11 +91,7 @@ fn memory_map(bt: &BootServices) {
     let buf_sz = map_sz + 8 * mem::size_of::<MemoryDescriptor>();
 
     // We will use vectors for convencience.
-    let mut buffer = Vec::with_capacity(buf_sz);
-
-    unsafe {
-        buffer.set_len(buf_sz);
-    }
+    let mut buffer = vec![0_u8; buf_sz];
 
     let (_key, desc_iter) = bt
         .memory_map(&mut buffer)

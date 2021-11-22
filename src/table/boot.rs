@@ -75,12 +75,12 @@ pub struct BootServices {
         proto: *const Guid,
         key: *mut c_void,
         buf_sz: &mut usize,
-        buf: *mut Handle,
+        buf: *mut MaybeUninit<Handle>,
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
         device_path: &mut &DevicePath,
-        out_handle: *mut Handle,
+        out_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
     install_configuration_table: usize,
 
@@ -91,7 +91,7 @@ pub struct BootServices {
         device_path: *const DevicePath,
         source_buffer: *const u8,
         source_size: usize,
-        *mut Handle,
+        image_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
     start_image: unsafe extern "efiapi" fn(
         image_handle: Handle,
@@ -502,11 +502,11 @@ impl BootServices {
     pub fn locate_handle(
         &self,
         search_ty: SearchType,
-        output: Option<&mut [Handle]>,
+        output: Option<&mut [MaybeUninit<Handle>]>,
     ) -> Result<usize> {
         let handle_size = mem::size_of::<Handle>();
 
-        const NULL_BUFFER: *mut Handle = ptr::null_mut();
+        const NULL_BUFFER: *mut MaybeUninit<Handle> = ptr::null_mut();
 
         let (mut buffer_size, buffer) = match output {
             Some(buffer) => (buffer.len() * handle_size, buffer.as_mut_ptr()),
@@ -541,9 +541,10 @@ impl BootServices {
     /// protocol, the `device_path` is advanced to the device path terminator node. If `device_path`
     /// is a multi-instance device path, the function will operate on the first instance.
     pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
+        let mut handle = MaybeUninit::uninit();
         unsafe {
-            let mut handle = Handle::uninitialized();
-            (self.locate_device_path)(&P::GUID, device_path, &mut handle).into_with_val(|| handle)
+            (self.locate_device_path)(&P::GUID, device_path, &mut handle)
+                .into_with_val(|| handle.assume_init())
         }
     }
 
@@ -553,11 +554,11 @@ impl BootServices {
         parent_image_handle: Handle,
         source_buffer: &[u8],
     ) -> Result<Handle> {
+        let boot_policy = 0;
+        let device_path = ptr::null();
+        let source_size = source_buffer.len();
+        let mut image_handle = MaybeUninit::uninit();
         unsafe {
-            let boot_policy = 0;
-            let device_path = ptr::null();
-            let source_size = source_buffer.len();
-            let mut image_handle = Handle::uninitialized();
             (self.load_image)(
                 boot_policy,
                 parent_image_handle,
@@ -566,7 +567,7 @@ impl BootServices {
                 source_size,
                 &mut image_handle,
             )
-            .into_with_val(|| image_handle)
+            .into_with_val(|| image_handle.assume_init())
         }
     }
 
@@ -745,7 +746,7 @@ impl BootServices {
 
         // Allocate a large enough buffer.
         let mut buffer = Vec::new();
-        buffer.resize_with(buffer_size, || unsafe { Handle::uninitialized() });
+        buffer.resize_with(buffer_size, MaybeUninit::uninit);
 
         // Perform the search.
         let (status2, buffer_size) = self.locate_handle(search_type, Some(&mut buffer))?.split();
@@ -759,9 +760,19 @@ impl BootServices {
         // `Status::BUFFER_TOO_SMALL` and `buffer` will be dropped.
         buffer.truncate(buffer_size);
 
+        // Convert the buffer from MaybeUninits to Handles.
+        // The raw parts roundtrip with a pointer cast is better than just
+        // transmuting vectors per mem::transmute docs.
+        // Transmuting MaybeUninit<T> to T is also correct, if we are sure that
+        // it is initialized, which it is, unless UEFI is broken
+        let handles = unsafe {
+            let (ptr, len, cap) = buffer.into_raw_parts();
+            Vec::from_raw_parts(ptr as *mut Handle, len, cap)
+        };
+
         // Emit output, with warnings
         status1
-            .into_with_val(|| buffer)
+            .into_with_val(|| handles)
             .map(|completion| completion.with_status(status2))
     }
 

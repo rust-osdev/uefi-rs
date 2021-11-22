@@ -2,18 +2,14 @@
 //!
 //! This module defines the basic data types that are used throughout uefi-rs
 
-use core::{ffi::c_void, mem::MaybeUninit};
+use core::{ffi::c_void, ptr::NonNull};
 
-/// Opaque handle to an UEFI entity (protocol, image...)
+/// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
+///
+/// If you need to have a nullable handle (for a custom UEFI FFI for example) use `Option<Handle>`.
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
-pub struct Handle(*mut c_void);
-
-impl Handle {
-    pub(crate) unsafe fn uninitialized() -> Self {
-        MaybeUninit::zeroed().assume_init()
-    }
-}
+pub struct Handle(NonNull<c_void>);
 
 /// Handle to an event structure
 #[repr(transparent)]

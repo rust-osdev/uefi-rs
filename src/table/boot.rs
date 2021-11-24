@@ -9,11 +9,11 @@ use crate::{Char16, Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::vec::Vec;
 use bitflags::bitflags;
-use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
 use core::ptr::NonNull;
+use core::{cell::UnsafeCell, ptr::null};
 use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
@@ -548,23 +548,22 @@ impl BootServices {
         }
     }
 
-    /// Load an EFI image from a buffer.
-    pub fn load_image_from_buffer(
+    /// Load an EFI image.
+    pub fn load_image(
         &self,
+        boot_policy: bool,
         parent_image_handle: Handle,
-        source_buffer: &[u8],
-    ) -> Result<Handle> {
-        let boot_policy = 0;
-        let device_path = ptr::null();
-        let source_size = source_buffer.len();
+        device_path: Option<&DevicePath>,
+        source_buffer: Option<&[u8]>,
+    ) -> uefi::Result<Handle> {
         let mut image_handle = MaybeUninit::uninit();
         unsafe {
             (self.load_image)(
-                boot_policy,
+                boot_policy as u8,
                 parent_image_handle,
-                device_path,
-                source_buffer.as_ptr(),
-                source_size,
+                device_path.map(|b| b as _).unwrap_or(null()),
+                source_buffer.map(|b| b.as_ptr()).unwrap_or(null()),
+                source_buffer.map(|b| b.len()).unwrap_or_default(),
                 &mut image_handle,
             )
             .into_with_val(|| image_handle.assume_init())

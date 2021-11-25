@@ -25,7 +25,7 @@
 
 #![cfg_attr(
     feature = "exts",
-    feature(allocator_api, alloc_layout_extra, vec_into_raw_parts)
+    feature(allocator_api, alloc_layout_extra, vec_spare_capacity)
 )]
 #![feature(auto_traits)]
 #![feature(control_flow_enum)]

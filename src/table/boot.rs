@@ -744,31 +744,17 @@ impl BootServices {
         // Determine how much we need to allocate.
         let (status1, buffer_size) = self.locate_handle(search_type, None)?.split();
 
-        // Allocate a large enough buffer.
-        let mut buffer = Vec::new();
-        buffer.resize_with(buffer_size, MaybeUninit::uninit);
+        // Allocate a large enough buffer without pointless initialization.
+        let mut handles = Vec::with_capacity(buffer_size);
+        let buffer = handles.spare_capacity_mut();
 
         // Perform the search.
-        let (status2, buffer_size) = self.locate_handle(search_type, Some(&mut buffer))?.split();
+        let (status2, buffer_size) = self.locate_handle(search_type, Some(buffer))?.split();
 
-        // Ensure that the buffer's length matches the number of handles
-        // that were actually filled in. Calling `truncate` only has an
-        // effect if the new length is smaller than the vec's currently
-        // length, and that is sufficient here since if `buffer` is
-        // smaller than the amount of data `locate_handle` wants to
-        // return then `find_handles` will end up returning
-        // `Status::BUFFER_TOO_SMALL` and `buffer` will be dropped.
-        buffer.truncate(buffer_size);
-
-        // Convert the buffer from MaybeUninits to Handles.
-        // The raw parts roundtrip with a pointer cast is better than just
-        // transmuting vectors per mem::transmute docs.
-        // Transmuting MaybeUninit<T> to T is also correct, if we are sure that
-        // it is initialized, which it is, unless UEFI is broken
-        let handles = unsafe {
-            let (ptr, len, cap) = buffer.into_raw_parts();
-            Vec::from_raw_parts(ptr as *mut Handle, len, cap)
-        };
+        // Mark the returned number of elements as initialized.
+        unsafe {
+            handles.set_len(buffer_size);
+        }
 
         // Emit output, with warnings
         status1

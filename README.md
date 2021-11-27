@@ -19,12 +19,11 @@ This crate makes it easy to both:
 The objective is to provide **safe** and **performant** wrappers for UEFI interfaces,
 and allow developers to write idiomatic Rust code.
 
-Check out @gil0mendes [blog post on getting started with UEFI in Rust][gm-blog].
+Check out [the UEFI application template](template) for a quick start.
 
 **Note**: this crate currently has only been tested with **64-bit** UEFI on x86/ARM.
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
-[gm-blog]: https://gil0mendes.io/blog/an-efi-app-a-bit-rusty/
 [rustc-custom]: https://doc.rust-lang.org/rustc/targets/custom.html
 
 ![uefi-rs running in QEMU](https://imgur.com/SFPSVuO.png)
@@ -54,30 +53,6 @@ This project contains multiple sub-crates:
 
 [log]: https://github.com/rust-lang-nursery/log
 
-## Building kernels which use UEFI
-
-This crate makes it easy to start building simple applications with UEFI.
-However, there are some limitations you should be aware of:
-
-- The global logger / allocator **can only be set once** per binary.
-  It is useful when just starting out, but if you're building a real OS you will
-  want to write your own specific kernel logger and memory allocator.
-
-- To support advanced features such as [higher half kernel] and [linker scripts]
-  you will want to build your kernel as an ELF binary.
-
-In other words, the best way to use this crate is to create a small binary which
-wraps your actual kernel, and then use UEFI's convenient functions for loading
-it from disk and booting it.
-
-This is similar to what the Linux kernel's [EFI stub] does: the compressed kernel
-is an ELF binary which has little knowledge of how it's booted, and the boot loader
-uses UEFI to set up an environment for it.
-
-[higher half kernel]: https://wiki.osdev.org/Higher_Half_Kernel
-[linker scripts]: https://sourceware.org/binutils/docs/ld/Scripts.html
-[EFI stub]: https://www.kernel.org/doc/Documentation/efi-stub.txt
-
 ## Documentation
 
 The docs for the latest published crate version can be found at
@@ -88,11 +63,12 @@ the [UEFI specification][spec] for detailed information.
 
 [spec]: http://www.uefi.org/specifications
 
-## Sample code
+## Tests
 
-An example UEFI app is built in the `uefi-test-runner` directory.
+The `uefi-test-runner` directory contains a sample UEFI app which exercises
+most of the library's functionality.
 
-Check out the testing [README.md](uefi-test-runner/README.md) for instructions on how to run the crate's tests.
+Check out the testing project's [`README.md`](uefi-test-runner/README.md) for instructions on how to run the tests.
 
 ## Building UEFI programs
 

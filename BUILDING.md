@@ -22,9 +22,8 @@ application. Copy it to a new directory to get started.
 
 ## Building and running
 
-- Build using a `nightly` version of the compiler and activate the
-  [`build-std`](https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std)
-  Cargo feature: `cargo +nightly build -Z build-std --target x86_64-unknown-uefi`.
+- Build using a `nightly` version of the compiler:
+  `cargo +nightly build --target x86_64-unknown-uefi`.
 
 - The `target` directory will contain a `x86_64-unknown-uefi` subdirectory,
   where you will find the `uefi_app.efi` file - a normal UEFI executable.

@@ -86,6 +86,8 @@ impl fmt::Display for Guid {
 /// for more specific traits such as `Protocol` or `FileProtocolInfo`, which
 /// indicate in which circumstances an `Identify`-tagged type should be used.
 ///
+/// # Safety
+///
 /// Implementing `Identify` is unsafe because attaching an incorrect GUID to a
 /// type can lead to type unsafety on both the Rust and UEFI side.
 ///

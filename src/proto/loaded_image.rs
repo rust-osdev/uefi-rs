@@ -97,6 +97,8 @@ impl LoadedImage {
     /// calling `BootServices.start_image` to control the command line
     /// passed to the image.
     ///
+    /// `size` is in bytes.
+    ///
     /// # Safety
     ///
     /// This function takes `options` as a raw pointer because the

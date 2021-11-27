@@ -14,12 +14,14 @@
 #![feature(asm)]
 #![feature(lang_items)]
 #![feature(panic_info_message)]
+#![feature(abi_efiapi)]
 
 #[macro_use]
 extern crate log;
 // Core types.
 extern crate uefi;
 
+use core::ffi::c_void;
 use core::ptr::NonNull;
 
 use cfg_if::cfg_if;
@@ -81,6 +83,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
                 EventType::SIGNAL_EXIT_BOOT_SERVICES,
                 Tpl::NOTIFY,
                 Some(exit_boot_services),
+                None,
             )
             .map_inner(|_| ())
     }
@@ -107,19 +110,19 @@ unsafe fn init_logger(st: &mut SystemTable<Boot>) {
 }
 
 /// Notify the utility library that boot services are not safe to call anymore
-fn exit_boot_services(_e: Event) {
+/// As this is a callback, it must be `extern "efiapi"`.
+unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_void>>) {
     // DEBUG: The UEFI spec does not guarantee that this printout will work, as
     //        the services used by logging might already have been shut down.
     //        But it works on current OVMF, and can be used as a handy way to
     //        check that the callback does get called.
     //
     // info!("Shutting down the UEFI utility library");
-    unsafe {
-        SYSTEM_TABLE = None;
-        if let Some(ref mut logger) = LOGGER {
-            logger.disable();
-        }
+    SYSTEM_TABLE = None;
+    if let Some(ref mut logger) = LOGGER {
+        logger.disable();
     }
+
     uefi::alloc::exit_boot_services();
 }
 

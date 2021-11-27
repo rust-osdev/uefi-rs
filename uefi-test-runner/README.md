@@ -38,3 +38,7 @@ Available options:
 - `--verbose`: enables verbose mode, prints commands before running them
 - `--headless`: enables headless mode, which runs QEMU without a GUI
 - `--release`: builds the code with optimizations enabled
+- `--disable-kvm`: disable [KVM](https://www.linux-kvm.org/page/Main_Page) hardware acceleration
+  when running the tests in QEMU
+
+  This is especially useful if you want to run the tests under [WSL](https://docs.microsoft.com/en-us/windows/wsl/) on Windows.

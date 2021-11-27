@@ -28,6 +28,9 @@ SETTINGS = {
     'config': 'debug',
     # Disables some tests which don't work in our CI setup
     'ci': False,
+    # KVM is a Linux kernel module which allows QEMU to use
+    # hardware-accelerated virtualization.
+    'disable_kvm': False,
     # QEMU executable to use
     # Indexed by the `arch` setting
     'qemu_binary': {
@@ -247,8 +250,9 @@ def run_qemu():
             '-m', '256M',
         ])
         if not SETTINGS['ci']:
-            # Enable acceleration if possible.
-            qemu_flags.append('--enable-kvm')
+            # Enable hardware-accelerated virtualization if possible.
+            if not SETTINGS['disable_kvm']:
+                qemu_flags.append('--enable-kvm')
         else:
             # Exit instead of rebooting
             qemu_flags.append('-no-reboot')
@@ -407,6 +411,9 @@ def main():
     parser.add_argument('--ci', help='disables some tests which currently break CI',
                         action='store_true')
 
+    parser.add_argument('--disable-kvm', help='disables hardware accelerated virtualization support in QEMU',
+                        action='store_true')
+
     opts = parser.parse_args()
 
     SETTINGS['arch'] = opts.target
@@ -415,6 +422,7 @@ def main():
     SETTINGS['headless'] = opts.headless
     SETTINGS['config'] = 'release' if opts.release else 'debug'
     SETTINGS['ci'] = opts.ci
+    SETTINGS['disable_kvm'] = opts.disable_kvm
 
     verb = opts.verb
 

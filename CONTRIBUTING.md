@@ -13,8 +13,9 @@ First, change to the `uefi-test-runner` directory:
 cd 'uefi-test-runner'
 ```
 
-Please take a quick look at the README for an overview of the system requirements
-of the test runner.
+Please take a quick look at the test runner project's [`README`](uefi-test-runner/README.md)
+for an overview of the required dependencies. In addition, the [`BUILDING`](BUILDING.md)
+document is useful if it's your first time building and running an UEFI executable.
 
 Make some changes in your favourite editor / IDE:
 I use [VS Code][code] with the [RLS][rls] extension.

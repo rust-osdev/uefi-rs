@@ -1,11 +1,11 @@
-use core::convert::TryFrom;
 use log::info;
 use uefi::prelude::*;
 use uefi::table::runtime::{VariableAttributes, VariableVendor};
-use uefi::{CString16, Guid};
+use uefi::{CStr16, Guid};
 
 fn test_variables(rt: &RuntimeServices) {
-    let name = CString16::try_from("UefiRsTestVar").unwrap();
+    let mut buf = [0; 14];
+    let name = CStr16::from_str_with_buf("UefiRsTestVar", &mut buf).unwrap();
     let test_value = b"TestValue";
     let test_attrs = VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS;
 

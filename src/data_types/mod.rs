@@ -57,7 +57,7 @@ pub use self::chars::{Char16, Char8};
 mod enums;
 
 mod strs;
-pub use self::strs::{CStr16, CStr8, FromSliceWithNulError};
+pub use self::strs::{CStr16, CStr8, FromSliceWithNulError, FromStrWithBufError};
 
 #[cfg(feature = "exts")]
 mod owned_strs;

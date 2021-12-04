@@ -6,7 +6,7 @@ use uefi::{proto, Identify};
 pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     info!("Testing various protocols");
 
-    console::test(st);
+    console::test(image, st);
 
     let bt = st.boot_services();
     find_protocol(bt);

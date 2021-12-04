@@ -123,8 +123,20 @@ pub struct BootServices {
     disconnect_controller: usize,
 
     // Protocol open / close services
-    open_protocol: usize,
-    close_protocol: usize,
+    open_protocol: extern "efiapi" fn(
+        handle: Handle,
+        protocol: &Guid,
+        interface: &mut *mut c_void,
+        agent_handle: Handle,
+        controller_handle: Option<Handle>,
+        attributes: u32,
+    ) -> Status,
+    close_protocol: extern "efiapi" fn(
+        handle: Handle,
+        protocol: &Guid,
+        agent_handle: Handle,
+        controller_handle: Option<Handle>,
+    ) -> Status,
     open_protocol_information: usize,
 
     // Library services
@@ -481,10 +493,15 @@ impl BootServices {
     /// This function attempts to get the protocol implementation of a handle,
     /// based on the protocol GUID.
     ///
+    /// It is recommended that all new drivers and applications use
+    /// [`open_protocol`] instead of `handle_protocol`.
+    ///
     /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
     /// provides no mechanism to protect against concurrent usage. Such
     /// protections must be implemented by user-level code, for example via a
     /// global `HashSet`.
+    ///
+    /// [`open_protocol`]: BootServices::open_protocol
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
@@ -670,6 +687,67 @@ impl BootServices {
             .unwrap_or((0, ptr::null_mut()));
 
         unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+    }
+
+    /// Open a protocol interface for a handle.
+    ///
+    /// This function attempts to get the protocol implementation of a
+    /// handle, based on the protocol GUID. It is an extended version of
+    /// [`handle_protocol`]. It is recommended that all
+    /// new drivers and applications use `open_protocol` instead of
+    /// `handle_protocol`.
+    ///
+    /// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for
+    /// details of the input parameters.
+    ///
+    /// If successful, a [`ScopedProtocol`] is returned that will
+    /// automatically close the protocol interface when dropped.
+    ///
+    /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
+    /// provides no mechanism to protect against concurrent usage. Such
+    /// protections must be implemented by user-level code, for example via a
+    /// global `HashSet`.
+    ///
+    /// [`handle_protocol`]: BootServices::handle_protocol
+    pub fn open_protocol<P: Protocol>(
+        &self,
+        params: OpenProtocolParams,
+        attributes: OpenProtocolAttributes,
+    ) -> Result<ScopedProtocol<P>> {
+        let mut interface = ptr::null_mut();
+        (self.open_protocol)(
+            params.handle,
+            &P::GUID,
+            &mut interface,
+            params.agent,
+            params.controller,
+            attributes as u32,
+        )
+        .into_with_val(|| {
+            let interface = interface as *mut P as *mut UnsafeCell<P>;
+            unsafe {
+                ScopedProtocol {
+                    interface: &*interface,
+                    open_params: params,
+                    boot_services: self,
+                }
+            }
+        })
+    }
+
+    /// Test whether a handle supports a protocol.
+    pub fn test_protocol<P: Protocol>(&self, params: OpenProtocolParams) -> Result<()> {
+        const TEST_PROTOCOL: u32 = 0x04;
+        let mut interface = ptr::null_mut();
+        (self.open_protocol)(
+            params.handle,
+            &P::GUID,
+            &mut interface,
+            params.agent,
+            params.controller,
+            TEST_PROTOCOL,
+        )
+        .into_with_val(|| ())
     }
 
     /// Get the list of protocol interface [`Guids`][Guid] that are installed
@@ -959,6 +1037,97 @@ impl Drop for TplGuard<'_> {
         unsafe {
             (self.boot_services.restore_tpl)(self.old_tpl);
         }
+    }
+}
+
+// OpenProtocolAttributes is safe to model as a regular enum because it
+// is only used as an input. The attributes are bitflags, but all valid
+// combinations are listed in the spec and only ByDriver and Exclusive
+// can actually be combined.
+//
+// Some values intentionally excluded:
+//
+// ByHandleProtocol (0x01) excluded because it is only intended to be
+// used in an implementation of `HandleProtocol`.
+//
+// TestProtocol (0x04) excluded because it doesn't actually open the
+// protocol, just tests if it's present on the handle. Since that
+// changes the interface significantly, that's exposed as a separate
+// method: `BootServices::test_protocol`.
+
+/// Attributes for [`BootServices::open_protocol`].
+#[repr(u32)]
+pub enum OpenProtocolAttributes {
+    /// Used by drivers to get a protocol interface for a handle. The
+    /// driver will not be informed if the interface is uninstalled or
+    /// reinstalled.
+    GetProtocol = 0x02,
+
+    /// Used by bus drivers to show that a protocol is being used by one
+    /// of the child controllers of the bus.
+    ByChildController = 0x08,
+
+    /// Used by a driver to gain access to a protocol interface. When
+    /// this mode is used, the driver's `Stop` function will be called
+    /// if the protocol interface is reinstalled or uninstalled. Once a
+    /// protocol interface is opened with this attribute, no other
+    /// drivers will be allowed to open the same protocol interface with
+    /// the `ByDriver` attribute.
+    ByDriver = 0x10,
+
+    /// Used by a driver to gain exclusive access to a protocol
+    /// interface. If any other drivers have the protocol interface
+    /// opened with an attribute of `ByDriver`, then an attempt will be
+    /// made to remove them with `DisconnectController`.
+    ByDriverExclusive = 0x30,
+
+    /// Used by applications to gain exclusive access to a protocol
+    /// interface. If any drivers have the protocol opened with an
+    /// attribute of `ByDriver`, then an attempt will be made to remove
+    /// them by calling the driver's `Stop` function.
+    Exclusive = 0x20,
+}
+
+/// Parameters passed to [`BootServices::open_protocol`].
+pub struct OpenProtocolParams {
+    /// The handle for the protocol to open.
+    pub handle: Handle,
+
+    /// The handle of the calling agent. For drivers, this is the handle
+    /// containing the `EFI_DRIVER_BINDING_PROTOCOL` instance. For
+    /// applications, this is the image handle.
+    pub agent: Handle,
+
+    /// For drivers, this is the controller handle that requires the
+    /// protocol interface. For applications this should be set to
+    /// `None`.
+    pub controller: Option<Handle>,
+}
+
+/// An open protocol interface. Automatically closes the protocol
+/// interface on drop.
+pub struct ScopedProtocol<'a, P: Protocol> {
+    /// The protocol interface.
+    pub interface: &'a UnsafeCell<P>,
+
+    open_params: OpenProtocolParams,
+    boot_services: &'a BootServices,
+}
+
+impl<'a, P: Protocol> Drop for ScopedProtocol<'a, P> {
+    fn drop(&mut self) {
+        let status = (self.boot_services.close_protocol)(
+            self.open_params.handle,
+            &P::GUID,
+            self.open_params.agent,
+            self.open_params.controller,
+        );
+        // All of the error cases for close_protocol boil down to
+        // calling it with a different set of parameters than what was
+        // passed to open_protocol. The public API prevents such errors,
+        // and the error can't be propagated out of drop anyway, so just
+        // assert success.
+        assert_eq!(status, Status::SUCCESS);
     }
 }
 

@@ -9,10 +9,9 @@ extern crate log;
 extern crate alloc;
 
 use alloc::string::String;
-use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
-use uefi::table::boot::{MemoryDescriptor, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 
 mod boot;
 mod proto;
@@ -142,8 +141,8 @@ fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     }
 
     // Exit boot services as a proof that it works :)
-    let max_mmap_size =
-        st.boot_services().memory_map_size() + 8 * mem::size_of::<MemoryDescriptor>();
+    let sizes = st.boot_services().memory_map_size();
+    let max_mmap_size = sizes.map_size + 2 * sizes.entry_size;
     let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
     let (st, _iter) = st
         .exit_boot_services(image, &mut mmap_storage[..])

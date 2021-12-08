@@ -218,12 +218,13 @@ impl BootServices {
         (self.free_pages)(addr, count).into()
     }
 
-    /// Retrieves the size, in bytes, of the current memory map.
+    /// Returns struct which contains the size of a single memory descriptor
+    /// as well as the size of the current memory map.
     ///
-    /// A buffer of this size will be capable of holding the whole current memory map,
-    /// including padding. Note, however, that allocations will increase the size of the
-    /// memory map, therefore it is better to allocate some extra space.
-    pub fn memory_map_size(&self) -> usize {
+    /// Note that the size of the memory map can increase any time an allocation happens,
+    /// so when creating a buffer to put the memory map into, it's recommended to allocate a few extra
+    /// elements worth of space above the size of the current memory map.
+    pub fn memory_map_size(&self) -> MemoryMapSize {
         let mut map_size = 0;
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
@@ -240,7 +241,10 @@ impl BootServices {
         };
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
 
-        map_size
+        MemoryMapSize {
+            entry_size,
+            map_size,
+        }
     }
 
     /// Retrieves the current memory map.
@@ -1296,6 +1300,14 @@ bitflags! {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct MemoryMapKey(usize);
+
+/// A structure containing the size of a memory descriptor and the size of the memory map
+pub struct MemoryMapSize {
+    /// Size of a single memory descriptor in bytes
+    pub entry_size: usize,
+    /// Size of the entire memory map in bytes
+    pub map_size: usize,
+}
 
 /// An iterator of memory descriptors
 #[derive(Debug, Clone)]

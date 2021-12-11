@@ -1,20 +1,34 @@
 use uefi::prelude::*;
 use uefi::proto::device_path::DevicePath;
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::table::boot::BootServices;
+use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
 
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running device path protocol test");
 
     let loaded_image = bt
-        .handle_protocol::<LoadedImage>(image)
+        .open_protocol::<LoadedImage>(
+            OpenProtocolParams {
+                handle: image,
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
         .expect_success("Failed to open LoadedImage protocol");
-    let loaded_image = unsafe { &*loaded_image.get() };
+    let loaded_image = unsafe { &*loaded_image.interface.get() };
 
     let device_path = bt
-        .handle_protocol::<DevicePath>(loaded_image.device())
+        .open_protocol::<DevicePath>(
+            OpenProtocolParams {
+                handle: loaded_image.device(),
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
         .expect_success("Failed to open DevicePath protocol");
-    let device_path = unsafe { &*device_path.get() };
+    let device_path = unsafe { &*device_path.interface.get() };
 
     for path in device_path.iter() {
         info!(

@@ -12,9 +12,9 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     find_protocol(bt);
     test_protocols_per_handle(image, bt);
 
-    debug::test(bt);
+    debug::test(image, bt);
     device_path::test(image, bt);
-    media::test(bt);
+    media::test(image, bt);
     pi::test(bt);
 
     #[cfg(any(

@@ -502,6 +502,7 @@ impl BootServices {
     /// global `HashSet`.
     ///
     /// [`open_protocol`]: BootServices::open_protocol
+    #[deprecated(note = "it is recommended to use `open_protocol` instead")]
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
@@ -848,24 +849,45 @@ impl BootServices {
     pub fn get_image_file_system(
         &self,
         image_handle: Handle,
-    ) -> Result<&UnsafeCell<SimpleFileSystem>> {
+    ) -> Result<ScopedProtocol<SimpleFileSystem>> {
         let loaded_image = self
-            .handle_protocol::<LoadedImage>(image_handle)?
+            .open_protocol::<LoadedImage>(
+                OpenProtocolParams {
+                    handle: image_handle,
+                    agent: image_handle,
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )?
             .expect("Failed to retrieve `LoadedImage` protocol from handle");
-        let loaded_image = unsafe { &*loaded_image.get() };
+        let loaded_image = unsafe { &*loaded_image.interface.get() };
 
         let device_handle = loaded_image.device();
 
         let device_path = self
-            .handle_protocol::<DevicePath>(device_handle)?
+            .open_protocol::<DevicePath>(
+                OpenProtocolParams {
+                    handle: device_handle,
+                    agent: image_handle,
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )?
             .expect("Failed to retrieve `DevicePath` protocol from image's device handle");
-        let mut device_path = unsafe { &*device_path.get() };
+        let mut device_path = unsafe { &*device_path.interface.get() };
 
         let device_handle = self
             .locate_device_path::<SimpleFileSystem>(&mut device_path)?
             .expect("Failed to locate `SimpleFileSystem` protocol on device path");
 
-        self.handle_protocol::<SimpleFileSystem>(device_handle)
+        self.open_protocol::<SimpleFileSystem>(
+            OpenProtocolParams {
+                handle: device_handle,
+                agent: image_handle,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
     }
 }
 

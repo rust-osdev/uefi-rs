@@ -102,10 +102,7 @@ jobs:
           args: --all -- --check
 
       - name: Run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --target x86_64-unknown-uefi --all-features -- -Dwarnings
+        run: uefi-test-runner/build.py clippy
 
       - name: Run cargo doc
         uses: actions-rs/cargo@v1

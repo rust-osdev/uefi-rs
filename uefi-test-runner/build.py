@@ -68,6 +68,10 @@ def esp_dir():
     'Returns the directory where we will build the emulated UEFI system partition'
     return build_dir() / 'esp'
 
+def repo_dir():
+    'Returns the root directory of the git repo.'
+    return Path(__file__).resolve().parent.parent
+
 def run_tool(tool, *flags):
     'Runs cargo-<tool> with certain arguments.'
 
@@ -120,7 +124,15 @@ def build(*test_flags):
 def clippy():
     'Runs Clippy on all projects'
 
-    run_clippy('--all')
+    run_clippy(
+        # Specifying the manifest path allows this command to
+        # run successfully regardless of the CWD.
+        '--manifest-path', repo_dir() / 'Cargo.toml',
+        # Lint all packages in the workspace.
+        '--workspace',
+        # Enable all the features in the uefi package that enable more
+        # code.
+        '--features=alloc,exts,logger')
 
 def doc():
     'Generates documentation for the library crates.'
@@ -158,12 +170,11 @@ def get_host_target():
 
 def test():
     'Run tests and doctests using the host target.'
-    repo_dir = Path(__file__).resolve().parent.parent
     sp.run([
         'cargo', 'test',
         # Specifying the manifest path allows this command to
         # run successfully regardless of the CWD.
-        '--manifest-path', repo_dir / 'Cargo.toml',
+        '--manifest-path', repo_dir() / 'Cargo.toml',
         '-Zbuild-std=std',
         '--target', get_host_target(),
         '--features', 'exts',

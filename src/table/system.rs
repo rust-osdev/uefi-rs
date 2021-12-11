@@ -219,6 +219,46 @@ impl SystemTable<Runtime> {
     pub unsafe fn runtime_services(&self) -> &RuntimeServices {
         self.table.runtime
     }
+
+    /// Changes the runtime addressing mode of EFI firmware from physical to virtual.
+    /// It is up to the caller to translate the old SystemTable address to a new virtual
+    /// address and provide it for this function.
+    /// See [`get_current_system_table_addr`]
+    ///
+    /// # Safety
+    ///
+    /// Setting new virtual memory map is unsafe and may cause undefined behaviors.
+    ///
+    /// [`get_current_system_table_addr`]: SystemTable::get_current_system_table_addr
+    pub unsafe fn set_virtual_address_map(
+        self,
+        map: &mut [MemoryDescriptor],
+        new_system_table_virtual_addr: u64,
+    ) -> Result<Self> {
+        // Unsafe Code Guidelines guarantees that there is no padding in an array or a slice
+        // between its elements if the element type is `repr(C)`, which is our case.
+        //
+        // See https://rust-lang.github.io/unsafe-code-guidelines/layout/arrays-and-slices.html
+        let map_size = core::mem::size_of_val(map);
+        let entry_size = core::mem::size_of::<MemoryDescriptor>();
+        let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
+        let map_ptr = map.as_mut_ptr();
+        (self.table.runtime.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr)
+            .into_with_val(|| {
+                let new_table_ref =
+                    &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
+                Self {
+                    table: new_table_ref,
+                    _marker: PhantomData,
+                }
+            })
+    }
+
+    /// Return the address of the SystemTable that resides in a UEFI runtime services
+    /// memory region.
+    pub fn get_current_system_table_addr(&self) -> u64 {
+        self.table as *const _ as usize as u64
+    }
 }
 
 /// The actual UEFI system table

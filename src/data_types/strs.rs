@@ -20,6 +20,20 @@ pub enum FromSliceWithNulError {
     NotNulTerminated,
 }
 
+/// Error returned by [`CStr16::from_str_with_buf`].
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FromStrWithBufError {
+    /// An invalid character was encountered before the end of the string
+    InvalidChar(usize),
+
+    /// A null character was encountered in the string
+    InteriorNul(usize),
+
+    /// The buffer is not big enough to hold the entire string and
+    /// trailing null character
+    BufferTooSmall,
+}
+
 /// A Latin-1 null-terminated string
 ///
 /// This type is largely inspired by `std::ffi::CStr`, see the documentation of
@@ -141,6 +155,52 @@ impl CStr16 {
         &*(codes as *const [u16] as *const Self)
     }
 
+    /// Convert a [`&str`] to a `&CStr16`, backed by a buffer.
+    ///
+    /// The input string must contain only characters representable with
+    /// UCS-2, and must not contain any null characters (even at the end of
+    /// the input).
+    ///
+    /// The backing buffer must be big enough to hold the converted string as
+    /// well as a trailing null character.
+    ///
+    /// # Examples
+    ///
+    /// Convert the UTF-8 string "ABC" to a `&CStr16`:
+    ///
+    /// ```
+    /// use uefi::CStr16;
+    ///
+    /// let mut buf = [0; 4];
+    /// CStr16::from_str_with_buf("ABC", &mut buf).unwrap();
+    /// ```
+    pub fn from_str_with_buf<'a>(
+        input: &str,
+        buf: &'a mut [u16],
+    ) -> Result<&'a Self, FromStrWithBufError> {
+        let mut index = 0;
+
+        // Convert to UTF-16.
+        for c in input.encode_utf16() {
+            *buf.get_mut(index)
+                .ok_or(FromStrWithBufError::BufferTooSmall)? = c;
+            index += 1;
+        }
+
+        // Add trailing null character.
+        *buf.get_mut(index)
+            .ok_or(FromStrWithBufError::BufferTooSmall)? = 0;
+
+        // Convert from u16 to Char16. This checks for invalid UCS-2 chars and
+        // interior nulls. The NotNulTerminated case is unreachable because we
+        // just added a trailing null character.
+        Self::from_u16_with_nul(&buf[..index + 1]).map_err(|err| match err {
+            FromSliceWithNulError::InvalidChar(p) => FromStrWithBufError::InvalidChar(p),
+            FromSliceWithNulError::InteriorNul(p) => FromStrWithBufError::InteriorNul(p),
+            FromSliceWithNulError::NotNulTerminated => unreachable!(),
+        })
+    }
+
     /// Returns the inner pointer to this C string
     pub fn as_ptr(&self) -> *const Char16 {
         self.0.as_ptr()
@@ -250,5 +310,36 @@ mod tests {
     fn test_cstr16_num_bytes() {
         let s = CStr16::from_u16_with_nul(&[65, 66, 67, 0]).unwrap();
         assert_eq!(s.num_bytes(), 8);
+    }
+
+    #[test]
+    fn test_cstr16_from_str_with_buf() {
+        let mut buf = [0; 4];
+
+        // OK: buf is exactly the right size.
+        let s = CStr16::from_str_with_buf("ABC", &mut buf).unwrap();
+        assert_eq!(s.to_u16_slice_with_nul(), [65, 66, 67, 0]);
+
+        // OK: buf is bigger than needed.
+        let s = CStr16::from_str_with_buf("A", &mut buf).unwrap();
+        assert_eq!(s.to_u16_slice_with_nul(), [65, 0]);
+
+        // Error: buf is too small.
+        assert_eq!(
+            CStr16::from_str_with_buf("ABCD", &mut buf).unwrap_err(),
+            FromStrWithBufError::BufferTooSmall
+        );
+
+        // Error: invalid character.
+        assert_eq!(
+            CStr16::from_str_with_buf("a😀", &mut buf).unwrap_err(),
+            FromStrWithBufError::InvalidChar(1),
+        );
+
+        // Error: interior null.
+        assert_eq!(
+            CStr16::from_str_with_buf("a\0b", &mut buf).unwrap_err(),
+            FromStrWithBufError::InteriorNul(1),
+        );
     }
 }

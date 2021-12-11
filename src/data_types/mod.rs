@@ -2,23 +2,30 @@
 //!
 //! This module defines the basic data types that are used throughout uefi-rs
 
-use core::{ffi::c_void, mem::MaybeUninit};
+use core::{ffi::c_void, ptr::NonNull};
 
-/// Opaque handle to an UEFI entity (protocol, image...)
+/// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
+///
+/// If you need to have a nullable handle (for a custom UEFI FFI for example) use `Option<Handle>`.
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
-pub struct Handle(*mut c_void);
-
-impl Handle {
-    pub(crate) unsafe fn uninitialized() -> Self {
-        MaybeUninit::zeroed().assume_init()
-    }
-}
+pub struct Handle(NonNull<c_void>);
 
 /// Handle to an event structure
-#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Event(*mut c_void);
+
+impl Event {
+    /// Clone this `Event`
+    ///
+    /// # Safety
+    /// When an event is closed by calling `BootServices::close_event`, that event and ALL references
+    /// to it are invalidated and the underlying memory is freed by firmware. The caller must ensure
+    /// that any clones of a closed `Event` are never used again.
+    pub unsafe fn unsafe_clone(&self) -> Self {
+        Self(self.0)
+    }
+}
 
 /// Trait for querying the alignment of a struct
 ///
@@ -50,7 +57,7 @@ pub use self::chars::{Char16, Char8};
 mod enums;
 
 mod strs;
-pub use self::strs::{CStr16, CStr8, FromSliceWithNulError};
+pub use self::strs::{CStr16, CStr8, FromSliceWithNulError, FromStrWithBufError};
 
 #[cfg(feature = "exts")]
 mod owned_strs;

@@ -4,7 +4,7 @@ This file documents the process of building and running the test suite.
 
 ## Prerequisites
 
-Besides all the [core library requirements](https://github.com/rust-osdev/uefi-rs/blob/master/BUILDING.md#Prerequisites) for building a UEFI app, the tests have additional requirements:
+Besides all the [core library requirements](../BUILDING.md) for building a UEFI app, the tests have additional requirements:
 
 - [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
 - [Python 3](https://www.python.org): at least version 3.6 is required.
@@ -38,3 +38,7 @@ Available options:
 - `--verbose`: enables verbose mode, prints commands before running them
 - `--headless`: enables headless mode, which runs QEMU without a GUI
 - `--release`: builds the code with optimizations enabled
+- `--disable-kvm`: disable [KVM](https://www.linux-kvm.org/page/Main_Page) hardware acceleration
+  when running the tests in QEMU
+
+  This is especially useful if you want to run the tests under [WSL](https://docs.microsoft.com/en-us/windows/wsl/) on Windows.

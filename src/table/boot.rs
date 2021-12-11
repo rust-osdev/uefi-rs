@@ -13,6 +13,7 @@ use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
+use core::ptr::NonNull;
 use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
@@ -48,8 +49,8 @@ pub struct BootServices {
         ty: EventType,
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
-        notify_ctx: *mut c_void,
-        event: *mut Event,
+        notify_ctx: Option<NonNull<c_void>>,
+        out_event: *mut Event,
     ) -> Status,
     set_timer: unsafe extern "efiapi" fn(event: Event, ty: u32, trigger_time: u64) -> Status,
     wait_for_event: unsafe extern "efiapi" fn(
@@ -57,8 +58,8 @@ pub struct BootServices {
         events: *mut Event,
         out_index: *mut usize,
     ) -> Status,
-    signal_event: usize,
-    close_event: usize,
+    signal_event: extern "efiapi" fn(event: Event) -> Status,
+    close_event: unsafe extern "efiapi" fn(event: Event) -> Status,
     check_event: unsafe extern "efiapi" fn(event: Event) -> Status,
 
     // Protocol handlers
@@ -74,12 +75,12 @@ pub struct BootServices {
         proto: *const Guid,
         key: *mut c_void,
         buf_sz: &mut usize,
-        buf: *mut Handle,
+        buf: *mut MaybeUninit<Handle>,
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
-        device_path: &mut *mut DevicePath,
-        out_handle: *mut Handle,
+        device_path: &mut &DevicePath,
+        out_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
     install_configuration_table: usize,
 
@@ -90,7 +91,7 @@ pub struct BootServices {
         device_path: *const DevicePath,
         source_buffer: *const u8,
         source_size: usize,
-        *mut Handle,
+        image_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
     start_image: unsafe extern "efiapi" fn(
         image_handle: Handle,
@@ -149,7 +150,14 @@ pub struct BootServices {
     set_mem: unsafe extern "efiapi" fn(buffer: *mut u8, len: usize, value: u8),
 
     // New event functions (UEFI 2.0 or newer)
-    create_event_ex: usize,
+    create_event_ex: unsafe extern "efiapi" fn(
+        ty: EventType,
+        notify_tpl: Tpl,
+        notify_fn: Option<EventNotifyFn>,
+        notify_ctx: Option<NonNull<c_void>>,
+        event_group: Option<NonNull<Guid>>,
+        out_event: *mut Event,
+    ) -> Status,
 }
 
 impl BootServices {
@@ -307,44 +315,81 @@ impl BootServices {
         &self,
         event_ty: EventType,
         notify_tpl: Tpl,
-        notify_fn: Option<fn(Event)>,
+        notify_fn: Option<EventNotifyFn>,
+        notify_ctx: Option<NonNull<c_void>>,
     ) -> Result<Event> {
         // Prepare storage for the output Event
         let mut event = MaybeUninit::<Event>::uninit();
-
-        // Use a trampoline to handle the impedance mismatch between Rust & C
-        unsafe extern "efiapi" fn notify_trampoline(e: Event, ctx: *mut c_void) {
-            let notify_fn: fn(Event) = mem::transmute(ctx);
-            notify_fn(e); // SAFETY: Aborting panics are assumed here
-        }
-        let (notify_func, notify_ctx) = notify_fn
-            .map(|notify_fn| {
-                (
-                    Some(notify_trampoline as EventNotifyFn),
-                    notify_fn as fn(Event) as *mut c_void,
-                )
-            })
-            .unwrap_or((None, ptr::null_mut()));
 
         // Now we're ready to call UEFI
         (self.create_event)(
             event_ty,
             notify_tpl,
-            notify_func,
+            notify_fn,
             notify_ctx,
             event.as_mut_ptr(),
         )
         .into_with_val(|| event.assume_init())
     }
 
+    /// Creates a new `Event` of type `event_type`. The event's notification function, context,
+    /// and task priority are specified by `notify_fn`, `notify_ctx`, and `notify_tpl`, respectively.
+    /// The `Event` will be added to the group of `Event`s identified by `event_group`.
+    ///
+    /// If no group is specified by `event_group`, this function behaves as if the same parameters
+    /// had been passed to `create_event()`.
+    ///
+    /// Event groups are collections of events identified by a shared `Guid` where, when one member
+    /// event is signaled, all other events are signaled and their individual notification actions
+    /// are taken. All events are guaranteed to be signaled before the first notification action is
+    /// taken. All notification functions will be executed in the order specified by their `Tpl`.
+    ///
+    /// A single event can only be part of a single event group. An event may be removed from an
+    /// event group by using `close_event()`.
+    ///
+    /// The `EventType` of an event uses the same values as `create_event()`, except that
+    /// `EventType::SIGNAL_EXIT_BOOT_SERVICES` and `EventType::SIGNAL_VIRTUAL_ADDRESS_CHANGE`
+    /// are not valid.
+    ///
+    /// If `event_type` has `EventType::NOTIFY_SIGNAL` or `EventType::NOTIFY_WAIT`, then `notify_fn`
+    /// mus be `Some` and `notify_tpl` must be a valid task priority level, otherwise these parameters
+    /// are ignored.
+    ///
+    /// More than one event of type `EventType::TIMER` may be part of a single event group. However,
+    /// there is no mechanism for determining which of the timers was signaled.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
+    pub unsafe fn create_event_ex(
+        &self,
+        event_type: EventType,
+        notify_tpl: Tpl,
+        notify_fn: Option<EventNotifyFn>,
+        notify_ctx: Option<NonNull<c_void>>,
+        event_group: Option<NonNull<Guid>>,
+    ) -> Result<Event> {
+        let mut event = MaybeUninit::<Event>::uninit();
+
+        (self.create_event_ex)(
+            event_type,
+            notify_tpl,
+            notify_fn,
+            notify_ctx,
+            event_group,
+            event.as_mut_ptr(),
+        )
+        .into_with_val(|| event.assume_init())
+    }
+
     /// Sets the trigger for `EventType::TIMER` event.
-    pub fn set_timer(&self, event: Event, trigger_time: TimerTrigger) -> Result {
+    pub fn set_timer(&self, event: &Event, trigger_time: TimerTrigger) -> Result {
         let (ty, time) = match trigger_time {
             TimerTrigger::Cancel => (0, 0),
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.set_timer)(event, ty, time) }.into()
+        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.into()
     }
 
     /// Stops execution until an event is signaled.
@@ -389,6 +434,35 @@ impl BootServices {
         )
     }
 
+    /// Place 'event' in the signaled stated. If 'event' is already in the signaled state,
+    /// then nothing further occurs and `Status::SUCCESS` is returned. If `event` is of type
+    /// `EventType::NOTIFY_SIGNAL`, then the event's notification function is scheduled to
+    /// be invoked at the event's notification task priority level.
+    ///
+    /// This function may be invoked from any task priority level.
+    ///
+    /// If `event` is part of an event group, then all of the events in the event group are
+    /// also signaled and their notification functions are scheduled.
+    ///
+    /// When signaling an event group, it is possible to create an event in the group, signal
+    /// it, and then close the event to remove it from the group.
+    pub fn signal_event(&self, event: &Event) -> Result {
+        // Safety: cloning this event should be safe, as we're directly passing it to firmware
+        // and not keeping the clone around.
+        unsafe { (self.signal_event)(event.unsafe_clone()).into() }
+    }
+
+    /// Removes `event` from any event group to which it belongs and closes it. If `event` was
+    /// registered with `register_protocol_notify()`, then the corresponding registration will
+    /// be removed. It is safe to call this function within the corresponding notify function.
+    ///
+    ///
+    /// Note: The UEFI Specification v2.9 states that this may only return `EFI_SUCCESS`, but,
+    /// at least for application based on EDK2 (such as OVMF), it may also return `EFI_INVALID_PARAMETER`.
+    pub fn close_event(&self, event: Event) -> Result {
+        unsafe { (self.close_event)(event).into() }
+    }
+
     /// Checks to see if an event is signaled, without blocking execution to wait for it.
     ///
     /// The returned value will be `true` if the event is in the signaled state,
@@ -428,11 +502,11 @@ impl BootServices {
     pub fn locate_handle(
         &self,
         search_ty: SearchType,
-        output: Option<&mut [Handle]>,
+        output: Option<&mut [MaybeUninit<Handle>]>,
     ) -> Result<usize> {
         let handle_size = mem::size_of::<Handle>();
 
-        const NULL_BUFFER: *mut Handle = ptr::null_mut();
+        const NULL_BUFFER: *mut MaybeUninit<Handle> = ptr::null_mut();
 
         let (mut buffer_size, buffer) = match output {
             Some(buffer) => (buffer.len() * handle_size, buffer.as_mut_ptr()),
@@ -457,12 +531,20 @@ impl BootServices {
     }
 
     /// Locates the handle to a device on the device path that supports the specified protocol.
-    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut DevicePath) -> Result<Handle> {
+    ///
+    /// The `device_path` is updated to point at the remaining part of the [`DevicePath`] after
+    /// the part that matched the protocol. For example, it can be used with a device path
+    /// that contains a file path to strip off the file system portion of the device path,
+    /// leaving the file path and handle to the file system driver needed to access the file.
+    ///
+    /// If the first node of `device_path` matches the
+    /// protocol, the `device_path` is advanced to the device path terminator node. If `device_path`
+    /// is a multi-instance device path, the function will operate on the first instance.
+    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
+        let mut handle = MaybeUninit::uninit();
         unsafe {
-            let mut handle = Handle::uninitialized();
-            let mut device_path_ptr = device_path as *mut DevicePath;
-            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
-                .into_with_val(|| handle)
+            (self.locate_device_path)(&P::GUID, device_path, &mut handle)
+                .into_with_val(|| handle.assume_init())
         }
     }
 
@@ -472,11 +554,11 @@ impl BootServices {
         parent_image_handle: Handle,
         source_buffer: &[u8],
     ) -> Result<Handle> {
+        let boot_policy = 0;
+        let device_path = ptr::null();
+        let source_size = source_buffer.len();
+        let mut image_handle = MaybeUninit::uninit();
         unsafe {
-            let boot_policy = 0;
-            let device_path = ptr::null();
-            let source_size = source_buffer.len();
-            let mut image_handle = Handle::uninitialized();
             (self.load_image)(
                 boot_policy,
                 parent_image_handle,
@@ -485,7 +567,7 @@ impl BootServices {
                 source_size,
                 &mut image_handle,
             )
-            .into_with_val(|| image_handle)
+            .into_with_val(|| image_handle.assume_init())
         }
     }
 
@@ -662,24 +744,21 @@ impl BootServices {
         // Determine how much we need to allocate.
         let (status1, buffer_size) = self.locate_handle(search_type, None)?.split();
 
-        // Allocate a large enough buffer.
-        let mut buffer = Vec::with_capacity(buffer_size);
-
-        unsafe {
-            buffer.set_len(buffer_size);
-        }
+        // Allocate a large enough buffer without pointless initialization.
+        let mut handles = Vec::with_capacity(buffer_size);
+        let buffer = handles.spare_capacity_mut();
 
         // Perform the search.
-        let (status2, buffer_size) = self.locate_handle(search_type, Some(&mut buffer))?.split();
+        let (status2, buffer_size) = self.locate_handle(search_type, Some(buffer))?.split();
 
-        // Once the vector has been filled, update its size.
+        // Mark the returned number of elements as initialized.
         unsafe {
-            buffer.set_len(buffer_size);
+            handles.set_len(buffer_size);
         }
 
         // Emit output, with warnings
         status1
-            .into_with_val(|| buffer)
+            .into_with_val(|| handles)
             .map(|completion| completion.with_status(status2))
     }
 
@@ -702,10 +781,10 @@ impl BootServices {
         let device_path = self
             .handle_protocol::<DevicePath>(device_handle)?
             .expect("Failed to retrieve `DevicePath` protocol from image's device handle");
-        let device_path = unsafe { &mut *device_path.get() };
+        let mut device_path = unsafe { &*device_path.get() };
 
         let device_handle = self
-            .locate_device_path::<SimpleFileSystem>(device_path)?
+            .locate_device_path::<SimpleFileSystem>(&mut device_path)?
             .expect("Failed to locate `SimpleFileSystem` protocol on device path");
 
         self.handle_protocol::<SimpleFileSystem>(device_handle)
@@ -1116,7 +1195,7 @@ bitflags! {
 }
 
 /// Raw event notification function
-type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c_void);
+type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
 /// Timer events manipulation
 pub enum TimerTrigger {

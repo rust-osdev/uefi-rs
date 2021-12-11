@@ -11,10 +11,6 @@ uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.11", default-features = false }
 
-# When building using Cargo's `build-std` feature, the `mem` feature of `compiler-builtins`
-# does not automatically get enabled. Therefore, we have to manually add support for
-# the memory functions.
-rlibc = "1.0.0"
 qemu-exit = "2.0.0"
 
 [features]

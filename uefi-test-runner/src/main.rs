@@ -8,9 +8,6 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-// Keep this line to ensure the `mem*` functions are linked in.
-extern crate rlibc;
-
 use alloc::string::String;
 use core::mem;
 use uefi::prelude::*;

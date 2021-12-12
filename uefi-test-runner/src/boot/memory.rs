@@ -1,8 +1,7 @@
 use uefi::prelude::*;
-use uefi::table::boot::{AllocateType, BootServices, MemoryDescriptor, MemoryType};
+use uefi::table::boot::{AllocateType, BootServices, MemoryType};
 
 use crate::alloc::vec::Vec;
-use core::mem;
 
 pub fn test(bt: &BootServices) {
     info!("Testing memory functions");
@@ -26,7 +25,7 @@ fn allocate_pages(bt: &BootServices) {
 
     assert_eq!(pgs % 4096, 0, "Page pointer is not page-aligned");
 
-    // Reinterprete the page as an array of bytes
+    // Reinterpret the page as an array of bytes
     let buf = unsafe { &mut *(pgs as *mut [u8; 4096]) };
 
     // If these don't fail then we properly allocated some memory.
@@ -84,13 +83,13 @@ fn memmove(bt: &BootServices) {
 fn memory_map(bt: &BootServices) {
     info!("Testing memory map functions");
 
-    // Get an estimate of the memory map size.
-    let map_sz = bt.memory_map_size();
+    // Get the memory descriptor size and an estimate of the memory map size
+    let sizes = bt.memory_map_size();
 
-    // 8 extra descriptors should be enough.
-    let buf_sz = map_sz + 8 * mem::size_of::<MemoryDescriptor>();
+    // 2 extra descriptors should be enough.
+    let buf_sz = sizes.map_size + 2 * sizes.entry_size;
 
-    // We will use vectors for convencience.
+    // We will use vectors for convenience.
     let mut buffer = vec![0_u8; buf_sz];
 
     let (_key, desc_iter) = bt

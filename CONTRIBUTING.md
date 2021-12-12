@@ -135,5 +135,5 @@ impl NewProtocol {
 
 ## Publishing new versions of the crates
 
-Maintainers of this repository might also be interested in [the guidelines](CONTRIBUTING.md)
+Maintainers of this repository might also be interested in [the guidelines](PUBLISHING.md)
 for publishing new versions of the uefi-rs crates.

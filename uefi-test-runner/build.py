@@ -79,7 +79,7 @@ def run_tool(tool, *flags):
     cmd = ['cargo', tool, '--target', target, *flags]
 
     if SETTINGS['verbose']:
-        print(' '.join(cmd))
+        print(' '.join(str(arg) for arg in cmd))
 
     sp.run(cmd, check=True)
 

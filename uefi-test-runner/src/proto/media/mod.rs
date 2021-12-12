@@ -1,8 +1,9 @@
 use uefi::prelude::*;
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::PartitionInfo;
+use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 
-pub fn test(bt: &BootServices) {
+pub fn test(image: Handle, bt: &BootServices) {
     info!("Testing Media Access protocols");
 
     if let Ok(sfs) = bt.locate_protocol::<SimpleFileSystem>() {
@@ -40,9 +41,16 @@ pub fn test(bt: &BootServices) {
 
     for handle in handles {
         let pi = bt
-            .handle_protocol::<PartitionInfo>(handle)
+            .open_protocol::<PartitionInfo>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )
             .expect_success("Failed to get partition info");
-        let pi = unsafe { &*pi.get() };
+        let pi = unsafe { &*pi.interface.get() };
 
         if let Some(mbr) = pi.mbr_partition_record() {
             info!("MBR partition: {:?}", mbr);

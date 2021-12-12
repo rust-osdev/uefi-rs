@@ -12,7 +12,7 @@ use alloc::string::String;
 use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
-use uefi::table::boot::MemoryDescriptor;
+use uefi::table::boot::{MemoryDescriptor, OpenProtocolAttributes, OpenProtocolParams};
 
 mod boot;
 mod proto;
@@ -77,13 +77,25 @@ fn check_revision(rev: uefi::table::Revision) {
 /// This functionality is very specific to our QEMU-based test runner. Outside
 /// of it, we just pause the tests for a couple of seconds to allow visual
 /// inspection of the output.
-fn check_screenshot(bt: &BootServices, name: &str) {
+fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
-        // Access the serial port (in a QEMU environment, it should always be there)
+        let serial_handle = *bt
+            .find_handles::<Serial>()
+            .expect_success("Failed to get serial handles")
+            .first()
+            .expect("Could not find serial port");
+
         let serial = bt
-            .locate_protocol::<Serial>()
-            .expect_success("Could not find serial port");
-        let serial = unsafe { &mut *serial.get() };
+            .open_protocol::<Serial>(
+                OpenProtocolParams {
+                    handle: serial_handle,
+                    agent: image,
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )
+            .expect_success("Could not open serial protocol");
+        let serial = unsafe { &mut *serial.interface.get() };
 
         // Set a large timeout to avoid problems with Travis
         let mut io_mode = *serial.io_mode();

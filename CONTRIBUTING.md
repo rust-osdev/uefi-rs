@@ -132,3 +132,8 @@ impl NewProtocol {
 ```
 
 [fork]: https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo
+
+## Publishing new versions of the crates
+
+Maintainers of this repository might also be interested in [the guidelines](CONTRIBUTING.md)
+for publishing new versions of the uefi-rs crates.

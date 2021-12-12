@@ -31,13 +31,11 @@ can be combined in a single pull request).
 
 The dependency graph of the published crates in this repo is:
 
-```
-uefi-macros <-- uefi (root project) <-- uefi-services
-```
+- `uefi-services` depends on `uefi` (the root project)
+- `uefi` depends on `uefi-macros`
 
-which suggests that, if there are breaking changes happening in the project,
-we should first process/publish a new version of `uefi-macros`, then of `uefi`,
-then of `uefi-services` and so on.
+If there are breaking changes happening in the project, we should first publish
+a new version of `uefi-macros`, then of `uefi`, then of `uefi-services` and so on.
 
 For example, if the signature of a widely-used macro from `uefi-macros` is changed,
 a new major version of that crate will have to be published, then a new version of

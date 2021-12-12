@@ -132,7 +132,9 @@ def clippy():
         '--workspace',
         # Enable all the features in the uefi package that enable more
         # code.
-        '--features=alloc,exts,logger')
+        '--features=alloc,exts,logger',
+        # Treat all warnings as errors.
+        '--', '-D', 'warnings')
 
 def doc():
     'Generates documentation for the library crates.'

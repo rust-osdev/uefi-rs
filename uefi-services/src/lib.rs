@@ -18,7 +18,6 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(asm)]
 #![feature(lang_items)]
 #![feature(panic_info_message)]
 #![feature(abi_efiapi)]
@@ -28,6 +27,7 @@ extern crate log;
 // Core types.
 extern crate uefi;
 
+use core::arch::asm;
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
@@ -187,14 +187,14 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
                     loop {
                         unsafe {
                             // Try to at least keep CPU from running at 100%
-                            core::arch::asm!("hlt", options(nomem, nostack));
+                            asm!("hlt", options(nomem, nostack));
                         }
                     }
                 } else if #[cfg(target_arch = "aarch64")] {
                     loop {
                         unsafe {
                             // Try to at least keep CPU from running at 100%
-                            core::arch::asm!("hlt 420", options(nomem, nostack));
+                            asm!("hlt 420", options(nomem, nostack));
                         }
                     }
                 } else {

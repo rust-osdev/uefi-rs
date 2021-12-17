@@ -11,7 +11,7 @@ uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.11", default-features = false }
 
-qemu-exit = "2.0.0"
+qemu-exit = "3.0.0"
 
 [features]
 # This feature should only be enabled in our CI, it disables some tests

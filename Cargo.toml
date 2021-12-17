@@ -46,8 +46,6 @@ members = [
 ]
 
 [patch.crates-io]
-# TODO: workaround for https://github.com/rust-osdev/uefi-rs/issues/329
-qemu-exit = { git = "https://github.com/toku-sa-n/qemu-exit.git", rev = "7279783c309423168398394682faa93ff81cdd31" }
 uefi-macros = { path = "uefi-macros" }
 uefi = { path = "." }
 

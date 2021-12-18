@@ -22,6 +22,7 @@ impl Event {
     /// When an event is closed by calling `BootServices::close_event`, that event and ALL references
     /// to it are invalidated and the underlying memory is freed by firmware. The caller must ensure
     /// that any clones of a closed `Event` are never used again.
+    #[must_use]
     pub unsafe fn unsafe_clone(&self) -> Self {
         Self(self.0)
     }

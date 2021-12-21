@@ -191,6 +191,7 @@ impl SystemTable<Boot> {
     /// used after boot services are exited. However, the singleton-based
     /// designs that Rust uses for memory allocation, logging, and panic
     /// handling require taking this risk.
+    #[must_use]
     pub unsafe fn unsafe_clone(&self) -> Self {
         SystemTable {
             table: self.table,

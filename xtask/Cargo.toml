@@ -1,0 +1,14 @@
+[package]
+name = "xtask"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0.51"
+clap = { version = "3.0.0-rc.7", features = ["derive"] }
+fs-err = "2.6.0"
+nix = "0.23.1"
+regex = "1.5.4"
+serde_json = "1.0.73"
+tempfile = "3.2.0"

@@ -1,2 +1,0 @@
-#!/bin/sh
-cargo -Zbuild-std=std "$@"

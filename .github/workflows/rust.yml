@@ -25,7 +25,7 @@ jobs:
       # TODO: cache Rust binaries
 
     - name: Build
-      run: ./build.py build --target aarch64
+      run: cargo xtask build --target aarch64
 
   build_and_test:
     name: Build and run tests on x86_64
@@ -47,17 +47,12 @@ jobs:
           components: rust-src
       # TODO: cache Rust binaries
 
-    - name: Build template
-      uses: actions-rs/cargo@v1
-      with:
-          command: build
-          args: --target x86_64-unknown-uefi --manifest-path template/Cargo.toml
-
     - name: Build
-      run: ./build.py build
+      run: cargo xtask build --target x86_64
 
     - name: Run VM tests
-      run: ./build.py run --headless --ci
+      run: cargo xtask run --target x86_64 --headless --ci
+      timeout-minutes: 2
 
   test:
     name: Run tests and documentation tests
@@ -75,7 +70,7 @@ jobs:
             override: true
 
       - name: Run cargo test
-        run: ./build.py test
+        run: cargo xtask test
 
   lints:
     name: Lints
@@ -99,12 +94,7 @@ jobs:
           args: --all -- --check
 
       - name: Run clippy
-        run: ./build.py clippy
+        run: cargo xtask clippy --warnings-as-errors
 
       - name: Run cargo doc
-        uses: actions-rs/cargo@v1
-        env:
-          RUSTDOCFLAGS: -Dwarnings
-        with:
-          command: doc
-          args: --target x86_64-unknown-uefi --all-features
+        run: cargo xtask doc --warnings-as-errors

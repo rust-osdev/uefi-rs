@@ -71,28 +71,34 @@ rustup toolchain install nightly
 rustup component add --toolchain nightly rust-src
 ```
 
-Use the `./build.py` script to build and test the crate.
+Use the `cargo xtask` command to build and test the crate.
 
 Available commands:
-- `build`: build `uefi-test-runner`
-- `clippy`: run clippy on the whole workspace
-- `doc`: build the docs for the library packages
+- `build`: build all the UEFI packages
+  - `--release`: build in release mode
+  - `--target {x86_64,aarch64}`: choose target UEFI arch
+- `clippy`: run clippy on all the packages
+  - `--target {x86_64,aarch64}`: choose target UEFI arch
+  - `--warnings-as-errors`: treat warnings as errors
+- `doc`: build the docs for the UEFI packages
+  - `--open`: open the docs in a browser
+  - `--warnings-as-errors`: treat warnings as errors
 - `run`: build `uefi-test-runner` and run it in QEMU
+  - `--ci`: disable some tests that don't work in the CI
+  - `--disable-kvm`: disable hardware accelerated virtualization support in QEMU.
+                     Especially useful if you want to run the tests under
+                     [WSL](https://docs.microsoft.com/en-us/windows/wsl) on Windows.
+  - `--headless`: run QEMU without a GUI
+  - `--ovmf-dir <PATH>`: directory in which to look for OVMF files
+  - `--release`: build in release mode
+  - `--target {x86_64,aarch64}`: choose target UEFI arch
 - `test`: run unit tests and doctests on the host
-
-Available options:
-- `--target {x86_64,aarch64}`: choose which architecture to build/run the tests
-- `--verbose`: enables verbose mode, prints commands before running them
-- `--headless`: enables headless mode, which runs QEMU without a GUI
-- `--release`: builds the code with optimizations enabled
-- `--disable-kvm`: disable [KVM](https://www.linux-kvm.org/page/Main_Page) hardware acceleration
-  when running the tests in QEMU (especially useful if you want to run the tests under
-  [WSL](https://docs.microsoft.com/en-us/windows/wsl) on Windows.
 
 The `uefi-test-runner` directory contains a sample UEFI app which exercises
 most of the library's functionality.
 
-Check out the testing project's [`README.md`](uefi-test-runner/README.md) for instructions on how to run the tests.
+Check out the testing project's [`README.md`](uefi-test-runner/README.md) for
+prerequisites for running the tests.
 
 ## Building UEFI programs
 

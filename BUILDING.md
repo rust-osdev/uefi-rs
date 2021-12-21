@@ -42,7 +42,7 @@ targets.
 
 - To run this in QEMU:
   - You will need a recent version of QEMU as well as OVMF to provide UEFI support
-  - Check the [`build.py`](uefi-test-runner/build.py) script for an idea of
+  - Check the [`qemu.rs`](xtask/src/qemu.rs) module for an idea of
     what arguments to pass to QEMU.
 
     In principle, you need to replicate the file structure described above for an USB drive,

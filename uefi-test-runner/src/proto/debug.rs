@@ -93,7 +93,7 @@ pub fn test(image: Handle, bt: &BootServices) {
                             )
                             .expect_success("Error while deregistering exception callback");
                     },
-                    // if we reach this, we're running on an arch that `build.py` doesn't support
+                    // if we reach this, we're running on an arch that `cargo xtask run` doesn't support
                     // TODO: Add match arms as we support testing on more archs
                     _ => unreachable!(),
                 }

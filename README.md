@@ -63,7 +63,31 @@ the [UEFI specification][spec] for detailed information.
 
 [spec]: http://www.uefi.org/specifications
 
-## Tests
+## Building and testing uefi-rs
+
+Install the `nightly` version of Rust and the `rust-src` component:
+```
+rustup toolchain install nightly
+rustup component add --toolchain nightly rust-src
+```
+
+Use the `./build.py` script to build and test the crate.
+
+Available commands:
+- `build`: build `uefi-test-runner`
+- `clippy`: run clippy on the whole workspace
+- `doc`: build the docs for the library packages
+- `run`: build `uefi-test-runner` and run it in QEMU
+- `test`: run unit tests and doctests on the host
+
+Available options:
+- `--target {x86_64,aarch64}`: choose which architecture to build/run the tests
+- `--verbose`: enables verbose mode, prints commands before running them
+- `--headless`: enables headless mode, which runs QEMU without a GUI
+- `--release`: builds the code with optimizations enabled
+- `--disable-kvm`: disable [KVM](https://www.linux-kvm.org/page/Main_Page) hardware acceleration
+  when running the tests in QEMU (especially useful if you want to run the tests under
+  [WSL](https://docs.microsoft.com/en-us/windows/wsl) on Windows.
 
 The `uefi-test-runner` directory contains a sample UEFI app which exercises
 most of the library's functionality.

@@ -16,29 +16,7 @@ Besides all the [core library requirements](../BUILDING.md) for building a UEFI 
   **Note**: if your distro's OVMF version is too old / does not provide these files,
   you can download [Gerd Hoffmann's builds](https://www.kraxel.org/repos/) and extract them in the local directory.
 
-## Steps
+## Build and run in QEMU
 
-It's as simple as running the `build.py` script with the ``run` argument:
-
-```sh
-./build.py run
-```
-
-Available commands:
-
-- `build`: only build
-- `run`: (re)build and run
-- `doc`: generate documentation
-- `clippy`: run Clippy
-- `test`: run tests and doctests
-
-Available options:
-
-- `--target {x86_64,aarch64}`: choose which architecture to build/run the tests
-- `--verbose`: enables verbose mode, prints commands before running them
-- `--headless`: enables headless mode, which runs QEMU without a GUI
-- `--release`: builds the code with optimizations enabled
-- `--disable-kvm`: disable [KVM](https://www.linux-kvm.org/page/Main_Page) hardware acceleration
-  when running the tests in QEMU
-
-  This is especially useful if you want to run the tests under [WSL](https://docs.microsoft.com/en-us/windows/wsl/) on Windows.
+Use `./build.py run` to build `uefi-test-runner` and run it in QEMU. See
+the top-level [README](../README.md) for more details of `./build.py`.

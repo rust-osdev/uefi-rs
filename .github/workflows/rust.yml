@@ -26,7 +26,6 @@ jobs:
 
     - name: Build
       run: ./build.py build --target aarch64
-      working-directory: ./uefi-test-runner
 
   build_and_test:
     name: Build and run tests on x86_64
@@ -56,11 +55,9 @@ jobs:
 
     - name: Build
       run: ./build.py build
-      working-directory: ./uefi-test-runner
 
     - name: Run VM tests
       run: ./build.py run --headless --ci
-      working-directory: ./uefi-test-runner
 
   test:
     name: Run tests and documentation tests
@@ -78,7 +75,7 @@ jobs:
             override: true
 
       - name: Run cargo test
-        run: uefi-test-runner/build.py test
+        run: ./build.py test
 
   lints:
     name: Lints
@@ -102,7 +99,7 @@ jobs:
           args: --all -- --check
 
       - name: Run clippy
-        run: uefi-test-runner/build.py clippy
+        run: ./build.py clippy
 
       - name: Run cargo doc
         uses: actions-rs/cargo@v1

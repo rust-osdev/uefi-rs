@@ -14,7 +14,7 @@ import sys
 
 ## Configurable settings
 # Path to workspace directory (which contains the top-level `Cargo.toml`)
-WORKSPACE_DIR = Path(__file__).resolve().parents[1]
+WORKSPACE_DIR = Path(__file__).resolve().parent
 
 # Try changing these with command line flags, where possible
 SETTINGS = {
@@ -68,10 +68,6 @@ def esp_dir():
     'Returns the directory where we will build the emulated UEFI system partition'
     return build_dir() / 'esp'
 
-def repo_dir():
-    'Returns the root directory of the git repo.'
-    return Path(__file__).resolve().parent.parent
-
 def run_tool(tool, *flags):
     'Runs cargo-<tool> with certain arguments.'
 
@@ -103,7 +99,7 @@ def build(*test_flags):
         build_args.append('--release')
 
     if SETTINGS['ci']:
-        build_args.extend(['--features', 'ci'])
+        build_args.extend(['--features', 'uefi-test-runner/ci'])
 
     run_build(*build_args)
 
@@ -127,7 +123,7 @@ def clippy():
     run_clippy(
         # Specifying the manifest path allows this command to
         # run successfully regardless of the CWD.
-        '--manifest-path', repo_dir() / 'Cargo.toml',
+        '--manifest-path', WORKSPACE_DIR / 'Cargo.toml',
         # Lint all packages in the workspace.
         '--workspace',
         # Enable all the features in the uefi package that enable more
@@ -176,7 +172,7 @@ def test():
         'cargo', 'test',
         # Specifying the manifest path allows this command to
         # run successfully regardless of the CWD.
-        '--manifest-path', repo_dir() / 'Cargo.toml',
+        '--manifest-path', WORKSPACE_DIR / 'Cargo.toml',
         '-Zbuild-std=std',
         '--target', get_host_target(),
         '--features', 'exts',
@@ -231,7 +227,7 @@ def run_qemu():
     'Runs the code in QEMU.'
 
     # Rebuild all the changes.
-    build('--features', 'qemu')
+    build('--features', 'uefi-test-runner/qemu')
 
     ovmf_code, ovmf_vars = ovmf_files(find_ovmf())
 

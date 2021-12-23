@@ -5,17 +5,8 @@ Pull requests, issues and suggestions are welcome!
 The UEFI spec is huge, so there might be some omissions or some missing features.
 You should follow the existing project structure when adding new items.
 
-## Workflow
-
-First, change to the `uefi-test-runner` directory:
-
-```shell
-cd 'uefi-test-runner'
-```
-
-Please take a quick look at the test runner project's [`README`](uefi-test-runner/README.md)
-for an overview of the required dependencies. In addition, the [`BUILDING`](BUILDING.md)
-document is useful if it's your first time building and running an UEFI executable.
+See the top-level [README](../README.md) for details of using `./build.py` to
+build and test the project.
 
 Make some changes in your favourite editor / IDE:
 I use [VS Code][code] with the [RLS][rls] extension.

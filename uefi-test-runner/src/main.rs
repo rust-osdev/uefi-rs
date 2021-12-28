@@ -77,11 +77,17 @@ fn check_revision(rev: uefi::table::Revision) {
 /// inspection of the output.
 fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
-        let serial_handle = *bt
+        let serial_handles = bt
             .find_handles::<Serial>()
-            .expect_success("Failed to get serial handles")
-            .first()
-            .expect("Could not find serial port");
+            .expect_success("Failed to get serial handles");
+
+        // Use the second serial device handle. Opening a serial device
+        // in exclusive mode breaks the connection between stdout and
+        // the serial device, and we don't want that to happen to the
+        // first serial device since it's used for log transport.
+        let serial_handle = *serial_handles
+            .get(1)
+            .expect("Second serial device is missing");
 
         let serial = bt
             .open_protocol::<Serial>(

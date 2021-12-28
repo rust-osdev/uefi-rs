@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess as sp
 import sys
+import threading
 
 ## Configurable settings
 # Path to workspace directory (which contains the top-level `Cargo.toml`)
@@ -223,6 +224,32 @@ def find_ovmf():
 
     raise FileNotFoundError(f'OVMF files not found anywhere')
 
+def echo_filtered_stdout(stdout):
+    """Print lines read from the QEMU process's stdout."""
+    # This regex is used to detect and strip ANSI escape codes. These
+    # escapes are added by the console output protocol when writing to
+    # the serial device.
+    ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
+
+    for line in stdout:
+        # Print out the processed QEMU output for logging & inspection.
+        # Strip ending and trailing whitespace + ANSI escape codes
+        # (This simplifies log analysis and keeps the terminal clean)
+        print(ansi_escape.sub('', line.strip()))
+
+class Pipe:
+    def __init__(self, base_name):
+        self.qemu_arg = f'pipe:{base_name}'
+        self.input_path = f'{base_name}.in'
+        self.output_path = f'{base_name}.out'
+
+        os.mkfifo(self.input_path)
+        os.mkfifo(self.output_path)
+
+    def remove_files(self):
+        os.remove(self.input_path)
+        os.remove(self.output_path)
+
 def run_qemu():
     'Runs the code in QEMU.'
 
@@ -231,7 +258,9 @@ def run_qemu():
 
     ovmf_code, ovmf_vars = ovmf_files(find_ovmf())
 
-    qemu_monitor_pipe = 'qemu-monitor'
+    # Set up named pipes as communication channels with QEMU.
+    qemu_monitor_pipe = Pipe('qemu-monitor')
+    serial_pipe = Pipe('serial-pipe')
 
     arch = SETTINGS['arch']
 
@@ -284,12 +313,17 @@ def run_qemu():
         # Mount a local directory as a FAT partition.
         '-drive', f'format=raw,file=fat:rw:{esp_dir()}',
 
-        # Connect the serial port to the host. OVMF is kind enough to connect
-        # the UEFI stdout and stdin to that port too.
+        # Open two serial devices. The first one is connected to the
+        # host's stdout, and serves to just transport logs. The second
+        # one is connected to a pipe, and used to receive the SCREENSHOT
+        # command and send the response. That second will also receive
+        # logs up until the test runner opens the handle in exclusive
+        # mode, but we can just read and ignore those lines.
         '-serial', 'stdio',
+        '-serial', serial_pipe.qemu_arg,
 
         # Map the QEMU monitor to a pair of named pipes
-        '-qmp', f'pipe:{qemu_monitor_pipe}',
+        '-qmp', qemu_monitor_pipe.qemu_arg,
     ])
 
     # For now these only work on x86_64
@@ -317,43 +351,35 @@ def run_qemu():
     if SETTINGS['verbose']:
         print(' '.join(cmd))
 
-    # This regex can be used to detect and strip ANSI escape codes when
-    # analyzing the output of the test runner.
-    ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]')
-
-    # Setup named pipes as a communication channel with QEMU's monitor
-    monitor_input_path = f'{qemu_monitor_pipe}.in'
-    os.mkfifo(monitor_input_path)
-    monitor_output_path = f'{qemu_monitor_pipe}.out'
-    os.mkfifo(monitor_output_path)
-
     # Start QEMU
-    qemu = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, universal_newlines=True)
+    qemu = sp.Popen(cmd, stdout=sp.PIPE, universal_newlines=True)
+    thread = threading.Thread(target=echo_filtered_stdout, args=(qemu.stdout,))
+    thread.start()
     try:
         # Connect to the QEMU monitor
-        with open(monitor_input_path, mode='w') as monitor_input,                  \
-             open(monitor_output_path, mode='r') as monitor_output:
+        with open(qemu_monitor_pipe.input_path, mode='w') as monitor_input,   \
+             open(qemu_monitor_pipe.output_path, mode='r') as monitor_output, \
+             open(serial_pipe.input_path, mode='w') as serial_input,          \
+             open(serial_pipe.output_path, mode='r') as serial_output:
             # Execute the QEMU monitor handshake, doing basic sanity checks
             assert monitor_output.readline().startswith('{"QMP":')
             print('{"execute": "qmp_capabilities"}', file=monitor_input, flush=True)
             assert monitor_output.readline() == '{"return": {}}\n'
 
-            # Iterate over stdout...
-            for line in qemu.stdout:
-                # Strip ending and trailing whitespace + ANSI escape codes
-                # (This simplifies log analysis and keeps the terminal clean)
-                stripped = ansi_escape.sub('', line.strip())
-
-                # Skip lines which contain nothing else
-                if not stripped:
-                    continue
-
-                # Print out the processed QEMU output for logging & inspection
-                print(stripped)
+            # Iterate over the second serial device's output...
+            for line in serial_output:
+                # Strip whitespace from the end. No need to strip ANSI
+                # escape codes like in the stdout, because those escape
+                # codes are inserted by the console output protocol,
+                # whereas the "SCREENSHOT" line we are interested in is
+                # written via the serial protocol.
+                line = line.rstrip()
 
                 # If the app requests a screenshot, take it
-                if stripped.startswith("SCREENSHOT: "):
-                    reference_name = stripped[12:]
+                if line.startswith("SCREENSHOT: "):
+                    print(line)
+
+                    reference_name = line[12:]
 
                     # Ask QEMU to take a screenshot
                     monitor_command = '{"execute": "screendump", "arguments": {"filename": "screenshot.ppm"}}'
@@ -366,7 +392,7 @@ def run_qemu():
                     assert reply == {"return": {}}
 
                     # Tell the VM that the screenshot was taken
-                    print('OK', file=qemu.stdin, flush=True)
+                    print('OK', file=serial_input, flush=True)
 
                     # Compare screenshot to the reference file specified by the user
                     # TODO: Add an operating mode where the reference is created if it doesn't exist
@@ -384,13 +410,15 @@ def run_qemu():
             qemu.kill()
             status = -1
 
-        # Delete the monitor pipes
-        os.remove(monitor_input_path)
-        os.remove(monitor_output_path)
+        # Delete the pipes
+        qemu_monitor_pipe.remove_files()
+        serial_pipe.remove_files()
 
         # Throw an exception if QEMU failed
         if status != 0 and status != 3:
             raise sp.CalledProcessError(cmd=cmd, returncode=status)
+
+    thread.join()
 
 def main():
     'Runs the user-requested actions.'

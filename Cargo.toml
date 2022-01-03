@@ -47,6 +47,7 @@ members = [
 
 [patch.crates-io]
 uefi-macros = { path = "uefi-macros" }
+uefi-services = { path = "uefi-services" }
 uefi = { path = "." }
 
 [package.metadata.docs.rs]

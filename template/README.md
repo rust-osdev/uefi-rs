@@ -10,10 +10,7 @@ how to build and run a UEFI application developed using `uefi-rs`.
 
 - [`template/.cargo/config`](template/.cargo/config) file sets some `build-std` options.
 - [`template/Cargo.toml`](template/Cargo.toml) shows the necessary
-  dependencies. Note that when creating your project the
-  [`uefi`](https://crates.io/crates/uefi) and
-  [`uefi-services`](https://crates.io/crates/uefi-services) dependencies should
-  be changed to the latest releases on [crates.io](https://crates.io).
+  dependencies.
 - [`template/src/main.rs`](template/src/main.rs) has a minimal entry point that
   initializes the `uefi-services` crate and exits successfully.
 

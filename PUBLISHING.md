@@ -57,6 +57,8 @@ you will also have to update the corresponding `Cargo.toml` of `uefi` to be:
 uefi-macros = "2.0.0"
 ```
 
+The dependencies in `template/Cargo.toml` should also be updated to the new version.
+
 [cargo-semver]: https://doc.rust-lang.org/cargo/reference/semver.html
 [semver]: https://semver.org/
 

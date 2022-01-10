@@ -15,6 +15,18 @@ impl Handle {
     /// Creates a new [`Handle`] from a raw address. The address might
     /// come from the Multiboot2 information structure or something similar.
     ///
+    /// # Example
+    /// ```rust
+    /// use core::ffi::c_void;
+    /// use uefi::Handle;
+    ///
+    /// let image_handle_addr = 0xdeadbeef as *mut c_void;
+    ///
+    /// let uefi_image_handle = unsafe {
+    ///     Handle::from_ptr(image_handle_addr).expect("Pointer must not be null!")
+    /// };
+    /// ```
+    ///
     /// # Safety
     /// This function is unsafe because the caller must be sure that the pointer
     /// is valid. Otherwise, further operations on the object might result in

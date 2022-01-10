@@ -11,6 +11,20 @@ use core::{ffi::c_void, ptr::NonNull};
 #[repr(transparent)]
 pub struct Handle(NonNull<c_void>);
 
+impl Handle {
+    /// Creates a new [`Handle`] from a raw address. The address might
+    /// come from the Multiboot2 information structure or something similar.
+    ///
+    /// # Safety
+    /// This function is unsafe because the caller must be sure that the pointer
+    /// is valid. Otherwise, further operations on the object might result in
+    /// undefined behaviour, even if the methods aren't marked as unsafe.
+    pub unsafe fn from_ptr(ptr: *mut c_void) -> Option<Self> {
+        // shorthand for "|ptr| Self(ptr)"
+        NonNull::new(ptr).map(Self)
+    }
+}
+
 /// Handle to an event structure
 #[repr(transparent)]
 pub struct Event(*mut c_void);

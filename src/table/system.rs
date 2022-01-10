@@ -1,4 +1,7 @@
+use core::ffi::c_void;
+use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
+use core::ptr::NonNull;
 use core::{ptr, slice};
 
 use crate::proto::console::text;
@@ -7,7 +10,6 @@ use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 use super::boot::{BootServices, MemoryDescriptor};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
-use core::fmt::{Debug, Formatter};
 
 /// Marker trait used to provide different views of the UEFI System Table
 pub trait SystemTableView {}
@@ -70,6 +72,20 @@ impl<View: SystemTableView> SystemTable<View> {
     /// pointing to other system-specific tables.
     pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
         unsafe { slice::from_raw_parts(self.table.cfg_table, self.table.nr_cfg) }
+    }
+
+    /// Creates a new `SystemTable<View>` from a raw address. The address might
+    /// come from the Multiboot2 information structure or something similar.
+    ///
+    /// # Safety
+    /// This function is unsafe because the caller must be sure that the pointer
+    /// is valid. Otherwise, further operations on the object might result in
+    /// undefined behaviour, even if the methods aren't marked as unsafe.
+    pub unsafe fn from_ptr(ptr: *mut c_void) -> Option<Self> {
+        NonNull::new(ptr.cast()).map(|ptr| Self {
+            table: ptr.as_ref(),
+            _marker: PhantomData,
+        })
     }
 }
 

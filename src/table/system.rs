@@ -77,6 +77,18 @@ impl<View: SystemTableView> SystemTable<View> {
     /// Creates a new `SystemTable<View>` from a raw address. The address might
     /// come from the Multiboot2 information structure or something similar.
     ///
+    /// # Example
+    /// ```rust
+    /// use core::ffi::c_void;
+    /// use uefi::prelude::{Boot, SystemTable};
+    ///
+    /// let system_table_addr = 0xdeadbeef as *mut c_void;
+    ///
+    /// let mut uefi_system_table = unsafe {
+    ///     SystemTable::<Boot>::from_ptr(system_table_addr).expect("Pointer must not be null!")
+    /// };
+    /// ```
+    ///
     /// # Safety
     /// This function is unsafe because the caller must be sure that the pointer
     /// is valid. Otherwise, further operations on the object might result in

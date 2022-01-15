@@ -5,15 +5,6 @@ the crates in this repository to [crates.io](https://crates.io/).
 
 **It is mostly intended for maintainers of the uefi-rs project.**
 
-## Before bumping the crate versions
-
-It is a good idea to occasionally update/refresh the dependencies of the uefi-rs crates,
-even if we don't necessarily need a bugfix included in one of them.
-
-This can be done easily by using the [`cargo upgrade`][cargo-upgrade] tool.
-
-[cargo-upgrade]: https://crates.io/crates/cargo-edit#cargo-upgrade
-
 ## Bumping the crate versions
 
 For ensuring compatibility within the crates ecosystem,

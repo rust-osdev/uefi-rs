@@ -10,6 +10,7 @@ exclude = [
     "uefi-macros/**",
     "uefi-services/**",
     "uefi-test-runner/**",
+    "xtask/**",
 ]
 description = "Safe and easy-to-use wrapper for building UEFI apps"
 repository = "https://github.com/rust-osdev/uefi-rs"
@@ -43,10 +44,12 @@ members = [
     "uefi-macros",
     "uefi-services",
     "uefi-test-runner",
+    "xtask",
 ]
 
 [patch.crates-io]
 uefi-macros = { path = "uefi-macros" }
+uefi-services = { path = "uefi-services" }
 uefi = { path = "." }
 
 [package.metadata.docs.rs]

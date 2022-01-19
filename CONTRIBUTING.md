@@ -5,7 +5,7 @@ Pull requests, issues and suggestions are welcome!
 The UEFI spec is huge, so there might be some omissions or some missing features.
 You should follow the existing project structure when adding new items.
 
-See the top-level [README](../README.md) for details of using `./build.py` to
+See the top-level [README](../README.md) for details of using `cargo xtask` to
 build and test the project.
 
 Make some changes in your favourite editor / IDE:
@@ -14,7 +14,7 @@ I use [VS Code][code] with the [RLS][rls] extension.
 Test your changes:
 
 ```shell
-./build.py run
+cargo xtask run
 ```
 
 The line above will open a QEMU window where the test harness will run some tests.
@@ -23,7 +23,7 @@ Any contributions are also expected to pass [Clippy][clippy]'s static analysis,
 which you can run as follows:
 
 ```shell
-./build.py clippy
+cargo xtask clippy
 ```
 
 [clippy]: https://github.com/rust-lang-nursery/rust-clippy

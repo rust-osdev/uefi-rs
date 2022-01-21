@@ -8,7 +8,9 @@ use anyhow::Result;
 use cargo::{Cargo, CargoAction, Feature, Package};
 use clap::Parser;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
-use util::run_cmd;
+use std::process::Command;
+use tempfile::TempDir;
+use util::{command_to_string, run_cmd};
 
 fn build(opt: &BuildOpt) -> Result<()> {
     let cargo = Cargo {
@@ -105,6 +107,45 @@ fn run_host_tests() -> Result<()> {
     run_cmd(cargo.command()?)
 }
 
+/// Test that the template app builds successfully with the released
+/// versions of the libraries on crates.io.
+///
+/// The `build` action also builds the template app, but due to the
+/// `patch.crates-io` of the top-level Cargo.toml the app is built using
+/// the current versions of the libraries in this repo. To give warning
+/// when the latest crates.io releases of the libraries are broken (due
+/// to changes in the nightly toolchain), this action copies the
+/// template to a temporary directory and builds it in isolation.
+///
+/// The build command is also checked against the contents of
+/// `BUILDING.md` to ensure that the doc correctly describes how to
+/// build an app.
+fn test_latest_release() -> Result<()> {
+    // Recursively copy the template app to a temporary directory. This
+    // isolates the app from the full git repo so that the
+    // `patch.crates-io` section of the root Cargo.toml doesn't apply.
+    let tmp_dir = TempDir::new()?;
+    let tmp_dir = tmp_dir.path();
+    let mut cp_cmd = Command::new("cp");
+    cp_cmd
+        .args(&["--recursive", "--verbose", "template"])
+        .arg(tmp_dir);
+    run_cmd(cp_cmd)?;
+
+    // Create cargo build command, not using the `cargo` module to make
+    // it explicit that it matches the command in `BUILDING.md`.
+    let mut build_cmd = Command::new("cargo");
+    build_cmd
+        .args(&["+nightly", "build", "--target", "x86_64-unknown-uefi"])
+        .current_dir(tmp_dir.join("template"));
+
+    // Check that the command is indeed in BUILDING.md, then verify the
+    // build succeeds.
+    let building_md = include_str!("../../BUILDING.md");
+    assert!(building_md.contains(&command_to_string(&build_cmd)));
+    run_cmd(build_cmd)
+}
+
 fn main() -> Result<()> {
     let opt = Opt::parse();
 
@@ -114,5 +155,6 @@ fn main() -> Result<()> {
         Action::Doc(doc_opt) => doc(doc_opt),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(_) => run_host_tests(),
+        Action::TestLatestRelease(_) => test_latest_release(),
     }
 }

@@ -18,11 +18,6 @@ keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
 
-[badges]
-travis-ci = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
-
 [features]
 default = []
 alloc = []

@@ -49,6 +49,7 @@ pub enum Action {
     Doc(DocOpt),
     Run(QemuOpt),
     Test(TestOpt),
+    TestLatestRelease(TestLatestReleaseOpt),
 }
 
 /// Build all the uefi packages.
@@ -111,3 +112,7 @@ pub struct QemuOpt {
 /// Build uefi-test-runner and run it in QEMU.
 #[derive(Debug, Parser)]
 pub struct TestOpt;
+
+/// Build the template against the crates.io packages.
+#[derive(Debug, Parser)]
+pub struct TestLatestReleaseOpt;

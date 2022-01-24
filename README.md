@@ -5,6 +5,8 @@
 ![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
 ![License](https://img.shields.io/github/license/rust-osdev/uefi-rs)
 ![Build status](https://github.com/rust-osdev/uefi-rs/workflows/Rust/badge.svg)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/rust-osdev/uefi-rs.svg)](http://isitmaintained.com/project/rust-osdev/uefi-rs "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/rust-osdev/uefi-rs.svg)](http://isitmaintained.com/project/rust-osdev/uefi-rs "Percentage of issues still open")
 
 ## Description
 

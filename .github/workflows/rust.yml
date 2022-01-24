@@ -98,3 +98,27 @@ jobs:
 
       - name: Run cargo doc
         run: cargo xtask doc --warnings-as-errors
+
+  # This job tests that the template app builds successfully with the
+  # released versions of the libraries on crates.io.
+  #
+  # Since a nightly toolchain is currently required to build uefi-rs,
+  # the released versions can suddenly stop building when a new nightly
+  # compiler with a breaking change is released. This job provides an
+  # alert when this situation occurs.
+  test_latest_release:
+    name: Build the template against the released version of uefi-rs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+
+    - name: Build
+      run: cargo xtask test-latest-release

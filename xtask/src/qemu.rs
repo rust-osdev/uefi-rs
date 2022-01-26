@@ -345,6 +345,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Map the QEMU monitor to a pair of named pipes
     cmd.args(&["-qmp", &qemu_monitor_pipe.qemu_arg]);
 
+    // Attach network device
+    cmd.args(&["-nic", "model=e1000"]);
+
     println!("{}", command_to_string(&cmd));
 
     cmd.stdin(Stdio::piped());

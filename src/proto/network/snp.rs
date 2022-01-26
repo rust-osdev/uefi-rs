@@ -1,76 +1,75 @@
-//! Network I/O protocols.
+//! Simple Network Protocol (SNP).
 
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 
-/// The Snp protocol.
+/// The SimpleNetwork protocol provides a packet level interface to network adapters.
 #[repr(C)]
 #[unsafe_guid("a19832b9-ac25-11d3-9a2d-0090273fc14d")]
 #[derive(Protocol)]
-pub struct Snp {
-    pub revision: u64,
-    start: extern "efiapi" fn(this: &Snp) -> Status,
-    stop: extern "efiapi" fn(this: &Snp) -> Status,
+pub struct SimpleNetwork {
+    revision: u64,
+    start: extern "efiapi" fn(this: &SimpleNetwork) -> Status,
+    stop: extern "efiapi" fn(this: &SimpleNetwork) -> Status,
     initialize: extern "efiapi" fn(
-        this: &Snp,
+        this: &SimpleNetwork,
         extra_rx_buffer_size: usize,
         extra_tx_buffer_size: usize,
     ) -> Status,
-    reset: extern "efiapi" fn(this: &Snp, extended_verification: bool) -> Status,
-    shutdown: extern "efiapi" fn(this: &Snp) -> Status,
+    reset: extern "efiapi" fn(this: &SimpleNetwork, extended_verification: bool) -> Status,
+    shutdown: extern "efiapi" fn(this: &SimpleNetwork) -> Status,
     receive_filters: extern "efiapi" fn(
-        this: &Snp,
+        this: &SimpleNetwork,
         enable: u32,
         disable: u32,
         reset_mcast_filter: bool,
         mcast_filter_count: usize,
         mcast_filter: *const MacAddress,
     ) -> Status,
-    station_address: extern "efiapi" fn(this: &Snp, reset: bool, new: *const MacAddress) -> Status,
+    station_address: extern "efiapi" fn(this: &SimpleNetwork, reset: bool, new: *const MacAddress) -> Status,
     statistics: extern "efiapi" fn(
-        this: &Snp,
+        this: &SimpleNetwork,
         reset: bool,
         statistics_size: *mut usize,
-        statistics_table: *mut NetworkStatistics,
+        statistics_table: *mut SimpleNetworkStatistics,
     ) -> Status,
-    mcast_ip_to_mac: extern "efiapi" fn(this: &Snp, ipv6: bool, ip: *const IpAddress, mac: *mut MacAddress) -> Status,
+    mcast_ip_to_mac: extern "efiapi" fn(this: &SimpleNetwork, ipv6: bool, ip: *const IpAddress, mac: *mut MacAddress) -> Status,
     nv_data: extern "efiapi" fn(
-        this: &Snp,
+        this: &SimpleNetwork,
         read_write: bool,
         offset: usize,
         buffer_size: usize,
         buffer: *mut [u8],
     ) -> Status,
     get_status:
-        extern "efiapi" fn(this: &Snp, interrupt_status: *mut u32, tx_buf: *mut *mut [u8]) -> Status,
+        extern "efiapi" fn(this: &SimpleNetwork, interrupt_status: *mut u32, tx_buf: *mut *mut u8) -> Status,
     transmit: extern "efiapi" fn(
-        this: &Snp,
+        this: &SimpleNetwork,
         header_size: usize,
         buffer_size: usize,
-        buffer: *const [u8],
+        buffer: *const core::ffi::c_void,
         src_addr: *const MacAddress,
         dest_addr: *const MacAddress,
-        protocol: u16,
+        protocol: *const u16,
     ) -> Status,
     receive: extern "efiapi" fn(
-        this: &Snp,
+        this: &SimpleNetwork,
         header_size: *const usize,
         buffer_size: *mut usize,
-        buffer: *mut [u8],
+        buffer: *mut core::ffi::c_void,
         src_addr: *mut MacAddress,
         dest_addr: *mut MacAddress,
         protocol: *mut u16,
     ) -> Status,
     wait_for_packet: usize,
-    mode: *const NetworkMode,
+    mode: *const SimpleNetworkMode,
 }
 
-impl Snp {
+impl SimpleNetwork {
     /// Changes the state of a network interface from “stopped” to “started”.
     ///
     /// # Errors
     /// * `uefi::Status::ALREADY_STARTED`  The network interface is already in the started state.
-    /// * `uefi::Status::INVALID_PARAMETER`  This parameter was NULL or did not point to a valid EFI_SIMPLE_NETWORK_PROTOCOL structure
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     /// * `uefi::Status::DEVICE_ERROR`  This function is not supported by the network interface.
     pub fn start(&self) -> Result {
@@ -81,10 +80,9 @@ impl Snp {
     ///
     /// # Errors
     /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
-    /// * `uefi::Status::INVALID_PARAMETER`  This parameter was NULL or did not point to a valid EFI_SIMPLE_NETWORK_PROTOCOL structure
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     /// * `uefi::Status::DEVICE_ERROR`  This function is not supported by the network interface.
-    pub fn stop(&mut self) -> Result {
+    pub fn stop(&self) -> Result {
         (self.stop)(self).into()
     }
 
@@ -93,7 +91,6 @@ impl Snp {
     /// # Errors
     /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
     /// * `uefi::Status::EFI_OUT_OF_RESOURCES`  There was not enough memory for the transmit and receive buffers
-    /// * `uefi::Status::INVALID_PARAMETER`  This parameter was NULL or did not point to a valid EFI_SIMPLE_NETWORK_PROTOCOL structure
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     /// * `uefi::Status::UNSUPPORTED`  The increased buffer size feature is not supported.
     pub fn initialize(&self, extra_rx_buffer_size: usize, extra_tx_buffer_size: usize) -> Result {
@@ -119,6 +116,24 @@ impl Snp {
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     pub fn shutdown(&self) -> Result {
         (self.shutdown)(self).into()
+    }
+
+    /// Manages the multicast receive filters of a network interface.
+    ///
+    /// # Errors
+    /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
+    /// * `uefi::Status::INVALID_PARAMETER`  A parameter was invalid.
+    /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
+    /// * `uefi::Status::UNSUPPORTED`  This function is not supported by the network interface.
+    pub fn receive_filters(
+        &self,
+        enable: u32,
+        disable: u32,
+        reset_mcast_filter: bool,
+        mcast_filter_cnt: usize,
+        mcast_filter: *const MacAddress,
+    ) -> Result {
+        (self.receive_filters)(self, enable, disable, reset_mcast_filter, mcast_filter_cnt, mcast_filter).into()
     }
 
     /// Modifies or resets the current station address, if supported.
@@ -147,7 +162,7 @@ impl Snp {
         &self,
         reset: bool,
         statistics_size: *mut usize,
-        statistics_table: *mut NetworkStatistics,
+        statistics_table: *mut SimpleNetworkStatistics,
     ) -> Result {
         (self.statistics)(self, reset, statistics_size, statistics_table).into()
     }
@@ -189,12 +204,11 @@ impl Snp {
     ///
     /// # Errors
     /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
-    /// * `uefi::Status::INVALID_PARAMETER`  This parameter was NULL or did not point to a valid EFI_SIMPLE_NETWORK_PROTOCOL structure.
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     pub fn get_status(
         &self,
         interrupt_status: *mut u32,
-        tx_buf: *mut *mut [u8],
+        tx_buf: *mut *mut u8,
     ) -> Result {
         (self.get_status)(self, interrupt_status, tx_buf).into()
     }
@@ -204,7 +218,6 @@ impl Snp {
     /// # Errors
     /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
     /// * `uefi::Status::EFI_OUT_OF_RESOURCES`  There was not enough memory for the transmit and receive buffers
-    /// * `uefi::Status::INVALID_PARAMETER`  This parameter was NULL or did not point to a valid EFI_SIMPLE_NETWORK_PROTOCOL structure
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     /// * `uefi::Status::UNSUPPORTED`  The increased buffer size feature is not supported.
     pub fn transmit(
@@ -214,13 +227,13 @@ impl Snp {
         buffer: *const [u8],
         src_addr: *const MacAddress,
         dest_addr: *const MacAddress,
-        protocol: u16,
+        protocol: *const u16,
     ) -> Result {
         (self.transmit)(
             self,
             header_size,
             buffer_size,
-            buffer,
+            buffer as *const _ as *const core::ffi::c_void,
             src_addr,
             dest_addr,
             protocol,
@@ -249,7 +262,7 @@ impl Snp {
             self,
             header_size,
             buffer_size,
-            buffer,
+            buffer as *mut _ as *mut core::ffi::c_void,
             src_addr,
             dest_addr,
             protocol,
@@ -258,14 +271,14 @@ impl Snp {
     }
 
     /// Pointer for network mode.
-    pub fn mode(&self) -> &NetworkMode {
+    pub fn mode(&self) -> &SimpleNetworkMode {
         unsafe { &*self.mode }
     }
 }
 
 newtype_enum! {
     /// EFI_SIMPLE_NETWORK_STATE
-    pub enum NetworkState: u32 => {
+    pub enum SimpleNetworkState: u32 => {
         NETWORK_STOPPED = 0x00,
         NETWORK_STARTED = 0x01,
         NETWORK_INITIALIZED = 0x02,
@@ -276,43 +289,80 @@ newtype_enum! {
 /// EFI_NETWORK_STATISTICS
 #[repr(C)]
 #[derive(Debug)]
-pub struct NetworkStatistics {
-    rx_total_frames: u64,
-    rx_good_frames: u64,
-    rx_undersize_frames: u64,
-    rx_oversize_frames: u64,
-    rx_dropped_frames: u64,
-    rx_unicast_frames: u64,
-    rx_broadcast_frames: u64,
-    rx_multicast_frames: u64,
-    rx_crc_error_frames: u64,
-    rx_total_bytes: u64,
-    tx_total_frames: u64,
-    tx_good_frames: u64,
-    tx_undersize_frames: u64,
-    tx_oversize_frames: u64,
-    tx_dropped_frames: u64,
-    tx_unicast_frames: u64,
-    tx_broadcast_frames: u64,
-    tx_multicast_frames: u64,
-    tx_crc_error_frames: u64,
-    tx_total_bytes: u64,
-    collisions: u64,
-    unsupported_protocol: u64,
-    rx_duplicated_frames: u64,
-    rx_decrypt_error_frames: u64,
-    tx_error_frames: u64,
-    tx_retry_frames: u64,
+pub struct SimpleNetworkStatistics {
+    pub rx_total_frames: u64,
+    pub rx_good_frames: u64,
+    pub rx_undersize_frames: u64,
+    pub rx_oversize_frames: u64,
+    pub rx_dropped_frames: u64,
+    pub rx_unicast_frames: u64,
+    pub rx_broadcast_frames: u64,
+    pub rx_multicast_frames: u64,
+    pub rx_crc_error_frames: u64,
+    pub rx_total_bytes: u64,
+    pub tx_total_frames: u64,
+    pub tx_good_frames: u64,
+    pub tx_undersize_frames: u64,
+    pub tx_oversize_frames: u64,
+    pub tx_dropped_frames: u64,
+    pub tx_unicast_frames: u64,
+    pub tx_broadcast_frames: u64,
+    pub tx_multicast_frames: u64,
+    pub tx_crc_error_frames: u64,
+    pub tx_total_bytes: u64,
+    pub collisions: u64,
+    pub unsupported_protocol: u64,
+    pub rx_duplicated_frames: u64,
+    pub rx_decrypt_error_frames: u64,
+    pub tx_error_frames: u64,
+    pub tx_retry_frames: u64,
+}
+
+impl SimpleNetworkStatistics {
+
+    // Create a blank `SimpleNetworkStatistics`.
+    pub fn new() -> SimpleNetworkStatistics {
+        SimpleNetworkStatistics {
+            rx_total_frames: 0,
+            rx_good_frames: 0,
+            rx_undersize_frames: 0,
+            rx_oversize_frames: 0,
+            rx_dropped_frames: 0,
+            rx_unicast_frames: 0,
+            rx_broadcast_frames: 0,
+            rx_multicast_frames: 0,
+            rx_crc_error_frames: 0,
+            rx_total_bytes: 0,
+            tx_total_frames: 0,
+            tx_good_frames: 0,
+            tx_undersize_frames: 0,
+            tx_oversize_frames: 0,
+            tx_dropped_frames: 0,
+            tx_unicast_frames: 0,
+            tx_broadcast_frames: 0,
+            tx_multicast_frames: 0,
+            tx_crc_error_frames: 0,
+            tx_total_bytes: 0,
+            collisions: 0,
+            unsupported_protocol: 0,
+            rx_duplicated_frames: 0,
+            rx_decrypt_error_frames: 0,
+            tx_error_frames: 0,
+            tx_retry_frames: 0,
+        }
+    }
 }
 
 /// EFI_MAC_ADDRESS
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct MacAddress {
-    addr: [u8; 32],
+    pub addr: [u8; 32],
 }
 
 impl MacAddress {
+
+    // Create a `MacAddress` from the given 6 bytes.
     pub fn new(mac: [u8; 6]) -> MacAddress {
         let mut data = [0u8; 32];
         for (a, b) in data.iter_mut().zip(mac.iter()) {
@@ -326,58 +376,68 @@ impl MacAddress {
 #[repr(C)]
 #[derive(Debug)]
 pub struct IpAddress {
-    addr: [u8; 4],
+    pub addr: [u8; 4],
 }
 
 /// EFI_SIMPLE_NETWORK_MODE
 #[repr(C)]
 #[derive(Debug)]
-pub struct NetworkMode {
-    state: NetworkState,
-    hw_address_size: u32,
-    media_header_size: u32,
-    max_packet_size: u32,
-    nv_ram_size: u32,
-    nv_ram_access_size: u32,
-    receive_filter_mask: u32,
-    receive_filter_setting: u32,
-    max_mcast_filter_count: u32,
-    mcast_filter_count: u32,
-    mcast_filter: [MacAddress; 16],
-    current_address: MacAddress,
-    broadcast_address: MacAddress,
-    permanent_address: MacAddress,
-    if_type: u8,
-    mac_address_changeable: bool,
-    multiple_tx_supported: bool,
-    media_present_supported: bool,
-    media_present: bool,
-}
+pub struct SimpleNetworkMode {
 
-impl NetworkMode {
-
-    /// Reports the current state of the network interface.
-    pub fn state(&self) -> NetworkState {
-        self.state
-    }
+    /// The current state of the network interface.
+    pub state: SimpleNetworkState,
 
     /// The size, in bytes, of the network interface’s HW address.
-    pub fn hw_address_size(&self) -> u32 {
-        self.hw_address_size
-    }
+    pub hw_address_size: u32,
 
     /// The size, in bytes, of the network interface’s media header.
-    pub fn media_header_size(&self) -> u32 {
-        self.media_header_size
-    }
+    pub media_header_size: u32,
+
+    /// The maximum size, in bytes, of the packets supported by the network interface.
+    pub max_packet_size: u32,
+
+    /// The size, in bytes, of the NVRAM device attached to the network interface.
+    pub nv_ram_size: u32,
+
+    /// The size that must be used for all NVRAM reads and writes.
+    pub nv_ram_access_size: u32,
+
+    /// The multicast receive filter settings supported by the network interface.
+    pub receive_filter_mask: u32,
+
+    /// The current multicast receive filter settings.
+    pub receive_filter_setting: u32,
+
+    /// The maximum number of multicast address receive filters supported by the driver.
+    pub max_mcast_filter_count: u32,
+
+    /// The current number of multicast address receive filters.
+    pub mcast_filter_count: u32,
+
+    /// Array containing the addresses of the current multicast address receive filters.
+    pub mcast_filter: [MacAddress; 16],
 
     /// The current HW MAC address for the network interface.
-    pub fn current_address(&self) -> &MacAddress {
-        &self.current_address
-    }
+    pub current_address: MacAddress,
+
+    /// The current HW MAC address for broadcast packets.
+    pub broadcast_address: MacAddress,
+
+    /// The permanent HW MAC address for the network interface.
+    pub permanent_address: MacAddress,
 
     /// The interface type of the network interface. See RFC 3232, section "Number Hardware Type."
-    pub fn if_type(&self) -> u8 {
-        self.if_type
-    }
+    pub if_type: u8,
+
+    /// Whether the HW MAC address can be changed.
+    pub mac_address_changeable: bool,
+
+    /// Whether the network interface can transmit more than one packet at a time.
+    pub multiple_tx_supported: bool,
+
+    /// Whether the presence of media can be determined.
+    pub media_present_supported: bool,
+
+    /// Whether media are connected to the network interface.
+    pub media_present: bool,
 }

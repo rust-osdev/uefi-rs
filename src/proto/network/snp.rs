@@ -26,14 +26,20 @@ pub struct SimpleNetwork {
         mcast_filter_count: usize,
         mcast_filter: *const MacAddress,
     ) -> Status,
-    station_address: extern "efiapi" fn(this: &SimpleNetwork, reset: bool, new: *const MacAddress) -> Status,
+    station_address:
+        extern "efiapi" fn(this: &SimpleNetwork, reset: bool, new: *const MacAddress) -> Status,
     statistics: extern "efiapi" fn(
         this: &SimpleNetwork,
         reset: bool,
         statistics_size: *mut usize,
         statistics_table: *mut SimpleNetworkStatistics,
     ) -> Status,
-    mcast_ip_to_mac: extern "efiapi" fn(this: &SimpleNetwork, ipv6: bool, ip: *const IpAddress, mac: *mut MacAddress) -> Status,
+    mcast_ip_to_mac: extern "efiapi" fn(
+        this: &SimpleNetwork,
+        ipv6: bool,
+        ip: *const IpAddress,
+        mac: *mut MacAddress,
+    ) -> Status,
     nv_data: extern "efiapi" fn(
         this: &SimpleNetwork,
         read_write: bool,
@@ -41,8 +47,11 @@ pub struct SimpleNetwork {
         buffer_size: usize,
         buffer: *mut [u8],
     ) -> Status,
-    get_status:
-        extern "efiapi" fn(this: &SimpleNetwork, interrupt_status: *mut u32, tx_buf: *mut *mut u8) -> Status,
+    get_status: extern "efiapi" fn(
+        this: &SimpleNetwork,
+        interrupt_status: *mut u32,
+        tx_buf: *mut *mut u8,
+    ) -> Status,
     transmit: extern "efiapi" fn(
         this: &SimpleNetwork,
         header_size: usize,
@@ -133,7 +142,15 @@ impl SimpleNetwork {
         mcast_filter_cnt: usize,
         mcast_filter: *const MacAddress,
     ) -> Result {
-        (self.receive_filters)(self, enable, disable, reset_mcast_filter, mcast_filter_cnt, mcast_filter).into()
+        (self.receive_filters)(
+            self,
+            enable,
+            disable,
+            reset_mcast_filter,
+            mcast_filter_cnt,
+            mcast_filter,
+        )
+        .into()
     }
 
     /// Modifies or resets the current station address, if supported.
@@ -143,11 +160,7 @@ impl SimpleNetwork {
     /// * `uefi::Status::INVALID_PARAMETER`  A parameter was invalid.
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
     /// * `uefi::Status::UNSUPPORTED`  This function is not supported by the network interface.
-    pub fn station_address(
-        &self,
-        reset: bool,
-        new: *const MacAddress,
-    ) -> Result {
+    pub fn station_address(&self, reset: bool, new: *const MacAddress) -> Result {
         (self.station_address)(self, reset, new).into()
     }
 
@@ -161,10 +174,10 @@ impl SimpleNetwork {
     pub fn statistics(
         &self,
         reset: bool,
-        statistics_size: *mut usize,
         statistics_table: *mut SimpleNetworkStatistics,
     ) -> Result {
-        (self.statistics)(self, reset, statistics_size, statistics_table).into()
+        let mut stats_size = core::mem::size_of::<SimpleNetworkStatistics>();
+        (self.statistics)(self, reset, &mut stats_size, statistics_table).into()
     }
 
     /// Converts a multicast IP address to a multicast HW MAC address.
@@ -183,7 +196,7 @@ impl SimpleNetwork {
         (self.mcast_ip_to_mac)(self, ipv6, ip, mac).into()
     }
 
-    /// Performs read and write operations on the NVRAM device attached to a network interface. 
+    /// Performs read and write operations on the NVRAM device attached to a network interface.
     ///
     /// # Errors
     /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
@@ -205,11 +218,7 @@ impl SimpleNetwork {
     /// # Errors
     /// * `uefi::Status::NOT_STARTED`  The network interface has not been started.
     /// * `uefi::Status::DEVICE_ERROR`  The command could not be sent to the network interface.
-    pub fn get_status(
-        &self,
-        interrupt_status: *mut u32,
-        tx_buf: *mut *mut u8,
-    ) -> Result {
+    pub fn get_status(&self, interrupt_status: *mut u32, tx_buf: *mut *mut u8) -> Result {
         (self.get_status)(self, interrupt_status, tx_buf).into()
     }
 
@@ -319,7 +328,6 @@ pub struct SimpleNetworkStatistics {
 }
 
 impl SimpleNetworkStatistics {
-
     // Create a blank `SimpleNetworkStatistics`.
     pub fn new() -> SimpleNetworkStatistics {
         SimpleNetworkStatistics {
@@ -361,14 +369,13 @@ pub struct MacAddress {
 }
 
 impl MacAddress {
-
     // Create a `MacAddress` from the given 6 bytes.
     pub fn new(mac: [u8; 6]) -> MacAddress {
         let mut data = [0u8; 32];
         for (a, b) in data.iter_mut().zip(mac.iter()) {
             *a = *b;
         }
-        MacAddress{addr: data}
+        MacAddress { addr: data }
     }
 }
 
@@ -383,7 +390,6 @@ pub struct IpAddress {
 #[repr(C)]
 #[derive(Debug)]
 pub struct SimpleNetworkMode {
-
     /// The current state of the network interface.
     pub state: SimpleNetworkState,
 

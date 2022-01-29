@@ -1,7 +1,3 @@
-// TODO: workaround for
-// https://github.com/rust-lang/rust-clippy/issues/8140
-#![allow(clippy::return_self_not_must_use)]
-
 use super::Status;
 use log::warn;
 

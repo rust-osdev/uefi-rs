@@ -186,7 +186,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     }
     if !f.sig.generics.params.is_empty() {
         errors.append_all(err!(
-            &f.sig.generics.params,
+            f.sig.generics.params,
             "Entry method should not be generic"
         ));
     }

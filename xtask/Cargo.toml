@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.51"
-clap = { version = "3.0.0-rc.7", features = ["derive"] }
+clap = { version = "3.0.13", features = ["derive"] }
 fs-err = "2.6.0"
 nix = "0.23.1"
 regex = "1.5.4"

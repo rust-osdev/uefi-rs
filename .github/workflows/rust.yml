@@ -9,12 +9,20 @@ on:
     - cron:  '0 0 * * 0-6'
 
 jobs:
-  build:
-    name: Build on AArch64
+  test_aarch64:
+    name: Build and run tests on AArch64
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
       uses: actions/checkout@v2
+
+    - name: Install qemu and OVMF
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu-system-aarch64 qemu-efi-aarch64 -y
+        # Copy the files so that the vars file isn't read-only.
+        cp /usr/share/AAVMF/AAVMF_CODE.fd uefi-test-runner/QEMU_EFI-pflash.raw
+        cp /usr/share/AAVMF/AAVMF_VARS.fd uefi-test-runner/vars-template-pflash.raw
 
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
@@ -27,7 +35,11 @@ jobs:
     - name: Build
       run: cargo xtask build --target aarch64
 
-  build_and_test:
+    - name: Run VM tests
+      run: cargo xtask run --target aarch64 --headless --ci
+      timeout-minutes: 2
+
+  test_x86_64:
     name: Build and run tests on x86_64
     runs-on: ubuntu-latest
     steps:

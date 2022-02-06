@@ -18,8 +18,11 @@ jobs:
 
     - name: Install qemu and OVMF
       run: |
+        # Ubuntu 20.04 provides qemu 4.2, which crashes on exit in this
+        # test. Add a PPA to provide a more recent version of qemu.
+        sudo add-apt-repository ppa:canonical-server/server-backports
         sudo apt-get update
-        sudo apt-get install qemu-system-aarch64 qemu-efi-aarch64 -y
+        sudo apt-get install qemu-system-arm qemu-efi-aarch64 -y
         # Copy the files so that the vars file isn't read-only.
         cp /usr/share/AAVMF/AAVMF_CODE.fd uefi-test-runner/QEMU_EFI-pflash.raw
         cp /usr/share/AAVMF/AAVMF_VARS.fd uefi-test-runner/vars-template-pflash.raw
@@ -75,6 +78,9 @@ jobs:
 
     - name: Install qemu
       run: |
+        # Ubuntu 20.04 provides qemu 4.2, which crashes on exit in this
+        # test. Add a PPA to provide a more recent version of qemu.
+        sudo add-apt-repository ppa:canonical-server/server-backports
         sudo apt-get update
         sudo apt-get install qemu-system-x86 -y
 

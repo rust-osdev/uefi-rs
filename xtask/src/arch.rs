@@ -5,23 +5,29 @@ use std::str::FromStr;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum UefiArch {
     AArch64,
+    IA32,
     X86_64,
 }
 
 impl UefiArch {
     fn all() -> &'static [Self] {
-        &[Self::AArch64, Self::X86_64]
+        &[Self::AArch64, Self::IA32, Self::X86_64]
     }
 
     fn as_str(self) -> &'static str {
         match self {
             Self::AArch64 => "aarch64",
+            Self::IA32 => "ia32",
             Self::X86_64 => "x86_64",
         }
     }
 
-    pub fn as_triple(self) -> String {
-        format!("{}-unknown-uefi", self.as_str())
+    pub fn as_triple(self) -> &'static str {
+        match self {
+            Self::AArch64 => "aarch64-unknown-uefi",
+            Self::IA32 => "i686-unknown-uefi",
+            Self::X86_64 => "x86_64-unknown-uefi",
+        }
     }
 }
 
@@ -45,7 +51,7 @@ impl FromStr for UefiArch {
             .iter()
             .find(|arch| arch.as_str() == s)
             .cloned()
-            .ok_or_else(|| anyhow!("invalid triple: {}", s))
+            .ok_or_else(|| anyhow!("invalid arch: {}", s))
     }
 }
 

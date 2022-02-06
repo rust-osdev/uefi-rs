@@ -1,7 +1,7 @@
 use crate::arch::UefiArch;
 use crate::opt::QemuOpt;
 use crate::util::command_to_string;
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use fs_err::{File, OpenOptions};
 use nix::sys::stat::Mode;
 use nix::unistd::mkfifo;
@@ -366,12 +366,38 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Start a thread to process stdout from the child.
     let stdout_thread = thread::spawn(|| echo_filtered_stdout(child_io));
 
-    // Capture the result to return it, but first wait for the child to
+    // Capture the result to check it, but first wait for the child to
     // exit.
-    let ret = process_qemu_io(monitor_io, serial_io, tmp_dir);
-    child.wait()?;
+    let res = process_qemu_io(monitor_io, serial_io, tmp_dir);
+    let status = child.wait()?;
 
     stdout_thread.join().expect("stdout thread panicked");
 
-    ret
+    // Propagate earlier error if necessary.
+    res?;
+
+    // Get qemu's exit code if possible, or return an error if
+    // terminated by a signal.
+    let qemu_exit_code = status
+        .code()
+        .context(format!("qemu was terminated by a signal: {:?}", status))?;
+
+    let successful_exit_code = match arch {
+        UefiArch::AArch64 | UefiArch::IA32 => 0,
+
+        // The x86_64 version of uefi-test-runner uses exit code 3 to
+        // indicate success. See the `shutdown` function in
+        // uefi-test-runner for more details.
+        UefiArch::X86_64 => 3,
+    };
+
+    if qemu_exit_code != successful_exit_code {
+        bail!(
+            "qemu exited with code {}, expected {}",
+            qemu_exit_code,
+            successful_exit_code
+        );
+    }
+
+    Ok(())
 }

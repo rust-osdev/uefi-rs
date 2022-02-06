@@ -66,6 +66,46 @@ jobs:
       run: cargo xtask run --target x86_64 --headless --ci
       timeout-minutes: 2
 
+  test_ia32:
+    name: Build and run tests on IA32
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install qemu
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu-system-x86 -y
+
+    # Starting in ubuntu 21.04 there's an `ovmf-ia32` package, but the
+    # github runners are on ubuntu 20.04. For now, install the OVMF
+    # files from a repo that provides unofficial nightly builds:
+    # https://github.com/retrage/edk2-nightly
+    - name: Install OVMF
+      env:
+        # Pin to a specific commit in the retrage/edk2-nightly repo to
+        # guard against external changes breaking the CI.
+        EDK2_NIGHTLY_COMMIT: 'ebb83e5475d49418afc32857f66111949928bcdc'
+      run: |
+        curl -o uefi-test-runner/OVMF32_CODE.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_CODE.fd
+        curl -o uefi-test-runner/OVMF32_VARS.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_VARS.fd
+
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: rust-src
+      # TODO: cache Rust binaries
+
+    - name: Build
+      run: cargo xtask build --target ia32
+
+    - name: Run VM tests
+      run: cargo xtask run --target ia32 --headless --ci
+      timeout-minutes: 2
+
   test:
     name: Run tests and documentation tests
     runs-on: ubuntu-latest

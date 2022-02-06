@@ -23,8 +23,6 @@ and allow developers to write idiomatic Rust code.
 
 Check out [the UEFI application template](template) for a quick start.
 
-**Note**: this crate currently has only been tested with **64-bit** UEFI on x86/ARM.
-
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 [rustc-custom]: https://doc.rust-lang.org/rustc/targets/custom.html
 
@@ -78,9 +76,9 @@ Use the `cargo xtask` command to build and test the crate.
 Available commands:
 - `build`: build all the UEFI packages
   - `--release`: build in release mode
-  - `--target {x86_64,aarch64}`: choose target UEFI arch
+  - `--target {x86_64,ia32,aarch64}`: choose target UEFI arch
 - `clippy`: run clippy on all the packages
-  - `--target {x86_64,aarch64}`: choose target UEFI arch
+  - `--target {x86_64,ia32,aarch64}`: choose target UEFI arch
   - `--warnings-as-errors`: treat warnings as errors
 - `doc`: build the docs for the UEFI packages
   - `--open`: open the docs in a browser
@@ -93,7 +91,7 @@ Available commands:
   - `--headless`: run QEMU without a GUI
   - `--ovmf-dir <PATH>`: directory in which to look for OVMF files
   - `--release`: build in release mode
-  - `--target {x86_64,aarch64}`: choose target UEFI arch
+  - `--target {x86_64,ia32,aarch64}`: choose target UEFI arch
 - `test`: run unit tests and doctests on the host
 
 The `uefi-test-runner` directory contains a sample UEFI app which exercises

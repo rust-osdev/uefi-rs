@@ -8,10 +8,10 @@ how to build and run a UEFI application developed using `uefi-rs`.
 
 ## File structure
 
-- [`template/.cargo/config`](template/.cargo/config) file sets some `build-std` options.
-- [`template/Cargo.toml`](template/Cargo.toml) shows the necessary
+- [`template/.cargo/config`](./.cargo/config) file sets some `build-std` options.
+- [`template/Cargo.toml`](./Cargo.toml) shows the necessary
   dependencies.
-- [`template/src/main.rs`](template/src/main.rs) has a minimal entry point that
+- [`template/src/main.rs`](./src/main.rs) has a minimal entry point that
   initializes the `uefi-services` crate and exits successfully.
 
 ## Building kernels which use UEFI

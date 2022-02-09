@@ -24,7 +24,7 @@ pub enum FromStrError {
 /// use uefi::CString16;
 ///
 /// let s = CString16::try_from("abc").unwrap();
-/// assert_eq!(s.as_string(), "abc");
+/// assert_eq!(s.to_string(), "abc");
 /// ```
 #[derive(Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CString16(Vec<Char16>);

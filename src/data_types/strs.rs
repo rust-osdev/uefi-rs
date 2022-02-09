@@ -1,6 +1,4 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
-#[cfg(feature = "exts")]
-use crate::alloc_api::string::String;
 use core::convert::TryInto;
 use core::fmt;
 use core::iter::Iterator;
@@ -251,19 +249,6 @@ impl CStr16 {
             buf.write_char(char::from(*c16))?;
         }
         Ok(())
-    }
-
-    /// Transforms the C16Str to a regular Rust String.
-    /// **WARNING** This will require **heap allocation**, i.e. you need an global allocator.
-    /// If the UEFI boot services are exited, your OS/Kernel needs to provide another allocation
-    /// mechanism!
-    #[cfg(feature = "exts")]
-    pub fn as_string(&self) -> String {
-        let mut buf = String::with_capacity(self.0.len() * 2);
-        for c16 in self.iter() {
-            buf.push(char::from(*c16));
-        }
-        buf
     }
 }
 

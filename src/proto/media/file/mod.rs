@@ -54,31 +54,22 @@ pub trait File: Sized {
     /// * `uefi::Status::VOLUME_FULL`        The volume is full
     fn open(
         &mut self,
-        filename: &str,
+        filename: &CStr16,
         open_mode: FileMode,
         attributes: FileAttribute,
     ) -> Result<FileHandle> {
-        const BUF_SIZE: usize = 255;
-        if filename.len() > BUF_SIZE {
-            Err(Status::INVALID_PARAMETER.into())
-        } else {
-            let mut buf = [0u16; BUF_SIZE + 1];
-            let mut ptr = ptr::null_mut();
+        let mut ptr = ptr::null_mut();
 
-            let len = ucs2::encode(filename, &mut buf)?;
-            let filename = unsafe { CStr16::from_u16_with_nul_unchecked(&buf[..=len]) };
-
-            unsafe {
-                (self.imp().open)(
-                    self.imp(),
-                    &mut ptr,
-                    filename.as_ptr(),
-                    open_mode,
-                    attributes,
-                )
-            }
-            .into_with_val(|| unsafe { FileHandle::new(ptr) })
+        unsafe {
+            (self.imp().open)(
+                self.imp(),
+                &mut ptr,
+                filename.as_ptr(),
+                open_mode,
+                attributes,
+            )
         }
+        .into_with_val(|| unsafe { FileHandle::new(ptr) })
     }
 
     /// Close this file handle. Same as dropping this structure.

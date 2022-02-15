@@ -11,7 +11,6 @@ pub fn test(stdout: &mut Output) {
 
     // Print all modes.
     for (index, mode) in stdout.modes().enumerate() {
-        let mode = mode.expect("Warnings encountered while querying text mode");
         info!(
             "- Text mode #{}: {} rows by {} columns",
             index,
@@ -21,33 +20,29 @@ pub fn test(stdout: &mut Output) {
     }
 
     // Should clean up after us.
-    stdout.reset(false).unwrap_success();
+    stdout.reset(false).unwrap();
 }
 
 // Retrieves and prints the current output mode.
 fn get_current_mode(stdout: &mut Output) {
-    let current_mode = stdout.current_mode().unwrap_success();
+    let current_mode = stdout.current_mode().unwrap();
     info!("UEFI standard output current mode: {:?}", current_mode);
 }
 
 // Switch to the maximum supported text mode.
 fn change_text_mode(stdout: &mut Output) {
-    let best_mode = stdout
-        .modes()
-        .last()
-        .unwrap()
-        .expect("Warnings encountered while querying text mode");
+    let best_mode = stdout.modes().last().unwrap();
     stdout
         .set_mode(best_mode)
-        .expect_success("Failed to change text mode");
+        .expect("Failed to change text mode");
 }
 
 // Set a new color, and paint the background with it.
 fn change_color(stdout: &mut Output) {
     stdout
         .set_color(Color::White, Color::Blue)
-        .expect_success("Failed to change console color");
-    stdout.clear().expect_success("Failed to clear screen");
+        .expect("Failed to change console color");
+    stdout.clear().expect("Failed to clear screen");
 }
 
 // Print a text centered on screen.
@@ -56,18 +51,16 @@ fn center_text(stdout: &mut Output) {
     // This will make this `info!` line below be (somewhat) centered.
     stdout
         .enable_cursor(true)
-        .warning_as_error()
         .unwrap_or_else(|e| match e.status() {
             Status::UNSUPPORTED => info!("Cursor visibility control unavailable"),
             _ => panic!("Failed to show cursor"),
         });
     stdout
         .set_cursor_position(24, 0)
-        .expect_success("Failed to move cursor");
+        .expect("Failed to move cursor");
     info!("# uefi-rs test runner");
     stdout
         .enable_cursor(false)
-        .warning_as_error()
         .unwrap_or_else(|e| match e.status() {
             Status::UNSUPPORTED => info!("Cursor visibility control unavailable"),
             _ => panic!("Failed to hide cursor"),

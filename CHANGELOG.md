@@ -22,6 +22,8 @@
   to be loaded via the `SimpleFileSystem` protocol.
 - Added `Rng` protocol.
 - Added `GptPartitionAttributes` struct and associated constants.
+- Added `Output::output_string_lossy`.
+- Added `ResultExt::handle_warning`.
 
 ### Changed
 
@@ -38,6 +40,10 @@
 - The `Error` type is now public.
 - The type of `GptPartitionEntry.attributes` is now
   `GptPartitionAttributes`.
+- The `uefi::Result` type now treats UEFI warnings as errors by
+  default. The `uefi::Result::Ok` variant no longer contains a
+  `Completion`, so the type behaves more like a regular Rust `Result`
+  type.
 
 ### Removed
 
@@ -55,6 +61,13 @@
   `FileInfo`, `FileSystemInfo`, and `FileSystemVolumeLabel` instead.
 - Removed `BootServices::load_image_from_buffer`. Use
   `BootServices::load_image` instead.
+- Removed `Completion` type. Warnings are now treated as errors.
+- Removed many `ResultExt` methods, for most of them the standard
+  `Result` methods can be used instead. Use `unwrap` instead of
+  `unwrap_success`, `expect` instead of `expect_success`, `expect_err`
+  instead of `expect_error`, and `map` instead of `map_inner`. The
+  `log_warning` method has also been removed, use the new
+  `ResultExt::handle_warning` method instead.
 
 ### Fixed
 

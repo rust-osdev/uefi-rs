@@ -1,4 +1,4 @@
-use super::{Completion, Error, Result};
+use super::{Error, Result};
 use core::{
     convert::Infallible,
     ops::{ControlFlow, FromResidual, Try},
@@ -131,7 +131,7 @@ impl Status {
     #[allow(clippy::result_unit_err)]
     pub fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if !self.is_error() {
-            Ok(Completion::new(self, val()))
+            Ok(val())
         } else {
             Err(self.into())
         }
@@ -144,7 +144,7 @@ impl Status {
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<(), ErrData> {
         if !self.is_error() {
-            Ok(self.into())
+            Ok(())
         } else {
             Err(Error::new(self, err(self)))
         }
@@ -158,7 +158,7 @@ impl Status {
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<T, ErrData> {
         if !self.is_error() {
-            Ok(Completion::new(self, val()))
+            Ok(val())
         } else {
             Err(Error::new(self, err(self)))
         }
@@ -176,18 +176,18 @@ impl From<Status> for Result<(), ()> {
 pub struct StatusResidual(NonZeroUsize);
 
 impl Try for Status {
-    type Output = Completion<()>;
+    type Output = ();
     type Residual = StatusResidual;
 
     fn branch(self) -> ControlFlow<Self::Residual, Self::Output> {
         match NonZeroUsize::new(self.0) {
             Some(r) => ControlFlow::Break(StatusResidual(r)),
-            None => ControlFlow::Continue(Completion::from(self)),
+            None => ControlFlow::Continue(()),
         }
     }
 
-    fn from_output(output: Self::Output) -> Self {
-        output.status()
+    fn from_output(_output: Self::Output) -> Self {
+        Self::SUCCESS
     }
 }
 

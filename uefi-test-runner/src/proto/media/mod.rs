@@ -12,13 +12,13 @@ fn test_file_system_info(directory: &mut Directory) {
     let mut fs_info_buf = vec![0; 128];
     let fs_info = directory
         .get_info::<FileSystemInfo>(&mut fs_info_buf)
-        .unwrap_success();
+        .unwrap();
     info!("File system info: {:?}", fs_info);
 
     let mut fs_vol_buf = vec![0; 128];
     let fs_vol = directory
         .get_info::<FileSystemVolumeLabel>(&mut fs_vol_buf)
-        .unwrap_success();
+        .unwrap();
     info!("File system volume label: {:?}", fs_vol);
 
     // Both types should provide the same volume label.
@@ -38,12 +38,12 @@ fn test_open_and_read(directory: &mut Directory) {
     let test_input_path = CString16::try_from("EFI\\BOOT\\test_input.txt").unwrap();
     match directory.open(&test_input_path, FileMode::Read, FileAttribute::empty()) {
         Ok(file) => {
-            let file = file.unwrap().into_type().unwrap_success();
+            let file = file.into_type().unwrap();
             if let FileType::Regular(mut file) = file {
                 let mut buffer = vec![0; 128];
                 let size = file
                     .read(&mut buffer)
-                    .expect_success(&format!("failed to read {}", test_input_path));
+                    .unwrap_or_else(|_| panic!("failed to read {}", test_input_path));
                 let buffer = &buffer[..size];
                 info!("Successfully read {}", test_input_path);
                 assert_eq!(buffer, b"test input data");
@@ -68,14 +68,13 @@ pub fn test(image: Handle, bt: &BootServices) {
     info!("Testing Media Access protocols");
 
     if let Ok(sfs) = bt.locate_protocol::<SimpleFileSystem>() {
-        let sfs = sfs.expect("Cannot open `SimpleFileSystem` protocol");
         let sfs = unsafe { &mut *sfs.get() };
-        let mut directory = sfs.open_volume().unwrap().unwrap();
+        let mut directory = sfs.open_volume().unwrap();
         let mut buffer = vec![0; 128];
         loop {
             let file_info = match directory.read_entry(&mut buffer) {
-                Ok(completion) => {
-                    if let Some(info) = completion.unwrap() {
+                Ok(info) => {
+                    if let Some(info) = info {
                         info
                     } else {
                         // We've reached the end of the directory
@@ -91,7 +90,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             };
             info!("Root directory entry: {:?}", file_info);
         }
-        directory.reset_entry_readout().unwrap().unwrap();
+        directory.reset_entry_readout().unwrap();
 
         test_file_system_info(&mut directory);
         test_open_and_read(&mut directory);
@@ -101,7 +100,7 @@ pub fn test(image: Handle, bt: &BootServices) {
 
     let handles = bt
         .find_handles::<PartitionInfo>()
-        .expect_success("Failed to get handles for `PartitionInfo` protocol");
+        .expect("Failed to get handles for `PartitionInfo` protocol");
 
     for handle in handles {
         let pi = bt
@@ -113,7 +112,7 @@ pub fn test(image: Handle, bt: &BootServices) {
                 },
                 OpenProtocolAttributes::Exclusive,
             )
-            .expect_success("Failed to get partition info");
+            .expect("Failed to get partition info");
         let pi = unsafe { &*pi.interface.get() };
 
         if let Some(mbr) = pi.mbr_partition_record() {

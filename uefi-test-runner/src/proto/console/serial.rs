@@ -1,4 +1,3 @@
-use uefi::prelude::*;
 use uefi::proto::console::serial::{ControlBits, Serial};
 use uefi::table::boot::BootServices;
 
@@ -10,12 +9,11 @@ pub fn test(bt: &BootServices) {
             return;
         }
 
-        let serial = serial.expect("Warnings encountered while opening serial protocol");
         let serial = unsafe { &mut *serial.get() };
 
         let old_ctrl_bits = serial
             .get_control_bits()
-            .expect_success("Failed to get device control bits");
+            .expect("Failed to get device control bits");
         let mut ctrl_bits = ControlBits::empty();
 
         // For the purposes of testing, we're _not_ going to implement
@@ -27,7 +25,7 @@ pub fn test(bt: &BootServices) {
 
         serial
             .set_control_bits(ctrl_bits)
-            .expect_success("Failed to set device control bits");
+            .expect("Failed to set device control bits");
 
         // Keep this message short, we need it to fit in the FIFO.
         const OUTPUT: &[u8] = b"Hello world!";
@@ -35,22 +33,20 @@ pub fn test(bt: &BootServices) {
 
         serial
             .write(OUTPUT)
-            .expect_success("Failed to write to serial port");
+            .expect("Failed to write to serial port");
 
         let mut input = [0u8; MSG_LEN];
         serial
             .read(&mut input)
-            .expect_success("Failed to read from serial port");
+            .expect("Failed to read from serial port");
 
         assert_eq!(OUTPUT, &input[..]);
 
         // Clean up after ourselves
-        serial
-            .reset()
-            .expect_success("Could not reset the serial device");
+        serial.reset().expect("Could not reset the serial device");
         serial
             .set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)
-            .expect_success("Could not restore the serial device state");
+            .expect("Could not restore the serial device state");
     } else {
         warn!("No serial device found");
     }

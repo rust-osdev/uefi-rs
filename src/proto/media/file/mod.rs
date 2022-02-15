@@ -10,12 +10,14 @@ mod dir;
 mod info;
 mod regular;
 
+#[cfg(feature = "exts")]
 use crate::prelude::*;
 use crate::{CStr16, Char16, Guid, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::{alloc::Layout, boxed::Box};
 use bitflags::bitflags;
 use core::ffi::c_void;
+use core::fmt::Debug;
 use core::mem;
 use core::ptr;
 
@@ -163,12 +165,12 @@ pub trait File: Sized {
 
     #[cfg(feature = "exts")]
     /// Get the dynamically allocated info for a file
-    fn get_boxed_info<Info: FileProtocolInfo + ?Sized>(&mut self) -> Result<Box<Info>> {
+    fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
         // Initially try get_info with an empty array, this should always fail
         // as all Info types at least need room for a null-terminator.
         let size = match self
             .get_info::<Info>(&mut [])
-            .expect_error("zero sized get_info unexpectedly succeeded")
+            .expect_err("zero sized get_info unexpectedly succeeded")
             .split()
         {
             (s, None) => return Err(s.into()),
@@ -183,19 +185,16 @@ pub trait File: Sized {
         let mut buffer = crate::exts::allocate_buffer(layout);
         let buffer_start = buffer.as_ptr();
 
-        let info = self
-            .get_info(&mut buffer)
-            .discard_errdata()?
-            .map(|info_ref| {
-                // This operation is safe because info uses the exact memory
-                // of the provied buffer (so no memory is leaked), and the box
-                // is created if and only if buffer is leaked (so no memory can
-                // ever be freed twice).
+        let info = self.get_info::<Info>(&mut buffer).discard_errdata()?;
 
-                assert_eq!(mem::size_of_val(info_ref), layout.size());
-                assert_eq!(info_ref as *const Info as *const u8, buffer_start);
-                unsafe { Box::from_raw(info_ref as *mut _) }
-            });
+        // This operation is safe because info uses the exact memory
+        // of the provied buffer (so no memory is leaked), and the box
+        // is created if and only if buffer is leaked (so no memory can
+        // ever be freed twice).
+        assert_eq!(mem::size_of_val(info), layout.size());
+        assert_eq!(info as *const Info as *const u8, buffer_start);
+        let info = unsafe { Box::from_raw(info as *mut _) };
+
         mem::forget(buffer);
 
         Ok(info)
@@ -234,8 +233,8 @@ impl FileHandle {
         // get_position fails with EFI_UNSUPPORTED on directories
         let mut pos = 0;
         match (self.imp().get_position)(self.imp(), &mut pos) {
-            Status::SUCCESS => unsafe { Ok(Regular(RegularFile::new(self)).into()) },
-            Status::UNSUPPORTED => unsafe { Ok(Dir(Directory::new(self)).into()) },
+            Status::SUCCESS => unsafe { Ok(Regular(RegularFile::new(self))) },
+            Status::UNSUPPORTED => unsafe { Ok(Dir(Directory::new(self))) },
             s => Err(s.into()),
         }
     }
@@ -252,7 +251,7 @@ impl Drop for FileHandle {
     fn drop(&mut self) {
         let result: Result = (self.imp().close)(self.imp()).into();
         // The spec says this always succeeds.
-        result.expect_success("Failed to close file");
+        result.expect("Failed to close file");
     }
 }
 

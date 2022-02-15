@@ -19,7 +19,7 @@ mod runtime;
 #[entry]
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
-    uefi_services::init(&mut st).expect_success("Failed to initialize utilities");
+    uefi_services::init(&mut st).expect("Failed to initialize utilities");
 
     // unit tests here
 
@@ -29,9 +29,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     info!("Firmware Vendor: {}", buf.as_str());
 
     // Reset the console before running all the other tests.
-    st.stdout()
-        .reset(false)
-        .expect_success("Failed to reset stdout");
+    st.stdout().reset(false).expect("Failed to reset stdout");
 
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
@@ -41,8 +39,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     // Try retrieving a handle to the file system the image was booted from.
     bt.get_image_file_system(image)
-        .expect("Failed to retrieve boot file system")
-        .unwrap();
+        .expect("Failed to retrieve boot file system");
 
     boot::test(bt);
 
@@ -79,7 +76,7 @@ fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
         let serial_handles = bt
             .find_handles::<Serial>()
-            .expect_success("Failed to get serial handles");
+            .expect("Failed to get serial handles");
 
         // Use the second serial device handle. Opening a serial device
         // in exclusive mode breaks the connection between stdout and
@@ -98,7 +95,7 @@ fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
                 },
                 OpenProtocolAttributes::Exclusive,
             )
-            .expect_success("Could not open serial protocol");
+            .expect("Could not open serial protocol");
         let serial = unsafe { &mut *serial.interface.get() };
 
         // Set a large timeout to avoid problems with Travis
@@ -106,23 +103,21 @@ fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
         io_mode.timeout = 10_000_000;
         serial
             .set_attributes(&io_mode)
-            .expect_success("Failed to configure serial port timeout");
+            .expect("Failed to configure serial port timeout");
 
         // Send a screenshot request to the host
         serial
             .write(b"SCREENSHOT: ")
-            .expect_success("Failed to send request");
+            .expect("Failed to send request");
         let name_bytes = name.as_bytes();
-        serial
-            .write(name_bytes)
-            .expect_success("Failed to send request");
-        serial.write(b"\n").expect_success("Failed to send request");
+        serial.write(name_bytes).expect("Failed to send request");
+        serial.write(b"\n").expect("Failed to send request");
 
         // Wait for the host's acknowledgement before moving forward
         let mut reply = [0; 3];
         serial
             .read(&mut reply[..])
-            .expect_success("Failed to read host reply");
+            .expect("Failed to read host reply");
 
         assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
     } else {
@@ -135,7 +130,7 @@ fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     use uefi::table::runtime::ResetType;
 
     // Get our text output back.
-    st.stdout().reset(false).unwrap_success();
+    st.stdout().reset(false).unwrap();
 
     // Inform the user, and give him time to read on real hardware
     if cfg!(not(feature = "qemu")) {
@@ -151,7 +146,7 @@ fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
     let (st, _iter) = st
         .exit_boot_services(image, &mut mmap_storage[..])
-        .expect_success("Failed to exit boot services");
+        .expect("Failed to exit boot services");
 
     #[cfg(target_arch = "x86_64")]
     {

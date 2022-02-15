@@ -16,8 +16,6 @@ pub fn test(bt: &BootServices) {
 
     info!("Running UEFI multi-processor services protocol test");
     if let Ok(mp_support) = bt.locate_protocol::<MpServices>() {
-        let mp_support = mp_support
-            .expect("Warnings encountered while opening multi-processor services protocol");
         let mp_support = unsafe { &mut *mp_support.get() };
 
         test_get_number_of_processors(mp_support);
@@ -32,7 +30,7 @@ pub fn test(bt: &BootServices) {
 }
 
 fn test_get_number_of_processors(mps: &MpServices) {
-    let proc_count = mps.get_number_of_processors().unwrap().unwrap();
+    let proc_count = mps.get_number_of_processors().unwrap();
 
     // Ensure we can see all of the requested CPUs
     assert_eq!(proc_count.total, NUM_CPUS);
@@ -43,12 +41,12 @@ fn test_get_number_of_processors(mps: &MpServices) {
 
 fn test_get_processor_info(mps: &MpServices) {
     // Disable second CPU for this test
-    mps.enable_disable_ap(1, false, None).unwrap().unwrap();
+    mps.enable_disable_ap(1, false, None).unwrap();
 
     // Retrieve processor information from each CPU
-    let cpu0 = mps.get_processor_info(0).unwrap().unwrap();
-    let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
-    let cpu2 = mps.get_processor_info(2).unwrap().unwrap();
+    let cpu0 = mps.get_processor_info(0).unwrap();
+    let cpu1 = mps.get_processor_info(1).unwrap();
+    let cpu2 = mps.get_processor_info(2).unwrap();
 
     // Check that processor_id fields are sane
     assert_eq!(cpu0.processor_id, 0);
@@ -66,7 +64,7 @@ fn test_get_processor_info(mps: &MpServices) {
     assert!(cpu2.is_enabled());
 
     // Enable second CPU back
-    mps.enable_disable_ap(1, true, None).unwrap().unwrap();
+    mps.enable_disable_ap(1, true, None).unwrap();
 }
 
 extern "efiapi" fn proc_increment_atomic(arg: *mut c_void) {
@@ -84,7 +82,6 @@ fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
     mps.startup_all_aps(false, proc_increment_atomic, counter_ptr, None)
-        .unwrap()
         .unwrap();
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
 
@@ -105,7 +102,6 @@ fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
     for i in 1..NUM_CPUS {
         mps.startup_this_ap(i, proc_increment_atomic, counter_ptr, None)
-            .unwrap()
             .unwrap();
     }
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
@@ -120,48 +116,46 @@ fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
 
 fn test_enable_disable_ap(mps: &MpServices) {
     // Disable second CPU
-    mps.enable_disable_ap(1, false, None).unwrap().unwrap();
+    mps.enable_disable_ap(1, false, None).unwrap();
 
     // Ensure that one CPUs is disabled
-    let proc_count = mps.get_number_of_processors().unwrap().unwrap();
+    let proc_count = mps.get_number_of_processors().unwrap();
     assert_eq!(proc_count.total - proc_count.enabled, 1);
 
     // Enable second CPU back
-    mps.enable_disable_ap(1, true, None).unwrap().unwrap();
+    mps.enable_disable_ap(1, true, None).unwrap();
 
     // Ensure that all CPUs are enabled
-    let proc_count = mps.get_number_of_processors().unwrap().unwrap();
+    let proc_count = mps.get_number_of_processors().unwrap();
     assert_eq!(proc_count.total, proc_count.enabled);
 
     // Mark second CPU as unhealthy and check it's status
-    mps.enable_disable_ap(1, true, Some(false))
-        .unwrap()
-        .unwrap();
-    let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
+    mps.enable_disable_ap(1, true, Some(false)).unwrap();
+    let cpu1 = mps.get_processor_info(1).unwrap();
     assert!(!cpu1.is_healthy());
 
     // Mark second CPU as healthy again and check it's status
-    mps.enable_disable_ap(1, true, Some(true)).unwrap().unwrap();
-    let cpu1 = mps.get_processor_info(1).unwrap().unwrap();
+    mps.enable_disable_ap(1, true, Some(true)).unwrap();
+    let cpu1 = mps.get_processor_info(1).unwrap();
     assert!(cpu1.is_healthy());
 }
 
 fn test_switch_bsp_and_who_am_i(mps: &MpServices) {
     // Normally BSP starts on on CPU 0
-    let proc_number = mps.who_am_i().unwrap().unwrap();
+    let proc_number = mps.who_am_i().unwrap();
     assert_eq!(proc_number, 0);
 
     // Do a BSP switch
-    mps.switch_bsp(1, true).unwrap().unwrap();
+    mps.switch_bsp(1, true).unwrap();
 
     // We now should be on CPU 1
-    let proc_number = mps.who_am_i().unwrap().unwrap();
+    let proc_number = mps.who_am_i().unwrap();
     assert_eq!(proc_number, 1);
 
     // Switch back
-    mps.switch_bsp(0, true).unwrap().unwrap();
+    mps.switch_bsp(0, true).unwrap();
 
     // We now should be on CPU 0 again
-    let proc_number = mps.who_am_i().unwrap().unwrap();
+    let proc_number = mps.who_am_i().unwrap();
     assert_eq!(proc_number, 0);
 }

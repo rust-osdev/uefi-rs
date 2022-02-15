@@ -1,6 +1,6 @@
 use uefi::proto::console::text::Output;
 use uefi::table::boot::{BootServices, SearchType};
-use uefi::{prelude::*, Identify};
+use uefi::Identify;
 
 pub fn test(bt: &BootServices) {
     info!("Testing boot services");
@@ -19,7 +19,7 @@ fn test_locate_handle_buffer(bt: &BootServices) {
         // search all handles
         let handles = bt
             .locate_handle_buffer(SearchType::AllHandles)
-            .expect_success("Failed to locate handle buffer");
+            .expect("Failed to locate handle buffer");
         assert!(!handles.handles().is_empty(), "Could not find any handles");
     }
 
@@ -27,7 +27,7 @@ fn test_locate_handle_buffer(bt: &BootServices) {
         // search by protocol
         let handles = bt
             .locate_handle_buffer(SearchType::ByProtocol(&Output::GUID))
-            .expect_success("Failed to locate handle buffer");
+            .expect("Failed to locate handle buffer");
         assert!(
             !handles.handles().is_empty(),
             "Could not find any OUTPUT protocol handles"

@@ -48,7 +48,7 @@ pub use self::data_types::{unsafe_guid, Identify};
 pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
 
 mod result;
-pub use self::result::{Completion, Error, Result, ResultExt, Status};
+pub use self::result::{Error, Result, ResultExt, Status};
 
 pub mod table;
 

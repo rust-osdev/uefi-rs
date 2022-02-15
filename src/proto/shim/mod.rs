@@ -108,14 +108,14 @@ impl ShimLock {
             .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
 
         let mut context = MaybeUninit::<Context>::uninit();
-        let comp1 = (self.context)(ptr, size, context.as_mut_ptr())?;
-        let comp2 = (self.hash)(
+        (self.context)(ptr, size, context.as_mut_ptr())?;
+        (self.hash)(
             ptr,
             size,
             context.as_mut_ptr(),
             &mut hashes.sha256,
             &mut hashes.sha1,
         )?;
-        Ok(comp1.with_status(comp2.status()))
+        Ok(())
     }
 }

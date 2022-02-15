@@ -37,7 +37,7 @@ impl Input {
         let mut key = MaybeUninit::<RawKey>::uninit();
 
         match (self.read_key_stroke)(self, key.as_mut_ptr()) {
-            Status::NOT_READY => Ok(None.into()),
+            Status::NOT_READY => Ok(None),
             other => other.into_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
     }

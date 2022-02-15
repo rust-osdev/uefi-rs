@@ -1,6 +1,5 @@
 use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
 use crate::data_types::Align;
-use crate::prelude::*;
 use crate::Result;
 use core::ffi::c_void;
 
@@ -48,7 +47,7 @@ impl Directory {
         FileInfo::assert_aligned(buffer);
 
         // Read the directory entry into the aligned storage
-        self.0.read(buffer).map_inner(|size| {
+        self.0.read(buffer).map(|size| {
             if size != 0 {
                 unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr() as *mut c_void)) }
             } else {

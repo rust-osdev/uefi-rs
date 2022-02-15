@@ -33,7 +33,7 @@ fn find_protocol(bt: &BootServices) {
 
     let handles = bt
         .find_handles::<SearchedProtocol>()
-        .expect_success("Failed to retrieve list of handles");
+        .expect("Failed to retrieve list of handles");
 
     assert!(
         handles.len() > 1,
@@ -44,7 +44,7 @@ fn find_protocol(bt: &BootServices) {
 fn test_protocols_per_handle(image: Handle, bt: &BootServices) {
     let pph = bt
         .protocols_per_handle(image)
-        .expect_success("Failed to get protocols for image handle");
+        .expect("Failed to get protocols for image handle");
 
     info!("Image handle has {} protocols", pph.protocols().len());
 

@@ -14,7 +14,6 @@
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
 
-use crate::prelude::*;
 use crate::table::boot::{BootServices, MemoryType};
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.
@@ -61,10 +60,7 @@ unsafe impl GlobalAlloc for Allocator {
 
         if align > 8 {
             // allocate more space for alignment
-            let ptr = if let Ok(ptr) = boot_services()
-                .as_ref()
-                .allocate_pool(mem_ty, size + align)
-                .warning_as_error()
+            let ptr = if let Ok(ptr) = boot_services().as_ref().allocate_pool(mem_ty, size + align)
             {
                 ptr
             } else {
@@ -83,7 +79,6 @@ unsafe impl GlobalAlloc for Allocator {
             boot_services()
                 .as_ref()
                 .allocate_pool(mem_ty, size)
-                .warning_as_error()
                 .unwrap_or(ptr::null_mut())
         }
     }
@@ -92,11 +87,7 @@ unsafe impl GlobalAlloc for Allocator {
         if layout.align() > 8 {
             ptr = (ptr as *const *mut u8).sub(1).read();
         }
-        boot_services()
-            .as_ref()
-            .free_pool(ptr)
-            .warning_as_error()
-            .unwrap();
+        boot_services().as_ref().free_pool(ptr).unwrap();
     }
 }
 

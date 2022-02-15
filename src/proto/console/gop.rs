@@ -55,7 +55,7 @@
 //! avoid tearing with animations.
 
 use crate::proto::Protocol;
-use crate::{unsafe_guid, Completion, Result, Status};
+use crate::{unsafe_guid, Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
@@ -110,7 +110,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns information about all available graphics modes.
-    pub fn modes(&'_ self) -> impl ExactSizeIterator<Item = Completion<Mode>> + '_ {
+    pub fn modes(&'_ self) -> impl ExactSizeIterator<Item = Mode> + '_ {
         ModeIter {
             gop: self,
             current: 0,
@@ -439,7 +439,7 @@ struct ModeIter<'gop> {
 }
 
 impl<'gop> Iterator for ModeIter<'gop> {
-    type Item = Completion<Mode>;
+    type Item = Mode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;

@@ -91,7 +91,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
                 Some(exit_boot_services),
                 None,
             )
-            .map_inner(|_| ())
+            .map(|_| ())
     }
 }
 

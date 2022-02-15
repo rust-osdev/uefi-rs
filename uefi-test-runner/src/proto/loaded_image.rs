@@ -14,7 +14,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             },
             OpenProtocolAttributes::Exclusive,
         )
-        .expect_success("Failed to open LoadedImage protocol");
+        .expect("Failed to open LoadedImage protocol");
     let loaded_image = unsafe { &*loaded_image.interface.get() };
 
     let load_options = loaded_image.load_options_as_bytes();

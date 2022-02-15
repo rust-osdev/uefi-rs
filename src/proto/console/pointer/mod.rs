@@ -40,7 +40,7 @@ impl<'boot> Pointer<'boot> {
         let mut pointer_state = MaybeUninit::<PointerState>::uninit();
 
         match (self.get_state)(self, pointer_state.as_mut_ptr()) {
-            Status::NOT_READY => Ok(None.into()),
+            Status::NOT_READY => Ok(None),
             other => other.into_with_val(|| unsafe { Some(pointer_state.assume_init()) }),
         }
     }

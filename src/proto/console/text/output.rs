@@ -1,6 +1,5 @@
-use crate::prelude::*;
 use crate::proto::Protocol;
-use crate::{unsafe_guid, CStr16, Char16, Completion, Result, Status};
+use crate::{unsafe_guid, CStr16, Char16, Result, ResultExt, Status};
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 
@@ -48,13 +47,26 @@ impl<'boot> Output<'boot> {
         unsafe { (self.output_string)(self, string.as_ptr()) }.into()
     }
 
+    /// Writes a string to the output device. If the string contains
+    /// unknown characters that cannot be rendered they will be silently
+    /// skipped.
+    pub fn output_string_lossy(&mut self, string: &CStr16) -> Result {
+        self.output_string(string).handle_warning(|err| {
+            if err.status() == Status::WARN_UNKNOWN_GLYPH {
+                Ok(())
+            } else {
+                Err(err)
+            }
+        })
+    }
+
     /// Checks if a string contains only supported characters.
     ///
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
         match unsafe { (self.test_string)(self, string.as_ptr()) } {
-            Status::UNSUPPORTED => Ok(false.into()),
+            Status::UNSUPPORTED => Ok(false),
             other => other.into_with_val(|| true),
         }
     }
@@ -88,11 +100,11 @@ impl<'boot> Output<'boot> {
     /// Returns the the current text mode.
     pub fn current_mode(&self) -> Result<Option<OutputMode>> {
         match self.data.mode {
-            -1 => Ok(None.into()),
+            -1 => Ok(None),
             n if n >= 0 => {
                 let index = n as usize;
                 self.query_mode(index)
-                    .map_inner(|dims| Some(OutputMode { index, dims }))
+                    .map(|dims| Some(OutputMode { index, dims }))
             }
             _ => unreachable!(),
         }
@@ -162,9 +174,7 @@ impl<'boot> fmt::Write for Output<'boot> {
 
             let text = CStr16::from_u16_with_nul(codes).map_err(|_| fmt::Error)?;
 
-            self.output_string(text)
-                .warning_as_error()
-                .map_err(|_| fmt::Error)
+            self.output_string(text).map_err(|_| fmt::Error)
         };
 
         // This closure converts a character to UCS-2 and adds it to the buffer,
@@ -262,15 +272,15 @@ pub struct OutputModeIter<'out, 'boot: 'out> {
 }
 
 impl<'out, 'boot> Iterator for OutputModeIter<'out, 'boot> {
-    type Item = Completion<OutputMode>;
+    type Item = OutputMode;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;
         if index < self.max {
             self.current += 1;
 
-            if let Ok(dims_completion) = self.output.query_mode(index) {
-                Some(dims_completion.map(|dims| OutputMode { index, dims }))
+            if let Ok(dims) = self.output.query_mode(index) {
+                Some(OutputMode { index, dims })
             } else {
                 self.next()
             }

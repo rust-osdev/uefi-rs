@@ -5,7 +5,6 @@ pub fn test(bt: &BootServices) {
     info!("Running shim lock protocol test");
 
     if let Ok(shim_lock) = bt.locate_protocol::<ShimLock>() {
-        let shim_lock = shim_lock.expect("Warnings encountered while opening shim lock protocol");
         let shim_lock = unsafe { &*shim_lock.get() };
 
         // An empty buffer should definitely be invalid, so expect

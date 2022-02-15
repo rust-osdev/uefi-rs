@@ -202,6 +202,12 @@ impl RuntimeServices {
     /// Set the value of a variable. This can be used to create a new variable,
     /// update an existing variable, or (when the size of `data` is zero)
     /// delete a variable.
+    ///
+    /// # Warnings
+    ///
+    /// The [`Status::WARN_RESET_REQUIRED`] warning will be returned when using
+    /// this function to transition the Secure Boot mode to setup mode or audit
+    /// mode if the firmware requires a reboot for that operation.
     pub fn set_variable(
         &self,
         name: &CStr16,

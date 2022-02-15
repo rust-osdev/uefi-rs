@@ -1,4 +1,3 @@
-use uefi::prelude::*;
 use uefi::table::boot::{AllocateType, BootServices, MemoryType};
 
 use crate::alloc::vec::Vec;
@@ -21,7 +20,7 @@ fn allocate_pages(bt: &BootServices) {
     let mem_ty = MemoryType::LOADER_DATA;
     let pgs = bt
         .allocate_pages(ty, mem_ty, 1)
-        .expect_success("Failed to allocate a page of memory");
+        .expect("Failed to allocate a page of memory");
 
     assert_eq!(pgs % 4096, 0, "Page pointer is not page-aligned");
 
@@ -33,7 +32,7 @@ fn allocate_pages(bt: &BootServices) {
     buf[4095] = 0x23;
 
     // Clean up to avoid memory leaks.
-    bt.free_pages(pgs, 1).unwrap_success();
+    bt.free_pages(pgs, 1).unwrap();
 }
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.
@@ -94,7 +93,7 @@ fn memory_map(bt: &BootServices) {
 
     let (_key, desc_iter) = bt
         .memory_map(&mut buffer)
-        .expect_success("Failed to retrieve UEFI memory map");
+        .expect("Failed to retrieve UEFI memory map");
 
     // Collect the descriptors into a vector
     let descriptors = desc_iter.copied().collect::<Vec<_>>();

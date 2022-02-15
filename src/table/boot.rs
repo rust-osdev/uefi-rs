@@ -501,8 +501,8 @@ impl BootServices {
     pub fn check_event(&self, event: Event) -> Result<bool> {
         let status = unsafe { (self.check_event)(event) };
         match status {
-            Status::SUCCESS => Ok(true.into()),
-            Status::NOT_READY => Ok(false.into()),
+            Status::SUCCESS => Ok(true),
+            Status::NOT_READY => Ok(false),
             _ => Err(status.into()),
         }
     }
@@ -562,7 +562,7 @@ impl BootServices {
         let buffer_len = buffer_size / handle_size;
 
         match (buffer, status) {
-            (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len.into()),
+            (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len),
             (_, other_status) => other_status.into_with_val(|| buffer_len),
         }
     }
@@ -934,14 +934,14 @@ impl BootServices {
         let search_type = SearchType::from_proto::<P>();
 
         // Determine how much we need to allocate.
-        let (status1, buffer_size) = self.locate_handle(search_type, None)?.split();
+        let buffer_size = self.locate_handle(search_type, None)?;
 
         // Allocate a large enough buffer without pointless initialization.
         let mut handles = Vec::with_capacity(buffer_size);
         let buffer = handles.spare_capacity_mut();
 
         // Perform the search.
-        let (status2, buffer_size) = self.locate_handle(search_type, Some(buffer))?.split();
+        let buffer_size = self.locate_handle(search_type, Some(buffer))?;
 
         // Mark the returned number of elements as initialized.
         unsafe {
@@ -949,9 +949,7 @@ impl BootServices {
         }
 
         // Emit output, with warnings
-        status1
-            .into_with_val(|| handles)
-            .map(|completion| completion.with_status(status2))
+        Ok(handles)
     }
 
     /// Retrieves the `SimpleFileSystem` protocol associated with
@@ -963,35 +961,29 @@ impl BootServices {
         &self,
         image_handle: Handle,
     ) -> Result<ScopedProtocol<SimpleFileSystem>> {
-        let loaded_image = self
-            .open_protocol::<LoadedImage>(
-                OpenProtocolParams {
-                    handle: image_handle,
-                    agent: image_handle,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )?
-            .expect("Failed to retrieve `LoadedImage` protocol from handle");
+        let loaded_image = self.open_protocol::<LoadedImage>(
+            OpenProtocolParams {
+                handle: image_handle,
+                agent: image_handle,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )?;
         let loaded_image = unsafe { &*loaded_image.interface.get() };
 
         let device_handle = loaded_image.device();
 
-        let device_path = self
-            .open_protocol::<DevicePath>(
-                OpenProtocolParams {
-                    handle: device_handle,
-                    agent: image_handle,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )?
-            .expect("Failed to retrieve `DevicePath` protocol from image's device handle");
+        let device_path = self.open_protocol::<DevicePath>(
+            OpenProtocolParams {
+                handle: device_handle,
+                agent: image_handle,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )?;
         let mut device_path = unsafe { &*device_path.interface.get() };
 
-        let device_handle = self
-            .locate_device_path::<SimpleFileSystem>(&mut device_path)?
-            .expect("Failed to locate `SimpleFileSystem` protocol on device path");
+        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut device_path)?;
 
         self.open_protocol::<SimpleFileSystem>(
             OpenProtocolParams {

@@ -20,26 +20,24 @@ fn test_variables(rt: &RuntimeServices) {
 
     info!("Testing set_variable");
     rt.set_variable(name, &vendor, test_attrs, test_value)
-        .expect_success("failed to set variable");
+        .expect("failed to set variable");
 
     info!("Testing get_variable_size");
     let size = rt
         .get_variable_size(name, &vendor)
-        .expect_success("failed to get variable size");
+        .expect("failed to get variable size");
     assert_eq!(size, test_value.len());
 
     info!("Testing get_variable");
     let mut buf = [0u8; 9];
     let (data, attrs) = rt
         .get_variable(name, &vendor, &mut buf)
-        .expect_success("failed to get variable");
+        .expect("failed to get variable");
     assert_eq!(data, test_value);
     assert_eq!(attrs, test_attrs);
 
     info!("Testing variable_keys");
-    let variable_keys = rt
-        .variable_keys()
-        .expect_success("failed to get variable keys");
+    let variable_keys = rt.variable_keys().expect("failed to get variable keys");
     info!("Found {} variables", variable_keys.len());
     // There are likely a bunch of variables, only print out the first one
     // during the test to avoid spamming the log.

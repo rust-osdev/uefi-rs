@@ -1,21 +1,5 @@
 ///! Facilities for dealing with UEFI operation results.
-///!
-///! Almost all UEFI operations provide a status code as an output, which may
-///! either indicate success, fatal failure, or non-fatal failure. In addition,
-///! they may produce output, both in case of success and failure.
-///!
-///! We model this using an extended version of Rust's standard Result type,
-///! whose successful path supports UEFI warnings and whose failing path can
-///! report both an UEFI status code and extra data about the error.
-///!
-///! Convenience methods are also provided via extension traits to ease working
-///! with this complex type in everyday usage.
 use core::fmt::Debug;
-
-/// `Completion`s are used to model operations which have completed, but may
-/// have encountered non-fatal errors ("warnings") along the way
-mod completion;
-pub use self::completion::Completion;
 
 /// The error type that we use, essentially a status code + optional additional data
 mod error;
@@ -26,64 +10,65 @@ mod status;
 pub use self::status::Status;
 
 /// Return type of most UEFI functions. Both success and error payloads are optional.
-pub type Result<Output = (), ErrData = ()> =
-    core::result::Result<Completion<Output>, Error<ErrData>>;
+///
+/// Almost all UEFI operations provide a status code as an output which
+/// indicates either success, a warning, or an error. This type alias maps
+/// [`Status::SUCCESS`] to the `Ok` variant (with optional `Output` data), and
+/// maps both warning and error statuses to the `Err` variant (with optional
+/// `ErrData`).
+///
+/// Warnings are treated as errors by default because they generally indicate
+/// an abnormal situation.
+///
+/// Some convenience methods are provided by the [`ResultExt`] trait.
+pub type Result<Output = (), ErrData = ()> = core::result::Result<Output, Error<ErrData>>;
 
-/// Extension trait for Result which helps dealing with UEFI's warnings
+/// Extension trait which provides some convenience methods for [`Result`].
 pub trait ResultExt<Output, ErrData: Debug> {
     /// Extract the UEFI status from this result
     fn status(&self) -> Status;
 
-    /// Ignore warnings, keeping a trace of them in the logs
-    fn log_warning(self) -> core::result::Result<Output, Error<ErrData>>;
-
-    /// Expect success without warnings, panic otherwise
-    fn unwrap_success(self) -> Output;
-
-    /// Expect success without warnings, panic with provided message otherwise
-    fn expect_success(self, msg: &str) -> Output;
-
-    /// Expect error, panic with provided message otherwise, discarding output
-    fn expect_error(self, msg: &str) -> Error<ErrData>;
-
-    /// Transform the inner output, if any
-    fn map_inner<Mapped>(self, f: impl FnOnce(Output) -> Mapped) -> Result<Mapped, ErrData>;
-
     /// Transform the ErrData value to ()
     fn discard_errdata(self) -> Result<Output>;
 
-    /// Treat warnings as errors
-    fn warning_as_error(self) -> core::result::Result<Output, Error<ErrData>>
+    /// Calls `op` if the result contains a warning, otherwise returns
+    /// the result unchanged.
+    ///
+    /// By default warning statuses are treated as errors (i.e. stored in the
+    /// `Err` variant) because they generally indicate an abnormal
+    /// situation. In rare cases though it may be helpful to handle a
+    /// warning. This method is similar to [`Result::or_else`], except that
+    /// `op` is called only when the status is a warning.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use uefi::{Result, ResultExt, Status};
+    ///
+    /// # fn x() -> uefi::Result {
+    /// # let some_result = Result::from(Status::WARN_RESET_REQUIRED);
+    /// // Treat a specific warning as success, propagate others as errors.
+    /// some_result.handle_warning(|err| {
+    ///     if err.status() == Status::WARN_RESET_REQUIRED {
+    ///         Ok(())
+    ///     } else {
+    ///         Err(err)
+    ///     }
+    /// })?;
+    /// # Status::SUCCESS.into()
+    /// # }
+    /// ```
+    fn handle_warning<O>(self, op: O) -> Result<Output, ErrData>
     where
-        ErrData: Default;
+        O: FnOnce(Error<ErrData>) -> Result<Output, ErrData>;
 }
 
 impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrData> {
     fn status(&self) -> Status {
         match self {
-            Ok(c) => c.status(),
+            Ok(_) => Status::SUCCESS,
             Err(e) => e.status(),
         }
-    }
-
-    fn log_warning(self) -> core::result::Result<Output, Error<ErrData>> {
-        self.map(Completion::log)
-    }
-
-    fn unwrap_success(self) -> Output {
-        self.unwrap().unwrap()
-    }
-
-    fn expect_success(self, msg: &str) -> Output {
-        self.expect(msg).expect(msg)
-    }
-
-    fn expect_error(self, msg: &str) -> Error<ErrData> {
-        self.map(|completion| completion.status()).expect_err(msg)
-    }
-
-    fn map_inner<Mapped>(self, f: impl FnOnce(Output) -> Mapped) -> Result<Mapped, ErrData> {
-        self.map(|completion| completion.map(f))
     }
 
     fn discard_errdata(self) -> Result<Output> {
@@ -93,14 +78,19 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
         }
     }
 
-    fn warning_as_error(self) -> core::result::Result<Output, Error<ErrData>>
+    fn handle_warning<O>(self, op: O) -> Result<Output, ErrData>
     where
-        ErrData: Default,
+        O: FnOnce(Error<ErrData>) -> Result<Output, ErrData>,
     {
-        match self.map(Completion::split) {
-            Ok((Status::SUCCESS, res)) => Ok(res),
-            Ok((s, _)) => Err(Error::new(s, Default::default())),
-            Err(e) => Err(e),
+        match self {
+            Ok(output) => Ok(output),
+            Err(err) => {
+                if err.status().is_warning() {
+                    op(err)
+                } else {
+                    Err(err)
+                }
+            }
         }
     }
 }

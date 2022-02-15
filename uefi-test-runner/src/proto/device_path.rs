@@ -15,7 +15,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             },
             OpenProtocolAttributes::Exclusive,
         )
-        .expect_success("Failed to open LoadedImage protocol");
+        .expect("Failed to open LoadedImage protocol");
     let loaded_image = unsafe { &*loaded_image.interface.get() };
 
     let device_path = bt
@@ -27,7 +27,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             },
             OpenProtocolAttributes::Exclusive,
         )
-        .expect_success("Failed to open DevicePath protocol");
+        .expect("Failed to open DevicePath protocol");
     let device_path = unsafe { &*device_path.interface.get() };
 
     for path in device_path.iter() {

@@ -2,6 +2,7 @@ use super::chars::{Char16, NUL_16};
 use super::strs::CStr16;
 use crate::alloc_api::vec::Vec;
 use core::convert::TryFrom;
+use core::fmt;
 use core::ops;
 
 /// Error returned by [`CString16::try_from::<&str>`].
@@ -68,6 +69,12 @@ impl ops::Deref for CString16 {
 impl AsRef<CStr16> for CString16 {
     fn as_ref(&self) -> &CStr16 {
         self
+    }
+}
+
+impl fmt::Display for CString16 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.as_ref().fmt(f)
     }
 }
 

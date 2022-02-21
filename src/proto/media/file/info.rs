@@ -124,6 +124,7 @@ impl<Header> FromUefi for NamedFileProtocolInfo<Header> {
 }
 
 /// Errors that can occur when creating a `FileProtocolInfo`
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FileInfoCreationError {
     /// The provided buffer was too small to hold the `FileInfo`. You need at
     /// least the indicated buffer size (in bytes). Please remember that using

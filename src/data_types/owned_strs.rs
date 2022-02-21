@@ -78,6 +78,12 @@ impl fmt::Display for CString16 {
     }
 }
 
+impl PartialEq<&CStr16> for CString16 {
+    fn eq(&self, other: &&CStr16) -> bool {
+        PartialEq::eq(self.as_ref(), other)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,5 +99,21 @@ mod tests {
         assert_eq!(CString16::try_from("😀"), Err(FromStrError::InvalidChar));
 
         assert_eq!(CString16::try_from("x\0"), Err(FromStrError::InteriorNul));
+    }
+
+    /// Test `CString16 == &CStr16` and `&CStr16 == CString16`.
+    #[test]
+    fn test_cstring16_cstr16_eq() {
+        let mut buf = [0; 4];
+
+        assert_eq!(
+            CStr16::from_str_with_buf("abc", &mut buf).unwrap(),
+            CString16::try_from("abc").unwrap()
+        );
+
+        assert_eq!(
+            CString16::try_from("abc").unwrap(),
+            CStr16::from_str_with_buf("abc", &mut buf).unwrap(),
+        );
     }
 }

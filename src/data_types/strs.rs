@@ -207,6 +207,11 @@ impl CStr16 {
         self.0.as_ptr()
     }
 
+    /// Get the underlying [`Char16`] slice, including the trailing null.
+    pub fn as_slice_with_nul(&self) -> &[Char16] {
+        &self.0
+    }
+
     /// Converts this C string to a u16 slice
     pub fn to_u16_slice(&self) -> &[u16] {
         let chars = self.to_u16_slice_with_nul();

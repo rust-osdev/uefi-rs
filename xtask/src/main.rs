@@ -94,10 +94,9 @@ fn run_host_tests() -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Test,
         features: vec![Feature::Exts],
-        nightly: false,
+        nightly: true,
         // Don't test uefi-services (or the packages that depend on it)
-        // as it has lang items that conflict with `std`. The xtask
-        // currently doesn't have any tests.
+        // as it has lang items that conflict with `std`.
         packages: vec![Package::Uefi, Package::UefiMacros, Package::Xtask],
         release: false,
         // Use the host target so that tests can run without a VM.

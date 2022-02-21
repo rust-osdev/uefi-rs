@@ -1,4 +1,6 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
+#[cfg(feature = "exts")]
+use super::CString16;
 use core::convert::TryInto;
 use core::fmt;
 use core::iter::Iterator;
@@ -100,6 +102,7 @@ impl CStr8 {
 ///
 /// This type is largely inspired by `std::ffi::CStr`, see the documentation of
 /// `CStr` for more details on its semantics.
+#[derive(Eq, PartialEq)]
 #[repr(transparent)]
 pub struct CStr16([Char16]);
 
@@ -284,6 +287,13 @@ impl fmt::Display for CStr16 {
             <Char16 as fmt::Display>::fmt(c, f)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(feature = "exts")]
+impl PartialEq<CString16> for &CStr16 {
+    fn eq(&self, other: &CString16) -> bool {
+        PartialEq::eq(*self, other.as_ref())
     }
 }
 

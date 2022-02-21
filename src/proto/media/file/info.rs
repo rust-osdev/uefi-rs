@@ -356,3 +356,91 @@ impl FileSystemVolumeLabel {
 }
 
 impl FileProtocolInfo for FileSystemVolumeLabel {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::alloc_api::string::ToString;
+    use crate::alloc_api::vec;
+    use crate::table::runtime::{Daylight, Time};
+
+    #[test]
+    fn test_file_info() {
+        let mut storage = vec![0; 128];
+
+        let file_size = 123;
+        let physical_size = 456;
+        let create_time = Time::new(1970, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
+        let last_access_time = Time::new(1971, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
+        let modification_time = Time::new(1972, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
+        let attribute = FileAttribute::READ_ONLY;
+        let name = "test_name";
+        let info = FileInfo::new(
+            &mut storage,
+            file_size,
+            physical_size,
+            create_time,
+            last_access_time,
+            modification_time,
+            attribute,
+            name,
+        )
+        .unwrap();
+
+        //   Header size: 80 bytes
+        // + Name size (including trailing null): 20 bytes
+        // = 100
+        // Round size up to match FileInfo alignment of 8: 104
+        assert_eq!(info.header.size, 104);
+
+        assert_eq!(info.file_size(), file_size);
+        assert_eq!(info.physical_size(), physical_size);
+        assert_eq!(info.create_time(), &create_time);
+        assert_eq!(info.last_access_time(), &last_access_time);
+        assert_eq!(info.modification_time(), &modification_time);
+        assert_eq!(info.attribute(), attribute);
+        assert_eq!(info.file_name().to_string(), name);
+    }
+
+    #[test]
+    fn test_file_system_info() {
+        let mut storage = vec![0; 128];
+
+        let read_only = false;
+        let volume_size = 123;
+        let free_space = 456;
+        let block_size = 789;
+        let name = "test_name";
+        let info = FileSystemInfo::new(
+            &mut storage,
+            read_only,
+            volume_size,
+            free_space,
+            block_size,
+            name,
+        )
+        .unwrap();
+
+        //   Header size: 40 bytes
+        // + Name size (including trailing null): 20 bytes
+        // = 60
+        // Round size up to match FileInfo alignment of 8: 64
+        assert_eq!(info.header.size, 64);
+
+        assert_eq!(info.read_only(), read_only);
+        assert_eq!(info.volume_size(), volume_size);
+        assert_eq!(info.free_space(), free_space);
+        assert_eq!(info.block_size(), block_size);
+        assert_eq!(info.volume_label().to_string(), name);
+    }
+
+    #[test]
+    fn test_file_system_volume_label() {
+        let mut storage = vec![0; 128];
+
+        let name = "test_name";
+        let info = FileSystemVolumeLabel::new(&mut storage, &name).unwrap();
+
+        assert_eq!(info.volume_label().to_string(), name);
+    }
+}

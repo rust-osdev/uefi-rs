@@ -199,7 +199,7 @@ impl FileInfo {
             attribute,
         };
         let info = Self::new_impl(storage, header, file_name)?;
-        info.header.size = mem::size_of_val(&info) as u64;
+        info.header.size = mem::size_of_val(info) as u64;
         Ok(info)
     }
 
@@ -288,7 +288,7 @@ impl FileSystemInfo {
             block_size,
         };
         let info = Self::new_impl(storage, header, volume_label)?;
-        info.header.size = mem::size_of_val(&info) as u64;
+        info.header.size = mem::size_of_val(info) as u64;
         Ok(info)
     }
 

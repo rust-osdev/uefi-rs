@@ -54,9 +54,16 @@ impl Event {
     }
 }
 
-/// Trait for querying the alignment of a struct
+/// Trait for querying the alignment of a struct.
 ///
-/// Needed for dynamic-sized types because `mem::align_of` has a `Sized` bound (due to `dyn Trait`)
+/// For a statically-sized type the alignment can be retrieved with
+/// [`core::mem::align_of`]. For a dynamically-sized type (DST),
+/// [`core::mem::align_of_val`] provides the alignment given a reference. But in
+/// some cases it's helpful to know the alignment of a DST prior to having a
+/// value, meaning there's no reference to pass to `align_of_val`. For example,
+/// when using an API that creates a value using a `[u8]` buffer, the alignment
+/// of the buffer must be checked. The `Align` trait makes that possible by
+/// allowing the appropriate alignment to be manually specified.
 pub trait Align {
     /// Required memory alignment for this type
     fn alignment() -> usize;

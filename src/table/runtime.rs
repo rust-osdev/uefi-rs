@@ -421,6 +421,22 @@ impl fmt::Display for Time {
     }
 }
 
+impl PartialEq for Time {
+    fn eq(&self, other: &Time) -> bool {
+        self.year == other.year
+            && self.month == other.month
+            && self.day == other.day
+            && self.hour == other.hour
+            && self.minute == other.minute
+            && self.second == other.second
+            && self.nanosecond == other.nanosecond
+            && self.time_zone == other.time_zone
+            && self.daylight == other.daylight
+    }
+}
+
+impl Eq for Time {}
+
 /// Real time clock capabilities
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]

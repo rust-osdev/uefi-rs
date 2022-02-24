@@ -3,7 +3,6 @@ use crate::data_types::{chars::NUL_16, Align};
 use crate::table::runtime::Time;
 use crate::{unsafe_guid, CStr16, Char16, Identify};
 use core::cmp;
-use core::convert::TryInto;
 use core::ffi::c_void;
 use core::mem;
 use core::slice;
@@ -52,7 +51,7 @@ impl<Header> NamedFileProtocolInfo<Header> {
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the `name` string.
+    /// including a null-terminated UCS-2 `name` string.
     ///
     /// The buffer must be correctly aligned. You can query the required
     /// alignment using the `alignment()` method of the `Align` trait that this
@@ -61,13 +60,13 @@ impl<Header> NamedFileProtocolInfo<Header> {
     fn new_impl<'buf>(
         storage: &'buf mut [u8],
         header: Header,
-        name: &str,
+        name: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         // Make sure that the storage is properly aligned
         Self::assert_aligned(storage);
 
         // Make sure that the storage is large enough for our needs
-        let name_length_ucs2 = name.chars().count() + 1;
+        let name_length_ucs2 = name.as_slice_with_nul().len();
         let name_size = name_length_ucs2 * mem::size_of::<Char16>();
         let info_size = mem::size_of::<Header>() + name_size;
         if storage.len() < info_size {
@@ -94,12 +93,9 @@ impl<Header> NamedFileProtocolInfo<Header> {
         debug_assert_eq!(info.name.len(), name_length_ucs2);
 
         // Write down the UCS-2 name before returning the storage reference
-        for (target, ch) in info.name.iter_mut().zip(name.chars()) {
-            *target = ch
-                .try_into()
-                .map_err(|_| FileInfoCreationError::InvalidChar(ch))?;
-        }
-        info.name[name_length_ucs2 - 1] = NUL_16;
+        info.name.copy_from_slice(name.as_slice_with_nul());
+        debug_assert_eq!(info.name[name_length_ucs2 - 1], NUL_16);
+
         Ok(info)
     }
 }
@@ -130,9 +126,6 @@ pub enum FileInfoCreationError {
     /// least the indicated buffer size (in bytes). Please remember that using
     /// a misaligned buffer will cause a decrease of usable storage capacity.
     InsufficientStorage(usize),
-
-    /// The suggested file name contains invalid code points (not in UCS-2)
-    InvalidChar(char),
 }
 
 /// Generic file information
@@ -173,7 +166,7 @@ impl FileInfo {
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the `name` string.
+    /// including a null-terminated UCS-2 `name` string.
     ///
     /// The buffer must be correctly aligned. You can query the required
     /// alignment using the `alignment()` method of the `Align` trait that this
@@ -187,7 +180,7 @@ impl FileInfo {
         last_access_time: Time,
         modification_time: Time,
         attribute: FileAttribute,
-        file_name: &str,
+        file_name: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         let header = FileInfoHeader {
             size: 0,
@@ -266,7 +259,7 @@ impl FileSystemInfo {
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the `name` string.
+    /// including a null-terminated UCS-2 `name` string.
     ///
     /// The buffer must be correctly aligned. You can query the required
     /// alignment using the `alignment()` method of the `Align` trait that this
@@ -278,7 +271,7 @@ impl FileSystemInfo {
         volume_size: u64,
         free_space: u64,
         block_size: u32,
-        volume_label: &str,
+        volume_label: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         let header = FileSystemInfoHeader {
             size: 0,
@@ -336,14 +329,14 @@ impl FileSystemVolumeLabel {
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
-    /// including a null-terminated UCS-2 version of the `name` string.
+    /// including a null-terminated UCS-2 `name` string.
     ///
     /// The buffer must be correctly aligned. You can query the required
     /// alignment using the `alignment()` method of the `Align` trait that this
     /// struct implements.
     pub fn new<'buf>(
         storage: &'buf mut [u8],
-        volume_label: &str,
+        volume_label: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         let header = FileSystemVolumeLabelHeader {};
         Self::new_impl(storage, header, volume_label)
@@ -360,9 +353,10 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc_api::string::ToString;
     use crate::alloc_api::vec;
     use crate::table::runtime::{Daylight, Time};
+    use crate::CString16;
+    use core::convert::TryFrom;
 
     #[test]
     fn test_file_info() {
@@ -374,7 +368,7 @@ mod tests {
         let last_access_time = Time::new(1971, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
         let modification_time = Time::new(1972, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
         let attribute = FileAttribute::READ_ONLY;
-        let name = "test_name";
+        let name = CString16::try_from("test_name").unwrap();
         let info = FileInfo::new(
             &mut storage,
             file_size,
@@ -383,7 +377,7 @@ mod tests {
             last_access_time,
             modification_time,
             attribute,
-            name,
+            &name,
         )
         .unwrap();
 
@@ -399,7 +393,7 @@ mod tests {
         assert_eq!(info.last_access_time(), &last_access_time);
         assert_eq!(info.modification_time(), &modification_time);
         assert_eq!(info.attribute(), attribute);
-        assert_eq!(info.file_name().to_string(), name);
+        assert_eq!(info.file_name(), name);
     }
 
     #[test]
@@ -410,14 +404,14 @@ mod tests {
         let volume_size = 123;
         let free_space = 456;
         let block_size = 789;
-        let name = "test_name";
+        let name = CString16::try_from("test_name").unwrap();
         let info = FileSystemInfo::new(
             &mut storage,
             read_only,
             volume_size,
             free_space,
             block_size,
-            name,
+            &name,
         )
         .unwrap();
 
@@ -431,16 +425,16 @@ mod tests {
         assert_eq!(info.volume_size(), volume_size);
         assert_eq!(info.free_space(), free_space);
         assert_eq!(info.block_size(), block_size);
-        assert_eq!(info.volume_label().to_string(), name);
+        assert_eq!(info.volume_label(), name);
     }
 
     #[test]
     fn test_file_system_volume_label() {
         let mut storage = vec![0; 128];
 
-        let name = "test_name";
+        let name = CString16::try_from("test_name").unwrap();
         let info = FileSystemVolumeLabel::new(&mut storage, &name).unwrap();
 
-        assert_eq!(info.volume_label().to_string(), name);
+        assert_eq!(info.volume_label(), name);
     }
 }

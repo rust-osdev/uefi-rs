@@ -17,11 +17,8 @@ pub fn test(image: Handle, bt: &BootServices) {
         .expect_success("Failed to open LoadedImage protocol");
     let loaded_image = unsafe { &*loaded_image.interface.get() };
 
-    let mut buffer = vec![0; 128];
-    let load_options = loaded_image
-        .load_options(&mut buffer)
-        .expect("Failed to get load options");
-    info!("LoadedImage options: \"{}\"", load_options);
+    let load_options = loaded_image.load_options_as_bytes();
+    info!("LoadedImage options: {:?}", load_options);
 
     let (image_base, image_size) = loaded_image.info();
     info!(

@@ -1,12 +1,11 @@
 //! `LoadedImage` protocol.
 
 use crate::{
-    data_types::{CStr16, Char16},
-    proto::Protocol,
-    table::boot::MemoryType,
-    unsafe_guid, Handle, Status,
+    data_types::FromSliceWithNulError, proto::Protocol, table::boot::MemoryType, unsafe_guid,
+    CStr16, Handle, Status,
 };
-use core::{ffi::c_void, str};
+use core::convert::TryFrom;
+use core::{ffi::c_void, mem, slice};
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
 #[repr(C)]
@@ -24,7 +23,7 @@ pub struct LoadedImage {
 
     // Image load options
     load_options_size: u32,
-    load_options: *const Char16,
+    load_options: *const u8,
 
     // Location where image was loaded
     image_base: *const c_void,
@@ -39,10 +38,14 @@ pub struct LoadedImage {
 /// Errors that can be raised during parsing of the load options.
 #[derive(Debug)]
 pub enum LoadOptionsError {
-    /// The passed buffer is not large enough to contain the load options.
-    BufferTooSmall,
-    /// The load options are not valid UTF-8.
-    NotValidUtf8,
+    /// Load options are not set.
+    NotSet,
+
+    /// The start and/or length of the load options is not [`u16`]-aligned.
+    NotAligned,
+
+    /// Not a valid null-terminated UCS-2 string.
+    InvalidString(FromSliceWithNulError),
 }
 
 impl LoadedImage {
@@ -51,17 +54,54 @@ impl LoadedImage {
         self.device_handle
     }
 
-    /// Get the load options of the given image. If the image was executed from the EFI shell, or from a boot
-    /// option, this is the command line that was used to execute it as a string. If no options were given, this
-    /// returns `Ok("")`.
-    pub fn load_options<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a str, LoadOptionsError> {
+    /// Get the load options of the image as a [`&CStr16`].
+    ///
+    /// Load options are typically used to pass command-line options as
+    /// a null-terminated UCS-2 string. This format is not required
+    /// though; use [`load_options_as_bytes`] to access the raw bytes.
+    ///
+    /// [`&CStr16`]: `CStr16`
+    /// [`load_options_as_bytes`]: `Self::load_options_as_bytes`
+    pub fn load_options_as_cstr16(&self) -> Result<&CStr16, LoadOptionsError> {
+        let load_options_size = usize::try_from(self.load_options_size).unwrap();
+
         if self.load_options.is_null() {
-            Ok("")
+            Err(LoadOptionsError::NotSet)
+        } else if (load_options_size % mem::size_of::<u16>() != 0)
+            || (((self.load_options as usize) % mem::align_of::<u16>()) != 0)
+        {
+            Err(LoadOptionsError::NotAligned)
         } else {
-            let ucs2_slice = unsafe { CStr16::from_ptr(self.load_options).to_u16_slice() };
-            let length =
-                ucs2::decode(ucs2_slice, buffer).map_err(|_| LoadOptionsError::BufferTooSmall)?;
-            str::from_utf8(&buffer[0..length]).map_err(|_| LoadOptionsError::NotValidUtf8)
+            let s = unsafe {
+                slice::from_raw_parts(
+                    self.load_options as *const u16,
+                    load_options_size / mem::size_of::<u16>(),
+                )
+            };
+            CStr16::from_u16_with_nul(s).map_err(LoadOptionsError::InvalidString)
+        }
+    }
+
+    /// Get the load options of the image as raw bytes.
+    ///
+    /// UEFI allows arbitrary binary data in load options, but typically
+    /// the data is a null-terminated UCS-2 string. Use
+    /// [`load_options_as_cstr16`] to more conveniently access the load
+    /// options as a string.
+    ///
+    /// Returns `None` if load options are not set.
+    ///
+    /// [`load_options_as_cstr16`]: `Self::load_options_as_cstr16`
+    pub fn load_options_as_bytes(&self) -> Option<&[u8]> {
+        if self.load_options.is_null() {
+            None
+        } else {
+            unsafe {
+                Some(slice::from_raw_parts(
+                    self.load_options,
+                    usize::try_from(self.load_options_size).unwrap(),
+                ))
+            }
         }
     }
 
@@ -104,7 +144,7 @@ impl LoadedImage {
     /// This function takes `options` as a raw pointer because the
     /// load options data is not owned by `LoadedImage`. The caller
     /// must ensure that the memory lives long enough.
-    pub unsafe fn set_load_options(&mut self, options: *const Char16, size: u32) {
+    pub unsafe fn set_load_options(&mut self, options: *const u8, size: u32) {
         self.load_options = options;
         self.load_options_size = size;
     }

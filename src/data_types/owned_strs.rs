@@ -1,7 +1,6 @@
 use super::chars::{Char16, NUL_16};
 use super::strs::CStr16;
 use crate::alloc_api::vec::Vec;
-use core::convert::TryFrom;
 use core::fmt;
 use core::ops;
 
@@ -21,7 +20,6 @@ pub enum FromStrError {
 /// Round-trip conversion from a [`&str`] to a `CString16` and back:
 ///
 /// ```
-/// use core::convert::TryFrom;
 /// use uefi::CString16;
 ///
 /// let s = CString16::try_from("abc").unwrap();

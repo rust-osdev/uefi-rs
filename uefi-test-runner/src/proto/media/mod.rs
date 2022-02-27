@@ -1,4 +1,3 @@
-use core::convert::TryFrom;
 use uefi::prelude::*;
 use uefi::proto::media::file::{Directory, File, FileAttribute, FileMode, FileType};
 use uefi::proto::media::fs::SimpleFileSystem;

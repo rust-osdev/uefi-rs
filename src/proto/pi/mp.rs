@@ -14,7 +14,6 @@
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 use bitflags::bitflags;
-use core::convert::TryInto;
 use core::ffi::c_void;
 use core::ptr;
 use core::time::Duration;

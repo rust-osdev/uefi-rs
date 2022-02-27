@@ -4,7 +4,6 @@ use crate::{
     data_types::FromSliceWithNulError, proto::Protocol, table::boot::MemoryType, unsafe_guid,
     CStr16, Handle, Status,
 };
-use core::convert::TryFrom;
 use core::{ffi::c_void, mem, slice};
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.

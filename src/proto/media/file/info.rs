@@ -356,7 +356,6 @@ mod tests {
     use crate::alloc_api::vec;
     use crate::table::runtime::{Daylight, Time};
     use crate::CString16;
-    use core::convert::TryFrom;
 
     #[test]
     fn test_file_info() {

@@ -10,7 +10,6 @@
 use crate::proto::Protocol;
 use crate::result::Error;
 use crate::{unsafe_guid, Result, Status};
-use core::convert::TryInto;
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 

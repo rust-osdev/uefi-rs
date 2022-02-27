@@ -1,7 +1,6 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
 #[cfg(feature = "exts")]
 use super::CString16;
-use core::convert::TryInto;
 use core::fmt;
 use core::iter::Iterator;
 use core::result::Result;

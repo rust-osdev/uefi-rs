@@ -3,7 +3,6 @@
 //! UEFI uses both Latin-1 and UCS-2 character encoding, this module implements
 //! support for the associated character types.
 
-use core::convert::{TryFrom, TryInto};
 use core::fmt;
 
 /// Character conversion error

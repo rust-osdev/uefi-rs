@@ -777,10 +777,10 @@ impl BootServices {
         }
 
         status.into_with_val(|| {
-            let protocols = unsafe { slice::from_raw_parts_mut(protocols as *mut &Guid, count) };
             ProtocolsPerHandle {
                 boot_services: self,
-                protocols,
+                protocols: protocols as *mut &Guid,
+                count,
             }
         })
     }
@@ -1421,10 +1421,8 @@ pub struct ProtocolsPerHandle<'a> {
     // `free_pool`, so keep a reference to boot services for that purpose.
     boot_services: &'a BootServices,
 
-    // This is mutable so that it can later be free'd with `free_pool`. Users
-    // should only get an immutable reference though, so the field is not
-    // public.
-    protocols: &'a mut [&'a Guid],
+    protocols: *mut &'a Guid,
+    count: usize,
 }
 
 impl<'a> Drop for ProtocolsPerHandle<'a> {
@@ -1432,14 +1430,16 @@ impl<'a> Drop for ProtocolsPerHandle<'a> {
         // Ignore the result, we can't do anything about an error here.
         let _ = self
             .boot_services
-            .free_pool(self.protocols.as_mut_ptr() as *mut u8);
+            .free_pool(self.protocols as *mut u8);
     }
 }
 
 impl<'a> ProtocolsPerHandle<'a> {
     /// Get the protocol interface [`Guids`][Guid] that are installed on the
     /// [`Handle`].
-    pub fn protocols(&self) -> &[&Guid] {
-        self.protocols
+    pub fn protocols<'b>(&'b self) -> &'b [&'a Guid] {
+        // convert raw pointer to slice here so that we can get
+        // appropriate lifetime of the slice.
+        unsafe { slice::from_raw_parts(self.protocols, self.count) }
     }
 }

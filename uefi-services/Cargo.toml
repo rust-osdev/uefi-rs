@@ -2,7 +2,7 @@
 name = "uefi-services"
 version = "0.11.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Higher-level utilities for uefi-rs"
 repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]

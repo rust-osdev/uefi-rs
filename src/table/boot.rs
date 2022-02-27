@@ -776,12 +776,10 @@ impl BootServices {
             }
         }
 
-        status.into_with_val(|| {
-            ProtocolsPerHandle {
-                boot_services: self,
-                protocols: protocols as *mut &Guid,
-                count,
-            }
+        status.into_with_val(|| ProtocolsPerHandle {
+            boot_services: self,
+            protocols: protocols as *mut &Guid,
+            count,
         })
     }
 
@@ -1428,9 +1426,7 @@ pub struct ProtocolsPerHandle<'a> {
 impl<'a> Drop for ProtocolsPerHandle<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self
-            .boot_services
-            .free_pool(self.protocols as *mut u8);
+        let _ = self.boot_services.free_pool(self.protocols as *mut u8);
     }
 }
 

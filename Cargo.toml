@@ -3,7 +3,7 @@ name = "uefi"
 version = "0.14.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 exclude = [
     ".cargo/**",
     "template/**",

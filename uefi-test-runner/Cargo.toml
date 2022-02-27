@@ -3,7 +3,7 @@ name = "uefi-test-runner"
 version = "0.2.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 uefi = { path = "..", features = ['exts'] }

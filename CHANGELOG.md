@@ -16,6 +16,7 @@
 
 ### Changed
 
+- All packages now use the 2021 edition.
 - `File::open` now takes the filename as `&CStr16` instead of `&str`,
   avoiding an implicit string conversion.
 - `FileInfo::new`, `FileSystemInfo::new`, and

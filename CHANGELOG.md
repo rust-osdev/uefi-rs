@@ -13,6 +13,8 @@
   underlying slice.
 - Added `LoadedImage::load_options_as_bytes` and
   `LoadedImage::load_options_as_cstr16`.
+- Added `Align::offset_up_to_alignment`, `Align::round_up_to_alignment`,
+  and `Align::align_buf`.
 
 ### Changed
 

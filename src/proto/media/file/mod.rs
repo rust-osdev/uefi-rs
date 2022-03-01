@@ -19,10 +19,7 @@ use core::ffi::c_void;
 use core::mem;
 use core::ptr;
 
-pub use self::info::{
-    FileInfo, FileInfoHeader, FileProtocolInfo, FileSystemInfo, FileSystemInfoHeader,
-    FileSystemVolumeLabel, FileSystemVolumeLabelHeader, FromUefi, NamedFileProtocolInfo,
-};
+pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
 pub use self::{dir::Directory, regular::RegularFile};
 
 /// Common interface to `FileHandle`, `RegularFile`, and `Directory`.

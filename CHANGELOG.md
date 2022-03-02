@@ -13,6 +13,8 @@
   underlying slice.
 - Added `LoadedImage::load_options_as_bytes` and
   `LoadedImage::load_options_as_cstr16`.
+- Added `Align::offset_up_to_alignment`, `Align::round_up_to_alignment`,
+  and `Align::align_buf`.
 
 ### Changed
 
@@ -21,7 +23,9 @@
   avoiding an implicit string conversion.
 - `FileInfo::new`, `FileSystemInfo::new`, and
   `FileSystemVolumeLabel::new` now take their `name` parameter as
-  `&CStr16` instead of `&str`, avoiding an implicit string conversion.
+  `&CStr16` instead of `&str`, avoiding an implicit string
+  conversion. Additionally, an unaligned storage buffer is now allowed
+  as long as it is big enough to provide an aligned subslice.
 - `LoadImage::set_load_options` now takes a `u8` pointer instead of
   `Char16`.
 
@@ -36,6 +40,9 @@
 - Removed `LoadedImage::load_options`, use
   `LoadedImage::load_options_as_bytes` or
   `LoadedImage::load_options_as_cstr16` instead.
+- Removed `NamedFileProtocolInfo`, `FileInfoHeader`,
+  `FileSystemInfoHeader`, and `FileSystemVolumeLabelHeader`. Use
+  `FileInfo`, `FileSystemInfo`, and `FileSystemVolumeLabel` instead.
 
 ### Fixed
 
@@ -43,3 +50,8 @@
   `vec_spare_capacity` feature, which has been stabilized.
 - Fixed the header size calculated by `FileInfo::new` and
   `FileSystemInfo::new`.
+- Fixed incorrect alignment of the volume label field in
+  `FileSystemInfo`. This caused the beginning of the string to be
+  truncated and could result in out-of-bounds reads.
+- Fixed size check for file info types so that alignment padding is
+  taken into account. This fixes potential out-of-bounds writes.

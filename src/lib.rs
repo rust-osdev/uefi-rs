@@ -29,6 +29,7 @@
 #![feature(try_trait_v2)]
 #![feature(abi_efiapi)]
 #![feature(negative_impls)]
+#![feature(ptr_metadata)]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]

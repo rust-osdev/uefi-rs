@@ -1,12 +1,40 @@
 use uefi::prelude::*;
-use uefi::proto::media::file::{Directory, File, FileAttribute, FileMode, FileType};
+use uefi::proto::media::file::{
+    Directory, File, FileAttribute, FileMode, FileSystemInfo, FileSystemVolumeLabel, FileType,
+};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::PartitionInfo;
 use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 use uefi::CString16;
 
+/// Test `FileSystemInfo` and `FileSystemVolumeLabel`.
+fn test_file_system_info(directory: &mut Directory) {
+    let mut fs_info_buf = vec![0; 128];
+    let fs_info = directory
+        .get_info::<FileSystemInfo>(&mut fs_info_buf)
+        .unwrap_success();
+    info!("File system info: {:?}", fs_info);
+
+    let mut fs_vol_buf = vec![0; 128];
+    let fs_vol = directory
+        .get_info::<FileSystemVolumeLabel>(&mut fs_vol_buf)
+        .unwrap_success();
+    info!("File system volume label: {:?}", fs_vol);
+
+    // Both types should provide the same volume label.
+    assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
+
+    // If running under qemu we can verify the exact name.
+    if cfg!(feature = "qemu") {
+        assert_eq!(
+            fs_info.volume_label(),
+            CString16::try_from("QEMU VVFAT").unwrap()
+        );
+    }
+}
+
 /// Open and read a test file in the boot directory.
-pub fn test_open_and_read(directory: &mut Directory) {
+fn test_open_and_read(directory: &mut Directory) {
     let test_input_path = CString16::try_from("EFI\\BOOT\\test_input.txt").unwrap();
     match directory.open(&test_input_path, FileMode::Read, FileAttribute::empty()) {
         Ok(file) => {
@@ -65,6 +93,7 @@ pub fn test(image: Handle, bt: &BootServices) {
         }
         directory.reset_entry_readout().unwrap().unwrap();
 
+        test_file_system_info(&mut directory);
         test_open_and_read(&mut directory);
     } else {
         warn!("`SimpleFileSystem` protocol is not available");

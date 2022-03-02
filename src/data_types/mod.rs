@@ -16,7 +16,7 @@ impl Handle {
     /// come from the Multiboot2 information structure or something similar.
     ///
     /// # Example
-    /// ```rust
+    /// ```no_run
     /// use core::ffi::c_void;
     /// use uefi::Handle;
     ///

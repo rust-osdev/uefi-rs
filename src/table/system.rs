@@ -78,7 +78,7 @@ impl<View: SystemTableView> SystemTable<View> {
     /// come from the Multiboot2 information structure or something similar.
     ///
     /// # Example
-    /// ```rust
+    /// ```no_run
     /// use core::ffi::c_void;
     /// use uefi::prelude::{Boot, SystemTable};
     ///

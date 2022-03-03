@@ -154,7 +154,13 @@ pub struct BootServices {
         protocol_buffer: *mut *mut *const Guid,
         protocol_buffer_count: *mut usize,
     ) -> Status,
-    locate_handle_buffer: usize,
+    locate_handle_buffer: unsafe extern "efiapi" fn(
+        search_ty: i32,
+        proto: *const Guid,
+        key: *mut c_void,
+        no_handles: &mut usize,
+        buf: &mut *mut Handle,
+    ) -> Status,
     locate_protocol: extern "efiapi" fn(
         proto: &Guid,
         registration: *mut c_void,
@@ -868,6 +874,26 @@ impl BootServices {
         })
     }
 
+    /// Returns an array of handles that support the requested protocol in a buffer allocated from
+    /// pool.
+    pub fn locate_handle_buffer(&self, search_ty: SearchType) -> Result<HandleBuffer> {
+        let mut num_handles: usize = 0;
+        let mut buffer: *mut Handle = ptr::null_mut();
+
+        // Obtain the needed data from the parameters.
+        let (ty, guid, key) = match search_ty {
+            SearchType::AllHandles => (0, ptr::null(), ptr::null_mut()),
+            SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
+        };
+
+        unsafe { (self.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
+            .into_with_val(|| HandleBuffer {
+                boot_services: self,
+                count: num_handles,
+                buffer,
+            })
+    }
+
     /// Returns a protocol implementation, if present on the system.
     ///
     /// The caveats of `BootServices::handle_protocol()` also apply here.
@@ -1553,5 +1579,31 @@ impl<'a> ProtocolsPerHandle<'a> {
         // convert raw pointer to slice here so that we can get
         // appropriate lifetime of the slice.
         unsafe { slice::from_raw_parts(self.protocols, self.count) }
+    }
+}
+
+/// A buffer that contains an array of [`Handles`][Handle] that support the requested protocol.
+/// Returned by [`BootServices::locate_handle_buffer`].
+pub struct HandleBuffer<'a> {
+    // The pointer returned by `locate_handle_buffer` has to be free'd with
+    // `free_pool`, so keep a reference to boot services for that purpose.
+    boot_services: &'a BootServices,
+    count: usize,
+    buffer: *mut Handle,
+}
+
+impl<'a> Drop for HandleBuffer<'a> {
+    fn drop(&mut self) {
+        // Ignore the result, we can't do anything about an error here.
+        let _ = self.boot_services.free_pool(self.buffer as *mut u8);
+    }
+}
+
+impl<'a> HandleBuffer<'a> {
+    /// Get an array of [`Handles`][Handle] that support the requested protocol.
+    pub fn handles(&self) -> &[Handle] {
+        // convert raw pointer to slice here so that we can get
+        // appropriate lifetime of the slice.
+        unsafe { slice::from_raw_parts(self.buffer, self.count) }
     }
 }

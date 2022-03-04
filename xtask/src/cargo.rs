@@ -82,6 +82,7 @@ pub enum CargoAction {
     Build,
     Clippy,
     Doc { open: bool },
+    Miri,
     Test,
 }
 
@@ -105,6 +106,7 @@ impl Cargo {
         }
 
         let action;
+        let mut sub_action = None;
         let mut extra_args: Vec<&str> = Vec::new();
         let mut tool_args: Vec<&str> = Vec::new();
         match self.action {
@@ -126,11 +128,18 @@ impl Cargo {
                     extra_args.push("--open");
                 }
             }
+            CargoAction::Miri => {
+                action = "miri";
+                sub_action = Some("test");
+            }
             CargoAction::Test => {
                 action = "test";
             }
         };
         cmd.arg(action);
+        if let Some(sub_action) = sub_action {
+            cmd.arg(sub_action);
+        }
 
         if self.release {
             cmd.arg("--release");

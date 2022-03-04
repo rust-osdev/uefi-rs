@@ -12,11 +12,13 @@ use std::process::Command;
 use tempfile::TempDir;
 use util::{command_to_string, run_cmd};
 
+const NIGHTLY: &str = "nightly";
+
 fn build(opt: &BuildOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Build,
         features: Feature::more_code(),
-        nightly: true,
+        toolchain: opt.toolchain.or(NIGHTLY),
         packages: Package::all_except_xtask(),
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -30,7 +32,7 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Clippy,
         features: Feature::more_code(),
-        nightly: true,
+        toolchain: opt.toolchain.or(NIGHTLY),
         packages: Package::all_except_xtask(),
         release: false,
         target: Some(*opt.target),
@@ -42,7 +44,7 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Clippy,
         features: Vec::new(),
-        nightly: false,
+        toolchain: None,
         packages: vec![Package::Xtask],
         release: false,
         target: None,
@@ -56,7 +58,7 @@ fn doc(opt: &DocOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Doc { open: opt.open },
         features: Feature::more_code(),
-        nightly: true,
+        toolchain: opt.toolchain.or(NIGHTLY),
         packages: Package::published(),
         release: false,
         target: None,
@@ -76,7 +78,7 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Build,
         features,
-        nightly: true,
+        toolchain: opt.toolchain.or(NIGHTLY),
         packages: vec![Package::UefiTestRunner],
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -94,7 +96,7 @@ fn run_host_tests() -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Test,
         features: vec![Feature::Exts],
-        nightly: true,
+        toolchain: Some(NIGHTLY.into()),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
         packages: vec![Package::Uefi, Package::UefiMacros, Package::Xtask],

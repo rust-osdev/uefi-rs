@@ -89,7 +89,7 @@ pub enum CargoAction {
 pub struct Cargo {
     pub action: CargoAction,
     pub features: Vec<Feature>,
-    pub nightly: bool,
+    pub toolchain: Option<String>,
     pub packages: Vec<Package>,
     pub release: bool,
     pub target: Option<UefiArch>,
@@ -99,8 +99,9 @@ pub struct Cargo {
 impl Cargo {
     pub fn command(&self) -> Result<Command> {
         let mut cmd = Command::new("cargo");
-        if self.nightly {
-            cmd.arg("+nightly");
+
+        if let Some(toolchain) = &self.toolchain {
+            cmd.arg(&format!("+{}", toolchain));
         }
 
         let action;
@@ -187,7 +188,7 @@ mod tests {
         let cargo = Cargo {
             action: CargoAction::Doc { open: true },
             features: vec![Feature::Alloc],
-            nightly: true,
+            toolchain: Some("nightly".into()),
             packages: vec![Package::Uefi, Package::Xtask],
             release: false,
             target: None,

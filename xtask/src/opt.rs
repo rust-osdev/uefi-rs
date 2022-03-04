@@ -63,6 +63,7 @@ pub enum Action {
     Build(BuildOpt),
     Clippy(ClippyOpt),
     Doc(DocOpt),
+    Miri(MiriOpt),
     Run(QemuOpt),
     Test(TestOpt),
     TestLatestRelease(TestLatestReleaseOpt),
@@ -106,6 +107,13 @@ pub struct DocOpt {
 
     #[clap(flatten)]
     pub warning: WarningOpt,
+}
+
+/// Run unit tests and doctests under Miri.
+#[derive(Debug, Parser)]
+pub struct MiriOpt {
+    #[clap(flatten)]
+    pub toolchain: ToolchainOpt,
 }
 
 /// Build uefi-test-runner and run it in QEMU.

@@ -7,7 +7,7 @@ mod util;
 use anyhow::Result;
 use cargo::{Cargo, CargoAction, Feature, Package};
 use clap::Parser;
-use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
+use opt::{Action, BuildOpt, ClippyOpt, DocOpt, MiriOpt, Opt, QemuOpt};
 use std::process::Command;
 use tempfile::TempDir;
 use util::{command_to_string, run_cmd};
@@ -63,6 +63,20 @@ fn doc(opt: &DocOpt) -> Result<()> {
         release: false,
         target: None,
         warnings_as_errors: opt.warning.warnings_as_errors,
+    };
+    run_cmd(cargo.command()?)
+}
+
+/// Run unit tests and doctests under Miri.
+fn run_miri(opt: &MiriOpt) -> Result<()> {
+    let cargo = Cargo {
+        action: CargoAction::Miri,
+        features: [Feature::Exts].into(),
+        toolchain: opt.toolchain.or(NIGHTLY),
+        packages: [Package::Uefi].into(),
+        release: false,
+        target: None,
+        warnings_as_errors: false,
     };
     run_cmd(cargo.command()?)
 }
@@ -154,6 +168,7 @@ fn main() -> Result<()> {
         Action::Build(build_opt) => build(build_opt),
         Action::Clippy(clippy_opt) => clippy(clippy_opt),
         Action::Doc(doc_opt) => doc(doc_opt),
+        Action::Miri(miri_opt) => run_miri(miri_opt),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(_) => run_host_tests(),
         Action::TestLatestRelease(_) => test_latest_release(),

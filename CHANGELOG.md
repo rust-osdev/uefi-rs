@@ -28,6 +28,7 @@
   as long as it is big enough to provide an aligned subslice.
 - `LoadImage::set_load_options` now takes a `u8` pointer instead of
   `Char16`.
+- The `Error` type is now public.
 
 ### Removed
 

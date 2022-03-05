@@ -17,6 +17,9 @@
   and `Align::align_buf`.
 - Added `BootServices::connect_controller` and
   `BootServices::disconnect_controller`.
+- Added `BootServices::load_image` and `LoadImageSource`. Together these
+  replace `BootServices::load_image_from_buffer` and also allow an image
+  to be loaded via the `SimpleFileSystem` protocol.
 
 ### Changed
 
@@ -46,6 +49,8 @@
 - Removed `NamedFileProtocolInfo`, `FileInfoHeader`,
   `FileSystemInfoHeader`, and `FileSystemVolumeLabelHeader`. Use
   `FileInfo`, `FileSystemInfo`, and `FileSystemVolumeLabel` instead.
+- Removed `BootServices::load_image_from_buffer`. Use
+  `BootServices::load_image` instead.
 
 ### Fixed
 

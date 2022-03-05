@@ -579,22 +579,60 @@ impl BootServices {
         }
     }
 
-    /// Load an EFI image from a buffer.
-    pub fn load_image_from_buffer(
+    /// Load an EFI image into memory and return a [`Handle`] to the image.
+    ///
+    /// There are two ways to load the image: by copying raw image data
+    /// from a source buffer, or by loading the image via the
+    /// [`SimpleFileSystem`] protocol. See [`LoadImageSource`] for more
+    /// details of the `source` parameter.
+    ///
+    /// The `parent_image_handle` is used to initialize the
+    /// `parent_handle` field of the [`LoadedImage`] protocol for the
+    /// image.
+    ///
+    /// If the image is successfully loaded, a [`Handle`] supporting the
+    /// [`LoadedImage`] and `LoadedImageDevicePath` protocols is
+    /// returned. The image can be started with [`start_image`] or
+    /// unloaded with [`unload_image`].
+    ///
+    /// [`start_image`]: BootServices::start_image
+    /// [`unload_image`]: BootServices::unload_image
+    pub fn load_image(
         &self,
         parent_image_handle: Handle,
-        source_buffer: &[u8],
-    ) -> Result<Handle> {
-        let boot_policy = 0;
-        let device_path = ptr::null();
-        let source_size = source_buffer.len();
+        source: LoadImageSource,
+    ) -> uefi::Result<Handle> {
+        let boot_policy;
+        let device_path;
+        let source_buffer;
+        let source_size;
+        match source {
+            LoadImageSource::FromBuffer { buffer, file_path } => {
+                // Boot policy is ignored when loading from source buffer.
+                boot_policy = 0;
+
+                device_path = file_path.map(|p| p as _).unwrap_or(ptr::null());
+                source_buffer = buffer.as_ptr();
+                source_size = buffer.len();
+            }
+            LoadImageSource::FromFilePath {
+                file_path,
+                from_boot_manager,
+            } => {
+                boot_policy = u8::from(from_boot_manager);
+                device_path = file_path;
+                source_buffer = ptr::null();
+                source_size = 0;
+            }
+        };
+
         let mut image_handle = MaybeUninit::uninit();
         unsafe {
             (self.load_image)(
                 boot_policy,
                 parent_image_handle,
                 device_path,
-                source_buffer.as_ptr(),
+                source_buffer,
                 source_size,
                 &mut image_handle,
             )
@@ -1068,6 +1106,37 @@ impl Debug for BootServices {
             .field("create_event_ex", &(self.create_event_ex as *const usize))
             .finish()
     }
+}
+
+/// Used as a parameter of [`BootServices::load_image`] to provide the
+/// image source.
+pub enum LoadImageSource<'a> {
+    /// Load an image from a buffer. The data will copied from the
+    /// buffer, so the input reference doesn't need to remain valid
+    /// after the image is loaded.
+    FromBuffer {
+        /// Raw image data.
+        buffer: &'a [u8],
+
+        /// If set, this path will be added as the file path of the
+        /// loaded image. This is not required to load the image, but
+        /// may be used by the image itself to load other resources
+        /// relative to the image's path.
+        file_path: Option<&'a DevicePath>,
+    },
+
+    /// Load an image via the [`SimpleFileSystem`] protocol. If there is
+    /// no instance of that protocol associated with the path then the
+    /// behavior depends on `from_boot_manager`. If `true`, attempt to
+    /// load via the `LoadFile` protocol. If `false`, attempt to load
+    /// via the `LoadFile2` protocol, then fall back to `LoadFile`.
+    FromFilePath {
+        /// Device path from which to load the image.
+        file_path: &'a DevicePath,
+
+        /// Whether the request originates from the boot manager.
+        from_boot_manager: bool,
+    },
 }
 
 newtype_enum! {

@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## uefi - [Unreleased]
 
 ### Added
 
@@ -23,7 +23,7 @@
 
 ### Changed
 
-- All packages now use the 2021 edition.
+- Updated to the 2021 edition.
 - `File::open` now takes the filename as `&CStr16` instead of `&str`,
   avoiding an implicit string conversion.
 - `FileInfo::new`, `FileSystemInfo::new`, and
@@ -63,3 +63,15 @@
   truncated and could result in out-of-bounds reads.
 - Fixed size check for file info types so that alignment padding is
   taken into account. This fixes potential out-of-bounds writes.
+
+## uefi-macros - [Unreleased]
+
+### Changed
+
+- Updated to the 2021 edition.
+
+## uefi-services - [Unreleased]
+
+### Changed
+
+- Updated to the 2021 edition.

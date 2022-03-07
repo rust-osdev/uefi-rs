@@ -3,7 +3,7 @@ use uefi::proto::rng::Rng;
 use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
 
 pub fn test(image: Handle, bt: &BootServices) {
-    info!("Running loaded image protocol test");
+    info!("Running rng protocol test");
 
     let rng = bt
         .open_protocol::<Rng>(
@@ -14,8 +14,6 @@ pub fn test(image: Handle, bt: &BootServices) {
             },
             OpenProtocolAttributes::Exclusive,
         )
-        .expect_success("Failed to open LoadedImage protocol");
+        .expect_success("Failed to open Rng protocol");
     let _rng = unsafe { &*rng.interface.get() };
-
-    info!("Rng loaded !");
 }

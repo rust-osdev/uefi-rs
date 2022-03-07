@@ -82,6 +82,7 @@ pub enum CargoAction {
     Build,
     Clippy,
     Doc { open: bool },
+    Miri,
     Test,
 }
 
@@ -89,7 +90,7 @@ pub enum CargoAction {
 pub struct Cargo {
     pub action: CargoAction,
     pub features: Vec<Feature>,
-    pub nightly: bool,
+    pub toolchain: Option<String>,
     pub packages: Vec<Package>,
     pub release: bool,
     pub target: Option<UefiArch>,
@@ -99,11 +100,13 @@ pub struct Cargo {
 impl Cargo {
     pub fn command(&self) -> Result<Command> {
         let mut cmd = Command::new("cargo");
-        if self.nightly {
-            cmd.arg("+nightly");
+
+        if let Some(toolchain) = &self.toolchain {
+            cmd.arg(&format!("+{}", toolchain));
         }
 
         let action;
+        let mut sub_action = None;
         let mut extra_args: Vec<&str> = Vec::new();
         let mut tool_args: Vec<&str> = Vec::new();
         match self.action {
@@ -125,11 +128,18 @@ impl Cargo {
                     extra_args.push("--open");
                 }
             }
+            CargoAction::Miri => {
+                action = "miri";
+                sub_action = Some("test");
+            }
             CargoAction::Test => {
                 action = "test";
             }
         };
         cmd.arg(action);
+        if let Some(sub_action) = sub_action {
+            cmd.arg(sub_action);
+        }
 
         if self.release {
             cmd.arg("--release");
@@ -187,7 +197,7 @@ mod tests {
         let cargo = Cargo {
             action: CargoAction::Doc { open: true },
             features: vec![Feature::Alloc],
-            nightly: true,
+            toolchain: Some("nightly".into()),
             packages: vec![Package::Uefi, Package::Xtask],
             release: false,
             target: None,

@@ -157,6 +157,23 @@ jobs:
       - name: Run cargo doc
         run: cargo xtask doc --warnings-as-errors
 
+  miri:
+    name: Run unit tests and doctests under Miri
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install latest nightly toolchain that includes Miri
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: miri
+
+      - name: Run miri
+        run: cargo xtask miri
+
   # This job tests that the template app builds successfully with the
   # released versions of the libraries on crates.io.
   #

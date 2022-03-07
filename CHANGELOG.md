@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## uefi - [Unreleased]
 
 ### Added
 
@@ -15,10 +15,15 @@
   `LoadedImage::load_options_as_cstr16`.
 - Added `Align::offset_up_to_alignment`, `Align::round_up_to_alignment`,
   and `Align::align_buf`.
+- Added `BootServices::connect_controller` and
+  `BootServices::disconnect_controller`.
+- Added `BootServices::load_image` and `LoadImageSource`. Together these
+  replace `BootServices::load_image_from_buffer` and also allow an image
+  to be loaded via the `SimpleFileSystem` protocol.
 
 ### Changed
 
-- All packages now use the 2021 edition.
+- Updated to the 2021 edition.
 - `File::open` now takes the filename as `&CStr16` instead of `&str`,
   avoiding an implicit string conversion.
 - `FileInfo::new`, `FileSystemInfo::new`, and
@@ -28,6 +33,7 @@
   as long as it is big enough to provide an aligned subslice.
 - `LoadImage::set_load_options` now takes a `u8` pointer instead of
   `Char16`.
+- The `Error` type is now public.
 
 ### Removed
 
@@ -43,6 +49,8 @@
 - Removed `NamedFileProtocolInfo`, `FileInfoHeader`,
   `FileSystemInfoHeader`, and `FileSystemVolumeLabelHeader`. Use
   `FileInfo`, `FileSystemInfo`, and `FileSystemVolumeLabel` instead.
+- Removed `BootServices::load_image_from_buffer`. Use
+  `BootServices::load_image` instead.
 
 ### Fixed
 
@@ -55,3 +63,15 @@
   truncated and could result in out-of-bounds reads.
 - Fixed size check for file info types so that alignment padding is
   taken into account. This fixes potential out-of-bounds writes.
+
+## uefi-macros - [Unreleased]
+
+### Changed
+
+- Updated to the 2021 edition.
+
+## uefi-services - [Unreleased]
+
+### Changed
+
+- Updated to the 2021 edition.

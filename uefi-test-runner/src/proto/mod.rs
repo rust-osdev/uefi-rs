@@ -17,6 +17,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     loaded_image::test(image, bt);
     media::test(image, bt);
     pi::test(bt);
+    rng::test(image, bt);
 
     #[cfg(any(
         target_arch = "i386",
@@ -67,3 +68,4 @@ mod pi;
     target_arch = "aarch64"
 ))]
 mod shim;
+mod rng;

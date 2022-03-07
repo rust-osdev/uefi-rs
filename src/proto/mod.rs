@@ -35,3 +35,4 @@ pub mod loaded_image;
 pub mod media;
 pub mod pi;
 pub mod shim;
+pub mod rng;

@@ -61,6 +61,7 @@ mod device_path;
 mod loaded_image;
 mod media;
 mod pi;
+mod rng;
 #[cfg(any(
     target_arch = "i386",
     target_arch = "x86_64",
@@ -68,4 +69,3 @@ mod pi;
     target_arch = "aarch64"
 ))]
 mod shim;
-mod rng;

@@ -5,10 +5,16 @@ use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running rng protocol test");
 
+    let handle = *bt
+        .find_handles::<Rng>()
+        .expect_success("Failed to get Rng handles")
+        .first()
+        .expect("No Rng handles");
+
     let rng = bt
         .open_protocol::<Rng>(
             OpenProtocolParams {
-                handle: image,
+                handle,
                 agent: image,
                 controller: None,
             },

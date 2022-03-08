@@ -1,6 +1,9 @@
+use core::mem;
+use core::mem::size_of_val;
 use uefi::prelude::*;
-use uefi::proto::rng::Rng;
+use uefi::proto::rng::{Rng, RngAlgorithm};
 use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::Guid;
 
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running rng protocol test");
@@ -21,5 +24,18 @@ pub fn test(image: Handle, bt: &BootServices) {
             OpenProtocolAttributes::Exclusive,
         )
         .expect_success("Failed to open Rng protocol");
-    let _rng = unsafe { &*rng.interface.get() };
+    let rng = unsafe { &mut *rng.interface.get() };
+
+    let mut list = [RngAlgorithm::default(); 4];
+
+    match rng.get_info(&mut list) {
+        Ok(nb) => {
+            for i in 0..nb.unwrap() {
+                info!("OK {} : {}", nb.unwrap(), list[i].0)
+            }
+        }
+        Err(e) => {
+            error!("ERROR : {:#?}", e.status())
+        }
+    }
 }

@@ -1,10 +1,18 @@
 //! `Rng` protocol.
 
-use crate::{data_types::Guid, proto::Protocol, unsafe_guid, Status};
+use crate::{data_types::Guid, proto::Protocol, unsafe_guid, Result, Status};
+use core::slice::SliceIndex;
 
 /// Contain a Rng algorithm Guid
 #[repr(C)]
-struct RngAlgorithm(Guid);
+#[derive(Clone, Copy, Debug)]
+pub struct RngAlgorithm(pub Guid);
+
+impl RngAlgorithm {
+    pub fn default() -> Self {
+        Self(Guid::default())
+    }
+}
 
 /// Rng protocol
 #[repr(C)]
@@ -24,9 +32,13 @@ pub struct Rng {
     ) -> Status,
 }
 
-/*impl Rng {
-    fn get_info(&mut self) -> Result<[RngAlgorithm]> {
-        let mut algorithm_list_size: usize;
-        let mut algorithm_list: []
+impl Rng {
+    pub fn get_info(&mut self, algorithm_list: &mut [RngAlgorithm]) -> Result<usize> {
+        let mut algorithm_list_size = (algorithm_list.len() * 16) as *mut usize;
+
+        (self.get_info)(self, algorithm_list_size, algorithm_list.as_mut_ptr())
+            .into_with_val(|| algorithm_list_size as usize / 16)
+
+        // TODO: Add AlgorithmType Enum for better visibility on algorithms
     }
-}*/
+}

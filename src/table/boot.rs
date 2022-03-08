@@ -157,7 +157,7 @@ pub struct BootServices {
     locate_handle_buffer: unsafe extern "efiapi" fn(
         search_ty: i32,
         proto: *const Guid,
-        key: *mut c_void,
+        key: *const c_void,
         no_handles: &mut usize,
         buf: &mut *mut Handle,
     ) -> Status,

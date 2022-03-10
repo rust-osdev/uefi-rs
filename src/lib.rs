@@ -23,9 +23,6 @@
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
 
-#![cfg_attr(feature = "exts", feature(allocator_api, alloc_layout_extra))]
-#![feature(auto_traits)]
-#![feature(control_flow_enum)]
 #![feature(try_trait_v2)]
 #![feature(abi_efiapi)]
 #![feature(negative_impls)]

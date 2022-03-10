@@ -1,9 +1,6 @@
-use core::mem;
-use core::mem::size_of_val;
 use uefi::prelude::*;
 use uefi::proto::rng::{Rng, RngAlgorithm};
 use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
-use uefi::Guid;
 
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running rng protocol test");
@@ -28,14 +25,11 @@ pub fn test(image: Handle, bt: &BootServices) {
 
     let mut list = [RngAlgorithm::default(); 4];
 
-    match rng.get_info(&mut list) {
-        Ok(nb) => {
-            for i in 0..nb.unwrap() {
-                info!("OK {} : {}", nb.unwrap(), list[i].0)
-            }
-        }
-        Err(e) => {
-            error!("ERROR : {:#?}", e.status())
-        }
-    }
+    rng.get_info(&mut list).unwrap_success();
+
+    let mut buf = [0u8; 4];
+
+    rng.get_rng(Some(list[0]), &mut buf).unwrap_success();
+
+    assert_ne!([0u8; 4], buf);
 }

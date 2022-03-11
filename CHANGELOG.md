@@ -20,6 +20,7 @@
 - Added `BootServices::load_image` and `LoadImageSource`. Together these
   replace `BootServices::load_image_from_buffer` and also allow an image
   to be loaded via the `SimpleFileSystem` protocol.
+- Added `Rng` protocol.
 
 ### Changed
 

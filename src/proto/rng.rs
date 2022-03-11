@@ -1,7 +1,7 @@
 //! `Rng` protocol.
 
 use crate::{data_types::Guid, proto::Protocol, unsafe_guid, Result, Status};
-use core::ptr;
+use core::{mem, ptr};
 
 /// Contain a Rng algorithm Guid
 #[repr(C)]
@@ -22,12 +22,12 @@ impl RngAlgorithm {
 #[unsafe_guid("3152bca5-eade-433d-862e-c01cdc291f44")]
 #[derive(Protocol)]
 pub struct Rng {
-    get_info: extern "efiapi" fn(
+    get_info: unsafe extern "efiapi" fn(
         this: &Rng,
         algorithm_list_size: *mut usize,
         algorithm_list: *mut RngAlgorithm,
     ) -> Status,
-    get_rng: extern "efiapi" fn(
+    get_rng: unsafe extern "efiapi" fn(
         this: &Rng,
         algorithm: *const RngAlgorithm,
         value_length: usize,
@@ -37,13 +37,27 @@ pub struct Rng {
 
 impl Rng {
     /// Returns information about the random number generation implementation.
-    pub fn get_info(&mut self, algorithm_list: &mut [RngAlgorithm]) -> Result<usize> {
-        let algorithm_list_size = (algorithm_list.len() * 16) as *mut usize;
+    pub fn get_info<'buf>(
+        &mut self,
+        algorithm_list: &'buf mut [RngAlgorithm],
+    ) -> Result<&'buf [RngAlgorithm], Option<usize>> {
+        let mut algorithm_list_size = algorithm_list.len() * mem::size_of::<RngAlgorithm>();
 
-        (self.get_info)(self, algorithm_list_size, algorithm_list.as_mut_ptr())
-            .into_with_val(|| algorithm_list_size as usize / 16)
-
-        // TODO: Add AlgorithmType Enum for better visibility on algorithms
+        unsafe {
+            (self.get_info)(self, &mut algorithm_list_size, algorithm_list.as_mut_ptr()).into_with(
+                || {
+                    let len = algorithm_list_size / mem::size_of::<RngAlgorithm>();
+                    &algorithm_list[..len]
+                },
+                |status| {
+                    if status == Status::BUFFER_TOO_SMALL {
+                        Some(algorithm_list_size)
+                    } else {
+                        None
+                    }
+                },
+            )
+        }
     }
 
     /// Returns the next set of random numbers
@@ -55,6 +69,6 @@ impl Rng {
             Some(algo) => &algo as *const RngAlgorithm,
         };
 
-        (self.get_rng)(self, algo, buffer_length, buffer.as_mut_ptr()).into()
+        unsafe { (self.get_rng)(self, algo, buffer_length, buffer.as_mut_ptr()).into() }
     }
 }

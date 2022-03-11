@@ -25,7 +25,7 @@ pub fn test(image: Handle, bt: &BootServices) {
 
     let mut list = [RngAlgorithmType::EMPTY_ALGORITHM; 4];
 
-    rng.get_info(&mut list).unwrap_success();
+    let list = rng.get_info(&mut list).unwrap_success();
     info!("Supported rng algorithms : {:?}", list);
 
     let mut buf = [0u8; 4];

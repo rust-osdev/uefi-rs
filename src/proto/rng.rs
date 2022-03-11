@@ -37,14 +37,6 @@ pub struct Rng {
 
 impl Rng {
     /// Returns information about the random number generation implementation.
-    ///
-    /// Exemple :
-    /// ```
-    /// use uefi::proto::rng::RngAlgorithm;
-    ///
-    /// let mut buffer = [RngAlgorithm::default(); 4];
-    /// rng.get_info().unwrap_success();
-    /// ```
     pub fn get_info(&mut self, algorithm_list: &mut [RngAlgorithm]) -> Result<usize> {
         let algorithm_list_size = (algorithm_list.len() * 16) as *mut usize;
 

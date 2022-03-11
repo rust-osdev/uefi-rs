@@ -34,4 +34,5 @@ pub mod device_path;
 pub mod loaded_image;
 pub mod media;
 pub mod pi;
+pub mod rng;
 pub mod shim;

@@ -277,6 +277,8 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // QEMU by defaults enables a ton of devices which slow down boot.
     cmd.arg("-nodefaults");
 
+    cmd.args(&["-device", "virtio-rng-pci"]);
+
     match arch {
         UefiArch::AArch64 => {
             // Use a generic ARM environment. Sadly qemu can't emulate a

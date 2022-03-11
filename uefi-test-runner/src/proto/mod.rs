@@ -17,6 +17,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     loaded_image::test(image, bt);
     media::test(image, bt);
     pi::test(bt);
+    rng::test(image, bt);
 
     #[cfg(any(
         target_arch = "i386",
@@ -60,6 +61,7 @@ mod device_path;
 mod loaded_image;
 mod media;
 mod pi;
+mod rng;
 #[cfg(any(
     target_arch = "i386",
     target_arch = "x86_64",

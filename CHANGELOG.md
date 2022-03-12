@@ -21,6 +21,7 @@
   replace `BootServices::load_image_from_buffer` and also allow an image
   to be loaded via the `SimpleFileSystem` protocol.
 - Added `Rng` protocol.
+- Added `GptPartitionAttributes` struct and associated constants.
 
 ### Changed
 
@@ -35,6 +36,8 @@
 - `LoadImage::set_load_options` now takes a `u8` pointer instead of
   `Char16`.
 - The `Error` type is now public.
+- The type of `GptPartitionEntry.attributes` is now
+  `GptPartitionAttributes`.
 
 ### Removed
 

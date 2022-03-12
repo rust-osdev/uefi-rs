@@ -2,6 +2,7 @@
 
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Char16, Guid};
+use bitflags::bitflags;
 
 newtype_enum! {
     /// MBR OS type.
@@ -82,6 +83,46 @@ newtype_enum! {
     }
 }
 
+bitflags! {
+    /// Attributes describing a GPT partition.
+    ///
+    /// * Bit 0: [`REQUIRED_PARTITION`][Self::REQUIRED_PARTITION]
+    /// * Bit 1: [`NO_BLOCK_IO_PROTOCOL`][Self::NO_BLOCK_IO_PROTOCOL]
+    /// * Bit 2: [`LEGACY_BIOS_BOOTABLE`][Self::LEGACY_BIOS_BOOTABLE]
+    /// * Bits `3..=47`: reserved for future use and must be zero.
+    /// * Bits `48..=63`: See
+    /// [`type_specific_bits`][Self::type_specific_bits] and
+    /// [`RESERVED_FOR_PARTITION_TYPE`][Self::RESERVED_FOR_PARTITION_TYPE].
+    #[derive(Default)]
+    #[repr(transparent)]
+    pub struct GptPartitionAttributes: u64 {
+        /// Partition is required for the platform to function.
+        const REQUIRED_PARTITION = 1 << 0;
+
+        /// No [`BlockIO`] protocol will be created for this partition.
+        ///
+        /// [`BlockIO`]: uefi::proto::media::block::BlockIO
+        const NO_BLOCK_IO_PROTOCOL = 1 << 1;
+
+        /// Indicates that special software on a legacy BIOS system may
+        /// treat this partition as bootable. UEFI boot managers must
+        /// ignore the partition.
+        const LEGACY_BIOS_BOOTABLE = 1 << 2;
+
+        /// Mask for bits `48..=63`. The meaning of these bits depends
+        /// on the partition type.
+        const RESERVED_FOR_PARTITION_TYPE = 0xffff_0000_0000_0000;
+    }
+}
+
+impl GptPartitionAttributes {
+    /// Get bits `48..=63` as a [`u16`]. The meaning of these bits depends
+    /// on the partition's type (see [`GptPartitionEntry::partition_type_guid`]).
+    pub fn type_specific_bits(&self) -> u16 {
+        (self.bits >> 48) as u16
+    }
+}
+
 /// GPT/EFI Partition Entry.
 #[repr(C)]
 #[repr(packed)]
@@ -101,7 +142,7 @@ pub struct GptPartitionEntry {
     pub ending_lba: u64,
 
     /// All attribute bits of the partition.
-    pub attributes: u64,
+    pub attributes: GptPartitionAttributes,
 
     /// Null-terminated string containing a human-readable name of the
     /// partition.
@@ -195,5 +236,16 @@ impl PartitionInfo {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_partition_attributes() {
+        let attr = GptPartitionAttributes::from_bits(0xabcd_0000_0000_0007).unwrap();
+        assert_eq!(attr.type_specific_bits(), 0xabcd);
     }
 }

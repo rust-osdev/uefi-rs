@@ -1,4 +1,5 @@
 use crate::arch::UefiArch;
+use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
 use crate::opt::QemuOpt;
 use crate::util::command_to_string;
 use anyhow::{bail, Context, Result};
@@ -344,6 +345,14 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let tmp_dir = TempDir::new()?;
     let tmp_dir = tmp_dir.path();
 
+    let test_disk = tmp_dir.join("test_disk.fat.img");
+    create_mbr_test_disk(&test_disk)?;
+
+    cmd.arg("-drive");
+    let mut drive_arg = OsString::from("format=raw,file=");
+    drive_arg.push(test_disk.clone());
+    cmd.arg(drive_arg);
+
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
     let serial_pipe = Pipe::new(tmp_dir, "serial")?;
 
@@ -404,6 +413,8 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             successful_exit_code
         );
     }
+
+    check_mbr_test_disk(&test_disk)?;
 
     Ok(())
 }

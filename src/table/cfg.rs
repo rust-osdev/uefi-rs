@@ -7,8 +7,6 @@
 //! This module contains the actual entries of the configuration table,
 //! as well as GUIDs for many known vendor tables.
 
-#![allow(clippy::unreadable_literal)]
-
 use crate::Guid;
 use bitflags::bitflags;
 use core::ffi::c_void;

@@ -68,7 +68,6 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
     result.append_all(quote! {
         unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
             #[doc(hidden)]
-            #[allow(clippy::unreadable_literal)]
             const GUID: ::uefi::Guid = ::uefi::Guid::from_values(
                 #time_low,
                 #time_mid,

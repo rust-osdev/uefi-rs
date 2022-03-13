@@ -76,7 +76,6 @@ pub struct GraphicsOutput<'boot> {
     ) -> Status,
     set_mode: extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
-    #[allow(clippy::type_complexity)]
     blt: unsafe extern "efiapi" fn(
         this: &mut GraphicsOutput,
         buffer: *mut BltPixel,

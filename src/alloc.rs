@@ -51,7 +51,6 @@ pub fn exit_boot_services() {
 /// Only valid for as long as the UEFI boot services are available.
 pub struct Allocator;
 
-#[allow(clippy::cast_ptr_alignment)]
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mem_ty = MemoryType::LOADER_DATA;

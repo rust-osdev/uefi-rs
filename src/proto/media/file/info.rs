@@ -265,7 +265,6 @@ impl FileSystemInfo {
     /// The buffer must be correctly aligned. You can query the required
     /// alignment using the `alignment()` method of the `Align` trait that this
     /// struct implements.
-    #[allow(clippy::too_many_arguments)]
     pub fn new<'buf>(
         storage: &'buf mut [u8],
         read_only: bool,

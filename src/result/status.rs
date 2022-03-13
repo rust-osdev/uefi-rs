@@ -128,7 +128,6 @@ impl Status {
 
     /// Converts this status code into a result with a given value.
     #[inline]
-    #[allow(clippy::result_unit_err)]
     pub fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if self.is_success() {
             Ok(val())

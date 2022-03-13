@@ -1,11 +1,10 @@
+mod known_disk;
+
 use uefi::prelude::*;
-use uefi::proto::media::file::{
-    Directory, File, FileAttribute, FileMode, FileSystemInfo, FileSystemVolumeLabel, FileType,
-};
+use uefi::proto::media::file::{Directory, File, FileSystemInfo, FileSystemVolumeLabel};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::PartitionInfo;
 use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
-use uefi::CString16;
 
 /// Test `FileSystemInfo` and `FileSystemVolumeLabel`.
 fn test_file_system_info(directory: &mut Directory) {
@@ -23,45 +22,6 @@ fn test_file_system_info(directory: &mut Directory) {
 
     // Both types should provide the same volume label.
     assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
-
-    // If running under qemu we can verify the exact name.
-    if cfg!(feature = "qemu") {
-        assert_eq!(
-            fs_info.volume_label(),
-            CString16::try_from("QEMU VVFAT").unwrap()
-        );
-    }
-}
-
-/// Open and read a test file in the boot directory.
-fn test_open_and_read(directory: &mut Directory) {
-    let test_input_path = CString16::try_from("EFI\\BOOT\\test_input.txt").unwrap();
-    match directory.open(&test_input_path, FileMode::Read, FileAttribute::empty()) {
-        Ok(file) => {
-            let file = file.into_type().unwrap();
-            if let FileType::Regular(mut file) = file {
-                let mut buffer = vec![0; 128];
-                let size = file
-                    .read(&mut buffer)
-                    .unwrap_or_else(|_| panic!("failed to read {}", test_input_path));
-                let buffer = &buffer[..size];
-                info!("Successfully read {}", test_input_path);
-                assert_eq!(buffer, b"test input data");
-            } else {
-                panic!("{} is not a regular file", test_input_path);
-            }
-        }
-        Err(err) => {
-            let msg = format!("Failed to open {}: {:?}", test_input_path, err);
-            // The file might reasonably not be present when running on real
-            // hardware, so only panic on failure under qemu.
-            if cfg!(feature = "qemu") {
-                panic!("{}", msg);
-            } else {
-                warn!("{}", msg);
-            }
-        }
-    }
 }
 
 pub fn test(image: Handle, bt: &BootServices) {
@@ -93,7 +53,6 @@ pub fn test(image: Handle, bt: &BootServices) {
         directory.reset_entry_readout().unwrap();
 
         test_file_system_info(&mut directory);
-        test_open_and_read(&mut directory);
     } else {
         warn!("`SimpleFileSystem` protocol is not available");
     }
@@ -123,4 +82,6 @@ pub fn test(image: Handle, bt: &BootServices) {
             info!("Unknown partition");
         }
     }
+
+    known_disk::test_known_disk(image, bt);
 }

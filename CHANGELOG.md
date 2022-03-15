@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.15.2
+
 ### Added
 
 - Added `PartialEq` impls for `CStr16 == CStr16`, `&CStr16 == CString`,
@@ -81,13 +87,13 @@
 - Fixed size check for file info types so that alignment padding is
   taken into account. This fixes potential out-of-bounds writes.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.6.1
 
 ### Changed
 
 - Updated to the 2021 edition.
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.12.1
 
 ### Changed
 

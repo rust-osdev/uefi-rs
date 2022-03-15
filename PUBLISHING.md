@@ -67,3 +67,8 @@ cargo publish --target x86_64-unknown-uefi
 
 [cargo-publishing-reference]: https://doc.rust-lang.org/cargo/reference/publishing.html
 
+## Updating the changelog
+
+After bumping the crate versions, we should also update the [`CHANGELOG.md`](CHANGELOG.md) file
+in order to move all of the unpublished changes to their respective version, and prepare it for
+tracking further changes.

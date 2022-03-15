@@ -130,7 +130,7 @@ impl Status {
     #[inline]
     #[allow(clippy::result_unit_err)]
     pub fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
-        if !self.is_error() {
+        if self.is_success() {
             Ok(val())
         } else {
             Err(self.into())
@@ -143,7 +143,7 @@ impl Status {
         self,
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<(), ErrData> {
-        if !self.is_error() {
+        if self.is_success() {
             Ok(())
         } else {
             Err(Error::new(self, err(self)))
@@ -157,7 +157,7 @@ impl Status {
         val: impl FnOnce() -> T,
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<T, ErrData> {
-        if !self.is_error() {
+        if self.is_success() {
             Ok(val())
         } else {
             Err(Error::new(self, err(self)))
@@ -221,5 +221,53 @@ impl From<ucs2::Error> for Status {
             Error::BufferOverflow => Status::BUFFER_TOO_SMALL,
             Error::MultiByte => Status::UNSUPPORTED,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_status_to_result() {
+        assert!(Result::from(Status::SUCCESS).is_ok());
+        assert!(Result::from(Status::WARN_DELETE_FAILURE).is_err());
+        assert!(Result::from(Status::BUFFER_TOO_SMALL).is_err());
+
+        assert_eq!(Status::SUCCESS.into_with_val(|| 123).unwrap(), 123);
+        assert!(Status::WARN_DELETE_FAILURE.into_with_val(|| 123).is_err());
+        assert!(Status::BUFFER_TOO_SMALL.into_with_val(|| 123).is_err());
+
+        assert!(Status::SUCCESS.into_with_err(|_| 123).is_ok());
+        assert_eq!(
+            *Status::WARN_DELETE_FAILURE
+                .into_with_err(|_| 123)
+                .unwrap_err()
+                .data(),
+            123
+        );
+        assert_eq!(
+            *Status::BUFFER_TOO_SMALL
+                .into_with_err(|_| 123)
+                .unwrap_err()
+                .data(),
+            123
+        );
+
+        assert_eq!(Status::SUCCESS.into_with(|| 123, |_| 456).unwrap(), 123);
+        assert_eq!(
+            *Status::WARN_DELETE_FAILURE
+                .into_with(|| 123, |_| 456)
+                .unwrap_err()
+                .data(),
+            456
+        );
+        assert_eq!(
+            *Status::BUFFER_TOO_SMALL
+                .into_with(|| 123, |_| 456)
+                .unwrap_err()
+                .data(),
+            456
+        );
     }
 }

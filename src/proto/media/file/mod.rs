@@ -238,6 +238,26 @@ impl FileHandle {
             s => Err(s.into()),
         }
     }
+
+    /// If the handle represents a directory, convert it into a
+    /// [`Directory`]. Otherwise returns `None`.
+    pub fn into_directory(self) -> Option<Directory> {
+        if let Ok(FileType::Dir(dir)) = self.into_type() {
+            Some(dir)
+        } else {
+            None
+        }
+    }
+
+    /// If the handle represents a regular file, convert it into a
+    /// [`RegularFile`]. Otherwise returns `None`.
+    pub fn into_regular_file(self) -> Option<RegularFile> {
+        if let Ok(FileType::Regular(regular)) = self.into_type() {
+            Some(regular)
+        } else {
+            None
+        }
+    }
 }
 
 impl File for FileHandle {

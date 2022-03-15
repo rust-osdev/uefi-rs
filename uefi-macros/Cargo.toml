@@ -1,6 +1,6 @@
 [package]
 name = "uefi-macros"
-version = "0.5.0"
+version = "0.6.1"
 authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
 readme = "README.md"
 edition = "2021"
@@ -19,10 +19,10 @@ is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.33"
-quote = "1.0.10"
-syn = { version = "1.0.82", features = ["full"] }
+proc-macro2 = "1.0.36"
+quote = "1.0.15"
+syn = { version = "1.0.88", features = ["full"] }
 
 [dev-dependencies]
-trybuild = "1.0.53"
-uefi = { version = "0.14.0", default-features = false }
+trybuild = "1.0.56"
+uefi = { version = "0.15.0", default-features = false }

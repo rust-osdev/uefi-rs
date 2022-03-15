@@ -2,6 +2,10 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- Added `FileHandle::into_directory` and `FileHandle::into_regular_file`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

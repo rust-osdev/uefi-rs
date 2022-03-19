@@ -375,6 +375,7 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 mod tests {
     use super::*;
     use crate::alloc_api::vec;
+    use crate::table::runtime::TimeParams;
     use crate::table::runtime::{Daylight, Time};
     use crate::CString16;
 
@@ -394,9 +395,20 @@ mod tests {
 
         let file_size = 123;
         let physical_size = 456;
-        let create_time = Time::new(1970, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
-        let last_access_time = Time::new(1971, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
-        let modification_time = Time::new(1972, 1, 1, 0, 0, 0, 0, 0, Daylight::IN_DAYLIGHT);
+        let tp = TimeParams {
+            year: 1970,
+            month: 1,
+            day: 1,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            nanosecond: 0,
+            time_zone: None,
+            daylight: Daylight::IN_DAYLIGHT,
+        };
+        let create_time = Time::new(tp).unwrap();
+        let last_access_time = Time::new(TimeParams { year: 1971, ..tp }).unwrap();
+        let modification_time = Time::new(TimeParams { year: 1972, ..tp }).unwrap();
         let attribute = FileAttribute::READ_ONLY;
         let name = CString16::try_from("test_name").unwrap();
         let info = FileInfo::new(

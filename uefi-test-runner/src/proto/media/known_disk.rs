@@ -5,7 +5,7 @@ use uefi::proto::media::file::{
 };
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
-use uefi::table::runtime::{Daylight, Time};
+use uefi::table::runtime::{Daylight, Time, TimeParams};
 use uefi::CString16;
 
 /// Test directory entry iteration.
@@ -78,17 +78,37 @@ fn test_existing_file(directory: &mut Directory) {
     let info = file.get_info::<FileInfo>(&mut info_buffer).unwrap();
     assert_eq!(info.file_size(), 15);
     assert_eq!(info.physical_size(), 512);
-    assert_eq!(
-        *info.create_time(),
-        Time::new(2000, 1, 24, 0, 0, 0, 0, 2047, Daylight::empty())
-    );
+    let tp = TimeParams {
+        year: 2000,
+        month: 1,
+        day: 24,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        nanosecond: 0,
+        time_zone: None,
+        daylight: Daylight::empty(),
+    };
+    assert_eq!(*info.create_time(), Time::new(tp).unwrap());
     assert_eq!(
         *info.last_access_time(),
-        Time::new(2001, 2, 25, 0, 0, 0, 0, 2047, Daylight::empty())
+        Time::new(TimeParams {
+            year: 2001,
+            month: 2,
+            day: 25,
+            ..tp
+        })
+        .unwrap()
     );
     assert_eq!(
         *info.modification_time(),
-        Time::new(2002, 3, 26, 0, 0, 0, 0, 2047, Daylight::empty())
+        Time::new(TimeParams {
+            year: 2002,
+            month: 3,
+            day: 26,
+            ..tp
+        })
+        .unwrap()
     );
     assert_eq!(info.attribute(), FileAttribute::empty());
     assert_eq!(

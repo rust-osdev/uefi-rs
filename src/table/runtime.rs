@@ -263,7 +263,7 @@ impl Debug for RuntimeServices {
     }
 }
 
-/// The current time information
+/// Date and time representation.
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct Time {
@@ -280,92 +280,151 @@ pub struct Time {
     _pad2: u8,
 }
 
+/// Input parameters for [`Time::new`].
+#[derive(Copy, Clone)]
+pub struct TimeParams {
+    /// Year in the range `1900..=9999`.
+    pub year: u16,
+
+    /// Month in the range `1..=12`.
+    pub month: u8,
+
+    /// Day in the range `1..=31`.
+    pub day: u8,
+
+    /// Hour in the range `0.=23`.
+    pub hour: u8,
+
+    /// Minute in the range `0..=59`.
+    pub minute: u8,
+
+    /// Second in the range `0..=59`.
+    pub second: u8,
+
+    /// Fraction of a second represented as nanoseconds in the range
+    /// `0..=999_999_999`.
+    pub nanosecond: u32,
+
+    /// Offset in minutes from UTC in the range `-1440..=1440`, or
+    /// local time if `None`.
+    pub time_zone: Option<i16>,
+
+    /// Daylight savings time information.
+    pub daylight: Daylight,
+}
+
 bitflags! {
-    /// Flags describing the capabilities of a memory range.
+    /// A bitmask containing daylight savings time information.
     pub struct Daylight: u8 {
-        /// Time is affected by daylight savings time
+        /// Time is affected by daylight savings time.
         const ADJUST_DAYLIGHT = 0x01;
-        /// Time has been adjusted for daylight savings time
+        /// Time has been adjusted for daylight savings time.
         const IN_DAYLIGHT = 0x02;
     }
 }
+
+/// Error returned by [`Time`] methods if the input is outside the valid range.
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+pub struct TimeError;
 
 impl Time {
     /// Unspecified Timezone/local time.
     const UNSPECIFIED_TIMEZONE: i16 = 0x07ff;
 
-    /// Build an UEFI time struct
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        year: u16,
-        month: u8,
-        day: u8,
-        hour: u8,
-        minute: u8,
-        second: u8,
-        nanosecond: u32,
-        time_zone: i16,
-        daylight: Daylight,
-    ) -> Self {
-        assert!((1900..=9999).contains(&year));
-        assert!((1..=12).contains(&month));
-        assert!((1..=31).contains(&day));
-        assert!(hour <= 23);
-        assert!(minute <= 59);
-        assert!(second <= 59);
-        assert!(nanosecond <= 999_999_999);
-        assert!((time_zone >= -1440 && time_zone <= 1440) || time_zone == 2047);
-        Self {
-            year,
-            month,
-            day,
-            hour,
-            minute,
-            second,
+    /// Create a `Time` value. If a field is not in the valid range,
+    /// [`TimeError`] is returned.
+    pub fn new(params: TimeParams) -> core::result::Result<Self, TimeError> {
+        let time = Self {
+            year: params.year,
+            month: params.month,
+            day: params.day,
+            hour: params.hour,
+            minute: params.minute,
+            second: params.second,
             _pad1: 0,
-            nanosecond,
-            time_zone,
-            daylight,
+            nanosecond: params.nanosecond,
+            time_zone: params.time_zone.unwrap_or(Self::UNSPECIFIED_TIMEZONE),
+            daylight: params.daylight,
+            _pad2: 0,
+        };
+        if time.is_valid() {
+            Ok(time)
+        } else {
+            Err(TimeError)
+        }
+    }
+
+    /// Create an invalid `Time` with all fields set to zero. This can
+    /// be used with [`FileInfo`] to indicate a field should not be
+    /// updated when calling [`File::set_info`].
+    ///
+    /// [`FileInfo`]: uefi::proto::media::file::FileInfo
+    /// [`File::set_info`]: uefi::proto::media::file::File::set_info
+    pub fn invalid() -> Self {
+        Self {
+            year: 0,
+            month: 0,
+            day: 0,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            _pad1: 0,
+            nanosecond: 0,
+            time_zone: 0,
+            daylight: Daylight::empty(),
             _pad2: 0,
         }
     }
 
-    /// Query the year
+    /// True if all fields are within valid ranges, false otherwise.
+    pub fn is_valid(&self) -> bool {
+        (1900..=9999).contains(&self.year)
+            && (1..=12).contains(&self.month)
+            && (1..=31).contains(&self.day)
+            && self.hour <= 23
+            && self.minute <= 59
+            && self.second <= 59
+            && self.nanosecond <= 999_999_999
+            && ((-1440..=1440).contains(&self.time_zone)
+                || self.time_zone == Self::UNSPECIFIED_TIMEZONE)
+    }
+
+    /// Query the year.
     pub fn year(&self) -> u16 {
         self.year
     }
 
-    /// Query the month
+    /// Query the month.
     pub fn month(&self) -> u8 {
         self.month
     }
 
-    /// Query the day
+    /// Query the day.
     pub fn day(&self) -> u8 {
         self.day
     }
 
-    /// Query the hour
+    /// Query the hour.
     pub fn hour(&self) -> u8 {
         self.hour
     }
 
-    /// Query the minute
+    /// Query the minute.
     pub fn minute(&self) -> u8 {
         self.minute
     }
 
-    /// Query the second
+    /// Query the second.
     pub fn second(&self) -> u8 {
         self.second
     }
 
-    /// Query the nanosecond
+    /// Query the nanosecond.
     pub fn nanosecond(&self) -> u32 {
         self.nanosecond
     }
 
-    /// Query the time offset in minutes from UTC, or None if using local time
+    /// Query the time offset in minutes from UTC, or None if using local time.
     pub fn time_zone(&self) -> Option<i16> {
         if self.time_zone == 2047 {
             None
@@ -374,7 +433,7 @@ impl Time {
         }
     }
 
-    /// Query the daylight savings time information
+    /// Query the daylight savings time information.
     pub fn daylight(&self) -> Daylight {
         self.daylight
     }

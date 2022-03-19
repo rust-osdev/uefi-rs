@@ -5,6 +5,12 @@
 ### Added
 
 - Added `FileHandle::into_directory` and `FileHandle::into_regular_file`.
+- Added `TimeParams`, `Time::invalid`, and `Time::is_invalid`.
+
+### Changed
+
+- `Time::new` now takes a single `TimeParams` argument so that date and
+  time fields can be explicitly named at the call site.
 
 ## uefi-macros - [Unreleased]
 

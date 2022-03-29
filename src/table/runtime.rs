@@ -60,6 +60,18 @@ pub struct RuntimeServices {
         data_size: usize,
         data: *const u8,
     ) -> !,
+
+    // UEFI 2.0 Capsule Services.
+    update_capsule: usize,
+    query_capsule_capabilities: usize,
+
+    // Miscellaneous UEFI 2.0 Service.
+    query_variable_info: unsafe extern "efiapi" fn(
+        attributes: VariableAttributes,
+        maximum_variable_storage_size: *mut u64,
+        remaining_variable_storage_size: *mut u64,
+        maximum_variable_size: *mut u64,
+    ) -> Status,
 }
 
 impl RuntimeServices {
@@ -224,6 +236,26 @@ impl RuntimeServices {
                 data.as_ptr(),
             )
             .into()
+        }
+    }
+
+    /// Get information about UEFI variable storage space for the type
+    /// of variable specified in `attributes`.
+    ///
+    /// See [`VariableStorageInfo`] for details of the information returned.
+    pub fn query_variable_info(
+        &self,
+        attributes: VariableAttributes,
+    ) -> Result<VariableStorageInfo> {
+        let mut info = VariableStorageInfo::default();
+        unsafe {
+            (self.query_variable_info)(
+                attributes,
+                &mut info.maximum_variable_storage_size,
+                &mut info.remaining_variable_storage_size,
+                &mut info.maximum_variable_size,
+            )
+            .into_with_val(|| info)
         }
     }
 
@@ -617,6 +649,24 @@ impl fmt::Display for VariableKey {
 
         write!(f, " }}")
     }
+}
+
+/// Information about UEFI variable storage space returned by
+/// [`RuntimeServices::query_variable_info`]. Note that the data here is
+/// limited to a specific type of variable (as specified by the
+/// `attributes` argument to `query_variable_info`).
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct VariableStorageInfo {
+    /// Maximum size in bytes of the storage space available for
+    /// variables of the specified type.
+    pub maximum_variable_storage_size: u64,
+
+    /// Remaining size in bytes of the storage space available for
+    /// variables of the specified type.
+    pub remaining_variable_storage_size: u64,
+
+    /// Maximum size of an individual variable of the specified type.
+    pub maximum_variable_size: u64,
 }
 
 /// The type of system reset.

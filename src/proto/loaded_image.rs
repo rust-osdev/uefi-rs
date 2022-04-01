@@ -1,8 +1,8 @@
 //! `LoadedImage` protocol.
 
 use crate::{
-    data_types::FromSliceWithNulError, proto::Protocol, table::boot::MemoryType, unsafe_guid,
-    CStr16, Handle, Status,
+    data_types::FromSliceWithNulError, proto::device_path::DevicePath, proto::Protocol,
+    table::boot::MemoryType, unsafe_guid, CStr16, Char16, Handle, Status,
 };
 use core::{ffi::c_void, mem, slice};
 
@@ -17,7 +17,7 @@ pub struct LoadedImage {
 
     // Source location of the image
     device_handle: Handle,
-    _file_path: *const c_void, // TODO: not supported yet
+    file_path: *const c_void,
     _reserved: *const c_void,
 
     // Image load options
@@ -51,6 +51,19 @@ impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
     pub fn device(&self) -> Handle {
         self.device_handle
+    }
+
+    /// Return a NULL-terminated Path string including directory and file names.
+    pub fn file_path(&self) -> &CStr16 {
+        // file_path is a pointer to the file path portion specific to
+        // DeviceHandle that the EFI Image was loaded from.
+        let file_path = self.file_path as *const DevicePath;
+
+        unsafe {
+            // path name follows the DevicePathHeader.
+            let path_name = file_path.offset(1);
+            CStr16::from_ptr(path_name.cast::<Char16>())
+        }
     }
 
     /// Get the load options of the image as a [`&CStr16`].

@@ -108,13 +108,26 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
 /// with VM tests, but a few things like macros and data types can be
 /// tested with regular tests.
 fn run_host_tests() -> Result<()> {
+    // Run xtask tests.
+    let cargo = Cargo {
+        action: CargoAction::Test,
+        features: Vec::new(),
+        toolchain: None,
+        packages: vec![Package::Xtask],
+        release: false,
+        target: None,
+        warnings_as_errors: false,
+    };
+    run_cmd(cargo.command()?)?;
+
+    // Run uefi-rs and uefi-macros tests.
     let cargo = Cargo {
         action: CargoAction::Test,
         features: vec![Feature::Exts],
         toolchain: Some(NIGHTLY.into()),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
-        packages: vec![Package::Uefi, Package::UefiMacros, Package::Xtask],
+        packages: vec![Package::Uefi, Package::UefiMacros],
         release: false,
         // Use the host target so that tests can run without a VM.
         target: None,

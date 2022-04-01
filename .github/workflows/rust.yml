@@ -27,11 +27,15 @@ jobs:
         cp /usr/share/AAVMF/AAVMF_CODE.fd uefi-test-runner/QEMU_EFI-pflash.raw
         cp /usr/share/AAVMF/AAVMF_VARS.fd uefi-test-runner/vars-template-pflash.raw
 
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
           toolchain: nightly
-          override: true
           components: rust-src
       # TODO: cache Rust binaries
 
@@ -54,11 +58,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install qemu-system-x86 ovmf -y
 
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
           toolchain: nightly
-          override: true
           components: rust-src
       # TODO: cache Rust binaries
 
@@ -97,11 +105,15 @@ jobs:
         curl -o uefi-test-runner/OVMF32_CODE.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_CODE.fd
         curl -o uefi-test-runner/OVMF32_VARS.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_VARS.fd
 
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
           toolchain: nightly
-          override: true
           components: rust-src
       # TODO: cache Rust binaries
 
@@ -119,13 +131,17 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
+      - name: Install stable
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
             profile: minimal
             toolchain: nightly
             components: rust-src
-            override: true
 
       - name: Run cargo test
         run: cargo xtask test
@@ -137,13 +153,17 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
+      - name: Install stable
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
             profile: minimal
             toolchain: nightly
             components: rustfmt, clippy, rust-src
-            override: true
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
@@ -163,6 +183,11 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
+
+      - name: Install stable
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
 
       - name: Install latest nightly toolchain that includes Miri
         uses: actions-rs/toolchain@v1
@@ -188,11 +213,15 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v2
 
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
           toolchain: nightly
-          override: true
           components: rust-src
 
     - name: Build

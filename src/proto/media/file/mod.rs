@@ -357,6 +357,7 @@ pub enum FileMode {
 
 bitflags! {
     /// Attributes describing the properties of a file on the file system.
+    #[repr(transparent)]
     pub struct FileAttribute: u64 {
         /// File can only be opened in [`FileMode::READ`] mode.
         const READ_ONLY = 1;
@@ -370,5 +371,132 @@ bitflags! {
         const ARCHIVE = 1 << 5;
         /// Mask combining all the valid attributes.
         const VALID_ATTR = 0x37;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::table::runtime::Time;
+    use crate::{CString16, Identify};
+    use alloc_api::vec;
+
+    // Test `get_boxed_info` by setting up a fake file, which is mostly
+    // just function pointers. Most of the functions can be empty, only
+    // get_info is actually implemented to return useful data.
+    #[test]
+    fn test_get_boxed_info() {
+        let mut file_impl = FileImpl {
+            revision: 0,
+            open: stub_open,
+            close: stub_close,
+            delete: stub_delete,
+            read: stub_read,
+            write: stub_write,
+            get_position: stub_get_position,
+            set_position: stub_set_position,
+            get_info: stub_get_info,
+            set_info: stub_set_info,
+            flush: stub_flush,
+        };
+        let file_handle = FileHandle(&mut file_impl);
+
+        let mut file = unsafe { RegularFile::new(file_handle) };
+        let info = file.get_boxed_info::<FileInfo>().unwrap();
+        assert_eq!(info.file_size(), 123);
+        assert_eq!(info.file_name(), CString16::try_from("test_file").unwrap());
+    }
+
+    extern "efiapi" fn stub_get_info(
+        _this: &mut FileImpl,
+        information_type: &Guid,
+        buffer_size: &mut usize,
+        buffer: *mut u8,
+    ) -> Status {
+        assert_eq!(*information_type, FileInfo::GUID);
+
+        // Use a temporary buffer to get some file info, then copy that
+        // data to the output buffer.
+        let mut tmp = vec![0; 128];
+        let file_size = 123;
+        let physical_size = 456;
+        let time = Time::invalid();
+        let info = FileInfo::new(
+            &mut tmp,
+            file_size,
+            physical_size,
+            time,
+            time,
+            time,
+            FileAttribute::empty(),
+            &CString16::try_from("test_file").unwrap(),
+        )
+        .unwrap();
+        let required_size = mem::size_of_val(info);
+        if *buffer_size < required_size {
+            *buffer_size = required_size;
+            Status::BUFFER_TOO_SMALL
+        } else {
+            unsafe {
+                ptr::copy_nonoverlapping((info as *const FileInfo).cast(), buffer, required_size);
+            }
+            *buffer_size = required_size;
+            Status::SUCCESS
+        }
+    }
+
+    extern "efiapi" fn stub_open(
+        _this: &mut FileImpl,
+        _new_handle: &mut *mut FileImpl,
+        _filename: *const Char16,
+        _open_mode: FileMode,
+        _attributes: FileAttribute,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_close(_this: &mut FileImpl) -> Status {
+        Status::SUCCESS
+    }
+
+    extern "efiapi" fn stub_delete(_this: &mut FileImpl) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_read(
+        _this: &mut FileImpl,
+        _buffer_size: &mut usize,
+        _buffer: *mut u8,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_write(
+        _this: &mut FileImpl,
+        _buffer_size: &mut usize,
+        _buffer: *const u8,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_get_position(_this: &mut FileImpl, _position: &mut u64) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_set_position(_this: &mut FileImpl, _position: u64) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_set_info(
+        _this: &mut FileImpl,
+        _information_type: &Guid,
+        _buffer_size: usize,
+        _buffer: *const c_void,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_flush(_this: &mut FileImpl) -> Status {
+        Status::UNSUPPORTED
     }
 }

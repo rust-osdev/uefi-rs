@@ -139,7 +139,7 @@ pub enum FileInfoCreationError {
 ///   existing file in the same directory.
 /// - If a file is read-only, the only allowed change is to remove the read-only
 ///   attribute. Other changes must be carried out in a separate transaction.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 #[unsafe_guid("09576e92-6d3f-11d2-8e39-00a0c969723b")]
 pub struct FileInfo {
@@ -243,7 +243,7 @@ impl FileProtocolInfo for FileInfo {}
 ///
 /// Please note that only the system volume's volume label may be set using
 /// this information structure. Consider using `FileSystemVolumeLabel` instead.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 #[unsafe_guid("09576e93-6d3f-11d2-8e39-00a0c969723b")]
 pub struct FileSystemInfo {
@@ -327,7 +327,7 @@ impl FileProtocolInfo for FileSystemInfo {}
 /// System volume label
 ///
 /// May only be obtained on the root directory's file handle.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
 #[unsafe_guid("db47d7d3-fe81-11d3-9a35-0090273fc14d")]
 pub struct FileSystemVolumeLabel {

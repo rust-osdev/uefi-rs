@@ -16,6 +16,8 @@
 //! the rest of the structure, and the `length` field indicates the
 //! total size of the Node including the header.
 
+pub mod text;
+
 use crate::{proto::Protocol, unsafe_guid};
 use core::slice;
 

@@ -1,5 +1,5 @@
 use super::chars::{Char16, NUL_16};
-use super::strs::CStr16;
+use super::strs::{CStr16, FromSliceWithNulError};
 use crate::alloc_api::vec::Vec;
 use core::fmt;
 use core::ops;
@@ -56,6 +56,31 @@ impl TryFrom<&str> for CString16 {
     }
 }
 
+impl TryFrom<Vec<u16>> for CString16 {
+    type Error = FromSliceWithNulError;
+
+    fn try_from(input: Vec<u16>) -> Result<Self, Self::Error> {
+        // Try creating a CStr16 from the input. We throw away the
+        // result if successful, but it takes care of all the necessary
+        // validity checks (valid UCS-2, ends in null, contains no
+        // interior nulls).
+        CStr16::from_u16_with_nul(&input)?;
+
+        // Convert the input vector from `u16` to `Char16`.
+        //
+        // Safety: `Char16` is a transparent struct wrapping `u16`, so
+        // the types are compatible. The pattern used here matches the
+        // example in the docs for `into_raw_parts`.
+        let (ptr, len, cap) = input.into_raw_parts();
+        let rebuilt = unsafe {
+            let ptr = ptr as *mut Char16;
+            Vec::from_raw_parts(ptr, len, cap)
+        };
+
+        Ok(Self(rebuilt))
+    }
+}
+
 impl ops::Deref for CString16 {
     type Target = CStr16;
 
@@ -97,6 +122,29 @@ mod tests {
         assert_eq!(CString16::try_from("😀"), Err(FromStrError::InvalidChar));
 
         assert_eq!(CString16::try_from("x\0"), Err(FromStrError::InteriorNul));
+    }
+
+    #[test]
+    fn test_cstring16_from_u16_vec() {
+        // Test that invalid inputs are caught.
+        assert_eq!(
+            CString16::try_from(vec![]),
+            Err(FromSliceWithNulError::NotNulTerminated)
+        );
+        assert_eq!(
+            CString16::try_from(vec![b'a'.into(), 0, b'b'.into(), 0]),
+            Err(FromSliceWithNulError::InteriorNul(1))
+        );
+        assert_eq!(
+            CString16::try_from(vec![0xd800, 0]),
+            Err(FromSliceWithNulError::InvalidChar(0))
+        );
+
+        // Test valid input.
+        assert_eq!(
+            CString16::try_from(vec![b'x'.into(), 0]).unwrap(),
+            CString16::try_from("x").unwrap()
+        );
     }
 
     /// Test `CString16 == &CStr16` and `&CStr16 == CString16`.

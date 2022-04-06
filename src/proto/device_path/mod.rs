@@ -38,7 +38,7 @@ pub struct DevicePathHeader {
 /// This can be opened on a `LoadedImage.device()` handle using the `HandleProtocol` boot service.
 #[repr(C, packed)]
 #[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
-#[derive(Eq, Protocol)]
+#[derive(Debug, Eq, Protocol)]
 pub struct DevicePath {
     header: DevicePathHeader,
 }

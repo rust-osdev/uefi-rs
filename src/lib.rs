@@ -27,6 +27,7 @@
 #![feature(abi_efiapi)]
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
+#![cfg_attr(feature = "exts", feature(vec_into_raw_parts))]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(missing_docs, unused)]

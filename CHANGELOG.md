@@ -9,6 +9,7 @@
 - Added `RuntimeServices::query_variable_info` and `VariableStorageInfo`.
 - Added `DevicePathToText` and `DevicePathFromText`.
 - Added `LoadedImage::file_path`
+- Implemented `TryFrom<Vec<u16>> for CString16`.
 
 ### Changed
 

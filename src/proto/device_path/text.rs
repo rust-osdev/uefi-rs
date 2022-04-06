@@ -5,6 +5,30 @@ use crate::{
     unsafe_guid, CStr16, Char16,
 };
 
+/// This struct is a wrapper of `display_only` parameter
+/// used by Device Path to Text protocol.
+///
+/// The `display_only` parameter controls whether the longer
+/// (parseable)  or shorter (display-only) form of the conversion
+/// is used. If `display_only` is TRUE, then the shorter text
+/// representation of the display node is used, where applicable.
+/// If `display_only` is FALSE, then the longer text representation
+/// of the display node is used.
+#[derive(Clone, Copy)]
+pub struct DisplayOnly(pub bool);
+
+/// This struct is a wrapper of `allow_shortcuts` parameter
+/// used by Device Path to Text protocol.
+///
+/// The `allow_shortcuts` is FALSE, then the shortcut forms of
+/// text representation for a device node cannot be used. A
+/// shortcut form is one which uses information other than the
+/// type or subtype. If `allow_shortcuts is TRUE, then the
+/// shortcut forms of text representation for a device node
+/// can be used, where applicable.
+#[derive(Clone, Copy)]
+pub struct AllowShortcuts(pub bool);
+
 /// Device Path to Text protocol.
 ///
 /// This protocol provides common utility functions for converting device
@@ -28,54 +52,32 @@ pub struct DevicePathToText {
 impl DevicePathToText {
     /// Convert a device node to its text representation.
     ///
-    /// The `display_only` parameter controls whether the longer (parseable) or
-    /// shorter (display-only) form of the conversion is used. If `display_only`
-    /// is TRUE, then the shorter text representation of the display node is
-    /// used, where applicable. If `display_only` is FALSE, then the longer text
-    /// representation of the display node is used.
-    ///
-    /// The `allow_shortcuts` is FALSE, then the shortcut forms of text
-    /// representation for a device node cannot be used. A shortcut form
-    /// is one which uses information other than the type or subtype. If
-    /// `allow_shortcuts is TRUE, then the shortcut forms of text
-    /// representation for a device node can be used, where applicable.
-    ///
-    /// Returns `None` if `device_node` was NULL or there was insufficient memory.
+    /// Returns `None` if `device_node` was NULL or there was
+    /// insufficient memory.
     pub fn convert_device_node_to_text(
         &self,
         device_node: &DevicePath,
-        display_only: bool,
-        allow_shortcuts: bool,
+        display_only: DisplayOnly,
+        allow_shortcuts: AllowShortcuts,
     ) -> Option<&CStr16> {
         let text_device_node = unsafe {
-            (self.convert_device_node_to_text)(device_node, display_only, allow_shortcuts)
+            (self.convert_device_node_to_text)(device_node, display_only.0, allow_shortcuts.0)
         };
         unsafe { Some(CStr16::from_ptr(text_device_node.as_ref()?)) }
     }
 
     /// Convert a device path to its text representation.
     ///
-    /// The `display_only` parameter controls whether the longer (parseable) or
-    /// shorter (display-only) form of the conversion is used. If `display_only`
-    /// is TRUE, then the shorter text representation of the display node is
-    /// used, where applicable. If `display_only` is FALSE, then the longer text
-    /// representation of the display node is used.
-    ///
-    /// The `allow_shortcuts` is FALSE, then the shortcut forms of text
-    /// representation for a device node cannot be used. A shortcut form
-    /// is one which uses information other than the type or subtype. If
-    /// `allow_shortcuts is TRUE, then the shortcut forms of text
-    /// representation for a device node can be used, where applicable.
-    ///
-    /// Returns `None` if `device_path` was NULL or there was insufficient memory.
+    /// Returns `None` if `device_path` was NULL or there was
+    /// insufficient memory.
     pub fn convert_device_path_to_text(
         &self,
         device_path: &DevicePath,
-        display_only: bool,
-        allow_shortcuts: bool,
+        display_only: DisplayOnly,
+        allow_shortcuts: AllowShortcuts,
     ) -> Option<&CStr16> {
         let text_device_path = unsafe {
-            (self.convert_device_path_to_text)(device_path, display_only, allow_shortcuts)
+            (self.convert_device_path_to_text)(device_path, display_only.0, allow_shortcuts.0)
         };
         unsafe { Some(CStr16::from_ptr(text_device_path.as_ref()?)) }
     }

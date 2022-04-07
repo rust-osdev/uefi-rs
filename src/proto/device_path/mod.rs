@@ -18,8 +18,9 @@
 
 pub mod text;
 
+use crate::data_types::UnalignedCStr16;
 use crate::{proto::Protocol, unsafe_guid};
-use core::slice;
+use core::{mem, ptr, slice};
 
 /// Header that appears at the start of every [`DevicePath`] node.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -70,6 +71,38 @@ impl DevicePath {
     /// is not returned by the iterator.
     pub fn iter(&self) -> DevicePathIterator {
         DevicePathIterator { path: self }
+    }
+
+    /// Convert to an [`AcpiDevicePath`]. Returns `None` if the node is
+    /// not of the appropriate type.
+    pub fn as_acpi_device_path(&self) -> Option<&AcpiDevicePath> {
+        if self.device_type() == DeviceType::ACPI && self.sub_type() == DeviceSubType::ACPI {
+            let p: *const DevicePath = self;
+            Some(unsafe { &*p.cast() })
+        } else {
+            None
+        }
+    }
+
+    /// Convert to a [`FilePathMediaDevicePath`]. Returns `None` if the
+    /// node is not of the appropriate type.
+    pub fn as_file_path_media_device_path(&self) -> Option<&FilePathMediaDevicePath> {
+        if self.device_type() == DeviceType::MEDIA
+            && self.sub_type() == DeviceSubType::MEDIA_FILE_PATH
+        {
+            // Get the length of the `path_name` field.
+            let path_name_size_in_bytes = usize::from(self.length()) - 4;
+            assert!(path_name_size_in_bytes % mem::size_of::<u16>() == 0);
+            let path_name_len = path_name_size_in_bytes / mem::size_of::<u16>();
+
+            // Convert the `self` pointer to `FilePathMediaDevicePath`,
+            // which is a DST as it ends in a slice.
+            let p = self as *const Self;
+            let p: *const FilePathMediaDevicePath = ptr::from_raw_parts(p.cast(), path_name_len);
+            Some(unsafe { &*p })
+        } else {
+            None
+        }
     }
 }
 
@@ -291,4 +324,62 @@ pub struct AcpiDevicePath {
     /// corresponding _UID/_HID pair in the ACPI name space. Only the 32-bit numeric value type of _UID is supported;
     /// thus strings must not be used for the _UID in the ACPI name space.
     pub uid: u32,
+}
+
+/// File Path Media Device Path.
+#[repr(C, packed)]
+pub struct FilePathMediaDevicePath {
+    header: DevicePathHeader,
+    path_name: [u16],
+}
+
+impl FilePathMediaDevicePath {
+    /// Get the path. An [`UnalignedCStr16`] is returned since this is a
+    /// packed struct.
+    pub fn path_name(&self) -> UnalignedCStr16<'_> {
+        // Safety: creating this `UnalignedCStr16` is safe because the
+        // `path_name` pointer is valid (although potentially
+        // unaligned), and the lifetime of the output is tied to `self`,
+        // so there's no possibility of use-after-free.
+        unsafe {
+            // Use `addr_of` to avoid creating an unaligned reference.
+            let ptr: *const [u16] = ptr::addr_of!(self.path_name);
+            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            UnalignedCStr16::new(self, ptr as *const u16, len)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::CString16;
+
+    #[test]
+    fn test_file_path_media() {
+        // Manually create data for a `FilePathMediaDevicePath` node.
+        let mut raw_data: [u16; 7] = [
+            // MEDIA | MEDIA_FILE_PATH
+            0x0404,
+            // Length
+            0x00_0e,
+            b't'.into(),
+            b'e'.into(),
+            b's'.into(),
+            b't'.into(),
+            // Trailing null.
+            0,
+        ];
+
+        // Convert the raw data to a `DevicePath` node.
+        let dp: &DevicePath = unsafe { &*raw_data.as_mut_ptr().cast() };
+        assert_eq!(dp.length(), 14);
+
+        // Check that the `file_name` is correct.
+        let fpm = dp.as_file_path_media_device_path().unwrap();
+        assert_eq!(
+            fpm.path_name().to_cstring16().unwrap(),
+            CString16::try_from("test").unwrap()
+        );
+    }
 }

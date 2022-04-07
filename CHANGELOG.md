@@ -11,6 +11,9 @@
 - Added `LoadedImage::file_path`
 - Implemented `TryFrom<Vec<u16>> for CString16`.
 - Added `UnalignedCStr16`.
+- Added `FilePathMediaDevicePath`.
+- Added `DevicePath::as_acpi_device_path` and
+  `DevicePath::as_file_path_media_device_path`.
 
 ### Changed
 

@@ -10,6 +10,7 @@
 - Added `DevicePathToText` and `DevicePathFromText`.
 - Added `LoadedImage::file_path`
 - Implemented `TryFrom<Vec<u16>> for CString16`.
+- Added `UnalignedCStr16`.
 
 ### Changed
 

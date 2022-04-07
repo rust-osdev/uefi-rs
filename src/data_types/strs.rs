@@ -1,10 +1,12 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
-#[cfg(feature = "exts")]
-use super::CString16;
 use core::fmt;
 use core::iter::Iterator;
+use core::marker::PhantomData;
+use core::mem::MaybeUninit;
 use core::result::Result;
 use core::slice;
+#[cfg(feature = "exts")]
+use {super::CString16, crate::alloc_api::vec::Vec};
 
 /// Errors which can occur during checked `[uN]` -> `CStrN` conversions
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -17,6 +19,23 @@ pub enum FromSliceWithNulError {
 
     /// The slice was not null-terminated
     NotNulTerminated,
+}
+
+/// Error returned by [`UnalignedCStr16::to_cstr16`].
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum UnalignedCStr16Error {
+    /// An invalid character was encountered.
+    InvalidChar(usize),
+
+    /// A null character was encountered before the end of the data.
+    InteriorNul(usize),
+
+    /// The data was not null-terminated.
+    NotNulTerminated,
+
+    /// The buffer is not big enough to hold the entire string and
+    /// trailing null character.
+    BufferTooSmall,
 }
 
 /// Error returned by [`CStr16::from_str_with_buf`].
@@ -301,6 +320,113 @@ impl PartialEq<CString16> for &CStr16 {
     }
 }
 
+/// An unaligned UCS-2 null-terminated string.
+///
+/// This wrapper type can be used with UEFI strings that are inside a
+/// [`repr(packed)`] struct. Creating a reference to a packed field is
+/// not allowed because it might not be properly aligned, so a
+/// [`CStr16`] can't be directly constructed. `UnalignedCStr16` instead
+/// takes a pointer to the unaligned field, which is allowed. The
+/// resulting unaligned string cannot be used directly, but must be
+/// converted to an aligned form first with [`to_cstr16`] or
+/// [`to_cstring16`].
+///
+/// [`repr(packed)`]: https://doc.rust-lang.org/nomicon/other-reprs.html#reprpacked
+/// [`to_cstr16`]: Self::to_cstr16
+/// [`to_cstring16`]: Self::to_cstring16
+#[derive(Debug)]
+pub struct UnalignedCStr16<'a> {
+    data: *const u16,
+    len: usize,
+    _phantom_lifetime: PhantomData<&'a ()>,
+}
+
+// While it's not unsafe to have an empty `UnalignedCStr16`, there's not
+// much point either since the string wouldn't be valid without a null
+// terminator. So skip adding an `is_empty` method.
+#[allow(clippy::len_without_is_empty)]
+impl<'a> UnalignedCStr16<'a> {
+    /// Create an `UnalignedCStr16` from a `*const u16` pointer. The
+    /// pointer must be valid but can be unaligned. The `len` parameter
+    /// is the number of `u16` characters in the string (not the number
+    /// of bytes), including the trailing null.
+    ///
+    /// The `_lifetime` parameter is used to make it easy to set an
+    /// appropriate lifetime for `'a`. The caller should pass in a
+    /// reference to something tied to the lifetime of `data`. (The
+    /// `data` parameter cannot itself be a reference because the
+    /// pointer is allowed to be unaligned.)
+    ///
+    /// # Safety
+    ///
+    /// The `data` pointer cannot be dangling, and must remain valid for
+    /// the lifetime of `'a`. There must be at least `len` `u16`
+    /// elements starting with the the first character pointed to by
+    /// `data`. These restrictions allow all other methods on
+    /// `UnalignedCStr16` to be safe.
+    pub unsafe fn new<T: ?Sized>(_lifetime: &'a T, data: *const u16, len: usize) -> Self {
+        Self {
+            data,
+            len,
+            _phantom_lifetime: PhantomData,
+        }
+    }
+
+    /// Number of `u16` elements in the string, including the trailing null.
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Copy the data to an aligned buffer. Panics if the length of
+    /// `dst` is not exactly the same as `self.len()`. Otherwise the
+    /// function always succeeds, and initializes all elements of `dst`.
+    pub fn copy_to(&self, dst: &mut [MaybeUninit<u16>]) {
+        if dst.len() != self.len {
+            panic!("incorrect buffer length");
+        }
+
+        for (i, elem) in dst.iter_mut().enumerate() {
+            unsafe { elem.write(self.data.add(i).read_unaligned()) };
+        }
+    }
+
+    /// Convert to a [`CStr16`] using an aligned buffer for storage. The
+    /// lifetime of the output is tied to `buf`, not `self`.
+    pub fn to_cstr16<'buf>(
+        &self,
+        buf: &'buf mut [MaybeUninit<u16>],
+    ) -> Result<&'buf CStr16, UnalignedCStr16Error> {
+        // The input `buf` might be longer than needed, so get a
+        // subslice of the required length.
+        let buf = buf
+            .get_mut(..self.len())
+            .ok_or(UnalignedCStr16Error::BufferTooSmall)?;
+
+        self.copy_to(buf);
+        let buf = unsafe {
+            // Safety: `copy_buf` fully initializes the slice.
+            MaybeUninit::slice_assume_init_ref(buf)
+        };
+        CStr16::from_u16_with_nul(buf).map_err(|e| match e {
+            FromSliceWithNulError::InvalidChar(v) => UnalignedCStr16Error::InvalidChar(v),
+            FromSliceWithNulError::InteriorNul(v) => UnalignedCStr16Error::InteriorNul(v),
+            FromSliceWithNulError::NotNulTerminated => UnalignedCStr16Error::NotNulTerminated,
+        })
+    }
+
+    /// Convert to a [`CString16`]. Requires the `exts` feature.
+    #[cfg(feature = "exts")]
+    pub fn to_cstring16(&self) -> Result<CString16, FromSliceWithNulError> {
+        let len = self.len();
+        let mut v = Vec::with_capacity(len);
+        unsafe {
+            self.copy_to(v.spare_capacity_mut());
+            v.set_len(len);
+        }
+        CString16::try_from(v)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,6 +465,45 @@ mod tests {
         assert_eq!(
             CStr16::from_str_with_buf("a\0b", &mut buf).unwrap_err(),
             FromStrWithBufError::InteriorNul(1),
+        );
+    }
+
+    #[test]
+    fn test_unaligned_cstr16() {
+        let mut buf = [0u16; 6];
+        let us = unsafe {
+            let ptr = buf.as_mut_ptr() as *mut u8;
+            // Intentionally create an unaligned u16 pointer. This
+            // leaves room for five u16 characters.
+            let ptr = ptr.add(1) as *mut u16;
+            // Write out the "test" string.
+            ptr.add(0).write_unaligned(b't'.into());
+            ptr.add(1).write_unaligned(b'e'.into());
+            ptr.add(2).write_unaligned(b's'.into());
+            ptr.add(3).write_unaligned(b't'.into());
+            ptr.add(4).write_unaligned(b'\0'.into());
+
+            // Create the `UnalignedCStr16`.
+            UnalignedCStr16::new(&buf, ptr, 5)
+        };
+
+        // Test `to_cstr16()` with too small of a buffer.
+        let mut buf = [MaybeUninit::new(0); 4];
+        assert_eq!(
+            us.to_cstr16(&mut buf).unwrap_err(),
+            UnalignedCStr16Error::BufferTooSmall
+        );
+        // Test with a big enough buffer.
+        let mut buf = [MaybeUninit::new(0); 5];
+        assert_eq!(
+            us.to_cstr16(&mut buf).unwrap(),
+            CString16::try_from("test").unwrap()
+        );
+
+        // Test `to_cstring16()`.
+        assert_eq!(
+            us.to_cstring16().unwrap(),
+            CString16::try_from("test").unwrap()
         );
     }
 }

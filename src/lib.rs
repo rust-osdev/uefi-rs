@@ -25,6 +25,7 @@
 
 #![feature(try_trait_v2)]
 #![feature(abi_efiapi)]
+#![feature(maybe_uninit_slice)]
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
 #![cfg_attr(feature = "exts", feature(vec_into_raw_parts))]

@@ -49,8 +49,9 @@ pub fn test(image: Handle, bt: &BootServices) {
         );
 
         let text = device_path_to_text
-            .convert_device_path_to_text(path, DisplayOnly(true), AllowShortcuts(false))
+            .convert_device_path_to_text(bt, path, DisplayOnly(true), AllowShortcuts(false))
             .expect("Failed to convert device path to text");
+        let text = &*text;
         info!("path name: {text}");
 
         let convert = device_path_from_text

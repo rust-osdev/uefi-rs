@@ -2,8 +2,10 @@
 
 use crate::{
     proto::{device_path::DevicePath, Protocol},
+    table::boot::BootServices,
     unsafe_guid, CStr16, Char16,
 };
+use core::ops::Deref;
 
 /// This struct is a wrapper of `display_only` parameter
 /// used by Device Path to Text protocol.
@@ -28,6 +30,43 @@ pub struct DisplayOnly(pub bool);
 /// can be used, where applicable.
 #[derive(Clone, Copy)]
 pub struct AllowShortcuts(pub bool);
+
+/// Wrapper for a string internally allocated from
+/// UEFI boot services memory.
+pub struct PoolString<'a> {
+    boot_services: &'a BootServices,
+    text: *const Char16,
+}
+
+impl<'a> PoolString<'a> {
+    fn new(boot_services: &'a BootServices, text: *const Char16) -> Option<Self> {
+        if text.is_null() {
+            None
+        } else {
+            Some(Self {
+                boot_services,
+                text,
+            })
+        }
+    }
+}
+
+impl<'a> Deref for PoolString<'a> {
+    type Target = CStr16;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { CStr16::from_ptr(self.text) }
+    }
+}
+
+impl Drop for PoolString<'_> {
+    fn drop(&mut self) {
+        let addr = self.text as *mut u8;
+        self.boot_services
+            .free_pool(addr)
+            .expect("Failed to free pool [{addr}]");
+    }
+}
 
 /// Device Path to Text protocol.
 ///
@@ -54,32 +93,34 @@ impl DevicePathToText {
     ///
     /// Returns `None` if `device_node` was NULL or there was
     /// insufficient memory.
-    pub fn convert_device_node_to_text(
+    pub fn convert_device_node_to_text<'boot>(
         &self,
+        boot_services: &'boot BootServices,
         device_node: &DevicePath,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Option<&CStr16> {
+    ) -> Option<PoolString<'boot>> {
         let text_device_node = unsafe {
             (self.convert_device_node_to_text)(device_node, display_only.0, allow_shortcuts.0)
         };
-        unsafe { Some(CStr16::from_ptr(text_device_node.as_ref()?)) }
+        PoolString::new(boot_services, text_device_node)
     }
 
     /// Convert a device path to its text representation.
     ///
     /// Returns `None` if `device_path` was NULL or there was
     /// insufficient memory.
-    pub fn convert_device_path_to_text(
+    pub fn convert_device_path_to_text<'boot>(
         &self,
+        boot_services: &'boot BootServices,
         device_path: &DevicePath,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Option<&CStr16> {
+    ) -> Option<PoolString<'boot>> {
         let text_device_path = unsafe {
             (self.convert_device_path_to_text)(device_path, display_only.0, allow_shortcuts.0)
         };
-        unsafe { Some(CStr16::from_ptr(text_device_path.as_ref()?)) }
+        PoolString::new(boot_services, text_device_path)
     }
 }
 

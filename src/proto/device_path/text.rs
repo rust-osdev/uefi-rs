@@ -64,7 +64,7 @@ impl Drop for PoolString<'_> {
         let addr = self.text as *mut u8;
         self.boot_services
             .free_pool(addr)
-            .expect("Failed to free pool [{addr}]");
+            .expect("Failed to free pool [{addr:#?}]");
     }
 }
 

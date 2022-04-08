@@ -4,7 +4,7 @@ use crate::{
     data_types::FromSliceWithNulError,
     proto::{device_path::DevicePath, Protocol},
     table::boot::MemoryType,
-    unsafe_guid, CStr16, Char16, Handle, Status,
+    unsafe_guid, CStr16, Handle, Status,
 };
 use core::{ffi::c_void, mem, slice};
 
@@ -55,21 +55,12 @@ impl LoadedImage {
         self.device_handle
     }
 
-    /// Return a NULL-terminated Path string including directory and file names.
+    /// Get a reference to the `file_path`.
     ///
-    /// `file_path` is a pointer to the file path portion specific to DeviceHandle
-    /// that the EFI Image was loaded from. It will be empty if the image is loaded
-    /// from a buffer and the `file_path` is `None`.
-    ///
-    /// # Safety
-    ///
-    /// The callers should guarantee the image is loaded from file. If the image
-    /// is loaded from a buffer, make sure not passing an incorrect `DevicePath`,
-    /// which may case an undefined behavior.
-    pub unsafe fn file_path(&self) -> &CStr16 {
-        // path name follows the DevicePathHeader.
-        let path_name = self.file_path.offset(1);
-        CStr16::from_ptr(path_name.cast::<Char16>())
+    /// Return `None` if the pointer to the file path portion specific to
+    /// DeviceHandle that the EFI Image was loaded from is null.
+    pub fn file_path(&self) -> Option<&DevicePath> {
+        unsafe { self.file_path.as_ref() }
     }
 
     /// Get the load options of the image as a [`&CStr16`].

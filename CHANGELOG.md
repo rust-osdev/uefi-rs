@@ -7,6 +7,8 @@
 - Added `FileHandle::into_directory` and `FileHandle::into_regular_file`.
 - Added `TimeParams`, `Time::invalid`, and `Time::is_invalid`.
 - Added `RuntimeServices::query_variable_info` and `VariableStorageInfo`.
+- Added `DevicePathToText` and `DevicePathFromText`.
+- Added `LoadedImage::file_path`
 
 ### Changed
 

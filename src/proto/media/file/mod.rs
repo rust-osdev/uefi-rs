@@ -10,16 +10,18 @@ mod dir;
 mod info;
 mod regular;
 
-#[cfg(feature = "exts")]
-use crate::prelude::*;
 use crate::{CStr16, Char16, Guid, Result, Status};
-#[cfg(feature = "exts")]
-use alloc_api::{alloc::Layout, boxed::Box};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::Debug;
 use core::mem;
 use core::ptr;
+#[cfg(feature = "exts")]
+use {
+    crate::ResultExt,
+    alloc_api::{alloc, alloc::Layout, boxed::Box},
+    core::slice,
+};
 
 pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
 pub use self::{dir::Directory, regular::RegularFile};
@@ -182,22 +184,35 @@ pub trait File: Sized {
         let layout = Layout::from_size_align(size, Info::alignment())
             .unwrap()
             .pad_to_align();
-        let mut buffer = crate::exts::allocate_buffer(layout);
-        let buffer_start = buffer.as_ptr();
 
-        let info = self.get_info::<Info>(&mut buffer).discard_errdata()?;
+        // Allocate the buffer.
+        let data: *mut u8 = unsafe {
+            let data = alloc::alloc(layout);
+            if data.is_null() {
+                return Err(Status::OUT_OF_RESOURCES.into());
+            }
+            data
+        };
 
-        // This operation is safe because info uses the exact memory
-        // of the provied buffer (so no memory is leaked), and the box
-        // is created if and only if buffer is leaked (so no memory can
-        // ever be freed twice).
-        assert_eq!(mem::size_of_val(info), layout.size());
-        assert_eq!(info as *const Info as *const u8, buffer_start);
-        let info = unsafe { Box::from_raw(info as *mut _) };
+        // Get the file info using the allocated buffer for storage.
+        let info = {
+            let buffer = unsafe { slice::from_raw_parts_mut(data, layout.size()) };
+            self.get_info::<Info>(buffer).discard_errdata()
+        };
 
-        mem::forget(buffer);
+        // If an error occurred, deallocate the memory before returning.
+        let info = match info {
+            Ok(info) => info,
+            Err(err) => {
+                unsafe { alloc::dealloc(data, layout) };
+                return Err(err);
+            }
+        };
 
-        Ok(info)
+        // Wrap the file info in a box so that it will be deallocated on
+        // drop. This is valid because the memory was allocated with the
+        // global allocator.
+        unsafe { Ok(Box::from_raw(info)) }
     }
 }
 

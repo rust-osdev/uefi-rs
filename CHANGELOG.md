@@ -19,6 +19,10 @@
 
 - `Time::new` now takes a single `TimeParams` argument so that date and
   time fields can be explicitly named at the call site.
+  
+### Fixed
+
+- Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
 ## uefi-macros - [Unreleased]
 

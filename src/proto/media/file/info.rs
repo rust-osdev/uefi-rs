@@ -219,7 +219,7 @@ impl FileInfo {
 
     /// Name of the file
     pub fn file_name(&self) -> &CStr16 {
-        unsafe { CStr16::from_ptr(&self.file_name[0]) }
+        unsafe { CStr16::from_ptr(self.file_name.as_ptr()) }
     }
 }
 
@@ -306,7 +306,7 @@ impl FileSystemInfo {
 
     /// Volume label
     pub fn volume_label(&self) -> &CStr16 {
-        unsafe { CStr16::from_ptr(&self.volume_label[0]) }
+        unsafe { CStr16::from_ptr(self.volume_label.as_ptr()) }
     }
 }
 
@@ -353,7 +353,7 @@ impl FileSystemVolumeLabel {
 
     /// Volume label
     pub fn volume_label(&self) -> &CStr16 {
-        unsafe { CStr16::from_ptr(&self.volume_label[0]) }
+        unsafe { CStr16::from_ptr(self.volume_label.as_ptr()) }
     }
 }
 

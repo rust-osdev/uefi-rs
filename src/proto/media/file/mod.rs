@@ -10,16 +10,18 @@ mod dir;
 mod info;
 mod regular;
 
-#[cfg(feature = "exts")]
-use crate::prelude::*;
 use crate::{CStr16, Char16, Guid, Result, Status};
-#[cfg(feature = "exts")]
-use alloc_api::{alloc::Layout, boxed::Box};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::Debug;
 use core::mem;
 use core::ptr;
+#[cfg(feature = "exts")]
+use {
+    crate::ResultExt,
+    alloc_api::{alloc, alloc::Layout, boxed::Box},
+    core::slice,
+};
 
 pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
 pub use self::{dir::Directory, regular::RegularFile};
@@ -182,22 +184,35 @@ pub trait File: Sized {
         let layout = Layout::from_size_align(size, Info::alignment())
             .unwrap()
             .pad_to_align();
-        let mut buffer = crate::exts::allocate_buffer(layout);
-        let buffer_start = buffer.as_ptr();
 
-        let info = self.get_info::<Info>(&mut buffer).discard_errdata()?;
+        // Allocate the buffer.
+        let data: *mut u8 = unsafe {
+            let data = alloc::alloc(layout);
+            if data.is_null() {
+                return Err(Status::OUT_OF_RESOURCES.into());
+            }
+            data
+        };
 
-        // This operation is safe because info uses the exact memory
-        // of the provied buffer (so no memory is leaked), and the box
-        // is created if and only if buffer is leaked (so no memory can
-        // ever be freed twice).
-        assert_eq!(mem::size_of_val(info), layout.size());
-        assert_eq!(info as *const Info as *const u8, buffer_start);
-        let info = unsafe { Box::from_raw(info as *mut _) };
+        // Get the file info using the allocated buffer for storage.
+        let info = {
+            let buffer = unsafe { slice::from_raw_parts_mut(data, layout.size()) };
+            self.get_info::<Info>(buffer).discard_errdata()
+        };
 
-        mem::forget(buffer);
+        // If an error occurred, deallocate the memory before returning.
+        let info = match info {
+            Ok(info) => info,
+            Err(err) => {
+                unsafe { alloc::dealloc(data, layout) };
+                return Err(err);
+            }
+        };
 
-        Ok(info)
+        // Wrap the file info in a box so that it will be deallocated on
+        // drop. This is valid because the memory was allocated with the
+        // global allocator.
+        unsafe { Ok(Box::from_raw(info)) }
     }
 }
 
@@ -342,6 +357,7 @@ pub enum FileMode {
 
 bitflags! {
     /// Attributes describing the properties of a file on the file system.
+    #[repr(transparent)]
     pub struct FileAttribute: u64 {
         /// File can only be opened in [`FileMode::READ`] mode.
         const READ_ONLY = 1;
@@ -355,5 +371,132 @@ bitflags! {
         const ARCHIVE = 1 << 5;
         /// Mask combining all the valid attributes.
         const VALID_ATTR = 0x37;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::table::runtime::Time;
+    use crate::{CString16, Identify};
+    use alloc_api::vec;
+
+    // Test `get_boxed_info` by setting up a fake file, which is mostly
+    // just function pointers. Most of the functions can be empty, only
+    // get_info is actually implemented to return useful data.
+    #[test]
+    fn test_get_boxed_info() {
+        let mut file_impl = FileImpl {
+            revision: 0,
+            open: stub_open,
+            close: stub_close,
+            delete: stub_delete,
+            read: stub_read,
+            write: stub_write,
+            get_position: stub_get_position,
+            set_position: stub_set_position,
+            get_info: stub_get_info,
+            set_info: stub_set_info,
+            flush: stub_flush,
+        };
+        let file_handle = FileHandle(&mut file_impl);
+
+        let mut file = unsafe { RegularFile::new(file_handle) };
+        let info = file.get_boxed_info::<FileInfo>().unwrap();
+        assert_eq!(info.file_size(), 123);
+        assert_eq!(info.file_name(), CString16::try_from("test_file").unwrap());
+    }
+
+    extern "efiapi" fn stub_get_info(
+        _this: &mut FileImpl,
+        information_type: &Guid,
+        buffer_size: &mut usize,
+        buffer: *mut u8,
+    ) -> Status {
+        assert_eq!(*information_type, FileInfo::GUID);
+
+        // Use a temporary buffer to get some file info, then copy that
+        // data to the output buffer.
+        let mut tmp = vec![0; 128];
+        let file_size = 123;
+        let physical_size = 456;
+        let time = Time::invalid();
+        let info = FileInfo::new(
+            &mut tmp,
+            file_size,
+            physical_size,
+            time,
+            time,
+            time,
+            FileAttribute::empty(),
+            &CString16::try_from("test_file").unwrap(),
+        )
+        .unwrap();
+        let required_size = mem::size_of_val(info);
+        if *buffer_size < required_size {
+            *buffer_size = required_size;
+            Status::BUFFER_TOO_SMALL
+        } else {
+            unsafe {
+                ptr::copy_nonoverlapping((info as *const FileInfo).cast(), buffer, required_size);
+            }
+            *buffer_size = required_size;
+            Status::SUCCESS
+        }
+    }
+
+    extern "efiapi" fn stub_open(
+        _this: &mut FileImpl,
+        _new_handle: &mut *mut FileImpl,
+        _filename: *const Char16,
+        _open_mode: FileMode,
+        _attributes: FileAttribute,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_close(_this: &mut FileImpl) -> Status {
+        Status::SUCCESS
+    }
+
+    extern "efiapi" fn stub_delete(_this: &mut FileImpl) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_read(
+        _this: &mut FileImpl,
+        _buffer_size: &mut usize,
+        _buffer: *mut u8,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_write(
+        _this: &mut FileImpl,
+        _buffer_size: &mut usize,
+        _buffer: *const u8,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_get_position(_this: &mut FileImpl, _position: &mut u64) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_set_position(_this: &mut FileImpl, _position: u64) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_set_info(
+        _this: &mut FileImpl,
+        _information_type: &Guid,
+        _buffer_size: usize,
+        _buffer: *const c_void,
+    ) -> Status {
+        Status::UNSUPPORTED
+    }
+
+    extern "efiapi" fn stub_flush(_this: &mut FileImpl) -> Status {
+        Status::UNSUPPORTED
     }
 }

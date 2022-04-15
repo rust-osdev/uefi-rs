@@ -116,6 +116,10 @@ fn test_existing_file(directory: &mut Directory) {
         CString16::try_from("test_input.txt").unwrap()
     );
 
+    // Check that `get_boxed_info` returns the same info.
+    let boxed_info = file.get_boxed_info::<FileInfo>().unwrap();
+    assert_eq!(*info, *boxed_info);
+
     // Delete the file.
     file.delete().unwrap();
 
@@ -187,6 +191,10 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
         assert_eq!(fs_info.volume_size(), 512 * 1192);
         assert_eq!(fs_info.free_space(), 512 * 1190);
         assert_eq!(fs_info.block_size(), 512);
+
+        // Check that `get_boxed_info` returns the same info.
+        let boxed_fs_info = directory.get_boxed_info::<FileSystemInfo>().unwrap();
+        assert_eq!(*fs_info, *boxed_fs_info);
 
         test_existing_dir(&mut directory);
         test_delete_warning(&mut directory);

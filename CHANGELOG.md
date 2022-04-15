@@ -19,6 +19,12 @@
 
 - `Time::new` now takes a single `TimeParams` argument so that date and
   time fields can be explicitly named at the call site.
+- The file info types now derive `PartialEq` and `Eq`.
+- The `FileAttributes` type is now `repr(transparent)`.
+
+### Fixed
+
+- Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
 ## uefi-macros - [Unreleased]
 

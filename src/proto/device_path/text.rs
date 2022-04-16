@@ -1,7 +1,8 @@
 //! `DevicePathToText` and `DevicePathFromText` Protocol
 
 use crate::{
-    proto::{device_path::DevicePath, Protocol},
+    proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath},
+    proto::Protocol,
     table::boot::BootServices,
     unsafe_guid, CStr16, Char16,
 };
@@ -77,12 +78,12 @@ impl Drop for PoolString<'_> {
 #[derive(Protocol)]
 pub struct DevicePathToText {
     convert_device_node_to_text: unsafe extern "efiapi" fn(
-        device_node: *const DevicePath,
+        device_node: *const FfiDevicePath,
         display_only: bool,
         allow_shortcuts: bool,
     ) -> *const Char16,
     convert_device_path_to_text: unsafe extern "efiapi" fn(
-        device_path: *const DevicePath,
+        device_path: *const FfiDevicePath,
         display_only: bool,
         allow_shortcuts: bool,
     ) -> *const Char16,
@@ -96,12 +97,16 @@ impl DevicePathToText {
     pub fn convert_device_node_to_text<'boot>(
         &self,
         boot_services: &'boot BootServices,
-        device_node: &DevicePath,
+        device_node: &DevicePathNode,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
     ) -> Option<PoolString<'boot>> {
         let text_device_node = unsafe {
-            (self.convert_device_node_to_text)(device_node, display_only.0, allow_shortcuts.0)
+            (self.convert_device_node_to_text)(
+                device_node.as_ffi_ptr(),
+                display_only.0,
+                allow_shortcuts.0,
+            )
         };
         PoolString::new(boot_services, text_device_node)
     }
@@ -118,7 +123,11 @@ impl DevicePathToText {
         allow_shortcuts: AllowShortcuts,
     ) -> Option<PoolString<'boot>> {
         let text_device_path = unsafe {
-            (self.convert_device_path_to_text)(device_path, display_only.0, allow_shortcuts.0)
+            (self.convert_device_path_to_text)(
+                device_path.as_ffi_ptr(),
+                display_only.0,
+                allow_shortcuts.0,
+            )
         };
         PoolString::new(boot_services, text_device_path)
     }
@@ -133,9 +142,9 @@ impl DevicePathToText {
 #[derive(Protocol)]
 pub struct DevicePathFromText {
     convert_text_to_device_node:
-        unsafe extern "efiapi" fn(text_device_node: *const Char16) -> *const DevicePath,
+        unsafe extern "efiapi" fn(text_device_node: *const Char16) -> *const FfiDevicePath,
     convert_text_to_device_path:
-        unsafe extern "efiapi" fn(text_device_path: *const Char16) -> *const DevicePath,
+        unsafe extern "efiapi" fn(text_device_path: *const Char16) -> *const FfiDevicePath,
 }
 
 impl DevicePathFromText {
@@ -147,8 +156,18 @@ impl DevicePathFromText {
     ///
     /// Returns `None` if `text_device_node` was NULL or there was
     /// insufficient memory.
-    pub fn convert_text_to_device_node(&self, text_device_node: &CStr16) -> Option<&DevicePath> {
-        unsafe { (self.convert_text_to_device_node)(text_device_node.as_ptr()).as_ref() }
+    pub fn convert_text_to_device_node(
+        &self,
+        text_device_node: &CStr16,
+    ) -> Option<&DevicePathNode> {
+        unsafe {
+            let ptr = (self.convert_text_to_device_node)(text_device_node.as_ptr());
+            if ptr.is_null() {
+                None
+            } else {
+                Some(DevicePathNode::from_ffi_ptr(ptr))
+            }
+        }
     }
 
     /// Convert a text to its binary device path representation.
@@ -160,6 +179,13 @@ impl DevicePathFromText {
     /// Returns `None` if `text_device_path` was NULL or there was
     /// insufficient memory.
     pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Option<&DevicePath> {
-        unsafe { (self.convert_text_to_device_path)(text_device_path.as_ptr()).as_ref() }
+        unsafe {
+            let ptr = (self.convert_text_to_device_path)(text_device_path.as_ptr());
+            if ptr.is_null() {
+                None
+            } else {
+                Some(DevicePath::from_ffi_ptr(ptr))
+            }
+        }
     }
 }

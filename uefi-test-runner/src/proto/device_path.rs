@@ -40,7 +40,7 @@ pub fn test(image: Handle, bt: &BootServices) {
         .expect("Failed to open DevicePathFromText protocol");
     let device_path_from_text = unsafe { &*device_path_from_text.get() };
 
-    for path in device_path.iter() {
+    for path in device_path.node_iter() {
         info!(
             "path: type={:?}, subtype={:?}, length={}",
             path.device_type(),
@@ -49,13 +49,13 @@ pub fn test(image: Handle, bt: &BootServices) {
         );
 
         let text = device_path_to_text
-            .convert_device_path_to_text(bt, path, DisplayOnly(true), AllowShortcuts(false))
+            .convert_device_node_to_text(bt, path, DisplayOnly(true), AllowShortcuts(false))
             .expect("Failed to convert device path to text");
         let text = &*text;
         info!("path name: {text}");
 
         let convert = device_path_from_text
-            .convert_text_to_device_path(text)
+            .convert_text_to_device_node(text)
             .expect("Failed to convert text to device path");
         assert_eq!(path, convert);
     }

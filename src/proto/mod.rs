@@ -10,6 +10,7 @@
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
 use crate::Identify;
+use core::ffi::c_void;
 
 /// Common trait implemented by all standard UEFI protocols
 ///
@@ -26,6 +27,40 @@ use crate::Identify;
 /// struct DummyProtocol {}
 /// ```
 pub trait Protocol: Identify {}
+
+/// Trait for creating a protocol pointer from a [`c_void`] pointer.
+///
+/// There is a blanket implementation for all [`Sized`] protocols that
+/// simply casts the pointer to the appropriate type. Protocols that
+/// are not sized must provide a custom implementation.
+pub trait ProtocolPointer: Protocol {
+    /// Create a const pointer to a [`Protocol`] from a [`c_void`] pointer.
+    ///
+    /// # Safety
+    ///
+    /// The input pointer must point to valid data.
+    unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self;
+
+    /// Create a mutable pointer to a [`Protocol`] from a [`c_void`] pointer.
+    ///
+    /// # Safety
+    ///
+    /// The input pointer must point to valid data.
+    unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self;
+}
+
+impl<P> ProtocolPointer for P
+where
+    P: Protocol,
+{
+    unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        ptr.cast::<Self>()
+    }
+
+    unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        ptr.cast::<Self>()
+    }
+}
 
 pub use uefi_macros::Protocol;
 

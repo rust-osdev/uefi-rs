@@ -129,6 +129,7 @@ impl Cargo {
                 }
             }
             CargoAction::Miri => {
+                cmd.env("MIRIFLAGS", "-Zmiri-tag-raw-pointers");
                 action = "miri";
                 sub_action = Some("test");
             }

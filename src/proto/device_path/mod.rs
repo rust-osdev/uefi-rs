@@ -114,11 +114,11 @@ impl PartialEq for DevicePath {
         // comparing the fields of the `DevicePath` struct.
         unsafe {
             let self_bytes = slice::from_raw_parts(
-                self as *const DevicePath as *const u8,
+                (self as *const DevicePath).cast::<u8>(),
                 self.length() as usize,
             );
             let other_bytes = slice::from_raw_parts(
-                other as *const DevicePath as *const u8,
+                (other as *const DevicePath).cast::<u8>(),
                 other.length() as usize,
             );
 
@@ -149,9 +149,9 @@ impl<'a> Iterator for DevicePathIterator<'a> {
 
         // Advance self.path to the next entry.
         let len = cur.header.length;
-        let byte_ptr = cur as *const DevicePath as *const u8;
+        let byte_ptr = (cur as *const DevicePath).cast::<u8>();
         unsafe {
-            let next_path_ptr = byte_ptr.add(len as usize) as *const DevicePath;
+            let next_path_ptr = byte_ptr.add(len as usize).cast::<DevicePath>();
             self.path = &*next_path_ptr;
         }
 
@@ -345,7 +345,7 @@ impl FilePathMediaDevicePath {
             // Use `addr_of` to avoid creating an unaligned reference.
             let ptr: *const [u16] = ptr::addr_of!(self.path_name);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
-            UnalignedCStr16::new(self, ptr as *const u16, len)
+            UnalignedCStr16::new(self, ptr.cast::<u16>(), len)
         }
     }
 }

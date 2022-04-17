@@ -147,7 +147,7 @@ pub trait File: Sized {
     /// * `uefi::Status::ACCESS_DENIED`     Requested change is invalid for this information type
     /// * `uefi::Status::VOLUME_FULL`       Not enough space left on the volume to change the info
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
-        let info_ptr = info as *const Info as *const c_void;
+        let info_ptr = (info as *const Info).cast::<c_void>();
         let info_size = mem::size_of_val(&info);
         unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).into() }
     }

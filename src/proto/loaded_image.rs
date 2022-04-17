@@ -83,7 +83,7 @@ impl LoadedImage {
         } else {
             let s = unsafe {
                 slice::from_raw_parts(
-                    self.load_options as *const u16,
+                    self.load_options.cast::<u16>(),
                     load_options_size / mem::size_of::<u16>(),
                 )
             };

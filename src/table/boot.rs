@@ -524,7 +524,7 @@ impl BootServices {
     pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
-            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+            let ptr = ptr.cast::<UnsafeCell<P>>();
             unsafe { &*ptr }
         })
     }
@@ -819,7 +819,7 @@ impl BootServices {
             attributes as u32,
         )
         .into_with_val(|| {
-            let interface = interface as *mut P as *mut UnsafeCell<P>;
+            let interface = interface.cast::<UnsafeCell<P>>();
             unsafe {
                 ScopedProtocol {
                     interface: &*interface,
@@ -868,7 +868,7 @@ impl BootServices {
 
         status.into_with_val(|| ProtocolsPerHandle {
             boot_services: self,
-            protocols: protocols as *mut &Guid,
+            protocols: protocols.cast::<&Guid>(),
             count,
         })
     }
@@ -899,7 +899,7 @@ impl BootServices {
     pub fn locate_protocol<P: Protocol>(&self) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
-            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
+            let ptr = ptr.cast::<UnsafeCell<P>>();
             unsafe { &*ptr }
         })
     }
@@ -1559,7 +1559,7 @@ pub struct ProtocolsPerHandle<'a> {
 impl<'a> Drop for ProtocolsPerHandle<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self.boot_services.free_pool(self.protocols as *mut u8);
+        let _ = self.boot_services.free_pool(self.protocols.cast::<u8>());
     }
 }
 
@@ -1586,7 +1586,7 @@ pub struct HandleBuffer<'a> {
 impl<'a> Drop for HandleBuffer<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self.boot_services.free_pool(self.buffer as *mut u8);
+        let _ = self.boot_services.free_pool(self.buffer.cast::<u8>());
     }
 }
 

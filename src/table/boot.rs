@@ -17,6 +17,48 @@ use core::ptr::NonNull;
 use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
+///
+/// # Accessing protocols
+///
+/// Protocols can be opened using several methods of `BootServices`. Most
+/// commonly, [`open_protocol`] should be used. This returns a
+/// [`ScopedProtocol`] that takes care of closing the protocol when it is
+/// dropped. If the protocol is opened in [`Exclusive`] mode, UEFI ensures that
+/// nothing else can use the protocol until it is closed.
+///
+/// Other methods for opening protocols:
+///
+/// * [`get_image_file_system`]
+/// * [`handle_protocol`]
+/// * [`locate_protocol`]
+///
+/// For protocol definitions, see the [`proto`] module.
+///
+/// [`proto`]: crate::proto
+/// [`Exclusive`]: OpenProtocolAttributes::Exclusive
+/// [`open_protocol`]: BootServices::open_protocol
+/// [`get_image_file_system`]: BootServices::get_image_file_system
+/// [`locate_protocol`]: BootServices::locate_protocol
+/// [`handle_protocol`]: BootServices::handle_protocol
+///
+/// ## Use of [`UnsafeCell`] for protocol references
+///
+/// Some protocols require mutable access to themselves. For example,
+/// most of the methods of the [`Output`] protocol take `&mut self`,
+/// because the internal function pointers specified by UEFI for that
+/// protocol take a mutable `*This` pointer. We don't want to directly
+/// return a mutable reference to a protocol though because the lifetime
+/// of the protocol is tied to `BootServices`. (That lifetime improves
+/// safety by ensuring protocols aren't accessed after exiting boot
+/// services.) If methods like [`open_protocol`] protocol took a mutable
+/// reference to `BootServices` and returned a mutable reference to a
+/// protocol it would prevent all other access to `BootServices` until
+/// the protocol reference was dropped. To work around this, the
+/// protocol reference is wrapped in an [`UnsafeCell`]. Callers can then
+/// get a mutable reference to the protocol if needed.
+///
+/// [`Output`]: crate::proto::console::text::Output
+/// [`open_protocol`]: BootServices::open_protocol
 #[repr(C)]
 pub struct BootServices {
     header: Header,
@@ -1263,6 +1305,9 @@ pub struct OpenProtocolParams {
 
 /// An open protocol interface. Automatically closes the protocol
 /// interface on drop.
+///
+/// See also the [`BootServices`] documentation for details of how to open a
+/// protocol and why [`UnsafeCell`] is used.
 pub struct ScopedProtocol<'a, P: Protocol> {
     /// The protocol interface.
     pub interface: &'a UnsafeCell<P>,

@@ -1,12 +1,13 @@
 //! Protocol definitions.
 //!
-//! Protocols are sets of related functionality.
+//! Protocols are sets of related functionality identified by a unique
+//! ID. They can be implemented by a UEFI driver or occasionally by a
+//! UEFI application.
 //!
-//! Protocols are identified by a unique ID.
+//! See the [`BootServices`] documentation for details of how to open a
+//! protocol.
 //!
-//! Protocols can be implemented by a UEFI driver,
-//! and are usually retrieved from a standard UEFI table or
-//! by querying a handle.
+//! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
 use crate::Identify;
 

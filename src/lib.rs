@@ -31,7 +31,7 @@
 #![cfg_attr(feature = "exts", feature(vec_into_raw_parts))]
 #![no_std]
 // Enable some additional warnings and lints.
-#![warn(missing_docs, unused)]
+#![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(clippy::all)]
 
 // `uefi-exts` requires access to memory allocation APIs.

@@ -49,7 +49,7 @@ impl Directory {
         // Read the directory entry into the aligned storage
         self.0.read(buffer).map(|size| {
             if size != 0 {
-                unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr() as *mut c_void)) }
+                unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr().cast::<c_void>())) }
             } else {
                 None
             }

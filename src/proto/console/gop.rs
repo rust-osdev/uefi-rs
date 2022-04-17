@@ -630,7 +630,8 @@ impl<'gop> FrameBuffer<'gop> {
             index.saturating_add(mem::size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
-        (self.base.add(index) as *mut T).write_volatile(value)
+        let ptr = self.base.add(index).cast::<T>();
+        ptr.write_volatile(value)
     }
 
     /// Read a value from the frame buffer, starting at the i-th byte

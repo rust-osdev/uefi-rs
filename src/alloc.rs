@@ -72,7 +72,7 @@ unsafe impl GlobalAlloc for Allocator {
             }
             let return_ptr = ptr.add(offset);
             // store allocated pointer before the struct
-            (return_ptr as *mut *mut u8).sub(1).write(ptr);
+            (return_ptr.cast::<*mut u8>()).sub(1).write(ptr);
             return_ptr
         } else {
             boot_services()

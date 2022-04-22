@@ -469,6 +469,15 @@ mod tests {
     }
 
     #[test]
+    fn test_cstr16_macro() {
+        // Just a sanity check to make sure it's spitting out the right characters
+        assert_eq!(
+            crate::prelude::cstr16!("ABC").to_u16_slice_with_nul(),
+            [65, 66, 67, 0]
+        )
+    }
+
+    #[test]
     fn test_unaligned_cstr16() {
         let mut buf = [0u16; 6];
         let us = unsafe {

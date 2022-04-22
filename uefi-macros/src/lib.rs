@@ -211,3 +211,40 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     };
     result.into()
 }
+
+#[proc_macro]
+pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input: LitStr = parse_macro_input!(input);
+    let input = input.value();
+    match input
+        .chars()
+        .map(|c| u8::try_from(c))
+        .collect::<Result<Vec<u8>, _>>()
+    {
+        Ok(c) => {
+            quote!(unsafe { ::uefi::CStr8::from_bytes_with_nul_unchecked(&[ #(#c),* , 0 ]) }).into()
+        }
+        Err(_) => syn::Error::new_spanned(input, "Invalid character")
+            .into_compile_error()
+            .into(),
+    }
+}
+
+/// test
+#[proc_macro]
+pub fn cstr16(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input: LitStr = parse_macro_input!(input);
+    let input = input.value();
+    match input
+        .chars()
+        .map(|c| u8::try_from(c).map(|c| c as u16))
+        .collect::<Result<Vec<u16>, _>>()
+    {
+        Ok(c) => {
+            quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[ #(#c),* , 0 ]) }).into()
+        }
+        Err(_) => syn::Error::new_spanned(input, "Invalid character")
+            .into_compile_error()
+            .into(),
+    }
+}

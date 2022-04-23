@@ -11,7 +11,7 @@ clap = { version = "3.0.13", features = ["derive"] }
 fatfs = { git = "https://github.com/rafalh/rust-fatfs.git", rev = "87fc1ed5074a32b4e0344fcdde77359ef9e75432" }
 fs-err = "2.6.0"
 mbrman = "0.4.2"
-nix = "0.23.1"
+nix = "0.24.1"
 regex = "1.5.4"
 serde_json = "1.0.73"
 tempfile = "3.2.0"

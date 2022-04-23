@@ -218,7 +218,7 @@ pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = input.value();
     match input
         .chars()
-        .map(|c| u8::try_from(c))
+        .map(u8::try_from)
         .collect::<Result<Vec<u8>, _>>()
     {
         Ok(c) => {
@@ -230,7 +230,6 @@ pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     }
 }
 
-/// test
 #[proc_macro]
 pub fn cstr16(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input: LitStr = parse_macro_input!(input);

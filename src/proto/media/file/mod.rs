@@ -117,7 +117,7 @@ pub trait File: Sized {
             )
         }
         .into_with(
-            || unsafe { Info::from_uefi(buffer.as_ptr() as *mut c_void) },
+            || unsafe { Info::from_uefi(buffer.as_mut_ptr().cast::<c_void>()) },
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {
                     Some(buffer_size)

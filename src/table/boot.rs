@@ -18,6 +18,12 @@ use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
 ///
+/// # Accessing `BootServices`
+///
+/// A reference to `BootServices` can only be accessed by calling [`boot_services`].
+///
+/// [`boot_services`]: crate::table::SystemTable::boot_services
+///
 /// # Accessing protocols
 ///
 /// Protocols can be opened using several methods of `BootServices`. Most

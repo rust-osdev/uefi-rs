@@ -18,6 +18,12 @@ use core::{fmt, ptr};
 ///
 /// This table, and the function pointers it contains are valid
 /// even after the UEFI OS loader and OS have taken control of the platform.
+///
+/// # Accessing `RuntimeServices`
+///
+/// A reference to `RuntimeServices` can only be accessed by calling [`runtime_services`].
+///
+/// [`runtime_services`]: crate::table::SystemTable::runtime_services
 #[repr(C)]
 pub struct RuntimeServices {
     header: Header,

@@ -16,6 +16,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     device_path::test(image, bt);
     loaded_image::test(image, bt);
     media::test(image, bt);
+    network::test(image, bt);
     pi::test(bt);
     rng::test(image, bt);
 
@@ -60,6 +61,7 @@ mod debug;
 mod device_path;
 mod loaded_image;
 mod media;
+mod network;
 mod pi;
 mod rng;
 #[cfg(any(

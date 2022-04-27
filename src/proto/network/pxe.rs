@@ -131,7 +131,7 @@ impl BaseCode {
             ty,
             layer,
             use_bis,
-            info.map(|info| info as *const DiscoverInfo<[Server]> as *const _),
+            info.map(|info| (info as *const DiscoverInfo<[Server]>).cast()),
         )
         .into()
     }

@@ -4,7 +4,8 @@
 
 pub mod pxe;
 
-/// EFI_IP_ADDRESS
+/// Represents an IPv4/v6 address. Corresponds to `EFI_IP_ADDRESS` type in the
+/// C API.
 #[derive(Clone, Copy)]
 #[repr(C, align(4))]
 pub struct IpAddress(pub [u8; 16]);

@@ -976,6 +976,9 @@ pub struct DhcpV4Packet {
 }
 
 impl DhcpV4Packet {
+    /// The expected value for [`Self::dhcp_magik`].
+    pub const DHCP_MAGIK: u32 = 0x63825363;
+
     /// Transaction ID, a random number, used to match this boot request with the responses it generates.
     pub fn bootp_ident(&self) -> u32 {
         u32::from_be(self.bootp_ident)
@@ -991,7 +994,7 @@ impl DhcpV4Packet {
         DhcpV4Flags::from_bits_truncate(u16::from_be(self.bootp_flags))
     }
 
-    /// A magic cookie, should be `0x63825363`.
+    /// A magic cookie, should be [`Self::DHCP_MAGIK`].
     pub fn dhcp_magik(&self) -> u32 {
         u32::from_be(self.dhcp_magik)
     }

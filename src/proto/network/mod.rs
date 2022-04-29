@@ -26,7 +26,8 @@ impl IpAddress {
     }
 }
 
-/// EFI_MAC_ADDRESS
+/// Represents a MAC (media access control) address. Corresponds to the
+/// `EFI_MAC_ADDRESS` type in the C API.
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct MacAddress(pub [u8; 32]);

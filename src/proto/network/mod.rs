@@ -29,4 +29,4 @@ impl IpAddress {
 /// EFI_MAC_ADDRESS
 #[derive(Clone, Copy)]
 #[repr(C)]
-pub struct MacAddr(pub [u8; 32]);
+pub struct MacAddress(pub [u8; 32]);

@@ -7,7 +7,7 @@ use uefi_macros::{unsafe_guid, Protocol};
 
 use crate::{CStr8, Char8, Result, Status};
 
-use super::{IpAddress, MacAddr};
+use super::{IpAddress, MacAddress};
 
 /// PXE Base Code protocol
 #[repr(C)]
@@ -67,7 +67,7 @@ pub struct BaseCode {
     arp: extern "efiapi" fn(
         this: &Self,
         ip_addr: &IpAddress,
-        mac_addr: Option<&mut MacAddr>,
+        mac_addr: Option<&mut MacAddress>,
     ) -> Status,
     set_parameters: extern "efiapi" fn(
         this: &Self,
@@ -585,7 +585,7 @@ impl BaseCode {
     }
 
     /// Uses the ARP protocol to resolve a MAC address.
-    pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddr>) -> Result {
+    pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
         (self.arp)(self, ip_addr, mac_addr).into()
     }
 
@@ -1195,7 +1195,7 @@ pub struct ArpEntry {
     /// The ip address.
     pub ip_addr: IpAddress,
     /// The mac address of the device that is addressed by [`Self::ip_addr`].
-    pub mac_addr: MacAddr,
+    pub mac_addr: MacAddress,
 }
 
 /// An entry for the route table found in [`Mode::route_table`]

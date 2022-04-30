@@ -21,9 +21,9 @@ use core::{fmt, ptr};
 ///
 /// # Accessing `RuntimeServices`
 ///
-/// A reference to `RuntimeServices` can only be accessed by calling [`runtime_services`].
+/// A reference to `RuntimeServices` can only be accessed by calling [`SystemTable::runtime_services`].
 ///
-/// [`runtime_services`]: crate::table::SystemTable::runtime_services
+/// [`SystemTable::runtime_services`]: crate::table::SystemTable::runtime_services
 #[repr(C)]
 pub struct RuntimeServices {
     header: Header,

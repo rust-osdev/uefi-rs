@@ -21,9 +21,9 @@ use core::{ptr, slice};
 ///
 /// # Accessing `BootServices`
 ///
-/// A reference to `BootServices` can only be accessed by calling [`boot_services`].
+/// A reference to `BootServices` can only be accessed by calling [`SystemTable::boot_services`].
 ///
-/// [`boot_services`]: crate::table::SystemTable::boot_services
+/// [`SystemTable::boot_services`]: crate::table::SystemTable::boot_services
 ///
 /// # Accessing protocols
 ///

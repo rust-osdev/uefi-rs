@@ -7,6 +7,19 @@ use core::fmt::{Debug, Formatter};
 ///
 /// It implements the fmt::Write trait, so you can use it to print text with
 /// standard Rust constructs like the `write!()` and `writeln!()` macros.
+///
+/// # Accessing `Output` protocol
+///
+/// The standard output and standard error output protocols can be accessed
+/// using [`SystemTable::stdout`] and [`SystemTable::stderr`], respectively.
+///
+/// An `Output` protocol can also be accessed like any other UEFI protocol.
+/// See the [`BootServices`] documentation for more details of how to open a
+/// protocol.
+///
+/// [`SystemTable::stdout`]: crate::table::SystemTable::stdout
+/// [`SystemTable::stderr`]: crate::table::SystemTable::stderr
+/// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 #[repr(C)]
 #[unsafe_guid("387477c2-69c7-11d2-8e39-00a0c969723b")]
 #[derive(Protocol)]

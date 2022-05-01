@@ -232,7 +232,8 @@ impl BaseCode {
         server_ip: &IpAddress,
         directory_name: &CStr8,
         buffer: &'a mut [u8],
-    ) -> Result<impl Iterator<Item = TftpFileInfo<'a>> + 'a> {
+    ) -> Result<impl Iterator<Item = core::result::Result<TftpFileInfo<'a>, ReadDirParseError>> + 'a>
+    {
         let filename = NonNull::from(&directory_name.to_bytes_with_nul()[0]).cast();
 
         let buffer_ptr = NonNull::from(&buffer[0]).cast();
@@ -258,52 +259,37 @@ impl BaseCode {
         let buffer = &buffer[..buffer_size];
 
         let mut iterator = buffer.split_inclusive(|b| *b == 0);
-
-        Ok(from_fn(move || {
-            let filename = iterator
-                .next()
-                .expect("the final entry should have an empty file name");
+        let mut parse_next = move || {
+            let filename = iterator.next().ok_or(ReadDirParseError)?;
             if filename == [0] {
                 // This is the final entry.
-                return None;
+                return Ok(None);
             }
             let filename = CStr8::from_bytes_with_nul(filename).unwrap();
 
-            let information_string = iterator
-                .next()
-                .expect("each file should have an information string");
+            let information_string = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, information_string) = information_string.split_last().unwrap();
-            let information_string = core::str::from_utf8(information_string)
-                .expect("the information string should be valid utf-8");
+            let information_string =
+                core::str::from_utf8(information_string).map_err(|_| ReadDirParseError)?;
 
             let (size, rest) = information_string
                 .split_once(' ')
-                .expect("the information string should be valid");
-            let (year, rest) = rest
-                .split_once('-')
-                .expect("the information string should be valid");
-            let (month, rest) = rest
-                .split_once('-')
-                .expect("the information string should be valid");
-            let (day, rest) = rest
-                .split_once(' ')
-                .expect("the information string should be valid");
-            let (hour, rest) = rest
-                .split_once(':')
-                .expect("the information string should be valid");
-            let (minute, second) = rest
-                .split_once(':')
-                .expect("the information string should be valid");
+                .ok_or(ReadDirParseError)?;
+            let (year, rest) = rest.split_once('-').ok_or(ReadDirParseError)?;
+            let (month, rest) = rest.split_once('-').ok_or(ReadDirParseError)?;
+            let (day, rest) = rest.split_once(' ').ok_or(ReadDirParseError)?;
+            let (hour, rest) = rest.split_once(':').ok_or(ReadDirParseError)?;
+            let (minute, second) = rest.split_once(':').ok_or(ReadDirParseError)?;
 
-            let size = size.parse().expect("size should be a number");
-            let year = year.parse().expect("year should be a number");
-            let month = month.parse().expect("month should be a number");
-            let day = day.parse().expect("day should be a number");
-            let hour = hour.parse().expect("hour should be a number");
-            let minute = minute.parse().expect("minute should be a number");
-            let second = second.parse().expect("second should be a number");
+            let size = size.parse().map_err(|_| ReadDirParseError)?;
+            let year = year.parse().map_err(|_| ReadDirParseError)?;
+            let month = month.parse().map_err(|_| ReadDirParseError)?;
+            let day = day.parse().map_err(|_| ReadDirParseError)?;
+            let hour = hour.parse().map_err(|_| ReadDirParseError)?;
+            let minute = minute.parse().map_err(|_| ReadDirParseError)?;
+            let second = second.parse().map_err(|_| ReadDirParseError)?;
 
-            Some(TftpFileInfo {
+            Ok(Some(TftpFileInfo {
                 filename,
                 size,
                 year,
@@ -312,9 +298,9 @@ impl BaseCode {
                 hour,
                 minute,
                 second,
-            })
-        })
-        .fuse())
+            }))
+        };
+        Ok(from_fn(move || parse_next().transpose()).fuse())
     }
 
     /// Returns the size of a file located on a MTFTP server.
@@ -389,7 +375,8 @@ impl BaseCode {
         server_ip: &IpAddress,
         buffer: &'a mut [u8],
         info: &MtftpInfo,
-    ) -> Result<impl Iterator<Item = MtftpFileInfo<'a>> + 'a> {
+    ) -> Result<impl Iterator<Item = core::result::Result<MtftpFileInfo<'a>, ReadDirParseError>> + 'a>
+    {
         let buffer_ptr = NonNull::from(&buffer[0]).cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
@@ -413,71 +400,53 @@ impl BaseCode {
         let buffer = &buffer[..buffer_size];
 
         let mut iterator = buffer.split_inclusive(|b| *b == 0);
-
-        Ok(from_fn(move || {
-            let filename = iterator
-                .next()
-                .expect("the final entry should have an empty file name");
+        let mut parse_next = move || {
+            let filename = iterator.next().ok_or(ReadDirParseError)?;
             if filename == [0] {
                 // This is the final entry.
-                return None;
+                return Ok(None);
             }
             let filename = CStr8::from_bytes_with_nul(filename).unwrap();
 
-            let multicast_ip = iterator
-                .next()
-                .expect("each file should have a multicast ip address");
+            let multicast_ip = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, multicast_ip) = multicast_ip.split_last().unwrap();
-            let multicast_ip = core::str::from_utf8(multicast_ip)
-                .expect("the multicast ip address should be valid utf-8");
+            let multicast_ip = core::str::from_utf8(multicast_ip).map_err(|_| ReadDirParseError)?;
             let mut octets = multicast_ip.split('.');
             let mut buffer = [0; 4];
             for b in buffer.iter_mut() {
-                let octet = octets
-                    .next()
-                    .expect("the information string should be valid");
-                let octet = octet
-                    .parse()
-                    .expect("each octet in the ip address should be a number");
+                let octet = octets.next().ok_or(ReadDirParseError)?;
+                let octet = octet.parse().map_err(|_| ReadDirParseError)?;
                 *b = octet;
+            }
+            if octets.next().is_some() {
+                // The ip should have exact 4 octets, not more.
+                return Err(ReadDirParseError);
             }
             let ip_address = IpAddress::new_v4(buffer);
 
-            let information_string = iterator
-                .next()
-                .expect("each file should have an information string");
+            let information_string = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, information_string) = information_string.split_last().unwrap();
-            let information_string = core::str::from_utf8(information_string)
-                .expect("the information string should be valid utf-8");
+            let information_string =
+                core::str::from_utf8(information_string).map_err(|_| ReadDirParseError)?;
 
             let (size, rest) = information_string
                 .split_once(' ')
-                .expect("the information string should be valid");
-            let (year, rest) = rest
-                .split_once('-')
-                .expect("the information string should be valid");
-            let (month, rest) = rest
-                .split_once('-')
-                .expect("the information string should be valid");
-            let (day, rest) = rest
-                .split_once(' ')
-                .expect("the information string should be valid");
-            let (hour, rest) = rest
-                .split_once(':')
-                .expect("the information string should be valid");
-            let (minute, second) = rest
-                .split_once(':')
-                .expect("the information string should be valid");
+                .ok_or(ReadDirParseError)?;
+            let (year, rest) = rest.split_once('-').ok_or(ReadDirParseError)?;
+            let (month, rest) = rest.split_once('-').ok_or(ReadDirParseError)?;
+            let (day, rest) = rest.split_once(' ').ok_or(ReadDirParseError)?;
+            let (hour, rest) = rest.split_once(':').ok_or(ReadDirParseError)?;
+            let (minute, second) = rest.split_once(':').ok_or(ReadDirParseError)?;
 
-            let size = size.parse().expect("size should be a number");
-            let year = year.parse().expect("year should be a number");
-            let month = month.parse().expect("month should be a number");
-            let day = day.parse().expect("day should be a number");
-            let hour = hour.parse().expect("hour should be a number");
-            let minute = minute.parse().expect("minute should be a number");
-            let second = second.parse().expect("second should be a number");
+            let size = size.parse().map_err(|_| ReadDirParseError)?;
+            let year = year.parse().map_err(|_| ReadDirParseError)?;
+            let month = month.parse().map_err(|_| ReadDirParseError)?;
+            let day = day.parse().map_err(|_| ReadDirParseError)?;
+            let hour = hour.parse().map_err(|_| ReadDirParseError)?;
+            let minute = minute.parse().map_err(|_| ReadDirParseError)?;
+            let second = second.parse().map_err(|_| ReadDirParseError)?;
 
-            Some(MtftpFileInfo {
+            Ok(Some(MtftpFileInfo {
                 filename,
                 ip_address,
                 size,
@@ -487,9 +456,9 @@ impl BaseCode {
                 hour,
                 minute,
                 second,
-            })
-        })
-        .fuse())
+            }))
+        };
+        Ok(from_fn(move || parse_next().transpose()).fuse())
     }
 
     /// Writes a UDP packet to the network interface.
@@ -1274,3 +1243,8 @@ pub struct MtftpFileInfo<'a> {
     pub minute: u8,
     pub second: f32,
 }
+
+/// Returned if a server sends a malformed response in
+/// [`BaseCode::tftp_read_dir`] or [`BaseCode::mtftp_read_dir`].
+#[derive(Clone, Copy, Debug)]
+pub struct ReadDirParseError;

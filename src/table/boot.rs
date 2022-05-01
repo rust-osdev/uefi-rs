@@ -331,7 +331,7 @@ impl BootServices {
     )> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
-        let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
+        let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;

@@ -3,7 +3,7 @@
 use core::{
     ffi::c_void,
     iter::from_fn,
-    ptr::{null, null_mut, NonNull},
+    ptr::{null, null_mut},
 };
 
 use bitflags::bitflags;
@@ -53,7 +53,7 @@ pub struct BaseCode {
         header_size: Option<&usize>,
         header_ptr: *const c_void,
         buffer_size: &usize,
-        buffer_ptr: NonNull<c_void>,
+        buffer_ptr: *const c_void,
     ) -> Status,
     udp_read: unsafe extern "efiapi" fn(
         this: &Self,
@@ -65,7 +65,7 @@ pub struct BaseCode {
         header_size: Option<&usize>,
         header_ptr: *mut c_void,
         buffer_size: &mut usize,
-        buffer_ptr: NonNull<c_void>,
+        buffer_ptr: *mut c_void,
     ) -> Status,
     set_ip_filter: extern "efiapi" fn(this: &Self, new_filter: &IpFilter) -> Status,
     arp: extern "efiapi" fn(
@@ -101,7 +101,7 @@ pub struct BaseCode {
         new_pxe_reply: Option<&Packet>,
         new_pxe_bis_reply: Option<&Packet>,
     ) -> Status,
-    mode: NonNull<Mode>,
+    mode: *const Mode,
 }
 
 impl BaseCode {
@@ -486,7 +486,7 @@ impl BaseCode {
                 header_size,
                 header_ptr,
                 &buffer.len(),
-                NonNull::from(&buffer[0]).cast(),
+                (&buffer[0] as *const u8).cast(),
             )
         }
         .into()
@@ -525,7 +525,7 @@ impl BaseCode {
                 header_size,
                 header_ptr,
                 &mut buffer_size,
-                NonNull::from(&buffer[0]).cast(),
+                (&mut buffer[0] as *mut u8).cast(),
             )
         };
         Result::from(status)?;
@@ -612,7 +612,7 @@ impl BaseCode {
 
     /// Returns a reference to the `Mode` struct.
     pub fn mode(&self) -> &Mode {
-        unsafe { self.mode.as_ref() }
+        unsafe { &*self.mode }
     }
 }
 

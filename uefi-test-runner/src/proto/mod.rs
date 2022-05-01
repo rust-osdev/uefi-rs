@@ -36,7 +36,7 @@ fn find_protocol(bt: &BootServices) {
         .expect("Failed to retrieve list of handles");
 
     assert!(
-        handles.len() > 1,
+        !handles.is_empty(),
         "There should be at least one implementation of Simple Text Output (stdout)"
     );
 }

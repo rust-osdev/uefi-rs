@@ -1,6 +1,10 @@
 //! PXE Base Code protocol.
 
-use core::{ffi::c_void, iter::from_fn, ptr::NonNull};
+use core::{
+    ffi::c_void,
+    iter::from_fn,
+    ptr::{null, null_mut, NonNull},
+};
 
 use bitflags::bitflags;
 use uefi_macros::{unsafe_guid, Protocol};
@@ -29,12 +33,12 @@ pub struct BaseCode {
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
         operation: TftpOpcode,
-        buffer: Option<NonNull<c_void>>,
+        buffer: *mut c_void,
         overwrite: bool,
         buffer_size: &mut u64,
         block_size: Option<&usize>,
         server_ip: &IpAddress,
-        filename: Option<NonNull<Char8>>,
+        filename: *const Char8,
         info: Option<&MtftpInfo>,
         dont_use_buffer: bool,
     ) -> Status,
@@ -47,7 +51,7 @@ pub struct BaseCode {
         src_ip: Option<&IpAddress>,
         src_port: Option<&mut u16>,
         header_size: Option<&usize>,
-        header_ptr: Option<NonNull<c_void>>,
+        header_ptr: *const c_void,
         buffer_size: &usize,
         buffer_ptr: NonNull<c_void>,
     ) -> Status,
@@ -59,7 +63,7 @@ pub struct BaseCode {
         src_ip: Option<&mut IpAddress>,
         src_port: Option<&mut u16>,
         header_size: Option<&usize>,
-        header_ptr: Option<NonNull<c_void>>,
+        header_ptr: *mut c_void,
         buffer_size: &mut usize,
         buffer_ptr: NonNull<c_void>,
     ) -> Status,
@@ -139,18 +143,17 @@ impl BaseCode {
     /// Returns the size of a file located on a TFTP server.
     pub fn tftp_get_file_size(&mut self, server_ip: &IpAddress, filename: &CStr8) -> Result<u64> {
         let mut buffer_size = 0;
-        let filename = NonNull::from(&filename.to_bytes_with_nul()[0]).cast();
 
         let status = unsafe {
             (self.mtftp)(
                 self,
                 TftpOpcode::TftpGetFileSize,
-                None,
+                null_mut(),
                 false,
                 &mut buffer_size,
                 None,
                 server_ip,
-                Some(filename),
+                filename.as_ptr(),
                 None,
                 false,
             )
@@ -167,14 +170,11 @@ impl BaseCode {
         filename: &CStr8,
         buffer: Option<&mut [u8]>,
     ) -> Result<u64> {
-        let filename = NonNull::from(&filename.to_bytes_with_nul()[0]).cast();
-
         let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
-            let buffer_ptr = NonNull::from(&mut buffer[0]).cast::<c_void>();
             let buffer_size = u64::try_from(buffer.len()).unwrap();
-            (Some(buffer_ptr), buffer_size, false)
+            ((&mut buffer[0] as *mut u8).cast(), buffer_size, false)
         } else {
-            (None, 0, true)
+            (null_mut(), 0, true)
         };
 
         let status = unsafe {
@@ -186,7 +186,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip,
-                Some(filename),
+                filename.as_ptr(),
                 None,
                 dont_use_buffer,
             )
@@ -204,21 +204,19 @@ impl BaseCode {
         overwrite: bool,
         buffer: &[u8],
     ) -> Result {
-        let filename = NonNull::from(&filename.to_bytes_with_nul()[0]).cast();
-
-        let buffer_ptr = NonNull::from(&buffer[0]).cast();
+        let buffer_ptr = (&buffer[0] as *const u8 as *mut u8).cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         unsafe {
             (self.mtftp)(
                 self,
                 TftpOpcode::TftpWriteFile,
-                Some(buffer_ptr),
+                buffer_ptr,
                 overwrite,
                 &mut buffer_size,
                 None,
                 server_ip,
-                Some(filename),
+                filename.as_ptr(),
                 None,
                 false,
             )
@@ -234,21 +232,19 @@ impl BaseCode {
         buffer: &'a mut [u8],
     ) -> Result<impl Iterator<Item = core::result::Result<TftpFileInfo<'a>, ReadDirParseError>> + 'a>
     {
-        let filename = NonNull::from(&directory_name.to_bytes_with_nul()[0]).cast();
-
-        let buffer_ptr = NonNull::from(&buffer[0]).cast();
+        let buffer_ptr = (&buffer[0] as *const u8 as *mut u8).cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let status = unsafe {
             (self.mtftp)(
                 self,
                 TftpOpcode::TftpReadDirectory,
-                Some(buffer_ptr),
+                buffer_ptr,
                 false,
                 &mut buffer_size,
                 None,
                 server_ip,
-                Some(filename),
+                directory_name.as_ptr(),
                 None,
                 false,
             )
@@ -311,18 +307,17 @@ impl BaseCode {
         info: &MtftpInfo,
     ) -> Result<u64> {
         let mut buffer_size = 0;
-        let filename = NonNull::from(&filename.to_bytes_with_nul()[0]).cast();
 
         let status = unsafe {
             (self.mtftp)(
                 self,
                 TftpOpcode::MtftpGetFileSize,
-                None,
+                null_mut(),
                 false,
                 &mut buffer_size,
                 None,
                 server_ip,
-                Some(filename),
+                filename.as_ptr(),
                 Some(info),
                 false,
             )
@@ -340,14 +335,11 @@ impl BaseCode {
         buffer: Option<&mut [u8]>,
         info: &MtftpInfo,
     ) -> Result<u64> {
-        let filename = NonNull::from(&filename.to_bytes_with_nul()[0]).cast();
-
         let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
-            let buffer_ptr = NonNull::from(&mut buffer[0]).cast::<c_void>();
             let buffer_size = u64::try_from(buffer.len()).unwrap();
-            (Some(buffer_ptr), buffer_size, false)
+            ((&mut buffer[0] as *mut u8).cast(), buffer_size, false)
         } else {
-            (None, 0, true)
+            (null_mut(), 0, true)
         };
 
         let status = unsafe {
@@ -359,7 +351,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip,
-                Some(filename),
+                filename.as_ptr(),
                 Some(info),
                 dont_use_buffer,
             )
@@ -377,19 +369,19 @@ impl BaseCode {
         info: &MtftpInfo,
     ) -> Result<impl Iterator<Item = core::result::Result<MtftpFileInfo<'a>, ReadDirParseError>> + 'a>
     {
-        let buffer_ptr = NonNull::from(&buffer[0]).cast();
+        let buffer_ptr = (&buffer[0] as *const u8 as *mut u8).cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let status = unsafe {
             (self.mtftp)(
                 self,
                 TftpOpcode::MtftpReadDirectory,
-                Some(buffer_ptr),
+                buffer_ptr,
                 false,
                 &mut buffer_size,
                 None,
                 server_ip,
-                None,
+                null_mut(),
                 Some(info),
                 false,
             )
@@ -477,12 +469,9 @@ impl BaseCode {
         let header_size_tmp;
         let (header_size, header_ptr) = if let Some(header) = header {
             header_size_tmp = header.len();
-            (
-                Some(&header_size_tmp),
-                Some(NonNull::from(&header[0]).cast()),
-            )
+            (Some(&header_size_tmp), (&header[0] as *const u8).cast())
         } else {
-            (None, None)
+            (None, null())
         };
 
         unsafe {
@@ -518,12 +507,9 @@ impl BaseCode {
         let header_size_tmp;
         let (header_size, header_ptr) = if let Some(header) = header {
             header_size_tmp = header.len();
-            (
-                Some(&header_size_tmp),
-                Some(NonNull::from(&mut header[0]).cast()),
-            )
+            (Some(&header_size_tmp), (&mut header[0] as *mut u8).cast())
         } else {
-            (None, None)
+            (None, null_mut())
         };
 
         let mut buffer_size = buffer.len();

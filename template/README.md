@@ -31,8 +31,11 @@ it from disk and booting it.
 
 This is similar to what the Linux kernel's [EFI stub] does: the compressed kernel
 is an ELF binary which has little knowledge of how it's booted, and the boot loader
-uses UEFI to set up an environment for it.
+uses UEFI to set up an environment for it. See the [bootloader] crate for an example
+of how `uefi-rs` can be used to construct a first-stage bootloader which then
+loads and executes an ELF kernel binary.
 
 [higher half kernel]: https://wiki.osdev.org/Higher_Half_Kernel
 [linker scripts]: https://sourceware.org/binutils/docs/ld/Scripts.html
 [EFI stub]: https://www.kernel.org/doc/Documentation/efi-stub.txt
+[bootloader]: https://github.com/rust-osdev/bootloader

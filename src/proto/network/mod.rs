@@ -6,7 +6,7 @@ pub mod pxe;
 
 /// Represents an IPv4/v6 address. Corresponds to `EFI_IP_ADDRESS` type in the
 /// C API.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(C, align(4))]
 pub struct IpAddress(pub [u8; 16]);
 
@@ -29,6 +29,6 @@ impl IpAddress {
 
 /// Represents a MAC (media access control) address. Corresponds to the
 /// `EFI_MAC_ADDRESS` type in the C API.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub struct MacAddress(pub [u8; 32]);

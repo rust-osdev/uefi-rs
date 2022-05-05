@@ -617,6 +617,7 @@ impl BaseCode {
 }
 
 // EFI_PXE_BASE_CODE_BOOT_*
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u16)]
 #[allow(missing_docs)]
 pub enum BootstrapType {

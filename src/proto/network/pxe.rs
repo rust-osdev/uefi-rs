@@ -616,6 +616,7 @@ impl BaseCode {
     }
 }
 
+/// A type of bootstrap to perform in [`BaseCode::discover`].
 // EFI_PXE_BASE_CODE_BOOT_*
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u16)]

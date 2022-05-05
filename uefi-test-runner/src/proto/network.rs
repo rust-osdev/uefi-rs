@@ -59,7 +59,7 @@ pub fn test(image: Handle, bt: &BootServices) {
 
             base_code
                 .set_ip_filter(&IpFilter::new(IpFilters::STATION_IP, &[]))
-                .expect("failed to set ip filter");
+                .expect("failed to set IP filter");
 
             const EXAMPLE_SERVICE_PORT: u16 = 21572;
 

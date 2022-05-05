@@ -411,7 +411,7 @@ impl BaseCode {
                 *b = octet;
             }
             if octets.next().is_some() {
-                // The ip should have exact 4 octets, not more.
+                // The IP should have exact 4 octets, not more.
                 return Err(ReadDirParseError);
             }
             let ip_address = IpAddress::new_v4(buffer);
@@ -730,13 +730,13 @@ pub struct Server {
     pub ty: u16,
     accept_any_response: bool,
     _reserved: u8,
-    /// The ip address of the server
+    /// The IP address of the server
     ip_addr: IpAddress,
 }
 
 impl Server {
     /// Construct a `Server` for a Boot Server reply type. If `ip_addr` is not
-    /// `None` only Boot Server replies with matching the ip address will be
+    /// `None` only Boot Server replies with matching the IP address will be
     /// accepted.
     pub fn new(ty: u16, ip_addr: Option<IpAddress>) -> Self {
         Self {
@@ -747,7 +747,7 @@ impl Server {
         }
     }
 
-    /// Returns a `None` if the any response should be accepted or the ip
+    /// Returns a `None` if the any response should be accepted or the IP
     /// address of a Boot Server whose responses should be accepted.
     pub fn ip_addr(&self) -> Option<&IpAddress> {
         if self.accept_any_response {
@@ -846,7 +846,7 @@ impl IpFilter {
         }
     }
 
-    /// A list of ip addresses other than the Station Ip that should be
+    /// A list of IP addresses other than the Station Ip that should be
     /// enabled. Maybe be multicast or unicast.
     pub fn ip_list(&self) -> &[IpAddress] {
         &self.ip_list[..usize::from(self.ip_cnt)]
@@ -857,7 +857,7 @@ bitflags! {
     /// IP receive filters.
     #[repr(transparent)]
     pub struct IpFilters: u8 {
-        /// Enable the Station ip address.
+        /// Enable the Station IP address.
         const STATION_IP = 0x01;
         /// Enable IPv4 broadcast addresses.
         const BROADCAST = 0x02;
@@ -1148,7 +1148,7 @@ pub struct Mode {
 // EFI_PXE_BASE_CODE_ARP_ENTRY
 #[repr(C)]
 pub struct ArpEntry {
-    /// The ip address.
+    /// The IP address.
     pub ip_addr: IpAddress,
     /// The mac address of the device that is addressed by [`Self::ip_addr`].
     pub mac_addr: MacAddress,

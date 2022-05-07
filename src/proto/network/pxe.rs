@@ -617,7 +617,8 @@ impl BaseCode {
 }
 
 /// A type of bootstrap to perform in [`BaseCode::discover`].
-// EFI_PXE_BASE_CODE_BOOT_*
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_BOOT_` constants in the C API.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u16)]
 #[allow(missing_docs)]
@@ -648,7 +649,8 @@ pub enum BootstrapType {
 }
 
 /// This struct contains optional parameters for [`BaseCode::discover`].
-// EFI_PXE_BASE_CODE_DISCOVER_INFO
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_DISCOVER_INFO` type in the C API.
 #[repr(C)]
 pub struct DiscoverInfo<T: ?Sized> {
     use_m_cast: bool,
@@ -724,7 +726,8 @@ impl<T> DiscoverInfo<T> {
 }
 
 /// An entry in the Boot Server list
-// EFI_PXE_BASE_CODE_SRVLIST
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_SRVLIST` type in the C API.
 #[repr(C)]
 pub struct Server {
     /// The type of Boot Server reply
@@ -759,7 +762,7 @@ impl Server {
     }
 }
 
-// EFI_PXE_BASE_CODE_TFTP_OPCODE
+/// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_OPCODE` type in the C API.
 #[repr(C)]
 enum TftpOpcode {
     TftpGetFileSize = 1,
@@ -772,7 +775,8 @@ enum TftpOpcode {
 }
 
 /// MTFTP connection parameters
-// EFI_PXE_BASE_CODE_MTFTP_INFO
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_MTFTP_INFO` type in the C API.
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct MtftpInfo {
@@ -816,7 +820,8 @@ bitflags! {
 }
 
 /// IP receive filter settings
-// EFI_PXE_BASE_CODE_IP_FILTER
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_IP_FILTER` type in the C API.
 #[repr(C)]
 pub struct IpFilter {
     /// A set of filters.
@@ -870,7 +875,8 @@ bitflags! {
 }
 
 /// A network packet.
-// EFI_PXE_BASE_CODE_PACKET
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_PACKET` type in the C API.
 #[repr(C)]
 pub union Packet {
     raw: [u8; 1472],
@@ -897,7 +903,8 @@ impl AsRef<DhcpV6Packet> for Packet {
 }
 
 /// A Dhcpv4 Packet.
-// EFI_PXE_BASE_CODE_DHCPV4_PACKET
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_DHCPV4_PACKET` type in the C API.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct DhcpV4Packet {
@@ -967,7 +974,8 @@ bitflags! {
 }
 
 /// A Dhcpv6 Packet.
-// EFI_PXE_BASE_CODE_DHCPV6_PACKET
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_DHCPV6_PACKET` type in the C API.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct DhcpV6Packet {
@@ -989,7 +997,8 @@ impl DhcpV6Packet {
 
 /// The data values in this structure are read-only and are updated by the
 /// [`BaseCode`].
-// EFI_PXE_BASE_CODE_MODE
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_MODE` type in the C API.
 #[repr(C)]
 pub struct Mode {
     /// `true` if this device has been started by calling [`BaseCode::start`].
@@ -1146,7 +1155,8 @@ pub struct Mode {
 }
 
 /// An entry for the ARP cache found in [`Mode::arp_cache`]
-// EFI_PXE_BASE_CODE_ARP_ENTRY
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_ARP_ENTRY` type in the C API.
 #[repr(C)]
 pub struct ArpEntry {
     /// The IP address.
@@ -1156,7 +1166,8 @@ pub struct ArpEntry {
 }
 
 /// An entry for the route table found in [`Mode::route_table`]
-// EFI_PXE_BASE_CODE_ROUTE_ENTRY
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_ROUTE_ENTRY` type in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
 pub struct RouteEntry {
@@ -1165,7 +1176,9 @@ pub struct RouteEntry {
     pub gw_addr: IpAddress,
 }
 
-// EFI_PXE_BASE_CODE_ICMP_ERROR
+/// An ICMP error packet.
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_ICMP_ERROR` type in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
 pub struct IcmpError {
@@ -1176,8 +1189,8 @@ pub struct IcmpError {
     pub data: [u8; 494],
 }
 
-// This type represents the anonymous union inside
-// EFI_PXE_BASE_CODE_ICMP_ERROR.
+/// Corresponds to the anonymous union inside
+/// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
 pub union IcmpErrorUnion {
@@ -1187,8 +1200,8 @@ pub union IcmpErrorUnion {
     pub echo: IcmpErrorEcho,
 }
 
-// This type represents on of the fields in the anonymous union inside
-// EFI_PXE_BASE_CODE_ICMP_ERROR.
+/// Corresponds to the `Echo` field in the anonymous union inside
+/// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[allow(missing_docs)]
@@ -1197,7 +1210,9 @@ pub struct IcmpErrorEcho {
     pub sequence: u16,
 }
 
-// EFI_PXE_BASE_CODE_TFTP_ERROR
+/// A TFTP error packet.
+///
+/// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_ERROR` type in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
 pub struct TftpError {

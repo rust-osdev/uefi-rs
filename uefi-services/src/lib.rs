@@ -102,6 +102,8 @@ pub fn _print(args: core::fmt::Arguments) {
     unsafe {
         if let Some(st) = &mut SYSTEM_TABLE {
             st.stdout().write_fmt(args).expect("Failed to write to stdout");
+        } else {
+            panic!("SYSTEM_TABLE is None");
         }
     }
 }

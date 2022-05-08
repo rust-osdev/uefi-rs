@@ -96,7 +96,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
     }
 }
 
-// Interal function for print macros
+// Internal function for print macros
 #[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
     unsafe {

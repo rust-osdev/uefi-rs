@@ -16,6 +16,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     device_path::test(image, bt);
     loaded_image::test(image, bt);
     media::test(image, bt);
+    network::test(image, bt);
     pi::test(bt);
     rng::test(image, bt);
 
@@ -36,7 +37,7 @@ fn find_protocol(bt: &BootServices) {
         .expect("Failed to retrieve list of handles");
 
     assert!(
-        handles.len() > 1,
+        !handles.is_empty(),
         "There should be at least one implementation of Simple Text Output (stdout)"
     );
 }
@@ -60,6 +61,7 @@ mod debug;
 mod device_path;
 mod loaded_image;
 mod media;
+mod network;
 mod pi;
 mod rng;
 #[cfg(any(

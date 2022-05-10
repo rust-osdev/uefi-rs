@@ -1,6 +1,7 @@
 mod arch;
 mod cargo;
 mod disk;
+mod net;
 mod opt;
 mod qemu;
 mod util;

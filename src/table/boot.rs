@@ -2,9 +2,10 @@
 
 use super::Header;
 use crate::data_types::Align;
-use crate::proto::{device_path::DevicePath, Protocol};
+use crate::proto::device_path::{DevicePath, FfiDevicePath};
 #[cfg(feature = "exts")]
 use crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem};
+use crate::proto::{Protocol, ProtocolPointer};
 use crate::{Char16, Event, Guid, Handle, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::vec::Vec;
@@ -17,6 +18,54 @@ use core::ptr::NonNull;
 use core::{ptr, slice};
 
 /// Contains pointers to all of the boot services.
+///
+/// # Accessing `BootServices`
+///
+/// A reference to `BootServices` can only be accessed by calling [`SystemTable::boot_services`].
+///
+/// [`SystemTable::boot_services`]: crate::table::SystemTable::boot_services
+///
+/// # Accessing protocols
+///
+/// Protocols can be opened using several methods of `BootServices`. Most
+/// commonly, [`open_protocol`] should be used. This returns a
+/// [`ScopedProtocol`] that takes care of closing the protocol when it is
+/// dropped. If the protocol is opened in [`Exclusive`] mode, UEFI ensures that
+/// nothing else can use the protocol until it is closed.
+///
+/// Other methods for opening protocols:
+///
+/// * [`get_image_file_system`]
+/// * [`handle_protocol`]
+/// * [`locate_protocol`]
+///
+/// For protocol definitions, see the [`proto`] module.
+///
+/// [`proto`]: crate::proto
+/// [`Exclusive`]: OpenProtocolAttributes::Exclusive
+/// [`open_protocol`]: BootServices::open_protocol
+/// [`get_image_file_system`]: BootServices::get_image_file_system
+/// [`locate_protocol`]: BootServices::locate_protocol
+/// [`handle_protocol`]: BootServices::handle_protocol
+///
+/// ## Use of [`UnsafeCell`] for protocol references
+///
+/// Some protocols require mutable access to themselves. For example,
+/// most of the methods of the [`Output`] protocol take `&mut self`,
+/// because the internal function pointers specified by UEFI for that
+/// protocol take a mutable `*This` pointer. We don't want to directly
+/// return a mutable reference to a protocol though because the lifetime
+/// of the protocol is tied to `BootServices`. (That lifetime improves
+/// safety by ensuring protocols aren't accessed after exiting boot
+/// services.) If methods like [`open_protocol`] protocol took a mutable
+/// reference to `BootServices` and returned a mutable reference to a
+/// protocol it would prevent all other access to `BootServices` until
+/// the protocol reference was dropped. To work around this, the
+/// protocol reference is wrapped in an [`UnsafeCell`]. Callers can then
+/// get a mutable reference to the protocol if needed.
+///
+/// [`Output`]: crate::proto::console::text::Output
+/// [`open_protocol`]: BootServices::open_protocol
 #[repr(C)]
 pub struct BootServices {
     header: Header,
@@ -79,7 +128,7 @@ pub struct BootServices {
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
-        device_path: &mut &DevicePath,
+        device_path: &mut *const FfiDevicePath,
         out_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
     install_configuration_table: usize,
@@ -88,7 +137,7 @@ pub struct BootServices {
     load_image: unsafe extern "efiapi" fn(
         boot_policy: u8,
         parent_image_handle: Handle,
-        device_path: *const DevicePath,
+        device_path: *const FfiDevicePath,
         source_buffer: *const u8,
         source_size: usize,
         image_handle: &mut MaybeUninit<Handle>,
@@ -122,7 +171,7 @@ pub struct BootServices {
     connect_controller: unsafe extern "efiapi" fn(
         controller: Handle,
         driver_image: Option<Handle>,
-        remaining_device_path: *const DevicePath,
+        remaining_device_path: *const FfiDevicePath,
         recursive: bool,
     ) -> Status,
     disconnect_controller: unsafe extern "efiapi" fn(
@@ -283,7 +332,7 @@ impl BootServices {
     )> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
-        let map_buffer = buffer.as_ptr() as *mut MemoryDescriptor;
+        let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
         let mut map_key = MemoryMapKey(0);
         let mut entry_size = 0;
         let mut entry_version = 0;
@@ -521,11 +570,14 @@ impl BootServices {
     ///
     /// [`open_protocol`]: BootServices::open_protocol
     #[deprecated(note = "it is recommended to use `open_protocol` instead")]
-    pub fn handle_protocol<P: Protocol>(&self, handle: Handle) -> Result<&UnsafeCell<P>> {
+    pub fn handle_protocol<P: ProtocolPointer + ?Sized>(
+        &self,
+        handle: Handle,
+    ) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
-            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
-            unsafe { &*ptr }
+        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| unsafe {
+            let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
+            &*ptr
         })
     }
 
@@ -578,9 +630,14 @@ impl BootServices {
     /// is a multi-instance device path, the function will operate on the first instance.
     pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
         let mut handle = MaybeUninit::uninit();
+        let mut device_path_ptr = device_path.as_ffi_ptr();
         unsafe {
-            (self.locate_device_path)(&P::GUID, device_path, &mut handle)
-                .into_with_val(|| handle.assume_init())
+            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).into_with_val(
+                || {
+                    *device_path = DevicePath::from_ffi_ptr(device_path_ptr);
+                    handle.assume_init()
+                },
+            )
         }
     }
 
@@ -616,7 +673,7 @@ impl BootServices {
                 // Boot policy is ignored when loading from source buffer.
                 boot_policy = 0;
 
-                device_path = file_path.map(|p| p as _).unwrap_or(ptr::null());
+                device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
                 source_buffer = buffer.as_ptr();
                 source_size = buffer.len();
             }
@@ -625,7 +682,7 @@ impl BootServices {
                 from_boot_manager,
             } => {
                 boot_policy = u8::from(from_boot_manager);
-                device_path = file_path;
+                device_path = file_path.as_ffi_ptr();
                 source_buffer = ptr::null();
                 source_size = 0;
             }
@@ -763,7 +820,7 @@ impl BootServices {
                 controller,
                 driver_image,
                 remaining_device_path
-                    .map(|dp| dp as _)
+                    .map(|dp| dp.as_ffi_ptr())
                     .unwrap_or(ptr::null()),
                 recursive,
             )
@@ -804,7 +861,7 @@ impl BootServices {
     /// global `HashSet`.
     ///
     /// [`handle_protocol`]: BootServices::handle_protocol
-    pub fn open_protocol<P: Protocol>(
+    pub fn open_protocol<P: ProtocolPointer + ?Sized>(
         &self,
         params: OpenProtocolParams,
         attributes: OpenProtocolAttributes,
@@ -818,14 +875,12 @@ impl BootServices {
             params.controller,
             attributes as u32,
         )
-        .into_with_val(|| {
-            let interface = interface as *mut P as *mut UnsafeCell<P>;
-            unsafe {
-                ScopedProtocol {
-                    interface: &*interface,
-                    open_params: params,
-                    boot_services: self,
-                }
+        .into_with_val(|| unsafe {
+            let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
+            ScopedProtocol {
+                interface: &*interface,
+                open_params: params,
+                boot_services: self,
             }
         })
     }
@@ -868,7 +923,7 @@ impl BootServices {
 
         status.into_with_val(|| ProtocolsPerHandle {
             boot_services: self,
-            protocols: protocols as *mut &Guid,
+            protocols: protocols.cast::<&Guid>(),
             count,
         })
     }
@@ -896,11 +951,11 @@ impl BootServices {
     /// Returns a protocol implementation, if present on the system.
     ///
     /// The caveats of `BootServices::handle_protocol()` also apply here.
-    pub fn locate_protocol<P: Protocol>(&self) -> Result<&UnsafeCell<P>> {
+    pub fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
-            let ptr = ptr as *mut P as *mut UnsafeCell<P>;
-            unsafe { &*ptr }
+        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| unsafe {
+            let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
+            &*ptr
         })
     }
 
@@ -1263,7 +1318,10 @@ pub struct OpenProtocolParams {
 
 /// An open protocol interface. Automatically closes the protocol
 /// interface on drop.
-pub struct ScopedProtocol<'a, P: Protocol> {
+///
+/// See also the [`BootServices`] documentation for details of how to open a
+/// protocol and why [`UnsafeCell`] is used.
+pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
     pub interface: &'a UnsafeCell<P>,
 
@@ -1271,7 +1329,7 @@ pub struct ScopedProtocol<'a, P: Protocol> {
     boot_services: &'a BootServices,
 }
 
-impl<'a, P: Protocol> Drop for ScopedProtocol<'a, P> {
+impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
     fn drop(&mut self) {
         let status = (self.boot_services.close_protocol)(
             self.open_params.handle,
@@ -1559,7 +1617,7 @@ pub struct ProtocolsPerHandle<'a> {
 impl<'a> Drop for ProtocolsPerHandle<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self.boot_services.free_pool(self.protocols as *mut u8);
+        let _ = self.boot_services.free_pool(self.protocols.cast::<u8>());
     }
 }
 
@@ -1586,7 +1644,7 @@ pub struct HandleBuffer<'a> {
 impl<'a> Drop for HandleBuffer<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self.boot_services.free_pool(self.buffer as *mut u8);
+        let _ = self.boot_services.free_pool(self.buffer.cast::<u8>());
     }
 }
 

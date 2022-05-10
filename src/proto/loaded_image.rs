@@ -2,7 +2,8 @@
 
 use crate::{
     data_types::FromSliceWithNulError,
-    proto::{device_path::DevicePath, Protocol},
+    proto::device_path::{DevicePath, FfiDevicePath},
+    proto::Protocol,
     table::boot::MemoryType,
     unsafe_guid, CStr16, Handle, Status,
 };
@@ -19,7 +20,7 @@ pub struct LoadedImage {
 
     // Source location of the image
     device_handle: Handle,
-    file_path: *const DevicePath,
+    file_path: *const FfiDevicePath,
     _reserved: *const c_void,
 
     // Image load options
@@ -60,7 +61,11 @@ impl LoadedImage {
     /// Return `None` if the pointer to the file path portion specific to
     /// DeviceHandle that the EFI Image was loaded from is null.
     pub fn file_path(&self) -> Option<&DevicePath> {
-        unsafe { self.file_path.as_ref() }
+        if self.file_path.is_null() {
+            None
+        } else {
+            unsafe { Some(DevicePath::from_ffi_ptr(self.file_path)) }
+        }
     }
 
     /// Get the load options of the image as a [`&CStr16`].
@@ -83,7 +88,7 @@ impl LoadedImage {
         } else {
             let s = unsafe {
                 slice::from_raw_parts(
-                    self.load_options as *const u16,
+                    self.load_options.cast::<u16>(),
                     load_options_size / mem::size_of::<u16>(),
                 )
             };

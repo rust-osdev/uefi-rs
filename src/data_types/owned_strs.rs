@@ -73,7 +73,7 @@ impl TryFrom<Vec<u16>> for CString16 {
         // example in the docs for `into_raw_parts`.
         let (ptr, len, cap) = input.into_raw_parts();
         let rebuilt = unsafe {
-            let ptr = ptr as *mut Char16;
+            let ptr = ptr.cast::<Char16>();
             Vec::from_raw_parts(ptr, len, cap)
         };
 

@@ -15,6 +15,7 @@
 - Added `DevicePath::as_acpi_device_path` and
   `DevicePath::as_file_path_media_device_path`.
 - Included `cstr8` and `cstr16` macros from uefi-macros in the prelude.
+- Added `DevicePathInstance`, `DevicePathNode`, and `FfiDevicePath`.
 
 ### Changed
 
@@ -22,6 +23,9 @@
   time fields can be explicitly named at the call site.
 - The file info types now derive `PartialEq` and `Eq`.
 - The `FileAttributes` type is now `repr(transparent)`.
+- `DevicePath` is now a DST that represents an entire device path. The
+  `DevicePathInstance` and `DevicePathNode` provide views of path
+  instances and nodes, respectively.
 
 ### Fixed
 

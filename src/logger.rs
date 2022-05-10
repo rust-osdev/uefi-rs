@@ -48,7 +48,7 @@ impl Logger {
     }
 }
 
-impl<'boot> log::Log for Logger {
+impl log::Log for Logger {
     fn enabled(&self, _metadata: &log::Metadata) -> bool {
         self.writer.is_some()
     }

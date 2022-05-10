@@ -1,5 +1,6 @@
 use crate::arch::UefiArch;
 use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
+use crate::net;
 use crate::opt::QemuOpt;
 use crate::util::command_to_string;
 use anyhow::{bail, Context, Result};
@@ -367,6 +368,13 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     // Map the QEMU monitor to a pair of named pipes
     cmd.args(&["-qmp", &qemu_monitor_pipe.qemu_arg]);
+
+    // Attach network device with DHCP configured for PXE
+    cmd.args(&[
+        "-nic",
+        "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
+    ]);
+    net::start_reverse_echo_service();
 
     println!("{}", command_to_string(&cmd));
 

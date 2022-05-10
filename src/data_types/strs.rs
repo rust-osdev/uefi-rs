@@ -72,7 +72,7 @@ impl CStr8 {
         while *ptr.add(len) != NUL_8 {
             len += 1
         }
-        let ptr = ptr as *const u8;
+        let ptr = ptr.cast::<u8>();
         Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
 
@@ -137,7 +137,7 @@ impl CStr16 {
         while *ptr.add(len) != NUL_16 {
             len += 1
         }
-        let ptr = ptr as *const u16;
+        let ptr = ptr.cast::<u16>();
         Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
 

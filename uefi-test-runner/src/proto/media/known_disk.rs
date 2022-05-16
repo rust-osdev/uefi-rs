@@ -56,11 +56,7 @@ fn test_existing_file(directory: &mut Directory) {
     // Open an existing file.
     let input_file_path = cstr16!("test_dir\\test_input.txt");
     let mut file = directory
-        .open(
-            input_file_path,
-            FileMode::ReadWrite,
-            FileAttribute::empty(),
-        )
+        .open(input_file_path, FileMode::ReadWrite, FileAttribute::empty())
         .expect("failed to open file")
         .into_regular_file()
         .expect("not a regular file");

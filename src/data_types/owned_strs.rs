@@ -150,16 +150,14 @@ mod tests {
     /// Test `CString16 == &CStr16` and `&CStr16 == CString16`.
     #[test]
     fn test_cstring16_cstr16_eq() {
-        let mut buf = [0; 4];
-
         assert_eq!(
-            CStr16::from_str_with_buf("abc", &mut buf).unwrap(),
+            crate::prelude::cstr16!("abc"),
             CString16::try_from("abc").unwrap()
         );
 
         assert_eq!(
             CString16::try_from("abc").unwrap(),
-            CStr16::from_str_with_buf("abc", &mut buf).unwrap(),
+            crate::prelude::cstr16!("abc")
         );
     }
 }

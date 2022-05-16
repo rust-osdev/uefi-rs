@@ -14,6 +14,7 @@
 - Added `FilePathMediaDevicePath`.
 - Added `DevicePath::as_acpi_device_path` and
   `DevicePath::as_file_path_media_device_path`.
+- Included `cstr8` and `cstr16` macros from `uefi-macros` in the prelude.
 - Added `DevicePathInstance`, `DevicePathNode`, and `FfiDevicePath`.
 
 ### Changed
@@ -31,6 +32,11 @@
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
 ## uefi-macros - [Unreleased]
+
+### Added
+
+- Added `cstr8` and `cstr16` macros for creating `CStr8`/`CStr16` string literals
+  at compile time.
 
 ## uefi-services - [Unreleased]
 

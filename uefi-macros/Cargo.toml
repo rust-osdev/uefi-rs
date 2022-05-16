@@ -25,4 +25,4 @@ syn = { version = "1.0.94", features = ["full"] }
 
 [dev-dependencies]
 trybuild = "1.0.61"
-uefi = { version = "0.15.2", default-features = false }
+uefi = { version = "0.16.0", default-features = false }

@@ -111,8 +111,8 @@ unsafe fn init_logger(st: &mut SystemTable<Boot>) {
     // Set the logger.
     log::set_logger(logger).unwrap(); // Can only fail if already initialized.
 
-    // Log everything.
-    log::set_max_level(log::LevelFilter::Info);
+    // Set logger max level to level specified by log features
+    log::set_max_level(log::STATIC_MAX_LEVEL);
 }
 
 /// Notify the utility library that boot services are not safe to call anymore

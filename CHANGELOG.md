@@ -44,6 +44,12 @@
 - Added `cstr8` and `cstr16` macros for creating `CStr8`/`CStr16` string literals
   at compile time.
 
+## uefi-services - 0.13.0
+
+### Changed
+
+- Bumped `uefi` dependency to latest version.
+
 ## uefi - 0.15.2
 
 ### Added

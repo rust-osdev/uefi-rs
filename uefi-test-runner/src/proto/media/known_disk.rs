@@ -13,7 +13,7 @@ fn test_existing_dir(directory: &mut Directory) {
 
     let input_dir_path = cstr16!("test_dir");
     let mut dir = directory
-        .open(&input_dir_path, FileMode::Read, FileAttribute::empty())
+        .open(input_dir_path, FileMode::Read, FileAttribute::empty())
         .expect("failed to open directory")
         .into_directory()
         .expect("not a directory");
@@ -38,7 +38,7 @@ fn test_existing_dir(directory: &mut Directory) {
 fn test_delete_warning(directory: &mut Directory) {
     let input_file_path = cstr16!("test_dir\\test_input.txt");
     let file = directory
-        .open(&input_file_path, FileMode::Read, FileAttribute::empty())
+        .open(input_file_path, FileMode::Read, FileAttribute::empty())
         .expect("failed to open file")
         .into_regular_file()
         .expect("not a regular file");
@@ -57,7 +57,7 @@ fn test_existing_file(directory: &mut Directory) {
     let input_file_path = cstr16!("test_dir\\test_input.txt");
     let mut file = directory
         .open(
-            &input_file_path,
+            input_file_path,
             FileMode::ReadWrite,
             FileAttribute::empty(),
         )
@@ -121,7 +121,7 @@ fn test_existing_file(directory: &mut Directory) {
 
     // Verify the file is gone.
     assert!(directory
-        .open(&input_file_path, FileMode::Read, FileAttribute::empty())
+        .open(input_file_path, FileMode::Read, FileAttribute::empty())
         .is_err());
 }
 
@@ -132,7 +132,7 @@ fn test_create_file(directory: &mut Directory) {
     // Create a new file.
     let mut file = directory
         .open(
-            &cstr16!("new_test_file.txt"),
+            cstr16!("new_test_file.txt"),
             FileMode::CreateReadWrite,
             FileAttribute::empty(),
         )

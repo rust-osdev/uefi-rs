@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.16
+
 ### Added
 
 - Added `FileHandle::into_directory` and `FileHandle::into_regular_file`.
@@ -31,14 +37,12 @@
 
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.7.0
 
 ### Added
 
 - Added `cstr8` and `cstr16` macros for creating `CStr8`/`CStr16` string literals
   at compile time.
-
-## uefi-services - [Unreleased]
 
 ## uefi - 0.15.2
 

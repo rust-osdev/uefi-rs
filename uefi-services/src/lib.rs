@@ -96,23 +96,25 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
     }
 }
 
-// Internal function for print macros
+// Internal function for print macros.
 #[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
     unsafe {
-        if let Some(st) = &mut SYSTEM_TABLE {
-            st.stdout().write_fmt(args).expect("Failed to write to stdout");
-        } else {
-            panic!("SYSTEM_TABLE is None");
-        }
+        let st = SYSTEM_TABLE
+            .as_ref()
+            .expect("The system table handle is not available");
+
+        st.stdout()
+            .write_fmt(args)
+            .expect("Failed to write to stdout");
     }
 }
 
-/// Prints to the standard output
-/// 
+/// Prints to the standard output.
+///
 /// # Panics
-/// Will panic if SYSTEM_TABLE is None (Before [init] and after [exit_boot_services])
-/// 
+/// Will panic if `SYSTEM_TABLE` is `None` (Before [init] and after [exit_boot_services]).
+///
 /// # Examples
 /// ```
 /// print!("");
@@ -124,11 +126,11 @@ macro_rules! print {
     ($($arg:tt)*) => ($crate::_print(core::format_args!($($arg)*)));
 }
 
-/// Prints to the standard output, with a newline
-/// 
+/// Prints to the standard output, with a newline.
+///
 /// # Panics
-/// Will panic if SYSTEM_TABLE is None (Before [init] and after [exit_boot_services])
-/// 
+/// Will panic if `SYSTEM_TABLE` is `None` (Before [init] and after [exit_boot_services]).
+///
 /// # Examples
 /// ```
 /// println!();

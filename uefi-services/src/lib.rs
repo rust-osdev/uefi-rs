@@ -113,7 +113,7 @@ pub fn _print(args: core::fmt::Arguments) {
 /// Prints to the standard output.
 ///
 /// # Panics
-/// Will panic if `SYSTEM_TABLE` is `None` (Before [init] and after [exit_boot_services]).
+/// Will panic if `SYSTEM_TABLE` is `None` (Before [init()] and after [uefi::prelude::SystemTable::exit_boot_services()]).
 ///
 /// # Examples
 /// ```
@@ -129,7 +129,7 @@ macro_rules! print {
 /// Prints to the standard output, with a newline.
 ///
 /// # Panics
-/// Will panic if `SYSTEM_TABLE` is `None` (Before [init] and after [exit_boot_services]).
+/// Will panic if `SYSTEM_TABLE` is `None` (Before [init()] and after [uefi::prelude::SystemTable::exit_boot_services()]).
 ///
 /// # Examples
 /// ```

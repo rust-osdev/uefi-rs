@@ -101,7 +101,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
 pub fn _print(args: core::fmt::Arguments) {
     unsafe {
         let st = SYSTEM_TABLE
-            .as_ref()
+            .as_mut()
             .expect("The system table handle is not available");
 
         st.stdout()

@@ -885,6 +885,8 @@ impl BootServices {
         )
         .into_with_val(|| unsafe {
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
+
+            #[allow(deprecated)]
             ScopedProtocol {
                 interface: &*interface,
                 open_params: params,
@@ -1327,6 +1329,7 @@ pub struct OpenProtocolParams {
 /// protocol and why [`UnsafeCell`] is used.
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
+    #[deprecated(since = "0.16.0", note = "use Deref and DerefMut instead")]
     pub interface: &'a UnsafeCell<P>,
 
     open_params: OpenProtocolParams,
@@ -1354,13 +1357,19 @@ impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {
     type Target = P;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { &*self.interface.get() }
+        #[allow(deprecated)]
+        unsafe {
+            &*self.interface.get()
+        }
     }
 }
 
 impl<'a, P: Protocol + ?Sized> DerefMut for ScopedProtocol<'a, P> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut *self.interface.get() }
+        #[allow(deprecated)]
+        unsafe {
+            &mut *self.interface.get()
+        }
     }
 }
 

@@ -14,6 +14,7 @@ use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
+use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::{ptr, slice};
 
@@ -1350,6 +1351,20 @@ impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
         // and the error can't be propagated out of drop anyway, so just
         // assert success.
         assert_eq!(status, Status::SUCCESS);
+    }
+}
+
+impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {
+    type Target = P;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*self.interface.get() }
+    }
+}
+
+impl<'a, P: Protocol + ?Sized> DerefMut for ScopedProtocol<'a, P> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { &mut *self.interface.get() }
     }
 }
 

@@ -13,7 +13,7 @@ pub fn test(image: Handle, bt: &BootServices) {
 
     if let Ok(handles) = bt.find_handles::<BaseCode>() {
         for handle in handles {
-            let base_code = bt
+            let mut base_code = bt
                 .open_protocol::<BaseCode>(
                     OpenProtocolParams {
                         handle,
@@ -23,8 +23,6 @@ pub fn test(image: Handle, bt: &BootServices) {
                     OpenProtocolAttributes::Exclusive,
                 )
                 .unwrap();
-
-            let base_code = unsafe { &mut *base_code.interface.get() };
 
             info!("Starting PXE Base Code");
             base_code

@@ -1031,21 +1031,17 @@ impl BootServices {
             },
             OpenProtocolAttributes::Exclusive,
         )?;
-        let loaded_image = unsafe { &*loaded_image.interface.get() };
-
-        let device_handle = loaded_image.device();
 
         let device_path = self.open_protocol::<DevicePath>(
             OpenProtocolParams {
-                handle: device_handle,
+                handle: loaded_image.device(),
                 agent: image_handle,
                 controller: None,
             },
             OpenProtocolAttributes::Exclusive,
         )?;
-        let mut device_path = unsafe { &*device_path.interface.get() };
 
-        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut device_path)?;
+        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
 
         self.open_protocol::<SimpleFileSystem>(
             OpenProtocolParams {

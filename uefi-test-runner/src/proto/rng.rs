@@ -11,7 +11,7 @@ pub fn test(image: Handle, bt: &BootServices) {
         .first()
         .expect("No Rng handles");
 
-    let rng = bt
+    let mut rng = bt
         .open_protocol::<Rng>(
             OpenProtocolParams {
                 handle,
@@ -21,7 +21,6 @@ pub fn test(image: Handle, bt: &BootServices) {
             OpenProtocolAttributes::Exclusive,
         )
         .expect("Failed to open Rng protocol");
-    let rng = unsafe { &mut *rng.interface.get() };
 
     let mut list = [RngAlgorithmType::EMPTY_ALGORITHM; 4];
 

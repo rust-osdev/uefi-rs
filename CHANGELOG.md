@@ -2,6 +2,10 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- Added EFI revision constants to `Revision`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]
@@ -32,6 +36,7 @@
 - `DevicePath` is now a DST that represents an entire device path. The
   `DevicePathInstance` and `DevicePathNode` provide views of path
   instances and nodes, respectively.
+- The methods of `Revision` are now `const`.
 
 ### Fixed
 

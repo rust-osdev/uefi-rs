@@ -6,6 +6,13 @@
 
 - Added EFI revision constants to `Revision`.
 
+### Fixed
+
+- The `BootServices::create_event_ex` and
+  `RuntimeServices::query_variable_info` methods now check the table
+  version to make sure it's 2.0 or higher before calling the associated
+  function pointers. This prevents potential invalid pointer access.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

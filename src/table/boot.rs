@@ -1,6 +1,6 @@
 //! UEFI services available during boot.
 
-use super::Header;
+use super::{Header, Revision};
 use crate::data_types::Align;
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
 #[cfg(feature = "exts")]
@@ -437,6 +437,9 @@ impl BootServices {
     /// More than one event of type `EventType::TIMER` may be part of a single event group. However,
     /// there is no mechanism for determining which of the timers was signaled.
     ///
+    /// This operation is only supported starting with UEFI 2.0; earlier
+    /// versions will fail with [`Status::UNSUPPORTED`].
+    ///
     /// # Safety
     ///
     /// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
@@ -448,6 +451,10 @@ impl BootServices {
         notify_ctx: Option<NonNull<c_void>>,
         event_group: Option<NonNull<Guid>>,
     ) -> Result<Event> {
+        if self.header.revision < Revision::EFI_2_00 {
+            return Err(Status::UNSUPPORTED.into());
+        }
+
         let mut event = MaybeUninit::<Event>::uninit();
 
         (self.create_event_ex)(

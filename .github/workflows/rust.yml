@@ -226,3 +226,25 @@ jobs:
 
     - name: Build
       run: cargo xtask test-latest-release
+
+  windows:
+    name: Check that the build works on a Windows target
+    runs-on: windows-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            profile: minimal
+            toolchain: nightly
+            components: rust-src
+
+      - name: Build
+        run: cargo xtask build

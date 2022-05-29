@@ -1,3 +1,5 @@
+#![cfg(unix)]
+
 use std::net::UdpSocket;
 
 /// Start a thread that listens on UDP port 21572 and simulates a simple echo

@@ -1,3 +1,5 @@
+#![cfg(unix)]
+
 use crate::arch::UefiArch;
 use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
 use crate::net;

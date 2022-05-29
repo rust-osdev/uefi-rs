@@ -8,6 +8,7 @@ mod util;
 
 use anyhow::Result;
 use cargo::{Cargo, CargoAction, Feature, Package};
+use cfg_if::cfg_if;
 use clap::Parser;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, MiriOpt, Opt, QemuOpt};
 use std::process::Command;
@@ -102,7 +103,13 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     };
     run_cmd(cargo.command()?)?;
 
-    qemu::run_qemu(*opt.target, opt)
+    cfg_if! {
+        if #[cfg(unix)] {
+            qemu::run_qemu(*opt.target, opt)
+        } else {
+            panic!("vm tests are only supported on unix targets");
+        }
+    }
 }
 
 /// Run unit tests and doctests on the host. Most of uefi-rs is tested

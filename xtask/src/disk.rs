@@ -1,3 +1,5 @@
+#![cfg(unix)]
+
 use anyhow::Result;
 use fatfs::{Date, DateTime, FileSystem, FormatVolumeOptions, FsOptions, StdIoWrapper, Time};
 use mbrman::{MBRPartitionEntry, CHS, MBR};

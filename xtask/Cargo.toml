@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.51"
+cfg-if = "1.0.0"
 clap = { version = "3.0.13", features = ["derive"] }
 # The latest fatfs release (0.3.5) is old, use git instead to pick up some fixes.
 fatfs = { git = "https://github.com/rafalh/rust-fatfs.git", rev = "87fc1ed5074a32b4e0344fcdde77359ef9e75432" }

@@ -14,6 +14,7 @@ use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
+use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::{ptr, slice};
 
@@ -884,6 +885,8 @@ impl BootServices {
         )
         .into_with_val(|| unsafe {
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
+
+            #[allow(deprecated)]
             ScopedProtocol {
                 interface: &*interface,
                 open_params: params,
@@ -1030,21 +1033,17 @@ impl BootServices {
             },
             OpenProtocolAttributes::Exclusive,
         )?;
-        let loaded_image = unsafe { &*loaded_image.interface.get() };
-
-        let device_handle = loaded_image.device();
 
         let device_path = self.open_protocol::<DevicePath>(
             OpenProtocolParams {
-                handle: device_handle,
+                handle: loaded_image.device(),
                 agent: image_handle,
                 controller: None,
             },
             OpenProtocolAttributes::Exclusive,
         )?;
-        let mut device_path = unsafe { &*device_path.interface.get() };
 
-        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut device_path)?;
+        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
 
         self.open_protocol::<SimpleFileSystem>(
             OpenProtocolParams {
@@ -1330,6 +1329,7 @@ pub struct OpenProtocolParams {
 /// protocol and why [`UnsafeCell`] is used.
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
+    #[deprecated(since = "0.16.0", note = "use Deref and DerefMut instead")]
     pub interface: &'a UnsafeCell<P>,
 
     open_params: OpenProtocolParams,
@@ -1350,6 +1350,26 @@ impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
         // and the error can't be propagated out of drop anyway, so just
         // assert success.
         assert_eq!(status, Status::SUCCESS);
+    }
+}
+
+impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {
+    type Target = P;
+
+    fn deref(&self) -> &Self::Target {
+        #[allow(deprecated)]
+        unsafe {
+            &*self.interface.get()
+        }
+    }
+}
+
+impl<'a, P: Protocol + ?Sized> DerefMut for ScopedProtocol<'a, P> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        #[allow(deprecated)]
+        unsafe {
+            &mut *self.interface.get()
+        }
     }
 }
 

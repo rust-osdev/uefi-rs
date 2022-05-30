@@ -154,7 +154,7 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
 
     let mut found_test_disk = false;
     for handle in handles {
-        let sfs = bt
+        let mut sfs = bt
             .open_protocol::<SimpleFileSystem>(
                 OpenProtocolParams {
                     handle,
@@ -164,7 +164,6 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
                 OpenProtocolAttributes::Exclusive,
             )
             .expect("Failed to get simple file system");
-        let sfs = unsafe { &mut *sfs.interface.get() };
         let mut directory = sfs.open_volume().unwrap();
 
         let mut fs_info_buf = vec![0; 128];

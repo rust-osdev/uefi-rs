@@ -72,7 +72,6 @@ pub fn test(image: Handle, bt: &BootServices) {
                 OpenProtocolAttributes::Exclusive,
             )
             .expect("Failed to get partition info");
-        let pi = unsafe { &*pi.interface.get() };
 
         if let Some(mbr) = pi.mbr_partition_record() {
             info!("MBR partition: {:?}", mbr);

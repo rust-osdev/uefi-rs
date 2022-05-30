@@ -5,6 +5,9 @@
 ### Added
 
 - Added EFI revision constants to `Revision`.
+- Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
+  This eliminates the need to explicitly access the `interface` field,
+  which is now marked as deprecated.
 
 ### Fixed
 

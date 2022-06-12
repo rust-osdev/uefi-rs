@@ -15,6 +15,13 @@
   `RuntimeServices::query_variable_info` methods now check the table
   version to make sure it's 2.0 or higher before calling the associated
   function pointers. This prevents potential invalid pointer access.
+  
+### Removed
+
+- Removed the `exts::allocate_buffer` function. This function could
+  cause undefined behavior when called with a `Layout` with an alignment
+  other than 1. A safe alternative is to use
+  [`Vec::into_boxed_slice`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.into_boxed_slice).
 
 ## uefi-macros - [Unreleased]
 

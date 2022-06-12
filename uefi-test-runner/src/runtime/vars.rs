@@ -47,14 +47,18 @@ fn test_variables(rt: &RuntimeServices) {
 
 fn test_variable_info(rt: &RuntimeServices) {
     info!(
-        "Storage for non-volatile variabls: {:?}",
-        rt.query_variable_info(VariableAttributes::NON_VOLATILE),
+        "Storage for non-volatile boot-services variables: {:?}",
+        rt.query_variable_info(
+            VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::NON_VOLATILE
+        )
+        .unwrap(),
     );
     info!(
         "Storage for volatile runtime variables: {:?}",
         rt.query_variable_info(
             VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS
-        ),
+        )
+        .unwrap(),
     );
 }
 

@@ -122,9 +122,9 @@ impl Rng {
     pub fn get_rng(&mut self, algorithm: Option<RngAlgorithmType>, buffer: &mut [u8]) -> Result {
         let buffer_length = buffer.len();
 
-        let algo = match algorithm {
+        let algo = match algorithm.as_ref() {
             None => ptr::null(),
-            Some(algo) => &algo as *const RngAlgorithmType,
+            Some(algo) => algo as *const RngAlgorithmType,
         };
 
         unsafe { (self.get_rng)(self, algo, buffer_length, buffer.as_mut_ptr()).into() }

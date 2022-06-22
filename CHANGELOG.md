@@ -8,6 +8,7 @@
 - Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
   This eliminates the need to explicitly access the `interface` field,
   which is now marked as deprecated.
+- Implemented `core::fmt::Write` for the `Serial` protocol.
 
 ### Fixed
 
@@ -15,6 +16,7 @@
   `RuntimeServices::query_variable_info` methods now check the table
   version to make sure it's 2.0 or higher before calling the associated
   function pointers. This prevents potential invalid pointer access.
+- The table `Header` struct's `Debug` impl now prints the correct signature.
   
 ### Removed
 

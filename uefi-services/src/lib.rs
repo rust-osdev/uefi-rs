@@ -18,7 +18,6 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(panic_info_message)]
 #![feature(abi_efiapi)]
 
 #[macro_use]
@@ -134,17 +133,7 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
 #[cfg(not(feature = "no_panic_handler"))]
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
-    if let Some(location) = info.location() {
-        error!(
-            "Panic in {} at ({}, {}):",
-            location.file(),
-            location.line(),
-            location.column()
-        );
-        if let Some(message) = info.message() {
-            error!("{}", message);
-        }
-    }
+    error!("{}", info);
 
     // Give the user some time to read the message
     if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {

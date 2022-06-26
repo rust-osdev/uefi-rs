@@ -38,11 +38,3 @@ impl From<Status> for Error<()> {
         Self { status, data: () }
     }
 }
-
-// FIXME: This conversion will go away along with usage of the ucs2 crate
-
-impl From<ucs2::Error> for Error<()> {
-    fn from(other: ucs2::Error) -> Self {
-        Status::from(other).into()
-    }
-}

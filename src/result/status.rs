@@ -211,18 +211,6 @@ impl FromResidual<core::result::Result<Infallible, Error>> for Status {
     }
 }
 
-// FIXME: This conversion will go away along with usage of the ucs2 crate
-
-impl From<ucs2::Error> for Status {
-    fn from(other: ucs2::Error) -> Self {
-        use ucs2::Error;
-        match other {
-            Error::BufferOverflow => Status::BUFFER_TOO_SMALL,
-            Error::MultiByte => Status::UNSUPPORTED,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

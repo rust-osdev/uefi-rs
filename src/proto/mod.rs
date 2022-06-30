@@ -72,4 +72,5 @@ pub mod media;
 pub mod network;
 pub mod pi;
 pub mod rng;
+pub mod security;
 pub mod shim;

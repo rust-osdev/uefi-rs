@@ -9,6 +9,7 @@
   This eliminates the need to explicitly access the `interface` field,
   which is now marked as deprecated.
 - Implemented `core::fmt::Write` for the `Serial` protocol.
+- Added the `MemoryProtection` protocol.
 
 ### Fixed
 

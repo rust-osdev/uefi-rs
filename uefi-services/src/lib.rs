@@ -130,7 +130,7 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
     uefi::alloc::exit_boot_services();
 }
 
-#[cfg(not(feature = "no_panic_handler"))]
+#[cfg(feature = "panic_handler")]
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     error!("{}", info);

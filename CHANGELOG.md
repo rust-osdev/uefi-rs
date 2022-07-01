@@ -30,6 +30,11 @@
 
 ## uefi-services - [Unreleased]
 
+### Changed
+
+- The `no_panic_handler` feature has been replaced with an additive
+  `panic_handler` feature. The new feature is enabled by default.
+
 ## uefi - 0.16
 
 ### Added

@@ -92,7 +92,7 @@ pub fn test(image: Handle, bt: &BootServices) {
                     _ => unreachable!(),
                 }
 
-                test_invalidate_instruction_cache(&mut *debug_support);
+                test_invalidate_instruction_cache(&mut debug_support);
             }
         }
     } else {

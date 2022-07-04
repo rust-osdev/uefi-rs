@@ -79,6 +79,54 @@ impl Feature {
     }
 }
 
+/// Select which target types (e.g. libs, bins, and examples) to include.
+///
+/// Cargo commands such as `build` and `clippy` include libs, bins, and
+/// tests by default, but not examples. To include examples, which we
+/// need for uefi-test-runner, you have to add `--examples`. But adding
+/// that flag also turns off the other types, so if you specify one type
+/// you have to also specify all the other types you care about.
+///
+/// Making things slightly tricker is that cargo will fail if a target
+/// type is specified that is not present in any of the selected
+/// packages. Since we run some cargo commands on a subset of packages,
+/// we can't always use the same set of target types. There is an
+/// `--all-targets` flag which is smarter about this, but it will enable
+/// the test target which fails to compile on the UEFI targets, so we
+/// can't use that either.
+///
+/// So to get everything working and include coverage of the examples,
+/// allow each cargo invocation to specify if it wants the default set
+/// of types or some more specific combo.
+#[derive(Clone, Copy, Debug)]
+pub enum TargetTypes {
+    /// Use this to not specify any target types in the cargo command
+    /// line; this will enable bins, libs, and tests if they are present.
+    Default,
+
+    /// Build bins and examples.
+    BinsExamples,
+
+    /// Build bins, examples, and libs.
+    BinsExamplesLib,
+}
+
+impl TargetTypes {
+    const fn args(self) -> &'static [&'static str] {
+        match self {
+            TargetTypes::Default => &[],
+            TargetTypes::BinsExamples => &["--bins", "--examples"],
+            TargetTypes::BinsExamplesLib => &[
+                "--bins",
+                "--examples",
+                // This flag is not plural like the others because a
+                // package can only include one lib.
+                "--lib",
+            ],
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum CargoAction {
     Build,
@@ -122,6 +170,7 @@ pub struct Cargo {
     pub release: bool,
     pub target: Option<UefiArch>,
     pub warnings_as_errors: bool,
+    pub target_types: TargetTypes,
 }
 
 impl Cargo {
@@ -194,6 +243,8 @@ impl Cargo {
             ]);
         }
 
+        cmd.args(self.target_types.args());
+
         cmd.args(extra_args);
 
         if !tool_args.is_empty() {
@@ -238,6 +289,7 @@ mod tests {
             release: false,
             target: None,
             warnings_as_errors: true,
+            target_types: TargetTypes::Default,
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),

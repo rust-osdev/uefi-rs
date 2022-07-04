@@ -116,6 +116,10 @@ pub struct QemuOpt {
     /// Path of an OVMF vars file.
     #[clap(long, action)]
     pub ovmf_vars: Option<PathBuf>,
+
+    /// Run an example instead of the main binary.
+    #[clap(long, action)]
+    pub example: Option<String>,
 }
 
 /// Build uefi-test-runner and run it in QEMU.

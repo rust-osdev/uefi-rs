@@ -356,7 +356,11 @@ fn build_esp_dir(opt: &QemuOpt) -> Result<PathBuf> {
         .join(build_mode);
     let esp_dir = build_dir.join("esp");
     let boot_dir = esp_dir.join("EFI").join("Boot");
-    let built_file = build_dir.join("uefi-test-runner.efi");
+    let built_file = if let Some(example) = &opt.example {
+        build_dir.join("examples").join(format!("{example}.efi"))
+    } else {
+        build_dir.join("uefi-test-runner.efi")
+    };
     let output_file = match *opt.target {
         UefiArch::AArch64 => "BootAA64.efi",
         UefiArch::IA32 => "BootIA32.efi",
@@ -517,12 +521,17 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Map the QEMU monitor to a pair of named pipes
     cmd.args(["-qmp", qemu_monitor_pipe.qemu_arg()]);
 
-    // Attach network device with DHCP configured for PXE
-    cmd.args([
-        "-nic",
-        "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
-    ]);
-    let echo_service = net::EchoService::start();
+    // Attach network device with DHCP configured for PXE. Skip this for
+    // examples since it slows down the boot some.
+    let echo_service = if opt.example.is_none() {
+        cmd.args([
+            "-nic",
+            "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
+        ]);
+        Some(net::EchoService::start())
+    } else {
+        None
+    };
 
     println!("{}", command_to_string(&cmd));
 
@@ -546,7 +555,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let status = child.0.wait()?;
 
     stdout_thread.join().expect("stdout thread panicked");
-    echo_service.stop();
+    if let Some(echo_service) = echo_service {
+        echo_service.stop();
+    }
 
     // Propagate earlier error if necessary.
     res?;

@@ -9,7 +9,7 @@ mod qemu;
 mod util;
 
 use anyhow::Result;
-use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package};
+use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
 use std::process::Command;
@@ -24,6 +24,7 @@ fn build(opt: &BuildOpt) -> Result<()> {
         release: opt.build_mode.release,
         target: Some(*opt.target),
         warnings_as_errors: false,
+        target_types: TargetTypes::BinsExamplesLib,
     };
     run_cmd(cargo.command()?)
 }
@@ -37,6 +38,7 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
         release: false,
         target: Some(*opt.target),
         warnings_as_errors: opt.warning.warnings_as_errors,
+        target_types: TargetTypes::BinsExamplesLib,
     };
     run_cmd(cargo.command()?)?;
 
@@ -48,6 +50,7 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
         release: false,
         target: None,
         warnings_as_errors: opt.warning.warnings_as_errors,
+        target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)
 }
@@ -61,6 +64,7 @@ fn doc(opt: &DocOpt) -> Result<()> {
         release: false,
         target: None,
         warnings_as_errors: opt.warning.warnings_as_errors,
+        target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)
 }
@@ -74,6 +78,7 @@ fn run_miri() -> Result<()> {
         release: false,
         target: None,
         warnings_as_errors: false,
+        target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)
 }
@@ -97,6 +102,7 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
         release: opt.build_mode.release,
         target: Some(*opt.target),
         warnings_as_errors: false,
+        target_types: TargetTypes::BinsExamples,
     };
     run_cmd(cargo.command()?)?;
 
@@ -115,6 +121,7 @@ fn run_host_tests() -> Result<()> {
         release: false,
         target: None,
         warnings_as_errors: false,
+        target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)?;
 
@@ -129,6 +136,7 @@ fn run_host_tests() -> Result<()> {
         // Use the host target so that tests can run without a VM.
         target: None,
         warnings_as_errors: false,
+        target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)
 }

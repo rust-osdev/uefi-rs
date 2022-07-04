@@ -80,6 +80,7 @@ Available commands:
   - `--disable-kvm`: disable hardware accelerated virtualization support in QEMU.
                      Especially useful if you want to run the tests under
                      [WSL](https://docs.microsoft.com/en-us/windows/wsl) on Windows.
+  - `--example <NAME>`: run an example instead of the main binary.
   - `--headless`: run QEMU without a GUI
   - `--ovmf-code <PATH>`: path of an OVMF code file
   - `--ovmf-vars <PATH>`: path of an OVMF vars file

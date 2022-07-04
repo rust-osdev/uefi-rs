@@ -1,0 +1,4 @@
+# The examples in this directory get included in the book. Set a smaller
+# width to reduce the amount of horizontal scrolling needed for markdown
+# code blocks.
+max_width = 80

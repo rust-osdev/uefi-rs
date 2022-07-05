@@ -27,8 +27,18 @@ fn test_file_system_info(directory: &mut Directory) {
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Testing Media Access protocols");
 
-    if let Ok(sfs) = bt.locate_protocol::<SimpleFileSystem>() {
-        let sfs = unsafe { &mut *sfs.get() };
+    if let Ok(handle) = bt.get_handle_for_protocol::<SimpleFileSystem>() {
+        let mut sfs = bt
+            .open_protocol::<SimpleFileSystem>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )
+            .expect("failed to open SimpleFileSystem protocol");
+
         let mut directory = sfs.open_volume().unwrap();
         let mut buffer = vec![0; 128];
         loop {

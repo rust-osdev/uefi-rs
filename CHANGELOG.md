@@ -10,6 +10,7 @@
   which is now marked as deprecated.
 - Implemented `core::fmt::Write` for the `Serial` protocol.
 - Added the `MemoryProtection` protocol.
+- Added `BootServices::get_handle_for_protocol`.
 
 ### Fixed
 

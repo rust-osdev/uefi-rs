@@ -649,6 +649,57 @@ impl BootServices {
         }
     }
 
+    /// Find an arbitrary handle that supports a particular
+    /// [`Protocol`]. Returns [`NOT_FOUND`] if no handles support the
+    /// protocol.
+    ///
+    /// This method is a convenient wrapper around
+    /// [`BootServices::locate_handle_buffer`] for getting just one
+    /// handle. This is useful when you don't care which handle the
+    /// protocol is opened on. For example, [`DevicePathToText`] isn't
+    /// tied to a particular device, so only a single handle is expected
+    /// to exist.
+    ///
+    /// [`NOT_FOUND`]: Status::NOT_FOUND
+    /// [`DevicePathToText`]: uefi::proto::device_path::text::DevicePathToText
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use uefi::proto::device_path::text::DevicePathToText;
+    /// use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+    /// use uefi::Handle;
+    /// # use uefi::Result;
+    ///
+    /// # fn get_fake_val<T>() -> T { todo!() }
+    /// # fn test() -> Result {
+    /// # let boot_services: &BootServices = get_fake_val();
+    /// # let image_handle: Handle = get_fake_val();
+    /// let handle = boot_services.get_handle_for_protocol::<DevicePathToText>()?;
+    /// let device_path_to_text = boot_services.open_protocol::<DevicePathToText>(
+    ///     OpenProtocolParams {
+    ///         handle,
+    ///         agent: image_handle,
+    ///         controller: None,
+    ///     },
+    ///     OpenProtocolAttributes::Exclusive,
+    /// )?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_handle_for_protocol<P: Protocol>(&self) -> Result<Handle> {
+        // Delegate to a non-generic function to potentially reduce code size.
+        self.get_handle_for_protocol_impl(&P::GUID)
+    }
+
+    fn get_handle_for_protocol_impl(&self, guid: &Guid) -> Result<Handle> {
+        self.locate_handle_buffer(SearchType::ByProtocol(guid))?
+            .handles()
+            .first()
+            .cloned()
+            .ok_or_else(|| Status::NOT_FOUND.into())
+    }
+
     /// Load an EFI image into memory and return a [`Handle`] to the image.
     ///
     /// There are two ways to load the image: by copying raw image data

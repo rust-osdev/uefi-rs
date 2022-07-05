@@ -2,21 +2,30 @@ use core::ffi::c_void;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use core::time::Duration;
 use uefi::proto::pi::mp::MpServices;
-use uefi::table::boot::BootServices;
-use uefi::Status;
+use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::{Handle, Status};
 
 /// Number of cores qemu is configured to have
 const NUM_CPUS: usize = 4;
 
-pub fn test(bt: &BootServices) {
+pub fn test(image: Handle, bt: &BootServices) {
     // These tests break CI. See #103.
     if cfg!(feature = "ci") {
         return;
     }
 
     info!("Running UEFI multi-processor services protocol test");
-    if let Ok(mp_support) = bt.locate_protocol::<MpServices>() {
-        let mp_support = unsafe { &mut *mp_support.get() };
+    if let Ok(handle) = bt.get_handle_for_protocol::<MpServices>() {
+        let mp_support = &bt
+            .open_protocol::<MpServices>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )
+            .expect("failed to open multi-processor services protocol");
 
         test_get_number_of_processors(mp_support);
         test_get_processor_info(mp_support);

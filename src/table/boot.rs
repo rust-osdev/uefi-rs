@@ -576,14 +576,21 @@ impl BootServices {
     /// protections must be implemented by user-level code, for example via a
     /// global `HashSet`.
     ///
+    /// # Safety
+    ///
+    /// This method is unsafe because the handle database is not
+    /// notified that the handle and protocol are in use; there is no
+    /// guarantee that they will remain valid for the duration of their
+    /// use. Use [`open_protocol`] instead.
+    ///
     /// [`open_protocol`]: BootServices::open_protocol
     #[deprecated(note = "it is recommended to use `open_protocol` instead")]
-    pub fn handle_protocol<P: ProtocolPointer + ?Sized>(
+    pub unsafe fn handle_protocol<P: ProtocolPointer + ?Sized>(
         &self,
         handle: Handle,
     ) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| unsafe {
+        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
             let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
             &*ptr
         })

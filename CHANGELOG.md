@@ -12,6 +12,11 @@
 - Added the `MemoryProtection` protocol.
 - Added `BootServices::get_handle_for_protocol`.
 
+### Changed
+
+- Marked `BootServices::handle_protocol` as `unsafe`. (This method is
+  also deprecated -- use `open_protocol` instead.)
+
 ### Fixed
 
 - The `BootServices::create_event_ex` and

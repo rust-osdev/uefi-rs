@@ -26,7 +26,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
         target_arch = "arm",
         target_arch = "aarch64"
     ))]
-    shim::test(bt);
+    shim::test(image, bt);
 }
 
 fn find_protocol(bt: &BootServices) {

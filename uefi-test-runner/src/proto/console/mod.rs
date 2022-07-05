@@ -8,7 +8,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     let bt = st.boot_services();
     serial::test(bt);
     gop::test(image, bt);
-    pointer::test(bt);
+    pointer::test(image, bt);
 }
 
 mod gop;

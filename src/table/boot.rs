@@ -1019,9 +1019,18 @@ impl BootServices {
     /// Returns a protocol implementation, if present on the system.
     ///
     /// The caveats of `BootServices::handle_protocol()` also apply here.
-    pub fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
+    ///
+    /// # Safety
+    ///
+    /// This method is unsafe because the handle database is not
+    /// notified that the handle and protocol are in use; there is no
+    /// guarantee that they will remain valid for the duration of their
+    /// use. Use [`BootServices::get_handle_for_protocol`] and
+    /// [`BootServices::open_protocol`] instead.
+    #[deprecated(note = "it is recommended to use `open_protocol` instead")]
+    pub unsafe fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| unsafe {
+        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
             let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
             &*ptr
         })

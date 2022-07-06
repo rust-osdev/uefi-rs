@@ -35,8 +35,8 @@ fn bad_generic<T>(_handle: Handle, _st: SystemTable<Boot>) -> Status {
 }
 
 #[entry]
-fn bad_args(_handle: Handle, _st: SystemTable<Boot>, _x: usize) -> bool {
-    false
+fn bad_args(_handle: Handle, _st: SystemTable<Boot>, _x: usize) -> Status {
+    Status::SUCCESS
 }
 
 #[entry]

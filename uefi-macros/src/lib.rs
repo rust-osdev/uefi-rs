@@ -8,9 +8,9 @@ use proc_macro2::{TokenStream as TokenStream2, TokenTree};
 use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{
     parse::{Parse, ParseStream},
-    parse_macro_input,
+    parse_macro_input, parse_quote,
     spanned::Spanned,
-    DeriveInput, Error, Generics, Ident, ItemFn, ItemType, LitStr, Visibility,
+    DeriveInput, Error, FnArg, Generics, Ident, ItemFn, ItemType, LitStr, Pat, Visibility,
 };
 
 /// Parses a type definition, extracts its identifier and generic parameters
@@ -157,6 +157,28 @@ pub fn derive_protocol(item: TokenStream) -> TokenStream {
     result.into()
 }
 
+/// Get the name of a function's argument at `arg_index`.
+fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2) -> Option<Ident> {
+    if let Some(FnArg::Typed(arg)) = f.sig.inputs.iter().nth(arg_index) {
+        if let Pat::Ident(pat_ident) = &*arg.pat {
+            // The argument has a valid name such as `handle` or `_handle`.
+            Some(pat_ident.ident.clone())
+        } else {
+            // The argument is unnamed, i.e. `_`.
+            errors.append_all(err!(arg.span(), "Entry method's arguments must be named"));
+            None
+        }
+    } else {
+        // Either there are too few arguments, or it's the wrong kind of
+        // argument (e.g. `self`).
+        //
+        // Don't append an error in this case. The error will be caught
+        // by the typecheck later on, which will give a better error
+        // message.
+        None
+    }
+}
+
 /// Custom attribute for a UEFI executable entrypoint
 #[proc_macro_attribute]
 pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -190,6 +212,9 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         ));
     }
 
+    let image_handle_ident = get_function_arg_name(&f, 0, &mut errors);
+    let system_table_ident = get_function_arg_name(&f, 1, &mut errors);
+
     // show most errors at once instead of one by one
     if !errors.is_empty() {
         return errors.into();
@@ -199,6 +224,18 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     let unsafety = f.sig.unsafety.take();
     // strip any visibility modifiers
     f.vis = Visibility::Inherited;
+    // Set the global image handle. If `image_handle_ident` is `None`
+    // then the typecheck is going to fail anyway.
+    if let Some(image_handle_ident) = image_handle_ident {
+        f.block.stmts.insert(
+            0,
+            parse_quote! {
+                unsafe {
+                    #system_table_ident.boot_services().set_image_handle(#image_handle_ident);
+                }
+            },
+        );
+    }
 
     let ident = &f.sig.ident;
 

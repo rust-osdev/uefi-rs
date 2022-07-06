@@ -18,6 +18,20 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::{ptr, slice};
 
+// TODO: this similar to `SyncUnsafeCell`. Once that is stabilized we
+// can use it instead.
+struct GlobalImageHandle {
+    handle: UnsafeCell<Option<Handle>>,
+}
+
+// Safety: reads and writes are managed via `set_image_handle` and
+// `BootServices::image_handle`.
+unsafe impl Sync for GlobalImageHandle {}
+
+static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
+    handle: UnsafeCell::new(None),
+};
+
 /// Contains pointers to all of the boot services.
 ///
 /// # Accessing `BootServices`
@@ -238,6 +252,46 @@ pub struct BootServices {
 }
 
 impl BootServices {
+    /// Get the [`Handle`] of the currently-executing image.
+    pub fn image_handle(&self) -> Handle {
+        // Safety:
+        //
+        // `IMAGE_HANDLE` is only set by `set_image_handle`, see that
+        // documentation for more details.
+        //
+        // Additionally, `image_handle` takes a `&self` which ensures it
+        // can only be called while boot services are active. (After
+        // exiting boot services, the image handle should not be
+        // considered valid.)
+        unsafe {
+            IMAGE_HANDLE
+                .handle
+                .get()
+                .read()
+                .expect("set_image_handle has not been called")
+        }
+    }
+
+    /// Update the global image [`Handle`].
+    ///
+    /// This is called automatically in the `main` entry point as part
+    /// of [`uefi_macros::entry`]. It should not be called at any other
+    /// point in time, unless the executable does not use
+    /// [`uefi_macros::entry`], in which case it should be called once
+    /// before calling other `BootServices` functions.
+    ///
+    /// # Safety
+    ///
+    /// This function should only be called as described above. The
+    /// safety guarantees of [`BootServices::open_protocol_exclusive`]
+    /// rely on the global image handle being correct.
+    pub unsafe fn set_image_handle(&self, image_handle: Handle) {
+        // As with `image_handle`, `&self` isn't actually used, but it
+        // enforces that this function is only called while boot
+        // services are active.
+        IMAGE_HANDLE.handle.get().write(Some(image_handle));
+    }
+
     /// Raises a task's priority level and returns its previous level.
     ///
     /// The effect of calling `raise_tpl` with a `Tpl` that is below the current

@@ -1007,6 +1007,26 @@ impl BootServices {
         })
     }
 
+    /// Open a protocol interface for a handle in exclusive mode.
+    ///
+    /// If successful, a [`ScopedProtocol`] is returned that will
+    /// automatically close the protocol interface when dropped.
+    ///
+    /// [`handle_protocol`]: BootServices::handle_protocol
+    pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
+        &self,
+        handle: Handle,
+    ) -> Result<ScopedProtocol<P>> {
+        self.open_protocol::<P>(
+            OpenProtocolParams {
+                handle,
+                agent: self.image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
+    }
+
     /// Test whether a handle supports a protocol.
     pub fn test_protocol<P: Protocol>(&self, params: OpenProtocolParams) -> Result<()> {
         const TEST_PROTOCOL: u32 = 0x04;

@@ -4,7 +4,6 @@ use uefi::prelude::*;
 use uefi::proto::media::file::{Directory, File, FileSystemInfo, FileSystemVolumeLabel};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::PartitionInfo;
-use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 
 /// Test `FileSystemInfo` and `FileSystemVolumeLabel`.
 fn test_file_system_info(directory: &mut Directory) {
@@ -24,19 +23,12 @@ fn test_file_system_info(directory: &mut Directory) {
     assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
 }
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Testing Media Access protocols");
 
     if let Ok(handle) = bt.get_handle_for_protocol::<SimpleFileSystem>() {
         let mut sfs = bt
-            .open_protocol::<SimpleFileSystem>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )
+            .open_protocol_exclusive::<SimpleFileSystem>(handle)
             .expect("failed to open SimpleFileSystem protocol");
 
         let mut directory = sfs.open_volume().unwrap();
@@ -73,14 +65,7 @@ pub fn test(image: Handle, bt: &BootServices) {
 
     for handle in handles {
         let pi = bt
-            .open_protocol::<PartitionInfo>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )
+            .open_protocol_exclusive::<PartitionInfo>(handle)
             .expect("Failed to get partition info");
 
         if let Some(mbr) = pi.mbr_partition_record() {
@@ -92,5 +77,5 @@ pub fn test(image: Handle, bt: &BootServices) {
         }
     }
 
-    known_disk::test_known_disk(image, bt);
+    known_disk::test_known_disk(bt);
 }

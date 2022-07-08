@@ -1,19 +1,11 @@
 use uefi::proto::console::pointer::Pointer;
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
-use uefi::Handle;
+use uefi::table::boot::BootServices;
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Running pointer protocol test");
     if let Ok(handle) = bt.get_handle_for_protocol::<Pointer>() {
         let mut pointer = bt
-            .open_protocol::<Pointer>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )
+            .open_protocol_exclusive::<Pointer>(handle)
             .expect("failed to open pointer protocol");
 
         pointer

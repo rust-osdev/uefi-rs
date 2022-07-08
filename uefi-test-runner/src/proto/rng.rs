@@ -1,21 +1,13 @@
-use uefi::prelude::*;
 use uefi::proto::rng::{Rng, RngAlgorithmType};
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::table::boot::BootServices;
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Running rng protocol test");
 
     let handle = bt.get_handle_for_protocol::<Rng>().expect("No Rng handles");
 
     let mut rng = bt
-        .open_protocol::<Rng>(
-            OpenProtocolParams {
-                handle,
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )
+        .open_protocol_exclusive::<Rng>(handle)
         .expect("Failed to open Rng protocol");
 
     let mut list = [RngAlgorithmType::EMPTY_ALGORITHM; 4];

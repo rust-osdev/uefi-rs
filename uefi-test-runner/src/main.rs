@@ -10,7 +10,6 @@ extern crate alloc;
 use alloc::string::String;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
-use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 use uefi_services::{print, println};
 
 mod boot;
@@ -81,7 +80,7 @@ fn check_revision(rev: uefi::table::Revision) {
 /// This functionality is very specific to our QEMU-based test runner. Outside
 /// of it, we just pause the tests for a couple of seconds to allow visual
 /// inspection of the output.
-fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
+fn check_screenshot(bt: &BootServices, name: &str) {
     if cfg!(feature = "qemu") {
         let serial_handles = bt
             .find_handles::<Serial>()
@@ -96,14 +95,7 @@ fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
             .expect("Second serial device is missing");
 
         let mut serial = bt
-            .open_protocol::<Serial>(
-                OpenProtocolParams {
-                    handle: serial_handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )
+            .open_protocol_exclusive::<Serial>(serial_handle)
             .expect("Could not open serial protocol");
 
         // Set a large timeout to avoid problems with Travis

@@ -1,20 +1,12 @@
 use uefi::proto::shim::ShimLock;
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
-use uefi::Handle;
+use uefi::table::boot::BootServices;
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Running shim lock protocol test");
 
     if let Ok(handle) = bt.get_handle_for_protocol::<ShimLock>() {
         let shim_lock = bt
-            .open_protocol::<ShimLock>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )
+            .open_protocol_exclusive::<ShimLock>(handle)
             .expect("failed to open shim lock protocol");
 
         // An empty buffer should definitely be invalid, so expect

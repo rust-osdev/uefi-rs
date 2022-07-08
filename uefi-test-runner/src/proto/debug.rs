@@ -1,20 +1,12 @@
 use core::ffi::c_void;
 use uefi::proto::debug::{DebugSupport, ExceptionType, ProcessorArch, SystemContext};
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
-use uefi::Handle;
+use uefi::table::boot::BootServices;
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Running UEFI debug connection protocol test");
     if let Ok(handles) = bt.find_handles::<DebugSupport>() {
         for handle in handles {
-            if let Ok(mut debug_support) = bt.open_protocol::<DebugSupport>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            ) {
+            if let Ok(mut debug_support) = bt.open_protocol_exclusive::<DebugSupport>(handle) {
                 // make sure that the max processor index is a sane value, i.e. it works
                 let maximum_processor_index = debug_support.get_maximum_processor_index();
                 assert_ne!(

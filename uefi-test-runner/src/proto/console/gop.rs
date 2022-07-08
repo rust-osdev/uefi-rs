@@ -2,7 +2,7 @@ use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
 use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub unsafe fn test(image: Handle, bt: &BootServices) {
     info!("Running graphics output protocol test");
     if let Ok(handle) = bt.get_handle_for_protocol::<GraphicsOutput>() {
         let gop = &mut bt
@@ -23,7 +23,7 @@ pub fn test(image: Handle, bt: &BootServices) {
         fill_color(gop);
         draw_fb(gop);
 
-        crate::check_screenshot(image, bt, "gop_test");
+        crate::check_screenshot(bt, "gop_test");
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");

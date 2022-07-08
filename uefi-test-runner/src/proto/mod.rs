@@ -12,13 +12,13 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     find_protocol(bt);
     test_protocols_per_handle(image, bt);
 
-    debug::test(image, bt);
+    debug::test(bt);
     device_path::test(image, bt);
     loaded_image::test(image, bt);
-    media::test(image, bt);
-    network::test(image, bt);
-    pi::test(image, bt);
-    rng::test(image, bt);
+    media::test(bt);
+    network::test(bt);
+    pi::test(bt);
+    rng::test(bt);
 
     #[cfg(any(
         target_arch = "i386",
@@ -26,7 +26,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
         target_arch = "arm",
         target_arch = "aarch64"
     ))]
-    shim::test(image, bt);
+    shim::test(bt);
 }
 
 fn find_protocol(bt: &BootServices) {

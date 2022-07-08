@@ -1,56 +1,30 @@
 use uefi::prelude::*;
 use uefi::proto::device_path::{text::*, DevicePath};
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::table::boot::BootServices;
 
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running device path protocol test");
 
     let loaded_image = bt
-        .open_protocol::<LoadedImage>(
-            OpenProtocolParams {
-                handle: image,
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )
+        .open_protocol_exclusive::<LoadedImage>(image)
         .expect("Failed to open LoadedImage protocol");
 
     let device_path = bt
-        .open_protocol::<DevicePath>(
-            OpenProtocolParams {
-                handle: loaded_image.device(),
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )
+        .open_protocol_exclusive::<DevicePath>(loaded_image.device())
         .expect("Failed to open DevicePath protocol");
 
     let device_path_to_text = bt
-        .open_protocol::<DevicePathToText>(
-            OpenProtocolParams {
-                handle: bt
-                    .get_handle_for_protocol::<DevicePathToText>()
-                    .expect("Failed to get DevicePathToText handle"),
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
+        .open_protocol_exclusive::<DevicePathToText>(
+            bt.get_handle_for_protocol::<DevicePathToText>()
+                .expect("Failed to get DevicePathToText handle"),
         )
         .expect("Failed to open DevicePathToText protocol");
 
     let device_path_from_text = bt
-        .open_protocol::<DevicePathFromText>(
-            OpenProtocolParams {
-                handle: bt
-                    .get_handle_for_protocol::<DevicePathFromText>()
-                    .expect("Failed to get DevicePathFromText handle"),
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
+        .open_protocol_exclusive::<DevicePathFromText>(
+            bt.get_handle_for_protocol::<DevicePathFromText>()
+                .expect("Failed to get DevicePathFromText handle"),
         )
         .expect("Failed to open DevicePathFromText protocol");
 

@@ -43,13 +43,14 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
 /// # Accessing protocols
 ///
 /// Protocols can be opened using several methods of `BootServices`. Most
-/// commonly, [`open_protocol`] should be used. This returns a
+/// commonly, [`open_protocol_exclusive`] should be used. This ensures that
+/// nothing else can use the protocol until it is closed, and returns a
 /// [`ScopedProtocol`] that takes care of closing the protocol when it is
-/// dropped. If the protocol is opened in [`Exclusive`] mode, UEFI ensures that
-/// nothing else can use the protocol until it is closed.
+/// dropped.
 ///
 /// Other methods for opening protocols:
 ///
+/// * [`open_protocol`]
 /// * [`get_image_file_system`]
 /// * [`handle_protocol`]
 /// * [`locate_protocol`]
@@ -57,7 +58,7 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
 /// For protocol definitions, see the [`proto`] module.
 ///
 /// [`proto`]: crate::proto
-/// [`Exclusive`]: OpenProtocolAttributes::Exclusive
+/// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
 /// [`open_protocol`]: BootServices::open_protocol
 /// [`get_image_file_system`]: BootServices::get_image_file_system
 /// [`locate_protocol`]: BootServices::locate_protocol
@@ -623,7 +624,7 @@ impl BootServices {
     /// based on the protocol GUID.
     ///
     /// It is recommended that all new drivers and applications use
-    /// [`open_protocol`] instead of `handle_protocol`.
+    /// [`open_protocol_exclusive`] or [`open_protocol`] instead of `handle_protocol`.
     ///
     /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
     /// provides no mechanism to protect against concurrent usage. Such
@@ -635,10 +636,14 @@ impl BootServices {
     /// This method is unsafe because the handle database is not
     /// notified that the handle and protocol are in use; there is no
     /// guarantee that they will remain valid for the duration of their
-    /// use. Use [`open_protocol`] instead.
+    /// use. Use [`open_protocol_exclusive`] if possible, otherwise use
+    /// [`open_protocol`].
     ///
     /// [`open_protocol`]: BootServices::open_protocol
-    #[deprecated(note = "it is recommended to use `open_protocol` instead")]
+    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+    #[deprecated(
+        note = "it is recommended to use `open_protocol_exclusive` or `open_protocol` instead"
+    )]
     pub unsafe fn handle_protocol<P: ProtocolPointer + ?Sized>(
         &self,
         handle: Handle,
@@ -737,14 +742,7 @@ impl BootServices {
     /// # let boot_services: &BootServices = get_fake_val();
     /// # let image_handle: Handle = get_fake_val();
     /// let handle = boot_services.get_handle_for_protocol::<DevicePathToText>()?;
-    /// let device_path_to_text = boot_services.open_protocol::<DevicePathToText>(
-    ///     OpenProtocolParams {
-    ///         handle,
-    ///         agent: image_handle,
-    ///         controller: None,
-    ///     },
-    ///     OpenProtocolAttributes::Exclusive,
-    /// )?;
+    /// let device_path_to_text = boot_services.open_protocol_exclusive::<DevicePathToText>(handle)?;
     /// # Ok(())
     /// # }
     /// ```
@@ -963,11 +961,14 @@ impl BootServices {
 
     /// Open a protocol interface for a handle.
     ///
+    /// See also [`open_protocol_exclusive`], which provides a safe
+    /// subset of this functionality.
+    ///
     /// This function attempts to get the protocol implementation of a
     /// handle, based on the protocol GUID. It is an extended version of
     /// [`handle_protocol`]. It is recommended that all
-    /// new drivers and applications use `open_protocol` instead of
-    /// `handle_protocol`.
+    /// new drivers and applications use `open_protocol_exclusive` or
+    /// `open_protocol` instead of `handle_protocol`.
     ///
     /// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for
     /// details of the input parameters.
@@ -980,8 +981,19 @@ impl BootServices {
     /// protections must be implemented by user-level code, for example via a
     /// global `HashSet`.
     ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it can be used to open a
+    /// protocol in ways that don't get tracked by the UEFI
+    /// implementation. This could allow the protocol to be removed from
+    /// a handle, or for the handle to be deleted entirely, while a
+    /// reference to the protocol is still active. The caller is
+    /// responsible for ensuring that the handle and protocol remain
+    /// valid until the `ScopedProtocol` is dropped.
+    ///
     /// [`handle_protocol`]: BootServices::handle_protocol
-    pub fn open_protocol<P: ProtocolPointer + ?Sized>(
+    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+    pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
         &self,
         params: OpenProtocolParams,
         attributes: OpenProtocolAttributes,
@@ -995,7 +1007,7 @@ impl BootServices {
             params.controller,
             attributes as u32,
         )
-        .into_with_val(|| unsafe {
+        .into_with_val(|| {
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
 
             #[allow(deprecated)]
@@ -1017,14 +1029,19 @@ impl BootServices {
         &self,
         handle: Handle,
     ) -> Result<ScopedProtocol<P>> {
-        self.open_protocol::<P>(
-            OpenProtocolParams {
-                handle,
-                agent: self.image_handle(),
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )
+        // Safety: opening in exclusive mode with the correct agent
+        // handle set ensures that the protocol cannot be modified or
+        // removed while it is open, so this usage is safe.
+        unsafe {
+            self.open_protocol::<P>(
+                OpenProtocolParams {
+                    handle,
+                    agent: self.image_handle(),
+                    controller: None,
+                },
+                OpenProtocolAttributes::Exclusive,
+            )
+        }
     }
 
     /// Test whether a handle supports a protocol.
@@ -1099,9 +1116,15 @@ impl BootServices {
     /// This method is unsafe because the handle database is not
     /// notified that the handle and protocol are in use; there is no
     /// guarantee that they will remain valid for the duration of their
-    /// use. Use [`BootServices::get_handle_for_protocol`] and
-    /// [`BootServices::open_protocol`] instead.
-    #[deprecated(note = "it is recommended to use `open_protocol` instead")]
+    /// use. Use [`get_handle_for_protocol`] and either
+    /// [`open_protocol_exclusive`] or [`open_protocol`] instead.
+    ///
+    /// [`get_handle_for_protocol`]: BootServices::get_handle_for_protocol
+    /// [`open_protocol`]: BootServices::open_protocol
+    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+    #[deprecated(
+        note = "it is recommended to use `open_protocol_exclusive` or `open_protocol` instead"
+    )]
     pub unsafe fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
         (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
@@ -1166,34 +1189,13 @@ impl BootServices {
         &self,
         image_handle: Handle,
     ) -> Result<ScopedProtocol<SimpleFileSystem>> {
-        let loaded_image = self.open_protocol::<LoadedImage>(
-            OpenProtocolParams {
-                handle: image_handle,
-                agent: image_handle,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )?;
+        let loaded_image = self.open_protocol_exclusive::<LoadedImage>(image_handle)?;
 
-        let device_path = self.open_protocol::<DevicePath>(
-            OpenProtocolParams {
-                handle: loaded_image.device(),
-                agent: image_handle,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )?;
+        let device_path = self.open_protocol_exclusive::<DevicePath>(loaded_image.device())?;
 
         let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
 
-        self.open_protocol::<SimpleFileSystem>(
-            OpenProtocolParams {
-                handle: device_handle,
-                agent: image_handle,
-                controller: None,
-            },
-            OpenProtocolAttributes::Exclusive,
-        )
+        self.open_protocol_exclusive(device_handle)
     }
 }
 

@@ -18,10 +18,11 @@
 ### Changed
 
 - Marked `BootServices::handle_protocol` as `unsafe`. (This method is
-  also deprecated -- use `open_protocol` instead.)
+  also deprecated -- use `open_protocol_exclusive` or `open_protocol` instead.)
 - Deprecated `BootServices::locate_protocol` and marked it `unsafe`. Use
   `BootServices::get_handle_for_protocol` and
-  `BootServices::open_protocol` instead.
+  `BootServices::open_protocol_exclusive` (or
+  `BootServices::open_protocol`) instead.
 - renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
   additive. It is now a default feature.
 

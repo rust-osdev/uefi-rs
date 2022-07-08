@@ -145,17 +145,19 @@ fn test_create_file(directory: &mut Directory) {
 fn get_block_media_id(handle: Handle, bt: &BootServices) -> u32 {
     // This cannot be opened in `EXCLUSIVE` mode, as doing so
     // unregisters the `DiskIO` protocol from the handle.
-    let block_io = bt
-        .open_protocol::<BlockIO>(
-            OpenProtocolParams {
-                handle,
-                agent: bt.image_handle(),
-                controller: None,
-            },
-            OpenProtocolAttributes::GetProtocol,
-        )
-        .expect("Failed to get block I/O protocol");
-    block_io.media().media_id()
+    unsafe {
+        let block_io = bt
+            .open_protocol::<BlockIO>(
+                OpenProtocolParams {
+                    handle,
+                    agent: bt.image_handle(),
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .expect("Failed to get block I/O protocol");
+        block_io.media().media_id()
+    }
 }
 
 /// Tests raw disk I/O.

@@ -141,38 +141,38 @@ fn test_create_file(directory: &mut Directory) {
     file.write(b"test output data").unwrap();
 }
 
-/// Tests raw disk I/O.
-fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
-    info!("Testing raw disk I/O");
-
-    // Open the block I/O protocol on the handle
+/// Get the media ID via the BlockIO protocol.
+fn get_block_media_id(handle: Handle, bt: &BootServices) -> u32 {
+    // This cannot be opened in `EXCLUSIVE` mode, as doing so
+    // unregisters the `DiskIO` protocol from the handle.
     let block_io = bt
         .open_protocol::<BlockIO>(
             OpenProtocolParams {
                 handle,
-                agent: image,
+                agent: bt.image_handle(),
                 controller: None,
             },
             OpenProtocolAttributes::GetProtocol,
         )
         .expect("Failed to get block I/O protocol");
+    block_io.media().media_id()
+}
+
+/// Tests raw disk I/O.
+fn test_raw_disk_io(handle: Handle, bt: &BootServices) {
+    info!("Testing raw disk I/O");
+
+    let media_id = get_block_media_id(handle, bt);
 
     // Open the disk I/O protocol on the input handle
     let disk_io = bt
-        .open_protocol::<DiskIo>(
-            OpenProtocolParams {
-                handle,
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::GetProtocol,
-        )
+        .open_protocol_exclusive::<DiskIo>(handle)
         .expect("Failed to get disk I/O protocol");
 
     // Read from the first sector of the disk into the buffer
     let mut buf = vec![0; 512];
     disk_io
-        .read_disk(block_io.media().media_id(), 0, &mut buf)
+        .read_disk(media_id, 0, &mut buf)
         .expect("Failed to read from disk");
 
     // Verify that the disk's MBR signature is correct
@@ -192,29 +192,12 @@ struct DiskIoTask {
 }
 
 /// Tests raw disk I/O through the DiskIo2 protocol.
-fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
+fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
     info!("Testing raw disk I/O 2");
 
     // Open the disk I/O protocol on the input handle
-    if let Ok(disk_io2) = bt.open_protocol::<DiskIo2>(
-        OpenProtocolParams {
-            handle,
-            agent: image,
-            controller: None,
-        },
-        OpenProtocolAttributes::GetProtocol,
-    ) {
-        // Open the block I/O protocol on the handle
-        let block_io = bt
-            .open_protocol::<BlockIO>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::GetProtocol,
-            )
-            .expect("Failed to get block I/O protocol");
+    if let Ok(disk_io2) = bt.open_protocol_exclusive::<DiskIo2>(handle) {
+        let media_id = get_block_media_id(handle, bt);
 
         unsafe {
             // Create the completion event
@@ -234,7 +217,7 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
             // Initiate the asynchronous read operation
             disk_io2
                 .read_disk_raw(
-                    block_io.media().media_id(),
+                    media_id,
                     0,
                     NonNull::new(&mut task.token as _),
                     task.buffer.len(),
@@ -258,7 +241,7 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
 
 /// Run various tests on a special test disk. The disk is created by
 /// xtask/src/disk.rs.
-pub fn test_known_disk(image: Handle, bt: &BootServices) {
+pub fn test_known_disk(bt: &BootServices) {
     // This test is only valid when running in the specially-prepared
     // qemu with the test disk.
     if !cfg!(feature = "qemu") {
@@ -272,47 +255,41 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
 
     let mut found_test_disk = false;
     for handle in handles {
-        let mut sfs = bt
-            .open_protocol::<SimpleFileSystem>(
-                OpenProtocolParams {
-                    handle,
-                    agent: image,
-                    controller: None,
-                },
-                OpenProtocolAttributes::Exclusive,
-            )
-            .expect("Failed to get simple file system");
-        let mut directory = sfs.open_volume().unwrap();
+        {
+            let mut sfs = bt
+                .open_protocol_exclusive::<SimpleFileSystem>(handle)
+                .expect("Failed to get simple file system");
+            let mut directory = sfs.open_volume().unwrap();
 
-        let mut fs_info_buf = vec![0; 128];
-        let fs_info = directory
-            .get_info::<FileSystemInfo>(&mut fs_info_buf)
-            .unwrap();
+            let mut fs_info_buf = vec![0; 128];
+            let fs_info = directory
+                .get_info::<FileSystemInfo>(&mut fs_info_buf)
+                .unwrap();
 
-        if fs_info.volume_label().to_string() == "MbrTestDisk" {
-            info!("Checking MbrTestDisk");
-            found_test_disk = true;
-        } else {
-            continue;
+            if fs_info.volume_label().to_string() == "MbrTestDisk" {
+                info!("Checking MbrTestDisk");
+                found_test_disk = true;
+            } else {
+                continue;
+            }
+
+            assert!(!fs_info.read_only());
+            assert_eq!(fs_info.volume_size(), 512 * 1192);
+            assert_eq!(fs_info.free_space(), 512 * 1190);
+            assert_eq!(fs_info.block_size(), 512);
+
+            // Check that `get_boxed_info` returns the same info.
+            let boxed_fs_info = directory.get_boxed_info::<FileSystemInfo>().unwrap();
+            assert_eq!(*fs_info, *boxed_fs_info);
+
+            test_existing_dir(&mut directory);
+            test_delete_warning(&mut directory);
+            test_existing_file(&mut directory);
+            test_create_file(&mut directory);
         }
 
-        // Test raw disk I/O first
-        test_raw_disk_io(handle, image, bt);
-        test_raw_disk_io2(handle, image, bt);
-
-        assert!(!fs_info.read_only());
-        assert_eq!(fs_info.volume_size(), 512 * 1192);
-        assert_eq!(fs_info.free_space(), 512 * 1190);
-        assert_eq!(fs_info.block_size(), 512);
-
-        // Check that `get_boxed_info` returns the same info.
-        let boxed_fs_info = directory.get_boxed_info::<FileSystemInfo>().unwrap();
-        assert_eq!(*fs_info, *boxed_fs_info);
-
-        test_existing_dir(&mut directory);
-        test_delete_warning(&mut directory);
-        test_existing_file(&mut directory);
-        test_create_file(&mut directory);
+        test_raw_disk_io(handle, bt);
+        test_raw_disk_io2(handle, bt);
     }
 
     if !found_test_disk {

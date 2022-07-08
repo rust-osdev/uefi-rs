@@ -4,25 +4,15 @@ use uefi::{
         pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, UdpOpFlags},
         IpAddress,
     },
-    table::boot::{OpenProtocolAttributes, OpenProtocolParams},
-    CStr8, Handle,
+    CStr8,
 };
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Testing Network protocols");
 
     if let Ok(handles) = bt.find_handles::<BaseCode>() {
         for handle in handles {
-            let mut base_code = bt
-                .open_protocol::<BaseCode>(
-                    OpenProtocolParams {
-                        handle,
-                        agent: image,
-                        controller: None,
-                    },
-                    OpenProtocolAttributes::Exclusive,
-                )
-                .unwrap();
+            let mut base_code = bt.open_protocol_exclusive::<BaseCode>(handle).unwrap();
 
             info!("Starting PXE Base Code");
             base_code

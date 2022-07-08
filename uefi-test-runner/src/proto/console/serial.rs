@@ -2,7 +2,7 @@ use uefi::proto::console::serial::{ControlBits, Serial};
 use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
 use uefi::Handle;
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub unsafe fn test(image: Handle, bt: &BootServices) {
     info!("Running serial protocol test");
     if let Ok(handle) = bt.get_handle_for_protocol::<Serial>() {
         let mut serial = bt

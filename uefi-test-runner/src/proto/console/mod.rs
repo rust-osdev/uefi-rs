@@ -6,9 +6,11 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     stdout::test(st.stdout());
 
     let bt = st.boot_services();
-    serial::test(image, bt);
-    gop::test(image, bt);
-    pointer::test(image, bt);
+    unsafe {
+        serial::test(image, bt);
+        gop::test(image, bt);
+    }
+    pointer::test(bt);
 }
 
 mod gop;

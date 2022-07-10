@@ -324,7 +324,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             cmd.args(&["-m", "256M"]);
 
             // Enable hardware-accelerated virtualization if possible.
-            if !opt.disable_kvm && !opt.ci {
+            if platform::is_linux() && !opt.disable_kvm && !opt.ci {
                 cmd.arg("--enable-kvm");
             }
 

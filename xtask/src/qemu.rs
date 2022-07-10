@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use std::ffi::OsString;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::thread;
 use tempfile::TempDir;
 
@@ -267,6 +267,27 @@ fn build_esp_dir(opt: &QemuOpt) -> Result<PathBuf> {
     Ok(esp_dir)
 }
 
+/// Wrap a child process to automatically kill it when dropped.
+struct ChildWrapper(Child);
+
+impl Drop for ChildWrapper {
+    fn drop(&mut self) {
+        // Do nothing if child has already exited (this call doesn't block).
+        if matches!(self.0.try_wait(), Ok(Some(_))) {
+            return;
+        }
+
+        // Try to stop the process, then wait for it to exit. Log errors
+        // but otherwise ignore.
+        if let Err(err) = self.0.kill() {
+            eprintln!("failed to kill process: {}", err);
+        }
+        if let Err(err) = self.0.wait() {
+            eprintln!("failed to wait for process exit: {}", err);
+        }
+    }
+}
+
 pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let esp_dir = build_esp_dir(opt)?;
 
@@ -382,11 +403,14 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     cmd.stdin(Stdio::piped());
     cmd.stdout(Stdio::piped());
-    let mut child = cmd.spawn()?;
+    let mut child = ChildWrapper(cmd.spawn().context("failed to launch qemu")?);
 
     let monitor_io = Io::from_pipe(&qemu_monitor_pipe)?;
     let serial_io = Io::from_pipe(&serial_pipe)?;
-    let child_io = Io::new(child.stdout.take().unwrap(), child.stdin.take().unwrap());
+    let child_io = Io::new(
+        child.0.stdout.take().unwrap(),
+        child.0.stdin.take().unwrap(),
+    );
 
     // Start a thread to process stdout from the child.
     let stdout_thread = thread::spawn(|| echo_filtered_stdout(child_io));
@@ -394,7 +418,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Capture the result to check it, but first wait for the child to
     // exit.
     let res = process_qemu_io(monitor_io, serial_io, tmp_dir);
-    let status = child.wait()?;
+    let status = child.0.wait()?;
 
     stdout_thread.join().expect("stdout thread panicked");
 

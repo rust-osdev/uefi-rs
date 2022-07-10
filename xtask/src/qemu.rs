@@ -1,14 +1,10 @@
-#![cfg(unix)]
-
 use crate::arch::UefiArch;
 use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
 use crate::opt::QemuOpt;
+use crate::pipe::Pipe;
 use crate::util::command_to_string;
 use crate::{net, platform};
 use anyhow::{bail, Context, Result};
-use fs_err::{File, OpenOptions};
-use nix::sys::stat::Mode;
-use nix::unistd::mkfifo;
 use regex::bytes::Regex;
 use serde_json::{json, Value};
 use std::ffi::OsString;
@@ -99,37 +95,13 @@ fn add_pflash_args(cmd: &mut Command, file: &Path, read_only: bool) {
     cmd.arg(arg);
 }
 
-struct Pipe {
-    qemu_arg: String,
-    input_path: PathBuf,
-    output_path: PathBuf,
-}
-
-impl Pipe {
-    fn new(dir: &Path, base_name: &'static str) -> Result<Self> {
-        let mode = Mode::from_bits(0o666).unwrap();
-        let qemu_arg = format!("pipe:{}", dir.join(base_name).to_str().unwrap());
-        let input_path = dir.join(format!("{}.in", base_name));
-        let output_path = dir.join(format!("{}.out", base_name));
-
-        mkfifo(&input_path, mode)?;
-        mkfifo(&output_path, mode)?;
-
-        Ok(Self {
-            qemu_arg,
-            input_path,
-            output_path,
-        })
-    }
-}
-
-struct Io<R: Read, W: Write> {
+pub struct Io<R: Read, W: Write> {
     reader: BufReader<R>,
     writer: W,
 }
 
 impl<R: Read, W: Write> Io<R, W> {
-    fn new(r: R, w: W) -> Self {
+    pub fn new(r: R, w: W) -> Self {
         Self {
             reader: BufReader::new(r),
             writer: w,
@@ -150,23 +122,17 @@ impl<R: Read, W: Write> Io<R, W> {
         Ok(serde_json::from_str(&line)?)
     }
 
-    fn write_line(&mut self, line: &str) -> Result<()> {
-        writeln!(self.writer, "{}", line)?;
+    fn write_all(&mut self, s: &str) -> Result<()> {
+        self.writer.write_all(s.as_bytes())?;
         self.writer.flush()?;
         Ok(())
     }
 
     fn write_json(&mut self, json: Value) -> Result<()> {
-        self.write_line(&json.to_string())
-    }
-}
-
-impl Io<File, File> {
-    fn from_pipe(pipe: &Pipe) -> Result<Self> {
-        Ok(Self::new(
-            File::open(&pipe.output_path)?,
-            OpenOptions::new().write(true).open(&pipe.input_path)?,
-        ))
+        // Note: it's important not to add anything after the JSON data
+        // such as a trailing newline. On Windows, QEMU's pipe reader
+        // will hang if that happens.
+        self.write_all(&json.to_string())
     }
 }
 
@@ -222,7 +188,7 @@ fn process_qemu_io<R: Read, W: Write>(
             assert_eq!(reply, json!({"return": {}}));
 
             // Tell the VM that the screenshot was taken
-            serial_io.write_line("OK")?;
+            serial_io.write_all("OK\n")?;
 
             // Compare screenshot to the reference file specified by the user.
             // TODO: Add an operating mode where the reference is created if it doesn't exist.
@@ -386,10 +352,10 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // until the test runner opens the handle in exclusive mode, but we
     // can just read and ignore those lines.
     cmd.args(&["-serial", "stdio"]);
-    cmd.args(&["-serial", &serial_pipe.qemu_arg]);
+    cmd.args(&["-serial", serial_pipe.qemu_arg()]);
 
     // Map the QEMU monitor to a pair of named pipes
-    cmd.args(&["-qmp", &qemu_monitor_pipe.qemu_arg]);
+    cmd.args(&["-qmp", qemu_monitor_pipe.qemu_arg()]);
 
     // Attach network device with DHCP configured for PXE
     cmd.args(&[
@@ -404,8 +370,8 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     cmd.stdout(Stdio::piped());
     let mut child = ChildWrapper(cmd.spawn().context("failed to launch qemu")?);
 
-    let monitor_io = Io::from_pipe(&qemu_monitor_pipe)?;
-    let serial_io = Io::from_pipe(&serial_pipe)?;
+    let monitor_io = qemu_monitor_pipe.open_io()?;
+    let serial_io = serial_pipe.open_io()?;
     let child_io = Io::new(
         child.0.stdout.take().unwrap(),
         child.0.stdin.take().unwrap(),

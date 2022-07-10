@@ -1,5 +1,3 @@
-#![cfg(unix)]
-
 use std::net::UdpSocket;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};

@@ -397,7 +397,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         "-nic",
         "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
     ]);
-    net::start_reverse_echo_service();
+    let echo_service = net::EchoService::start();
 
     println!("{}", command_to_string(&cmd));
 
@@ -421,6 +421,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let status = child.0.wait()?;
 
     stdout_thread.join().expect("stdout thread panicked");
+    echo_service.stop();
 
     // Propagate earlier error if necessary.
     res?;

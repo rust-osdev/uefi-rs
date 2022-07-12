@@ -188,6 +188,13 @@ fn test_latest_release() -> Result<()> {
 fn main() -> Result<()> {
     let opt = Opt::parse();
 
+    // TODO:
+    println!("=======VARS=======");
+    for (k, v) in std::env::vars() {
+        println!("{}={}", k, v);
+    }
+    println!("=======VARS=======");
+
     match &opt.action {
         Action::Build(build_opt) => build(build_opt),
         Action::Clippy(clippy_opt) => clippy(clippy_opt),

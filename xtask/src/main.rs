@@ -173,13 +173,15 @@ fn test_latest_release() -> Result<()> {
     // it explicit that it matches the command in `BUILDING.md`.
     let mut build_cmd = Command::new("cargo");
     build_cmd
+        .env_remove("RUSTC")
         .args(&["+nightly", "build", "--target", "x86_64-unknown-uefi"])
         .current_dir(tmp_dir.join("template"));
 
     // Check that the command is indeed in BUILDING.md, then verify the
     // build succeeds.
     let building_md = include_str!("../../BUILDING.md");
-    assert!(building_md.contains(&command_to_string(&build_cmd)));
+    let cmd_str = command_to_string(&build_cmd).replace("RUSTC= ", "");
+    assert!(building_md.contains(&cmd_str));
     run_cmd(build_cmd)
 }
 

@@ -101,6 +101,12 @@ impl Cargo {
     pub fn command(&self) -> Result<Command> {
         let mut cmd = Command::new("cargo");
 
+        // Cargo automatically sets some env vars that can prevent the
+        // channel arg (e.g. "+nightly") from working. Unset them in the
+        // child's environment.
+        cmd.env_remove("RUSTC");
+        cmd.env_remove("RUSTDOC");
+
         if let Some(toolchain) = &self.toolchain {
             cmd.arg(&format!("+{}", toolchain));
         }
@@ -206,7 +212,7 @@ mod tests {
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo +nightly doc --package uefi --package xtask --features alloc --open"
+            "RUSTC= RUSTDOC= RUSTDOCFLAGS=-Dwarnings cargo +nightly doc --package uefi --package xtask --features alloc --open"
         );
     }
 }

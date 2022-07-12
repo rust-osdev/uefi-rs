@@ -7,7 +7,7 @@ mod qemu;
 mod util;
 
 use anyhow::Result;
-use cargo::{Cargo, CargoAction, Feature, Package};
+use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package};
 use cfg_if::cfg_if;
 use clap::Parser;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, MiriOpt, Opt, QemuOpt};
@@ -172,6 +172,7 @@ fn test_latest_release() -> Result<()> {
     // Create cargo build command, not using the `cargo` module to make
     // it explicit that it matches the command in `BUILDING.md`.
     let mut build_cmd = Command::new("cargo");
+    fix_nested_cargo_env(&mut build_cmd);
     build_cmd
         .args(&["+nightly", "build", "--target", "x86_64-unknown-uefi"])
         .current_dir(tmp_dir.join("template"));

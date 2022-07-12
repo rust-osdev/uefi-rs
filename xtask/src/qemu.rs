@@ -2,9 +2,9 @@
 
 use crate::arch::UefiArch;
 use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
-use crate::net;
 use crate::opt::QemuOpt;
 use crate::util::command_to_string;
+use crate::{net, platform};
 use anyhow::{bail, Context, Result};
 use fs_err::{File, OpenOptions};
 use nix::sys::stat::Mode;
@@ -69,8 +69,7 @@ impl OvmfPaths {
             return Ok(ovmf_paths);
         }
 
-        #[cfg(target_os = "linux")]
-        {
+        if platform::is_linux() {
             let possible_paths = [
                 // Most distros, including CentOS, Fedora, Debian, and Ubuntu.
                 Path::new("/usr/share/OVMF"),

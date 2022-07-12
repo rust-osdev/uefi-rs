@@ -3,6 +3,7 @@ mod cargo;
 mod disk;
 mod net;
 mod opt;
+mod platform;
 mod qemu;
 mod util;
 

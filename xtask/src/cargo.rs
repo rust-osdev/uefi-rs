@@ -1,5 +1,7 @@
 use crate::arch::UefiArch;
 use anyhow::{bail, Result};
+use std::env;
+use std::ffi::OsString;
 use std::process::Command;
 
 #[derive(Clone, Copy, Debug)]
@@ -86,6 +88,32 @@ pub enum CargoAction {
     Test,
 }
 
+/// Get a modified PATH to remove entries added by rustup. This is
+/// necessary on Windows, see
+/// https://github.com/rust-lang/rustup/issues/3031.
+fn sanitized_path(orig_path: OsString) -> OsString {
+    // Modify the PATH to remove entries added by rustup. This is
+    // necessary on Windows, see https://github.com/rust-lang/rustup/issues/3031.
+    let paths = env::split_paths(&orig_path);
+    let sanitized_paths = paths.filter(|path| {
+        !path
+            .components()
+            .any(|component| component.as_os_str() == ".rustup")
+    });
+
+    env::join_paths(sanitized_paths).expect("invalid PATH")
+}
+
+/// Cargo automatically sets some env vars that can prevent the
+/// channel arg (e.g. "+nightly") from working. Unset them in the
+/// child's environment.
+pub fn fix_nested_cargo_env(cmd: &mut Command) {
+    cmd.env_remove("RUSTC");
+    cmd.env_remove("RUSTDOC");
+    let orig_path = env::var_os("PATH").unwrap_or_default();
+    cmd.env("PATH", sanitized_path(orig_path));
+}
+
 #[derive(Debug)]
 pub struct Cargo {
     pub action: CargoAction,
@@ -100,6 +128,8 @@ pub struct Cargo {
 impl Cargo {
     pub fn command(&self) -> Result<Command> {
         let mut cmd = Command::new("cargo");
+
+        fix_nested_cargo_env(&mut cmd);
 
         if let Some(toolchain) = &self.toolchain {
             cmd.arg(&format!("+{}", toolchain));
@@ -191,6 +221,17 @@ mod tests {
             Feature::comma_separated_string(&Feature::more_code()),
             "alloc,exts,logger"
         );
+    }
+
+    #[test]
+    fn test_sanitize_path() {
+        let (input, expected) = match env::consts::FAMILY {
+            "unix" => ("Abc:/path/.rustup/cargo:Xyz", "Abc:Xyz"),
+            "windows" => ("Abc;/path/.rustup/cargo;Xyz", "Abc;Xyz"),
+            _ => unimplemented!(),
+        };
+
+        assert_eq!(sanitized_path(input.into()), expected);
     }
 
     #[test]

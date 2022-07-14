@@ -10,7 +10,7 @@ use crate::{unsafe_guid, Event, Result, Status};
 /// reponsible for adding this protocol to any block I/O interface that
 /// appears in the system that does not already have a disk I/O protocol.
 #[repr(C)]
-#[unsafe_guid("ce345171-ba0b-11d2-4f8e-00a0c969723b")]
+#[unsafe_guid("ce345171-ba0b-11d2-8e4f-00a0c969723b")]
 #[derive(Protocol)]
 pub struct DiskIo {
     revision: u64,
@@ -83,7 +83,7 @@ pub struct DiskIo2Token {
 /// This protocol provides an extension to the disk I/O protocol to enable
 /// non-blocking / asynchronous byte-oriented disk operation.
 #[repr(C)]
-#[unsafe_guid("151c8eae-7f2c-472c-549e-9828194f6a88")]
+#[unsafe_guid("151c8eae-7f2c-472c-9e54-9828194f6a88")]
 #[derive(Protocol)]
 pub struct DiskIo2 {
     revision: u64,

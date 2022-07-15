@@ -576,14 +576,21 @@ impl BootServices {
     /// protections must be implemented by user-level code, for example via a
     /// global `HashSet`.
     ///
+    /// # Safety
+    ///
+    /// This method is unsafe because the handle database is not
+    /// notified that the handle and protocol are in use; there is no
+    /// guarantee that they will remain valid for the duration of their
+    /// use. Use [`open_protocol`] instead.
+    ///
     /// [`open_protocol`]: BootServices::open_protocol
     #[deprecated(note = "it is recommended to use `open_protocol` instead")]
-    pub fn handle_protocol<P: ProtocolPointer + ?Sized>(
+    pub unsafe fn handle_protocol<P: ProtocolPointer + ?Sized>(
         &self,
         handle: Handle,
     ) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| unsafe {
+        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
             let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
             &*ptr
         })
@@ -647,6 +654,57 @@ impl BootServices {
                 },
             )
         }
+    }
+
+    /// Find an arbitrary handle that supports a particular
+    /// [`Protocol`]. Returns [`NOT_FOUND`] if no handles support the
+    /// protocol.
+    ///
+    /// This method is a convenient wrapper around
+    /// [`BootServices::locate_handle_buffer`] for getting just one
+    /// handle. This is useful when you don't care which handle the
+    /// protocol is opened on. For example, [`DevicePathToText`] isn't
+    /// tied to a particular device, so only a single handle is expected
+    /// to exist.
+    ///
+    /// [`NOT_FOUND`]: Status::NOT_FOUND
+    /// [`DevicePathToText`]: uefi::proto::device_path::text::DevicePathToText
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use uefi::proto::device_path::text::DevicePathToText;
+    /// use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+    /// use uefi::Handle;
+    /// # use uefi::Result;
+    ///
+    /// # fn get_fake_val<T>() -> T { todo!() }
+    /// # fn test() -> Result {
+    /// # let boot_services: &BootServices = get_fake_val();
+    /// # let image_handle: Handle = get_fake_val();
+    /// let handle = boot_services.get_handle_for_protocol::<DevicePathToText>()?;
+    /// let device_path_to_text = boot_services.open_protocol::<DevicePathToText>(
+    ///     OpenProtocolParams {
+    ///         handle,
+    ///         agent: image_handle,
+    ///         controller: None,
+    ///     },
+    ///     OpenProtocolAttributes::Exclusive,
+    /// )?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_handle_for_protocol<P: Protocol>(&self) -> Result<Handle> {
+        // Delegate to a non-generic function to potentially reduce code size.
+        self.get_handle_for_protocol_impl(&P::GUID)
+    }
+
+    fn get_handle_for_protocol_impl(&self, guid: &Guid) -> Result<Handle> {
+        self.locate_handle_buffer(SearchType::ByProtocol(guid))?
+            .handles()
+            .first()
+            .cloned()
+            .ok_or_else(|| Status::NOT_FOUND.into())
     }
 
     /// Load an EFI image into memory and return a [`Handle`] to the image.
@@ -961,9 +1019,18 @@ impl BootServices {
     /// Returns a protocol implementation, if present on the system.
     ///
     /// The caveats of `BootServices::handle_protocol()` also apply here.
-    pub fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
+    ///
+    /// # Safety
+    ///
+    /// This method is unsafe because the handle database is not
+    /// notified that the handle and protocol are in use; there is no
+    /// guarantee that they will remain valid for the duration of their
+    /// use. Use [`BootServices::get_handle_for_protocol`] and
+    /// [`BootServices::open_protocol`] instead.
+    #[deprecated(note = "it is recommended to use `open_protocol` instead")]
+    pub unsafe fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
         let mut ptr = ptr::null_mut();
-        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| unsafe {
+        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
             let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
             &*ptr
         })

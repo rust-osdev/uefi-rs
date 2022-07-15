@@ -10,6 +10,15 @@
   which is now marked as deprecated.
 - Implemented `core::fmt::Write` for the `Serial` protocol.
 - Added the `MemoryProtection` protocol.
+- Added `BootServices::get_handle_for_protocol`.
+
+### Changed
+
+- Marked `BootServices::handle_protocol` as `unsafe`. (This method is
+  also deprecated -- use `open_protocol` instead.)
+- Deprecated `BootServices::locate_protocol` and marked it `unsafe`. Use
+  `BootServices::get_handle_for_protocol` and
+  `BootServices::open_protocol` instead.
 
 ### Fixed
 

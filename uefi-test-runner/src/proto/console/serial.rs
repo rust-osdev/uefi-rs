@@ -1,15 +1,27 @@
 use uefi::proto::console::serial::{ControlBits, Serial};
-use uefi::table::boot::BootServices;
+use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::Handle;
 
-pub fn test(bt: &BootServices) {
+pub fn test(image: Handle, bt: &BootServices) {
     info!("Running serial protocol test");
-    if let Ok(serial) = bt.locate_protocol::<Serial>() {
+    if let Ok(handle) = bt.get_handle_for_protocol::<Serial>() {
+        let mut serial = bt
+            .open_protocol::<Serial>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                // For this test, don't open in exclusive mode. That
+                // would break the connection between stdout and the
+                // serial device.
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .expect("failed to open serial protocol");
         // BUG: there are multiple failures in the serial tests on AArch64
         if cfg!(target_arch = "aarch64") {
             return;
         }
-
-        let serial = unsafe { &mut *serial.get() };
 
         let old_ctrl_bits = serial
             .get_control_bits()

@@ -119,7 +119,7 @@ mod enums;
 
 mod strs;
 pub use self::strs::{
-    CStr16, CStr8, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16,
+    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16,
     UnalignedCStr16Error,
 };
 

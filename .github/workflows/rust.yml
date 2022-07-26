@@ -208,7 +208,10 @@ jobs:
   # alert when this situation occurs.
   test_latest_release:
     name: Build the template against the released version of uefi-rs
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout sources
       uses: actions/checkout@v2

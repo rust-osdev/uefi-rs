@@ -16,6 +16,12 @@ error: Entry method should not be async
 23 | async fn bad_async(_handle: Handle, _st: SystemTable<Boot>) -> Status {
    | ^^^^^
 
+error: Entry method should not be const
+  --> $DIR/entry.rs:28:1
+   |
+28 | const fn bad_const(_handle: Handle, _st: SystemTable<Boot>) -> Status {
+   | ^^^^^
+
 error: Entry method should not be generic
   --> $DIR/entry.rs:33:16
    |

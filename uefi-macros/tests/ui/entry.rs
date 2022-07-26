@@ -25,7 +25,7 @@ async fn bad_async(_handle: Handle, _st: SystemTable<Boot>) -> Status {
 }
 
 #[entry]
-fn bad_const(_handle: Handle, _st: SystemTable<Boot>) -> Status {
+const fn bad_const(_handle: Handle, _st: SystemTable<Boot>) -> Status {
     Status::SUCCESS
 }
 

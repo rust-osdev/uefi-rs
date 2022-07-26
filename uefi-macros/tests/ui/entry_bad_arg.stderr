@@ -1,0 +1,8 @@
+error[E0308]: mismatched types
+ --> tests/ui/entry_bad_arg.rs:9:4
+  |
+9 | fn main(_handle: Handle, _st: SystemTable<Boot>, _x: usize) -> Status {
+  |    ^^^^ incorrect number of function parameters
+  |
+  = note: expected fn pointer `extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>) -> uefi::Status`
+                found fn item `extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<uefi::table::Boot>, usize) -> uefi::Status {main}`

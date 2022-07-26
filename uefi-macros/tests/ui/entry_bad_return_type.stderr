@@ -1,0 +1,8 @@
+error[E0308]: mismatched types
+ --> tests/ui/entry_bad_return_type.rs:9:4
+  |
+9 | fn main(_handle: Handle, _st: SystemTable<Boot>) -> bool {
+  |    ^^^^ expected struct `Status`, found `bool`
+  |
+  = note: expected fn pointer `extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<_>) -> Status`
+                found fn item `extern "efiapi" fn(uefi::Handle, uefi::table::SystemTable<_>) -> bool {main}`

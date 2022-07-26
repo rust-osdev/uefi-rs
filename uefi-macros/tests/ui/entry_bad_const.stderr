@@ -1,0 +1,5 @@
+error: Entry method should not be const
+ --> tests/ui/entry_bad_const.rs:9:1
+  |
+9 | const fn main(_handle: Handle, _st: SystemTable<Boot>) -> Status {
+  | ^^^^^

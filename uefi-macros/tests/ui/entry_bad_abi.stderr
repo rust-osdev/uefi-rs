@@ -1,0 +1,5 @@
+error: Entry method must have no ABI modifier
+ --> tests/ui/entry_bad_abi.rs:9:1
+  |
+9 | extern "C" fn main(_handle: Handle, _st: SystemTable<Boot>) -> Status {
+  | ^^^^^^^^^^

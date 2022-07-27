@@ -3,12 +3,13 @@ mod cargo;
 mod disk;
 mod net;
 mod opt;
+mod pipe;
+mod platform;
 mod qemu;
 mod util;
 
 use anyhow::Result;
 use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package};
-use cfg_if::cfg_if;
 use clap::Parser;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, MiriOpt, Opt, QemuOpt};
 use std::process::Command;
@@ -87,7 +88,11 @@ fn run_miri(opt: &MiriOpt) -> Result<()> {
 /// Build uefi-test-runner and run it in QEMU.
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![Feature::Qemu];
-    if opt.ci {
+
+    // Always enable the ci feature when not building on Linux so that
+    // the MP test is skipped. That test doesn't work with kvm disabled
+    // (see https://github.com/rust-osdev/uefi-rs/issues/103).
+    if opt.ci || !platform::is_linux() {
         features.push(Feature::Ci);
     }
 
@@ -103,13 +108,7 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     };
     run_cmd(cargo.command()?)?;
 
-    cfg_if! {
-        if #[cfg(unix)] {
-            qemu::run_qemu(*opt.target, opt)
-        } else {
-            panic!("vm tests are only supported on unix targets");
-        }
-    }
+    qemu::run_qemu(*opt.target, opt)
 }
 
 /// Run unit tests and doctests on the host. Most of uefi-rs is tested

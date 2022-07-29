@@ -11,6 +11,10 @@
 - Implemented `core::fmt::Write` for the `Serial` protocol.
 - Added the `MemoryProtection` protocol.
 - Added `BootServices::get_handle_for_protocol`.
+- Added trait `EqStrUntilNul` and implemented it for `CStr16` and `CString16`.
+  Now you can compare everything that is `AsRef<str>` (such as `String` and `str`
+  from the standard library) to uefi strings. Please head to the documentation of
+  `EqStrUntilNul` to find out limitations and further information.
 
 ### Changed
 
@@ -27,7 +31,7 @@
   version to make sure it's 2.0 or higher before calling the associated
   function pointers. This prevents potential invalid pointer access.
 - The table `Header` struct's `Debug` impl now prints the correct signature.
-  
+
 ### Removed
 
 - Removed the `exts::allocate_buffer` function. This function could

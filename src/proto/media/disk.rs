@@ -126,7 +126,7 @@ impl DiskIo2 {
     /// * `len` - Buffer size.
     /// * `buffer` - Buffer to read into.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// Because of the asynchronous nature of the disk transaction, manual lifetime
     /// tracking is required.
@@ -160,7 +160,7 @@ impl DiskIo2 {
     /// * `len` - Buffer size.
     /// * `buffer` - Buffer to write from.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// Because of the asynchronous nature of the disk transaction, manual lifetime
     /// tracking is required.

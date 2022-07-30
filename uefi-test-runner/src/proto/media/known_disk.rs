@@ -10,6 +10,7 @@ use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::{EventType, MemoryType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
 use uefi::Event;
+use uefi_services::system_table;
 
 /// Test directory entry iteration.
 fn test_existing_dir(directory: &mut Directory) {
@@ -181,12 +182,14 @@ fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
 }
 
 /// Asynchronous disk I/O 2 transaction callback
-unsafe extern "efiapi" fn disk_io2_callback(_event: Event, ctx: Option<NonNull<c_void>>) {
+unsafe extern "efiapi" fn disk_io2_callback(event: Event, ctx: Option<NonNull<c_void>>) {
     let ptr = ctx.unwrap().as_ptr() as *const u8;
 
     // Verify that the disk's MBR signature is correct
     assert_eq!(*ptr.offset(510), 0x55);
     assert_eq!(*ptr.offset(511), 0xaa);
+
+    system_table().as_ref().boot_services().close_event(event).unwrap();
 }
 
 /// Tests raw disk I/O through the DiskIo2 protocol.
@@ -233,9 +236,8 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
             .read_disk_raw(0, 0, &mut token, SIZE, buf)
             .expect("Failed to read from disk");
     }
-
+ 
     info!("Raw disk I/O 2 succeeded");
-    bt.close_event(event).unwrap();
     bt.free_pool(buf).unwrap();
 }
 

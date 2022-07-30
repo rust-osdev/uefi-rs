@@ -17,7 +17,6 @@ use tempfile::TempDir;
 struct OvmfPaths {
     code: PathBuf,
     vars: PathBuf,
-    vars_read_only: bool,
 }
 
 impl OvmfPaths {
@@ -26,19 +25,14 @@ impl OvmfPaths {
             UefiArch::AArch64 => Self {
                 code: dir.join("QEMU_EFI-pflash.raw"),
                 vars: dir.join("vars-template-pflash.raw"),
-                // The OVMF implementation for AArch64 won't boot unless
-                // the vars file is writeable.
-                vars_read_only: false,
             },
             UefiArch::IA32 => Self {
                 code: dir.join("OVMF32_CODE.fd"),
                 vars: dir.join("OVMF32_VARS.fd"),
-                vars_read_only: true,
             },
             UefiArch::X86_64 => Self {
                 code: dir.join("OVMF_CODE.fd"),
                 vars: dir.join("OVMF_VARS.fd"),
-                vars_read_only: true,
             },
         }
     }
@@ -84,10 +78,18 @@ impl OvmfPaths {
     }
 }
 
-fn add_pflash_args(cmd: &mut Command, file: &Path, read_only: bool) {
+enum PflashMode {
+    ReadOnly,
+    ReadWrite,
+}
+
+fn add_pflash_args(cmd: &mut Command, file: &Path, mode: PflashMode) {
     // Build the argument as an OsString to avoid requiring a UTF-8 path.
     let mut arg = OsString::from("if=pflash,format=raw,readonly=");
-    arg.push(if read_only { "on" } else { "off" });
+    arg.push(match mode {
+        PflashMode::ReadOnly => "on",
+        PflashMode::ReadWrite => "off",
+    });
     arg.push(",file=");
     arg.push(file);
 
@@ -313,10 +315,20 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         }
     }
 
+    let tmp_dir = TempDir::new()?;
+    let tmp_dir = tmp_dir.path();
+
     // Set up OVMF.
     let ovmf_paths = OvmfPaths::find(opt, arch)?;
-    add_pflash_args(&mut cmd, &ovmf_paths.code, /*read_only=*/ true);
-    add_pflash_args(&mut cmd, &ovmf_paths.vars, ovmf_paths.vars_read_only);
+
+    // Make a copy of the OVMF vars file so that it can be used
+    // read+write without modifying the original. Under AArch64, some
+    // versions of OVMF won't boot if the vars file isn't writeable.
+    let ovmf_vars = tmp_dir.join("ovmf_vars");
+    fs_err::copy(&ovmf_paths.vars, &ovmf_vars)?;
+
+    add_pflash_args(&mut cmd, &ovmf_paths.code, PflashMode::ReadOnly);
+    add_pflash_args(&mut cmd, &ovmf_vars, PflashMode::ReadWrite);
 
     // Mount a local directory as a FAT partition.
     cmd.arg("-drive");
@@ -330,9 +342,6 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     if opt.headless {
         cmd.args(&["-display", "none"]);
     }
-
-    let tmp_dir = TempDir::new()?;
-    let tmp_dir = tmp_dir.path();
 
     let test_disk = tmp_dir.join("test_disk.fat.img");
     create_mbr_test_disk(&test_disk)?;

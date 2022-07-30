@@ -189,7 +189,11 @@ unsafe extern "efiapi" fn disk_io2_callback(event: Event, ctx: Option<NonNull<c_
     assert_eq!(*ptr.offset(510), 0x55);
     assert_eq!(*ptr.offset(511), 0xaa);
 
-    system_table().as_ref().boot_services().close_event(event).unwrap();
+    system_table()
+        .as_ref()
+        .boot_services()
+        .close_event(event)
+        .unwrap();
 }
 
 /// Tests raw disk I/O through the DiskIo2 protocol.
@@ -197,16 +201,19 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
     info!("Testing raw disk I/O 2");
 
     // Open the disk I/O protocol on the input handle
-    let disk_io2 = bt
-        .open_protocol::<DiskIo2>(
-            OpenProtocolParams {
-                handle,
-                agent: image,
-                controller: None,
-            },
-            OpenProtocolAttributes::GetProtocol,
-        )
-        .expect("Failed to get disk I/O 2 protocol");
+    let disk_io2 = bt.open_protocol::<DiskIo2>(
+        OpenProtocolParams {
+            handle,
+            agent: image,
+            controller: None,
+        },
+        OpenProtocolAttributes::GetProtocol,
+    );
+    if disk_io2.is_err() {
+        return;
+    }
+
+    let disk_io2 = disk_io2.unwrap();
 
     // Allocate a temporary buffer to read into
     const SIZE: usize = 512;
@@ -236,7 +243,7 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
             .read_disk_raw(0, 0, &mut token, SIZE, buf)
             .expect("Failed to read from disk");
     }
- 
+
     info!("Raw disk I/O 2 succeeded");
     bt.free_pool(buf).unwrap();
 }

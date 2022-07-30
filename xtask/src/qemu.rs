@@ -11,7 +11,7 @@ use std::ffi::OsString;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::thread;
+use std::{env, thread};
 use tempfile::TempDir;
 
 struct OvmfPaths {
@@ -264,6 +264,18 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         UefiArch::X86_64 => "qemu-system-x86_64",
     };
     let mut cmd = Command::new(qemu_exe);
+
+    if platform::is_windows() {
+        // The QEMU installer for Windows does not automatically add the
+        // directory containing the QEMU executables to the PATH. Add
+        // the default directory to the PATH to make it more likely that
+        // QEMU will be found on Windows. (The directory is appended, so
+        // if a different directory on the PATH already has the QEMU
+        // binary this change won't affect anything.)
+        let mut path = env::var_os("PATH").unwrap_or_default();
+        path.push(r";C:\Program Files\qemu");
+        cmd.env("PATH", path);
+    }
 
     // Disable default devices.
     // QEMU by defaults enables a ton of devices which slow down boot.

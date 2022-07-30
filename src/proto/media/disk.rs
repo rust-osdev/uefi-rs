@@ -123,6 +123,7 @@ impl DiskIo2 {
     /// * `media_id` - ID of the medium to be read from.
     /// * `offset` - Starting byte offset on the logical block I/O device to read from.
     /// * `token` - Transaction token for asynchronous read.
+    /// * `len` - Buffer size.
     /// * `buffer` - Buffer to read into.
     ///
     /// # Errors:
@@ -134,22 +135,15 @@ impl DiskIo2 {
     /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
     /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
     ///                                     the read operation.
-    pub fn read_disk(
+    pub unsafe fn read_disk_raw(
         &self,
         media_id: u32,
         offset: u64,
-        token: &mut DiskIo2Token,
-        buffer: &mut [u8],
+        token: *mut DiskIo2Token,
+        len: usize,
+        buffer: *mut u8,
     ) -> Result {
-        (self.read_disk_ex)(
-            self,
-            media_id,
-            offset,
-            token,
-            buffer.len(),
-            buffer.as_mut_ptr(),
-        )
-        .into()
+        (self.read_disk_ex)(self, media_id, offset, &mut *token, len, buffer).into()
     }
 
     /// Writes bytes to the disk device.
@@ -158,6 +152,7 @@ impl DiskIo2 {
     /// * `media_id` - ID of the medium to write to.
     /// * `offset` - Starting byte offset on the logical block I/O device to write to.
     /// * `token` - Transaction token for asynchronous write.
+    /// * `len` - Buffer size.
     /// * `buffer` - Buffer to write from.
     ///
     /// # Errors:
@@ -170,14 +165,15 @@ impl DiskIo2 {
     /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
     ///                                     the write operation.
     /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
-    pub fn write_disk(
+    pub unsafe fn write_disk_raw(
         &mut self,
         media_id: u32,
         offset: u64,
-        token: &mut DiskIo2Token,
-        buffer: &[u8],
+        token: *mut DiskIo2Token,
+        len: usize,
+        buffer: *const u8,
     ) -> Result {
-        (self.write_disk_ex)(self, media_id, offset, token, buffer.len(), buffer.as_ptr()).into()
+        (self.write_disk_ex)(self, media_id, offset, &mut *token, len, buffer).into()
     }
 
     /// Flushes all modified data to the physical device.

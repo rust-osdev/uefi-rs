@@ -1,11 +1,15 @@
 use alloc::string::ToString;
+use core::ffi::c_void;
+use core::ptr::NonNull;
 use uefi::prelude::*;
+use uefi::proto::media::disk::{DiskIo, DiskIo2, DiskIo2Token};
 use uefi::proto::media::file::{
     Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo,
 };
 use uefi::proto::media::fs::SimpleFileSystem;
-use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
+use uefi::table::boot::{EventType, MemoryType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
+use uefi::Event;
 
 /// Test directory entry iteration.
 fn test_existing_dir(directory: &mut Directory) {
@@ -138,6 +142,103 @@ fn test_create_file(directory: &mut Directory) {
     file.write(b"test output data").unwrap();
 }
 
+/// Tests raw disk I/O.
+fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
+    info!("Testing raw disk I/O");
+
+    // Open the disk I/O protocol on the input handle
+    let disk_io = bt
+        .open_protocol::<DiskIo>(
+            OpenProtocolParams {
+                handle,
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("Failed to get disk I/O protocol");
+
+    // Allocate a temporary buffer to read into
+    const SIZE: usize = 512;
+    let buf = bt
+        .allocate_pool(MemoryType::LOADER_DATA, SIZE)
+        .expect("Failed to allocate temporary buffer");
+
+    // SAFETY: A valid buffer of `SIZE` bytes was allocated above
+    let slice = unsafe { core::slice::from_raw_parts_mut(buf, SIZE) };
+
+    // Read from the first sector of the disk into the buffer
+    disk_io
+        .read_disk(0, 0, slice)
+        .expect("Failed to read from disk");
+
+    // Verify that the disk's MBR signature is correct
+    assert_eq!(slice[510], 0x55);
+    assert_eq!(slice[511], 0xaa);
+
+    info!("Raw disk I/O succeeded");
+    bt.free_pool(buf).unwrap();
+}
+
+/// Asynchronous disk I/O 2 transaction callback
+unsafe extern "efiapi" fn disk_io2_callback(_event: Event, ctx: Option<NonNull<c_void>>) {
+    let ptr = ctx.unwrap().as_ptr() as *const u8;
+
+    // Verify that the disk's MBR signature is correct
+    assert_eq!(*ptr.offset(510), 0x55);
+    assert_eq!(*ptr.offset(511), 0xaa);
+}
+
+/// Tests raw disk I/O through the DiskIo2 protocol.
+fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
+    info!("Testing raw disk I/O 2");
+
+    // Open the disk I/O protocol on the input handle
+    let disk_io2 = bt
+        .open_protocol::<DiskIo2>(
+            OpenProtocolParams {
+                handle,
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("Failed to get disk I/O 2 protocol");
+
+    // Allocate a temporary buffer to read into
+    const SIZE: usize = 512;
+    let buf = bt
+        .allocate_pool(MemoryType::LOADER_DATA, SIZE)
+        .expect("Failed to allocate temporary buffer");
+
+    // Create an event callback for the disk read completion
+    let event = unsafe {
+        bt.create_event(
+            EventType::NOTIFY_SIGNAL,
+            Tpl::NOTIFY,
+            Some(disk_io2_callback),
+            NonNull::new(buf as *mut c_void),
+        )
+        .expect("Failed to create event for disk I/O 2 transaction")
+    };
+
+    // Read from the first sector of the disk into the buffer
+    // SAFETY: The cloned `event` is only used for this transaction
+    unsafe {
+        let mut token = DiskIo2Token {
+            event: Some(event.unsafe_clone()),
+            transaction_status: uefi::Status::SUCCESS,
+        };
+        disk_io2
+            .read_disk_raw(0, 0, &mut token, SIZE, buf)
+            .expect("Failed to read from disk");
+    }
+
+    info!("Raw disk I/O 2 succeeded");
+    bt.close_event(event).unwrap();
+    bt.free_pool(buf).unwrap();
+}
+
 /// Run various tests on a special test disk. The disk is created by
 /// xtask/src/disk.rs.
 pub fn test_known_disk(image: Handle, bt: &BootServices) {
@@ -154,6 +255,10 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
 
     let mut found_test_disk = false;
     for handle in handles {
+        // Test raw disk I/O first
+        test_raw_disk_io(handle, image, bt);
+        test_raw_disk_io2(handle, image, bt);
+
         let mut sfs = bt
             .open_protocol::<SimpleFileSystem>(
                 OpenProtocolParams {

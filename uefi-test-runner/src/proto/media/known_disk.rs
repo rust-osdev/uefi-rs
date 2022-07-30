@@ -181,19 +181,31 @@ fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
     bt.free_pool(buf).unwrap();
 }
 
+/// Asynchronous disk I/O task context
+#[repr(C)]
+struct DiskIoTask {
+    /// Token for the transaction
+    token: DiskIo2Token,
+    /// Pointer to a buffer holding the read data
+    buffer: *mut u8,
+}
+
 /// Asynchronous disk I/O 2 transaction callback
 unsafe extern "efiapi" fn disk_io2_callback(event: Event, ctx: Option<NonNull<c_void>>) {
-    let ptr = ctx.unwrap().as_ptr() as *const u8;
+    let task = ctx.unwrap().as_ptr() as *mut DiskIoTask;
 
     // Verify that the disk's MBR signature is correct
-    assert_eq!(*ptr.offset(510), 0x55);
-    assert_eq!(*ptr.offset(511), 0xaa);
+    assert_eq!((*task).token.transaction_status, uefi::Status::SUCCESS);
+    assert_eq!(*(*task).buffer.offset(510), 0x55);
+    assert_eq!(*(*task).buffer.offset(511), 0xaa);
 
-    system_table()
-        .as_ref()
-        .boot_services()
-        .close_event(event)
-        .unwrap();
+    // Close the completion event
+    let bt = system_table().as_ref().boot_services();
+    bt.close_event(event).unwrap();
+
+    // Free the disk data buffer & task context
+    bt.free_pool((*task).buffer).unwrap();
+    bt.free_pool(task as *mut u8).unwrap();
 }
 
 /// Tests raw disk I/O through the DiskIo2 protocol.
@@ -201,51 +213,47 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
     info!("Testing raw disk I/O 2");
 
     // Open the disk I/O protocol on the input handle
-    let disk_io2 = bt.open_protocol::<DiskIo2>(
+    if let Ok(disk_io2) = bt.open_protocol::<DiskIo2>(
         OpenProtocolParams {
             handle,
             agent: image,
             controller: None,
         },
         OpenProtocolAttributes::GetProtocol,
-    );
-    if disk_io2.is_err() {
-        return;
+    ) {
+        // Allocate the task context structure
+        let task = bt
+            .allocate_pool(MemoryType::LOADER_DATA, core::mem::size_of::<DiskIoTask>())
+            .expect("Failed to allocate task struct for disk I/O")
+            as *mut DiskIoTask;
+
+        // SAFETY: `task` refers to a valid allocation of at least `size_of::<DiskIoTask>()`
+        unsafe {
+            // Create the completion event as part of the disk I/O token
+            (*task).token.event = Some(
+                bt.create_event(
+                    EventType::NOTIFY_SIGNAL,
+                    Tpl::NOTIFY,
+                    Some(disk_io2_callback),
+                    NonNull::new(task as *mut c_void),
+                )
+                .expect("Failed to create disk I/O completion event"),
+            );
+
+            // Allocate a buffer for the transaction to read into
+            const SIZE_TO_READ: usize = 512;
+            (*task).buffer = bt
+                .allocate_pool(MemoryType::LOADER_DATA, SIZE_TO_READ)
+                .expect("Failed to allocate buffer for disk I/O");
+
+            // Initiate the asynchronous read operation
+            disk_io2
+                .read_disk_raw(0, 0, &mut (*task).token, SIZE_TO_READ, (*task).buffer)
+                .expect("Failed to initiate asynchronous disk I/O read");
+        }
+
+        info!("Raw disk I/O 2 succeeded");
     }
-
-    let disk_io2 = disk_io2.unwrap();
-
-    // Allocate a temporary buffer to read into
-    const SIZE: usize = 512;
-    let buf = bt
-        .allocate_pool(MemoryType::LOADER_DATA, SIZE)
-        .expect("Failed to allocate temporary buffer");
-
-    // Create an event callback for the disk read completion
-    let event = unsafe {
-        bt.create_event(
-            EventType::NOTIFY_SIGNAL,
-            Tpl::NOTIFY,
-            Some(disk_io2_callback),
-            NonNull::new(buf as *mut c_void),
-        )
-        .expect("Failed to create event for disk I/O 2 transaction")
-    };
-
-    // Read from the first sector of the disk into the buffer
-    // SAFETY: The cloned `event` is only used for this transaction
-    unsafe {
-        let mut token = DiskIo2Token {
-            event: Some(event.unsafe_clone()),
-            transaction_status: uefi::Status::SUCCESS,
-        };
-        disk_io2
-            .read_disk_raw(0, 0, &mut token, SIZE, buf)
-            .expect("Failed to read from disk");
-    }
-
-    info!("Raw disk I/O 2 succeeded");
-    bt.free_pool(buf).unwrap();
 }
 
 /// Run various tests on a special test disk. The disk is created by

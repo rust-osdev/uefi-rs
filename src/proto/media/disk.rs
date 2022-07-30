@@ -126,6 +126,11 @@ impl DiskIo2 {
     /// * `len` - Buffer size.
     /// * `buffer` - Buffer to read into.
     ///
+    /// # Safety:
+    ///
+    /// Because of the asynchronous nature of the disk transaction, manual lifetime
+    /// tracking is required.
+    ///
     /// # Errors:
     /// * `uefi::status::INVALID_PARAMETER` The read request contains device addresses
     ///                                     that are not valid for the device.
@@ -154,6 +159,11 @@ impl DiskIo2 {
     /// * `token` - Transaction token for asynchronous write.
     /// * `len` - Buffer size.
     /// * `buffer` - Buffer to write from.
+    ///
+    /// # Safety:
+    ///
+    /// Because of the asynchronous nature of the disk transaction, manual lifetime
+    /// tracking is required.
     ///
     /// # Errors:
     /// * `uefi::status::INVALID_PARAMETER` The write request contains device addresses

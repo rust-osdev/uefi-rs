@@ -2,6 +2,7 @@ use alloc::string::ToString;
 use core::ffi::c_void;
 use core::ptr::NonNull;
 use uefi::prelude::*;
+use uefi::proto::media::block::BlockIO;
 use uefi::proto::media::disk::{DiskIo, DiskIo2, DiskIo2Token};
 use uefi::proto::media::file::{
     Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo,
@@ -147,6 +148,18 @@ fn test_create_file(directory: &mut Directory) {
 fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
     info!("Testing raw disk I/O");
 
+    // Open the block I/O protocol on the handle
+    let block_io = bt
+        .open_protocol::<BlockIO>(
+            OpenProtocolParams {
+                handle,
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("Failed to get block I/O protocol");
+
     // Open the disk I/O protocol on the input handle
     let disk_io = bt
         .open_protocol::<DiskIo>(
@@ -159,26 +172,17 @@ fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
         )
         .expect("Failed to get disk I/O protocol");
 
-    // Allocate a temporary buffer to read into
-    const SIZE: usize = 512;
-    let buf = bt
-        .allocate_pool(MemoryType::LOADER_DATA, SIZE)
-        .expect("Failed to allocate temporary buffer");
-
-    // SAFETY: A valid buffer of `SIZE` bytes was allocated above
-    let slice = unsafe { core::slice::from_raw_parts_mut(buf, SIZE) };
-
     // Read from the first sector of the disk into the buffer
+    let mut buf = vec![0; 512];
     disk_io
-        .read_disk(0, 0, slice)
+        .read_disk(block_io.media().media_id(), 0, &mut buf)
         .expect("Failed to read from disk");
 
     // Verify that the disk's MBR signature is correct
-    assert_eq!(slice[510], 0x55);
-    assert_eq!(slice[511], 0xaa);
+    assert_eq!(buf[510], 0x55);
+    assert_eq!(buf[511], 0xaa);
 
     info!("Raw disk I/O succeeded");
-    bt.free_pool(buf).unwrap();
 }
 
 /// Asynchronous disk I/O task context
@@ -221,6 +225,18 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
         },
         OpenProtocolAttributes::GetProtocol,
     ) {
+        // Open the block I/O protocol on the handle
+        let block_io = bt
+            .open_protocol::<BlockIO>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .expect("Failed to get block I/O protocol");
+
         // Allocate the task context structure
         let task = bt
             .allocate_pool(MemoryType::LOADER_DATA, core::mem::size_of::<DiskIoTask>())
@@ -248,7 +264,13 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
 
             // Initiate the asynchronous read operation
             disk_io2
-                .read_disk_raw(0, 0, &mut (*task).token, SIZE_TO_READ, (*task).buffer)
+                .read_disk_raw(
+                    block_io.media().media_id(),
+                    0,
+                    &mut (*task).token,
+                    SIZE_TO_READ,
+                    (*task).buffer,
+                )
                 .expect("Failed to initiate asynchronous disk I/O read");
         }
 
@@ -272,10 +294,6 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
 
     let mut found_test_disk = false;
     for handle in handles {
-        // Test raw disk I/O first
-        test_raw_disk_io(handle, image, bt);
-        test_raw_disk_io2(handle, image, bt);
-
         let mut sfs = bt
             .open_protocol::<SimpleFileSystem>(
                 OpenProtocolParams {
@@ -299,6 +317,10 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
         } else {
             continue;
         }
+
+        // Test raw disk I/O first
+        test_raw_disk_io(handle, image, bt);
+        test_raw_disk_io2(handle, image, bt);
 
         assert!(!fs_info.read_only());
         assert_eq!(fs_info.volume_size(), 512 * 1192);

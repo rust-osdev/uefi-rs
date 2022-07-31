@@ -1,5 +1,4 @@
 use alloc::string::ToString;
-use core::ffi::c_void;
 use core::ptr::NonNull;
 use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
@@ -8,10 +7,8 @@ use uefi::proto::media::file::{
     Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo,
 };
 use uefi::proto::media::fs::SimpleFileSystem;
-use uefi::table::boot::{EventType, MemoryType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
+use uefi::table::boot::{EventType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
-use uefi::Event;
-use uefi_services::system_table;
 
 /// Test directory entry iteration.
 fn test_existing_dir(directory: &mut Directory) {
@@ -190,26 +187,8 @@ fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
 struct DiskIoTask {
     /// Token for the transaction
     token: DiskIo2Token,
-    /// Pointer to a buffer holding the read data
-    buffer: *mut u8,
-}
-
-/// Asynchronous disk I/O 2 transaction callback
-unsafe extern "efiapi" fn disk_io2_callback(event: Event, ctx: Option<NonNull<c_void>>) {
-    let task = ctx.unwrap().as_ptr() as *mut DiskIoTask;
-
-    // Verify that the disk's MBR signature is correct
-    assert_eq!((*task).token.transaction_status, uefi::Status::SUCCESS);
-    assert_eq!(*(*task).buffer.offset(510), 0x55);
-    assert_eq!(*(*task).buffer.offset(511), 0xaa);
-
-    // Close the completion event
-    let bt = system_table().as_ref().boot_services();
-    bt.close_event(event).unwrap();
-
-    // Free the disk data buffer & task context
-    bt.free_pool((*task).buffer).unwrap();
-    bt.free_pool(task as *mut u8).unwrap();
+    /// Buffer holding the read data
+    buffer: [u8; 512],
 }
 
 /// Tests raw disk I/O through the DiskIo2 protocol.
@@ -237,44 +216,54 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
             )
             .expect("Failed to get block I/O protocol");
 
-        // Allocate the task context structure
-        let task = bt
-            .allocate_pool(MemoryType::LOADER_DATA, core::mem::size_of::<DiskIoTask>())
-            .expect("Failed to allocate task struct for disk I/O")
-            as *mut DiskIoTask;
-
-        // SAFETY: `task` refers to a valid allocation of at least `size_of::<DiskIoTask>()`
         unsafe {
-            // Create the completion event as part of the disk I/O token
-            (*task).token.event = Some(
-                bt.create_event(
-                    EventType::NOTIFY_SIGNAL,
-                    Tpl::NOTIFY,
-                    Some(disk_io2_callback),
-                    NonNull::new(task as *mut c_void),
-                )
-                .expect("Failed to create disk I/O completion event"),
-            );
+            // Create the task context structure
+            let mut task = core::mem::MaybeUninit::uninit();
 
-            // Allocate a buffer for the transaction to read into
-            const SIZE_TO_READ: usize = 512;
-            (*task).buffer = bt
-                .allocate_pool(MemoryType::LOADER_DATA, SIZE_TO_READ)
-                .expect("Failed to allocate buffer for disk I/O");
+            // Create the completion event
+            let mut event = bt
+                .create_event(
+                    EventType::empty(),
+                    Tpl::NOTIFY,
+                    None,
+                    NonNull::new(task.as_mut_ptr() as _),
+                )
+                .expect("Failed to create disk I/O completion event");
+
+            // Initialise the task context
+            task.write(DiskIoTask {
+                token: DiskIo2Token {
+                    event: event.unsafe_clone(),
+                    transaction_status: uefi::Status::NOT_READY,
+                },
+                buffer: [0; 512],
+            });
+
+            // Get a mutable reference to the task to not move it
+            let task_ref = task.assume_init_mut();
 
             // Initiate the asynchronous read operation
             disk_io2
                 .read_disk_raw(
                     block_io.media().media_id(),
                     0,
-                    &mut (*task).token,
-                    SIZE_TO_READ,
-                    (*task).buffer,
+                    NonNull::new(&mut task_ref.token as _),
+                    task_ref.buffer.len(),
+                    task_ref.buffer.as_mut_ptr(),
                 )
                 .expect("Failed to initiate asynchronous disk I/O read");
-        }
 
-        info!("Raw disk I/O 2 succeeded");
+            // Wait for the transaction to complete
+            bt.wait_for_event(core::slice::from_mut(&mut event))
+                .expect("Failed to wait on completion event");
+
+            // Verify that the disk's MBR signature is correct
+            assert_eq!(task_ref.token.transaction_status, uefi::Status::SUCCESS);
+            assert_eq!(task_ref.buffer[510], 0x55);
+            assert_eq!(task_ref.buffer[511], 0xaa);
+
+            info!("Raw disk I/O 2 succeeded");
+        }
     }
 }
 

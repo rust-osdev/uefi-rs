@@ -217,39 +217,28 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
             .expect("Failed to get block I/O protocol");
 
         unsafe {
-            // Create the task context structure
-            let mut task = core::mem::MaybeUninit::uninit();
-
             // Create the completion event
             let mut event = bt
-                .create_event(
-                    EventType::empty(),
-                    Tpl::NOTIFY,
-                    None,
-                    NonNull::new(task.as_mut_ptr() as _),
-                )
+                .create_event(EventType::empty(), Tpl::NOTIFY, None, None)
                 .expect("Failed to create disk I/O completion event");
 
             // Initialise the task context
-            task.write(DiskIoTask {
+            let mut task = DiskIoTask {
                 token: DiskIo2Token {
                     event: event.unsafe_clone(),
                     transaction_status: uefi::Status::NOT_READY,
                 },
                 buffer: [0; 512],
-            });
-
-            // Get a mutable reference to the task to not move it
-            let task_ref = task.assume_init_mut();
+            };
 
             // Initiate the asynchronous read operation
             disk_io2
                 .read_disk_raw(
                     block_io.media().media_id(),
                     0,
-                    NonNull::new(&mut task_ref.token as _),
-                    task_ref.buffer.len(),
-                    task_ref.buffer.as_mut_ptr(),
+                    NonNull::new(&mut task.token as _),
+                    task.buffer.len(),
+                    task.buffer.as_mut_ptr(),
                 )
                 .expect("Failed to initiate asynchronous disk I/O read");
 
@@ -258,9 +247,9 @@ fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
                 .expect("Failed to wait on completion event");
 
             // Verify that the disk's MBR signature is correct
-            assert_eq!(task_ref.token.transaction_status, uefi::Status::SUCCESS);
-            assert_eq!(task_ref.buffer[510], 0x55);
-            assert_eq!(task_ref.buffer[511], 0xaa);
+            assert_eq!(task.token.transaction_status, uefi::Status::SUCCESS);
+            assert_eq!(task.buffer[510], 0x55);
+            assert_eq!(task.buffer[511], 0xaa);
 
             info!("Raw disk I/O 2 succeeded");
         }

@@ -22,6 +22,8 @@
 - Deprecated `BootServices::locate_protocol` and marked it `unsafe`. Use
   `BootServices::get_handle_for_protocol` and
   `BootServices::open_protocol` instead.
+- renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
+  additive. It is now a default feature.
 
 ### Removed
 
@@ -39,7 +41,7 @@
 
 - The `no_panic_handler` feature has been replaced with an additive
   `panic_handler` feature. The new feature is enabled by default.
-  
+
 ## uefi - 0.16.1
 
 ### Added
@@ -55,7 +57,7 @@
   function pointers. This prevents potential invalid pointer access.
 - Fixed an incorrect pointer cast in the `Rng` protocol that could cause
   undefined behavior.
-  
+
 ### Changed
 
 - Relaxed the version requirements for the `bitflags` and `log`

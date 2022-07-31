@@ -73,11 +73,11 @@ impl log::Log for Logger {
             // Ignoring errors is bad, especially when they represent loss of
             // precious early-boot system diagnosis data, so we panic by
             // default. But if you experience this problem and want your UEFI
-            // application to keep running when it happens, you can enable the
-            // `ignore-logger-error` cargo feature. If you do so, logging errors
+            // application to keep running when it happens, you can disable the
+            // `panic-on-logger-errors` cargo feature. If you do so, logging errors
             // will be ignored by `uefi-rs` instead.
             //
-            if !cfg!(feature = "ignore-logger-errors") {
+            if cfg!(feature = "panic-on-logger-errors") {
                 result.unwrap()
             }
         }

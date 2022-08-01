@@ -30,13 +30,14 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     info!("Firmware Vendor: {}", buf.as_str());
 
     // Test print! and println! macros.
+    let (print, println) = ("print!", "println!"); // necessary for clippy to ignore
     print!(
         "Testing {} macro with formatting: {:#010b} ",
-        "print!", 155u8
+        print, 155u8
     );
     println!(
         "Testing {} macro with formatting: {:#010b} ",
-        "println!", 155u8
+        println, 155u8
     );
 
     // Reset the console before running all the other tests.

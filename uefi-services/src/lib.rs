@@ -26,6 +26,7 @@ extern crate log;
 extern crate uefi;
 
 use core::ffi::c_void;
+use core::fmt::Write;
 use core::ptr::NonNull;
 
 use cfg_if::cfg_if;
@@ -91,6 +92,53 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
             )
             .map(|_| ())
     }
+}
+
+// Internal function for print macros.
+#[doc(hidden)]
+pub fn _print(args: core::fmt::Arguments) {
+    unsafe {
+        let st = SYSTEM_TABLE
+            .as_mut()
+            .expect("The system table handle is not available");
+
+        st.stdout()
+            .write_fmt(args)
+            .expect("Failed to write to stdout");
+    }
+}
+
+/// Prints to the standard output.
+///
+/// # Panics
+/// Will panic if `SYSTEM_TABLE` is `None` (Before [init()] and after [uefi::prelude::SystemTable::exit_boot_services()]).
+///
+/// # Examples
+/// ```
+/// print!("");
+/// print!("Hello World\n");
+/// print!("Hello {}", "World");
+/// ```
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::_print(core::format_args!($($arg)*)));
+}
+
+/// Prints to the standard output, with a newline.
+///
+/// # Panics
+/// Will panic if `SYSTEM_TABLE` is `None` (Before [init()] and after [uefi::prelude::SystemTable::exit_boot_services()]).
+///
+/// # Examples
+/// ```
+/// println!();
+/// println!("Hello World");
+/// println!("Hello {}", "World");
+/// ```
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::_print(core::format_args!("{}{}", core::format_args!($($arg)*), "\n")));
 }
 
 /// Set up logging

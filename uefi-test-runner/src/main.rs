@@ -29,7 +29,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
     info!("Firmware Vendor: {}", buf.as_str());
 
-    // Test print! and println! macros
+    // Test print! and println! macros.
     print!("Testing {} macro with formatting: {:#010b} ", "print!", 155u8);
     println!("Testing {} macro with formatting: {:#010b} ", "println!", 155u8);
 

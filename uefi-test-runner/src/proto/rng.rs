@@ -5,13 +5,9 @@ use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running rng protocol test");
 
-    let handle = *bt
-        .find_handles::<Rng>()
-        .expect("Failed to get Rng handles")
-        .first()
-        .expect("No Rng handles");
+    let handle = bt.get_handle_for_protocol::<Rng>().expect("No Rng handles");
 
-    let rng = bt
+    let mut rng = bt
         .open_protocol::<Rng>(
             OpenProtocolParams {
                 handle,
@@ -21,7 +17,6 @@ pub fn test(image: Handle, bt: &BootServices) {
             OpenProtocolAttributes::Exclusive,
         )
         .expect("Failed to open Rng protocol");
-    let rng = unsafe { &mut *rng.interface.get() };
 
     let mut list = [RngAlgorithmType::EMPTY_ALGORITHM; 4];
 

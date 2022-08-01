@@ -1,11 +1,23 @@
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
-use uefi::table::boot::BootServices;
+use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
 
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running graphics output protocol test");
-    if let Ok(gop) = bt.locate_protocol::<GraphicsOutput>() {
-        let gop = unsafe { &mut *gop.get() };
+    if let Ok(handle) = bt.get_handle_for_protocol::<GraphicsOutput>() {
+        let gop = &mut bt
+            .open_protocol::<GraphicsOutput>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                // For this test, don't open in exclusive mode. That
+                // would break the connection between stdout and the
+                // video console.
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .expect("failed to open Graphics Output Protocol");
 
         set_graphics_mode(gop);
         fill_color(gop);

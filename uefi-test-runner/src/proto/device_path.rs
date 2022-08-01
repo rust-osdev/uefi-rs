@@ -16,7 +16,6 @@ pub fn test(image: Handle, bt: &BootServices) {
             OpenProtocolAttributes::Exclusive,
         )
         .expect("Failed to open LoadedImage protocol");
-    let loaded_image = unsafe { &*loaded_image.interface.get() };
 
     let device_path = bt
         .open_protocol::<DevicePath>(
@@ -28,17 +27,32 @@ pub fn test(image: Handle, bt: &BootServices) {
             OpenProtocolAttributes::Exclusive,
         )
         .expect("Failed to open DevicePath protocol");
-    let device_path = unsafe { &*device_path.interface.get() };
 
     let device_path_to_text = bt
-        .locate_protocol::<DevicePathToText>()
+        .open_protocol::<DevicePathToText>(
+            OpenProtocolParams {
+                handle: bt
+                    .get_handle_for_protocol::<DevicePathToText>()
+                    .expect("Failed to get DevicePathToText handle"),
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
         .expect("Failed to open DevicePathToText protocol");
-    let device_path_to_text = unsafe { &*device_path_to_text.get() };
 
     let device_path_from_text = bt
-        .locate_protocol::<DevicePathFromText>()
+        .open_protocol::<DevicePathFromText>(
+            OpenProtocolParams {
+                handle: bt
+                    .get_handle_for_protocol::<DevicePathFromText>()
+                    .expect("Failed to get DevicePathFromText handle"),
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
         .expect("Failed to open DevicePathFromText protocol");
-    let device_path_from_text = unsafe { &*device_path_from_text.get() };
 
     for path in device_path.node_iter() {
         info!(

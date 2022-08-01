@@ -9,7 +9,7 @@ use std::path::PathBuf;
 #[derive(Debug, Parser)]
 pub struct TargetOpt {
     /// UEFI target to build for.
-    #[clap(long, default_value_t)]
+    #[clap(long, action, default_value_t)]
     pub target: UefiArch,
 }
 
@@ -24,7 +24,7 @@ impl Deref for TargetOpt {
 #[derive(Debug, Parser)]
 pub struct ToolchainOpt {
     /// Rust toolchain to use, e.g. "nightly-2022-02-24".
-    #[clap(long)]
+    #[clap(long, action)]
     toolchain: Option<String>,
 }
 
@@ -40,14 +40,14 @@ impl ToolchainOpt {
 #[derive(Debug, Parser)]
 pub struct BuildModeOpt {
     /// Build in release mode.
-    #[clap(long)]
+    #[clap(long, action)]
     pub release: bool,
 }
 
 #[derive(Debug, Parser)]
 pub struct WarningOpt {
     /// Treat warnings as errors.
-    #[clap(long)]
+    #[clap(long, action)]
     pub warnings_as_errors: bool,
 }
 
@@ -102,7 +102,7 @@ pub struct DocOpt {
     pub toolchain: ToolchainOpt,
 
     /// Open the docs in a browser.
-    #[clap(long)]
+    #[clap(long, action)]
     pub open: bool,
 
     #[clap(flatten)]
@@ -129,19 +129,19 @@ pub struct QemuOpt {
     pub build_mode: BuildModeOpt,
 
     /// Disable hardware accelerated virtualization support in QEMU.
-    #[clap(long)]
+    #[clap(long, action)]
     pub disable_kvm: bool,
 
     /// Disable some tests that don't work in the CI.
-    #[clap(long)]
+    #[clap(long, action)]
     pub ci: bool,
 
     /// Run QEMU without a GUI.
-    #[clap(long)]
+    #[clap(long, action)]
     pub headless: bool,
 
     /// Directory in which to look for OVMF files.
-    #[clap(long)]
+    #[clap(long, action)]
     pub ovmf_dir: Option<PathBuf>,
 }
 

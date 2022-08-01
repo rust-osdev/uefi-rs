@@ -95,7 +95,7 @@ fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
             .get(1)
             .expect("Second serial device is missing");
 
-        let serial = bt
+        let mut serial = bt
             .open_protocol::<Serial>(
                 OpenProtocolParams {
                     handle: serial_handle,
@@ -105,7 +105,6 @@ fn check_screenshot(image: Handle, bt: &BootServices, name: &str) {
                 OpenProtocolAttributes::Exclusive,
             )
             .expect("Could not open serial protocol");
-        let serial = unsafe { &mut *serial.interface.get() };
 
         // Set a large timeout to avoid problems with Travis
         let mut io_mode = *serial.io_mode();

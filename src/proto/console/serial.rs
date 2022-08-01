@@ -1,5 +1,7 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
+use core::fmt::Write;
+
 use crate::proto::Protocol;
 use crate::{unsafe_guid, Result, Status};
 use bitflags::bitflags;
@@ -110,6 +112,12 @@ impl<'boot> Serial<'boot> {
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
+    }
+}
+
+impl<'boot> Write for Serial<'boot> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        self.write(s.as_bytes()).map_err(|_| core::fmt::Error)
     }
 }
 

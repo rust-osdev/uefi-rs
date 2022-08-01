@@ -120,6 +120,9 @@ impl CStr8 {
 ///
 /// This type is largely inspired by `std::ffi::CStr`, see the documentation of
 /// `CStr` for more details on its semantics.
+///
+/// For convenience, a [CStr16] is comparable with `&str` and `String` from the standard library
+/// through the trait [EqStrUntilNul].
 #[derive(Eq, PartialEq)]
 #[repr(transparent)]
 pub struct CStr16([Char16]);
@@ -278,6 +281,22 @@ impl CStr16 {
     }
 }
 
+impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CStr16 {
+    fn eq_str_until_nul(&self, other: &StrType) -> bool {
+        let other = other.as_ref();
+
+        let any_not_equal = self
+            .iter()
+            .copied()
+            .map(char::from)
+            .zip(other.chars())
+            .take_while(|(l, r)| *l != '\0' && *r != '\0')
+            .any(|(l, r)| l != r);
+
+        !any_not_equal
+    }
+}
+
 /// An iterator over `CStr16`.
 #[derive(Debug)]
 pub struct CStr16Iter<'a> {
@@ -427,9 +446,39 @@ impl<'a> UnalignedCStr16<'a> {
     }
 }
 
+/// Trait that helps to compare Rust strings against CStr16 types.
+/// A generic implementation of this trait enables us that we only have to
+/// implement one direction (`left.eq_str_until_nul(&right)`) and we get
+/// the other direction (`right.eq_str_until_nul(&left)`) for free.
+pub trait EqStrUntilNul<StrType: ?Sized> {
+    /// Checks if the provided Rust string `StrType` is equal to [Self] until the first null-byte
+    /// is found. An exception is the terminating null-byte of [Self] which is ignored.
+    ///
+    /// As soon as the first null byte in either `&self` or `other` is found, this method returns.
+    /// Note that Rust strings are allowed to contain null-bytes that do not terminate the string.
+    /// Although this is rather unusual, you can compare `"foo\0bar"` with an instance of [Self].
+    /// In that case, only `foo"` is compared against [Self] (if [Self] is long enough).
+    fn eq_str_until_nul(&self, other: &StrType) -> bool;
+}
+
+// magic implementation which transforms an existing `left.eq_str_until_nul(&right)` implementation
+// into an additional working `right.eq_str_until_nul(&left)` implementation.
+impl<StrType, C16StrType> EqStrUntilNul<C16StrType> for StrType
+where
+    StrType: AsRef<str>,
+    C16StrType: EqStrUntilNul<StrType> + ?Sized,
+{
+    fn eq_str_until_nul(&self, other: &C16StrType) -> bool {
+        // reuse the existing implementation
+        other.eq_str_until_nul(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::alloc_api::string::String;
+    use uefi_macros::cstr16;
 
     #[test]
     fn test_cstr16_num_bytes() {
@@ -469,6 +518,15 @@ mod tests {
     }
 
     #[test]
+    fn test_cstr16_macro() {
+        // Just a sanity check to make sure it's spitting out the right characters
+        assert_eq!(
+            crate::prelude::cstr16!("ABC").to_u16_slice_with_nul(),
+            [65, 66, 67, 0]
+        )
+    }
+
+    #[test]
     fn test_unaligned_cstr16() {
         let mut buf = [0u16; 6];
         let us = unsafe {
@@ -505,5 +563,25 @@ mod tests {
             us.to_cstring16().unwrap(),
             CString16::try_from("test").unwrap()
         );
+    }
+
+    #[test]
+    fn test_compare() {
+        let input: &CStr16 = cstr16!("test");
+
+        // test various comparisons with different order (left, right)
+        assert!(input.eq_str_until_nul(&"test"));
+        assert!(input.eq_str_until_nul(&String::from("test")));
+
+        // now other direction
+        assert!(String::from("test").eq_str_until_nul(input));
+        assert!("test".eq_str_until_nul(input));
+
+        // some more tests
+        // this is fine: compare until the first null
+        assert!(input.eq_str_until_nul(&"te\0st"));
+        // this is fine
+        assert!(input.eq_str_until_nul(&"test\0"));
+        assert!(!input.eq_str_until_nul(&"hello"));
     }
 }

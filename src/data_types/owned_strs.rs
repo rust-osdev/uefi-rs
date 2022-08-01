@@ -1,6 +1,7 @@
 use super::chars::{Char16, NUL_16};
 use super::strs::{CStr16, FromSliceWithNulError};
 use crate::alloc_api::vec::Vec;
+use crate::data_types::strs::EqStrUntilNul;
 use core::fmt;
 use core::ops;
 
@@ -14,6 +15,9 @@ pub enum FromStrError {
 }
 
 /// An owned UCS-2 null-terminated string.
+///
+/// For convenience, a [CString16] is comparable with `&str` and `String` from the standard library
+/// through the trait [EqStrUntilNul].
 ///
 /// # Examples
 ///
@@ -107,9 +111,17 @@ impl PartialEq<&CStr16> for CString16 {
     }
 }
 
+impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CString16 {
+    fn eq_str_until_nul(&self, other: &StrType) -> bool {
+        let this = self.as_ref();
+        this.eq_str_until_nul(other)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::alloc_api::string::String;
     use crate::alloc_api::vec;
 
     #[test]
@@ -150,16 +162,28 @@ mod tests {
     /// Test `CString16 == &CStr16` and `&CStr16 == CString16`.
     #[test]
     fn test_cstring16_cstr16_eq() {
-        let mut buf = [0; 4];
-
         assert_eq!(
-            CStr16::from_str_with_buf("abc", &mut buf).unwrap(),
+            crate::prelude::cstr16!("abc"),
             CString16::try_from("abc").unwrap()
         );
 
         assert_eq!(
             CString16::try_from("abc").unwrap(),
-            CStr16::from_str_with_buf("abc", &mut buf).unwrap(),
+            crate::prelude::cstr16!("abc")
         );
+    }
+
+    /// Tests the trait implementation of trait [EqStrUntilNul].
+    #[test]
+    fn test_cstring16_eq_std_str() {
+        let input = CString16::try_from("test").unwrap();
+
+        // test various comparisons with different order (left, right)
+        assert!(input.eq_str_until_nul(&"test"));
+        assert!(input.eq_str_until_nul(&String::from("test")));
+
+        // now other direction
+        assert!(String::from("test").eq_str_until_nul(&input));
+        assert!("test".eq_str_until_nul(&input));
     }
 }

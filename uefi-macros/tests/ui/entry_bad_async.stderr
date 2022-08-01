@@ -1,0 +1,5 @@
+error: Entry method should not be async
+ --> tests/ui/entry_bad_async.rs:9:1
+  |
+9 | async fn main(_handle: Handle, _st: SystemTable<Boot>) -> Status {
+  | ^^^^^

@@ -18,8 +18,6 @@
 
 #![no_std]
 #![feature(alloc_error_handler)]
-#![feature(lang_items)]
-#![feature(panic_info_message)]
 #![feature(abi_efiapi)]
 
 #[macro_use]
@@ -159,8 +157,8 @@ unsafe fn init_logger(st: &mut SystemTable<Boot>) {
     // Set the logger.
     log::set_logger(logger).unwrap(); // Can only fail if already initialized.
 
-    // Log everything.
-    log::set_max_level(log::LevelFilter::Info);
+    // Set logger max level to level specified by log features
+    log::set_max_level(log::STATIC_MAX_LEVEL);
 }
 
 /// Notify the utility library that boot services are not safe to call anymore
@@ -180,23 +178,10 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
     uefi::alloc::exit_boot_services();
 }
 
-#[lang = "eh_personality"]
-fn eh_personality() {}
-
-#[cfg(not(feature = "no_panic_handler"))]
+#[cfg(feature = "panic_handler")]
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
-    if let Some(location) = info.location() {
-        error!(
-            "Panic in {} at ({}, {}):",
-            location.file(),
-            location.line(),
-            location.column()
-        );
-        if let Some(message) = info.message() {
-            error!("{}", message);
-        }
-    }
+    error!("{}", info);
 
     // Give the user some time to read the message
     if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {

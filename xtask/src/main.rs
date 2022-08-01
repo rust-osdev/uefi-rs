@@ -3,11 +3,13 @@ mod cargo;
 mod disk;
 mod net;
 mod opt;
+mod pipe;
+mod platform;
 mod qemu;
 mod util;
 
 use anyhow::Result;
-use cargo::{Cargo, CargoAction, Feature, Package};
+use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package};
 use clap::Parser;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, MiriOpt, Opt, QemuOpt};
 use std::process::Command;
@@ -86,7 +88,11 @@ fn run_miri(opt: &MiriOpt) -> Result<()> {
 /// Build uefi-test-runner and run it in QEMU.
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![Feature::Qemu];
-    if opt.ci {
+
+    // Always enable the ci feature when not building on Linux so that
+    // the MP test is skipped. That test doesn't work with kvm disabled
+    // (see https://github.com/rust-osdev/uefi-rs/issues/103).
+    if opt.ci || !platform::is_linux() {
         features.push(Feature::Ci);
     }
 
@@ -165,6 +171,7 @@ fn test_latest_release() -> Result<()> {
     // Create cargo build command, not using the `cargo` module to make
     // it explicit that it matches the command in `BUILDING.md`.
     let mut build_cmd = Command::new("cargo");
+    fix_nested_cargo_env(&mut build_cmd);
     build_cmd
         .args(&["+nightly", "build", "--target", "x86_64-unknown-uefi"])
         .current_dir(tmp_dir.join("template"));

@@ -1,11 +1,10 @@
 use log::info;
 use uefi::prelude::*;
 use uefi::table::runtime::{VariableAttributes, VariableVendor};
-use uefi::{CStr16, Guid};
+use uefi::Guid;
 
 fn test_variables(rt: &RuntimeServices) {
-    let mut buf = [0; 14];
-    let name = CStr16::from_str_with_buf("UefiRsTestVar", &mut buf).unwrap();
+    let name = cstr16!("UefiRsTestVar");
     let test_value = b"TestValue";
     let test_attrs = VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS;
 
@@ -48,14 +47,18 @@ fn test_variables(rt: &RuntimeServices) {
 
 fn test_variable_info(rt: &RuntimeServices) {
     info!(
-        "Storage for non-volatile variabls: {:?}",
-        rt.query_variable_info(VariableAttributes::NON_VOLATILE),
+        "Storage for non-volatile boot-services variables: {:?}",
+        rt.query_variable_info(
+            VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::NON_VOLATILE
+        )
+        .unwrap(),
     );
     info!(
         "Storage for volatile runtime variables: {:?}",
         rt.query_variable_info(
             VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS
-        ),
+        )
+        .unwrap(),
     );
 }
 

@@ -1,7 +1,6 @@
 use core::ffi::c_void;
 use core::ptr::NonNull;
 
-use uefi::proto::console::text::Output;
 use uefi::table::boot::{BootServices, EventType, TimerTrigger, Tpl};
 use uefi::Event;
 
@@ -37,28 +36,35 @@ fn test_event_callback(bt: &BootServices) {
 }
 
 fn test_callback_with_ctx(bt: &BootServices) {
+    let mut data = 123u32;
+
     extern "efiapi" fn callback(_event: Event, ctx: Option<NonNull<c_void>>) {
         info!("Inside the event callback with context");
+        // Safety: this callback is run within the parent function's
+        // scope, so the context pointer is still valid.
         unsafe {
-            let ctx = &mut *(ctx.unwrap().as_ptr() as *mut Output);
-            // Clear the screen as a quick test that we successfully passed context
-            ctx.clear().expect("Failed to clear screen");
+            let ctx = ctx.unwrap().as_ptr().cast::<u32>();
+            *ctx = 456;
         }
     }
 
-    let ctx = unsafe { &mut *(bt.locate_protocol::<Output>().unwrap().get()) };
+    let ctx: *mut u32 = &mut data;
+    let ctx = NonNull::new(ctx.cast::<c_void>()).unwrap();
 
     let event = unsafe {
         bt.create_event(
             EventType::NOTIFY_WAIT,
             Tpl::CALLBACK,
             Some(callback),
-            Some(NonNull::new_unchecked(ctx as *mut _ as *mut c_void)),
+            Some(ctx),
         )
         .expect("Failed to create event with context")
     };
 
     bt.check_event(event).expect("Failed to check event");
+
+    // Check that `data` was updated inside the event callback.
+    assert_eq!(data, 456);
 }
 
 fn test_watchdog(bt: &BootServices) {

@@ -6,15 +6,14 @@ use uefi::proto::media::file::{
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
-use uefi::CString16;
 
 /// Test directory entry iteration.
 fn test_existing_dir(directory: &mut Directory) {
     info!("Testing existing directory");
 
-    let input_dir_path = CString16::try_from("test_dir").unwrap();
+    let input_dir_path = cstr16!("test_dir");
     let mut dir = directory
-        .open(&input_dir_path, FileMode::Read, FileAttribute::empty())
+        .open(input_dir_path, FileMode::Read, FileAttribute::empty())
         .expect("failed to open directory")
         .into_directory()
         .expect("not a directory");
@@ -37,9 +36,9 @@ fn test_existing_dir(directory: &mut Directory) {
 /// warning. This is mostly just an excuse to verify that warnings are
 /// properly converted to errors.
 fn test_delete_warning(directory: &mut Directory) {
-    let input_file_path = CString16::try_from("test_dir\\test_input.txt").unwrap();
+    let input_file_path = cstr16!("test_dir\\test_input.txt");
     let file = directory
-        .open(&input_file_path, FileMode::Read, FileAttribute::empty())
+        .open(input_file_path, FileMode::Read, FileAttribute::empty())
         .expect("failed to open file")
         .into_regular_file()
         .expect("not a regular file");
@@ -55,13 +54,9 @@ fn test_existing_file(directory: &mut Directory) {
     info!("Testing existing file");
 
     // Open an existing file.
-    let input_file_path = CString16::try_from("test_dir\\test_input.txt").unwrap();
+    let input_file_path = cstr16!("test_dir\\test_input.txt");
     let mut file = directory
-        .open(
-            &input_file_path,
-            FileMode::ReadWrite,
-            FileAttribute::empty(),
-        )
+        .open(input_file_path, FileMode::ReadWrite, FileAttribute::empty())
         .expect("failed to open file")
         .into_regular_file()
         .expect("not a regular file");
@@ -111,10 +106,7 @@ fn test_existing_file(directory: &mut Directory) {
         .unwrap()
     );
     assert_eq!(info.attribute(), FileAttribute::empty());
-    assert_eq!(
-        info.file_name(),
-        CString16::try_from("test_input.txt").unwrap()
-    );
+    assert_eq!(info.file_name(), cstr16!("test_input.txt"));
 
     // Check that `get_boxed_info` returns the same info.
     let boxed_info = file.get_boxed_info::<FileInfo>().unwrap();
@@ -125,7 +117,7 @@ fn test_existing_file(directory: &mut Directory) {
 
     // Verify the file is gone.
     assert!(directory
-        .open(&input_file_path, FileMode::Read, FileAttribute::empty())
+        .open(input_file_path, FileMode::Read, FileAttribute::empty())
         .is_err());
 }
 
@@ -136,7 +128,7 @@ fn test_create_file(directory: &mut Directory) {
     // Create a new file.
     let mut file = directory
         .open(
-            &CString16::try_from("new_test_file.txt").unwrap(),
+            cstr16!("new_test_file.txt"),
             FileMode::CreateReadWrite,
             FileAttribute::empty(),
         )
@@ -162,7 +154,7 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
 
     let mut found_test_disk = false;
     for handle in handles {
-        let sfs = bt
+        let mut sfs = bt
             .open_protocol::<SimpleFileSystem>(
                 OpenProtocolParams {
                     handle,
@@ -172,7 +164,6 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
                 OpenProtocolAttributes::Exclusive,
             )
             .expect("Failed to get simple file system");
-        let sfs = unsafe { &mut *sfs.interface.get() };
         let mut directory = sfs.open_volume().unwrap();
 
         let mut fs_info_buf = vec![0; 128];

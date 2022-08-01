@@ -4,6 +4,55 @@
 
 ### Added
 
+- Added EFI revision constants to `Revision`.
+- Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
+  This eliminates the need to explicitly access the `interface` field,
+  which is now marked as deprecated.
+- Implemented `core::fmt::Write` for the `Serial` protocol.
+- Added the `MemoryProtection` protocol.
+- Added `BootServices::get_handle_for_protocol`.
+- Added trait `EqStrUntilNul` and implemented it for `CStr16` and `CString16`.
+  Now you can compare everything that is `AsRef<str>` (such as `String` and `str`
+  from the standard library) to uefi strings. Please head to the documentation of
+  `EqStrUntilNul` to find out limitations and further information.
+
+### Changed
+
+- Marked `BootServices::handle_protocol` as `unsafe`. (This method is
+  also deprecated -- use `open_protocol` instead.)
+- Deprecated `BootServices::locate_protocol` and marked it `unsafe`. Use
+  `BootServices::get_handle_for_protocol` and
+  `BootServices::open_protocol` instead.
+
+### Fixed
+
+- The `BootServices::create_event_ex` and
+  `RuntimeServices::query_variable_info` methods now check the table
+  version to make sure it's 2.0 or higher before calling the associated
+  function pointers. This prevents potential invalid pointer access.
+- The table `Header` struct's `Debug` impl now prints the correct signature.
+
+### Removed
+
+- Removed the `exts::allocate_buffer` function. This function could
+  cause undefined behavior when called with a `Layout` with an alignment
+  other than 1. A safe alternative is to use
+  [`Vec::into_boxed_slice`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.into_boxed_slice).
+- Removed `From` conversions from `ucs2::Error` to `Status` and `Error`.
+
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+### Changed
+
+- The `no_panic_handler` feature has been replaced with an additive
+  `panic_handler` feature. The new feature is enabled by default.
+
+## uefi - 0.16
+
+### Added
+
 - Added `FileHandle::into_directory` and `FileHandle::into_regular_file`.
 - Added `TimeParams`, `Time::invalid`, and `Time::is_invalid`.
 - Added `RuntimeServices::query_variable_info` and `VariableStorageInfo`.
@@ -14,6 +63,7 @@
 - Added `FilePathMediaDevicePath`.
 - Added `DevicePath::as_acpi_device_path` and
   `DevicePath::as_file_path_media_device_path`.
+- Included `cstr8` and `cstr16` macros from `uefi-macros` in the prelude.
 - Added `DevicePathInstance`, `DevicePathNode`, and `FfiDevicePath`.
 
 ### Changed
@@ -25,14 +75,24 @@
 - `DevicePath` is now a DST that represents an entire device path. The
   `DevicePathInstance` and `DevicePathNode` provide views of path
   instances and nodes, respectively.
+- The methods of `Revision` are now `const`.
 
 ### Fixed
 
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.7.0
 
-## uefi-services - [Unreleased]
+### Added
+
+- Added `cstr8` and `cstr16` macros for creating `CStr8`/`CStr16` string literals
+  at compile time.
+
+## uefi-services - 0.13.0
+
+### Changed
+
+- Bumped `uefi` dependency to latest version.
 
 ## uefi - 0.15.2
 

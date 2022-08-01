@@ -1,6 +1,6 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use super::Header;
+use super::{Header, Revision};
 #[cfg(feature = "exts")]
 use crate::data_types::FromSliceWithNulError;
 use crate::result::Error;
@@ -248,11 +248,18 @@ impl RuntimeServices {
     /// Get information about UEFI variable storage space for the type
     /// of variable specified in `attributes`.
     ///
+    /// This operation is only supported starting with UEFI 2.0; earlier
+    /// versions will fail with [`Status::UNSUPPORTED`].
+    ///
     /// See [`VariableStorageInfo`] for details of the information returned.
     pub fn query_variable_info(
         &self,
         attributes: VariableAttributes,
     ) -> Result<VariableStorageInfo> {
+        if self.header.revision < Revision::EFI_2_00 {
+            return Err(Status::UNSUPPORTED.into());
+        }
+
         let mut info = VariableStorageInfo::default();
         unsafe {
             (self.query_variable_info)(

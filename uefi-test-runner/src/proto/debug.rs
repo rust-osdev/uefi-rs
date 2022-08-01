@@ -7,7 +7,7 @@ pub fn test(image: Handle, bt: &BootServices) {
     info!("Running UEFI debug connection protocol test");
     if let Ok(handles) = bt.find_handles::<DebugSupport>() {
         for handle in handles {
-            if let Ok(debug_support) = bt.open_protocol::<DebugSupport>(
+            if let Ok(mut debug_support) = bt.open_protocol::<DebugSupport>(
                 OpenProtocolParams {
                     handle,
                     agent: image,
@@ -15,8 +15,6 @@ pub fn test(image: Handle, bt: &BootServices) {
                 },
                 OpenProtocolAttributes::Exclusive,
             ) {
-                let debug_support = unsafe { &mut *debug_support.interface.get() };
-
                 // make sure that the max processor index is a sane value, i.e. it works
                 let maximum_processor_index = debug_support.get_maximum_processor_index();
                 assert_ne!(
@@ -94,7 +92,7 @@ pub fn test(image: Handle, bt: &BootServices) {
                     _ => unreachable!(),
                 }
 
-                test_invalidate_instruction_cache(debug_support);
+                test_invalidate_instruction_cache(&mut debug_support);
             }
         }
     } else {

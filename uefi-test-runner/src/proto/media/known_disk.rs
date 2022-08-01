@@ -1,10 +1,13 @@
 use alloc::string::ToString;
+use core::ptr::NonNull;
 use uefi::prelude::*;
+use uefi::proto::media::block::BlockIO;
+use uefi::proto::media::disk::{DiskIo, DiskIo2, DiskIo2Token};
 use uefi::proto::media::file::{
     Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo,
 };
 use uefi::proto::media::fs::SimpleFileSystem;
-use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
+use uefi::table::boot::{EventType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
 
 /// Test directory entry iteration.
@@ -138,6 +141,121 @@ fn test_create_file(directory: &mut Directory) {
     file.write(b"test output data").unwrap();
 }
 
+/// Tests raw disk I/O.
+fn test_raw_disk_io(handle: Handle, image: Handle, bt: &BootServices) {
+    info!("Testing raw disk I/O");
+
+    // Open the block I/O protocol on the handle
+    let block_io = bt
+        .open_protocol::<BlockIO>(
+            OpenProtocolParams {
+                handle,
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("Failed to get block I/O protocol");
+
+    // Open the disk I/O protocol on the input handle
+    let disk_io = bt
+        .open_protocol::<DiskIo>(
+            OpenProtocolParams {
+                handle,
+                agent: image,
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("Failed to get disk I/O protocol");
+
+    // Read from the first sector of the disk into the buffer
+    let mut buf = vec![0; 512];
+    disk_io
+        .read_disk(block_io.media().media_id(), 0, &mut buf)
+        .expect("Failed to read from disk");
+
+    // Verify that the disk's MBR signature is correct
+    assert_eq!(buf[510], 0x55);
+    assert_eq!(buf[511], 0xaa);
+
+    info!("Raw disk I/O succeeded");
+}
+
+/// Asynchronous disk I/O task context
+#[repr(C)]
+struct DiskIoTask {
+    /// Token for the transaction
+    token: DiskIo2Token,
+    /// Buffer holding the read data
+    buffer: [u8; 512],
+}
+
+/// Tests raw disk I/O through the DiskIo2 protocol.
+fn test_raw_disk_io2(handle: Handle, image: Handle, bt: &BootServices) {
+    info!("Testing raw disk I/O 2");
+
+    // Open the disk I/O protocol on the input handle
+    if let Ok(disk_io2) = bt.open_protocol::<DiskIo2>(
+        OpenProtocolParams {
+            handle,
+            agent: image,
+            controller: None,
+        },
+        OpenProtocolAttributes::GetProtocol,
+    ) {
+        // Open the block I/O protocol on the handle
+        let block_io = bt
+            .open_protocol::<BlockIO>(
+                OpenProtocolParams {
+                    handle,
+                    agent: image,
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .expect("Failed to get block I/O protocol");
+
+        unsafe {
+            // Create the completion event
+            let mut event = bt
+                .create_event(EventType::empty(), Tpl::NOTIFY, None, None)
+                .expect("Failed to create disk I/O completion event");
+
+            // Initialise the task context
+            let mut task = DiskIoTask {
+                token: DiskIo2Token {
+                    event: event.unsafe_clone(),
+                    transaction_status: uefi::Status::NOT_READY,
+                },
+                buffer: [0; 512],
+            };
+
+            // Initiate the asynchronous read operation
+            disk_io2
+                .read_disk_raw(
+                    block_io.media().media_id(),
+                    0,
+                    NonNull::new(&mut task.token as _),
+                    task.buffer.len(),
+                    task.buffer.as_mut_ptr(),
+                )
+                .expect("Failed to initiate asynchronous disk I/O read");
+
+            // Wait for the transaction to complete
+            bt.wait_for_event(core::slice::from_mut(&mut event))
+                .expect("Failed to wait on completion event");
+
+            // Verify that the disk's MBR signature is correct
+            assert_eq!(task.token.transaction_status, uefi::Status::SUCCESS);
+            assert_eq!(task.buffer[510], 0x55);
+            assert_eq!(task.buffer[511], 0xaa);
+
+            info!("Raw disk I/O 2 succeeded");
+        }
+    }
+}
+
 /// Run various tests on a special test disk. The disk is created by
 /// xtask/src/disk.rs.
 pub fn test_known_disk(image: Handle, bt: &BootServices) {
@@ -177,6 +295,10 @@ pub fn test_known_disk(image: Handle, bt: &BootServices) {
         } else {
             continue;
         }
+
+        // Test raw disk I/O first
+        test_raw_disk_io(handle, image, bt);
+        test_raw_disk_io2(handle, image, bt);
 
         assert!(!fs_info.read_only());
         assert_eq!(fs_info.volume_size(), 512 * 1192);

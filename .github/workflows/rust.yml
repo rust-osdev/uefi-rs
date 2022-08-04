@@ -23,9 +23,6 @@ jobs:
         sudo add-apt-repository ppa:canonical-server/server-backports
         sudo apt-get update
         sudo apt-get install qemu-system-arm qemu-efi-aarch64 -y
-        # Copy the files so that the vars file isn't read-only.
-        cp /usr/share/AAVMF/AAVMF_CODE.fd uefi-test-runner/QEMU_EFI-pflash.raw
-        cp /usr/share/AAVMF/AAVMF_VARS.fd uefi-test-runner/vars-template-pflash.raw
 
     - name: Install stable
       uses: actions-rs/toolchain@v1
@@ -102,8 +99,8 @@ jobs:
         # guard against external changes breaking the CI.
         EDK2_NIGHTLY_COMMIT: 'ebb83e5475d49418afc32857f66111949928bcdc'
       run: |
-        curl -o uefi-test-runner/OVMF32_CODE.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_CODE.fd
-        curl -o uefi-test-runner/OVMF32_VARS.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_VARS.fd
+        curl -o OVMF32_CODE.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_CODE.fd
+        curl -o OVMF32_VARS.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_VARS.fd
 
     - name: Install stable
       uses: actions-rs/toolchain@v1
@@ -121,7 +118,7 @@ jobs:
       run: cargo xtask build --target ia32
 
     - name: Run VM tests
-      run: cargo xtask run --target ia32 --headless --ci
+      run: cargo xtask run --target ia32 --headless --ci --ovmf-code OVMF32_CODE.fd --ovmf-vars OVMF32_VARS.fd
       timeout-minutes: 2
 
   test:

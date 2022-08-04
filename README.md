@@ -87,7 +87,8 @@ Available commands:
                      Especially useful if you want to run the tests under
                      [WSL](https://docs.microsoft.com/en-us/windows/wsl) on Windows.
   - `--headless`: run QEMU without a GUI
-  - `--ovmf-dir <PATH>`: directory in which to look for OVMF files
+  - `--ovmf-code <PATH>`: path of an OVMF code file
+  - `--ovmf-vars <PATH>`: path of an OVMF vars file
   - `--release`: build in release mode
   - `--target {x86_64,ia32,aarch64}`: choose target UEFI arch
 - `test`: run unit tests and doctests on the host

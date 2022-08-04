@@ -11,83 +11,224 @@ use std::ffi::OsString;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::thread;
+use std::{env, thread};
 use tempfile::TempDir;
+
+#[derive(Clone, Copy, Debug)]
+enum OvmfFileType {
+    Code,
+    Vars,
+}
+
+impl OvmfFileType {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Self::Code => "code",
+            Self::Vars => "vars",
+        }
+    }
+}
 
 struct OvmfPaths {
     code: PathBuf,
     vars: PathBuf,
-    vars_read_only: bool,
 }
 
 impl OvmfPaths {
-    fn from_dir(dir: &Path, arch: UefiArch) -> Self {
+    fn get_path(&self, file_type: OvmfFileType) -> &Path {
+        match file_type {
+            OvmfFileType::Code => &self.code,
+            OvmfFileType::Vars => &self.vars,
+        }
+    }
+
+    /// Get the Arch Linux OVMF paths for the given guest arch.
+    fn arch_linux(arch: UefiArch) -> Self {
         match arch {
+            // Package "edk2-armvirt".
             UefiArch::AArch64 => Self {
-                code: dir.join("QEMU_EFI-pflash.raw"),
-                vars: dir.join("vars-template-pflash.raw"),
-                // The OVMF implementation for AArch64 won't boot unless
-                // the vars file is writeable.
-                vars_read_only: false,
+                code: "/usr/share/edk2-armvirt/aarch64/QEMU_CODE.fd".into(),
+                vars: "/usr/share/edk2-armvirt/aarch64/QEMU_VARS.fd".into(),
             },
+            // Package "edk2-ovmf".
             UefiArch::IA32 => Self {
-                code: dir.join("OVMF32_CODE.fd"),
-                vars: dir.join("OVMF32_VARS.fd"),
-                vars_read_only: true,
+                code: "/usr/share/edk2-ovmf/ia32/OVMF_CODE.fd".into(),
+                vars: "/usr/share/edk2-ovmf/ia32/OVMF_VARS.fd".into(),
             },
+            // Package "edk2-ovmf".
             UefiArch::X86_64 => Self {
-                code: dir.join("OVMF_CODE.fd"),
-                vars: dir.join("OVMF_VARS.fd"),
-                vars_read_only: true,
+                code: "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd".into(),
+                vars: "/usr/share/edk2-ovmf/x64/OVMF_VARS.fd".into(),
             },
         }
     }
 
-    fn exists(&self) -> bool {
-        self.code.exists() && self.vars.exists()
+    /// Get the CentOS OVMF paths for the given guest arch.
+    fn centos_linux(arch: UefiArch) -> Option<Self> {
+        match arch {
+            // Package "edk2-aarch64".
+            UefiArch::AArch64 => Some(Self {
+                code: "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw".into(),
+                vars: "/usr/share/edk2/aarch64/vars-template-pflash.raw".into(),
+            }),
+            // There's no official ia32 package.
+            UefiArch::IA32 => None,
+            // Package "edk2-ovmf".
+            UefiArch::X86_64 => Some(Self {
+                // Use the `.secboot` variant because the CentOS package
+                // doesn't have a plain "OVMF_CODE.fd".
+                code: "/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd".into(),
+                vars: "/usr/share/edk2/ovmf/OVMF_VARS.fd".into(),
+            }),
+        }
+    }
+
+    /// Get the Debian OVMF paths for the given guest arch. These paths
+    /// also work on Ubuntu.
+    fn debian_linux(arch: UefiArch) -> Self {
+        match arch {
+            // Package "qemu-efi-aarch64".
+            UefiArch::AArch64 => Self {
+                code: "/usr/share/AAVMF/AAVMF_CODE.fd".into(),
+                vars: "/usr/share/AAVMF/AAVMF_VARS.fd".into(),
+            },
+            // Package "ovmf-ia32".
+            UefiArch::IA32 => Self {
+                code: "/usr/share/OVMF/OVMF32_CODE_4M.secboot.fd".into(),
+                vars: "/usr/share/OVMF/OVMF32_VARS_4M.fd".into(),
+            },
+            // Package "ovmf".
+            UefiArch::X86_64 => Self {
+                code: "/usr/share/OVMF/OVMF_CODE.fd".into(),
+                vars: "/usr/share/OVMF/OVMF_VARS.fd".into(),
+            },
+        }
+    }
+
+    /// Get the Fedora OVMF paths for the given guest arch.
+    fn fedora_linux(arch: UefiArch) -> Self {
+        match arch {
+            // Package "edk2-aarch64".
+            UefiArch::AArch64 => Self {
+                code: "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw".into(),
+                vars: "/usr/share/edk2/aarch64/vars-template-pflash.raw".into(),
+            },
+            // Package "edk2-ovmf-ia32".
+            UefiArch::IA32 => Self {
+                code: "/usr/share/edk2/ovmf-ia32/OVMF_CODE.fd".into(),
+                vars: "/usr/share/edk2/ovmf-ia32/OVMF_VARS.fd".into(),
+            },
+            // Package "edk2-ovmf".
+            UefiArch::X86_64 => Self {
+                code: "/usr/share/edk2/ovmf/OVMF_CODE.fd".into(),
+                vars: "/usr/share/edk2/ovmf/OVMF_VARS.fd".into(),
+            },
+        }
+    }
+
+    /// Get the Windows OVMF paths for the given guest arch.
+    fn windows(arch: UefiArch) -> Self {
+        match arch {
+            UefiArch::AArch64 => Self {
+                code: r"C:\Program Files\qemu\share\edk2-aarch64-code.fd".into(),
+                vars: r"C:\Program Files\qemu\share\edk2-arm-vars.fd".into(),
+            },
+            UefiArch::IA32 => Self {
+                code: r"C:\Program Files\qemu\share\edk2-i386-code.fd".into(),
+                vars: r"C:\Program Files\qemu\share\edk2-i386-vars.fd".into(),
+            },
+            UefiArch::X86_64 => Self {
+                code: r"C:\Program Files\qemu\share\edk2-x86_64-code.fd".into(),
+                // There's no x86_64 vars file, but the i386 one works.
+                vars: r"C:\Program Files\qemu\share\edk2-i386-vars.fd".into(),
+            },
+        }
+    }
+
+    /// Get candidate paths where OVMF code/vars might exist for the
+    /// given guest arch and host platform.
+    fn get_candidate_paths(arch: UefiArch) -> Vec<Self> {
+        let mut candidates = Vec::new();
+        if platform::is_linux() {
+            candidates.push(Self::arch_linux(arch));
+            if let Some(candidate) = Self::centos_linux(arch) {
+                candidates.push(candidate);
+            }
+            candidates.push(Self::debian_linux(arch));
+            candidates.push(Self::fedora_linux(arch));
+        }
+        if platform::is_windows() {
+            candidates.push(Self::windows(arch));
+        }
+        candidates
+    }
+
+    /// Search for an OVMF file (either code or vars).
+    ///
+    /// If `user_provided_path` is not None, it is always used. An error
+    /// is returned if the path does not exist.
+    ///
+    /// Otherwise, the paths in `candidates` are searched to find one
+    /// that exists. If none of them exist, an error is returned.
+    fn find_ovmf_file(
+        file_type: OvmfFileType,
+        user_provided_path: &Option<PathBuf>,
+        candidates: &[Self],
+    ) -> Result<PathBuf> {
+        if let Some(path) = user_provided_path {
+            // The user provided an exact path to use; verify that it
+            // exists.
+            if path.exists() {
+                Ok(path.to_owned())
+            } else {
+                bail!(
+                    "ovmf {} file does not exist: {}",
+                    file_type.as_str(),
+                    path.display()
+                );
+            }
+        } else {
+            for candidate in candidates {
+                let path = candidate.get_path(file_type);
+                if path.exists() {
+                    return Ok(path.to_owned());
+                }
+            }
+
+            bail!(
+                "no ovmf {} file found in candidates: {:?}",
+                file_type.as_str(),
+                candidates
+                    .iter()
+                    .map(|c| c.get_path(file_type))
+                    .collect::<Vec<_>>(),
+            );
+        }
     }
 
     /// Find path to OVMF files.
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
-        // If the path is specified in the settings, use it.
-        if let Some(ovmf_dir) = &opt.ovmf_dir {
-            let ovmf_paths = Self::from_dir(ovmf_dir, arch);
-            if ovmf_paths.exists() {
-                return Ok(ovmf_paths);
-            }
-            bail!("OVMF files not found in {}", ovmf_dir.display());
-        }
+        let candidates = Self::get_candidate_paths(arch);
 
-        // Check whether the test runner directory contains the files.
-        let ovmf_dir = Path::new("uefi-test-runner");
-        let ovmf_paths = Self::from_dir(ovmf_dir, arch);
-        if ovmf_paths.exists() {
-            return Ok(ovmf_paths);
-        }
+        let code = Self::find_ovmf_file(OvmfFileType::Code, &opt.ovmf_code, &candidates)?;
+        let vars = Self::find_ovmf_file(OvmfFileType::Vars, &opt.ovmf_vars, &candidates)?;
 
-        if platform::is_linux() {
-            let possible_paths = [
-                // Most distros, including CentOS, Fedora, Debian, and Ubuntu.
-                Path::new("/usr/share/OVMF"),
-                // Arch Linux.
-                Path::new("/usr/share/ovmf/x64"),
-            ];
-            for path in possible_paths {
-                let ovmf_paths = Self::from_dir(path, arch);
-                if ovmf_paths.exists() {
-                    return Ok(ovmf_paths);
-                }
-            }
-        }
-
-        bail!("OVMF files not found anywhere");
+        Ok(Self { code, vars })
     }
 }
 
-fn add_pflash_args(cmd: &mut Command, file: &Path, read_only: bool) {
+enum PflashMode {
+    ReadOnly,
+    ReadWrite,
+}
+
+fn add_pflash_args(cmd: &mut Command, file: &Path, mode: PflashMode) {
     // Build the argument as an OsString to avoid requiring a UTF-8 path.
     let mut arg = OsString::from("if=pflash,format=raw,readonly=");
-    arg.push(if read_only { "on" } else { "off" });
+    arg.push(match mode {
+        PflashMode::ReadOnly => "on",
+        PflashMode::ReadWrite => "off",
+    });
     arg.push(",file=");
     arg.push(file);
 
@@ -263,6 +404,18 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     };
     let mut cmd = Command::new(qemu_exe);
 
+    if platform::is_windows() {
+        // The QEMU installer for Windows does not automatically add the
+        // directory containing the QEMU executables to the PATH. Add
+        // the default directory to the PATH to make it more likely that
+        // QEMU will be found on Windows. (The directory is appended, so
+        // if a different directory on the PATH already has the QEMU
+        // binary this change won't affect anything.)
+        let mut path = env::var_os("PATH").unwrap_or_default();
+        path.push(r";C:\Program Files\qemu");
+        cmd.env("PATH", path);
+    }
+
     // Disable default devices.
     // QEMU by defaults enables a ton of devices which slow down boot.
     cmd.arg("-nodefaults");
@@ -313,10 +466,20 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         }
     }
 
+    let tmp_dir = TempDir::new()?;
+    let tmp_dir = tmp_dir.path();
+
     // Set up OVMF.
     let ovmf_paths = OvmfPaths::find(opt, arch)?;
-    add_pflash_args(&mut cmd, &ovmf_paths.code, /*read_only=*/ true);
-    add_pflash_args(&mut cmd, &ovmf_paths.vars, ovmf_paths.vars_read_only);
+
+    // Make a copy of the OVMF vars file so that it can be used
+    // read+write without modifying the original. Under AArch64, some
+    // versions of OVMF won't boot if the vars file isn't writeable.
+    let ovmf_vars = tmp_dir.join("ovmf_vars");
+    fs_err::copy(&ovmf_paths.vars, &ovmf_vars)?;
+
+    add_pflash_args(&mut cmd, &ovmf_paths.code, PflashMode::ReadOnly);
+    add_pflash_args(&mut cmd, &ovmf_vars, PflashMode::ReadWrite);
 
     // Mount a local directory as a FAT partition.
     cmd.arg("-drive");
@@ -330,9 +493,6 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     if opt.headless {
         cmd.args(&["-display", "none"]);
     }
-
-    let tmp_dir = TempDir::new()?;
-    let tmp_dir = tmp_dir.path();
 
     let test_disk = tmp_dir.join("test_disk.fat.img");
     create_mbr_test_disk(&test_disk)?;

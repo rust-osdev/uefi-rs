@@ -1,9 +1,5 @@
 use super::{Error, Result};
-use core::{
-    convert::Infallible,
-    ops::{ControlFlow, FromResidual, Try},
-};
-use core::{fmt::Debug, num::NonZeroUsize};
+use core::fmt::Debug;
 
 /// Bit indicating that an UEFI status code is an error
 const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
@@ -169,45 +165,6 @@ impl From<Status> for Result<(), ()> {
     #[inline]
     fn from(status: Status) -> Result<(), ()> {
         status.into_with(|| (), |_| ())
-    }
-}
-
-pub struct StatusResidual(NonZeroUsize);
-
-impl Try for Status {
-    type Output = ();
-    type Residual = StatusResidual;
-
-    fn branch(self) -> ControlFlow<Self::Residual, Self::Output> {
-        match NonZeroUsize::new(self.0) {
-            Some(r) => ControlFlow::Break(StatusResidual(r)),
-            None => ControlFlow::Continue(()),
-        }
-    }
-
-    fn from_output(_output: Self::Output) -> Self {
-        Self::SUCCESS
-    }
-}
-
-impl FromResidual for Status {
-    fn from_residual(r: StatusResidual) -> Self {
-        Status(r.0.into())
-    }
-}
-
-impl<T> FromResidual<StatusResidual> for Result<T, ()> {
-    fn from_residual(r: StatusResidual) -> Self {
-        Err(Status(r.0.into()).into())
-    }
-}
-
-impl FromResidual<core::result::Result<Infallible, Error>> for Status {
-    fn from_residual(r: core::result::Result<Infallible, Error>) -> Self {
-        match r {
-            Err(err) => err.status(),
-            Ok(infallible) => match infallible {},
-        }
     }
 }
 

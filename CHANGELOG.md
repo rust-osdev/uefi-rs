@@ -43,6 +43,10 @@
   other than 1. A safe alternative is to use
   [`Vec::into_boxed_slice`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.into_boxed_slice).
 - Removed `From` conversions from `ucs2::Error` to `Status` and `Error`.
+- Removed use of the unstable `try_trait_v2` feature, which allowed `?`
+  to be used with `Status` in a function returning `uefi::Result`. This
+  can be replaced by calling `status.into()`, or `Result::from(status)`
+  in cases where the compiler needs a type hint.
 
 ## uefi-macros - [Unreleased]
 

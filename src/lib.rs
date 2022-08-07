@@ -23,7 +23,6 @@
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
 
-#![feature(try_trait_v2)]
 #![feature(abi_efiapi)]
 #![feature(maybe_uninit_slice)]
 #![feature(negative_impls)]

@@ -14,6 +14,16 @@
   Now you can compare everything that is `AsRef<str>` (such as `String` and `str`
   from the standard library) to uefi strings. Please head to the documentation of
   `EqStrUntilNul` to find out limitations and further information.
+- Added `BootServices::image_handle` to get the handle of the executing
+  image. The image is set automatically by the `#[entry]` macro; if a
+  program does not use that macro then it should call
+  `BootServices::set_image_handle`.
+- Added `BootServices::open_protocol_exclusive`. This provides a safe
+  and convenient subset of `open_protocol` that can be used whenever a
+  resource doesn't need to be shared. In same cases sharing is useful
+  (e.g. you might want to draw to the screen using the graphics
+  protocol, but still allow stdout output to go to the screen as
+  well), and in those cases `open_protocol` can still be used.
 
 ### Changed
 

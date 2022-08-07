@@ -23,12 +23,12 @@
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
 
-#![feature(try_trait_v2)]
 #![feature(abi_efiapi)]
 #![feature(maybe_uninit_slice)]
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
 #![cfg_attr(feature = "exts", feature(vec_into_raw_parts))]
+#![cfg_attr(feature = "unstable_try_trait", feature(try_trait_v2))]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]

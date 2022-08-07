@@ -48,6 +48,7 @@ pub enum Feature {
     Alloc,
     Exts,
     Logger,
+    UnstableTryTrait,
 
     Ci,
     Qemu,
@@ -59,6 +60,7 @@ impl Feature {
             Self::Alloc => "alloc",
             Self::Exts => "exts",
             Self::Logger => "logger",
+            Self::UnstableTryTrait => "unstable_try_trait",
 
             Self::Ci => "uefi-test-runner/ci",
             Self::Qemu => "uefi-test-runner/qemu",
@@ -67,7 +69,12 @@ impl Feature {
 
     /// Set of features that enables more code in the root uefi crate.
     pub fn more_code() -> Vec<Self> {
-        vec![Self::Alloc, Self::Exts, Self::Logger]
+        vec![
+            Self::Alloc,
+            Self::Exts,
+            Self::Logger,
+            Self::UnstableTryTrait,
+        ]
     }
 
     fn comma_separated_string(features: &[Feature]) -> String {
@@ -219,7 +226,7 @@ mod tests {
     fn test_comma_separated_features() {
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code()),
-            "alloc,exts,logger"
+            "alloc,exts,logger,unstable_try_trait"
         );
     }
 

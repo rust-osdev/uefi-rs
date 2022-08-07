@@ -19,10 +19,14 @@ categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
 
 [features]
-default = []
+default = ["unstable_try_trait"]
 alloc = []
 exts = []
 logger = []
+# If enabled, the unstable `try_trait_v2` feature
+# (https://github.com/rust-lang/rust/issues/84277) is used to allow
+# using `?` with `Status` values.
+unstable_try_trait = []
 # Ignore text output errors in logger as a workaround for firmware issues that
 # were observed on the VirtualBox UEFI implementation (see uefi-rs#121)
 ignore-logger-errors = []

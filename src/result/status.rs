@@ -1,9 +1,11 @@
 use super::{Error, Result};
+use core::fmt::Debug;
+#[cfg(feature = "unstable_try_trait")]
 use core::{
     convert::Infallible,
+    num::NonZeroUsize,
     ops::{ControlFlow, FromResidual, Try},
 };
-use core::{fmt::Debug, num::NonZeroUsize};
 
 /// Bit indicating that an UEFI status code is an error
 const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
@@ -172,8 +174,10 @@ impl From<Status> for Result<(), ()> {
     }
 }
 
+#[cfg(feature = "unstable_try_trait")]
 pub struct StatusResidual(NonZeroUsize);
 
+#[cfg(feature = "unstable_try_trait")]
 impl Try for Status {
     type Output = ();
     type Residual = StatusResidual;
@@ -190,18 +194,21 @@ impl Try for Status {
     }
 }
 
+#[cfg(feature = "unstable_try_trait")]
 impl FromResidual for Status {
     fn from_residual(r: StatusResidual) -> Self {
         Status(r.0.into())
     }
 }
 
+#[cfg(feature = "unstable_try_trait")]
 impl<T> FromResidual<StatusResidual> for Result<T, ()> {
     fn from_residual(r: StatusResidual) -> Self {
         Err(Status(r.0.into()).into())
     }
 }
 
+#[cfg(feature = "unstable_try_trait")]
 impl FromResidual<core::result::Result<Infallible, Error>> for Status {
     fn from_residual(r: core::result::Result<Infallible, Error>) -> Self {
         match r {

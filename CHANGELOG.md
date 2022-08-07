@@ -23,6 +23,9 @@
 - Deprecated `BootServices::locate_protocol` and marked it `unsafe`. Use
   `BootServices::get_handle_for_protocol` and
   `BootServices::open_protocol` instead.
+- Use of the unstable `try_trait_v2` rustc feature (allowing `?` to be
+  used with `Status`) has been placed behind an optional
+  `unstable_try_trait` feature. This feature is enabled by default.
 
 ### Fixed
 

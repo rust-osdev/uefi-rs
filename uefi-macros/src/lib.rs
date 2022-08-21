@@ -179,7 +179,47 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
     }
 }
 
-/// Custom attribute for a UEFI executable entrypoint
+/// Custom attribute for a UEFI executable entry point.
+///
+/// This attribute modifies a function to mark it as the entry point for
+/// a UEFI executable. The function must have two parameters, [`Handle`]
+/// and [`SystemTable<Boot>`], and return a [`Status`]. The function can
+/// optionally be `unsafe`.
+///
+/// Due to internal implementation details the parameters must both be
+/// named, so `arg` or `_arg` are allowed, but not `_`.
+///
+/// The [`BootServices::set_image_handle`] function will be called
+/// automatically with the image [`Handle`] argument.
+///
+/// # Examples
+///
+/// ```no_run
+/// #![no_main]
+/// #![no_std]
+/// #![feature(abi_efiapi)]
+/// # // A bit of boilerplate needed to make the example compile in the
+/// # // context of `cargo test`.
+/// # #![feature(lang_items)]
+/// # #[lang = "eh_personality"]
+/// # fn eh_personality() {}
+/// # #[panic_handler]
+/// # fn panic_handler(info: &core::panic::PanicInfo) -> ! {
+/// #     loop {}
+/// # }
+///
+/// use uefi::prelude::*;
+///
+/// #[entry]
+/// fn main(image: Handle, st: SystemTable<Boot>) -> Status {
+///     Status::SUCCESS
+/// }
+/// ```
+///
+/// [`Handle`]: https://docs.rs/uefi/latest/uefi/data_types/struct.Handle.html
+/// [`SystemTable<Boot>`]: https://docs.rs/uefi/latest/uefi/table/struct.SystemTable.html
+/// [`Status`]: https://docs.rs/uefi/latest/uefi/struct.Status.html
+/// [`BootServices::set_image_handle`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.set_image_handle
 #[proc_macro_attribute]
 pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     // This code is inspired by the approach in this embedded Rust crate:

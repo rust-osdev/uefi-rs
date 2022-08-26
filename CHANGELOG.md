@@ -1,6 +1,6 @@
 # Changelog
 
-## uefi - [Unreleased]
+## uefi - 0.16.1
 
 ### Added
 
@@ -8,16 +8,36 @@
 
 ### Fixed
 
+- The table `Header` struct's `Debug` impl now prints the correct signature.
 - The `BootServices::create_event_ex` and
   `RuntimeServices::query_variable_info` methods now check the table
   version to make sure it's 2.0 or higher before calling the associated
   function pointers. This prevents potential invalid pointer access.
+- Fixed an incorrect pointer cast in the `Rng` protocol that could cause
+  undefined behavior.
+  
+### Changed
 
-## uefi-macros - [Unreleased]
+- Relaxed the version requirements for the `bitflags` and `log`
+  dependencies to allow earlier patch versions.
+- Enabled `doc_auto_cfg` on docs.rs to show badges on items that are
+  gated behind a feature.
 
-## uefi-services - [Unreleased]
+## uefi-macros - 0.7.1
 
-## uefi - 0.16
+### Changed
+
+- Relaxed the version requirements for the `proc-macro2`, `quote`, and
+  `sync` dependencies to allow earlier patch versions.
+
+## uefi-services - 0.13.1
+
+### Changed
+
+- Relaxed the version requirements for the `log` dependency to allow
+  earlier patch versions.
+
+## uefi - 0.16.0
 
 ### Added
 

@@ -2,9 +2,13 @@ name: Rust
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - version-*
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - version-*
   schedule:
     - cron:  '0 0 * * 0-6'
 

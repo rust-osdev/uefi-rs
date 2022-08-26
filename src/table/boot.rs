@@ -1396,7 +1396,7 @@ pub struct OpenProtocolParams {
 /// protocol and why [`UnsafeCell`] is used.
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
-    #[deprecated(since = "0.16.0", note = "use Deref and DerefMut instead")]
+    #[deprecated(since = "0.17.0", note = "use Deref and DerefMut instead")]
     pub interface: &'a UnsafeCell<P>,
 
     open_params: OpenProtocolParams,

@@ -29,6 +29,7 @@
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
 #![cfg_attr(feature = "exts", feature(vec_into_raw_parts))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]

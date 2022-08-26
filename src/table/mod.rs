@@ -14,7 +14,7 @@ mod revision;
 pub use self::revision::Revision;
 
 mod system;
-pub use self::system::{Boot, Runtime, SystemTable, SystemTableView, SystemTableViewState};
+pub use self::system::{Boot, Runtime, SystemTable, SystemTableView, SystemTableViewStatus};
 
 pub mod boot;
 pub mod runtime;

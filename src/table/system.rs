@@ -53,7 +53,9 @@ pub struct SystemTable<View: SystemTableView> {
 
 /// Determines whether this table is Boot or Runtime
 pub enum SystemTableViewStatus {
+    /// Indicates that current table is a Boot Services table
     Boot,
+    /// Indicates that current table is a Runtime Services table
     Runtime,
 }
 

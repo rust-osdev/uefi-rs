@@ -1,3 +1,4 @@
+use core::any::TypeId;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
@@ -50,8 +51,14 @@ pub struct SystemTable<View: SystemTableView> {
     _marker: PhantomData<View>,
 }
 
+/// Determines whether this table is Boot or Runtime
+pub enum SystemTableViewStatus {
+    Boot,
+    Runtime,
+}
+
 // These parts of the UEFI System Table interface will always be available
-impl<View: SystemTableView> SystemTable<View> {
+impl<View: SystemTableView + 'static> SystemTable<View> {
     /// Return the firmware vendor string
     pub fn firmware_vendor(&self) -> &CStr16 {
         unsafe { CStr16::from_ptr(self.table.fw_vendor) }
@@ -66,6 +73,17 @@ impl<View: SystemTableView> SystemTable<View> {
     /// the revision of the UEFI specification implemented by the firmware.
     pub fn uefi_revision(&self) -> Revision {
         self.table.header.revision
+    }
+
+    /// Checks whether this table is Boot or Runtime
+    pub fn state(&self) -> SystemTableViewStatus {
+        if TypeId::of::<View>() == TypeId::of::<Boot>() {
+            SystemTableViewStatus::Boot
+        } else if TypeId::of::<View>() == TypeId::of::<Runtime>() {
+            SystemTableViewStatus::Runtime
+        } else {
+            unreachable!()
+        }
     }
 
     /// Returns the config table entries, a linear array of structures

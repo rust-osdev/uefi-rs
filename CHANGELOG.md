@@ -4,7 +4,6 @@
 
 ### Added
 
-- Added EFI revision constants to `Revision`.
 - Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
   This eliminates the need to explicitly access the `interface` field,
   which is now marked as deprecated.
@@ -24,14 +23,6 @@
   `BootServices::get_handle_for_protocol` and
   `BootServices::open_protocol` instead.
 
-### Fixed
-
-- The `BootServices::create_event_ex` and
-  `RuntimeServices::query_variable_info` methods now check the table
-  version to make sure it's 2.0 or higher before calling the associated
-  function pointers. This prevents potential invalid pointer access.
-- The table `Header` struct's `Debug` impl now prints the correct signature.
-
 ### Removed
 
 - Removed the `exts::allocate_buffer` function. This function could
@@ -48,8 +39,45 @@
 
 - The `no_panic_handler` feature has been replaced with an additive
   `panic_handler` feature. The new feature is enabled by default.
+  
+## uefi - 0.16.1
 
-## uefi - 0.16
+### Added
+
+- Added EFI revision constants to `Revision`.
+
+### Fixed
+
+- The table `Header` struct's `Debug` impl now prints the correct signature.
+- The `BootServices::create_event_ex` and
+  `RuntimeServices::query_variable_info` methods now check the table
+  version to make sure it's 2.0 or higher before calling the associated
+  function pointers. This prevents potential invalid pointer access.
+- Fixed an incorrect pointer cast in the `Rng` protocol that could cause
+  undefined behavior.
+  
+### Changed
+
+- Relaxed the version requirements for the `bitflags` and `log`
+  dependencies to allow earlier patch versions.
+- Enabled `doc_auto_cfg` on docs.rs to show badges on items that are
+  gated behind a feature.
+
+## uefi-macros - 0.7.1
+
+### Changed
+
+- Relaxed the version requirements for the `proc-macro2`, `quote`, and
+  `sync` dependencies to allow earlier patch versions.
+
+## uefi-services - 0.13.1
+
+### Changed
+
+- Relaxed the version requirements for the `log` dependency to allow
+  earlier patch versions.
+
+## uefi - 0.16.0
 
 ### Added
 

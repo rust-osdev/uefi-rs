@@ -67,4 +67,12 @@ impl File for Directory {
     fn handle(&mut self) -> &mut FileHandle {
         self.0.handle()
     }
+
+    fn is_regular_file(&self) -> Result<bool> {
+        Ok(false)
+    }
+
+    fn is_directory(&self) -> Result<bool> {
+        Ok(true)
+    }
 }

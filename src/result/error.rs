@@ -3,7 +3,7 @@ use core::fmt::Debug;
 
 /// Errors emitted from UEFI entry point must propagate erronerous UEFI statuses,
 /// and may optionally propagate additional entry point-specific data.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Error<Data: Debug = ()> {
     status: Status,
     data: Data,

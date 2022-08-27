@@ -31,6 +31,8 @@
 ### Fixed
 
 - Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
+- The `File` trait now knows the methods `is_regular_file` and `is_directory`.
+  Developers profit from this on the struct `FileHandle`, for example.
 
 ### Changed
 

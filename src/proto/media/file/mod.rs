@@ -214,6 +214,18 @@ pub trait File: Sized {
         // global allocator.
         unsafe { Ok(Box::from_raw(info)) }
     }
+
+    /// Returns if the underlying file is a regular file.
+    /// The result is an error if the underlying file was already closed or deleted.
+    ///
+    /// UEFI file system protocol only knows "regular files" and "directories".
+    fn is_regular_file(&self) -> Result<bool>;
+
+    /// Returns if the underlying file is a directory.
+    /// The result is an error if the underlying file was already closed or deleted.
+    ///
+    /// UEFI file system protocol only knows "regular files" and "directories".
+    fn is_directory(&self) -> Result<bool>;
 }
 
 // Internal File helper methods to access the funciton pointer table.
@@ -241,16 +253,14 @@ impl FileHandle {
     }
 
     /// Converts `File` into a more specific subtype based on if it is a
-    /// directory or not. It does this via a call to `get_position`.
-    pub fn into_type(mut self) -> Result<FileType> {
+    /// directory or not. Wrapper around [Self::is_regular_file].
+    pub fn into_type(self) -> Result<FileType> {
         use FileType::*;
 
-        // get_position fails with EFI_UNSUPPORTED on directories
-        let mut pos = 0;
-        match (self.imp().get_position)(self.imp(), &mut pos) {
-            Status::SUCCESS => unsafe { Ok(Regular(RegularFile::new(self))) },
-            Status::UNSUPPORTED => unsafe { Ok(Dir(Directory::new(self))) },
-            s => Err(s.into()),
+        if self.is_regular_file()? {
+            unsafe { Ok(Regular(RegularFile::new(self))) }
+        } else {
+            unsafe { Ok(Dir(Directory::new(self))) }
         }
     }
 
@@ -279,6 +289,22 @@ impl File for FileHandle {
     #[inline]
     fn handle(&mut self) -> &mut FileHandle {
         self
+    }
+
+    fn is_regular_file(&self) -> Result<bool> {
+        let this = unsafe { self.0.as_mut().unwrap() };
+
+        // get_position fails with EFI_UNSUPPORTED on directories
+        let mut pos = 0;
+        match (this.get_position)(this, &mut pos) {
+            Status::SUCCESS => Ok(true),
+            Status::UNSUPPORTED => Ok(false),
+            s => Err(s.into()),
+        }
+    }
+
+    fn is_directory(&self) -> Result<bool> {
+        self.is_regular_file().map(|b| !b)
     }
 }
 

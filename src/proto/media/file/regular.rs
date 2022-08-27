@@ -104,4 +104,12 @@ impl File for RegularFile {
     fn handle(&mut self) -> &mut FileHandle {
         &mut self.0
     }
+
+    fn is_regular_file(&self) -> Result<bool> {
+        Ok(true)
+    }
+
+    fn is_directory(&self) -> Result<bool> {
+        Ok(false)
+    }
 }

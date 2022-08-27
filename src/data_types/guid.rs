@@ -8,7 +8,7 @@ use core::fmt;
 ///
 /// The `Display` formatter prints GUIDs in the canonical format defined by
 /// RFC 4122, which is also used by UEFI.
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Copy, Clone, Eq, Ord, PartialEq, PartialOrd)]
 #[repr(C)]
 pub struct Guid {
     /// The low field of the timestamp.

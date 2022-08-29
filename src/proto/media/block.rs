@@ -138,7 +138,7 @@ impl BlockIOMedia {
     }
 
     /// True if there is a media currently present in the device.
-    pub fn is_media_preset(&self) -> bool {
+    pub fn is_media_present(&self) -> bool {
         self.media_present
     }
 

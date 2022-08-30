@@ -44,7 +44,7 @@
 macro_rules! newtype_enum {
     (
         $(#[$type_attrs:meta])*
-        pub enum $type:ident : $base_integer:ty => $(#[$impl_attrs:meta])* {
+        $visibility:vis enum $type:ident : $base_integer:ty => $(#[$impl_attrs:meta])* {
             $(
                 $(#[$variant_attrs:meta])*
                 $variant:ident = $value:expr,
@@ -54,7 +54,7 @@ macro_rules! newtype_enum {
         $(#[$type_attrs])*
         #[repr(transparent)]
         #[derive(Clone, Copy, Eq, PartialEq)]
-        pub struct $type(pub $base_integer);
+        $visibility struct $type(pub $base_integer);
 
         $(#[$impl_attrs])*
         #[allow(unused)]

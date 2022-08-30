@@ -1,4 +1,4 @@
-use super::chars::{Char16, Char8, NUL_16, NUL_8};
+use super::chars::{Char16, NUL_16};
 use core::fmt;
 use core::iter::Iterator;
 use core::marker::PhantomData;
@@ -50,70 +50,6 @@ pub enum FromStrWithBufError {
     /// The buffer is not big enough to hold the entire string and
     /// trailing null character
     BufferTooSmall,
-}
-
-/// A Latin-1 null-terminated string
-///
-/// This type is largely inspired by `std::ffi::CStr`, see the documentation of
-/// `CStr` for more details on its semantics.
-#[repr(transparent)]
-pub struct CStr8([Char8]);
-
-impl CStr8 {
-    /// Wraps a raw UEFI string with a safe C string wrapper
-    ///
-    /// # Safety
-    ///
-    /// The function will start accessing memory from `ptr` until the first
-    /// null byte. It's the callers responsability to ensure `ptr` points to
-    /// a valid string, in accessible memory.
-    pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
-        let mut len = 0;
-        while *ptr.add(len) != NUL_8 {
-            len += 1
-        }
-        let ptr = ptr.cast::<u8>();
-        Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
-    }
-
-    /// Creates a C string wrapper from bytes
-    pub fn from_bytes_with_nul(chars: &[u8]) -> Result<&Self, FromSliceWithNulError> {
-        let nul_pos = chars.iter().position(|&c| c == 0);
-        if let Some(nul_pos) = nul_pos {
-            if nul_pos + 1 != chars.len() {
-                return Err(FromSliceWithNulError::InteriorNul(nul_pos));
-            }
-            Ok(unsafe { Self::from_bytes_with_nul_unchecked(chars) })
-        } else {
-            Err(FromSliceWithNulError::NotNulTerminated)
-        }
-    }
-
-    /// Unsafely creates a C string wrapper from bytes
-    ///
-    /// # Safety
-    ///
-    /// It's the callers responsability to ensure chars is a valid Latin-1
-    /// null-terminated string, with no interior null bytes.
-    pub unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
-        &*(chars as *const [u8] as *const Self)
-    }
-
-    /// Returns the inner pointer to this C string
-    pub fn as_ptr(&self) -> *const Char8 {
-        self.0.as_ptr()
-    }
-
-    /// Converts this C string to a slice of bytes
-    pub fn to_bytes(&self) -> &[u8] {
-        let chars = self.to_bytes_with_nul();
-        &chars[..chars.len() - 1]
-    }
-
-    /// Converts this C string to a slice of bytes containing the trailing 0 char
-    pub fn to_bytes_with_nul(&self) -> &[u8] {
-        unsafe { &*(&self.0 as *const [Char8] as *const [u8]) }
-    }
 }
 
 /// An UCS-2 null-terminated string

@@ -10,4 +10,4 @@ pub use crate::table::runtime::RuntimeServices;
 pub use crate::table::{Boot, SystemTable};
 
 // Import the macro for creating the custom entry point, as well as the cstr macros.
-pub use uefi_macros::{cstr16, cstr8, entry};
+pub use uefi_macros::{cstr16, entry};

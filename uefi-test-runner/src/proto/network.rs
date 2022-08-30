@@ -1,10 +1,12 @@
+use core::ffi::CStr as CStr8;
 use uefi::{
     prelude::BootServices,
     proto::network::{
         pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, UdpOpFlags},
         IpAddress,
     },
-    CStr8,
+    table::boot::{OpenProtocolAttributes, OpenProtocolParams},
+    Handle,
 };
 
 pub fn test(bt: &BootServices) {

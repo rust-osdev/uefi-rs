@@ -9,7 +9,8 @@ use core::{
 use bitflags::bitflags;
 use uefi_macros::{unsafe_guid, Protocol};
 
-use crate::{CStr8, Char8, Result, Status};
+use crate::{Result, Status};
+use core::ffi::{c_char, CStr as CStr8};
 
 use super::{IpAddress, MacAddress};
 
@@ -38,7 +39,7 @@ pub struct BaseCode {
         buffer_size: &mut u64,
         block_size: Option<&usize>,
         server_ip: &IpAddress,
-        filename: *const Char8,
+        filename: *const c_char,
         info: Option<&MtftpInfo>,
         dont_use_buffer: bool,
     ) -> Status,

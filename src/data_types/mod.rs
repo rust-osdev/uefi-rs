@@ -112,14 +112,15 @@ pub use self::guid::Guid;
 pub use self::guid::{unsafe_guid, Identify};
 
 pub mod chars;
-pub use self::chars::{Char16, Char8};
+pub use self::chars::Char16;
 
 #[macro_use]
 mod enums;
 
 mod strs;
+
 pub use self::strs::{
-    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16,
+    CStr16, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16,
     UnalignedCStr16Error,
 };
 

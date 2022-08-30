@@ -42,6 +42,8 @@
   `BootServices::open_protocol`) instead.
 - renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
   additive. It is now a default feature.
+- The library doesn't longer expose the `CStr8` type. It was not relevant in the
+  API so far, and internally it was replaced by `core::ffi::CStr`. (Since Rust 1.62)
 
 ### Removed
 

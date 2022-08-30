@@ -9,57 +9,6 @@ use core::fmt;
 #[derive(Clone, Copy, Debug)]
 pub struct CharConversionError;
 
-/// A Latin-1 character
-#[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(transparent)]
-pub struct Char8(u8);
-
-impl TryFrom<char> for Char8 {
-    type Error = CharConversionError;
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        let code_point = value as u32;
-        if code_point <= 0xff {
-            Ok(Char8(code_point as u8))
-        } else {
-            Err(CharConversionError)
-        }
-    }
-}
-
-impl From<Char8> for char {
-    fn from(char: Char8) -> char {
-        char.0 as char
-    }
-}
-
-impl From<u8> for Char8 {
-    fn from(value: u8) -> Self {
-        Char8(value)
-    }
-}
-
-impl From<Char8> for u8 {
-    fn from(char: Char8) -> u8 {
-        char.0
-    }
-}
-
-impl fmt::Debug for Char8 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        <char as fmt::Debug>::fmt(&From::from(self.0), f)
-    }
-}
-
-impl fmt::Display for Char8 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        <char as fmt::Display>::fmt(&From::from(self.0), f)
-    }
-}
-
-/// Latin-1 version of the NUL character
-pub const NUL_8: Char8 = Char8(0);
-
 /// An UCS-2 code point
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]

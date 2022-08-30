@@ -43,6 +43,7 @@
 //!   currently implemented:
 //!   * [`AcpiDevicePath`]
 //!   * [`FilePathMediaDevicePath`]
+//!   * [`HardDriveMediaDevicePath`]
 //!
 //! * [`DevicePathHeader`] is a header present at the start of every
 //!   node. It describes the type of node as well as the node's size.
@@ -69,7 +70,7 @@ pub mod text;
 
 use crate::data_types::UnalignedCStr16;
 use crate::proto::{Protocol, ProtocolPointer};
-use crate::unsafe_guid;
+use crate::{unsafe_guid, Guid};
 use core::ffi::c_void;
 use core::marker::{PhantomData, PhantomPinned};
 use core::{mem, ptr};
@@ -172,6 +173,20 @@ impl DevicePathNode {
             // which is a DST as it ends in a slice.
             let p = self as *const Self;
             let p: *const FilePathMediaDevicePath = ptr::from_raw_parts(p.cast(), path_name_len);
+            Some(unsafe { &*p })
+        } else {
+            None
+        }
+    }
+
+    /// Convert to a [`HardDriveMediaDevicePath`]. Returns `None` if the
+    /// node is not of the appropriate type.
+    pub fn as_hard_drive_media_device_path(&self) -> Option<&HardDriveMediaDevicePath> {
+        if self.full_type() == (DeviceType::MEDIA, DeviceSubType::MEDIA_HARD_DRIVE) {
+            assert!({ self.header.length } == HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH);
+
+            let p = self as *const Self;
+            let p = p.cast::<HardDriveMediaDevicePath>();
             Some(unsafe { &*p })
         } else {
             None
@@ -579,6 +594,93 @@ impl FilePathMediaDevicePath {
     }
 }
 
+/// Hard Drive Media Device Path.
+#[repr(C, packed)]
+pub struct HardDriveMediaDevicePath {
+    header: DevicePathHeader,
+    partition_number: u32,
+    partition_start: u64,
+    partition_size: u64,
+    partition_signature: PartitionSignatureUnion,
+    partition_format: PartitionFormat,
+    signature_type: SignatureType,
+}
+
+/// [`HardDriveMediaDevicePath`] is a fixed-length structure of 42 bytes.
+const HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH: u16 = 42;
+
+impl HardDriveMediaDevicePath {
+    /// Returns the format of the partition (MBR, GPT, or unknown).
+    pub fn partition_format(&self) -> PartitionFormat {
+        self.partition_format
+    }
+
+    /// Returns the 1-based index of the partition.
+    pub fn partition_number(&self) -> u32 {
+        self.partition_number
+    }
+
+    /// Returns the partition size in logical blocks.
+    pub fn partition_size(&self) -> u64 {
+        self.partition_size
+    }
+
+    /// Returns the starting LBA of the partition.
+    pub fn partition_start(&self) -> u64 {
+        self.partition_start
+    }
+
+    /// Returns the MBR or GPT partition signature
+    pub fn partition_signature(&self) -> Option<PartitionSignature> {
+        match self.signature_type {
+            SignatureType::MBR => {
+                let mbr_signature = unsafe { self.partition_signature.mbr_signature };
+                Some(PartitionSignature::MBR(mbr_signature))
+            }
+            SignatureType::GUID => {
+                let guid = unsafe { self.partition_signature.guid };
+                Some(PartitionSignature::GUID(guid))
+            }
+            _ => None,
+        }
+    }
+}
+
+newtype_enum! {
+    /// Partition format.
+    pub enum PartitionFormat: u8 => {
+        /// MBR (PC-AT compatible Master Boot Record) format.
+        MBR = 0x01,
+        /// GPT (GUID Partition Table) format.
+        GPT = 0x02,
+    }
+}
+
+/// Partition signature.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PartitionSignature {
+    /// 32-bit MBR partition signature.
+    MBR(u32),
+    /// 128-bit GUID partition signature.
+    GUID(Guid),
+}
+
+#[repr(C)]
+union PartitionSignatureUnion {
+    mbr_signature: u32,
+    guid: Guid,
+}
+
+newtype_enum! {
+    /// Signature type.
+    enum SignatureType: u8 => {
+        /// 32-bit MBR partition signature.
+        MBR = 0x01,
+        /// 128-bit GUID partition signature.
+        GUID = 0x02,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -714,6 +816,54 @@ mod tests {
         assert_eq!(
             fpm.path_name().to_cstring16().unwrap(),
             CString16::try_from("test").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_hard_drive_media_mbr() {
+        let mbr_partition_bytes: [u8; 42] = [
+            0x04, 0x01, 0x2a, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0xc1, 0xbf, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfa, 0xfd, 0x1a, 0xbe,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+        ];
+        let dp = unsafe { DevicePathNode::from_ffi_ptr(mbr_partition_bytes.as_ptr().cast()) };
+        assert_eq!(dp.length(), HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH);
+
+        let hdm = dp.as_hard_drive_media_device_path().unwrap();
+        assert_eq!(hdm.partition_format(), PartitionFormat::MBR);
+        assert_eq!(hdm.partition_number(), 1);
+        assert_eq!(hdm.partition_size(), 1032129);
+        assert_eq!(hdm.partition_start(), 63);
+        assert_eq!(
+            hdm.partition_signature(),
+            Some(PartitionSignature::MBR(0xBE1AFDFA))
+        );
+    }
+
+    #[test]
+    fn test_hard_drive_media_gpt() {
+        let guid_partition_bytes: [u8; 42] = [
+            0x04, 0x01, 0x2a, 0x00, 0x01, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x10, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x39, 0xaa, 0x41,
+            0x35, 0x3d, 0x84, 0x4f, 0xb1, 0x95, 0xae, 0x3a, 0x95, 0x0b, 0xfb, 0xad, 0x02, 0x02,
+        ];
+        let dp = unsafe { DevicePathNode::from_ffi_ptr(guid_partition_bytes.as_ptr().cast()) };
+        assert_eq!(dp.length(), HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH);
+
+        let hdm = dp.as_hard_drive_media_device_path().unwrap();
+        assert_eq!(hdm.partition_format(), PartitionFormat::GPT);
+        assert_eq!(hdm.partition_number(), 1);
+        assert_eq!(hdm.partition_size(), 200704);
+        assert_eq!(hdm.partition_start(), 128);
+        assert_eq!(
+            hdm.partition_signature(),
+            Some(PartitionSignature::GUID(Guid::from_values(
+                0x41aa39a0,
+                0x3d35,
+                0x4f84,
+                0xb195,
+                0xae3a950bfbad
+            )))
         );
     }
 }

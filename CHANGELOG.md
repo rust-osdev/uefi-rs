@@ -24,6 +24,13 @@
   (e.g. you might want to draw to the screen using the graphics
   protocol, but still allow stdout output to go to the screen as
   well), and in those cases `open_protocol` can still be used.
+- Added `DiskIo` and `DiskIo2` protocols.
+- Added `HardDriveMediaDevicePath` and related types.
+- Added `PartialOrd` and `Ord` to the traits derived by `Guid`.
+
+### Fixed
+
+- Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
 
 ### Changed
 
@@ -51,6 +58,10 @@
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]
+
+### Added
+
+- Added `print!` and `println!` macros.
 
 ### Changed
 

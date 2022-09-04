@@ -1,3 +1,4 @@
 [toolchain]
-channel = "nightly"
+# Pinned due to https://github.com/rust-osdev/uefi-rs/issues/500.
+channel = "nightly-2022-09-01"
 components = ["rust-src"]

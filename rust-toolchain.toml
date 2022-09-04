@@ -1,6 +1,9 @@
 [toolchain]
-# Nightly is required due to use of unstable features.
-channel = "nightly"
+# Pinned due to https://github.com/rust-osdev/uefi-rs/issues/500.
+#
+# Compilation started failing 2022-09-02. The previous several builds
+# don't have miri available though, so pin to a slightly older version.
+channel = "nightly-2022-08-26"
 
 # Install the `rust-src` component so that `-Zbuild-std` works. This in
 # addition to the components included in the default profile.

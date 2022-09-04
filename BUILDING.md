@@ -13,25 +13,31 @@ targets.
 [`i686-unknown-uefi`]: https://github.com/rust-lang/rust/blob/HEAD/compiler/rustc_target/src/spec/i686_unknown_uefi.rs
 [`x86_64-unknown-uefi`]: https://github.com/rust-lang/rust/blob/HEAD/compiler/rustc_target/src/spec/x86_64_unknown_uefi.rs
 
-## Building
+## Building for a UEFI target
 
-- Install a `nightly` version of the Rust [toolchain](https://rust-lang.github.io/rustup/concepts/toolchains.html):
+For instructions on building the `uefi-rs` crates, see the
+[README](README.md). This section is for building your own crates,
+outside of the `uefi-rs` repo.
 
-  `rustup toolchain install nightly`
+- Install a `nightly` version of the Rust [toolchain] and include the
+  `rust-src` [component]. The easiest way to do this is with a
+  `rust-toolchain.toml` file, for example:
+  
+  ```toml
+  [toolchain]
+  channel = "nightly"
+  components = ["rust-src"]
+  ```
 
-  It is not currently possible to build the core crate with a stable version of the Rust compiler.
+- Build the crate:
 
-- You need to add the `rust-src` toolchain [component](https://rust-lang.github.io/rustup/concepts/components.html)
-  (if it's not already installed), which Cargo will use to build the core crates for the UEFI target:
-
-  `rustup component add --toolchain nightly rust-src`
-
-- Build this crate using the `nightly` toolchain:
-
-  `cargo +nightly build --target x86_64-unknown-uefi`.
+  `cargo build --target x86_64-unknown-uefi`.
 
 - The `target` directory will contain a `x86_64-unknown-uefi` subdirectory,
   where you will find a `<crate name>.efi` file - a normal UEFI executable.
+  
+[toolchain]: https://rust-lang.github.io/rustup/concepts/toolchains.html
+[component]: https://rust-lang.github.io/rustup/concepts/components.html
 
 ## Running
 

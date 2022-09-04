@@ -28,18 +28,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install qemu-system-arm qemu-efi-aarch64 -y
 
-    - name: Install stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: nightly
-          components: rust-src
-      # TODO: cache Rust binaries
-
     - name: Build
       run: cargo xtask build --target aarch64
 
@@ -58,18 +46,6 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install qemu-system-x86 ovmf -y
-
-    - name: Install stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: nightly
-          components: rust-src
-      # TODO: cache Rust binaries
 
     - name: Build
       run: cargo xtask build --target x86_64
@@ -106,18 +82,6 @@ jobs:
         curl -o OVMF32_CODE.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_CODE.fd
         curl -o OVMF32_VARS.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_VARS.fd
 
-    - name: Install stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: nightly
-          components: rust-src
-      # TODO: cache Rust binaries
-
     - name: Build
       run: cargo xtask build --target ia32
 
@@ -132,18 +96,6 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install stable
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-            profile: minimal
-            toolchain: nightly
-            components: rust-src
-
       - name: Run cargo test
         run: cargo xtask test
 
@@ -154,26 +106,15 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install stable
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-            profile: minimal
-            toolchain: nightly
-            components: rustfmt, clippy, rust-src
-
       - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: |
+          rustup component add rustfmt
+          cargo fmt --all -- --check
 
       - name: Run clippy
-        run: cargo xtask clippy --warnings-as-errors
+        run: |
+          rustup component add clippy
+          cargo xtask clippy --warnings-as-errors
 
       - name: Run cargo doc
         run: cargo xtask doc --warnings-as-errors
@@ -185,20 +126,10 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install stable
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-
-      - name: Install latest nightly toolchain that includes Miri
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          components: miri
-
       - name: Run miri
-        run: cargo xtask miri
+        run: |
+          rustup component add miri
+          cargo xtask miri
 
   # This job tests that the template app builds successfully with the
   # released versions of the libraries on crates.io.
@@ -214,17 +145,6 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v2
 
-    - name: Install stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: nightly
-          components: rust-src
-
     - name: Build
       run: cargo xtask test-latest-release
 
@@ -234,18 +154,6 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
-
-      - name: Install stable
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-            profile: minimal
-            toolchain: nightly
-            components: rust-src
 
       - name: Build
         run: cargo xtask build

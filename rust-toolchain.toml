@@ -1,0 +1,7 @@
+[toolchain]
+# Nightly is required due to use of unstable features.
+channel = "nightly"
+
+# Install the `rust-src` component so that `-Zbuild-std` works. This in
+# addition to the components included in the default profile.
+components = ["rust-src"]

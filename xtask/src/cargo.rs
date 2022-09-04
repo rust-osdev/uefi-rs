@@ -118,7 +118,6 @@ pub fn fix_nested_cargo_env(cmd: &mut Command) {
 pub struct Cargo {
     pub action: CargoAction,
     pub features: Vec<Feature>,
-    pub toolchain: Option<String>,
     pub packages: Vec<Package>,
     pub release: bool,
     pub target: Option<UefiArch>,
@@ -130,10 +129,6 @@ impl Cargo {
         let mut cmd = Command::new("cargo");
 
         fix_nested_cargo_env(&mut cmd);
-
-        if let Some(toolchain) = &self.toolchain {
-            cmd.arg(&format!("+{}", toolchain));
-        }
 
         let action;
         let mut sub_action = None;
@@ -239,7 +234,6 @@ mod tests {
         let cargo = Cargo {
             action: CargoAction::Doc { open: true },
             features: vec![Feature::Alloc],
-            toolchain: Some("nightly".into()),
             packages: vec![Package::Uefi, Package::Xtask],
             release: false,
             target: None,
@@ -247,7 +241,7 @@ mod tests {
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo +nightly doc --package uefi --package xtask --features alloc --open"
+            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features alloc --open"
         );
     }
 }

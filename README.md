@@ -63,12 +63,6 @@ the [UEFI specification][spec] for detailed information.
 
 ## Building and testing uefi-rs
 
-Install the `nightly` version of Rust and the `rust-src` component:
-```
-rustup toolchain install nightly
-rustup component add --toolchain nightly rust-src
-```
-
 Use the `cargo xtask` command to build and test the crate.
 
 Available commands:

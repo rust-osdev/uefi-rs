@@ -22,22 +22,6 @@ impl Deref for TargetOpt {
 }
 
 #[derive(Debug, Parser)]
-pub struct ToolchainOpt {
-    /// Rust toolchain to use, e.g. "nightly-2022-02-24".
-    #[clap(long, action)]
-    toolchain: Option<String>,
-}
-
-impl ToolchainOpt {
-    /// Get the toolchain arg if set, otherwise use `default_toolchain`.
-    pub fn or(&self, default_toolchain: &str) -> Option<String> {
-        self.toolchain
-            .clone()
-            .or_else(|| Some(default_toolchain.to_string()))
-    }
-}
-
-#[derive(Debug, Parser)]
 pub struct BuildModeOpt {
     /// Build in release mode.
     #[clap(long, action)]
@@ -76,9 +60,6 @@ pub struct BuildOpt {
     pub target: TargetOpt,
 
     #[clap(flatten)]
-    pub toolchain: ToolchainOpt,
-
-    #[clap(flatten)]
     pub build_mode: BuildModeOpt,
 }
 
@@ -89,18 +70,12 @@ pub struct ClippyOpt {
     pub target: TargetOpt,
 
     #[clap(flatten)]
-    pub toolchain: ToolchainOpt,
-
-    #[clap(flatten)]
     pub warning: WarningOpt,
 }
 
 /// Build the docs for the uefi packages.
 #[derive(Debug, Parser)]
 pub struct DocOpt {
-    #[clap(flatten)]
-    pub toolchain: ToolchainOpt,
-
     /// Open the docs in a browser.
     #[clap(long, action)]
     pub open: bool,
@@ -111,19 +86,13 @@ pub struct DocOpt {
 
 /// Run unit tests and doctests under Miri.
 #[derive(Debug, Parser)]
-pub struct MiriOpt {
-    #[clap(flatten)]
-    pub toolchain: ToolchainOpt,
-}
+pub struct MiriOpt {}
 
 /// Build uefi-test-runner and run it in QEMU.
 #[derive(Debug, Parser)]
 pub struct QemuOpt {
     #[clap(flatten)]
     pub target: TargetOpt,
-
-    #[clap(flatten)]
-    pub toolchain: ToolchainOpt,
 
     #[clap(flatten)]
     pub build_mode: BuildModeOpt,

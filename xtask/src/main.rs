@@ -11,18 +11,15 @@ mod util;
 use anyhow::Result;
 use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package};
 use clap::Parser;
-use opt::{Action, BuildOpt, ClippyOpt, DocOpt, MiriOpt, Opt, QemuOpt};
+use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
 use std::process::Command;
 use tempfile::TempDir;
 use util::{command_to_string, run_cmd};
-
-const NIGHTLY: &str = "nightly";
 
 fn build(opt: &BuildOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Build,
         features: Feature::more_code(),
-        toolchain: opt.toolchain.or(NIGHTLY),
         packages: Package::all_except_xtask(),
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -36,7 +33,6 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Clippy,
         features: Feature::more_code(),
-        toolchain: opt.toolchain.or(NIGHTLY),
         packages: Package::all_except_xtask(),
         release: false,
         target: Some(*opt.target),
@@ -48,7 +44,6 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Clippy,
         features: Vec::new(),
-        toolchain: None,
         packages: vec![Package::Xtask],
         release: false,
         target: None,
@@ -62,7 +57,6 @@ fn doc(opt: &DocOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Doc { open: opt.open },
         features: Feature::more_code(),
-        toolchain: opt.toolchain.or(NIGHTLY),
         packages: Package::published(),
         release: false,
         target: None,
@@ -72,11 +66,10 @@ fn doc(opt: &DocOpt) -> Result<()> {
 }
 
 /// Run unit tests and doctests under Miri.
-fn run_miri(opt: &MiriOpt) -> Result<()> {
+fn run_miri() -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Miri,
         features: [Feature::Exts].into(),
-        toolchain: opt.toolchain.or(NIGHTLY),
         packages: [Package::Uefi].into(),
         release: false,
         target: None,
@@ -100,7 +93,6 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Build,
         features,
-        toolchain: opt.toolchain.or(NIGHTLY),
         packages: vec![Package::UefiTestRunner],
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -119,7 +111,6 @@ fn run_host_tests() -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Test,
         features: Vec::new(),
-        toolchain: None,
         packages: vec![Package::Xtask],
         release: false,
         target: None,
@@ -131,7 +122,6 @@ fn run_host_tests() -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Test,
         features: vec![Feature::Exts],
-        toolchain: Some(NIGHTLY.into()),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
         packages: vec![Package::Uefi, Package::UefiMacros],
@@ -173,7 +163,7 @@ fn test_latest_release() -> Result<()> {
     let mut build_cmd = Command::new("cargo");
     fix_nested_cargo_env(&mut build_cmd);
     build_cmd
-        .args(&["+nightly", "build", "--target", "x86_64-unknown-uefi"])
+        .args(&["build", "--target", "x86_64-unknown-uefi"])
         .current_dir(tmp_dir.join("template"));
 
     // Check that the command is indeed in BUILDING.md, then verify the
@@ -190,7 +180,7 @@ fn main() -> Result<()> {
         Action::Build(build_opt) => build(build_opt),
         Action::Clippy(clippy_opt) => clippy(clippy_opt),
         Action::Doc(doc_opt) => doc(doc_opt),
-        Action::Miri(miri_opt) => run_miri(miri_opt),
+        Action::Miri(_) => run_miri(),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(_) => run_host_tests(),
         Action::TestLatestRelease(_) => test_latest_release(),

@@ -257,11 +257,13 @@ impl FileHandle {
     pub fn into_type(self) -> Result<FileType> {
         use FileType::*;
 
-        if self.is_regular_file()? {
-            unsafe { Ok(Regular(RegularFile::new(self))) }
-        } else {
-            unsafe { Ok(Dir(Directory::new(self))) }
-        }
+        self.is_regular_file().map(|is_file| {
+            if is_file {
+                unsafe { Regular(RegularFile::new(self)) }
+            } else {
+                unsafe { Dir(Directory::new(self)) }
+            }
+        })
     }
 
     /// If the handle represents a directory, convert it into a
@@ -294,7 +296,8 @@ impl File for FileHandle {
     fn is_regular_file(&self) -> Result<bool> {
         let this = unsafe { self.0.as_mut().unwrap() };
 
-        // get_position fails with EFI_UNSUPPORTED on directories
+        // - get_position fails with EFI_UNSUPPORTED on directories
+        // - result is an error if the underlying file was already closed or deleted.
         let mut pos = 0;
         match (this.get_position)(this, &mut pos) {
             Status::SUCCESS => Ok(true),

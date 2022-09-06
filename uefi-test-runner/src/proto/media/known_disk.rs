@@ -15,11 +15,13 @@ fn test_existing_dir(directory: &mut Directory) {
     info!("Testing existing directory");
 
     let input_dir_path = cstr16!("test_dir");
-    let mut dir = directory
+    let dir = directory
         .open(input_dir_path, FileMode::Read, FileAttribute::empty())
-        .expect("failed to open directory")
-        .into_directory()
-        .expect("not a directory");
+        .expect("failed to open directory");
+
+    assert!(dir.is_directory().unwrap());
+
+    let mut dir = dir.into_directory().expect("not a directory");
 
     // Collect and validate the directory entries.
     let mut entry_names = vec![];
@@ -129,15 +131,17 @@ fn test_create_file(directory: &mut Directory) {
     info!("Testing file creation");
 
     // Create a new file.
-    let mut file = directory
+    let file = directory
         .open(
             cstr16!("new_test_file.txt"),
             FileMode::CreateReadWrite,
             FileAttribute::empty(),
         )
-        .expect("failed to create file")
-        .into_regular_file()
-        .expect("not a regular file");
+        .expect("failed to create file");
+
+    assert!(file.is_regular_file().unwrap());
+
+    let mut file = file.into_regular_file().expect("not a regular file");
     file.write(b"test output data").unwrap();
 }
 
@@ -261,10 +265,21 @@ pub fn test_known_disk(bt: &BootServices) {
             let mut sfs = bt
                 .open_protocol_exclusive::<SimpleFileSystem>(handle)
                 .expect("Failed to get simple file system");
-            let mut directory = sfs.open_volume().unwrap();
+            let mut root_directory = sfs.open_volume().unwrap();
+
+            // test is_directory() and is_regular_file() from the File trait which is the
+            // base for into_type() used later in the test.
+            {
+                // because File is "Sized", we cannot cast it to &dyn
+                fn test_is_directory(file: &impl File) {
+                    assert_eq!(Ok(true), file.is_directory());
+                    assert_eq!(Ok(false), file.is_regular_file());
+                }
+                test_is_directory(&root_directory);
+            }
 
             let mut fs_info_buf = vec![0; 128];
-            let fs_info = directory
+            let fs_info = root_directory
                 .get_info::<FileSystemInfo>(&mut fs_info_buf)
                 .unwrap();
 
@@ -281,13 +296,13 @@ pub fn test_known_disk(bt: &BootServices) {
             assert_eq!(fs_info.block_size(), 512);
 
             // Check that `get_boxed_info` returns the same info.
-            let boxed_fs_info = directory.get_boxed_info::<FileSystemInfo>().unwrap();
+            let boxed_fs_info = root_directory.get_boxed_info::<FileSystemInfo>().unwrap();
             assert_eq!(*fs_info, *boxed_fs_info);
 
-            test_existing_dir(&mut directory);
-            test_delete_warning(&mut directory);
-            test_existing_file(&mut directory);
-            test_create_file(&mut directory);
+            test_existing_dir(&mut root_directory);
+            test_delete_warning(&mut root_directory);
+            test_existing_file(&mut root_directory);
+            test_create_file(&mut root_directory);
         }
 
         test_raw_disk_io(handle, bt);

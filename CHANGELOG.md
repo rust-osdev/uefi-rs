@@ -10,10 +10,10 @@
 - Implemented `core::fmt::Write` for the `Serial` protocol.
 - Added the `MemoryProtection` protocol.
 - Added `BootServices::get_handle_for_protocol`.
-- Added trait `EqStrUntilNul` and implemented it for `CStr16` and `CString16`.
-  Now you can compare everything that is `AsRef<str>` (such as `String` and `str`
-  from the standard library) to uefi strings. Please head to the documentation of
-  `EqStrUntilNul` to find out limitations and further information.
+- Added trait `EqStrUntilNul` and implemented it for `CStr8`, `CStr16`, and `CString16`
+  (CString8 doesn't exist yet). Now you can compare everything that is `AsRef<str>`
+  (such as `String` and `str` from the standard library) to UEFI strings. Please head to the
+  documentation of `EqStrUntilNul` to find out limitations and further information.
 - Added `BootServices::image_handle` to get the handle of the executing
   image. The image is set automatically by the `#[entry]` macro; if a
   program does not use that macro then it should call
@@ -27,6 +27,7 @@
 - Added `DiskIo` and `DiskIo2` protocols.
 - Added `HardDriveMediaDevicePath` and related types.
 - Added `PartialOrd` and `Ord` to the traits derived by `Guid`.
+- Added `TryFrom<core::ffi::CStr>` implementation for `CStr8`.
 
 ### Fixed
 

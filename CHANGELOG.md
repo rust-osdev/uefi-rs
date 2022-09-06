@@ -57,6 +57,13 @@
 
 ## uefi-macros - [Unreleased]
 
+### Changed
+
+- The `#[entry]` macro now calls `BootServices::set_image_handle` to set
+  the global image handle. Due to this change, the two arguments to main
+  must both be named (e.g. `image: Handle` and `_image: Handle` are both
+  OK, but not `_: Handle`).
+
 ## uefi-services - [Unreleased]
 
 ### Added

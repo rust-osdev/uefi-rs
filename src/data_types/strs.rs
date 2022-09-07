@@ -103,7 +103,7 @@ impl CStr8 {
     ///
     /// # Safety
     ///
-    /// It's the callers responsability to ensure chars is a valid Latin-1
+    /// It's the callers responsibility to ensure chars is a valid Latin-1
     /// null-terminated string, with no interior null bytes.
     pub unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
         &*(chars as *const [u8] as *const Self)
@@ -185,7 +185,7 @@ impl CStr16 {
     /// # Safety
     ///
     /// The function will start accessing memory from `ptr` until the first
-    /// null byte. It's the callers responsability to ensure `ptr` points to
+    /// null byte. It's the callers responsibility to ensure `ptr` points to
     /// a valid string, in accessible memory.
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;
@@ -223,7 +223,7 @@ impl CStr16 {
     ///
     /// # Safety
     ///
-    /// It's the callers responsability to ensure chars is a valid UCS-2
+    /// It's the callers responsibility to ensure chars is a valid UCS-2
     /// null-terminated string, with no interior null bytes.
     pub unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
         &*(codes as *const [u16] as *const Self)

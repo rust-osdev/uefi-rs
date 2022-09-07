@@ -117,7 +117,7 @@ jobs:
           cargo xtask clippy --warnings-as-errors
 
       - name: Run cargo doc
-        run: cargo xtask doc --warnings-as-errors
+        run: cargo xtask doc
 
   miri:
     name: Run unit tests and doctests under Miri

@@ -33,6 +33,10 @@
 // Enable some additional warnings and lints.
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(clippy::all)]
+#![deny(rustdoc::all)]
+// todo remove once https://github.com/rust-lang/rust/issues/101730 is stable
+#![feature(rustdoc_missing_doc_code_examples)]
+#![allow(rustdoc::missing_doc_code_examples)]
 
 // `uefi-exts` requires access to memory allocation APIs.
 #[cfg(feature = "exts")]

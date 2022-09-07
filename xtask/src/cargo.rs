@@ -146,9 +146,6 @@ impl Cargo {
             }
             CargoAction::Doc { open } => {
                 action = "doc";
-                if self.warnings_as_errors {
-                    cmd.env("RUSTDOCFLAGS", "-Dwarnings");
-                }
                 if open {
                     extra_args.push("--open");
                 }
@@ -237,11 +234,11 @@ mod tests {
             packages: vec![Package::Uefi, Package::Xtask],
             release: false,
             target: None,
-            warnings_as_errors: true,
+            warnings_as_errors: false,
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features alloc --open"
+            "cargo doc --package uefi --package xtask --features alloc --open"
         );
     }
 }

@@ -19,6 +19,10 @@
 #![no_std]
 #![feature(alloc_error_handler)]
 #![feature(abi_efiapi)]
+#![deny(rustdoc::all)]
+// todo remove once https://github.com/rust-lang/rust/issues/101730 is stable
+#![feature(rustdoc_missing_doc_code_examples)]
+#![allow(rustdoc::missing_doc_code_examples)]
 
 #[macro_use]
 extern crate log;

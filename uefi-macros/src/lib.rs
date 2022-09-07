@@ -1,4 +1,10 @@
 #![recursion_limit = "128"]
+#![deny(rustdoc::all)]
+// todo remove once https://github.com/rust-lang/rust/issues/101730 is stable
+#![feature(rustdoc_missing_doc_code_examples)]
+#![allow(rustdoc::missing_doc_code_examples)]
+
+//! Code generation macros for the `uefi` crate.
 
 extern crate proc_macro;
 

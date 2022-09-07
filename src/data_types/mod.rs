@@ -39,7 +39,7 @@ impl Handle {
 
 /// Handle to an event structure
 #[repr(transparent)]
-pub struct Event(*mut c_void);
+pub struct Event(NonNull<c_void>);
 
 impl Event {
     /// Clone this `Event`

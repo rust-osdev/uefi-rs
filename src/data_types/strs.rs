@@ -1,5 +1,4 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
-use core::ffi::CStr;
 use core::fmt;
 use core::iter::Iterator;
 use core::marker::PhantomData;
@@ -57,11 +56,6 @@ pub enum FromStrWithBufError {
 ///
 /// This type is largely inspired by [`core::ffi::CStr`] with the exception that all characters are
 /// guaranteed to be 8 bit long.
-///
-/// A [`CStr8`] can be constructed from a [`core::ffi::CStr`] via a `try_from` call:
-/// ```ignore
-/// let cstr8: &CStr8 = TryFrom::try_from(cstr).unwrap();
-/// ```
 ///
 /// For convenience, a [`CStr8`] is comparable with [`core::str`] and
 /// `alloc::string::String` from the standard library through the trait [`EqStrUntilNul`].
@@ -157,14 +151,6 @@ impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CStr8 {
             .any(|(l, r)| l != r);
 
         !any_not_equal
-    }
-}
-
-impl<'a> TryFrom<&'a CStr> for &'a CStr8 {
-    type Error = FromSliceWithNulError;
-
-    fn try_from(cstr: &'a CStr) -> Result<Self, Self::Error> {
-        CStr8::from_bytes_with_nul(cstr.to_bytes_with_nul())
     }
 }
 
@@ -532,16 +518,6 @@ mod tests {
     use super::*;
     use crate::alloc_api::string::String;
     use uefi_macros::{cstr16, cstr8};
-
-    // Tests if our CStr8 type can be constructed from a valid core::ffi::CStr
-    #[test]
-    fn test_cstr8_from_cstr() {
-        let msg = "hello world\0";
-        let cstr = unsafe { CStr::from_ptr(msg.as_ptr().cast()) };
-        let cstr8: &CStr8 = TryFrom::try_from(cstr).unwrap();
-        assert!(cstr8.eq_str_until_nul(&msg));
-        assert!(msg.eq_str_until_nul(cstr8));
-    }
 
     #[test]
     fn test_cstr16_num_bytes() {

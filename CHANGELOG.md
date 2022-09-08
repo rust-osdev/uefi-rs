@@ -27,7 +27,6 @@
 - Added `DiskIo` and `DiskIo2` protocols.
 - Added `HardDriveMediaDevicePath` and related types.
 - Added `PartialOrd` and `Ord` to the traits derived by `Guid`.
-- Added `TryFrom<core::ffi::CStr>` implementation for `CStr8`.
 
 ### Fixed
 

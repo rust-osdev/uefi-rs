@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 uefi = { version = "0.17.0", features = ["exts"] }
-uefi-services = "0.13.0"
+uefi-services = "0.14.0"

@@ -1,6 +1,6 @@
 [package]
 name = "uefi-macros"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
 readme = "README.md"
 edition = "2021"

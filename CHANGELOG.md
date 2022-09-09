@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.17.0
+
 ### Added
 
 - Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
@@ -54,7 +60,7 @@
   can be replaced by calling `status.into()`, or `Result::from(status)`
   in cases where the compiler needs a type hint.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.8.0
 
 ### Changed
 
@@ -63,7 +69,7 @@
   must both be named (e.g. `image: Handle` and `_image: Handle` are both
   OK, but not `_: Handle`).
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.14.0
 
 ### Added
 

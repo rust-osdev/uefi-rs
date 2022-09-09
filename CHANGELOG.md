@@ -27,10 +27,6 @@
 - Added `DiskIo` and `DiskIo2` protocols.
 - Added `HardDriveMediaDevicePath` and related types.
 - Added `PartialOrd` and `Ord` to the traits derived by `Guid`.
-
-### Fixed
-
-- Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
 - The `File` trait now knows the methods `is_regular_file` and `is_directory`.
   Developers profit from this on the struct `FileHandle`, for example.
 
@@ -42,8 +38,9 @@
   `BootServices::get_handle_for_protocol` and
   `BootServices::open_protocol_exclusive` (or
   `BootServices::open_protocol`) instead.
-- renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
+- Renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
   additive. It is now a default feature.
+- Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
 
 ### Removed
 

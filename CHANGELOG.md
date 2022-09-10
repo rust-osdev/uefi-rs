@@ -10,6 +10,8 @@
 
 - Fixed the definition of `AllocateType` so that `MaxAddress` and
   `Address` always take a 64-bit value, regardless of target platform.
+- The conversion methods on `DevicePathToText` and `DevicePathFromText`
+  now return a `uefi::Result` instead of an `Option`.
 
 ## uefi-macros - [Unreleased]
 

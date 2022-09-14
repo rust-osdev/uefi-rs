@@ -1,6 +1,6 @@
 [package]
 name = "uefi-macros"
-version = "0.7.0"
+version = "0.8.1"
 authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
 readme = "README.md"
 edition = "2021"
@@ -25,4 +25,4 @@ syn = { version = "1.0.74", features = ["full"] }
 
 [dev-dependencies]
 trybuild = "1.0.61"
-uefi = { version = "0.16.0", default-features = false }
+uefi = { version = "0.17.0", default-features = false }

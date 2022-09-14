@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.17.0
+
 ### Added
 
 - Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
@@ -10,10 +16,10 @@
 - Implemented `core::fmt::Write` for the `Serial` protocol.
 - Added the `MemoryProtection` protocol.
 - Added `BootServices::get_handle_for_protocol`.
-- Added trait `EqStrUntilNul` and implemented it for `CStr16` and `CString16`.
-  Now you can compare everything that is `AsRef<str>` (such as `String` and `str`
-  from the standard library) to uefi strings. Please head to the documentation of
-  `EqStrUntilNul` to find out limitations and further information.
+- Added trait `EqStrUntilNul` and implemented it for `CStr8`, `CStr16`, and `CString16`
+  (CString8 doesn't exist yet). Now you can compare everything that is `AsRef<str>`
+  (such as `String` and `str` from the standard library) to UEFI strings. Please head to the
+  documentation of `EqStrUntilNul` to find out limitations and further information.
 - Added `BootServices::image_handle` to get the handle of the executing
   image. The image is set automatically by the `#[entry]` macro; if a
   program does not use that macro then it should call
@@ -27,10 +33,6 @@
 - Added `DiskIo` and `DiskIo2` protocols.
 - Added `HardDriveMediaDevicePath` and related types.
 - Added `PartialOrd` and `Ord` to the traits derived by `Guid`.
-
-### Fixed
-
-- Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
 - The `File` trait now knows the methods `is_regular_file` and `is_directory`.
   Developers profit from this on the struct `FileHandle`, for example.
 
@@ -42,8 +44,9 @@
   `BootServices::get_handle_for_protocol` and
   `BootServices::open_protocol_exclusive` (or
   `BootServices::open_protocol`) instead.
-- renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
+- Renamed feature `ignore-logger-errors` to `panic-on-logger-errors` so that it is
   additive. It is now a default feature.
+- Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
 
 ### Removed
 
@@ -57,7 +60,7 @@
   can be replaced by calling `status.into()`, or `Result::from(status)`
   in cases where the compiler needs a type hint.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.8.0
 
 ### Changed
 
@@ -66,7 +69,7 @@
   must both be named (e.g. `image: Handle` and `_image: Handle` are both
   OK, but not `_: Handle`).
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.14.0
 
 ### Added
 

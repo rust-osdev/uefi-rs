@@ -13,6 +13,7 @@
   feature. (requires the **unstable** and **alloc** features)
 - Added an `core::error::Error` implementation for `Error` to ease
   integration with error-handling crates. (requires the **unstable** feature)
+- Added partial support for the TCG protocols for TPM devices under `uefi::proto::tcg`.
 
 ### Changed
 

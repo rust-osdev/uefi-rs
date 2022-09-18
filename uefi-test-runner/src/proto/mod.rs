@@ -28,6 +28,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
         target_arch = "aarch64"
     ))]
     shim::test(bt);
+    tcg::test(bt);
 }
 
 fn find_protocol(bt: &BootServices) {
@@ -73,3 +74,4 @@ mod rng;
 ))]
 mod shim;
 mod string;
+mod tcg;

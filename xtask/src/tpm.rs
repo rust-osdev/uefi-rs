@@ -23,7 +23,7 @@ impl Swtpm {
         let tmp_path = tmp_dir.path().to_str().unwrap();
 
         let mut cmd = Command::new("swtpm");
-        cmd.args(&[
+        cmd.args([
             "socket",
             "--tpmstate",
             &format!("dir={tmp_path}"),

@@ -2,6 +2,7 @@ use crate::arch::UefiArch;
 use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
 use crate::opt::QemuOpt;
 use crate::pipe::Pipe;
+use crate::tpm::Swtpm;
 use crate::util::command_to_string;
 use crate::{net, platform};
 use anyhow::{bail, Context, Result};
@@ -535,6 +536,15 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
         ]);
         Some(net::EchoService::start())
+    } else {
+        None
+    };
+
+    // Set up a software TPM if requested.
+    let _tpm = if let Some(tpm_version) = opt.tpm {
+        let tpm = Swtpm::spawn(tpm_version)?;
+        cmd.args(tpm.qemu_args());
+        Some(tpm)
     } else {
         None
     };

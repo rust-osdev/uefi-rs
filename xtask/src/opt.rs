@@ -1,7 +1,13 @@
 use crate::arch::UefiArch;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use std::ops::Deref;
 use std::path::PathBuf;
+
+#[derive(Clone, Copy, Debug, PartialEq, ValueEnum)]
+pub enum TpmVersion {
+    V1,
+    V2,
+}
 
 // Define some common options so that the doc strings don't have to be
 // copy-pasted.
@@ -134,6 +140,10 @@ pub struct QemuOpt {
     /// Run QEMU without a GUI.
     #[clap(long, action)]
     pub headless: bool,
+
+    /// Attach a software TPM to QEMU.
+    #[clap(long, action)]
+    pub tpm: Option<TpmVersion>,
 
     /// Path of an OVMF code file.
     #[clap(long, action)]

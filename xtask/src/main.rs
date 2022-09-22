@@ -7,6 +7,7 @@ mod opt;
 mod pipe;
 mod platform;
 mod qemu;
+mod tpm;
 mod util;
 
 use crate::opt::TestOpt;

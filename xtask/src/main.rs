@@ -154,7 +154,7 @@ fn test_latest_release() -> Result<()> {
     let tmp_dir = tmp_dir.path();
     let mut cp_cmd = Command::new("cp");
     cp_cmd
-        .args(&["--recursive", "--verbose", "template"])
+        .args(["--recursive", "--verbose", "template"])
         .arg(tmp_dir);
     run_cmd(cp_cmd)?;
 
@@ -163,7 +163,7 @@ fn test_latest_release() -> Result<()> {
     let mut build_cmd = Command::new("cargo");
     fix_nested_cargo_env(&mut build_cmd);
     build_cmd
-        .args(&["build", "--target", "x86_64-unknown-uefi"])
+        .args(["build", "--target", "x86_64-unknown-uefi"])
         .current_dir(tmp_dir.join("template"));
 
     // Check that the command is indeed in BUILDING.md, then verify the

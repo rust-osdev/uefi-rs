@@ -1,0 +1,4 @@
+[toolchain]
+# Oldest nightly that currently works with `cargo xtask build`.
+channel = "nightly-2022-04-18"
+components = ["rust-src"]

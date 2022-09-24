@@ -420,27 +420,27 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // QEMU by defaults enables a ton of devices which slow down boot.
     cmd.arg("-nodefaults");
 
-    cmd.args(&["-device", "virtio-rng-pci"]);
+    cmd.args(["-device", "virtio-rng-pci"]);
 
     match arch {
         UefiArch::AArch64 => {
             // Use a generic ARM environment. Sadly qemu can't emulate a
             // RPi 4 like machine though.
-            cmd.args(&["-machine", "virt"]);
+            cmd.args(["-machine", "virt"]);
 
             // A72 is a very generic 64-bit ARM CPU in the wild.
-            cmd.args(&["-cpu", "cortex-a72"]);
+            cmd.args(["-cpu", "cortex-a72"]);
         }
         UefiArch::IA32 => {}
         UefiArch::X86_64 => {
             // Use a modern machine.
-            cmd.args(&["-machine", "q35"]);
+            cmd.args(["-machine", "q35"]);
 
             // Multi-processor services protocol test needs exactly 4 CPUs.
-            cmd.args(&["-smp", "4"]);
+            cmd.args(["-smp", "4"]);
 
             // Allocate some memory.
-            cmd.args(&["-m", "256M"]);
+            cmd.args(["-m", "256M"]);
 
             // Enable hardware-accelerated virtualization if possible.
             if platform::is_linux() && !opt.disable_kvm && !opt.ci {
@@ -453,11 +453,11 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             }
 
             // Map the QEMU exit signal to port f4.
-            cmd.args(&["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]);
+            cmd.args(["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]);
 
             // OVMF debug builds can output information to a serial `debugcon`.
             // Only enable when debugging UEFI boot.
-            // cmd.args(&[
+            // cmd.args([
             //     "-debugcon",
             //     "file:debug.log",
             //     "-global",
@@ -489,9 +489,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     // When running in headless mode we don't have video, but we can still have
     // QEMU emulate a display and take screenshots from it.
-    cmd.args(&["-vga", "std"]);
+    cmd.args(["-vga", "std"]);
     if opt.headless {
-        cmd.args(&["-display", "none"]);
+        cmd.args(["-display", "none"]);
     }
 
     let test_disk = tmp_dir.join("test_disk.fat.img");
@@ -511,14 +511,14 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // and send the response. That second will also receive logs up
     // until the test runner opens the handle in exclusive mode, but we
     // can just read and ignore those lines.
-    cmd.args(&["-serial", "stdio"]);
-    cmd.args(&["-serial", serial_pipe.qemu_arg()]);
+    cmd.args(["-serial", "stdio"]);
+    cmd.args(["-serial", serial_pipe.qemu_arg()]);
 
     // Map the QEMU monitor to a pair of named pipes
-    cmd.args(&["-qmp", qemu_monitor_pipe.qemu_arg()]);
+    cmd.args(["-qmp", qemu_monitor_pipe.qemu_arg()]);
 
     // Attach network device with DHCP configured for PXE
-    cmd.args(&[
+    cmd.args([
         "-nic",
         "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
     ]);

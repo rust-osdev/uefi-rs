@@ -90,7 +90,7 @@ fn windows_open_pipe(path: &Path) -> Result<File> {
     loop {
         attempt += 1;
 
-        match OpenOptions::new().read(true).write(true).open(&path) {
+        match OpenOptions::new().read(true).write(true).open(path) {
             Ok(file) => return Ok(file),
             Err(err) => {
                 if attempt >= max_attempts {

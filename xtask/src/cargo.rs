@@ -141,7 +141,7 @@ impl Cargo {
             CargoAction::Clippy => {
                 action = "clippy";
                 if self.warnings_as_errors {
-                    tool_args.extend(&["-D", "warnings"]);
+                    tool_args.extend(["-D", "warnings"]);
                 }
             }
             CargoAction::Doc { open } => {
@@ -172,7 +172,7 @@ impl Cargo {
         }
 
         if let Some(target) = self.target {
-            cmd.args(&[
+            cmd.args([
                 "--target",
                 target.as_triple(),
                 "-Zbuild-std=core,compiler_builtins,alloc",
@@ -184,11 +184,11 @@ impl Cargo {
             bail!("packages cannot be empty");
         }
         for package in &self.packages {
-            cmd.args(&["--package", package.as_str()]);
+            cmd.args(["--package", package.as_str()]);
         }
 
         if !self.features.is_empty() {
-            cmd.args(&[
+            cmd.args([
                 "--features",
                 &Feature::comma_separated_string(&self.features),
             ]);

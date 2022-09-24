@@ -1,3 +1,4 @@
+use crate::data_types::PhysicalAddress;
 use crate::proto::Protocol;
 use crate::table::boot::MemoryAttribute;
 use crate::{unsafe_guid, Result, Status};
@@ -14,21 +15,21 @@ use core::ops::Range;
 pub struct MemoryProtection {
     get_memory_attributes: unsafe extern "efiapi" fn(
         this: *const Self,
-        base_address: u64,
+        base_address: PhysicalAddress,
         length: u64,
         attributes: *mut MemoryAttribute,
     ) -> Status,
 
     set_memory_attributes: unsafe extern "efiapi" fn(
         this: *const Self,
-        base_address: u64,
+        base_address: PhysicalAddress,
         length: u64,
         attributes: MemoryAttribute,
     ) -> Status,
 
     clear_memory_attributes: unsafe extern "efiapi" fn(
         this: *const Self,
-        base_address: u64,
+        base_address: PhysicalAddress,
         length: u64,
         attributes: MemoryAttribute,
     ) -> Status,
@@ -46,7 +47,10 @@ impl MemoryProtection {
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
-    pub fn get_memory_attributes(&self, byte_region: Range<u64>) -> Result<MemoryAttribute> {
+    pub fn get_memory_attributes(
+        &self,
+        byte_region: Range<PhysicalAddress>,
+    ) -> Result<MemoryAttribute> {
         let mut attributes = MemoryAttribute::empty();
         let (base_address, length) = range_to_base_and_len(byte_region);
         unsafe {
@@ -65,7 +69,7 @@ impl MemoryProtection {
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
     pub fn set_memory_attributes(
         &self,
-        byte_region: Range<u64>,
+        byte_region: Range<PhysicalAddress>,
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
@@ -82,7 +86,7 @@ impl MemoryProtection {
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
     pub fn clear_memory_attributes(
         &self,
-        byte_region: Range<u64>,
+        byte_region: Range<PhysicalAddress>,
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
@@ -91,7 +95,7 @@ impl MemoryProtection {
 }
 
 /// Convert a byte `Range` to `(base_address, length)`.
-fn range_to_base_and_len(r: Range<u64>) -> (u64, u64) {
+fn range_to_base_and_len(r: Range<PhysicalAddress>) -> (PhysicalAddress, PhysicalAddress) {
     (r.start, r.end.checked_sub(r.start).unwrap())
 }
 

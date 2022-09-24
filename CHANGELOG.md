@@ -2,6 +2,15 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- Added `PhysicalAddress` and `VirtualAddress` type aliases.
+
+### Changed
+
+- Fixed the definition of `AllocateType` so that `MaxAddress` and
+  `Address` always take a 64-bit value, regardless of target platform.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

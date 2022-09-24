@@ -107,6 +107,14 @@ pub trait Align {
     }
 }
 
+/// Physical memory address. This is always a 64-bit value, regardless
+/// of target platform.
+pub type PhysicalAddress = u64;
+
+/// Virtual memory address. This is always a 64-bit value, regardless
+/// of target platform.
+pub type VirtualAddress = u64;
+
 mod guid;
 pub use self::guid::Guid;
 pub use self::guid::{unsafe_guid, Identify};

@@ -10,6 +10,7 @@
 
 - Fixed the definition of `AllocateType` so that `MaxAddress` and
   `Address` always take a 64-bit value, regardless of target platform.
+- The MSRV is `nightly-2022-09-14` (`1.65.0`)
 
 ## uefi-macros - [Unreleased]
 

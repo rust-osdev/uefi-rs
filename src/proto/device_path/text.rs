@@ -1,10 +1,18 @@
 //! `DevicePathToText` and `DevicePathFromText` Protocol
 
+// Note on return types: the specification of the conversion functions
+// is a little unusual in that they return a pointer rather than
+// `EFI_STATUS`. A NULL pointer is used to indicate an error, and the
+// spec says that will only happen if the input pointer is null (which
+// can't happen here since we use references as input, not pointers), or
+// if there is insufficient memory. So we treat any NULL output as an
+// `OUT_OF_RESOURCES` error.
+
 use crate::{
     proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath},
     proto::Protocol,
     table::boot::BootServices,
-    unsafe_guid, CStr16, Char16,
+    unsafe_guid, CStr16, Char16, Result, Status,
 };
 use core::ops::Deref;
 
@@ -40,11 +48,11 @@ pub struct PoolString<'a> {
 }
 
 impl<'a> PoolString<'a> {
-    fn new(boot_services: &'a BootServices, text: *const Char16) -> Option<Self> {
+    fn new(boot_services: &'a BootServices, text: *const Char16) -> Result<Self> {
         if text.is_null() {
-            None
+            Err(Status::OUT_OF_RESOURCES.into())
         } else {
-            Some(Self {
+            Ok(Self {
                 boot_services,
                 text,
             })
@@ -92,15 +100,17 @@ pub struct DevicePathToText {
 impl DevicePathToText {
     /// Convert a device node to its text representation.
     ///
-    /// Returns `None` if `device_node` was NULL or there was
-    /// insufficient memory.
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// memory for the conversion.
+    ///
+    /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
     pub fn convert_device_node_to_text<'boot>(
         &self,
         boot_services: &'boot BootServices,
         device_node: &DevicePathNode,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Option<PoolString<'boot>> {
+    ) -> Result<PoolString<'boot>> {
         let text_device_node = unsafe {
             (self.convert_device_node_to_text)(
                 device_node.as_ffi_ptr(),
@@ -113,15 +123,17 @@ impl DevicePathToText {
 
     /// Convert a device path to its text representation.
     ///
-    /// Returns `None` if `device_path` was NULL or there was
-    /// insufficient memory.
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// memory for the conversion.
+    ///
+    /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
     pub fn convert_device_path_to_text<'boot>(
         &self,
         boot_services: &'boot BootServices,
         device_path: &DevicePath,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Option<PoolString<'boot>> {
+    ) -> Result<PoolString<'boot>> {
         let text_device_path = unsafe {
             (self.convert_device_path_to_text)(
                 device_path.as_ffi_ptr(),
@@ -154,18 +166,20 @@ impl DevicePathFromText {
     /// Conversion starts with the first character and continues until
     /// the first non-device node character.
     ///
-    /// Returns `None` if `text_device_node` was NULL or there was
-    /// insufficient memory.
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// memory for the conversion.
+    ///
+    /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
     pub fn convert_text_to_device_node(
         &self,
         text_device_node: &CStr16,
-    ) -> Option<&DevicePathNode> {
+    ) -> Result<&DevicePathNode> {
         unsafe {
             let ptr = (self.convert_text_to_device_node)(text_device_node.as_ptr());
             if ptr.is_null() {
-                None
+                Err(Status::OUT_OF_RESOURCES.into())
             } else {
-                Some(DevicePathNode::from_ffi_ptr(ptr))
+                Ok(DevicePathNode::from_ffi_ptr(ptr))
             }
         }
     }
@@ -176,15 +190,17 @@ impl DevicePathFromText {
     /// Conversion starts with the first character and continues until
     /// the first non-device path character.
     ///
-    /// Returns `None` if `text_device_path` was NULL or there was
-    /// insufficient memory.
-    pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Option<&DevicePath> {
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// memory for the conversion.
+    ///
+    /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
+    pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Result<&DevicePath> {
         unsafe {
             let ptr = (self.convert_text_to_device_path)(text_device_path.as_ptr());
             if ptr.is_null() {
-                None
+                Err(Status::OUT_OF_RESOURCES.into())
             } else {
-                Some(DevicePath::from_ffi_ptr(ptr))
+                Ok(DevicePath::from_ffi_ptr(ptr))
             }
         }
     }

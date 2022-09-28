@@ -53,13 +53,18 @@ This project contains multiple sub-crates:
 
 ## Documentation
 
-The docs for the latest published crate version can be found at
-[docs.rs/uefi/](https://docs.rs/uefi/)
+The [uefi-rs book] contains a tutorial, how-tos, and overviews of some
+important UEFI concepts.
 
-This crate's documentation is fairly minimal, and you are encouraged to refer to
-the [UEFI specification][spec] for detailed information.
+Reference documentation can be found on docs.rs:
+- [docs.rs/uefi](https://docs.rs/uefi)
+- [docs.rs/uefi-macros](https://docs.rs/uefi-macros)
+- [docs.rs/uefi-services](https://docs.rs/uefi-services)
+
+For additional information, refer to the [UEFI specification][spec].
 
 [spec]: http://www.uefi.org/specifications
+[uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD
 
 ## Building and testing uefi-rs
 

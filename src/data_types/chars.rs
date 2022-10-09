@@ -100,7 +100,7 @@ impl TryFrom<u16> for Char16 {
 
 impl From<Char16> for u16 {
     fn from(char: Char16) -> u16 {
-        char.0 as u16
+        char.0
     }
 }
 

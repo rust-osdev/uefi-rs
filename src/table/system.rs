@@ -58,7 +58,7 @@ impl<View: SystemTableView> SystemTable<View> {
     }
 
     /// Return the firmware revision
-    pub fn firmware_revision(&self) -> Revision {
+    pub fn firmware_revision(&self) -> u32 {
         self.table.fw_revision
     }
 
@@ -296,8 +296,7 @@ struct SystemTableImpl {
     header: Header,
     /// Null-terminated string representing the firmware's vendor.
     fw_vendor: *const Char16,
-    /// Revision of the UEFI specification the firmware conforms to.
-    fw_revision: Revision,
+    fw_revision: u32,
     stdin_handle: Handle,
     stdin: *mut text::Input,
     stdout_handle: Handle,

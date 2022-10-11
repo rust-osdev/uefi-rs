@@ -20,7 +20,6 @@
 #![feature(alloc_error_handler)]
 #![feature(abi_efiapi)]
 
-#[macro_use]
 extern crate log;
 // Core types.
 extern crate uefi;
@@ -212,7 +211,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             }
 
             // If we don't have any shutdown mechanism handy, the best we can do is loop
-            error!("Could not shut down, please power off the system manually...");
+            log::error!("Could not shut down, please power off the system manually...");
 
             cfg_if! {
                 if #[cfg(target_arch = "x86_64")] {

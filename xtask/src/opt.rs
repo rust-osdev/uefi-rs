@@ -101,6 +101,10 @@ pub struct QemuOpt {
     #[clap(long, action)]
     pub disable_kvm: bool,
 
+    /// Disable network tests.
+    #[clap(long, action)]
+    pub disable_network: bool,
+
     /// Disable some tests that don't work in the CI.
     #[clap(long, action)]
     pub ci: bool,

@@ -523,7 +523,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     // Attach network device with DHCP configured for PXE. Skip this for
     // examples since it slows down the boot some.
-    let echo_service = if opt.example.is_none() {
+    let echo_service = if !opt.disable_network && opt.example.is_none() {
         cmd.args([
             "-nic",
             "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",

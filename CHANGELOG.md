@@ -90,6 +90,9 @@
 
 - The `no_panic_handler` feature has been replaced with an additive
   `panic_handler` feature. The new feature is enabled by default.
+- Changed the panic handler log message to use `println!` instead of
+  `error!`. This removes an extraneous file name and line number from
+  the log message.
 
 ## uefi - 0.16.1
 

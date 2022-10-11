@@ -181,7 +181,7 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
 #[cfg(feature = "panic_handler")]
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
-    error!("{}", info);
+    println!("[PANIC]: {}", info);
 
     // Give the user some time to read the message
     if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {

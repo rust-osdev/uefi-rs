@@ -17,6 +17,7 @@
 - Changed `SystemTable::firmware_revision` to return a `u32` instead of
   a `Revision`. The firmware revision's format is vendor specific and
   may not have the same semantics as the UEFI revision.
+- Changed `Revision` to `repr(transparent)`.
 
 ## uefi-macros - [Unreleased]
 

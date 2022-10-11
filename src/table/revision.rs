@@ -6,7 +6,31 @@ use core::fmt;
 ///
 /// The minor revision number is incremented on minor changes,
 /// it is stored as a two-digit binary-coded decimal.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+///
+/// # Display format
+///
+/// For major revision 2 and later, if the lower minor digit is zero,
+/// the revision is formatted as "major.minor-upper". Otherwise it's
+/// formatted as "major.minor-upper.minor-lower". This format is
+/// described in the "EFI System Table" section of the UEFI
+/// Specification.
+///
+/// Prior to major version 2, the revision is always formatted as
+/// "major.minor", with minor left-padded with zero if minor-upper is
+/// zero.
+///
+/// Examples:
+///
+/// ```
+/// use uefi::table::Revision;
+/// assert_eq!(Revision::EFI_1_02.to_string(), "1.02");
+/// assert_eq!(Revision::EFI_1_10.to_string(), "1.10");
+/// assert_eq!(Revision::EFI_2_00.to_string(), "2.0");
+/// assert_eq!(Revision::EFI_2_30.to_string(), "2.3");
+/// assert_eq!(Revision::EFI_2_31.to_string(), "2.3.1");
+/// assert_eq!(Revision::EFI_2_100.to_string(), "2.10");
+/// ```
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct Revision(u32);
 
@@ -50,13 +74,20 @@ impl Revision {
     }
 }
 
-impl fmt::Debug for Revision {
-    /// Formats the revision in the `major.minor.patch` format.
+impl fmt::Display for Revision {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (major, minor) = (self.major(), self.minor());
-        let minor = minor / 10;
-        let patch = minor % 10;
-        write!(f, "{major}.{minor}.{patch}")
+
+        if major < 2 {
+            write!(f, "{major}.{minor:02}")
+        } else {
+            let (minor, patch) = (minor / 10, minor % 10);
+            if patch == 0 {
+                write!(f, "{major}.{minor}")
+            } else {
+                write!(f, "{major}.{minor}.{patch}")
+            }
+        }
     }
 }
 

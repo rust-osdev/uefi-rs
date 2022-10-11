@@ -19,6 +19,9 @@
   may not have the same semantics as the UEFI revision.
 - Changed `Revision` to `repr(transparent)`.
 - Add `Revision::EFI_2_100` constant.
+- The `Revision` type now implements `Display` with correct formatting
+  for all UEFI versions. The custom `Debug` impl has been removed and
+  replaced with a derived `Debug` impl.
 
 ## uefi-macros - [Unreleased]
 

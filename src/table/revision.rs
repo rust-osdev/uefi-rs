@@ -27,6 +27,7 @@ impl Revision {
     pub const EFI_2_70: Self = Self::new(2, 70);
     pub const EFI_2_80: Self = Self::new(2, 80);
     pub const EFI_2_90: Self = Self::new(2, 90);
+    pub const EFI_2_100: Self = Self::new(2, 100);
 }
 
 impl Revision {

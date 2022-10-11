@@ -18,6 +18,7 @@
   a `Revision`. The firmware revision's format is vendor specific and
   may not have the same semantics as the UEFI revision.
 - Changed `Revision` to `repr(transparent)`.
+- Add `Revision::EFI_2_100` constant.
 
 ## uefi-macros - [Unreleased]
 

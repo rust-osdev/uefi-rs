@@ -101,6 +101,10 @@ pub struct QemuOpt {
     #[clap(long, action)]
     pub disable_kvm: bool,
 
+    /// Disable network tests.
+    #[clap(long, action)]
+    pub disable_network: bool,
+
     /// Disable some tests that don't work in the CI.
     #[clap(long, action)]
     pub ci: bool,
@@ -116,6 +120,10 @@ pub struct QemuOpt {
     /// Path of an OVMF vars file.
     #[clap(long, action)]
     pub ovmf_vars: Option<PathBuf>,
+
+    /// Run an example instead of the main binary.
+    #[clap(long, action)]
+    pub example: Option<String>,
 }
 
 /// Build uefi-test-runner and run it in QEMU.

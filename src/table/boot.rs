@@ -1,7 +1,7 @@
 //! UEFI services available during boot.
 
 use super::{Header, Revision};
-use crate::data_types::Align;
+use crate::data_types::{Align, PhysicalAddress, VirtualAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
 #[cfg(feature = "exts")]
 use crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem};
@@ -95,9 +95,9 @@ pub struct BootServices {
         alloc_ty: u32,
         mem_ty: MemoryType,
         count: usize,
-        addr: &mut u64,
+        addr: &mut PhysicalAddress,
     ) -> Status,
-    free_pages: extern "efiapi" fn(addr: u64, pages: usize) -> Status,
+    free_pages: extern "efiapi" fn(addr: PhysicalAddress, pages: usize) -> Status,
     get_memory_map: unsafe extern "efiapi" fn(
         size: &mut usize,
         map: *mut MemoryDescriptor,
@@ -324,17 +324,17 @@ impl BootServices {
         ty: AllocateType,
         mem_ty: MemoryType,
         count: usize,
-    ) -> Result<u64> {
+    ) -> Result<PhysicalAddress> {
         let (ty, mut addr) = match ty {
             AllocateType::AnyPages => (0, 0),
-            AllocateType::MaxAddress(addr) => (1, addr as u64),
-            AllocateType::Address(addr) => (2, addr as u64),
+            AllocateType::MaxAddress(addr) => (1, addr),
+            AllocateType::Address(addr) => (2, addr),
         };
         (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
-    pub fn free_pages(&self, addr: u64, count: usize) -> Result {
+    pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
         (self.free_pages)(addr, count).into()
     }
 
@@ -1522,9 +1522,9 @@ pub enum AllocateType {
     /// Allocate any possible pages.
     AnyPages,
     /// Allocate pages at any address below the given address.
-    MaxAddress(usize),
+    MaxAddress(PhysicalAddress),
     /// Allocate pages at the specified address.
-    Address(usize),
+    Address(PhysicalAddress),
 }
 
 newtype_enum! {
@@ -1594,9 +1594,9 @@ pub struct MemoryDescriptor {
     /// Skip 4 bytes as UEFI declares items in structs should be naturally aligned
     padding: u32,
     /// Starting physical address.
-    pub phys_start: u64,
+    pub phys_start: PhysicalAddress,
     /// Starting virtual address.
-    pub virt_start: u64,
+    pub virt_start: VirtualAddress,
     /// Number of 4 KiB pages contained in this range.
     pub page_count: u64,
     /// The capability attributes of this memory range.

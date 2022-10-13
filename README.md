@@ -53,13 +53,18 @@ This project contains multiple sub-crates:
 
 ## Documentation
 
-The docs for the latest published crate version can be found at
-[docs.rs/uefi/](https://docs.rs/uefi/)
+The [uefi-rs book] contains a tutorial, how-tos, and overviews of some
+important UEFI concepts.
 
-This crate's documentation is fairly minimal, and you are encouraged to refer to
-the [UEFI specification][spec] for detailed information.
+Reference documentation can be found on docs.rs:
+- [docs.rs/uefi](https://docs.rs/uefi)
+- [docs.rs/uefi-macros](https://docs.rs/uefi-macros)
+- [docs.rs/uefi-services](https://docs.rs/uefi-services)
+
+For additional information, refer to the [UEFI specification][spec].
 
 [spec]: http://www.uefi.org/specifications
+[uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD
 
 ## Building and testing uefi-rs
 
@@ -80,6 +85,7 @@ Available commands:
   - `--disable-kvm`: disable hardware accelerated virtualization support in QEMU.
                      Especially useful if you want to run the tests under
                      [WSL](https://docs.microsoft.com/en-us/windows/wsl) on Windows.
+  - `--example <NAME>`: run an example instead of the main binary.
   - `--headless`: run QEMU without a GUI
   - `--ovmf-code <PATH>`: path of an OVMF code file
   - `--ovmf-vars <PATH>`: path of an OVMF vars file
@@ -96,6 +102,11 @@ prerequisites for running the tests.
 ## Building UEFI programs
 
 For instructions on how to create your own UEFI apps, see the [BUILDING.md](BUILDING.md) file.
+
+The uefi-rs crates currently require some [unstable features].
+The nightly MSRV is currently 2022-04-18.
+
+[unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
 
 ## Contributing
 

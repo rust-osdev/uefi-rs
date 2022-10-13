@@ -2,6 +2,17 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- Added `PhysicalAddress` and `VirtualAddress` type aliases.
+
+### Changed
+
+- Fixed the definition of `AllocateType` so that `MaxAddress` and
+  `Address` always take a 64-bit value, regardless of target platform.
+- The conversion methods on `DevicePathToText` and `DevicePathFromText`
+  now return a `uefi::Result` instead of an `Option`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]
@@ -79,6 +90,9 @@
 
 - The `no_panic_handler` feature has been replaced with an additive
   `panic_handler` feature. The new feature is enabled by default.
+- Changed the panic handler log message to use `println!` instead of
+  `error!`. This removes an extraneous file name and line number from
+  the log message.
 
 ## uefi - 0.16.1
 

@@ -12,6 +12,7 @@
   `Address` always take a 64-bit value, regardless of target platform.
 - The conversion methods on `DevicePathToText` and `DevicePathFromText`
   now return a `uefi::Result` instead of an `Option`.
+- `Event` is now a newtype around `NonNull<c_void>` instead of `*mut c_void`.
 
 ## uefi-macros - [Unreleased]
 

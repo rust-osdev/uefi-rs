@@ -37,9 +37,11 @@ impl Handle {
     }
 }
 
-/// Handle to an event structure
+/// Handle to an event structure, guaranteed to be non-null.
+///
+/// If you need to have a nullable event, use `Option<Event>`.
 #[repr(transparent)]
-pub struct Event(*mut c_void);
+pub struct Event(NonNull<c_void>);
 
 impl Event {
     /// Clone this `Event`

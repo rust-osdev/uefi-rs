@@ -214,7 +214,7 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
             // Initialise the task context
             let mut task = DiskIoTask {
                 token: DiskIo2Token {
-                    event: event.unsafe_clone(),
+                    event: Some(event.unsafe_clone()),
                     transaction_status: uefi::Status::NOT_READY,
                 },
                 buffer: [0; 512],

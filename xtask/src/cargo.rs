@@ -221,12 +221,7 @@ impl Cargo {
         }
 
         if let Some(target) = self.target {
-            cmd.args([
-                "--target",
-                target.as_triple(),
-                "-Zbuild-std=core,compiler_builtins,alloc",
-                "-Zbuild-std-features=compiler-builtins-mem",
-            ]);
+            cmd.args(["--target", target.as_triple(), "-Zbuild-std=core,alloc"]);
         }
 
         if self.packages.is_empty() {

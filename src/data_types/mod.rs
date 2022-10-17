@@ -38,7 +38,7 @@ impl Handle {
 }
 
 /// Handle to an event structure, guaranteed to be non-null.
-/// 
+///
 /// If you need to have a nullable event, use `Option<Event>`.
 #[repr(transparent)]
 pub struct Event(NonNull<c_void>);

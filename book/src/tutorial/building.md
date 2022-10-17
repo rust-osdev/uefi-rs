@@ -24,8 +24,7 @@ Run this command to build the application:
 
 ```sh
 cargo build --target x86_64-unknown-uefi \
-    -Zbuild-std=core,compiler_builtins,alloc \
-    -Zbuild-std-features=compiler-builtins-mem
+    -Zbuild-std=core,alloc
 ```
 
 This will produce an x86-64 executable:
@@ -49,8 +48,7 @@ Create `.cargo/config.toml` with these contents:
 target = "x86_64-unknown-uefi"
 
 [unstable]
-build-std = ["core", "compiler_builtins", "alloc"]
-build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "alloc"]
 ```
 
 Now you can build much more simply:

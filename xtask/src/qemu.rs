@@ -403,8 +403,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     let qemu_exe = match arch {
         UefiArch::AArch64 => "qemu-system-aarch64",
-        UefiArch::IA32 => "qemu-system-i386",
-        UefiArch::X86_64 => "qemu-system-x86_64",
+        UefiArch::IA32 | UefiArch::X86_64 => "qemu-system-x86_64",
     };
     let mut cmd = Command::new(qemu_exe);
 
@@ -435,8 +434,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             // A72 is a very generic 64-bit ARM CPU in the wild.
             cmd.args(["-cpu", "cortex-a72"]);
         }
-        UefiArch::IA32 => {}
-        UefiArch::X86_64 => {
+        UefiArch::IA32 | UefiArch::X86_64 => {
             // Use a modern machine.
             cmd.args(["-machine", "q35"]);
 

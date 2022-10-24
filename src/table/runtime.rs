@@ -5,7 +5,7 @@ use super::{Header, Revision};
 use crate::data_types::FromSliceWithNulError;
 use crate::result::Error;
 use crate::table::boot::MemoryDescriptor;
-use crate::{CStr16, Char16, Guid, Result, Status};
+use crate::{guid, CStr16, Char16, Guid, Result, Status};
 #[cfg(feature = "exts")]
 use alloc_api::{vec, vec::Vec};
 use bitflags::bitflags;
@@ -606,22 +606,10 @@ newtype_enum! {
     /// defines some special values, and vendors will define their own.
     pub enum VariableVendor: Guid => {
         /// Used to access global variables.
-        GLOBAL_VARIABLE = Guid::from_values(
-            0x8be4df61,
-            0x93ca,
-            0x11d2,
-            0xaa0d,
-            0x00e098032b8c,
-        ),
+        GLOBAL_VARIABLE = guid!("8be4df61-93ca-11d2-aa0d-00e098032b8c"),
 
         /// Used to access EFI signature database variables.
-        IMAGE_SECURITY_DATABASE = Guid::from_values(
-            0xd719b2cb,
-            0x3d3a,
-            0x4596,
-            0xa3bc,
-            0xdad00e67656f,
-        ),
+        IMAGE_SECURITY_DATABASE = guid!("d719b2cb-3d3a-4596-a3bc-dad00e67656f"),
     }
 }
 

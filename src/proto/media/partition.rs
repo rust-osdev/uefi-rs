@@ -1,7 +1,7 @@
 //! Partition information protocol.
 
 use crate::proto::Protocol;
-use crate::{unsafe_guid, Char16, Guid};
+use crate::{guid, unsafe_guid, Char16, Guid};
 use bitflags::bitflags;
 
 newtype_enum! {
@@ -55,31 +55,13 @@ newtype_enum! {
     /// Partition Type GUIDs.
     pub enum GptPartitionType: Guid => {
         /// Indicates a partition entry is unused.
-        UNUSED_ENTRY = Guid::from_values(
-            0x00000000,
-            0x0000,
-            0x0000,
-            0x0000,
-            0x000000000000,
-        ),
+        UNUSED_ENTRY = guid!("00000000-0000-0000-0000-000000000000"),
 
         /// EFI System Partition.
-        EFI_SYSTEM_PARTITION = Guid::from_values(
-            0xc12a7328,
-            0xf81f,
-            0x11d2,
-            0xba4b,
-            0x00a0c93ec93b,
-        ),
+        EFI_SYSTEM_PARTITION = guid!("c12a7328-f81f-11d2-ba4b-00a0c93ec93b"),
 
         /// Partition containing a legacy MBR.
-        LEGACY_MBR = Guid::from_values(
-            0x024dee41,
-            0x33e7,
-            0x11d3,
-            0x9d69,
-            0x0008c781f39f,
-        ),
+        LEGACY_MBR = guid!("024dee41-33e7-11d3-9d69-0008c781f39f"),
     }
 }
 

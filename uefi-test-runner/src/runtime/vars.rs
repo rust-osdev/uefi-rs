@@ -1,7 +1,7 @@
 use log::info;
+use uefi::guid;
 use uefi::prelude::*;
 use uefi::table::runtime::{VariableAttributes, VariableVendor};
-use uefi::Guid;
 
 fn test_variables(rt: &RuntimeServices) {
     let name = cstr16!("UefiRsTestVar");
@@ -9,13 +9,7 @@ fn test_variables(rt: &RuntimeServices) {
     let test_attrs = VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS;
 
     // Arbitrary GUID generated for this test.
-    let vendor = VariableVendor(Guid::from_values(
-        0x9baf21cf,
-        0xe187,
-        0x497e,
-        0xae77,
-        0x5bd8b0e09703,
-    ));
+    let vendor = VariableVendor(guid!("9baf21cf-e187-497e-ae77-5bd8b0e09703"));
 
     info!("Testing set_variable");
     rt.set_variable(name, &vendor, test_attrs, test_value)

@@ -684,7 +684,7 @@ newtype_enum! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::CString16;
+    use crate::{guid, CString16};
     use alloc_api::vec::Vec;
 
     /// Create a node to `path` from raw data.
@@ -857,12 +857,8 @@ mod tests {
         assert_eq!(hdm.partition_start(), 128);
         assert_eq!(
             hdm.partition_signature(),
-            Some(PartitionSignature::GUID(Guid::from_values(
-                0x41aa39a0,
-                0x3d35,
-                0x4f84,
-                0xb195,
-                0xae3a950bfbad
+            Some(PartitionSignature::GUID(guid!(
+                "41aa39a0-3d35-4f84-b195-ae3a950bfbad"
             )))
         );
     }

@@ -16,6 +16,12 @@
 
 ## uefi-macros - [Unreleased]
 
+### Added
+
+- Added a `guid!` macro. This is similar to `Guid::from_values`, but
+  takes a more convenient string argument like the `unsafe_guid!`
+  attribute macro.
+
 ## uefi-services - [Unreleased]
 
 ## uefi - 0.17.0

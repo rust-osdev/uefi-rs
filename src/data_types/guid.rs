@@ -110,7 +110,7 @@ pub use uefi_macros::unsafe_guid;
 
 #[cfg(test)]
 mod tests {
-    use uefi::unsafe_guid;
+    use uefi::{guid, unsafe_guid};
     extern crate alloc;
     use super::*;
 
@@ -126,7 +126,15 @@ mod tests {
     }
 
     #[test]
-    fn test_unsafe_guid() {
+    fn test_guid_macro() {
+        assert_eq!(
+            guid!("12345678-9abc-def0-1234-56789abcdef0"),
+            Guid::from_values(0x12345678, 0x9abc, 0xdef0, 0x1234, 0x56789abcdef0)
+        );
+    }
+
+    #[test]
+    fn test_unsafe_guid_macro() {
         #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]
         struct X;
 

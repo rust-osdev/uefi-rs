@@ -527,6 +527,10 @@ impl DeviceSubType {
     pub const MESSAGING_DNS: DeviceSubType = DeviceSubType(31);
     /// NVDIMM Namespace Device Path.
     pub const MESSAGING_NVDIMM_NAMESPACE: DeviceSubType = DeviceSubType(32);
+    /// REST Service Device Path.
+    pub const MESSAGING_REST_SERVICE: DeviceSubType = DeviceSubType(33);
+    /// NVME over Fabric (NVMe-oF) Namespace Device Path.
+    pub const MESSAGING_NVME_OF_NAMESPACE: DeviceSubType = DeviceSubType(34);
 
     /// Hard Drive Media Device Path.
     pub const MEDIA_HARD_DRIVE: DeviceSubType = DeviceSubType(1);

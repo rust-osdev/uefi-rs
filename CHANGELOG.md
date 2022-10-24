@@ -8,6 +8,8 @@
 - Added `Guid::from_bytes` and `Guid::to_bytes`.
 - Added `UnalignedSlice` for representing a reference to an unaligned
   slice.
+- Added `DeviceSubType::MESSAGING_REST_SERVICE` and
+  `DeviceSubType::MESSAGING_NVME_OF_NAMESPACE`.
 
 ### Changed
 

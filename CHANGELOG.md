@@ -5,6 +5,7 @@
 ### Added
 
 - Added `PhysicalAddress` and `VirtualAddress` type aliases.
+- Added `Guid::from_bytes` and `Guid::to_bytes`.
 
 ### Changed
 

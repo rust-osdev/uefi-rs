@@ -26,6 +26,7 @@ pub struct Guid {
 
 impl Guid {
     /// Creates a new GUID from its canonical representation
+    #[must_use]
     pub const fn from_values(
         time_low: u32,
         time_mid: u16,
@@ -53,6 +54,36 @@ impl Guid {
                 node[7],
             ],
         }
+    }
+
+    /// Create a GUID from a 16-byte array. No changes to byte order are made.
+    #[must_use]
+    pub const fn from_bytes(bytes: [u8; 16]) -> Self {
+        let a = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+        let b = u16::from_le_bytes([bytes[4], bytes[5]]);
+        let c = u16::from_le_bytes([bytes[6], bytes[7]]);
+        let d = [
+            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15],
+        ];
+
+        Self { a, b, c, d }
+    }
+
+    /// Convert to a 16-byte array.
+    #[must_use]
+    #[rustfmt::skip]
+    pub const fn to_bytes(self) -> [u8; 16] {
+        let a = self.a.to_le_bytes();
+        let b = self.b.to_le_bytes();
+        let c = self.c.to_le_bytes();
+        let d = self.d;
+
+        [
+            a[0], a[1], a[2], a[3],
+            b[0], b[1], c[0], c[1],
+            d[0], d[1], d[2], d[3],
+            d[4], d[5], d[6], d[7],
+        ]
     }
 }
 
@@ -142,5 +173,22 @@ mod tests {
             X::GUID,
             Guid::from_values(0x12345678, 0x9abc, 0xdef0, 0x1234, 0x56789abcdef0)
         );
+    }
+
+    #[test]
+    fn test_to_from_bytes() {
+        #[rustfmt::skip]
+        let bytes = [
+            0x78, 0x56, 0x34, 0x12,
+            0xbc, 0x9a,
+            0xf0, 0xde,
+            0x12, 0x34,
+            0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+        ];
+        assert_eq!(
+            Guid::from_bytes(bytes),
+            Guid::from_values(0x12345678, 0x9abc, 0xdef0, 0x1234, 0x56789abcdef0)
+        );
+        assert_eq!(Guid::from_bytes(bytes).to_bytes(), bytes);
     }
 }

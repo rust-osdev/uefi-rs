@@ -80,6 +80,35 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
     result.into()
 }
 
+/// Create a `Guid` at compile time.
+///
+/// # Example
+///
+/// ```
+/// use uefi::{guid, Guid};
+/// const EXAMPLE_GUID: Guid = guid!("12345678-9abc-def0-1234-56789abcdef0");
+/// ```
+#[proc_macro]
+pub fn guid(args: TokenStream) -> TokenStream {
+    let (time_low, time_mid, time_high_and_version, clock_seq_and_variant, node) =
+        match parse_guid(parse_macro_input!(args as LitStr)) {
+            Ok(data) => data,
+            Err(tokens) => return tokens.into(),
+        };
+
+    quote!({
+        const g: ::uefi::Guid = ::uefi::Guid::from_values(
+            #time_low,
+            #time_mid,
+            #time_high_and_version,
+            #clock_seq_and_variant,
+            #node,
+        );
+        g
+    })
+    .into()
+}
+
 fn parse_guid(guid_lit: LitStr) -> Result<(u32, u16, u16, u16, u64), TokenStream2> {
     let guid_str = guid_lit.value();
 

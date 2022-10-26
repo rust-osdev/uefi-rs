@@ -52,7 +52,9 @@ impl fmt::Debug for Revision {
     /// Formats the revision in the `major.minor.patch` format.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (major, minor) = (self.major(), self.minor());
-        write!(f, "{}.{}.{}", major, minor / 10, minor % 10)
+        let minor = minor / 10;
+        let patch = minor % 10;
+        write!(f, "{major}.{minor}.{patch}")
     }
 }
 

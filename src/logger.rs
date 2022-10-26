@@ -148,12 +148,13 @@ impl<'writer, 'a, W: fmt::Write> fmt::Write for DecoratedLog<'writer, 'a, W> {
             )?;
             self.at_line_start = false;
         }
-        write!(self.writer, "{}", first)?;
+        write!(self.writer, "{first}")?;
 
         // For the remainder of the line iterator (if any), we know that we are
         // truly at the beginning of lines of output.
         for line in lines {
-            write!(self.writer, "\n{}: {}", self.log_level, line)?;
+            let level = self.log_level;
+            write!(self.writer, "\n{level}: {line}")?;
         }
 
         // If the string ends with a newline character, we must 1/propagate it

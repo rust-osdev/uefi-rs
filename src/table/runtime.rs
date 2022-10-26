@@ -519,11 +519,11 @@ impl fmt::Display for Time {
             let fraction_part = offset_in_hours - (integer_part as f32);
             // most time zones
             if fraction_part == 0.0 {
-                write!(f, "UTC+{}", offset_in_hours)?;
+                write!(f, "UTC+{offset_in_hours}")?;
             }
             // time zones with 30min offset (and perhaps other special time zones)
             else {
-                write!(f, "UTC+{:.1}", offset_in_hours)?;
+                write!(f, "UTC+{offset_in_hours:.1}")?;
             }
         }
 
@@ -636,8 +636,8 @@ impl fmt::Display for VariableKey {
         write!(f, "VariableKey {{ name: ")?;
 
         match self.name() {
-            Ok(name) => write!(f, "\"{}\"", name)?,
-            Err(err) => write!(f, "Err({:?})", err)?,
+            Ok(name) => write!(f, "\"{name}\"")?,
+            Err(err) => write!(f, "Err({err:?})")?,
         }
 
         write!(f, ", vendor: ")?;

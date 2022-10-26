@@ -289,7 +289,7 @@ fn echo_filtered_stdout<R: Read, W: Write>(mut child_io: Io<R, W>) {
         let stripped = String::from_utf8(stripped.into()).expect("line is not utf8");
 
         // Print out the processed QEMU output for logging & inspection.
-        println!("{}", stripped);
+        println!("{stripped}");
     }
 }
 
@@ -334,7 +334,7 @@ fn process_qemu_io<R: Read, W: Write>(
             // Compare screenshot to the reference file specified by the user.
             // TODO: Add an operating mode where the reference is created if it doesn't exist.
             let reference_file =
-                Path::new("uefi-test-runner/screenshots").join(format!("{}.ppm", reference_name));
+                Path::new("uefi-test-runner/screenshots").join(format!("{reference_name}.ppm"));
             let expected = fs_err::read(reference_file)?;
             let actual = fs_err::read(&screenshot_path)?;
             assert_eq!(expected, actual);
@@ -390,10 +390,10 @@ impl Drop for ChildWrapper {
         // Try to stop the process, then wait for it to exit. Log errors
         // but otherwise ignore.
         if let Err(err) = self.0.kill() {
-            eprintln!("failed to kill process: {}", err);
+            eprintln!("failed to kill process: {err}");
         }
         if let Err(err) = self.0.wait() {
-            eprintln!("failed to wait for process exit: {}", err);
+            eprintln!("failed to wait for process exit: {err}");
         }
     }
 }
@@ -564,7 +564,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // terminated by a signal.
     let qemu_exit_code = status
         .code()
-        .context(format!("qemu was terminated by a signal: {:?}", status))?;
+        .context(format!("qemu was terminated by a signal: {status:?}"))?;
 
     let successful_exit_code = match arch {
         UefiArch::AArch64 | UefiArch::IA32 => 0,

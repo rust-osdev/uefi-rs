@@ -89,6 +89,10 @@ impl Guid {
 
 impl fmt::Display for Guid {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let a = self.a;
+        let b = self.b;
+        let c = self.c;
+
         let d = {
             let mut buf = [0u8; 2];
             buf[..].copy_from_slice(&self.d[0..2]);
@@ -102,11 +106,7 @@ impl fmt::Display for Guid {
             u64::from_be_bytes(buf)
         };
 
-        write!(
-            fmt,
-            "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}",
-            self.a, self.b, self.c, d, e
-        )
+        write!(fmt, "{a:08x}-{b:04x}-{c:04x}-{d:04x}-{e:012x}",)
     }
 }
 

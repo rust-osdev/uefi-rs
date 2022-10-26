@@ -19,8 +19,8 @@ impl Pipe {
     pub fn new(dir: &Path, base_name: &'static str) -> Result<Self> {
         if platform::is_unix() {
             let qemu_arg = format!("pipe:{}", dir.join(base_name).to_str().unwrap());
-            let input_path = dir.join(format!("{}.in", base_name));
-            let output_path = dir.join(format!("{}.out", base_name));
+            let input_path = dir.join(format!("{base_name}.in"));
+            let output_path = dir.join(format!("{base_name}.out"));
 
             // This part has to be conditionally compiled because the
             // `nix` interfaces don't exist when compiling under
@@ -43,11 +43,11 @@ impl Pipe {
 
             Ok(Self {
                 // QEMU adds the "\\.\pipe\" prefix automatically.
-                qemu_arg: format!("pipe:{}", base_name),
+                qemu_arg: format!("pipe:{base_name}"),
 
                 // On Windows the pipe is duplex, so only one path
                 // needed.
-                input_path: format!(r"\\.\pipe\{}", base_name).into(),
+                input_path: format!(r"\\.\pipe\{base_name}").into(),
                 output_path: PathBuf::new(),
             })
         } else {

@@ -14,6 +14,14 @@
 - The conversion methods on `DevicePathToText` and `DevicePathFromText`
   now return a `uefi::Result` instead of an `Option`.
 - `Event` is now a newtype around `NonNull<c_void>` instead of `*mut c_void`.
+- Changed `SystemTable::firmware_revision` to return a `u32` instead of
+  a `Revision`. The firmware revision's format is vendor specific and
+  may not have the same semantics as the UEFI revision.
+- Changed `Revision` to `repr(transparent)`.
+- Add `Revision::EFI_2_100` constant.
+- The `Revision` type now implements `Display` with correct formatting
+  for all UEFI versions. The custom `Debug` impl has been removed and
+  replaced with a derived `Debug` impl.
 
 ## uefi-macros - [Unreleased]
 

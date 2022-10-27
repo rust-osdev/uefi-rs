@@ -355,6 +355,6 @@ newtype_enum! {
         Stopped = 0,
         Started = 1,
         Initialized = 2,
-        MaxState = 4
+        MaxState = 4,
     }
 }

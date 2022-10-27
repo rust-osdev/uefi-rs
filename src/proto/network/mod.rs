@@ -3,6 +3,7 @@
 //! These protocols can be used to interact with network resources.
 
 pub mod pxe;
+pub mod snp;
 
 /// Represents an IPv4/v6 address.
 ///

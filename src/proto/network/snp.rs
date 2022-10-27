@@ -351,10 +351,15 @@ pub struct NetworkMode {
 }
 
 newtype_enum! {
+    /// The state of a network interface
     pub enum NetworkState: u32 => {
-        Stopped = 0,
-        Started = 1,
-        Initialized = 2,
-        MaxState = 4,
+        /// The interface has been stopped
+        STOPPED = 0,
+        /// The interface has been started
+        STARTED = 1,
+        /// The interface has been initialized
+        INITIALIZED = 2,
+        /// No state can have a number higher than this
+        MAX_STATE = 4,
     }
 }

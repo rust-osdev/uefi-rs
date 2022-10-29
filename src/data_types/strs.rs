@@ -1,4 +1,5 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
+use super::UnalignedSlice;
 use core::fmt;
 use core::iter::Iterator;
 use core::marker::PhantomData;
@@ -261,6 +262,31 @@ impl CStr16 {
         })
     }
 
+    /// Create a [`CStr16`] from an [`UnalignedSlice`] using an aligned
+    /// buffer for storage. The lifetime of the output is tied to `buf`,
+    /// not `src`.
+    pub fn from_unaligned_slice<'buf>(
+        src: &UnalignedSlice<'_, u16>,
+        buf: &'buf mut [MaybeUninit<u16>],
+    ) -> Result<&'buf CStr16, UnalignedCStr16Error> {
+        // The input `buf` might be longer than needed, so get a
+        // subslice of the required length.
+        let buf = buf
+            .get_mut(..src.len())
+            .ok_or(UnalignedCStr16Error::BufferTooSmall)?;
+
+        src.copy_to_maybe_uninit(buf);
+        let buf = unsafe {
+            // Safety: `copy_buf` fully initializes the slice.
+            MaybeUninit::slice_assume_init_ref(buf)
+        };
+        CStr16::from_u16_with_nul(buf).map_err(|e| match e {
+            FromSliceWithNulError::InvalidChar(v) => UnalignedCStr16Error::InvalidChar(v),
+            FromSliceWithNulError::InteriorNul(v) => UnalignedCStr16Error::InteriorNul(v),
+            FromSliceWithNulError::NotNulTerminated => UnalignedCStr16Error::NotNulTerminated,
+        })
+    }
+
     /// Returns the inner pointer to this C string
     pub fn as_ptr(&self) -> *const Char16 {
         self.0.as_ptr()
@@ -482,6 +508,18 @@ impl<'a> UnalignedCStr16<'a> {
             v.set_len(len);
         }
         CString16::try_from(v)
+    }
+}
+
+impl<'a> UnalignedSlice<'a, u16> {
+    /// Create a [`CStr16`] from an [`UnalignedSlice`] using an aligned
+    /// buffer for storage. The lifetime of the output is tied to `buf`,
+    /// not `self`.
+    pub fn to_cstr16<'buf>(
+        &self,
+        buf: &'buf mut [MaybeUninit<u16>],
+    ) -> Result<&'buf CStr16, UnalignedCStr16Error> {
+        CStr16::from_unaligned_slice(self, buf)
     }
 }
 

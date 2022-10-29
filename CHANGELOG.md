@@ -24,6 +24,12 @@
 - The `Revision` type now implements `Display` with correct formatting
   for all UEFI versions. The custom `Debug` impl has been removed and
   replaced with a derived `Debug` impl.
+  
+### Removed
+
+- Removed `UnalignedCStr16`; use `UnalignedSlice` instead. An
+  `UnalignedSlice<u16>` can be converted to a string with `to_cstr16` or
+  `to_cstring16`.
 
 ## uefi-macros - [Unreleased]
 

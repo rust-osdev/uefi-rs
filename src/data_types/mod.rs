@@ -129,8 +129,7 @@ mod enums;
 
 mod strs;
 pub use self::strs::{
-    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16,
-    UnalignedCStr16Error,
+    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16Error,
 };
 
 #[cfg(feature = "exts")]

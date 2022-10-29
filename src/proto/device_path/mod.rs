@@ -68,7 +68,7 @@
 
 pub mod text;
 
-use crate::data_types::UnalignedCStr16;
+use crate::data_types::UnalignedSlice;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{unsafe_guid, Guid};
 use core::ffi::c_void;
@@ -578,10 +578,10 @@ pub struct FilePathMediaDevicePath {
 }
 
 impl FilePathMediaDevicePath {
-    /// Get the path. An [`UnalignedCStr16`] is returned since this is a
+    /// Get the path. An [`UnalignedSlice`] is returned since this is a
     /// packed struct.
-    pub fn path_name(&self) -> UnalignedCStr16<'_> {
-        // Safety: creating this `UnalignedCStr16` is safe because the
+    pub fn path_name(&self) -> UnalignedSlice<u16> {
+        // Safety: creating this `UnalignedSlice` is safe because the
         // `path_name` pointer is valid (although potentially
         // unaligned), and the lifetime of the output is tied to `self`,
         // so there's no possibility of use-after-free.
@@ -589,7 +589,7 @@ impl FilePathMediaDevicePath {
             // Use `addr_of` to avoid creating an unaligned reference.
             let ptr: *const [u16] = ptr::addr_of!(self.path_name);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
-            UnalignedCStr16::new(self, ptr.cast::<u16>(), len)
+            UnalignedSlice::new(ptr.cast::<u16>(), len)
         }
     }
 }

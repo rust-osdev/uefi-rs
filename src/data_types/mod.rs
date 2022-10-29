@@ -138,6 +138,9 @@ mod owned_strs;
 #[cfg(feature = "exts")]
 pub use self::owned_strs::{CString16, FromStrError};
 
+mod unaligned_slice;
+pub use unaligned_slice::UnalignedSlice;
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -6,6 +6,8 @@
 
 - Added `PhysicalAddress` and `VirtualAddress` type aliases.
 - Added `Guid::from_bytes` and `Guid::to_bytes`.
+- Added `UnalignedSlice` for representing a reference to an unaligned
+  slice.
 
 ### Changed
 

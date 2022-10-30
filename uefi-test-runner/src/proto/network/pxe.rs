@@ -8,7 +8,7 @@ use uefi::{
 };
 
 pub fn test(bt: &BootServices) {
-    info!("Testing Network protocols");
+    info!("Testing The PXE base code protocol");
 
     if let Ok(handles) = bt.find_handles::<BaseCode>() {
         for handle in handles {

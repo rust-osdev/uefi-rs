@@ -68,7 +68,7 @@
 
 pub mod text;
 
-use crate::data_types::UnalignedCStr16;
+use crate::data_types::UnalignedSlice;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{unsafe_guid, Guid};
 use core::ffi::c_void;
@@ -446,109 +446,113 @@ pub struct DeviceSubType(pub u8);
 
 impl DeviceSubType {
     /// PCI Device Path.
-    pub const HARDWARE_PCI: DeviceSubType = DeviceSubType(0x01);
+    pub const HARDWARE_PCI: DeviceSubType = DeviceSubType(1);
     /// PCCARD Device Path.
-    pub const HARDWARE_PCCARD: DeviceSubType = DeviceSubType(0x02);
+    pub const HARDWARE_PCCARD: DeviceSubType = DeviceSubType(2);
     /// Memory-mapped Device Path.
-    pub const HARDWARE_MEMORY_MAPPED: DeviceSubType = DeviceSubType(0x03);
+    pub const HARDWARE_MEMORY_MAPPED: DeviceSubType = DeviceSubType(3);
     /// Vendor-Defined Device Path.
-    pub const HARDWARE_VENDOR: DeviceSubType = DeviceSubType(0x04);
+    pub const HARDWARE_VENDOR: DeviceSubType = DeviceSubType(4);
     /// Controller Device Path.
-    pub const HARDWARE_CONTROLLER: DeviceSubType = DeviceSubType(0x05);
+    pub const HARDWARE_CONTROLLER: DeviceSubType = DeviceSubType(5);
     /// BMC Device Path.
-    pub const HARDWARE_BMC: DeviceSubType = DeviceSubType(0x06);
+    pub const HARDWARE_BMC: DeviceSubType = DeviceSubType(6);
 
     /// ACPI Device Path.
-    pub const ACPI: DeviceSubType = DeviceSubType(0x01);
+    pub const ACPI: DeviceSubType = DeviceSubType(1);
     /// Expanded ACPI Device Path.
-    pub const ACPI_EXPANDED: DeviceSubType = DeviceSubType(0x02);
+    pub const ACPI_EXPANDED: DeviceSubType = DeviceSubType(2);
     /// ACPI _ADR Device Path.
-    pub const ACPI_ADR: DeviceSubType = DeviceSubType(0x03);
+    pub const ACPI_ADR: DeviceSubType = DeviceSubType(3);
     /// NVDIMM Device Path.
-    pub const ACPI_NVDIMM: DeviceSubType = DeviceSubType(0x04);
+    pub const ACPI_NVDIMM: DeviceSubType = DeviceSubType(4);
 
     /// ATAPI Device Path.
-    pub const MESSAGING_ATAPI: DeviceSubType = DeviceSubType(0x01);
+    pub const MESSAGING_ATAPI: DeviceSubType = DeviceSubType(1);
     /// SCSI Device Path.
-    pub const MESSAGING_SCSI: DeviceSubType = DeviceSubType(0x02);
+    pub const MESSAGING_SCSI: DeviceSubType = DeviceSubType(2);
     /// Fibre Channel Device Path.
-    pub const MESSAGING_FIBRE_CHANNEL: DeviceSubType = DeviceSubType(0x03);
+    pub const MESSAGING_FIBRE_CHANNEL: DeviceSubType = DeviceSubType(3);
     /// 1394 Device Path.
-    pub const MESSAGING_1394: DeviceSubType = DeviceSubType(0x04);
+    pub const MESSAGING_1394: DeviceSubType = DeviceSubType(4);
     /// USB Device Path.
-    pub const MESSAGING_USB: DeviceSubType = DeviceSubType(0x05);
+    pub const MESSAGING_USB: DeviceSubType = DeviceSubType(5);
     /// I2O Device Path.
-    pub const MESSAGING_I2O: DeviceSubType = DeviceSubType(0x06);
+    pub const MESSAGING_I2O: DeviceSubType = DeviceSubType(6);
     /// Infiniband Device Path.
-    pub const MESSAGING_INFINIBAND: DeviceSubType = DeviceSubType(0x09);
+    pub const MESSAGING_INFINIBAND: DeviceSubType = DeviceSubType(9);
     /// Vendor-Defined Device Path.
-    pub const MESSAGING_VENDOR: DeviceSubType = DeviceSubType(0x0a);
+    pub const MESSAGING_VENDOR: DeviceSubType = DeviceSubType(10);
     /// MAC Address Device Path.
-    pub const MESSAGING_MAC_ADDRESS: DeviceSubType = DeviceSubType(0x0b);
+    pub const MESSAGING_MAC_ADDRESS: DeviceSubType = DeviceSubType(11);
     /// IPV4 Device Path.
-    pub const MESSAGING_IPV4: DeviceSubType = DeviceSubType(0x0c);
+    pub const MESSAGING_IPV4: DeviceSubType = DeviceSubType(12);
     /// IPV6 Device Path.
-    pub const MESSAGING_IPV6: DeviceSubType = DeviceSubType(0x0d);
+    pub const MESSAGING_IPV6: DeviceSubType = DeviceSubType(13);
     /// UART Device Path.
-    pub const MESSAGING_UART: DeviceSubType = DeviceSubType(0x0e);
+    pub const MESSAGING_UART: DeviceSubType = DeviceSubType(14);
     /// USB Class Device Path.
-    pub const MESSAGING_USB_CLASS: DeviceSubType = DeviceSubType(0x0f);
+    pub const MESSAGING_USB_CLASS: DeviceSubType = DeviceSubType(15);
     /// USB WWID Device Path.
-    pub const MESSAGING_USB_WWID: DeviceSubType = DeviceSubType(0x10);
+    pub const MESSAGING_USB_WWID: DeviceSubType = DeviceSubType(16);
     /// Device Logical Unit.
-    pub const MESSAGING_DEVICE_LOGICAL_UNIT: DeviceSubType = DeviceSubType(0x11);
+    pub const MESSAGING_DEVICE_LOGICAL_UNIT: DeviceSubType = DeviceSubType(17);
     /// SATA Device Path.
-    pub const MESSAGING_SATA: DeviceSubType = DeviceSubType(0x12);
+    pub const MESSAGING_SATA: DeviceSubType = DeviceSubType(18);
     /// iSCSI Device Path node (base information).
-    pub const MESSAGING_ISCSI: DeviceSubType = DeviceSubType(0x13);
+    pub const MESSAGING_ISCSI: DeviceSubType = DeviceSubType(19);
     /// VLAN Device Path node.
-    pub const MESSAGING_VLAN: DeviceSubType = DeviceSubType(0x14);
+    pub const MESSAGING_VLAN: DeviceSubType = DeviceSubType(20);
     /// Fibre Channel Ex Device Path.
-    pub const MESSAGING_FIBRE_CHANNEL_EX: DeviceSubType = DeviceSubType(0x15);
+    pub const MESSAGING_FIBRE_CHANNEL_EX: DeviceSubType = DeviceSubType(21);
     /// Serial Attached SCSI (SAS) Ex Device Path.
-    pub const MESSAGING_SCSI_SAS_EX: DeviceSubType = DeviceSubType(0x16);
+    pub const MESSAGING_SCSI_SAS_EX: DeviceSubType = DeviceSubType(22);
     /// NVM Express Namespace Device Path.
-    pub const MESSAGING_NVME_NAMESPACE: DeviceSubType = DeviceSubType(0x17);
+    pub const MESSAGING_NVME_NAMESPACE: DeviceSubType = DeviceSubType(23);
     /// Uniform Resource Identifiers (URI) Device Path.
-    pub const MESSAGING_URI: DeviceSubType = DeviceSubType(0x18);
+    pub const MESSAGING_URI: DeviceSubType = DeviceSubType(24);
     /// UFS Device Path.
-    pub const MESSAGING_UFS: DeviceSubType = DeviceSubType(0x19);
+    pub const MESSAGING_UFS: DeviceSubType = DeviceSubType(25);
     /// SD (Secure Digital) Device Path.
-    pub const MESSAGING_SD: DeviceSubType = DeviceSubType(0x1a);
+    pub const MESSAGING_SD: DeviceSubType = DeviceSubType(26);
     /// Bluetooth Device Path.
-    pub const MESSAGING_BLUETOOTH: DeviceSubType = DeviceSubType(0x1b);
+    pub const MESSAGING_BLUETOOTH: DeviceSubType = DeviceSubType(27);
     /// Wi-Fi Device Path.
-    pub const MESSAGING_WIFI: DeviceSubType = DeviceSubType(0x1c);
+    pub const MESSAGING_WIFI: DeviceSubType = DeviceSubType(28);
     /// eMMC (Embedded Multi-Media Card) Device Path.
-    pub const MESSAGING_EMMC: DeviceSubType = DeviceSubType(0x1d);
+    pub const MESSAGING_EMMC: DeviceSubType = DeviceSubType(29);
     /// BluetoothLE Device Path.
-    pub const MESSAGING_BLUETOOTH_LE: DeviceSubType = DeviceSubType(0x1e);
+    pub const MESSAGING_BLUETOOTH_LE: DeviceSubType = DeviceSubType(30);
     /// DNS Device Path.
-    pub const MESSAGING_DNS: DeviceSubType = DeviceSubType(0x1f);
+    pub const MESSAGING_DNS: DeviceSubType = DeviceSubType(31);
     /// NVDIMM Namespace Device Path.
-    pub const MESSAGING_NVDIMM_NAMESPACE: DeviceSubType = DeviceSubType(0x20);
+    pub const MESSAGING_NVDIMM_NAMESPACE: DeviceSubType = DeviceSubType(32);
+    /// REST Service Device Path.
+    pub const MESSAGING_REST_SERVICE: DeviceSubType = DeviceSubType(33);
+    /// NVME over Fabric (NVMe-oF) Namespace Device Path.
+    pub const MESSAGING_NVME_OF_NAMESPACE: DeviceSubType = DeviceSubType(34);
 
     /// Hard Drive Media Device Path.
-    pub const MEDIA_HARD_DRIVE: DeviceSubType = DeviceSubType(0x01);
+    pub const MEDIA_HARD_DRIVE: DeviceSubType = DeviceSubType(1);
     /// CD-ROM Media Device Path.
-    pub const MEDIA_CD_ROM: DeviceSubType = DeviceSubType(0x02);
+    pub const MEDIA_CD_ROM: DeviceSubType = DeviceSubType(2);
     /// Vendor-Defined Media Device Path.
-    pub const MEDIA_VENDOR: DeviceSubType = DeviceSubType(0x03);
+    pub const MEDIA_VENDOR: DeviceSubType = DeviceSubType(3);
     /// File Path Media Device Path.
-    pub const MEDIA_FILE_PATH: DeviceSubType = DeviceSubType(0x04);
+    pub const MEDIA_FILE_PATH: DeviceSubType = DeviceSubType(4);
     /// Media Protocol Device Path.
-    pub const MEDIA_PROTOCOL: DeviceSubType = DeviceSubType(0x05);
+    pub const MEDIA_PROTOCOL: DeviceSubType = DeviceSubType(5);
     /// PIWG Firmware File.
-    pub const MEDIA_PIWG_FIRMWARE_FILE: DeviceSubType = DeviceSubType(0x06);
+    pub const MEDIA_PIWG_FIRMWARE_FILE: DeviceSubType = DeviceSubType(6);
     /// PIWG Firmware Volume.
-    pub const MEDIA_PIWG_FIRMWARE_VOLUME: DeviceSubType = DeviceSubType(0x07);
+    pub const MEDIA_PIWG_FIRMWARE_VOLUME: DeviceSubType = DeviceSubType(7);
     /// Relative Offset Range.
-    pub const MEDIA_RELATIVE_OFFSET_RANGE: DeviceSubType = DeviceSubType(0x08);
+    pub const MEDIA_RELATIVE_OFFSET_RANGE: DeviceSubType = DeviceSubType(8);
     /// RAM Disk Device Path.
-    pub const MEDIA_RAM_DISK: DeviceSubType = DeviceSubType(0x09);
+    pub const MEDIA_RAM_DISK: DeviceSubType = DeviceSubType(9);
 
     /// BIOS Boot Specification Device Path.
-    pub const BIOS_BOOT_SPECIFICATION: DeviceSubType = DeviceSubType(0x01);
+    pub const BIOS_BOOT_SPECIFICATION: DeviceSubType = DeviceSubType(1);
 
     /// End this instance of a Device Path and start a new one.
     pub const END_INSTANCE: DeviceSubType = DeviceSubType(0x01);
@@ -578,10 +582,10 @@ pub struct FilePathMediaDevicePath {
 }
 
 impl FilePathMediaDevicePath {
-    /// Get the path. An [`UnalignedCStr16`] is returned since this is a
+    /// Get the path. An [`UnalignedSlice`] is returned since this is a
     /// packed struct.
-    pub fn path_name(&self) -> UnalignedCStr16<'_> {
-        // Safety: creating this `UnalignedCStr16` is safe because the
+    pub fn path_name(&self) -> UnalignedSlice<u16> {
+        // Safety: creating this `UnalignedSlice` is safe because the
         // `path_name` pointer is valid (although potentially
         // unaligned), and the lifetime of the output is tied to `self`,
         // so there's no possibility of use-after-free.
@@ -589,7 +593,7 @@ impl FilePathMediaDevicePath {
             // Use `addr_of` to avoid creating an unaligned reference.
             let ptr: *const [u16] = ptr::addr_of!(self.path_name);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
-            UnalignedCStr16::new(self, ptr.cast::<u16>(), len)
+            UnalignedSlice::new(ptr.cast::<u16>(), len)
         }
     }
 }

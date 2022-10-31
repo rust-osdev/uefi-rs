@@ -2,6 +2,7 @@ use super::chars::{Char16, NUL_16};
 use super::strs::{CStr16, FromSliceWithNulError};
 use crate::alloc_api::vec::Vec;
 use crate::data_types::strs::EqStrUntilNul;
+use crate::data_types::UnalignedSlice;
 use core::fmt;
 use core::ops;
 
@@ -82,6 +83,22 @@ impl TryFrom<Vec<u16>> for CString16 {
         };
 
         Ok(Self(rebuilt))
+    }
+}
+
+impl<'a> TryFrom<&UnalignedSlice<'a, u16>> for CString16 {
+    type Error = FromSliceWithNulError;
+
+    fn try_from(input: &UnalignedSlice<u16>) -> Result<Self, Self::Error> {
+        let v = input.to_vec();
+        CString16::try_from(v)
+    }
+}
+
+impl<'a> UnalignedSlice<'a, u16> {
+    /// Copies `self` to a new [`CString16`].
+    pub fn to_cstring16(&self) -> Result<CString16, FromSliceWithNulError> {
+        CString16::try_from(self)
     }
 }
 

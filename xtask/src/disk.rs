@@ -1,6 +1,6 @@
 use anyhow::Result;
 use fatfs::{Date, DateTime, FileSystem, FormatVolumeOptions, FsOptions, StdIoWrapper, Time};
-use mbrman::{MBRPartitionEntry, CHS, MBR};
+use mbrman::{MBRPartitionEntry, BOOT_INACTIVE, CHS, MBR};
 use std::io::{Cursor, Read, Write};
 use std::ops::Range;
 use std::path::Path;
@@ -23,7 +23,7 @@ pub fn create_mbr_test_disk(path: &Path) -> Result<()> {
 
         let mut mbr = MBR::new_from(&mut cur, SECTOR_SIZE as u32, [0xff; 4])?;
         mbr[1] = MBRPartitionEntry {
-            boot: false,
+            boot: BOOT_INACTIVE,
             first_chs: CHS::empty(),
             sys: 0x06,
             last_chs: CHS::empty(),

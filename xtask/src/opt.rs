@@ -126,7 +126,7 @@ pub struct QemuOpt {
     pub example: Option<String>,
 }
 
-/// Build uefi-test-runner and run it in QEMU.
+/// Run unit tests and doctests on the host.
 #[derive(Debug, Parser)]
 pub struct TestOpt;
 

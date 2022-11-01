@@ -212,7 +212,7 @@ impl CStr16 {
     ///
     /// It's the callers responsibility to ensure chars is a valid UCS-2
     /// null-terminated string, with no interior null bytes.
-    pub unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
+    pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
         &*(codes as *const [u16] as *const Self)
     }
 
@@ -567,5 +567,12 @@ mod tests {
     fn test_compare_cstr16() {
         let input: &CStr16 = cstr16!("test");
         test_compare_cstrX!(input);
+    }
+
+    /// Test that the `cstr16!` macro can be used in a `const` context.
+    #[test]
+    fn test_cstr16_macro_const() {
+        const S: &CStr16 = cstr16!("ABC");
+        assert_eq!(S.to_u16_slice_with_nul(), [65, 66, 67, 0]);
     }
 }

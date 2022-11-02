@@ -248,7 +248,7 @@ impl<T: File> FileInternal for T {}
 pub struct FileHandle(*mut FileImpl);
 
 impl FileHandle {
-    pub(super) unsafe fn new(ptr: *mut FileImpl) -> Self {
+    pub(super) const unsafe fn new(ptr: *mut FileImpl) -> Self {
         Self(ptr)
     }
 

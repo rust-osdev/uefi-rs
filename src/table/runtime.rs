@@ -405,7 +405,7 @@ impl Time {
     ///
     /// [`FileInfo`]: uefi::proto::media::file::FileInfo
     /// [`File::set_info`]: uefi::proto::media::file::File::set_info
-    pub fn invalid() -> Self {
+    pub const fn invalid() -> Self {
         Self {
             year: 0,
             month: 0,

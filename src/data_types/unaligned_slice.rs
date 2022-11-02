@@ -58,7 +58,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     /// Returns an iterator over the slice.
     ///
     /// The iterator yields all items from start to end.
-    pub fn iter(&'a self) -> UnalignedSliceIter<'a, T> {
+    pub const fn iter(&'a self) -> UnalignedSliceIter<'a, T> {
         UnalignedSliceIter {
             slice: self,
             index: 0,

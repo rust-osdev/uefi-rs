@@ -141,7 +141,7 @@ impl DevicePathNode {
     }
 
     /// Cast to a [`FfiDevicePath`] pointer.
-    pub fn as_ffi_ptr(&self) -> *const FfiDevicePath {
+    pub const fn as_ffi_ptr(&self) -> *const FfiDevicePath {
         let ptr: *const Self = self;
         ptr.cast::<FfiDevicePath>()
     }
@@ -199,7 +199,7 @@ impl DevicePathInstance {
     /// reached.
     ///
     /// [`DevicePathNodes`]: DevicePathNode
-    pub fn node_iter(&self) -> DevicePathNodeIterator {
+    pub const fn node_iter(&self) -> DevicePathNodeIterator {
         DevicePathNodeIterator {
             nodes: &self.data,
             stop_condition: StopCondition::AnyEndNode,
@@ -271,7 +271,7 @@ impl DevicePath {
     }
 
     /// Get an iterator over the [`DevicePathInstance`]s in this path.
-    pub fn instance_iter(&self) -> DevicePathInstanceIterator {
+    pub const fn instance_iter(&self) -> DevicePathInstanceIterator {
         DevicePathInstanceIterator {
             remaining_path: Some(self),
         }
@@ -281,7 +281,7 @@ impl DevicePath {
     /// `self`. Iteration ends when a path is reached where
     /// [`is_end_entire`][DevicePathNode::is_end_entire] is true. That ending
     /// path is not returned by the iterator.
-    pub fn node_iter(&self) -> DevicePathNodeIterator {
+    pub const fn node_iter(&self) -> DevicePathNodeIterator {
         DevicePathNodeIterator {
             nodes: &self.data,
             stop_condition: StopCondition::EndEntireNode,

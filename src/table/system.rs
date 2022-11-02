@@ -70,7 +70,7 @@ impl<View: SystemTableView> SystemTable<View> {
 
     /// Returns the config table entries, a linear array of structures
     /// pointing to other system-specific tables.
-    pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
+    pub const fn config_table(&self) -> &[cfg::ConfigTableEntry] {
         unsafe { slice::from_raw_parts(self.table.cfg_table, self.table.nr_cfg) }
     }
 
@@ -125,7 +125,7 @@ impl SystemTable<Boot> {
     }
 
     /// Access boot services
-    pub fn boot_services(&self) -> &BootServices {
+    pub const fn boot_services(&self) -> &BootServices {
         unsafe { &*self.table.boot }
     }
 
@@ -220,7 +220,7 @@ impl SystemTable<Boot> {
     /// designs that Rust uses for memory allocation, logging, and panic
     /// handling require taking this risk.
     #[must_use]
-    pub unsafe fn unsafe_clone(&self) -> Self {
+    pub const unsafe fn unsafe_clone(&self) -> Self {
         SystemTable {
             table: self.table,
             _marker: PhantomData,

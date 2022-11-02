@@ -475,7 +475,7 @@ pub struct BltPixel {
 
 impl BltPixel {
     /// Create a new pixel from RGB values.
-    pub fn new(red: u8, green: u8, blue: u8) -> Self {
+    pub const fn new(red: u8, green: u8, blue: u8) -> Self {
         Self {
             red,
             green,

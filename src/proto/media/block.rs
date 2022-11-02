@@ -31,7 +31,7 @@ pub struct BlockIO {
 
 impl BlockIO {
     /// Pointer for block IO media.
-    pub fn media(&self) -> &BlockIOMedia {
+    pub const fn media(&self) -> &BlockIOMedia {
         unsafe { &*self.media }
     }
 

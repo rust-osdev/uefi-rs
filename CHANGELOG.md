@@ -26,6 +26,8 @@
 - The `Revision` type now implements `Display` with correct formatting
   for all UEFI versions. The custom `Debug` impl has been removed and
   replaced with a derived `Debug` impl.
+- `CStr16::from_u16_with_nul_unchecked` and `cstr16!` are now allowed in
+  `const` contexts.
   
 ### Removed
 

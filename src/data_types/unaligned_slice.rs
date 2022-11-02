@@ -36,12 +36,12 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     }
 
     /// Returns true if the slice has a length of 0.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 
     /// Returns the number of elements in the slice.
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len
     }
 

@@ -136,22 +136,22 @@ impl DevicePathNode {
     }
 
     /// Type of device
-    pub fn device_type(&self) -> DeviceType {
+    pub const fn device_type(&self) -> DeviceType {
         self.header.device_type
     }
 
     /// Sub type of device
-    pub fn sub_type(&self) -> DeviceSubType {
+    pub const fn sub_type(&self) -> DeviceSubType {
         self.header.sub_type
     }
 
     /// Tuple of the node's type and subtype.
-    pub fn full_type(&self) -> (DeviceType, DeviceSubType) {
+    pub const fn full_type(&self) -> (DeviceType, DeviceSubType) {
         (self.header.device_type, self.header.sub_type)
     }
 
     /// Size (in bytes) of the full [`DevicePathNode`], including the header.
-    pub fn length(&self) -> u16 {
+    pub const fn length(&self) -> u16 {
         self.header.length
     }
 
@@ -281,7 +281,7 @@ impl DevicePath {
     }
 
     /// Cast to a [`FfiDevicePath`] pointer.
-    pub fn as_ffi_ptr(&self) -> *const FfiDevicePath {
+    pub const fn as_ffi_ptr(&self) -> *const FfiDevicePath {
         let p = self as *const Self;
         p.cast()
     }
@@ -615,22 +615,22 @@ const HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH: u16 = 42;
 
 impl HardDriveMediaDevicePath {
     /// Returns the format of the partition (MBR, GPT, or unknown).
-    pub fn partition_format(&self) -> PartitionFormat {
+    pub const fn partition_format(&self) -> PartitionFormat {
         self.partition_format
     }
 
     /// Returns the 1-based index of the partition.
-    pub fn partition_number(&self) -> u32 {
+    pub const fn partition_number(&self) -> u32 {
         self.partition_number
     }
 
     /// Returns the partition size in logical blocks.
-    pub fn partition_size(&self) -> u64 {
+    pub const fn partition_size(&self) -> u64 {
         self.partition_size
     }
 
     /// Returns the starting LBA of the partition.
-    pub fn partition_start(&self) -> u64 {
+    pub const fn partition_start(&self) -> u64 {
         self.partition_start
     }
 
@@ -729,7 +729,7 @@ mod tests {
         raw_data
     }
 
-    /// Check that `node` has the expected content.    
+    /// Check that `node` has the expected content.
     fn check_node(node: &DevicePathNode, device_type: u8, sub_type: u8, node_data: &[u8]) {
         assert_eq!(node.device_type().0, device_type);
         assert_eq!(node.sub_type().0, sub_type);

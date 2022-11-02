@@ -52,7 +52,7 @@ pub enum LoadOptionsError {
 
 impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
-    pub fn device(&self) -> Handle {
+    pub const fn device(&self) -> Handle {
         self.device_handle
     }
 
@@ -164,7 +164,7 @@ impl LoadedImage {
     }
 
     /// Returns the base address and the size in bytes of the loaded image.
-    pub fn info(&self) -> (*const c_void, u64) {
+    pub const fn info(&self) -> (*const c_void, u64) {
         (self.image_base, self.image_size)
     }
 }

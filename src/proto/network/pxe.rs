@@ -688,39 +688,39 @@ impl<const N: usize> DiscoverInfo<[Server; N]> {
 
 impl<T> DiscoverInfo<T> {
     /// Returns whether discovery should use multicast.
-    pub fn use_m_cast(&self) -> bool {
+    pub const fn use_m_cast(&self) -> bool {
         self.use_m_cast
     }
 
     /// Returns whether discovery should use broadcast.
-    pub fn use_b_cast(&self) -> bool {
+    pub const fn use_b_cast(&self) -> bool {
         self.use_b_cast
     }
 
     /// Returns whether discovery should use unicast.
-    pub fn use_u_cast(&self) -> bool {
+    pub const fn use_u_cast(&self) -> bool {
         self.use_u_cast
     }
 
     /// Returns whether discovery should only accept boot servers in the server
     /// list (boot server verification).
-    pub fn must_use_list(&self) -> bool {
+    pub const fn must_use_list(&self) -> bool {
         self.must_use_list
     }
 
     /// Returns the address used in multicast discovery.
-    pub fn server_m_cast_ip(&self) -> &IpAddress {
+    pub const fn server_m_cast_ip(&self) -> &IpAddress {
         &self.server_m_cast_ip
     }
 
     /// Returns the amount of Boot Server.
-    pub fn ip_cnt(&self) -> u16 {
+    pub const fn ip_cnt(&self) -> u16 {
         self.ip_cnt
     }
 
     /// Returns the Boot Server list used for unicast discovery or boot server
     /// verification.
-    pub fn srv_list(&self) -> &T {
+    pub const fn srv_list(&self) -> &T {
         &self.srv_list
     }
 }
@@ -753,7 +753,7 @@ impl Server {
 
     /// Returns a `None` if the any response should be accepted or the IP
     /// address of a Boot Server whose responses should be accepted.
-    pub fn ip_addr(&self) -> Option<&IpAddress> {
+    pub const fn ip_addr(&self) -> Option<&IpAddress> {
         if self.accept_any_response {
             None
         } else {
@@ -944,22 +944,22 @@ impl DhcpV4Packet {
     pub const DHCP_MAGIK: u32 = 0x63825363;
 
     /// Transaction ID, a random number, used to match this boot request with the responses it generates.
-    pub fn bootp_ident(&self) -> u32 {
+    pub const fn bootp_ident(&self) -> u32 {
         u32::from_be(self.bootp_ident)
     }
 
     /// Filled in by client, seconds elapsed since client started trying to boot.
-    pub fn bootp_seconds(&self) -> u16 {
+    pub const fn bootp_seconds(&self) -> u16 {
         u16::from_be(self.bootp_seconds)
     }
 
     /// The flags.
-    pub fn bootp_flags(&self) -> DhcpV4Flags {
+    pub const fn bootp_flags(&self) -> DhcpV4Flags {
         DhcpV4Flags::from_bits_truncate(u16::from_be(self.bootp_flags))
     }
 
     /// A magic cookie, should be [`Self::DHCP_MAGIK`].
-    pub fn dhcp_magik(&self) -> u32 {
+    pub const fn dhcp_magik(&self) -> u32 {
         u32::from_be(self.dhcp_magik)
     }
 }

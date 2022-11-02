@@ -57,7 +57,7 @@ pub struct DebugSupport {
 
 impl DebugSupport {
     /// Returns the processor architecture of the running CPU.
-    pub fn arch(&self) -> ProcessorArch {
+    pub const fn arch(&self) -> ProcessorArch {
         self.isa
     }
 

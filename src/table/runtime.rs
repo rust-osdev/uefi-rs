@@ -435,42 +435,42 @@ impl Time {
     }
 
     /// Query the year.
-    pub fn year(&self) -> u16 {
+    pub const fn year(&self) -> u16 {
         self.year
     }
 
     /// Query the month.
-    pub fn month(&self) -> u8 {
+    pub const fn month(&self) -> u8 {
         self.month
     }
 
     /// Query the day.
-    pub fn day(&self) -> u8 {
+    pub const fn day(&self) -> u8 {
         self.day
     }
 
     /// Query the hour.
-    pub fn hour(&self) -> u8 {
+    pub const fn hour(&self) -> u8 {
         self.hour
     }
 
     /// Query the minute.
-    pub fn minute(&self) -> u8 {
+    pub const fn minute(&self) -> u8 {
         self.minute
     }
 
     /// Query the second.
-    pub fn second(&self) -> u8 {
+    pub const fn second(&self) -> u8 {
         self.second
     }
 
     /// Query the nanosecond.
-    pub fn nanosecond(&self) -> u32 {
+    pub const fn nanosecond(&self) -> u32 {
         self.nanosecond
     }
 
     /// Query the time offset in minutes from UTC, or None if using local time.
-    pub fn time_zone(&self) -> Option<i16> {
+    pub const fn time_zone(&self) -> Option<i16> {
         if self.time_zone == 2047 {
             None
         } else {
@@ -479,7 +479,7 @@ impl Time {
     }
 
     /// Query the daylight savings time information.
-    pub fn daylight(&self) -> Daylight {
+    pub const fn daylight(&self) -> Daylight {
         self.daylight
     }
 }

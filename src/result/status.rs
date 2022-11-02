@@ -118,7 +118,7 @@ impl Status {
 
     /// Returns true if the status code indicates an error.
     #[inline]
-    pub fn is_error(self) -> bool {
+    pub const fn is_error(self) -> bool {
         self.0 & ERROR_BIT != 0
     }
 

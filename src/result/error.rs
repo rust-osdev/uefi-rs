@@ -11,17 +11,17 @@ pub struct Error<Data: Debug = ()> {
 
 impl<Data: Debug> Error<Data> {
     /// Create an `Error`.
-    pub fn new(status: Status, data: Data) -> Self {
+    pub const fn new(status: Status, data: Data) -> Self {
         Self { status, data }
     }
 
     /// Get error `Status`.
-    pub fn status(&self) -> Status {
+    pub const fn status(&self) -> Status {
         self.status
     }
 
     /// Get error data.
-    pub fn data(&self) -> &Data {
+    pub const fn data(&self) -> &Data {
         &self.data
     }
 

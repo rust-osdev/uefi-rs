@@ -611,7 +611,7 @@ impl BaseCode {
     }
 
     /// Returns a reference to the `Mode` struct.
-    pub fn mode(&self) -> &Mode {
+    pub const fn mode(&self) -> &Mode {
         unsafe { &*self.mode }
     }
 }

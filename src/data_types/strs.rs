@@ -100,12 +100,12 @@ impl CStr8 {
     ///
     /// It's the callers responsibility to ensure chars is a valid Latin-1
     /// null-terminated string, with no interior null bytes.
-    pub unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
+    pub const unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
         &*(chars as *const [u8] as *const Self)
     }
 
     /// Returns the inner pointer to this CStr8.
-    pub fn as_ptr(&self) -> *const Char8 {
+    pub const fn as_ptr(&self) -> *const Char8 {
         self.0.as_ptr()
     }
 
@@ -116,7 +116,7 @@ impl CStr8 {
     }
 
     /// Converts this CStr8 to a slice of bytes containing the trailing null byte.
-    pub fn to_bytes_with_nul(&self) -> &[u8] {
+    pub const fn to_bytes_with_nul(&self) -> &[u8] {
         unsafe { &*(&self.0 as *const [Char8] as *const [u8]) }
     }
 }
@@ -304,12 +304,12 @@ impl CStr16 {
     }
 
     /// Converts this C string to a u16 slice containing the trailing 0 char
-    pub fn to_u16_slice_with_nul(&self) -> &[u16] {
+    pub const fn to_u16_slice_with_nul(&self) -> &[u16] {
         unsafe { &*(&self.0 as *const [Char16] as *const [u16]) }
     }
 
     /// Returns an iterator over this C string
-    pub fn iter(&self) -> CStr16Iter {
+    pub const fn iter(&self) -> CStr16Iter {
         CStr16Iter {
             inner: self,
             pos: 0,

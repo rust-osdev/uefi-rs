@@ -26,6 +26,7 @@ impl<Data: Debug> Error<Data> {
     }
 
     /// Split this error into its inner status and error data
+    #[allow(clippy::missing_const_for_fn)]
     pub fn split(self) -> (Status, Data) {
         (self.status, self.data)
     }

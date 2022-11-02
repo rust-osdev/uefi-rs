@@ -44,7 +44,7 @@ pub struct MbrPartitionRecord {
 
 impl MbrPartitionRecord {
     /// True if the partition is a bootable legacy partition.
-    pub fn is_bootable(&self) -> bool {
+    pub const fn is_bootable(&self) -> bool {
         self.boot_indicator == 0x80
     }
 }
@@ -100,7 +100,7 @@ bitflags! {
 impl GptPartitionAttributes {
     /// Get bits `48..=63` as a [`u16`]. The meaning of these bits depends
     /// on the partition's type (see [`GptPartitionEntry::partition_type_guid`]).
-    pub fn type_specific_bits(&self) -> u16 {
+    pub const fn type_specific_bits(&self) -> u16 {
         (self.bits >> 48) as u16
     }
 }
@@ -188,7 +188,7 @@ pub struct PartitionInfo {
 
 impl PartitionInfo {
     /// True if the partition is an EFI system partition.
-    pub fn is_system(&self) -> bool {
+    pub const fn is_system(&self) -> bool {
         self.system == 1
     }
 

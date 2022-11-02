@@ -44,7 +44,7 @@ impl Input {
 
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for a key to be available
-    pub fn wait_for_key_event(&self) -> &Event {
+    pub const fn wait_for_key_event(&self) -> &Event {
         &self.wait_for_key
     }
 }

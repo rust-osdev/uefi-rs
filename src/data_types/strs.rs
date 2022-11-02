@@ -288,12 +288,12 @@ impl CStr16 {
     }
 
     /// Returns the inner pointer to this C string
-    pub fn as_ptr(&self) -> *const Char16 {
+    pub const fn as_ptr(&self) -> *const Char16 {
         self.0.as_ptr()
     }
 
     /// Get the underlying [`Char16`] slice, including the trailing null.
-    pub fn as_slice_with_nul(&self) -> &[Char16] {
+    pub const fn as_slice_with_nul(&self) -> &[Char16] {
         &self.0
     }
 
@@ -317,7 +317,7 @@ impl CStr16 {
     }
 
     /// Get the number of bytes in the string (including the trailing null character).
-    pub fn num_bytes(&self) -> usize {
+    pub const fn num_bytes(&self) -> usize {
         self.0.len() * 2
     }
 

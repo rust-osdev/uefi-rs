@@ -58,13 +58,13 @@ impl<View: SystemTableView> SystemTable<View> {
     }
 
     /// Return the firmware revision
-    pub fn firmware_revision(&self) -> u32 {
+    pub const fn firmware_revision(&self) -> u32 {
         self.table.fw_revision
     }
 
     /// Returns the revision of this table, which is defined to be
     /// the revision of the UEFI specification implemented by the firmware.
-    pub fn uefi_revision(&self) -> Revision {
+    pub const fn uefi_revision(&self) -> Revision {
         self.table.header.revision
     }
 
@@ -120,7 +120,7 @@ impl SystemTable<Boot> {
     }
 
     /// Access runtime services
-    pub fn runtime_services(&self) -> &RuntimeServices {
+    pub const fn runtime_services(&self) -> &RuntimeServices {
         self.table.runtime
     }
 
@@ -245,7 +245,7 @@ impl SystemTable<Runtime> {
     /// This is unsafe because UEFI runtime services require an elaborate
     /// CPU configuration which may not be preserved by OS loaders. See the
     /// "Calling Conventions" chapter of the UEFI specification for details.
-    pub unsafe fn runtime_services(&self) -> &RuntimeServices {
+    pub const unsafe fn runtime_services(&self) -> &RuntimeServices {
         self.table.runtime
     }
 

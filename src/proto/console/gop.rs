@@ -294,7 +294,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns the frame buffer information for the current mode.
-    pub fn current_mode_info(&self) -> ModeInfo {
+    pub const fn current_mode_info(&self) -> ModeInfo {
         *self.mode.info
     }
 
@@ -377,12 +377,12 @@ impl Mode {
     /// The size of the info structure in bytes.
     ///
     /// Newer versions of the spec might add extra information, in a backwards compatible way.
-    pub fn info_size(&self) -> usize {
+    pub const fn info_size(&self) -> usize {
         self.info_sz
     }
 
     /// Returns a reference to the mode info structure.
-    pub fn info(&self) -> &ModeInfo {
+    pub const fn info(&self) -> &ModeInfo {
         &self.info
     }
 }
@@ -404,17 +404,17 @@ impl ModeInfo {
     /// Returns the (horizontal, vertical) resolution.
     ///
     /// On desktop monitors, this usually means (width, height).
-    pub fn resolution(&self) -> (usize, usize) {
+    pub const fn resolution(&self) -> (usize, usize) {
         (self.hor_res as usize, self.ver_res as usize)
     }
 
     /// Returns the format of the frame buffer.
-    pub fn pixel_format(&self) -> PixelFormat {
+    pub const fn pixel_format(&self) -> PixelFormat {
         self.format
     }
 
     /// Returns the bitmask of the custom pixel format, if available.
-    pub fn pixel_bitmask(&self) -> Option<PixelBitmask> {
+    pub const fn pixel_bitmask(&self) -> Option<PixelBitmask> {
         match self.format {
             PixelFormat::Bitmask => Some(self.mask),
             _ => None,
@@ -425,7 +425,7 @@ impl ModeInfo {
     ///
     /// Due to performance reasons, the stride might not be equal to the width,
     /// instead the stride might be bigger for better alignment.
-    pub fn stride(&self) -> usize {
+    pub const fn stride(&self) -> usize {
         self.stride as usize
     }
 }
@@ -582,7 +582,7 @@ impl<'gop> FrameBuffer<'gop> {
     }
 
     /// Query the framebuffer size in bytes
-    pub fn size(&self) -> usize {
+    pub const fn size(&self) -> usize {
         self.size
     }
 

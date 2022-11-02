@@ -44,7 +44,7 @@ impl<'boot> Serial<'boot> {
     }
 
     /// Returns the current I/O mode.
-    pub fn io_mode(&self) -> &IoMode {
+    pub const fn io_mode(&self) -> &IoMode {
         self.io_mode
     }
 

@@ -189,32 +189,32 @@ impl FileInfo {
     }
 
     /// File size (number of bytes stored in the file)
-    pub fn file_size(&self) -> u64 {
+    pub const fn file_size(&self) -> u64 {
         self.file_size
     }
 
     /// Physical space consumed by the file on the file system volume
-    pub fn physical_size(&self) -> u64 {
+    pub const fn physical_size(&self) -> u64 {
         self.physical_size
     }
 
     /// Time when the file was created
-    pub fn create_time(&self) -> &Time {
+    pub const fn create_time(&self) -> &Time {
         &self.create_time
     }
 
     /// Time when the file was last accessed
-    pub fn last_access_time(&self) -> &Time {
+    pub const fn last_access_time(&self) -> &Time {
         &self.last_access_time
     }
 
     /// Time when the file's contents were last modified
-    pub fn modification_time(&self) -> &Time {
+    pub const fn modification_time(&self) -> &Time {
         &self.modification_time
     }
 
     /// Attribute bits for the file
-    pub fn attribute(&self) -> FileAttribute {
+    pub const fn attribute(&self) -> FileAttribute {
         self.attribute
     }
 
@@ -286,22 +286,22 @@ impl FileSystemInfo {
     }
 
     /// Truth that the volume only supports read access
-    pub fn read_only(&self) -> bool {
+    pub const fn read_only(&self) -> bool {
         self.read_only
     }
 
     /// Number of bytes managed by the file system
-    pub fn volume_size(&self) -> u64 {
+    pub const fn volume_size(&self) -> u64 {
         self.volume_size
     }
 
     /// Number of available bytes for use by the file system
-    pub fn free_space(&self) -> u64 {
+    pub const fn free_space(&self) -> u64 {
         self.free_space
     }
 
     /// Nominal block size by which files are typically grown
-    pub fn block_size(&self) -> u32 {
+    pub const fn block_size(&self) -> u32 {
         self.block_size
     }
 

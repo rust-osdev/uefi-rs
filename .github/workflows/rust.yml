@@ -100,6 +100,9 @@ jobs:
       - name: Run cargo doc
         run: cargo xtask doc --warnings-as-errors
 
+      - name: Verify generated code is up-to-date
+        run: cargo xtask gen-code --check
+
   miri:
     name: Run unit tests and doctests under Miri
     runs-on: ubuntu-latest

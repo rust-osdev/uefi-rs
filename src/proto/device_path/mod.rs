@@ -80,9 +80,8 @@ pub use device_path_gen::{
     acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
 };
 
-use crate::data_types::UnalignedSlice;
 use crate::proto::{Protocol, ProtocolPointer};
-use crate::{unsafe_guid, Guid};
+use crate::unsafe_guid;
 use core::ffi::c_void;
 use core::marker::{PhantomData, PhantomPinned};
 use core::{mem, ptr};
@@ -176,39 +175,6 @@ impl DevicePathNode {
     /// of more specific node types.
     pub fn as_enum(&self) -> Result<DevicePathNodeEnum, NodeConversionError> {
         DevicePathNodeEnum::try_from(self)
-    }
-
-    /// Convert to a [`FilePathMediaDevicePath`]. Returns `None` if the
-    /// node is not of the appropriate type.
-    pub fn as_file_path_media_device_path(&self) -> Option<&FilePathMediaDevicePath> {
-        if self.full_type() == (DeviceType::MEDIA, DeviceSubType::MEDIA_FILE_PATH) {
-            // Get the length of the `path_name` field.
-            let path_name_size_in_bytes = usize::from(self.header.length) - 4;
-            assert!(path_name_size_in_bytes % mem::size_of::<u16>() == 0);
-            let path_name_len = path_name_size_in_bytes / mem::size_of::<u16>();
-
-            // Convert the `self` pointer to `FilePathMediaDevicePath`,
-            // which is a DST as it ends in a slice.
-            let p = self as *const Self;
-            let p: *const FilePathMediaDevicePath = ptr::from_raw_parts(p.cast(), path_name_len);
-            Some(unsafe { &*p })
-        } else {
-            None
-        }
-    }
-
-    /// Convert to a [`HardDriveMediaDevicePath`]. Returns `None` if the
-    /// node is not of the appropriate type.
-    pub fn as_hard_drive_media_device_path(&self) -> Option<&HardDriveMediaDevicePath> {
-        if self.full_type() == (DeviceType::MEDIA, DeviceSubType::MEDIA_HARD_DRIVE) {
-            assert!({ self.header.length } == HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH);
-
-            let p = self as *const Self;
-            let p = p.cast::<HardDriveMediaDevicePath>();
-            Some(unsafe { &*p })
-        } else {
-            None
-        }
     }
 }
 
@@ -578,131 +544,6 @@ impl DeviceSubType {
     pub const END_ENTIRE: DeviceSubType = DeviceSubType(0xff);
 }
 
-/// ACPI Device Path
-#[repr(C, packed)]
-pub struct AcpiDevicePath {
-    header: DevicePathHeader,
-
-    /// Device's PnP hardware ID stored in a numeric 32-bit compressed EISA-type ID. This value must match the
-    /// corresponding _HID in the ACPI name space.
-    pub hid: u32,
-    /// Unique ID that is required by ACPI if two devices have the same _HID. This value must also match the
-    /// corresponding _UID/_HID pair in the ACPI name space. Only the 32-bit numeric value type of _UID is supported;
-    /// thus strings must not be used for the _UID in the ACPI name space.
-    pub uid: u32,
-}
-
-/// File Path Media Device Path.
-#[repr(C, packed)]
-pub struct FilePathMediaDevicePath {
-    header: DevicePathHeader,
-    path_name: [u16],
-}
-
-impl FilePathMediaDevicePath {
-    /// Get the path. An [`UnalignedSlice`] is returned since this is a
-    /// packed struct.
-    pub fn path_name(&self) -> UnalignedSlice<u16> {
-        // Safety: creating this `UnalignedSlice` is safe because the
-        // `path_name` pointer is valid (although potentially
-        // unaligned), and the lifetime of the output is tied to `self`,
-        // so there's no possibility of use-after-free.
-        unsafe {
-            // Use `addr_of` to avoid creating an unaligned reference.
-            let ptr: *const [u16] = ptr::addr_of!(self.path_name);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
-            UnalignedSlice::new(ptr.cast::<u16>(), len)
-        }
-    }
-}
-
-/// Hard Drive Media Device Path.
-#[repr(C, packed)]
-pub struct HardDriveMediaDevicePath {
-    header: DevicePathHeader,
-    partition_number: u32,
-    partition_start: u64,
-    partition_size: u64,
-    partition_signature: PartitionSignatureUnion,
-    partition_format: PartitionFormat,
-    signature_type: SignatureType,
-}
-
-/// [`HardDriveMediaDevicePath`] is a fixed-length structure of 42 bytes.
-const HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH: u16 = 42;
-
-impl HardDriveMediaDevicePath {
-    /// Returns the format of the partition (MBR, GPT, or unknown).
-    pub const fn partition_format(&self) -> PartitionFormat {
-        self.partition_format
-    }
-
-    /// Returns the 1-based index of the partition.
-    pub const fn partition_number(&self) -> u32 {
-        self.partition_number
-    }
-
-    /// Returns the partition size in logical blocks.
-    pub const fn partition_size(&self) -> u64 {
-        self.partition_size
-    }
-
-    /// Returns the starting LBA of the partition.
-    pub const fn partition_start(&self) -> u64 {
-        self.partition_start
-    }
-
-    /// Returns the MBR or GPT partition signature
-    pub fn partition_signature(&self) -> Option<PartitionSignature> {
-        match self.signature_type {
-            SignatureType::MBR => {
-                let mbr_signature = unsafe { self.partition_signature.mbr_signature };
-                Some(PartitionSignature::MBR(mbr_signature))
-            }
-            SignatureType::GUID => {
-                let guid = unsafe { self.partition_signature.guid };
-                Some(PartitionSignature::GUID(guid))
-            }
-            _ => None,
-        }
-    }
-}
-
-newtype_enum! {
-    /// Partition format.
-    pub enum PartitionFormat: u8 => {
-        /// MBR (PC-AT compatible Master Boot Record) format.
-        MBR = 0x01,
-        /// GPT (GUID Partition Table) format.
-        GPT = 0x02,
-    }
-}
-
-/// Partition signature.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum PartitionSignature {
-    /// 32-bit MBR partition signature.
-    MBR(u32),
-    /// 128-bit GUID partition signature.
-    GUID(Guid),
-}
-
-#[repr(C)]
-union PartitionSignatureUnion {
-    mbr_signature: u32,
-    guid: Guid,
-}
-
-newtype_enum! {
-    /// Signature type.
-    enum SignatureType: u8 => {
-        /// 32-bit MBR partition signature.
-        MBR = 0x01,
-        /// 128-bit GUID partition signature.
-        GUID = 0x02,
-    }
-}
-
 /// Error returned when converting from a [`DevicePathNode`] to a more
 /// specific node type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -717,7 +558,6 @@ pub enum NodeConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{guid, CString16};
     use alloc_api::vec::Vec;
 
     /// Create a node to `path` from raw data.
@@ -822,77 +662,5 @@ mod tests {
 
         // Only two instances.
         assert!(iter.next().is_none());
-    }
-
-    #[test]
-    fn test_file_path_media() {
-        // Manually create data for a `FilePathMediaDevicePath` node.
-        let raw_data: [u16; 7] = [
-            // MEDIA | MEDIA_FILE_PATH
-            0x0404,
-            // Length
-            0x00_0e,
-            b't'.into(),
-            b'e'.into(),
-            b's'.into(),
-            b't'.into(),
-            // Trailing null.
-            0,
-        ];
-
-        // Convert the raw data to a `DevicePath` node.
-        let dp = unsafe { DevicePathNode::from_ffi_ptr(raw_data.as_ptr().cast()) };
-        assert_eq!(dp.length(), 14);
-
-        // Check that the `file_name` is correct.
-        let fpm = dp.as_file_path_media_device_path().unwrap();
-        assert_eq!(
-            fpm.path_name().to_cstring16().unwrap(),
-            CString16::try_from("test").unwrap()
-        );
-    }
-
-    #[test]
-    fn test_hard_drive_media_mbr() {
-        let mbr_partition_bytes: [u8; 42] = [
-            0x04, 0x01, 0x2a, 0x00, 0x01, 0x00, 0x00, 0x00, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0xc1, 0xbf, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfa, 0xfd, 0x1a, 0xbe,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
-        ];
-        let dp = unsafe { DevicePathNode::from_ffi_ptr(mbr_partition_bytes.as_ptr().cast()) };
-        assert_eq!(dp.length(), HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH);
-
-        let hdm = dp.as_hard_drive_media_device_path().unwrap();
-        assert_eq!(hdm.partition_format(), PartitionFormat::MBR);
-        assert_eq!(hdm.partition_number(), 1);
-        assert_eq!(hdm.partition_size(), 1032129);
-        assert_eq!(hdm.partition_start(), 63);
-        assert_eq!(
-            hdm.partition_signature(),
-            Some(PartitionSignature::MBR(0xBE1AFDFA))
-        );
-    }
-
-    #[test]
-    fn test_hard_drive_media_gpt() {
-        let guid_partition_bytes: [u8; 42] = [
-            0x04, 0x01, 0x2a, 0x00, 0x01, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x10, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x39, 0xaa, 0x41,
-            0x35, 0x3d, 0x84, 0x4f, 0xb1, 0x95, 0xae, 0x3a, 0x95, 0x0b, 0xfb, 0xad, 0x02, 0x02,
-        ];
-        let dp = unsafe { DevicePathNode::from_ffi_ptr(guid_partition_bytes.as_ptr().cast()) };
-        assert_eq!(dp.length(), HARD_DRIVE_MEDIA_DEVICE_PATH_LENGTH);
-
-        let hdm = dp.as_hard_drive_media_device_path().unwrap();
-        assert_eq!(hdm.partition_format(), PartitionFormat::GPT);
-        assert_eq!(hdm.partition_number(), 1);
-        assert_eq!(hdm.partition_size(), 200704);
-        assert_eq!(hdm.partition_start(), 128);
-        assert_eq!(
-            hdm.partition_signature(),
-            Some(PartitionSignature::GUID(guid!(
-                "41aa39a0-3d35-4f84-b195-ae3a950bfbad"
-            )))
-        );
     }
 }

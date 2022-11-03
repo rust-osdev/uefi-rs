@@ -40,6 +40,13 @@
 - Removed `UnalignedCStr16`; use `UnalignedSlice` instead. An
   `UnalignedSlice<u16>` can be converted to a string with `to_cstr16` or
   `to_cstring16`.
+- Removed `as_file_path_media_device_path` and
+  `as_hard_drive_media_device_path` from `DevicePathNode`. Use
+  `DevicePathNode::as_enum` instead. Alternatively, convert with `TryInto`,
+  e.g. `let node: &proto::device_path::media::HardDrive = node.try_into()?`.
+- Removed `AcpiDevicePath` and `HardDriveMediaDevicePath`. Use
+  `proto::device_path::acpi::Acpi` and
+  `proto::device_path::media::HardDrive` instead.  `
 
 ## uefi-macros - [Unreleased]
 

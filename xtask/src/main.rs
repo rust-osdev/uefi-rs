@@ -1,5 +1,6 @@
 mod arch;
 mod cargo;
+mod device_path;
 mod disk;
 mod net;
 mod opt;
@@ -188,6 +189,7 @@ fn main() -> Result<()> {
         Action::Build(build_opt) => build(build_opt),
         Action::Clippy(clippy_opt) => clippy(clippy_opt),
         Action::Doc(doc_opt) => doc(doc_opt),
+        Action::GenCode(gen_opt) => device_path::gen_code(gen_opt),
         Action::Miri(_) => run_miri(),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(_) => run_host_tests(),

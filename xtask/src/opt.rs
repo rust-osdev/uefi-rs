@@ -47,6 +47,7 @@ pub enum Action {
     Build(BuildOpt),
     Clippy(ClippyOpt),
     Doc(DocOpt),
+    GenCode(GenCodeOpt),
     Miri(MiriOpt),
     Run(QemuOpt),
     Test(TestOpt),
@@ -82,6 +83,17 @@ pub struct DocOpt {
 
     #[clap(flatten)]
     pub warning: WarningOpt,
+}
+
+/// Update auto-generated Rust code.
+///
+/// This is used to generate `device_path_gen.rs`. See
+/// `xtask/src/device_path/README.md` for more information.
+#[derive(Debug, Parser)]
+pub struct GenCodeOpt {
+    /// Exit 0 if the generated code is up-to-date, exit 1 if not.
+    #[clap(long)]
+    pub check: bool,
 }
 
 /// Run unit tests and doctests under Miri.

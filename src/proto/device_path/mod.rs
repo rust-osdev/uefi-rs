@@ -39,11 +39,17 @@
 //!   node's [`device_type`] and [`sub_type`] must be examined to
 //!   determine what type of data it contains.
 //!
-//!   Specific node types have their own structures, but only a few are
-//!   currently implemented:
-//!   * [`AcpiDevicePath`]
-//!   * [`FilePathMediaDevicePath`]
-//!   * [`HardDriveMediaDevicePath`]
+//!   Specific node types have their own structures in these submodules:
+//!   * [`acpi`]
+//!   * [`bios_boot_spec`]
+//!   * [`end`]
+//!   * [`hardware`]
+//!   * [`media`]
+//!   * [`messaging`]
+//!
+//! * [`DevicePathNodeEnum`] contains variants for references to each
+//!   type of node. Call [`DevicePathNode::as_enum`] to convert from a
+//!   [`DevicePathNode`] reference to a `DevicePathNodeEnum`.
 //!
 //! * [`DevicePathHeader`] is a header present at the start of every
 //!   node. It describes the type of node as well as the node's size.
@@ -66,7 +72,13 @@
 //! [`device_type`]: DevicePathNode::device_type
 //! [`sub_type`]: DevicePathNode::sub_type
 
+pub mod build;
 pub mod text;
+
+mod device_path_gen;
+pub use device_path_gen::{
+    acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
+};
 
 use crate::data_types::UnalignedSlice;
 use crate::proto::{Protocol, ProtocolPointer};
@@ -158,6 +170,12 @@ impl DevicePathNode {
     /// True if this node ends an entire [`DevicePath`].
     pub fn is_end_entire(&self) -> bool {
         self.full_type() == (DeviceType::END, DeviceSubType::END_ENTIRE)
+    }
+
+    /// Convert from a generic [`DevicePathNode`] reference to an enum
+    /// of more specific node types.
+    pub fn as_enum(&self) -> Result<DevicePathNodeEnum, NodeConversionError> {
+        DevicePathNodeEnum::try_from(self)
     }
 
     /// Convert to a [`FilePathMediaDevicePath`]. Returns `None` if the
@@ -683,6 +701,17 @@ newtype_enum! {
         /// 128-bit GUID partition signature.
         GUID = 0x02,
     }
+}
+
+/// Error returned when converting from a [`DevicePathNode`] to a more
+/// specific node type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NodeConversionError {
+    /// The length of the node data is not valid for its type.
+    InvalidLength,
+
+    /// The node type is not currently supported.
+    UnsupportedType,
 }
 
 #[cfg(test)]

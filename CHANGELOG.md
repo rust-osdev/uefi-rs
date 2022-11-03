@@ -13,6 +13,9 @@
 - Added `MemoryAttribute::SPECIAL_PURPOSE`, `MemoryAttribute::CPU_CRYPTO`,
   `MemoryAttribute::ISA_VALID`, and `MemoryAttribute::ISA_MASK`.
 - Added the `UnicodeCollation` protocol
+- Added structs to represent each type of device path node. All node
+  types specified in the UEFI 2.10 Specification are now supported.
+- Added `DevicePathBuilder` for building new device paths.
 
 ### Changed
 

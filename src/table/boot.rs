@@ -129,7 +129,7 @@ pub struct BootServices {
 
     // Protocol handlers
     install_protocol_interface: unsafe extern "efiapi" fn(
-        handle: Option<&Handle>,
+        handle: NonNull<Option<Handle>>,
         guid: &Guid,
         interface_type: InterfaceType,
         interface: Option<NonNull<c_void>>,
@@ -633,8 +633,8 @@ impl BootServices {
         }
     }
 
-    /// Installs a protocol interface on a device handle. If `handle` is `None`, one will be
-    /// created and added to the list of handles in the system and then returned.
+    /// Installs a protocol interface on a device handle. If the inner `Option` in `handle` is `None`,
+    /// one will be created and added to the list of handles in the system and then returned."
     ///
     /// When a protocol interface is installed, firmware will call all functions that have registered
     /// to wait for that interface to be installed.
@@ -644,19 +644,23 @@ impl BootServices {
     /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
     pub unsafe fn install_protocol_interface(
         &self,
-        handle: Option<&Handle>,
+        mut handle: Option<Handle>,
         protocol: &Guid,
         interface: Option<NonNull<c_void>>,
     ) -> Result<Handle> {
+        // Safety: The given pointer is guaranteed to be non-null, even though what it's indirectly pointing to
+        // may be null, thus this is safe
+        let handle_ptr = NonNull::new(&mut handle as *mut _).unwrap_unchecked();
+
         ((self.install_protocol_interface)(
-            handle,
+            handle_ptr,
             protocol,
             InterfaceType::NATIVE_INTERFACE,
             interface,
         ))
         // this `unwrapped_unchecked` is safe, `handle` is guaranteed to be Some() if this call is
         // successful
-        .into_with_val(|| *handle.unwrap_unchecked())
+        .into_with_val(|| handle.unwrap_unchecked())
     }
 
     /// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.

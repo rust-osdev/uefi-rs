@@ -19,6 +19,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     network::test(bt);
     pi::test(bt);
     rng::test(bt);
+    string::test(bt);
 
     #[cfg(any(
         target_arch = "i386",
@@ -71,3 +72,4 @@ mod rng;
     target_arch = "aarch64"
 ))]
 mod shim;
+mod string;

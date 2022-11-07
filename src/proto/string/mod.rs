@@ -1,4 +1,4 @@
-//! String protocols
+//! String protocols.
 //!
 //! The protocols provide some string operations like
 //! lexical comparison.

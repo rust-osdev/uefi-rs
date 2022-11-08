@@ -43,6 +43,7 @@ use uefi::{Event, Result};
 static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 
 /// Global logger object
+#[cfg(feature = "logger")]
 static mut LOGGER: Option<uefi::logger::Logger> = None;
 
 /// Obtains a pointer to the system table.
@@ -77,7 +78,10 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
         SYSTEM_TABLE = Some(st.unsafe_clone());
 
         // Setup logging and memory allocation
+
+        #[cfg(feature = "logger")]
         init_logger(st);
+
         let boot_services = st.boot_services();
         uefi::alloc::init(boot_services);
 
@@ -144,6 +148,7 @@ macro_rules! println {
 ///
 /// This is unsafe because you must arrange for the logger to be reset with
 /// disable() on exit from UEFI boot services.
+#[cfg(feature = "logger")]
 unsafe fn init_logger(st: &mut SystemTable<Boot>) {
     let stdout = st.stdout();
 
@@ -170,6 +175,8 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
     //
     // info!("Shutting down the UEFI utility library");
     SYSTEM_TABLE = None;
+
+    #[cfg(feature = "logger")]
     if let Some(ref mut logger) = LOGGER {
         logger.disable();
     }

@@ -12,6 +12,7 @@
   `DeviceSubType::MESSAGING_NVME_OF_NAMESPACE`.
 - Added `MemoryAttribute::SPECIAL_PURPOSE`, `MemoryAttribute::CPU_CRYPTO`,
   `MemoryAttribute::ISA_VALID`, and `MemoryAttribute::ISA_MASK`.
+- Added the `UnicodeCollation` protocol
 
 ### Changed
 

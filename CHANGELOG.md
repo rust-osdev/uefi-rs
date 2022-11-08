@@ -53,6 +53,10 @@
   `error!`. This removes an extraneous file name and line number from
   the log message.
 
+- Added a `logger` feature which reflects the same feature in `uefi`.
+  This allows using both crates while disabling `logger` in `uefi`,
+  which was previously impossible.
+
 ## uefi - 0.17.0
 
 ### Added

@@ -3,8 +3,7 @@
 ## Nightly toolchain
 
 Rust's nightly toolchain is currently required because uefi-rs uses some
-unstable features. The [`build-std`] feature we use to build the
-standard libraries is also unstable.
+unstable features.
 
 The easiest way to set this up is using a [rustup toolchain file]. In
 the root of your repository, add `rust-toolchain.toml`:
@@ -12,51 +11,24 @@ the root of your repository, add `rust-toolchain.toml`:
 ```toml
 [toolchain]
 channel = "nightly"
-components = ["rust-src"]
+targets = ["x86_64-unknown-uefi"]
 ```
 
+Here we have specified the `x86_64-unknown-uefi` target; there are also
+`i686-unknown-uefi` and `aarch64-unknown-uefi` targets available.
+
 Note that nightly releases can sometimes break, so you might opt to pin
-to a specific release. For example, `channel = "nightly-2022-09-01"`.
+to a specific release. For example, `channel = "nightly-2022-11-10"`.
 
 ## Build the application
 
 Run this command to build the application:
 
 ```sh
-cargo build --target x86_64-unknown-uefi \
-    -Zbuild-std=core,alloc
+cargo build --target x86_64-unknown-uefi
 ```
 
 This will produce an x86-64 executable:
 `target/x86_64-unknown-uefi/debug/my-uefi-app.efi`.
 
-## Simplifying the build command
-
-The above build command is verbose and not easy to remember. With a bit
-of configuration we can simplify it a lot.
-
-Create a `.cargo` directory in the root of the project:
-
-```sh
-mkdir .cargo
-```
-
-Create `.cargo/config.toml` with these contents:
-
-```toml
-[build]
-target = "x86_64-unknown-uefi"
-
-[unstable]
-build-std = ["core", "alloc"]
-```
-
-Now you can build much more simply:
-
-```sh
-cargo build
-```
-
-[`build-std`]: https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std
-[`rust-toolchain.toml`]: https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file
-[rustup toolchain file]: https://rust-lang.github.io/rustup/concepts/toolchains.html
+[rustup toolchain file]: https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file

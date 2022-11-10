@@ -1,7 +1,7 @@
 //! UEFI services available during boot.
 
 use super::{Header, Revision};
-use crate::data_types::{Align, PhysicalAddress, SearchKey, VirtualAddress};
+use crate::data_types::{Align, PhysicalAddress, VirtualAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
 #[cfg(feature = "exts")]
 use crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem};
@@ -129,31 +129,34 @@ pub struct BootServices {
 
     // Protocol handlers
     install_protocol_interface: unsafe extern "efiapi" fn(
-        handle: NonNull<Option<Handle>>,
+        handle: &mut Option<Handle>,
         guid: &Guid,
         interface_type: InterfaceType,
-        interface: Option<NonNull<c_void>>,
+        interface: *mut c_void,
     ) -> Status,
     reinstall_protocol_interface: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: &Guid,
-        old_interface: Option<NonNull<c_void>>,
-        new_interface: Option<NonNull<c_void>>,
+        old_interface: *mut c_void,
+        new_interface: *mut c_void,
     ) -> Status,
     uninstall_protocol_interface: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: &Guid,
-        interface: Option<NonNull<c_void>>,
+        interface: *mut c_void,
     ) -> Status,
     handle_protocol:
         extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
-    register_protocol_notify:
-        extern "efiapi" fn(protocol: &Guid, event: Event, registration: *mut SearchKey) -> Status,
+    register_protocol_notify: extern "efiapi" fn(
+        protocol: &Guid,
+        event: Event,
+        registration: *mut ProtocolSearchKey,
+    ) -> Status,
     locate_handle: unsafe extern "efiapi" fn(
         search_ty: i32,
         proto: Option<&Guid>,
-        key: Option<SearchKey>,
+        key: Option<ProtocolSearchKey>,
         buf_sz: &mut usize,
         buf: *mut MaybeUninit<Handle>,
     ) -> Status,
@@ -237,7 +240,7 @@ pub struct BootServices {
     locate_handle_buffer: unsafe extern "efiapi" fn(
         search_ty: i32,
         proto: Option<&Guid>,
-        key: Option<SearchKey>,
+        key: Option<ProtocolSearchKey>,
         no_handles: &mut usize,
         buf: &mut *mut Handle,
     ) -> Status,
@@ -634,7 +637,7 @@ impl BootServices {
     }
 
     /// Installs a protocol interface on a device handle. If the inner `Option` in `handle` is `None`,
-    /// one will be created and added to the list of handles in the system and then returned."
+    /// one will be created and added to the list of handles in the system and then returned.
     ///
     /// When a protocol interface is installed, firmware will call all functions that have registered
     /// to wait for that interface to be installed.
@@ -646,14 +649,10 @@ impl BootServices {
         &self,
         mut handle: Option<Handle>,
         protocol: &Guid,
-        interface: Option<NonNull<c_void>>,
+        interface: *mut c_void,
     ) -> Result<Handle> {
-        // Safety: The given pointer is guaranteed to be non-null, even though what it's indirectly pointing to
-        // may be null, thus this is safe
-        let handle_ptr = NonNull::new(&mut handle as *mut _).unwrap_unchecked();
-
         ((self.install_protocol_interface)(
-            handle_ptr,
+            &mut handle,
             protocol,
             InterfaceType::NATIVE_INTERFACE,
             interface,
@@ -678,8 +677,8 @@ impl BootServices {
         &self,
         handle: Handle,
         protocol: &Guid,
-        old_interface: Option<NonNull<c_void>>,
-        new_interface: Option<NonNull<c_void>>,
+        old_interface: *mut c_void,
+        new_interface: *mut c_void,
     ) -> Result<()> {
         (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface).into()
     }
@@ -698,7 +697,7 @@ impl BootServices {
         &self,
         handle: Handle,
         protocol: &Guid,
-        interface: Option<NonNull<c_void>>,
+        interface: *mut c_void,
     ) -> Result<()> {
         (self.uninstall_protocol_interface)(handle, protocol, interface).into()
     }
@@ -752,12 +751,17 @@ impl BootServices {
         &self,
         protocol: &Guid,
         event: Event,
-    ) -> Result<(Event, SearchKey)> {
-        let mut key: MaybeUninit<SearchKey> = MaybeUninit::uninit();
+    ) -> Result<(Event, SearchType)> {
+        let mut key: MaybeUninit<ProtocolSearchKey> = MaybeUninit::uninit();
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
         unsafe { (self.register_protocol_notify)(protocol, event.unsafe_clone(), key.as_mut_ptr()) }
             // Safety: as long as this call is successful, `key` will be valid.
-            .into_with_val(|| unsafe { (event.unsafe_clone(), key.assume_init()) })
+            .into_with_val(|| unsafe {
+                (
+                    event.unsafe_clone(),
+                    SearchType::ByRegisterNotify(key.assume_init()),
+                )
+            })
     }
 
     /// Enumerates all handles installed on the system which match a certain query.
@@ -1840,20 +1844,13 @@ pub enum SearchType<'guid> {
     ByProtocol(&'guid Guid),
     /// Return all handles that implement a protocol when an interface for that protocol
     /// is (re)installed.
-    ByRegisterNotify(SearchKey),
+    ByRegisterNotify(ProtocolSearchKey),
 }
 
 impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
     pub fn from_proto<P: Protocol>() -> Self {
         SearchType::ByProtocol(&P::GUID)
-    }
-}
-
-impl SearchType<'_> {
-    /// Constructs a new search type from a SearchKey.
-    pub fn from_search_key(key: SearchKey) -> Self {
-        SearchType::ByRegisterNotify(key)
     }
 }
 
@@ -1970,3 +1967,9 @@ pub enum InterfaceType: i32 => {
     NATIVE_INTERFACE    = 0,
 }
 }
+
+/// Opaque pointer returned by [`BootServices::register_protocol_notify`] to be used
+/// with [`BootServices::locate_handle`] via [`SearchType::ByRegisterNotify`].
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct ProtocolSearchKey(NonNull<c_void>);

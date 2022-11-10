@@ -20,7 +20,7 @@
   `BootServices::uninstall_protocol_interface`, and
   `BootServices::reinstall_protocol_interface`.
 - Added `BootServices::register_protocol_notify`.
-- Added `SearchType::ByRegisterNotify` and `SearchKey` type.
+- Added `SearchType::ByRegisterNotify`and `ProtocolSearchKey`.
 
 ### Changed
 

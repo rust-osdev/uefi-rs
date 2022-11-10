@@ -117,12 +117,6 @@ pub type PhysicalAddress = u64;
 /// of target platform.
 pub type VirtualAddress = u64;
 
-/// Opaque pointer returned by `BootServices::register_protocol_notify() to be used
-/// with `BootServices::locate_handle` as the `key` parameter.
-#[derive(Debug, Clone, Copy)]
-#[repr(transparent)]
-pub struct SearchKey(NonNull<c_void>);
-
 mod guid;
 pub use self::guid::Guid;
 pub use self::guid::{unsafe_guid, Identify};

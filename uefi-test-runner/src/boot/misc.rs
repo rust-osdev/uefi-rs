@@ -1,5 +1,5 @@
 use core::ffi::c_void;
-use core::ptr::NonNull;
+use core::ptr::{self, NonNull};
 
 use uefi::proto::Protocol;
 use uefi::table::boot::{BootServices, EventType, SearchType, TimerTrigger, Tpl};
@@ -108,7 +108,7 @@ fn test_install_protocol_interface(bt: &BootServices) {
     info!("Installing TestProtocol");
 
     let _ = unsafe {
-        bt.install_protocol_interface(None, &TestProtocol::GUID, None)
+        bt.install_protocol_interface(None, &TestProtocol::GUID, ptr::null_mut())
             .expect("Failed to install protocol interface")
     };
 
@@ -125,7 +125,12 @@ fn test_reinstall_protocol_interface(bt: &BootServices) {
         .handles()[0];
 
     unsafe {
-        let _ = bt.reinstall_protocol_interface(handle, &TestProtocol::GUID, None, None);
+        let _ = bt.reinstall_protocol_interface(
+            handle,
+            &TestProtocol::GUID,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        );
     }
 }
 
@@ -137,7 +142,7 @@ fn test_uninstall_protocol_interface(bt: &BootServices) {
         .handles()[0];
 
     unsafe {
-        bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, None)
+        bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, ptr::null_mut())
             .expect("Failed to uninstall protocol interface");
     }
 }

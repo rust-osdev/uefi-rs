@@ -8,7 +8,6 @@ how to build and run a UEFI application developed using `uefi-rs`.
 
 ## File structure
 
-- [`.cargo/config`](./.cargo/config) sets some `build-std` options.
 - [`rust-toolchain.toml`](rust-toolchain.toml) sets the nightly channel.
 - [`Cargo.toml`](./Cargo.toml) shows the necessary dependencies.
 - [`src/main.rs`](./src/main.rs) has a minimal entry point that

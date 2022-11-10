@@ -26,7 +26,9 @@ outside of the `uefi-rs` repo.
   ```toml
   [toolchain]
   channel = "nightly"
-  components = ["rust-src"]
+
+  # Install the x86_64 UEFI target; aarch64 and i686 are also available.
+  targets = ["x86_64-unknown-uefi"]
   ```
 
 - Build the crate:

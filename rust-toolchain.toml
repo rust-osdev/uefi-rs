@@ -1,6 +1,3 @@
 [toolchain]
 channel = "nightly"
-
-# Install the `rust-src` component so that `-Zbuild-std` works. This in
-# addition to the components included in the default profile.
-components = ["rust-src"]
+targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]

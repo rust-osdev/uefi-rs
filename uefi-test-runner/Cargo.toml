@@ -1,7 +1,7 @@
 [package]
 name = "uefi-test-runner"
 version = "0.2.0"
-authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+authors = ["The Rust OSDev team"]
 publish = false
 edition = "2021"
 
@@ -9,7 +9,7 @@ edition = "2021"
 uefi = { path = "../uefi", features = ['alloc'] }
 uefi-services = { path = "../uefi-services" }
 
-log = { version = "0.4.11", default-features = false }
+log = { version = "0.4.17", default-features = false }
 
 qemu-exit = "3.0.0"
 

@@ -99,7 +99,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
             .open_protocol_exclusive::<Serial>(serial_handle)
             .expect("Could not open serial protocol");
 
-        // Set a large timeout to avoid problems with Travis
+        // Set a large timeout to avoid problems with CI
         let mut io_mode = *serial.io_mode();
         io_mode.timeout = 10_000_000;
         serial

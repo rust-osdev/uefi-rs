@@ -1,18 +1,14 @@
 [package]
 name = "uefi-services"
 version = "0.15.0"
-authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+authors = ["The Rust OSDev team"]
+readme = "README.md"
 edition = "2021"
-description = "Higher-level utilities for uefi-rs"
+description = "Higher-level utilities for the `uefi` crate."
 repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
-
-[badges]
-travis-ci = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 
 [dependencies]
 uefi = { version = "0.18.0", features = ["global_allocator"] }

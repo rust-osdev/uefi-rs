@@ -1,19 +1,14 @@
 [package]
 name = "uefi-macros"
 version = "0.9.0"
-authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
+authors = ["The Rust OSDev team"]
 readme = "README.md"
 edition = "2021"
-description = "Procedural macros for the uefi-rs crate"
+description = "Procedural macros for the `uefi` crate."
 repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
-
-[badges]
-travis-ci = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
-is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
 
 [lib]
 proc-macro = true

@@ -23,6 +23,9 @@ fn test_file_system_info(directory: &mut Directory) {
     assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
 }
 
+/// Tests the following protocols:
+/// - [`SimpleFileSystem`]
+/// - [`PartitionInfo`]
 pub fn test(bt: &BootServices) {
     info!("Testing Media Access protocols");
 

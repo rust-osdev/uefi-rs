@@ -16,6 +16,11 @@
 - Added structs to represent each type of device path node. All node
   types specified in the UEFI 2.10 Specification are now supported.
 - Added `DevicePathBuilder` for building new device paths.
+- Added `BootServices::install_protocol_interface`,
+  `BootServices::uninstall_protocol_interface`, and
+  `BootServices::reinstall_protocol_interface`.
+- Added `BootServices::register_protocol_notify`.
+- Added `SearchType::ByRegisterNotify`and `ProtocolSearchKey`.
 
 ### Changed
 

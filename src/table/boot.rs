@@ -128,17 +128,35 @@ pub struct BootServices {
     check_event: unsafe extern "efiapi" fn(event: Event) -> Status,
 
     // Protocol handlers
-    install_protocol_interface: usize,
-    reinstall_protocol_interface: usize,
-    uninstall_protocol_interface: usize,
+    install_protocol_interface: unsafe extern "efiapi" fn(
+        handle: &mut Option<Handle>,
+        guid: &Guid,
+        interface_type: InterfaceType,
+        interface: *mut c_void,
+    ) -> Status,
+    reinstall_protocol_interface: unsafe extern "efiapi" fn(
+        handle: Handle,
+        protocol: &Guid,
+        old_interface: *mut c_void,
+        new_interface: *mut c_void,
+    ) -> Status,
+    uninstall_protocol_interface: unsafe extern "efiapi" fn(
+        handle: Handle,
+        protocol: &Guid,
+        interface: *mut c_void,
+    ) -> Status,
     handle_protocol:
         extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
-    register_protocol_notify: usize,
+    register_protocol_notify: extern "efiapi" fn(
+        protocol: &Guid,
+        event: Event,
+        registration: *mut ProtocolSearchKey,
+    ) -> Status,
     locate_handle: unsafe extern "efiapi" fn(
         search_ty: i32,
-        proto: *const Guid,
-        key: *mut c_void,
+        proto: Option<&Guid>,
+        key: Option<ProtocolSearchKey>,
         buf_sz: &mut usize,
         buf: *mut MaybeUninit<Handle>,
     ) -> Status,
@@ -221,8 +239,8 @@ pub struct BootServices {
     ) -> Status,
     locate_handle_buffer: unsafe extern "efiapi" fn(
         search_ty: i32,
-        proto: *const Guid,
-        key: *const c_void,
+        proto: Option<&Guid>,
+        key: Option<ProtocolSearchKey>,
         no_handles: &mut usize,
         buf: &mut *mut Handle,
     ) -> Status,
@@ -618,6 +636,72 @@ impl BootServices {
         }
     }
 
+    /// Installs a protocol interface on a device handle. If the inner `Option` in `handle` is `None`,
+    /// one will be created and added to the list of handles in the system and then returned.
+    ///
+    /// When a protocol interface is installed, firmware will call all functions that have registered
+    /// to wait for that interface to be installed.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+    pub unsafe fn install_protocol_interface(
+        &self,
+        mut handle: Option<Handle>,
+        protocol: &Guid,
+        interface: *mut c_void,
+    ) -> Result<Handle> {
+        ((self.install_protocol_interface)(
+            &mut handle,
+            protocol,
+            InterfaceType::NATIVE_INTERFACE,
+            interface,
+        ))
+        // this `unwrapped_unchecked` is safe, `handle` is guaranteed to be Some() if this call is
+        // successful
+        .into_with_val(|| handle.unwrap_unchecked())
+    }
+
+    /// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
+    /// These interfaces may be the same, in which case the registered protocol notifies occur for the handle
+    /// without replacing the interface.
+    ///
+    /// As with `install_protocol_interface`, any process that has registered to wait for the installation of
+    /// the interface is notified.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring that there are no references to the `old_interface` that is being
+    /// removed.
+    pub unsafe fn reinstall_protocol_interface(
+        &self,
+        handle: Handle,
+        protocol: &Guid,
+        old_interface: *mut c_void,
+        new_interface: *mut c_void,
+    ) -> Result<()> {
+        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface).into()
+    }
+
+    /// Removes a protocol interface from a device handle.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring that there are no references to a protocol interface
+    /// that has been removed. Some protocols may not be able to be removed as there is no information
+    /// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
+    /// to device protocols.
+    ///
+    /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+    pub unsafe fn uninstall_protocol_interface(
+        &self,
+        handle: Handle,
+        protocol: &Guid,
+        interface: *mut c_void,
+    ) -> Result<()> {
+        (self.uninstall_protocol_interface)(handle, protocol, interface).into()
+    }
+
     /// Query a handle for a certain protocol.
     ///
     /// This function attempts to get the protocol implementation of a handle,
@@ -655,6 +739,31 @@ impl BootServices {
         })
     }
 
+    /// Registers `event` to be signalled whenever a protocol interface is registered for
+    /// `protocol` by `install_protocol_interface()` or `reinstall_protocol_interface()`.
+    ///
+    /// Once `event` has been signalled, `BootServices::locate_handle()` can be used to identify
+    /// the newly (re)installed handles that support `protocol`. The returned `SearchKey` on success
+    /// corresponds to the `search_key` parameter in `locate_handle()`.
+    ///
+    /// Events can be unregistered from protocol interface notification by calling `close_event()`.
+    pub fn register_protocol_notify(
+        &self,
+        protocol: &Guid,
+        event: Event,
+    ) -> Result<(Event, SearchType)> {
+        let mut key: MaybeUninit<ProtocolSearchKey> = MaybeUninit::uninit();
+        // Safety: we clone `event` a couple times, but there will be only one left once we return.
+        unsafe { (self.register_protocol_notify)(protocol, event.unsafe_clone(), key.as_mut_ptr()) }
+            // Safety: as long as this call is successful, `key` will be valid.
+            .into_with_val(|| unsafe {
+                (
+                    event.unsafe_clone(),
+                    SearchType::ByRegisterNotify(key.assume_init()),
+                )
+            })
+    }
+
     /// Enumerates all handles installed on the system which match a certain query.
     ///
     /// You should first call this function with `None` for the output buffer,
@@ -677,8 +786,9 @@ impl BootServices {
 
         // Obtain the needed data from the parameters.
         let (ty, guid, key) = match search_ty {
-            SearchType::AllHandles => (0, ptr::null(), ptr::null_mut()),
-            SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
+            SearchType::AllHandles => (0, None, None),
+            SearchType::ByRegisterNotify(registration) => (1, None, Some(registration)),
+            SearchType::ByProtocol(guid) => (2, Some(guid), None),
         };
 
         let status = unsafe { (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
@@ -1095,8 +1205,9 @@ impl BootServices {
 
         // Obtain the needed data from the parameters.
         let (ty, guid, key) = match search_ty {
-            SearchType::AllHandles => (0, ptr::null(), ptr::null_mut()),
-            SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null_mut()),
+            SearchType::AllHandles => (0, None, None),
+            SearchType::ByRegisterNotify(registration) => (1, None, Some(registration)),
+            SearchType::ByProtocol(guid) => (2, Some(guid), None),
         };
 
         unsafe { (self.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
@@ -1731,7 +1842,9 @@ pub enum SearchType<'guid> {
     /// If the protocol implements the `Protocol` interface,
     /// you can use the `from_proto` function to construct a new `SearchType`.
     ByProtocol(&'guid Guid),
-    // TODO: add ByRegisterNotify once the corresponding function is implemented.
+    /// Return all handles that implement a protocol when an interface for that protocol
+    /// is (re)installed.
+    ByRegisterNotify(ProtocolSearchKey),
 }
 
 impl<'guid> SearchType<'guid> {
@@ -1844,3 +1957,19 @@ impl<'a> HandleBuffer<'a> {
         unsafe { slice::from_raw_parts(self.buffer, self.count) }
     }
 }
+
+newtype_enum! {
+/// Interface type of a protocol interface
+///
+/// Only has one variant when this was written (v2.10 of the UEFI spec)
+pub enum InterfaceType: i32 => {
+    /// Native interface
+    NATIVE_INTERFACE    = 0,
+}
+}
+
+/// Opaque pointer returned by [`BootServices::register_protocol_notify`] to be used
+/// with [`BootServices::locate_handle`] via [`SearchType::ByRegisterNotify`].
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct ProtocolSearchKey(NonNull<c_void>);

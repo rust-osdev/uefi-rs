@@ -1,8 +1,9 @@
 use core::ffi::c_void;
-use core::ptr::NonNull;
+use core::ptr::{self, NonNull};
 
-use uefi::table::boot::{BootServices, EventType, TimerTrigger, Tpl};
-use uefi::Event;
+use uefi::proto::Protocol;
+use uefi::table::boot::{BootServices, EventType, SearchType, TimerTrigger, Tpl};
+use uefi::{unsafe_guid, Event, Identify};
 
 pub fn test(bt: &BootServices) {
     info!("Testing timer...");
@@ -12,6 +13,11 @@ pub fn test(bt: &BootServices) {
     test_callback_with_ctx(bt);
     info!("Testing watchdog...");
     test_watchdog(bt);
+    info!("Testing protocol handler services...");
+    test_register_protocol_notify(bt);
+    test_install_protocol_interface(bt);
+    test_reinstall_protocol_interface(bt);
+    test_uninstall_protocol_interface(bt);
 }
 
 fn test_timer(bt: &BootServices) {
@@ -71,4 +77,72 @@ fn test_watchdog(bt: &BootServices) {
     // Disable the UEFI watchdog timer
     bt.set_watchdog_timer(0, 0x10000, None)
         .expect("Could not set watchdog timer");
+}
+
+/// Dummy protocol for tests
+#[unsafe_guid("1a972918-3f69-4b5d-8cb4-cece2309c7f5")]
+#[derive(Protocol)]
+struct TestProtocol {}
+
+unsafe extern "efiapi" fn _test_notify(_event: Event, _context: Option<NonNull<c_void>>) {
+    info!("Protocol was (re)installed and this function notified.")
+}
+
+fn test_register_protocol_notify(bt: &BootServices) {
+    let protocol = &TestProtocol::GUID;
+    let event = unsafe {
+        bt.create_event(
+            EventType::NOTIFY_SIGNAL,
+            Tpl::NOTIFY,
+            Some(_test_notify),
+            None,
+        )
+        .expect("Failed to create an event")
+    };
+
+    bt.register_protocol_notify(protocol, event)
+        .expect("Failed to register protocol notify fn");
+}
+
+fn test_install_protocol_interface(bt: &BootServices) {
+    info!("Installing TestProtocol");
+
+    let _ = unsafe {
+        bt.install_protocol_interface(None, &TestProtocol::GUID, ptr::null_mut())
+            .expect("Failed to install protocol interface")
+    };
+
+    let _ = bt
+        .locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
+        .expect("Failed to find protocol after it was installed");
+}
+
+fn test_reinstall_protocol_interface(bt: &BootServices) {
+    info!("Reinstalling TestProtocol");
+    let handle = bt
+        .locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
+        .expect("Failed to find protocol to uninstall")
+        .handles()[0];
+
+    unsafe {
+        let _ = bt.reinstall_protocol_interface(
+            handle,
+            &TestProtocol::GUID,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        );
+    }
+}
+
+fn test_uninstall_protocol_interface(bt: &BootServices) {
+    info!("Uninstalling TestProtocol");
+    let handle = bt
+        .locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
+        .expect("Failed to find protocol to uninstall")
+        .handles()[0];
+
+    unsafe {
+        bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, ptr::null_mut())
+            .expect("Failed to uninstall protocol interface");
+    }
 }

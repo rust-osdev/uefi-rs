@@ -7,6 +7,7 @@
   - [Running in a VM](tutorial/vm.md)
 - [How-to](how_to/introduction.md)
   - [Using Protocols](how_to/protocols.md)
+  - [Crate Features](how_to/crate_features.md)
 - [Concepts](concepts/introduction.md)
   - [Boot Stages](concepts/boot_stages.md)
   - [Tables](concepts/tables.md)

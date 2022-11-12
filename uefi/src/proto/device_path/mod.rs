@@ -558,7 +558,7 @@ pub enum NodeConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc_api::vec::Vec;
+    use alloc::vec::Vec;
 
     /// Create a node to `path` from raw data.
     fn add_node(path: &mut Vec<u8>, device_type: u8, sub_type: u8, node_data: &[u8]) {

@@ -1,16 +1,16 @@
 //! UEFI services available at runtime, even after the OS boots.
 
 use super::{Header, Revision};
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 use crate::data_types::FromSliceWithNulError;
 use crate::result::Error;
 use crate::table::boot::MemoryDescriptor;
 use crate::{guid, CStr16, Char16, Guid, Result, Status};
-#[cfg(feature = "exts")]
-use alloc_api::{vec, vec::Vec};
+#[cfg(feature = "alloc")]
+use alloc::{vec, vec::Vec};
 use bitflags::bitflags;
 use core::fmt::{Debug, Formatter};
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 use core::mem;
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
@@ -157,7 +157,7 @@ impl RuntimeServices {
     }
 
     /// Get the names and vendor GUIDs of all currently-set variables.
-    #[cfg(feature = "exts")]
+    #[cfg(feature = "alloc")]
     pub fn variable_keys(&self) -> Result<Vec<VariableKey>> {
         let mut all_variables = Vec::new();
 
@@ -614,7 +614,7 @@ newtype_enum! {
 }
 
 /// Unique key for a variable.
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 #[derive(Debug)]
 pub struct VariableKey {
     name: Vec<u16>,
@@ -622,7 +622,7 @@ pub struct VariableKey {
     pub vendor: VariableVendor,
 }
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 impl VariableKey {
     /// Name of the variable.
     pub fn name(&self) -> core::result::Result<&CStr16, FromSliceWithNulError> {
@@ -630,7 +630,7 @@ impl VariableKey {
     }
 }
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 impl fmt::Display for VariableKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "VariableKey {{ name: ")?;

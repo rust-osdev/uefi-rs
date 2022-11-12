@@ -13,7 +13,7 @@ license = "MPL-2.0"
 [features]
 default = ["panic-on-logger-errors"]
 alloc = []
-exts = []
+global_allocator = []
 logger = []
 # Ignore text output errors in logger as a workaround for firmware issues that
 # were observed on the VirtualBox UEFI implementation (see uefi-rs#121).

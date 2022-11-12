@@ -74,7 +74,7 @@ fn doc(opt: &DocOpt) -> Result<()> {
 fn run_miri() -> Result<()> {
     let cargo = Cargo {
         action: CargoAction::Miri,
-        features: [Feature::Exts].into(),
+        features: [Feature::Alloc].into(),
         packages: [Package::Uefi].into(),
         release: false,
         target: None,
@@ -129,7 +129,7 @@ fn run_host_tests() -> Result<()> {
     // Run uefi-rs and uefi-macros tests.
     let cargo = Cargo {
         action: CargoAction::Test,
-        features: vec![Feature::Exts],
+        features: vec![Feature::Alloc],
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
         packages: vec![Package::Uefi, Package::UefiMacros],

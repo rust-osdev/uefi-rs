@@ -11,13 +11,13 @@ use crate::proto::device_path::{DevicePath, DevicePathNode};
 use core::mem::MaybeUninit;
 use core::ptr;
 
-#[cfg(feature = "exts")]
-use alloc_api::vec::Vec;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 /// A builder for [`DevicePaths`].
 ///
 /// The builder can be constructed with either a fixed-length buffer or
-/// (if the `exts` feature is enabled) a `Vec`.
+/// (if the `alloc` feature is enabled) a `Vec`.
 ///
 /// Nodes are added via the [`push`] method. To construct a node, use one
 /// of the structs in these submodules:
@@ -82,7 +82,7 @@ impl<'a> DevicePathBuilder<'a> {
     }
 
     /// Create a builder backed by a `Vec`.
-    #[cfg(feature = "exts")]
+    #[cfg(feature = "alloc")]
     pub fn with_vec(v: &'a mut Vec<u8>) -> Self {
         Self {
             storage: BuilderStorage::Vec(v),
@@ -107,7 +107,7 @@ impl<'a> DevicePathBuilder<'a> {
                 );
                 *offset += node_size;
             }
-            #[cfg(feature = "exts")]
+            #[cfg(feature = "alloc")]
             BuilderStorage::Vec(vec) => {
                 let old_size = vec.len();
                 vec.reserve(node_size);
@@ -134,7 +134,7 @@ impl<'a> DevicePathBuilder<'a> {
             BuilderStorage::Buf { buf, offset } => unsafe {
                 MaybeUninit::slice_assume_init_ref(&buf[..*offset])
             },
-            #[cfg(feature = "exts")]
+            #[cfg(feature = "alloc")]
             BuilderStorage::Vec(vec) => vec,
         };
 
@@ -149,7 +149,7 @@ enum BuilderStorage<'a> {
         offset: usize,
     },
 
-    #[cfg(feature = "exts")]
+    #[cfg(feature = "alloc")]
     Vec(&'a mut Vec<u8>),
 }
 
@@ -450,7 +450,7 @@ mod tests {
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
             // Logical unit number
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            
+
             // End-entire node
             0x7f, 0xff, 0x04, 0x00,
         ]);

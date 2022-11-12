@@ -30,6 +30,8 @@
 
 ### Changed
 
+- Renamed crate feature `alloc` to `global_allocator`.
+- Renamed crate feature `exts` to `alloc`.
 - Fixed the definition of `AllocateType` so that `MaxAddress` and
   `Address` always take a 64-bit value, regardless of target platform.
 - The conversion methods on `DevicePathToText` and `DevicePathFromText`

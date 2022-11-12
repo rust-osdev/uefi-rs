@@ -132,9 +132,9 @@ pub use self::strs::{
     CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16Error,
 };
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 mod owned_strs;
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 pub use self::owned_strs::{CString16, FromStrError};
 
 mod unaligned_slice;

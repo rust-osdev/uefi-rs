@@ -3,12 +3,12 @@
 use super::{Header, Revision};
 use crate::data_types::{Align, PhysicalAddress, VirtualAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 use crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem};
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{Char16, Event, Guid, Handle, Result, Status};
-#[cfg(feature = "exts")]
-use alloc_api::vec::Vec;
+#[cfg(feature = "alloc")]
+use ::alloc::vec::Vec;
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -1265,7 +1265,7 @@ impl BootServices {
     }
 }
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 impl BootServices {
     /// Returns all the handles implementing a certain protocol.
     pub fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>> {

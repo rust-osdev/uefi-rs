@@ -6,7 +6,7 @@ use core::mem::MaybeUninit;
 use core::result::Result;
 use core::slice;
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 use super::CString16;
 
 /// Errors which can occur during checked `[uN]` -> `CStrN` conversions
@@ -397,7 +397,7 @@ impl fmt::Display for CStr16 {
     }
 }
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 impl PartialEq<CString16> for &CStr16 {
     fn eq(&self, other: &CString16) -> bool {
         PartialEq::eq(*self, other.as_ref())
@@ -447,7 +447,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc_api::string::String;
+    use crate::alloc::string::String;
     use uefi_macros::{cstr16, cstr8};
 
     #[test]

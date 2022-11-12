@@ -245,8 +245,8 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
     }
 }
 
-/// Run various tests on a special test disk. The disk is created by
-/// xtask/src/disk.rs.
+/// Run various file-system related tests on a special test disk. The disk is created by
+/// `xtask/src/disk.rs`.
 pub fn test_known_disk(bt: &BootServices) {
     // This test is only valid when running in the specially-prepared
     // qemu with the test disk.

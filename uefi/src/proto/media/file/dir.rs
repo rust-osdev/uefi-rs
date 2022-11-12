@@ -4,14 +4,7 @@ use crate::Result;
 use core::ffi::c_void;
 
 #[cfg(feature = "alloc")]
-use {
-    crate::{ResultExt, Status},
-    ::alloc::boxed::Box,
-    alloc::alloc,
-    core::alloc::Layout,
-    core::ptr::NonNull,
-    core::slice,
-};
+use {crate::mem::make_boxed, alloc::boxed::Box};
 
 /// A `FileHandle` that is also a directory.
 ///
@@ -77,51 +70,15 @@ impl Directory {
             return Ok(None);
         }
 
-        let required_size = match read_entry_res
-            .expect_err("zero sized read unexpectedly succeeded")
-            .split()
-        {
-            // Early return if something has failed.
-            (s, None) => return Err(s.into()),
-            (_, Some(required_size)) => required_size,
+        let fetch_data_fn = |buf| {
+            self.read_entry(buf)
+                // this is safe, as above, we checked that there are more entries
+                .map(|maybe_info: Option<&mut FileInfo>| {
+                    maybe_info.expect("Should have more entries")
+                })
         };
-
-        // We add trailing padding because the size of a rust structure must
-        // always be a multiple of alignment.
-        let layout = Layout::from_size_align(required_size, FileInfo::alignment())
-            .unwrap()
-            .pad_to_align();
-
-        // Allocate the buffer.
-        let heap_buf: NonNull<u8> = unsafe {
-            let ptr = alloc::alloc(layout);
-            match NonNull::new(ptr) {
-                None => return Err(Status::OUT_OF_RESOURCES.into()),
-                Some(ptr) => ptr,
-            }
-        };
-
-        // Get the file info using the allocated buffer for storage.
-        let info = {
-            let buffer = unsafe { slice::from_raw_parts_mut(heap_buf.as_ptr(), layout.size()) };
-            self.read_entry(buffer).discard_errdata()
-        };
-
-        // If an error occurred, deallocate the memory before returning.
-        let info = match info {
-            Ok(info) => info,
-            Err(err) => {
-                unsafe { alloc::dealloc(heap_buf.as_ptr(), layout) };
-                return Err(err);
-            }
-        };
-
-        // Wrap the file info in a box so that it will be deallocated on
-        // drop. This is valid because the memory was allocated with the
-        // global allocator.
-        let info = info.map(|info| unsafe { Box::from_raw(info) });
-
-        Ok(info)
+        let file_info = make_boxed::<FileInfo>(fetch_data_fn)?;
+        Ok(Some(file_info))
     }
 
     /// Start over the process of enumerating directory entries

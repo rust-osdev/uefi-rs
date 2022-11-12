@@ -141,9 +141,8 @@ pub use uefi_macros::unsafe_guid;
 
 #[cfg(test)]
 mod tests {
-    use uefi::{guid, unsafe_guid};
-    extern crate alloc;
     use super::*;
+    use uefi::{guid, unsafe_guid};
 
     #[test]
     fn test_guid_display() {

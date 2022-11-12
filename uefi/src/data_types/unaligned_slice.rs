@@ -1,8 +1,8 @@
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 
-#[cfg(feature = "exts")]
-use crate::alloc_api::vec::Vec;
+#[cfg(feature = "alloc")]
+use crate::alloc::vec::Vec;
 
 /// Slice backed by a potentially-unaligned pointer.
 ///
@@ -110,7 +110,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     }
 
     /// Copies `self` into a new `Vec`.
-    #[cfg(feature = "exts")]
+    #[cfg(feature = "alloc")]
     pub fn to_vec(&self) -> Vec<T> {
         let len = self.len();
         let mut v = Vec::with_capacity(len);
@@ -122,7 +122,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     }
 }
 
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 impl<'a, T: Copy> From<UnalignedSlice<'a, T>> for Vec<T> {
     fn from(input: UnalignedSlice<'a, T>) -> Self {
         input.to_vec()
@@ -185,7 +185,7 @@ impl<'a, T: Copy> Iterator for UnalignedSliceIter<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc_api::vec::Vec;
+    use alloc::vec::Vec;
 
     #[test]
     fn test_unaligned_slice() {

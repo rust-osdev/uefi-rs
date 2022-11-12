@@ -45,8 +45,8 @@ impl Package {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Feature {
+    GlobalAllocator,
     Alloc,
-    Exts,
     Logger,
 
     Ci,
@@ -56,8 +56,8 @@ pub enum Feature {
 impl Feature {
     fn as_str(&self) -> &'static str {
         match self {
+            Self::GlobalAllocator => "global_allocator",
             Self::Alloc => "alloc",
-            Self::Exts => "exts",
             Self::Logger => "logger",
 
             Self::Ci => "uefi-test-runner/ci",
@@ -67,7 +67,7 @@ impl Feature {
 
     /// Set of features that enables more code in the root uefi crate.
     pub fn more_code() -> Vec<Self> {
-        vec![Self::Alloc, Self::Exts, Self::Logger]
+        vec![Self::GlobalAllocator, Self::Alloc, Self::Logger]
     }
 
     fn comma_separated_string(features: &[Feature]) -> String {
@@ -260,7 +260,7 @@ mod tests {
     fn test_comma_separated_features() {
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code()),
-            "alloc,exts,logger"
+            "global_allocator,alloc,logger"
         );
     }
 
@@ -279,7 +279,7 @@ mod tests {
     fn test_cargo_command() {
         let cargo = Cargo {
             action: CargoAction::Doc { open: true },
-            features: vec![Feature::Alloc],
+            features: vec![Feature::GlobalAllocator],
             packages: vec![Package::Uefi, Package::Xtask],
             release: false,
             target: None,
@@ -288,7 +288,7 @@ mod tests {
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features alloc --open"
+            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features global_allocator --open"
         );
     }
 }

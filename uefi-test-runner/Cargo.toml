@@ -6,7 +6,7 @@ publish = false
 edition = "2021"
 
 [dependencies]
-uefi = { path = "../uefi", features = ['exts'] }
+uefi = { path = "../uefi", features = ['alloc'] }
 uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.11", default-features = false }

@@ -375,7 +375,7 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc_api::vec;
+    use crate::alloc::vec;
     use crate::table::runtime::TimeParams;
     use crate::table::runtime::{Daylight, Time};
     use crate::CString16;

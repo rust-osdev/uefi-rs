@@ -143,7 +143,7 @@ impl SystemTable<Boot> {
     /// Once boot services are exited, the logger and allocator provided by
     /// this crate can no longer be used. The logger should be disabled using
     /// the [`Logger::disable`] method, and the allocator should be disabled by
-    /// calling [`alloc::exit_boot_services`]. Note that if the logger and
+    /// calling [`global_allocator::exit_boot_services`]. Note that if the logger and
     /// allocator were initialized with [`uefi_services::init`], they will be
     /// disabled automatically when `exit_boot_services` is called.
     ///
@@ -169,7 +169,7 @@ impl SystemTable<Boot> {
     /// firmware following exit from boot services, along with a high-level
     /// iterator to the UEFI memory map.
     ///
-    /// [`alloc::exit_boot_services`]: crate::alloc::exit_boot_services
+    /// [`global_allocator::exit_boot_services`]: crate::global_allocator::exit_boot_services
     /// [`Logger::disable`]: crate::logger::Logger::disable
     /// [`uefi_services::init`]: https://docs.rs/uefi-services/latest/uefi_services/fn.init.html
     pub fn exit_boot_services(

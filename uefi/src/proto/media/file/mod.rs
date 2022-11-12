@@ -16,10 +16,10 @@ use core::ffi::c_void;
 use core::fmt::Debug;
 use core::mem;
 use core::ptr;
-#[cfg(feature = "exts")]
+#[cfg(feature = "alloc")]
 use {
     crate::ResultExt,
-    alloc_api::{alloc, alloc::Layout, boxed::Box},
+    ::alloc::{alloc, alloc::Layout, boxed::Box},
     core::slice,
 };
 
@@ -165,7 +165,7 @@ pub trait File: Sized {
         (self.imp().flush)(self.imp()).into()
     }
 
-    #[cfg(feature = "exts")]
+    #[cfg(feature = "alloc")]
     /// Get the dynamically allocated info for a file
     fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
         // Initially try get_info with an empty array, this should always fail
@@ -408,7 +408,7 @@ mod tests {
     use super::*;
     use crate::table::runtime::Time;
     use crate::{CString16, Identify};
-    use alloc_api::vec;
+    use ::alloc::vec;
 
     // Test `get_boxed_info` by setting up a fake file, which is mostly
     // just function pointers. Most of the functions can be empty, only

@@ -5,6 +5,8 @@
   you can write `some_cstr16.eq_str_until_nul("test")` instead of
   `some_cstr16.eq_str_until_nul(&"test")` now.
 - Added `TryFrom<core::ffi::CStr>` implementation for `CStr8`.
+- Added `Directory::read_entry_boxed` which works similar to `File::get_boxed_info`. This allows
+  easier iteration over the entries in a directory.
 
 ## uefi-macros - [Unreleased]
 

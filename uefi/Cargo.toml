@@ -1,10 +1,10 @@
 [package]
 name = "uefi"
 version = "0.18.0"
-authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+authors = ["The Rust OSDev team"]
 readme = "README.md"
 edition = "2021"
-description = "Safe and easy-to-use wrapper for building UEFI apps"
+description = "Safe and easy-to-use wrapper for building UEFI apps."
 repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]

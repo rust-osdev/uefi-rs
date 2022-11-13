@@ -39,7 +39,7 @@
   replaced with a derived `Debug` impl.
 - `CStr16::from_u16_with_nul_unchecked` and `cstr16!` are now allowed in
   `const` contexts.
-  
+
 ### Removed
 
 - Removed `UnalignedCStr16`; use `UnalignedSlice` instead. An
@@ -73,7 +73,8 @@
   This allows using both crates while disabling `logger` in `uefi`,
   which was previously impossible.
 
-## uefi - 0.17.0
+## uefi - 0.17.0 (2022-09-09)
+
 
 ### Added
 
@@ -127,7 +128,7 @@
   can be replaced by calling `status.into()`, or `Result::from(status)`
   in cases where the compiler needs a type hint.
 
-## uefi-macros - 0.8.0
+## uefi-macros - 0.8.0 (2022-09-09)
 
 ### Changed
 
@@ -136,7 +137,7 @@
   must both be named (e.g. `image: Handle` and `_image: Handle` are both
   OK, but not `_: Handle`).
 
-## uefi-services - 0.14.0
+## uefi-services - 0.14.0 (2022-09-09)
 
 ### Added
 
@@ -169,21 +170,21 @@
 - Enabled `doc_auto_cfg` on docs.rs to show badges on items that are
   gated behind a feature.
 
-## uefi-macros - 0.7.1
+## uefi-macros - 0.7.1 (2022-08-26)
 
 ### Changed
 
 - Relaxed the version requirements for the `proc-macro2`, `quote`, and
   `sync` dependencies to allow earlier patch versions.
 
-## uefi-services - 0.13.1
+## uefi-services - 0.13.1 (2022-08-26)
 
 ### Changed
 
 - Relaxed the version requirements for the `log` dependency to allow
   earlier patch versions.
 
-## uefi - 0.16.0
+## uefi - 0.16.0 (2022-05-16)
 
 ### Added
 
@@ -215,20 +216,20 @@
 
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
-## uefi-macros - 0.7.0
+## uefi-macros - 0.7.0 (2022-05-16)
 
 ### Added
 
 - Added `cstr8` and `cstr16` macros for creating `CStr8`/`CStr16` string literals
   at compile time.
 
-## uefi-services - 0.13.0
+## uefi-services - 0.13.0 (2022-05-16)
 
 ### Changed
 
 - Bumped `uefi` dependency to latest version.
 
-## uefi - 0.15.2
+## uefi - 0.15.2 (2022-03-15)
 
 ### Added
 
@@ -309,13 +310,13 @@
 - Fixed size check for file info types so that alignment padding is
   taken into account. This fixes potential out-of-bounds writes.
 
-## uefi-macros - 0.6.1
+## uefi-macros - 0.6.1 (2022-03-15)
 
 ### Changed
 
 - Updated to the 2021 edition.
 
-## uefi-services - 0.12.1
+## uefi-services - 0.12.1 (2022-03-15)
 
 ### Changed
 

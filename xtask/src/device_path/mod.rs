@@ -12,7 +12,7 @@ use syn::{File, Item};
 use util::rustfmt_string;
 
 const INPUT_PATH: &str = "xtask/src/device_path/spec.rs";
-const OUTPUT_PATH: &str = "src/proto/device_path/device_path_gen.rs";
+const OUTPUT_PATH: &str = "uefi/src/proto/device_path/device_path_gen.rs";
 
 fn gen_code_as_string(groups: &[NodeGroup]) -> Result<String> {
     let packed_modules = groups.iter().map(NodeGroup::gen_packed_module);
@@ -63,7 +63,7 @@ fn gen_code_as_string(groups: &[NodeGroup]) -> Result<String> {
 // This file was automatically generated with:
 // `cargo xtask gen-code`
 //
-// See //xtask/src/device_path/README.md for more details.
+// See `/xtask/src/device_path/README.md` for more details.
 
 {code}"
     );

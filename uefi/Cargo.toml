@@ -4,14 +4,6 @@ version = "0.18.0"
 authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
 readme = "README.md"
 edition = "2021"
-exclude = [
-    ".cargo/**",
-    "template/**",
-    "uefi-macros/**",
-    "uefi-services/**",
-    "uefi-test-runner/**",
-    "xtask/**",
-]
 description = "Safe and easy-to-use wrapper for building UEFI apps"
 repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]

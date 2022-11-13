@@ -3,7 +3,7 @@
 // This file was automatically generated with:
 // `cargo xtask gen-code`
 //
-// See //xtask/src/device_path/README.md for more details.
+// See `/xtask/src/device_path/README.md` for more details.
 
 use crate::data_types::UnalignedSlice;
 use crate::proto::device_path::{

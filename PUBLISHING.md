@@ -70,5 +70,6 @@ cargo publish --target x86_64-unknown-uefi
 ## Updating the changelog
 
 After bumping the crate versions, we should also update the [`CHANGELOG.md`](CHANGELOG.md) file
-in order to move all of the unpublished changes to their respective version, and prepare it for
-tracking further changes.
+in order to move all the unpublished changes to their respective version, and prepare it for
+tracking further changes. The date of the release should be included next to the section title as
+done for the other releases.

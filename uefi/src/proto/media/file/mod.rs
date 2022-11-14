@@ -165,7 +165,7 @@ pub trait File: Sized {
     /// Read the dynamically allocated info for a file.
     fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
         let fetch_data_fn = |buf| self.get_info::<Info>(buf);
-        let file_info = make_boxed::<Info>(fetch_data_fn)?;
+        let file_info = make_boxed::<Info, _>(fetch_data_fn)?;
         Ok(file_info)
     }
 

@@ -77,7 +77,7 @@ impl Directory {
                     maybe_info.expect("Should have more entries")
                 })
         };
-        let file_info = make_boxed::<FileInfo>(fetch_data_fn)?;
+        let file_info = make_boxed::<FileInfo, _>(fetch_data_fn)?;
         Ok(Some(file_info))
     }
 

@@ -17,8 +17,12 @@ use uefi::Error;
 ///   buffer size is sufficient, and
 /// - return a mutable typed reference that points to the same memory as the input buffer on
 ///   success.
-pub fn make_boxed<'a, Data: Align + ?Sized + Debug + 'a>(
-    mut fetch_data_fn: impl FnMut(&'a mut [u8]) -> Result<&'a mut Data, Option<usize>>,
+pub fn make_boxed<
+    'a,
+    Data: Align + ?Sized + Debug + 'a,
+    F: FnMut(&'a mut [u8]) -> Result<&'a mut Data, Option<usize>>,
+>(
+    mut fetch_data_fn: F,
 ) -> Result<Box<Data>> {
     let required_size = match fetch_data_fn(&mut []).map_err(Error::split) {
         // This is the expected case: the empty buffer passed in is too

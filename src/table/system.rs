@@ -70,7 +70,8 @@ impl<View: SystemTableView> SystemTable<View> {
 
     /// Returns the config table entries, a linear array of structures
     /// pointing to other system-specific tables.
-    pub const fn config_table(&self) -> &[cfg::ConfigTableEntry] {
+    #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
         unsafe { slice::from_raw_parts(self.table.cfg_table, self.table.nr_cfg) }
     }
 

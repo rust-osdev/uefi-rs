@@ -1925,7 +1925,8 @@ impl<'a> Drop for ProtocolsPerHandle<'a> {
 impl<'a> ProtocolsPerHandle<'a> {
     /// Get the protocol interface [`Guids`][Guid] that are installed on the
     /// [`Handle`].
-    pub const fn protocols<'b>(&'b self) -> &'b [&'a Guid] {
+    #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    pub fn protocols<'b>(&'b self) -> &'b [&'a Guid] {
         // convert raw pointer to slice here so that we can get
         // appropriate lifetime of the slice.
         unsafe { slice::from_raw_parts(self.protocols, self.count) }
@@ -1951,7 +1952,8 @@ impl<'a> Drop for HandleBuffer<'a> {
 
 impl<'a> HandleBuffer<'a> {
     /// Get an array of [`Handles`][Handle] that support the requested protocol.
-    pub const fn handles(&self) -> &[Handle] {
+    #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    pub fn handles(&self) -> &[Handle] {
         // convert raw pointer to slice here so that we can get
         // appropriate lifetime of the slice.
         unsafe { slice::from_raw_parts(self.buffer, self.count) }

@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.18.0 (2022-11-15)
+
 ### Added
 
 - Added `PhysicalAddress` and `VirtualAddress` type aliases.
@@ -53,7 +59,7 @@
   `proto::device_path::acpi::Acpi` and
   `proto::device_path::media::HardDrive` instead.  `
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.9.0 (2022-11-15)
 
 ### Added
 
@@ -61,7 +67,7 @@
   takes a more convenient string argument like the `unsafe_guid!`
   attribute macro.
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.15.0 (2022-11-15)
 
 ### Changed
 

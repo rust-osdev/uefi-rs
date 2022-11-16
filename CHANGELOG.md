@@ -1,10 +1,13 @@
 # Changelog
 
 ## uefi - [Unreleased]
+- The guaranteed MSRV is now `nightly-2022-11-16` (1.67).
 
 ## uefi-macros - [Unreleased]
+- The guaranteed MSRV is now `nightly-2022-11-16` (1.67).
 
 ## uefi-services - [Unreleased]
+- The guaranteed MSRV is now `nightly-2022-11-16` (1.67).
 
 ## uefi - 0.18.0 (2022-11-15)
 

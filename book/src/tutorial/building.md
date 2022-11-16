@@ -16,7 +16,7 @@ components = ["rust-src"]
 ```
 
 Note that nightly releases can sometimes break, so you might opt to pin
-to a specific release. For example, `channel = "nightly-2022-09-01"`.
+to a specific release. For example, `channel = "nightly-2022-11-16"`.
 
 ## Build the application
 

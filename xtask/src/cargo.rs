@@ -50,7 +50,6 @@ pub enum Feature {
     Logger,
 
     Ci,
-    Qemu,
 }
 
 impl Feature {
@@ -61,7 +60,6 @@ impl Feature {
             Self::Logger => "logger",
 
             Self::Ci => "uefi-test-runner/ci",
-            Self::Qemu => "uefi-test-runner/qemu",
         }
     }
 

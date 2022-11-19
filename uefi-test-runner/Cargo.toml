@@ -17,4 +17,4 @@ qemu-exit = "3.0.0"
 # This feature should only be enabled in our CI, it disables some tests
 # which currently fail in that environment (see #103 for discussion).
 ci = []
-qemu = ["uefi-services/qemu"]
+

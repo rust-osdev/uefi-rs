@@ -86,7 +86,7 @@ fn run_miri() -> Result<()> {
 
 /// Build uefi-test-runner and run it in QEMU.
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
-    let mut features = vec![Feature::Qemu];
+    let mut features = vec![];
 
     // Always enable the ci feature when not building on Linux so that
     // the MP test is skipped. That test doesn't work with kvm disabled

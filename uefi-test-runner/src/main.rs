@@ -8,7 +8,7 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-use alloc::string::String;
+use alloc::string::ToString;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi_services::{print, println};
@@ -24,10 +24,9 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     // unit tests here
 
-    // output firmware-vendor (CStr16 to Rust string)
-    let mut buf = String::new();
-    st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
-    info!("Firmware Vendor: {}", buf.as_str());
+    let firmware_vendor = st.firmware_vendor();
+    info!("Firmware Vendor: {}", firmware_vendor);
+    assert_eq!(firmware_vendor.to_string(), "EDK II");
 
     // Test print! and println! macros.
     let (print, println) = ("print!", "println!"); // necessary for clippy to ignore

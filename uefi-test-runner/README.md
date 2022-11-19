@@ -1,6 +1,9 @@
-# Running the tests
+# uefi-test-runner
 
-This file documents the process of building and running the test suite.
+This package is a UEFI application for running tests. It is intended to
+be run in a specially-configured QEMU VM. This allows us to test the
+parts of the `uefi` package that depend on a UEFI environment, such as
+various boot services and protocols.
 
 ## Prerequisites
 

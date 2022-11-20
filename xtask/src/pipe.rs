@@ -60,7 +60,7 @@ impl Pipe {
     }
 
     /// Create an `Io` object for performing reads and writes.
-    pub fn open_io(&self) -> Result<Io<File, File>> {
+    pub fn open_io(&self) -> Result<Io> {
         let reader;
         let writer;
 

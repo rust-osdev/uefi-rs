@@ -1,6 +1,9 @@
 # Changelog
 
 ## uefi - [Unreleased]
+- Implementations for the trait `EqStrUntilNul` now allow `?Sized` inputs. This means that
+  you can write `some_cstr16.eq_str_until_nul("test")` instead of
+  `some_cstr16.eq_str_until_nul(&"test")` now.
 
 ## uefi-macros - [Unreleased]
 

@@ -128,7 +128,7 @@ impl PartialEq<&CStr16> for CString16 {
     }
 }
 
-impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CString16 {
+impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CString16 {
     fn eq_str_until_nul(&self, other: &StrType) -> bool {
         let this = self.as_ref();
         this.eq_str_until_nul(other)
@@ -190,12 +190,16 @@ mod tests {
         );
     }
 
-    /// Tests the trait implementation of trait [EqStrUntilNul].
+    /// Tests the trait implementation of trait [`EqStrUntilNul]` for [`CString16`].
+    ///
+    /// This tests that `String` and `str` from the standard library can be
+    /// checked for equality against a [`CString16`]. It checks both directions,
+    /// i.e., the equality is reflexive.
     #[test]
     fn test_cstring16_eq_std_str() {
         let input = CString16::try_from("test").unwrap();
 
-        // test various comparisons with different order (left, right)
+        assert!(input.eq_str_until_nul("test")); // requires ?Sized constraint
         assert!(input.eq_str_until_nul(&"test"));
         assert!(input.eq_str_until_nul(&String::from("test")));
 

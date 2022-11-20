@@ -136,7 +136,7 @@ impl fmt::Display for CStr8 {
     }
 }
 
-impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CStr8 {
+impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CStr8 {
     fn eq_str_until_nul(&self, other: &StrType) -> bool {
         let other = other.as_ref();
 
@@ -147,7 +147,8 @@ impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CStr8 {
             .copied()
             .map(char::from)
             .zip(other.chars())
-            // this only works as CStr8 is guaranteed to have a fixed character length
+            // This only works as CStr8 is guaranteed to have a fixed character length
+            // (unlike UTF-8).
             .take_while(|(l, r)| *l != '\0' && *r != '\0')
             .any(|(l, r)| l != r);
 
@@ -345,7 +346,7 @@ impl CStr16 {
     }
 }
 
-impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CStr16 {
+impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CStr16 {
     fn eq_str_until_nul(&self, other: &StrType) -> bool {
         let other = other.as_ref();
 
@@ -354,7 +355,8 @@ impl<StrType: AsRef<str>> EqStrUntilNul<StrType> for CStr16 {
             .copied()
             .map(char::from)
             .zip(other.chars())
-            // this only works as CStr16 is guaranteed to have a fixed character length
+            // This only works as CStr16 is guaranteed to have a fixed character length
+            // (unlike UTF-8 or UTF-16).
             .take_while(|(l, r)| *l != '\0' && *r != '\0')
             .any(|(l, r)| l != r);
 
@@ -416,10 +418,11 @@ impl<'a> UnalignedSlice<'a, u16> {
     }
 }
 
-/// Trait that helps to compare Rust strings against CStr16 types.
-/// A generic implementation of this trait enables us that we only have to
-/// implement one direction (`left.eq_str_until_nul(&right)`) and we get
-/// the other direction (`right.eq_str_until_nul(&left)`) for free.
+/// The EqStrUntilNul trait helps to compare Rust strings against UEFI string types (UCS-2 strings).
+/// The given generic implementation of this trait enables us that we only have to
+/// implement one direction (`left.eq_str_until_nul(&right)`) for each UEFI string type and we
+/// get the other direction (`right.eq_str_until_nul(&left)`) for free. Hence, the relation is
+/// reflexive.
 pub trait EqStrUntilNul<StrType: ?Sized> {
     /// Checks if the provided Rust string `StrType` is equal to [Self] until the first null-byte
     /// is found. An exception is the terminating null-byte of [Self] which is ignored.

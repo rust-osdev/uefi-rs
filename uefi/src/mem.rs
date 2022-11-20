@@ -75,6 +75,7 @@ mod tests {
     use crate::ResultExt;
     use core::mem::{align_of, size_of};
 
+    /// Some simple dummy type to test [`make_boxed`].
     #[derive(Debug)]
     #[repr(C)]
     struct SomeData([u8; 4]);
@@ -85,53 +86,94 @@ mod tests {
         }
     }
 
+    /// Type wrapper that ensures an alignment of 16 for the underlying data.
+    #[derive(Debug)]
+    #[repr(C, align(16))]
+    struct Align16<T>(T);
+
+    /// Version of [`SomeData`] that has an alignment of 16.
+    type SomeDataAlign16 = Align16<SomeData>;
+
+    impl Align for SomeDataAlign16 {
+        fn alignment() -> usize {
+            align_of::<Self>()
+        }
+    }
+
     /// Function that behaves like the other UEFI functions. It takes a
     /// mutable reference to a buffer memory that represents a [`SomeData`]
     /// instance.
-    fn uefi_function_stub_read(buf: &mut [u8]) -> Result<&mut SomeData, Option<usize>> {
-        if buf.len() < 4 {
-            return Status::BUFFER_TOO_SMALL.into_with(|| panic!(), |_| Some(4));
+    fn uefi_function_stub_read<Data: Align>(buf: &mut [u8]) -> Result<&mut Data, Option<usize>> {
+        let required_size = size_of::<Data>();
+
+        if buf.len() < required_size {
+            // We can use an zero-length buffer to find the required size.
+            return Status::BUFFER_TOO_SMALL.into_with(|| panic!(), |_| Some(required_size));
         };
+
+        // assert alignment
+        assert_eq!(
+            buf.as_ptr() as usize % Data::alignment(),
+            0,
+            "The buffer must be correctly aligned!"
+        );
 
         buf[0] = 1;
         buf[1] = 2;
         buf[2] = 3;
         buf[3] = 4;
 
-        let data = unsafe { &mut *buf.as_mut_ptr().cast::<SomeData>() };
+        let data = unsafe { &mut *buf.as_mut_ptr().cast::<Data>() };
 
         Ok(data)
     }
 
-    // Some basic checks so that miri reports everything is fine.
+    // Some basic sanity checks so that we can catch problems early that miri would detect
+    // otherwise.
     #[test]
-    fn some_data_type_size_constraints() {
+    fn test_some_data_type_size_constraints() {
         assert_eq!(size_of::<SomeData>(), 4);
-        assert_eq!(align_of::<SomeData>(), 1);
+        assert_eq!(SomeData::alignment(), 1);
+        assert_eq!(
+            size_of::<SomeDataAlign16>(),
+            16,
+            "The size must be 16 instead of 4, as in Rust the runtime size is a multiple of the alignment."
+        );
+        assert_eq!(SomeDataAlign16::alignment(), 16);
     }
 
+    // Tests `uefi_function_stub_read` which is the foundation for the `test_make_boxed_utility`
+    // test.
     #[test]
-    fn basic_stub_read() {
+    fn test_basic_stub_read() {
         assert_eq!(
-            uefi_function_stub_read(&mut []).status(),
+            uefi_function_stub_read::<SomeData>(&mut []).status(),
             Status::BUFFER_TOO_SMALL
         );
         assert_eq!(
-            *uefi_function_stub_read(&mut []).unwrap_err().data(),
+            *uefi_function_stub_read::<SomeData>(&mut [])
+                .unwrap_err()
+                .data(),
             Some(4)
         );
 
         let mut buf: [u8; 4] = [0; 4];
-        let data = uefi_function_stub_read(&mut buf).unwrap();
+        let data: &mut SomeData = uefi_function_stub_read(&mut buf).unwrap();
+        assert_eq!(&data.0, &[1, 2, 3, 4]);
 
-        assert_eq!(&data.0, &[1, 2, 3, 4])
+        let mut buf: Align16<[u8; 16]> = Align16([0; 16]);
+        let data: &mut SomeDataAlign16 = uefi_function_stub_read(&mut buf.0).unwrap();
+        assert_eq!(&data.0 .0, &[1, 2, 3, 4]);
     }
 
     #[test]
-    fn make_boxed_utility() {
+    fn test_make_boxed_utility() {
         let fetch_data_fn = |buf| uefi_function_stub_read(buf);
         let data: Box<SomeData> = make_boxed(fetch_data_fn).unwrap();
+        assert_eq!(&data.0, &[1, 2, 3, 4]);
 
-        assert_eq!(&data.0, &[1, 2, 3, 4])
+        let fetch_data_fn = |buf| uefi_function_stub_read(buf);
+        let data: Box<SomeDataAlign16> = make_boxed(fetch_data_fn).unwrap();
+        assert_eq!(&data.0 .0, &[1, 2, 3, 4]);
     }
 }

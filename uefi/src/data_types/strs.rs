@@ -578,4 +578,41 @@ mod tests {
         const S: &CStr16 = cstr16!("ABC");
         assert_eq!(S.to_u16_slice_with_nul(), [65, 66, 67, 0]);
     }
+
+    /// Tests the trait implementation of trait [`EqStrUntilNul]` for [`CStr8`].
+    ///
+    /// This tests that `String` and `str` from the standard library can be
+    /// checked for equality against a [`CStr8`]. It checks both directions,
+    /// i.e., the equality is reflexive.
+    #[test]
+    fn test_cstr8_eq_std_str() {
+        let input: &CStr8 = cstr8!("test");
+
+        // test various comparisons with different order (left, right)
+        assert!(input.eq_str_until_nul("test")); // requires ?Sized constraint
+        assert!(input.eq_str_until_nul(&"test"));
+        assert!(input.eq_str_until_nul(&String::from("test")));
+
+        // now other direction
+        assert!(String::from("test").eq_str_until_nul(input));
+        assert!("test".eq_str_until_nul(input));
+    }
+
+    /// Tests the trait implementation of trait [`EqStrUntilNul]` for [`CStr16`].
+    ///
+    /// This tests that `String` and `str` from the standard library can be
+    /// checked for equality against a [`CStr16`]. It checks both directions,
+    /// i.e., the equality is reflexive.
+    #[test]
+    fn test_cstr16_eq_std_str() {
+        let input: &CStr16 = cstr16!("test");
+
+        assert!(input.eq_str_until_nul("test")); // requires ?Sized constraint
+        assert!(input.eq_str_until_nul(&"test"));
+        assert!(input.eq_str_until_nul(&String::from("test")));
+
+        // now other direction
+        assert!(String::from("test").eq_str_until_nul(input));
+        assert!("test".eq_str_until_nul(input));
+    }
 }

@@ -1,19 +1,18 @@
-use anyhow::{anyhow, Error, Result};
 use std::fmt;
-use std::str::FromStr;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
 pub enum UefiArch {
+    #[value(name = "aarch64")]
     AArch64,
+
+    #[value(name = "ia32")]
     IA32,
+
+    #[value(name = "x86_64")]
     X86_64,
 }
 
 impl UefiArch {
-    fn all() -> &'static [Self] {
-        &[Self::AArch64, Self::IA32, Self::X86_64]
-    }
-
     fn as_str(self) -> &'static str {
         match self {
             Self::AArch64 => "aarch64",
@@ -40,27 +39,5 @@ impl Default for UefiArch {
 impl fmt::Display for UefiArch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.as_str())
-    }
-}
-
-impl FromStr for UefiArch {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        Self::all()
-            .iter()
-            .find(|arch| arch.as_str() == s)
-            .cloned()
-            .ok_or_else(|| anyhow!("invalid arch: {}", s))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_from_str() {
-        assert_eq!(UefiArch::from_str("x86_64").unwrap(), UefiArch::X86_64);
     }
 }

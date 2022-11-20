@@ -236,16 +236,20 @@ fn add_pflash_args(cmd: &mut Command, file: &Path, mode: PflashMode) {
     cmd.arg(arg);
 }
 
-pub struct Io<R: Read, W: Write> {
-    reader: BufReader<R>,
-    writer: W,
+pub struct Io {
+    reader: BufReader<Box<dyn Read + Send>>,
+    writer: Box<dyn Write + Send>,
 }
 
-impl<R: Read, W: Write> Io<R, W> {
-    pub fn new(r: R, w: W) -> Self {
+impl Io {
+    pub fn new<R, W>(r: R, w: W) -> Self
+    where
+        R: Read + Send + 'static,
+        W: Write + Send + 'static,
+    {
         Self {
-            reader: BufReader::new(r),
-            writer: w,
+            reader: BufReader::new(Box::new(r)),
+            writer: Box::new(w),
         }
     }
 
@@ -277,7 +281,7 @@ impl<R: Read, W: Write> Io<R, W> {
     }
 }
 
-fn echo_filtered_stdout<R: Read, W: Write>(mut child_io: Io<R, W>) {
+fn echo_filtered_stdout(mut child_io: Io) {
     // This regex is used to detect and strip ANSI escape codes. These
     // escapes are added by the console output protocol when writing to
     // the serial device.
@@ -293,11 +297,7 @@ fn echo_filtered_stdout<R: Read, W: Write>(mut child_io: Io<R, W>) {
     }
 }
 
-fn process_qemu_io<R: Read, W: Write>(
-    mut monitor_io: Io<R, W>,
-    mut serial_io: Io<R, W>,
-    tmp_dir: &Path,
-) -> Result<()> {
+fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Result<()> {
     // Execute the QEMU monitor handshake, doing basic sanity checks.
     assert!(monitor_io.read_line()?.starts_with(r#"{"QMP":"#));
     monitor_io.write_json(json!({"execute": "qmp_capabilities"}))?;

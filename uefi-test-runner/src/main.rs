@@ -8,7 +8,7 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-use alloc::string::String;
+use alloc::string::ToString;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi_services::{print, println};
@@ -24,10 +24,9 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     // unit tests here
 
-    // output firmware-vendor (CStr16 to Rust string)
-    let mut buf = String::new();
-    st.firmware_vendor().as_str_in_buf(&mut buf).unwrap();
-    info!("Firmware Vendor: {}", buf.as_str());
+    let firmware_vendor = st.firmware_vendor();
+    info!("Firmware Vendor: {}", firmware_vendor);
+    assert_eq!(firmware_vendor.to_string(), "EDK II");
 
     // Test print! and println! macros.
     let (print, println) = ("print!", "println!"); // necessary for clippy to ignore
@@ -82,64 +81,51 @@ fn check_revision(rev: uefi::table::Revision) {
 /// of it, we just pause the tests for a couple of seconds to allow visual
 /// inspection of the output.
 fn check_screenshot(bt: &BootServices, name: &str) {
-    if cfg!(feature = "qemu") {
-        let serial_handles = bt
-            .find_handles::<Serial>()
-            .expect("Failed to get serial handles");
+    let serial_handles = bt
+        .find_handles::<Serial>()
+        .expect("Failed to get serial handles");
 
-        // Use the second serial device handle. Opening a serial device
-        // in exclusive mode breaks the connection between stdout and
-        // the serial device, and we don't want that to happen to the
-        // first serial device since it's used for log transport.
-        let serial_handle = *serial_handles
-            .get(1)
-            .expect("Second serial device is missing");
+    // Use the second serial device handle. Opening a serial device
+    // in exclusive mode breaks the connection between stdout and
+    // the serial device, and we don't want that to happen to the
+    // first serial device since it's used for log transport.
+    let serial_handle = *serial_handles
+        .get(1)
+        .expect("Second serial device is missing");
 
-        let mut serial = bt
-            .open_protocol_exclusive::<Serial>(serial_handle)
-            .expect("Could not open serial protocol");
+    let mut serial = bt
+        .open_protocol_exclusive::<Serial>(serial_handle)
+        .expect("Could not open serial protocol");
 
-        // Set a large timeout to avoid problems with CI
-        let mut io_mode = *serial.io_mode();
-        io_mode.timeout = 10_000_000;
-        serial
-            .set_attributes(&io_mode)
-            .expect("Failed to configure serial port timeout");
+    // Set a large timeout to avoid problems with CI
+    let mut io_mode = *serial.io_mode();
+    io_mode.timeout = 10_000_000;
+    serial
+        .set_attributes(&io_mode)
+        .expect("Failed to configure serial port timeout");
 
-        // Send a screenshot request to the host
-        serial
-            .write(b"SCREENSHOT: ")
-            .expect("Failed to send request");
-        let name_bytes = name.as_bytes();
-        serial.write(name_bytes).expect("Failed to send request");
-        serial.write(b"\n").expect("Failed to send request");
+    // Send a screenshot request to the host
+    serial
+        .write(b"SCREENSHOT: ")
+        .expect("Failed to send request");
+    let name_bytes = name.as_bytes();
+    serial.write(name_bytes).expect("Failed to send request");
+    serial.write(b"\n").expect("Failed to send request");
 
-        // Wait for the host's acknowledgement before moving forward
-        let mut reply = [0; 3];
-        serial
-            .read(&mut reply[..])
-            .expect("Failed to read host reply");
+    // Wait for the host's acknowledgement before moving forward
+    let mut reply = [0; 3];
+    serial
+        .read(&mut reply[..])
+        .expect("Failed to read host reply");
 
-        assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
-    } else {
-        // Outside of QEMU, give the user some time to inspect the output
-        bt.stall(3_000_000);
-    }
+    assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
 }
 
 fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
-    use uefi::table::runtime::ResetType;
-
     // Get our text output back.
     st.stdout().reset(false).unwrap();
 
-    // Inform the user, and give him time to read on real hardware
-    if cfg!(not(feature = "qemu")) {
-        info!("Testing complete, shutting down in 3 seconds...");
-        st.boot_services().stall(3_000_000);
-    } else {
-        info!("Testing complete, shutting down...");
-    }
+    info!("Testing complete, shutting down...");
 
     // Exit boot services as a proof that it works :)
     let sizes = st.boot_services().memory_map_size();
@@ -151,15 +137,23 @@ fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
 
     #[cfg(target_arch = "x86_64")]
     {
-        if cfg!(feature = "qemu") {
-            use qemu_exit::QEMUExit;
-            let custom_exit_success = 3;
-            let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
-            qemu_exit_handle.exit_success();
-        }
+        // Prevent unused variable warning.
+        let _ = st;
+
+        use qemu_exit::QEMUExit;
+        let custom_exit_success = 3;
+        let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
+        qemu_exit_handle.exit_success();
     }
 
-    // Shut down the system
-    let rt = unsafe { st.runtime_services() };
-    rt.reset(ResetType::Shutdown, Status::SUCCESS, None);
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        // Shut down the system
+        let rt = unsafe { st.runtime_services() };
+        rt.reset(
+            uefi::table::runtime::ResetType::Shutdown,
+            Status::SUCCESS,
+            None,
+        );
+    }
 }

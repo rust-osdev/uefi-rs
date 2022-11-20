@@ -248,12 +248,6 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
 /// Run various file-system related tests on a special test disk. The disk is created by
 /// `xtask/src/disk.rs`.
 pub fn test_known_disk(bt: &BootServices) {
-    // This test is only valid when running in the specially-prepared
-    // qemu with the test disk.
-    if !cfg!(feature = "qemu") {
-        return;
-    }
-
     let handles = bt
         .find_handles::<SimpleFileSystem>()
         .expect("Failed to get handles for `SimpleFileSystem` protocol");

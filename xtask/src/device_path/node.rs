@@ -165,7 +165,7 @@ impl Node {
                     }
 
                     // It's not trivial to nicely format the DST data since
-                    // the the slice might be unaligned. Treat it as a byte
+                    // the slice might be unaligned. Treat it as a byte
                     // slice instead.
                     quote!({
                         let ptr = addr_of!(#field_val);

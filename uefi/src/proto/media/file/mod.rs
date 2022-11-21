@@ -182,7 +182,7 @@ pub trait File: Sized {
     fn is_directory(&self) -> Result<bool>;
 }
 
-// Internal File helper methods to access the funciton pointer table.
+// Internal File helper methods to access the function pointer table.
 trait FileInternal: File {
     fn imp(&mut self) -> &mut FileImpl {
         unsafe { &mut *self.handle().0 }

@@ -337,7 +337,12 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
                 Path::new("uefi-test-runner/screenshots").join(format!("{reference_name}.ppm"));
             let expected = fs_err::read(reference_file)?;
             let actual = fs_err::read(&screenshot_path)?;
-            assert_eq!(expected, actual);
+            // Use `assert` rather than `assert_eq` here to avoid
+            // dumping a huge amount of raw pixel data on failure.
+            assert!(
+                expected == actual,
+                "screenshot does not match reference image"
+            )
         }
     }
 

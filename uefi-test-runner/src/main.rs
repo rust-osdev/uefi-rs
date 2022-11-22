@@ -75,11 +75,7 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
-/// Ask the test runner to check the current screen output against a reference
-///
-/// This functionality is very specific to our QEMU-based test runner. Outside
-/// of it, we just pause the tests for a couple of seconds to allow visual
-/// inspection of the output.
+/// Ask the test runner to check the current screen output against a reference.
 fn check_screenshot(bt: &BootServices, name: &str) {
     let serial_handles = bt
         .find_handles::<Serial>()

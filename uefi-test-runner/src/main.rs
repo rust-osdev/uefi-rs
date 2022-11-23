@@ -11,6 +11,7 @@ extern crate alloc;
 use alloc::string::ToString;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
+use uefi::Result;
 use uefi_services::{print, println};
 
 mod boot;
@@ -75,46 +76,71 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
+/// Send the `request` string to the host via the `serial` device, then
+/// wait up to 10 seconds to receive a reply. Returns an error if the
+/// reply is not `"OK\n"`.
+fn send_request_helper(serial: &mut Serial, request: &str) -> Result {
+    // Set a 10 second timeout for the read and write operations.
+    let mut io_mode = *serial.io_mode();
+    io_mode.timeout = 10_000_000;
+    serial.set_attributes(&io_mode)?;
+
+    // Send a screenshot request to the host.
+    serial.write(request.as_bytes()).discard_errdata()?;
+
+    // Wait for the host's acknowledgement before moving forward.
+    let mut reply = [0; 3];
+    serial.read(&mut reply[..]).discard_errdata()?;
+
+    if reply == *b"OK\n" {
+        Ok(())
+    } else {
+        Err(Status::ABORTED.into())
+    }
+}
+
 /// Ask the test runner to check the current screen output against a reference.
 fn check_screenshot(bt: &BootServices, name: &str) {
-    let serial_handles = bt
-        .find_handles::<Serial>()
-        .expect("Failed to get serial handles");
+    let request = format!("SCREENSHOT: {name}\n");
 
-    // Use the second serial device handle. Opening a serial device
-    // in exclusive mode breaks the connection between stdout and
-    // the serial device, and we don't want that to happen to the
-    // first serial device since it's used for log transport.
-    let serial_handle = *serial_handles
-        .get(1)
-        .expect("Second serial device is missing");
+    let serial_handle = bt
+        .get_handle_for_protocol::<Serial>()
+        .expect("Failed to get serial handle");
 
+    // Open the serial protocol in exclusive mode.
+    //
+    // EDK2's [console splitter driver] periodically tries to sample
+    // from console devices to see if keys are being pressed, which will
+    // overwrite the timeout set below and potentially swallow the reply
+    // from the host. Opening in exclusive mode stops the driver from
+    // using this device. However, it also prevents logs from from going
+    // to the serial device, so we have to restore the connection at the
+    // end with `connect_controller`.
+    //
+    // [console splitter driver]: https://github.com/tianocore/edk2/blob/HEAD/MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitter.c
     let mut serial = bt
         .open_protocol_exclusive::<Serial>(serial_handle)
         .expect("Could not open serial protocol");
 
-    // Set a large timeout to avoid problems with CI
-    let mut io_mode = *serial.io_mode();
-    io_mode.timeout = 10_000_000;
-    serial
-        .set_attributes(&io_mode)
-        .expect("Failed to configure serial port timeout");
+    // Send the request, but don't check the result yet so that first
+    // we can reconnect the console output for the logger.
+    let res = send_request_helper(&mut serial, &request);
 
-    // Send a screenshot request to the host
-    serial
-        .write(b"SCREENSHOT: ")
-        .expect("Failed to send request");
-    let name_bytes = name.as_bytes();
-    serial.write(name_bytes).expect("Failed to send request");
-    serial.write(b"\n").expect("Failed to send request");
+    // Release the serial device and reconnect all controllers to the
+    // serial handle. This is necessary to restore the connection
+    // between the console output device used for logging and the serial
+    // device, which was broken when we opened the protocol in exclusive
+    // mode above.
+    drop(serial);
+    let _ = bt.connect_controller(serial_handle, None, None, true);
 
-    // Wait for the host's acknowledgement before moving forward
-    let mut reply = [0; 3];
-    serial
-        .read(&mut reply[..])
-        .expect("Failed to read host reply");
-
-    assert_eq!(&reply[..], b"OK\n", "Unexpected screenshot request reply");
+    if let Err(err) = res {
+        panic!(
+            "request failed: \"{}\": {:?}",
+            request.trim_end(),
+            err.status()
+        );
+    }
 }
 
 fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {

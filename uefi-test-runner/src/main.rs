@@ -76,10 +76,23 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
-/// Send the `request` string to the host via the `serial` device, then
-/// wait up to 10 seconds to receive a reply. Returns an error if the
-/// reply is not `"OK\n"`.
-fn send_request_helper(serial: &mut Serial, request: &str) -> Result {
+#[derive(Clone, Copy, Debug)]
+enum HostRequest {
+    /// Tell the host to take a screenshot and compare against the
+    /// golden image.
+    Screenshot(&'static str),
+
+    /// Tell the host that tests are complete. The host will consider
+    /// the tests failed if this message is not received.
+    TestsComplete,
+}
+
+fn send_request_helper(serial: &mut Serial, request: HostRequest) -> Result {
+    let request = match request {
+        HostRequest::Screenshot(name) => format!("SCREENSHOT: {name}\n"),
+        HostRequest::TestsComplete => "TESTS_COMPLETE\n".to_string(),
+    };
+
     // Set a 10 second timeout for the read and write operations.
     let mut io_mode = *serial.io_mode();
     io_mode.timeout = 10_000_000;
@@ -99,10 +112,10 @@ fn send_request_helper(serial: &mut Serial, request: &str) -> Result {
     }
 }
 
-/// Ask the test runner to check the current screen output against a reference.
-fn check_screenshot(bt: &BootServices, name: &str) {
-    let request = format!("SCREENSHOT: {name}\n");
-
+/// Send the `request` string to the host via the `serial` device, then
+/// wait up to 10 seconds to receive a reply. Returns an error if the
+/// reply is not `"OK\n"`.
+fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     let serial_handle = bt
         .get_handle_for_protocol::<Serial>()
         .expect("Failed to get serial handle");
@@ -124,7 +137,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
 
     // Send the request, but don't check the result yet so that first
     // we can reconnect the console output for the logger.
-    let res = send_request_helper(&mut serial, &request);
+    let res = send_request_helper(&mut serial, request);
 
     // Release the serial device and reconnect all controllers to the
     // serial handle. This is necessary to restore the connection
@@ -135,11 +148,7 @@ fn check_screenshot(bt: &BootServices, name: &str) {
     let _ = bt.connect_controller(serial_handle, None, None, true);
 
     if let Err(err) = res {
-        panic!(
-            "request failed: \"{}\": {:?}",
-            request.trim_end(),
-            err.status()
-        );
+        panic!("request failed: \"{request:?}\": {:?}", err.status());
     }
 }
 
@@ -148,6 +157,11 @@ fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     st.stdout().reset(false).unwrap();
 
     info!("Testing complete, shutting down...");
+
+    // Tell the host that tests are done. We are about to exit boot
+    // services, so we can't easily communicate with the host any later
+    // than this.
+    send_request_to_host(st.boot_services(), HostRequest::TestsComplete);
 
     // Exit boot services as a proof that it works :)
     let sizes = st.boot_services().memory_map_size();

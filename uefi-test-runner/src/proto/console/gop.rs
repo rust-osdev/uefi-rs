@@ -1,3 +1,4 @@
+use crate::{send_request_to_host, HostRequest};
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
 use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
@@ -23,7 +24,7 @@ pub unsafe fn test(image: Handle, bt: &BootServices) {
         fill_color(gop);
         draw_fb(gop);
 
-        crate::check_screenshot(bt, "gop_test");
+        send_request_to_host(bt, HostRequest::Screenshot("gop_test"));
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");

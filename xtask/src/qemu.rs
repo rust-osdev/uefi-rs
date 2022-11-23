@@ -7,11 +7,11 @@ use crate::{net, platform};
 use anyhow::{bail, Context, Result};
 use regex::bytes::Regex;
 use serde_json::{json, Value};
+use std::env;
 use std::ffi::OsString;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::{env, thread};
 use tempfile::TempDir;
 
 #[derive(Clone, Copy, Debug)]
@@ -281,35 +281,22 @@ impl Io {
     }
 }
 
-fn echo_filtered_stdout(mut child_io: Io) {
+fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Result<()> {
     // This regex is used to detect and strip ANSI escape codes. These
     // escapes are added by the console output protocol when writing to
     // the serial device.
     let ansi_escape = Regex::new(r"(\x9b|\x1b\[)[0-?]*[ -/]*[@-~]").expect("invalid regex");
 
-    while let Ok(line) = child_io.read_line() {
-        let line = line.trim();
-        let stripped = ansi_escape.replace_all(line.as_bytes(), &b""[..]);
-        let stripped = String::from_utf8(stripped.into()).expect("line is not utf8");
-
-        // Print out the processed QEMU output for logging & inspection.
-        println!("{stripped}");
-    }
-}
-
-fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Result<()> {
     // Execute the QEMU monitor handshake, doing basic sanity checks.
     assert!(monitor_io.read_line()?.starts_with(r#"{"QMP":"#));
     monitor_io.write_json(json!({"execute": "qmp_capabilities"}))?;
     assert_eq!(monitor_io.read_json()?, json!({"return": {}}));
 
     while let Ok(line) = serial_io.read_line() {
-        // Strip whitespace from the end. No need to strip ANSI escape
-        // codes like in the stdout, because those escape codes are
-        // inserted by the console output protocol, whereas the
-        // "SCREENSHOT" line we are interested in is written via the
-        // serial protocol.
+        // Strip whitespace and ANSI escape codes.
         let line = line.trim_end();
+        let line = ansi_escape.replace_all(line.as_bytes(), &b""[..]);
+        let line = String::from_utf8(line.into()).expect("line is not utf8");
 
         // If the app requests a screenshot, take it.
         if let Some(reference_name) = line.strip_prefix("SCREENSHOT: ") {
@@ -343,6 +330,8 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
                 expected == actual,
                 "screenshot does not match reference image"
             )
+        } else {
+            println!("{line}");
         }
     }
 
@@ -510,16 +499,10 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     cmd.arg(drive_arg);
 
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
-    let serial_pipe = Pipe::new(tmp_dir, "serial")?;
 
-    // Open two serial devices. The first one is connected to the host's
-    // stdout, and serves to just transport logs. The second one is
-    // connected to a pipe, and used to receive the SCREENSHOT command
-    // and send the response. That second will also receive logs up
-    // until the test runner opens the handle in exclusive mode, but we
-    // can just read and ignore those lines.
+    // Open a serial device connected to stdio. This is used for
+    // printing logs and to receive and reply to commands.
     cmd.args(["-serial", "stdio"]);
-    cmd.args(["-serial", serial_pipe.qemu_arg()]);
 
     // Map the QEMU monitor to a pair of named pipes
     cmd.args(["-qmp", qemu_monitor_pipe.qemu_arg()]);
@@ -543,21 +526,16 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let mut child = ChildWrapper(cmd.spawn().context("failed to launch qemu")?);
 
     let monitor_io = qemu_monitor_pipe.open_io()?;
-    let serial_io = serial_pipe.open_io()?;
     let child_io = Io::new(
         child.0.stdout.take().unwrap(),
         child.0.stdin.take().unwrap(),
     );
 
-    // Start a thread to process stdout from the child.
-    let stdout_thread = thread::spawn(|| echo_filtered_stdout(child_io));
-
     // Capture the result to check it, but first wait for the child to
     // exit.
-    let res = process_qemu_io(monitor_io, serial_io, tmp_dir);
+    let res = process_qemu_io(monitor_io, child_io, tmp_dir);
     let status = child.0.wait()?;
 
-    stdout_thread.join().expect("stdout thread panicked");
     if let Some(echo_service) = echo_service {
         echo_service.stop();
     }

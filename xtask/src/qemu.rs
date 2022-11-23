@@ -282,6 +282,8 @@ impl Io {
 }
 
 fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Result<()> {
+    let mut tests_complete = false;
+
     // This regex is used to detect and strip ANSI escape codes. These
     // escapes are added by the console output protocol when writing to
     // the serial device.
@@ -297,6 +299,9 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
         let line = line.trim_end();
         let line = ansi_escape.replace_all(line.as_bytes(), &b""[..]);
         let line = String::from_utf8(line.into()).expect("line is not utf8");
+
+        // Send an "OK" response to the app.
+        let mut reply_ok = || serial_io.write_all("OK\n");
 
         // If the app requests a screenshot, take it.
         if let Some(reference_name) = line.strip_prefix("SCREENSHOT: ") {
@@ -316,7 +321,7 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
             assert_eq!(reply, json!({"return": {}}));
 
             // Tell the VM that the screenshot was taken
-            serial_io.write_all("OK\n")?;
+            reply_ok()?;
 
             // Compare screenshot to the reference file specified by the user.
             // TODO: Add an operating mode where the reference is created if it doesn't exist.
@@ -330,9 +335,21 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
                 expected == actual,
                 "screenshot does not match reference image"
             )
+        } else if line == "TESTS_COMPLETE" {
+            // The app sends this command after running its tests to
+            // indicate it actually got to the end. If the tests failed
+            // earlier with a panic, this command will never be
+            // received.
+            tests_complete = true;
+
+            reply_ok()?;
         } else {
             println!("{line}");
         }
+    }
+
+    if !tests_complete {
+        bail!("tests did not complete successfully");
     }
 
     Ok(())

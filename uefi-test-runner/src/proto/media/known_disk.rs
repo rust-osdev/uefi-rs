@@ -1,4 +1,5 @@
 use alloc::string::ToString;
+use core::cell::RefCell;
 use core::ptr::NonNull;
 use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
@@ -21,20 +22,61 @@ fn test_existing_dir(directory: &mut Directory) {
 
     assert!(dir.is_directory().unwrap());
 
-    let mut dir = dir.into_directory().expect("not a directory");
+    let dir = dir.into_directory().expect("Should be a directory");
 
-    // Collect and validate the directory entries.
-    let mut entry_names = vec![];
-    let mut buf = vec![0; 200];
-    loop {
-        let entry = dir.read_entry(&mut buf).expect("failed to read directory");
-        if let Some(entry) = entry {
-            entry_names.push(entry.file_name().to_string());
-        } else {
-            break;
+    let dir = RefCell::new(dir);
+
+    // Backing memory to read the file info data into.
+    let mut stack_buf = [0; 200];
+
+    // The file names that the test read from the directory.
+    let entry_names = RefCell::new(vec![]);
+
+    // Expected file names in the directory.
+    const EXPECTED: &[&str] = &[".", "..", "test_input.txt"];
+
+    // Reads the whole directory with provided backing memory.
+    let mut test_read_dir_stack_mem = || {
+        let mut dir = dir.borrow_mut();
+        let mut entry_names = entry_names.borrow_mut();
+        loop {
+            let entry = dir
+                .read_entry(&mut stack_buf)
+                .expect("failed to read directory");
+            if let Some(entry) = entry {
+                entry_names.push(entry.file_name().to_string());
+            } else {
+                break;
+            }
         }
+        assert_eq!(&*entry_names, EXPECTED);
+    };
+
+    // Reads the whole directory but returns owned memory on the heap.
+    let test_read_dir_heap_mem = || {
+        let mut dir = dir.borrow_mut();
+        let mut entry_names = entry_names.borrow_mut();
+        loop {
+            let entry = dir.read_entry_boxed().expect("failed to read directory");
+            if let Some(entry) = entry {
+                entry_names.push(entry.file_name().to_string());
+            } else {
+                break;
+            }
+        }
+        assert_eq!(&*entry_names, EXPECTED);
+    };
+
+    // Tests all read dir test functions three times.
+    for _ in 0..3 {
+        entry_names.borrow_mut().clear();
+        dir.borrow_mut().reset_entry_readout().unwrap();
+        test_read_dir_stack_mem();
+
+        entry_names.borrow_mut().clear();
+        dir.borrow_mut().reset_entry_readout().unwrap();
+        test_read_dir_heap_mem();
     }
-    assert_eq!(entry_names, [".", "..", "test_input.txt"]);
 }
 
 /// Test that deleting a file opened in read-only mode fails with a

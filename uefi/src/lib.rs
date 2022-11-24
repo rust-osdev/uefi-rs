@@ -79,3 +79,6 @@ pub mod global_allocator;
 
 #[cfg(feature = "logger")]
 pub mod logger;
+
+#[cfg(feature = "alloc")]
+pub(crate) mod mem;

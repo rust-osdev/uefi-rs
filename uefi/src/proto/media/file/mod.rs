@@ -17,11 +17,7 @@ use core::fmt::Debug;
 use core::mem;
 use core::ptr;
 #[cfg(feature = "alloc")]
-use {
-    crate::ResultExt,
-    ::alloc::{alloc, alloc::Layout, boxed::Box},
-    core::slice,
-};
+use {alloc::boxed::Box, uefi::mem::make_boxed};
 
 pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
 pub use self::{dir::Directory, regular::RegularFile};
@@ -166,53 +162,11 @@ pub trait File: Sized {
     }
 
     #[cfg(feature = "alloc")]
-    /// Get the dynamically allocated info for a file
+    /// Read the dynamically allocated info for a file.
     fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
-        // Initially try get_info with an empty array, this should always fail
-        // as all Info types at least need room for a null-terminator.
-        let size = match self
-            .get_info::<Info>(&mut [])
-            .expect_err("zero sized get_info unexpectedly succeeded")
-            .split()
-        {
-            (s, None) => return Err(s.into()),
-            (_, Some(size)) => size,
-        };
-
-        // We add trailing padding because the size of a rust structure must
-        // always be a multiple of alignment.
-        let layout = Layout::from_size_align(size, Info::alignment())
-            .unwrap()
-            .pad_to_align();
-
-        // Allocate the buffer.
-        let data: *mut u8 = unsafe {
-            let data = alloc::alloc(layout);
-            if data.is_null() {
-                return Err(Status::OUT_OF_RESOURCES.into());
-            }
-            data
-        };
-
-        // Get the file info using the allocated buffer for storage.
-        let info = {
-            let buffer = unsafe { slice::from_raw_parts_mut(data, layout.size()) };
-            self.get_info::<Info>(buffer).discard_errdata()
-        };
-
-        // If an error occurred, deallocate the memory before returning.
-        let info = match info {
-            Ok(info) => info,
-            Err(err) => {
-                unsafe { alloc::dealloc(data, layout) };
-                return Err(err);
-            }
-        };
-
-        // Wrap the file info in a box so that it will be deallocated on
-        // drop. This is valid because the memory was allocated with the
-        // global allocator.
-        unsafe { Ok(Box::from_raw(info)) }
+        let fetch_data_fn = |buf| self.get_info::<Info>(buf);
+        let file_info = make_boxed::<Info, _>(fetch_data_fn)?;
+        Ok(file_info)
     }
 
     /// Returns if the underlying file is a regular file.

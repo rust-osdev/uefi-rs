@@ -50,11 +50,13 @@ impl Directory {
         FileInfo::assert_aligned(buffer);
 
         // Read the directory entry into the aligned storage
-        self.0.read(buffer).map(|size| {
-            if size != 0 {
-                unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr().cast::<c_void>())) }
-            } else {
+        self.0.read(buffer).map(|read_bytes| {
+            // 0 read bytes signals that the last directory entry was read
+            let last_directory_entry_read = read_bytes == 0;
+            if last_directory_entry_read {
                 None
+            } else {
+                unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr().cast::<c_void>())) }
             }
         })
     }

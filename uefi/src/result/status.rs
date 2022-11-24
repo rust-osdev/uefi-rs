@@ -12,6 +12,12 @@ newtype_enum! {
 /// enum, as injecting an unknown value in a Rust enum is undefined behaviour.
 ///
 /// For lack of a better option, we therefore model them as a newtype of usize.
+///
+/// For a convenient integration into the Rust ecosystem, there are multiple
+/// factory methods to convert a Status into a [`uefi::Result`]:
+/// - [`Status::into_with`]
+/// - [`Status::into_with_val`]
+/// - [`Status::into_with_err`]
 #[must_use]
 pub enum Status: usize => {
     /// The operation completed successfully.
@@ -122,7 +128,10 @@ impl Status {
         self.0 & ERROR_BIT != 0
     }
 
-    /// Converts this status code into a result with a given value.
+    /// Converts this status code into a [`uefi::Result`] with a given `Ok` value.
+    ///
+    /// If the status does not indicate success, the status representing the specific error
+    /// code is embedded into the `Err` variant of type [`uefi::Error`].
     #[inline]
     pub fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if self.is_success() {
@@ -132,7 +141,10 @@ impl Status {
         }
     }
 
-    /// Converts this status code into a result with a given error payload
+    /// Converts this status code into a [`uefi::Result`] with a given `Err` payload.
+    ///
+    /// If the status does not indicate success, the status representing the specific error
+    /// code is embedded into the `Err` variant of type [`uefi::Error`].
     #[inline]
     pub fn into_with_err<ErrData: Debug>(
         self,
@@ -145,7 +157,10 @@ impl Status {
         }
     }
 
-    /// Convert this status code into a result with a given value and error payload
+    /// Convert this status code into a result with a given `Ok` value and `Err` payload.
+    ///
+    /// If the status does not indicate success, the status representing the specific error
+    /// code is embedded into the `Err` variant of type [`uefi::Error`].
     #[inline]
     pub fn into_with<T, ErrData: Debug>(
         self,

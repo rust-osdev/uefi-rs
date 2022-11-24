@@ -1,4 +1,4 @@
 [toolchain]
 # Oldest nightly that currently works with `cargo xtask build`.
-channel = "nightly-2022-08-25"
-components = ["rust-src"]
+channel = "nightly-2022-11-22"
+targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]

@@ -52,7 +52,7 @@ For additional information, refer to the [UEFI specification][spec].
 For instructions on how to create your own UEFI apps, see the [tutorial].
 
 The uefi-rs crates currently require some [unstable features].
-The nightly MSRV is currently 2022-08-25.
+The nightly MSRV is currently 2022-11-22.
 
 [unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
 [tutorial]: https://rust-osdev.github.io/uefi-rs/HEAD/tutorial/introduction.html

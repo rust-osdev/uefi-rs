@@ -94,7 +94,7 @@ prerequisites for running the tests.
 For instructions on how to create your own UEFI apps, see the [BUILDING.md](BUILDING.md) file.
 
 The uefi-rs crates currently require some [unstable features].
-The nightly MSRV is currently 2022-08-25.
+The nightly MSRV is currently 2022-11-22.
 
 [unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
 

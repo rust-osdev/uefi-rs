@@ -7,6 +7,8 @@
 - Added `TryFrom<core::ffi::CStr>` implementation for `CStr8`.
 - Added `Directory::read_entry_boxed` which works similar to `File::get_boxed_info`. This allows
   easier iteration over the entries in a directory.
+- Added an `core::error::Error` implementation for `Error` to ease
+  integration with error-handling crates.
 
 ## uefi-macros - [Unreleased]
 

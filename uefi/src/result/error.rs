@@ -45,3 +45,5 @@ impl<Data: Debug + Display> Display for Error<Data> {
         write!(f, "UEFI Error {}: {}", self.status(), self.data())
     }
 }
+
+impl<Data: Debug + Display> core::error::Error for Error<Data> {}

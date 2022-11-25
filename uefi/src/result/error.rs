@@ -1,5 +1,5 @@
 use super::Status;
-use core::fmt::Debug;
+use core::fmt::{Debug, Display};
 
 /// Errors emitted from UEFI entry point must propagate erronerous UEFI statuses,
 /// and may optionally propagate additional entry point-specific data.
@@ -37,5 +37,11 @@ impl<Data: Debug> Error<Data> {
 impl From<Status> for Error<()> {
     fn from(status: Status) -> Self {
         Self { status, data: () }
+    }
+}
+
+impl<Data: Debug + Display> Display for Error<Data> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "UEFI Error {}: {}", self.status(), self.data())
     }
 }

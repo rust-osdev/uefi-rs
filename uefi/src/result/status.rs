@@ -168,6 +168,12 @@ impl From<Status> for Result<(), ()> {
     }
 }
 
+impl core::fmt::Display for Status {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

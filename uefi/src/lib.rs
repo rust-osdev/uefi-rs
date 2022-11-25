@@ -41,6 +41,7 @@
 #![feature(maybe_uninit_slice)]
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
+#![feature(error_in_core)]
 #![cfg_attr(feature = "alloc", feature(vec_into_raw_parts))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]

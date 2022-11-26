@@ -3,8 +3,8 @@
 This directory contains a minimal example of a UEFI application.
 Copy it to a new directory to get started.
 
-Check out the [`BUILDING.md`](../BUILDING.md) document for more instructions on
-how to build and run a UEFI application developed using `uefi-rs`.
+Check out the [tutorial] for more instructions on how to build and run a
+UEFI application developed using `uefi-rs`.
 
 ## File structure
 
@@ -39,3 +39,4 @@ loads and executes an ELF kernel binary.
 [linker scripts]: https://sourceware.org/binutils/docs/ld/Scripts.html
 [EFI stub]: https://www.kernel.org/doc/Documentation/efi-stub.txt
 [bootloader]: https://github.com/rust-osdev/bootloader
+[tutorial]: https://rust-osdev.github.io/uefi-rs/HEAD/tutorial/introduction.html

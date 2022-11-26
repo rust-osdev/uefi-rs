@@ -5,6 +5,7 @@
   - [Creating a UEFI Application](tutorial/app.md)
   - [Building](tutorial/building.md)
   - [Running in a VM](tutorial/vm.md)
+  - [Running on Hardware](tutorial/hardware.md)
 - [How-to](how_to/introduction.md)
   - [Using Protocols](how_to/protocols.md)
   - [Drawing to the Screen](how_to/drawing.md)

@@ -7,8 +7,6 @@ various boot services and protocols.
 
 ## Prerequisites
 
-Besides all the [core library requirements](../BUILDING.md) for building a UEFI app, the tests have additional requirements:
-
 - [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
 - [Python 3](https://www.python.org): at least version 3.6 is required.
 - [OVMF](https://github.com/tianocore/tianocore.github.io/wiki/OVMF):

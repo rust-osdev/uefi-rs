@@ -5,7 +5,7 @@ be run in a specially-configured QEMU VM. This allows us to test the
 parts of the `uefi` package that depend on a UEFI environment, such as
 various boot services and protocols.
 
-## Prerequisites
+## Requirements
 
 - [QEMU](https://www.qemu.org/): the most recent version of QEMU is recommended.
 - [Python 3](https://www.python.org): at least version 3.6 is required.

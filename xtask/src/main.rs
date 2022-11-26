@@ -180,7 +180,7 @@ fn run_host_tests() -> Result<()> {
 /// template to a temporary directory and builds it in isolation.
 ///
 /// The build command is also checked against the contents of
-/// `BUILDING.md` to ensure that the doc correctly describes how to
+/// `building.md` to ensure that the doc correctly describes how to
 /// build an app.
 fn test_latest_release() -> Result<()> {
     // Recursively copy the template app to a temporary directory. This
@@ -195,16 +195,16 @@ fn test_latest_release() -> Result<()> {
     run_cmd(cp_cmd)?;
 
     // Create cargo build command, not using the `cargo` module to make
-    // it explicit that it matches the command in `BUILDING.md`.
+    // it explicit that it matches the command in `building.md`.
     let mut build_cmd = Command::new("cargo");
     fix_nested_cargo_env(&mut build_cmd);
     build_cmd
         .args(["build", "--target", "x86_64-unknown-uefi"])
         .current_dir(tmp_dir.join("template"));
 
-    // Check that the command is indeed in BUILDING.md, then verify the
+    // Check that the command is indeed in building.md, then verify the
     // build succeeds.
-    let building_md = include_str!("../../BUILDING.md");
+    let building_md = include_str!("../../book/src/tutorial/building.md");
     assert!(building_md.contains(&command_to_string(&build_cmd)));
     run_cmd(build_cmd)
 }

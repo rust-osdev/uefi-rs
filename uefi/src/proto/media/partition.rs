@@ -44,6 +44,7 @@ pub struct MbrPartitionRecord {
 
 impl MbrPartitionRecord {
     /// True if the partition is a bootable legacy partition.
+    #[must_use]
     pub const fn is_bootable(&self) -> bool {
         self.boot_indicator == 0x80
     }
@@ -100,6 +101,7 @@ bitflags! {
 impl GptPartitionAttributes {
     /// Get bits `48..=63` as a [`u16`]. The meaning of these bits depends
     /// on the partition's type (see [`GptPartitionEntry::partition_type_guid`]).
+    #[must_use]
     pub const fn type_specific_bits(&self) -> u16 {
         (self.bits >> 48) as u16
     }
@@ -135,6 +137,7 @@ impl GptPartitionEntry {
     /// Get the number of blocks in the partition. Returns `None` if the
     /// end block is before the start block, or if the number doesn't
     /// fit in a `u64`.
+    #[must_use]
     pub fn num_blocks(&self) -> Option<u64> {
         self.ending_lba
             .checked_sub(self.starting_lba)?
@@ -188,12 +191,14 @@ pub struct PartitionInfo {
 
 impl PartitionInfo {
     /// True if the partition is an EFI system partition.
+    #[must_use]
     pub const fn is_system(&self) -> bool {
         self.system == 1
     }
 
     /// Get the MBR partition record. Returns None if the partition
     /// type is not MBR.
+    #[must_use]
     pub fn mbr_partition_record(&self) -> Option<&MbrPartitionRecord> {
         if { self.revision } != PartitionInfoRevision::PROTOCOL_REVISION {
             return None;
@@ -208,6 +213,7 @@ impl PartitionInfo {
 
     /// Get the GPT partition entry. Returns None if the partition
     /// type is not GPT.
+    #[must_use]
     pub fn gpt_partition_entry(&self) -> Option<&GptPartitionEntry> {
         if { self.revision } != PartitionInfoRevision::PROTOCOL_REVISION {
             return None;

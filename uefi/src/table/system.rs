@@ -53,17 +53,20 @@ pub struct SystemTable<View: SystemTableView> {
 // These parts of the UEFI System Table interface will always be available
 impl<View: SystemTableView> SystemTable<View> {
     /// Return the firmware vendor string
+    #[must_use]
     pub fn firmware_vendor(&self) -> &CStr16 {
         unsafe { CStr16::from_ptr(self.table.fw_vendor) }
     }
 
     /// Return the firmware revision
+    #[must_use]
     pub const fn firmware_revision(&self) -> u32 {
         self.table.fw_revision
     }
 
     /// Returns the revision of this table, which is defined to be
     /// the revision of the UEFI specification implemented by the firmware.
+    #[must_use]
     pub const fn uefi_revision(&self) -> Revision {
         self.table.header.revision
     }
@@ -71,6 +74,7 @@ impl<View: SystemTableView> SystemTable<View> {
     /// Returns the config table entries, a linear array of structures
     /// pointing to other system-specific tables.
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[must_use]
     pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
         unsafe { slice::from_raw_parts(self.table.cfg_table, self.table.nr_cfg) }
     }
@@ -121,11 +125,13 @@ impl SystemTable<Boot> {
     }
 
     /// Access runtime services
+    #[must_use]
     pub const fn runtime_services(&self) -> &RuntimeServices {
         self.table.runtime
     }
 
     /// Access boot services
+    #[must_use]
     pub const fn boot_services(&self) -> &BootServices {
         unsafe { &*self.table.boot }
     }
@@ -246,6 +252,7 @@ impl SystemTable<Runtime> {
     /// This is unsafe because UEFI runtime services require an elaborate
     /// CPU configuration which may not be preserved by OS loaders. See the
     /// "Calling Conventions" chapter of the UEFI specification for details.
+    #[must_use]
     pub const unsafe fn runtime_services(&self) -> &RuntimeServices {
         self.table.runtime
     }
@@ -286,6 +293,7 @@ impl SystemTable<Runtime> {
 
     /// Return the address of the SystemTable that resides in a UEFI runtime services
     /// memory region.
+    #[must_use]
     pub fn get_current_system_table_addr(&self) -> u64 {
         self.table as *const _ as usize as u64
     }

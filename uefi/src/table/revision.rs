@@ -56,6 +56,7 @@ impl Revision {
 
 impl Revision {
     /// Creates a new revision.
+    #[must_use]
     pub const fn new(major: u16, minor: u16) -> Self {
         let major = major as u32;
         let minor = minor as u32;
@@ -64,11 +65,13 @@ impl Revision {
     }
 
     /// Returns the major revision.
+    #[must_use]
     pub const fn major(self) -> u16 {
         (self.0 >> 16) as u16
     }
 
     /// Returns the minor revision.
+    #[must_use]
     pub const fn minor(self) -> u16 {
         self.0 as u16
     }

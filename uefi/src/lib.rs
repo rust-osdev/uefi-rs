@@ -67,6 +67,7 @@
 // Enable some additional warnings and lints.
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(clippy::all)]
+#![deny(clippy::must_use_candidate)]
 
 // Enable once we use vec![] or similar
 // #[cfg_attr(feature = "alloc", macro_use)]

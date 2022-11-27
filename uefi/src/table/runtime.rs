@@ -405,6 +405,7 @@ impl Time {
     ///
     /// [`FileInfo`]: uefi::proto::media::file::FileInfo
     /// [`File::set_info`]: uefi::proto::media::file::File::set_info
+    #[must_use]
     pub const fn invalid() -> Self {
         Self {
             year: 0,
@@ -422,6 +423,7 @@ impl Time {
     }
 
     /// True if all fields are within valid ranges, false otherwise.
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         (1900..=9999).contains(&self.year)
             && (1..=12).contains(&self.month)
@@ -435,41 +437,49 @@ impl Time {
     }
 
     /// Query the year.
+    #[must_use]
     pub const fn year(&self) -> u16 {
         self.year
     }
 
     /// Query the month.
+    #[must_use]
     pub const fn month(&self) -> u8 {
         self.month
     }
 
     /// Query the day.
+    #[must_use]
     pub const fn day(&self) -> u8 {
         self.day
     }
 
     /// Query the hour.
+    #[must_use]
     pub const fn hour(&self) -> u8 {
         self.hour
     }
 
     /// Query the minute.
+    #[must_use]
     pub const fn minute(&self) -> u8 {
         self.minute
     }
 
     /// Query the second.
+    #[must_use]
     pub const fn second(&self) -> u8 {
         self.second
     }
 
     /// Query the nanosecond.
+    #[must_use]
     pub const fn nanosecond(&self) -> u32 {
         self.nanosecond
     }
 
     /// Query the time offset in minutes from UTC, or None if using local time.
+    #[must_use]
     pub const fn time_zone(&self) -> Option<i16> {
         if self.time_zone == 2047 {
             None
@@ -479,6 +489,7 @@ impl Time {
     }
 
     /// Query the daylight savings time information.
+    #[must_use]
     pub const fn daylight(&self) -> Daylight {
         self.daylight
     }

@@ -73,6 +73,7 @@ pub trait Align {
     /// Calculate the offset from `val` necessary to make it aligned,
     /// rounding up. For example, if `val` is 1 and the alignment is 8,
     /// this will return 7. Returns 0 if `val == 0`.
+    #[must_use]
     fn offset_up_to_alignment(val: usize) -> usize {
         assert!(Self::alignment() != 0);
         let r = val % Self::alignment();
@@ -84,6 +85,7 @@ pub trait Align {
     }
 
     /// Round `val` up so that it is aligned.
+    #[must_use]
     fn round_up_to_alignment(val: usize) -> usize {
         val + Self::offset_up_to_alignment(val)
     }

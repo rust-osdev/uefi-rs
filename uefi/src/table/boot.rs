@@ -325,6 +325,7 @@ impl BootServices {
     /// Raising a task's priority level can affect other running tasks and
     /// critical processes run by UEFI. The highest priority level is the
     /// most dangerous, since it disables interrupts.
+    #[must_use]
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
         TplGuard {
             boot_services: self,
@@ -362,6 +363,7 @@ impl BootServices {
     /// Note that the size of the memory map can increase any time an allocation happens,
     /// so when creating a buffer to put the memory map into, it's recommended to allocate a few extra
     /// elements worth of space above the size of the current memory map.
+    #[must_use]
     pub fn memory_map_size(&self) -> MemoryMapSize {
         let mut map_size = 0;
         let mut map_key = MemoryMapKey(0);
@@ -1687,6 +1689,7 @@ pub enum MemoryType: u32 => {
 impl MemoryType {
     /// Construct a custom `MemoryType`. Values in the range `0x80000000..=0xffffffff` are free for use if you are
     /// an OS loader.
+    #[must_use]
     pub const fn custom(value: u32) -> MemoryType {
         assert!(value >= 0x80000000);
         MemoryType(value)
@@ -1849,6 +1852,7 @@ pub enum SearchType<'guid> {
 
 impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
+    #[must_use]
     pub const fn from_proto<P: Protocol>() -> Self {
         SearchType::ByProtocol(&P::GUID)
     }
@@ -1926,6 +1930,7 @@ impl<'a> ProtocolsPerHandle<'a> {
     /// Get the protocol interface [`Guids`][Guid] that are installed on the
     /// [`Handle`].
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[must_use]
     pub fn protocols<'b>(&'b self) -> &'b [&'a Guid] {
         // convert raw pointer to slice here so that we can get
         // appropriate lifetime of the slice.
@@ -1953,6 +1958,7 @@ impl<'a> Drop for HandleBuffer<'a> {
 impl<'a> HandleBuffer<'a> {
     /// Get an array of [`Handles`][Handle] that support the requested protocol.
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[must_use]
     pub fn handles(&self) -> &[Handle] {
         // convert raw pointer to slice here so that we can get
         // appropriate lifetime of the slice.

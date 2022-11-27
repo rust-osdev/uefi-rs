@@ -59,16 +59,19 @@ pub struct ProcessorInformation {
 
 impl ProcessorInformation {
     /// Returns `true` if the processor is playing the role of BSP.
+    #[must_use]
     pub const fn is_bsp(&self) -> bool {
         self.status_flag.contains(StatusFlag::PROCESSOR_AS_BSP_BIT)
     }
 
     /// Returns `true` if the processor is enabled.
+    #[must_use]
     pub const fn is_enabled(&self) -> bool {
         self.status_flag.contains(StatusFlag::PROCESSOR_ENABLED_BIT)
     }
 
     /// Returns `true` if the processor is healthy.
+    #[must_use]
     pub const fn is_healthy(&self) -> bool {
         self.status_flag
             .contains(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT)

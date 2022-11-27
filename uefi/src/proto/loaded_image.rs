@@ -52,6 +52,7 @@ pub enum LoadOptionsError {
 
 impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
+    #[must_use]
     pub const fn device(&self) -> Handle {
         self.device_handle
     }
@@ -60,6 +61,7 @@ impl LoadedImage {
     ///
     /// Return `None` if the pointer to the file path portion specific to
     /// DeviceHandle that the EFI Image was loaded from is null.
+    #[must_use]
     pub fn file_path(&self) -> Option<&DevicePath> {
         if self.file_path.is_null() {
             None
@@ -106,6 +108,7 @@ impl LoadedImage {
     /// Returns `None` if load options are not set.
     ///
     /// [`load_options_as_cstr16`]: `Self::load_options_as_cstr16`
+    #[must_use]
     pub fn load_options_as_bytes(&self) -> Option<&[u8]> {
         if self.load_options.is_null() {
             None
@@ -164,6 +167,7 @@ impl LoadedImage {
     }
 
     /// Returns the base address and the size in bytes of the loaded image.
+    #[must_use]
     pub const fn info(&self) -> (*const c_void, u64) {
         (self.image_base, self.image_size)
     }

@@ -109,6 +109,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns information about all available graphics modes.
+    #[must_use]
     pub fn modes(&'_ self) -> impl ExactSizeIterator<Item = Mode> + '_ {
         ModeIter {
             gop: self,
@@ -294,6 +295,7 @@ impl<'boot> GraphicsOutput<'boot> {
     }
 
     /// Returns the frame buffer information for the current mode.
+    #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
         *self.mode.info
     }
@@ -377,11 +379,13 @@ impl Mode {
     /// The size of the info structure in bytes.
     ///
     /// Newer versions of the spec might add extra information, in a backwards compatible way.
+    #[must_use]
     pub const fn info_size(&self) -> usize {
         self.info_sz
     }
 
     /// Returns a reference to the mode info structure.
+    #[must_use]
     pub const fn info(&self) -> &ModeInfo {
         &self.info
     }
@@ -404,16 +408,19 @@ impl ModeInfo {
     /// Returns the (horizontal, vertical) resolution.
     ///
     /// On desktop monitors, this usually means (width, height).
+    #[must_use]
     pub const fn resolution(&self) -> (usize, usize) {
         (self.hor_res as usize, self.ver_res as usize)
     }
 
     /// Returns the format of the frame buffer.
+    #[must_use]
     pub const fn pixel_format(&self) -> PixelFormat {
         self.format
     }
 
     /// Returns the bitmask of the custom pixel format, if available.
+    #[must_use]
     pub const fn pixel_bitmask(&self) -> Option<PixelBitmask> {
         match self.format {
             PixelFormat::Bitmask => Some(self.mask),
@@ -425,6 +432,7 @@ impl ModeInfo {
     ///
     /// Due to performance reasons, the stride might not be equal to the width,
     /// instead the stride might be bigger for better alignment.
+    #[must_use]
     pub const fn stride(&self) -> usize {
         self.stride as usize
     }
@@ -475,6 +483,7 @@ pub struct BltPixel {
 
 impl BltPixel {
     /// Create a new pixel from RGB values.
+    #[must_use]
     pub const fn new(red: u8, green: u8, blue: u8) -> Self {
         Self {
             red,
@@ -582,6 +591,7 @@ impl<'gop> FrameBuffer<'gop> {
     }
 
     /// Query the framebuffer size in bytes
+    #[must_use]
     pub const fn size(&self) -> usize {
         self.size
     }
@@ -607,6 +617,7 @@ impl<'gop> FrameBuffer<'gop> {
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
     #[inline]
+    #[must_use]
     pub unsafe fn read_byte(&self, index: usize) -> u8 {
         debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
         self.base.add(index).read_volatile()
@@ -647,6 +658,7 @@ impl<'gop> FrameBuffer<'gop> {
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
     #[inline]
+    #[must_use]
     pub unsafe fn read_value<T>(&self, index: usize) -> T {
         debug_assert!(
             index.saturating_add(mem::size_of::<T>()) <= self.size,

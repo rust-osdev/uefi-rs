@@ -78,6 +78,7 @@ impl CStr8 {
     /// The function will start accessing memory from `ptr` until the first
     /// null byte. It's the callers responsibility to ensure `ptr` points to
     /// a valid null-terminated string in accessible memory.
+    #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
         let mut len = 0;
         while *ptr.add(len) != NUL_8 {
@@ -106,22 +107,26 @@ impl CStr8 {
     ///
     /// It's the callers responsibility to ensure chars is a valid Latin-1
     /// null-terminated string, with no interior null bytes.
+    #[must_use]
     pub const unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
         &*(chars as *const [u8] as *const Self)
     }
 
     /// Returns the inner pointer to this CStr8.
+    #[must_use]
     pub const fn as_ptr(&self) -> *const Char8 {
         self.0.as_ptr()
     }
 
     /// Converts this CStr8 to a slice of bytes without the terminating null byte.
+    #[must_use]
     pub fn to_bytes(&self) -> &[u8] {
         let chars = self.to_bytes_with_nul();
         &chars[..chars.len() - 1]
     }
 
     /// Converts this CStr8 to a slice of bytes containing the trailing null byte.
+    #[must_use]
     pub const fn to_bytes_with_nul(&self) -> &[u8] {
         unsafe { &*(&self.0 as *const [Char8] as *const [u8]) }
     }
@@ -189,6 +194,7 @@ impl CStr16 {
     /// The function will start accessing memory from `ptr` until the first
     /// null byte. It's the callers responsibility to ensure `ptr` points to
     /// a valid string, in accessible memory.
+    #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;
         while *ptr.add(len) != NUL_16 {
@@ -227,6 +233,7 @@ impl CStr16 {
     ///
     /// It's the callers responsibility to ensure chars is a valid UCS-2
     /// null-terminated string, with no interior null bytes.
+    #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
         &*(codes as *const [u16] as *const Self)
     }
@@ -303,27 +310,32 @@ impl CStr16 {
     }
 
     /// Returns the inner pointer to this C string
+    #[must_use]
     pub const fn as_ptr(&self) -> *const Char16 {
         self.0.as_ptr()
     }
 
     /// Get the underlying [`Char16`] slice, including the trailing null.
+    #[must_use]
     pub const fn as_slice_with_nul(&self) -> &[Char16] {
         &self.0
     }
 
     /// Converts this C string to a u16 slice
+    #[must_use]
     pub fn to_u16_slice(&self) -> &[u16] {
         let chars = self.to_u16_slice_with_nul();
         &chars[..chars.len() - 1]
     }
 
     /// Converts this C string to a u16 slice containing the trailing 0 char
+    #[must_use]
     pub const fn to_u16_slice_with_nul(&self) -> &[u16] {
         unsafe { &*(&self.0 as *const [Char16] as *const [u16]) }
     }
 
     /// Returns an iterator over this C string
+    #[must_use]
     pub const fn iter(&self) -> CStr16Iter {
         CStr16Iter {
             inner: self,
@@ -332,6 +344,7 @@ impl CStr16 {
     }
 
     /// Get the number of bytes in the string (including the trailing null character).
+    #[must_use]
     pub const fn num_bytes(&self) -> usize {
         self.0.len() * 2
     }

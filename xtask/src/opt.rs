@@ -86,6 +86,11 @@ pub struct DocOpt {
     #[clap(long, action)]
     pub open: bool,
 
+    /// Tells whether private items should be documented. This is convenient to check for
+    /// broken intra-doc links in private items.
+    #[clap(long, action)]
+    pub document_private_items: bool,
+
     #[clap(flatten)]
     pub warning: WarningOpt,
 }

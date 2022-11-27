@@ -86,7 +86,10 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
 /// Build docs.
 fn doc(opt: &DocOpt) -> Result<()> {
     let cargo = Cargo {
-        action: CargoAction::Doc { open: opt.open },
+        action: CargoAction::Doc {
+            open: opt.open,
+            document_private_items: opt.document_private_items,
+        },
         features: Feature::more_code(),
         packages: Package::published(),
         release: false,

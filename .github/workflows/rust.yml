@@ -98,7 +98,7 @@ jobs:
           cargo xtask clippy --warnings-as-errors
 
       - name: Run cargo doc
-        run: cargo xtask doc --warnings-as-errors
+        run: cargo xtask doc --warnings-as-errors --document-private-items
 
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check

@@ -15,19 +15,28 @@
 //! The `proto` module contains the standard UEFI protocols, which are normally provided
 //! by the various UEFI drivers and firmware layers.
 //!
-//! ## Optional crate features:
+//! ## Optional crate features
 //!
-//! - `alloc`: Enables functionality requiring the `alloc` crate from the Rust standard library.
-//!   - For example, this allows many convenient `uefi-rs` functions to operate on heap data (`Box`).
-//!   - It is up to the user to provide a `#[global_allocator]`.
-//! - `global_allocator`: implements a `#[global_allocator]` using UEFI functions.
-//!   - This allows you to use all abstractions from the `alloc` crate from the Rust standard library
-//!     during runtime. Hence, `Vec`, `Box`, etc. will be able to allocate memory.
-//!     **This is optional**, so you can provide a custom `#[global_allocator]` as well.
-//!   - There's no guarantee of the efficiency of UEFI's allocator.
-//! - `logger`: logging implementation for the standard [`log`] crate.
-//!   - Prints output to UEFI console.
-//!   - No buffering is done: this is not a high-performance logger.
+//! - `alloc`: Enable functionality requiring the [`alloc`] crate from
+//!   the Rust standard library. For example, methods that return a
+//!   `Vec` rather than filling a statically-sized array. This requires
+//!   a global allocator; you can use the `global_allocator` feature or
+//!   provide your own.
+//! - `global_allocator`: Implement a [global allocator] using UEFI
+//!   functions. This is a simple allocator that relies on the UEFI pool
+//!   allocator. You can choose to provide your own allocator instead of
+//!   using this feature, or no allocator at all if you don't need to
+//!   dynamically allocate any memory.
+//! - `logger`: Logging implementation for the standard [`log`] crate
+//!   that prints output to the UEFI console. No buffering is done; this
+//!   is not a high-performance logger.
+//! - `panic-on-logger-errors` (enabled by default): Panic if a text
+//!   output error occurs in the logger.
+//!
+//! The `global_allocator` and `logger` features require special
+//! handling to perform initialization and tear-down. The
+//! [`uefi-services`] crate provides an `init` method that takes care of
+//! this.
 //!
 //! ## Adapting to local conditions
 //!
@@ -36,6 +45,9 @@
 //!
 //! For example, a PC with no network card might not contain a network driver,
 //! therefore all the network protocols will be unavailable.
+//!
+//! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
+//! [`uefi-services`]: https://crates.io/crates/uefi-services
 
 #![feature(abi_efiapi)]
 #![feature(maybe_uninit_slice)]

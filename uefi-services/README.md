@@ -9,3 +9,9 @@ a global allocator.
 
 `uefi-services` is part of the `uefi-rs` project. Please refer to
 <https://github.com/rust-osdev/uefi-rs/> for comprehensive documentation.
+
+## Optional features
+
+This crate's features are described in [`src/lib.rs`].
+  
+[`src/lib.rs`]: src/lib.rs

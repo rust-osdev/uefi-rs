@@ -337,7 +337,7 @@ impl CStr16 {
     }
 
     /// Writes each [`Char16`] as a [`char`] (4 bytes long in Rust language) into the buffer.
-    /// It is up the the implementer of [`core::fmt::Write`] to convert the char to a string
+    /// It is up to the implementer of [`core::fmt::Write`] to convert the char to a string
     /// with proper encoding/charset. For example, in the case of [`alloc::string::String`]
     /// all Rust chars (UTF-32) get converted to UTF-8.
     ///

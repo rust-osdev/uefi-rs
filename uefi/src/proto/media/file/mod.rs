@@ -182,7 +182,7 @@ pub trait File: Sized {
     fn is_directory(&self) -> Result<bool>;
 }
 
-// Internal File helper methods to access the funciton pointer table.
+// Internal File helper methods to access the function pointer table.
 trait FileInternal: File {
     fn imp(&mut self) -> &mut FileImpl {
         unsafe { &mut *self.handle().0 }
@@ -286,6 +286,19 @@ pub(super) struct FileImpl {
     ) -> Status,
     close: extern "efiapi" fn(this: &mut FileImpl) -> Status,
     delete: extern "efiapi" fn(this: &mut FileImpl) -> Status,
+    /// # Read from Regular Files
+    /// If `self` is not a directory, the function reads the requested number of bytes from the file
+    /// at the file’s current position and returns them in `buffer`. If the read goes beyond the end
+    /// of the file, the read length is truncated to the end of the file. The file’s current
+    /// position is increased by the number of bytes returned.
+    ///
+    /// # Read from Directory
+    /// If `self` is a directory, the function reads the directory entry at the file’s current
+    /// position and returns the entry in `buffer`. If the `buffer` is not large enough to hold the
+    /// current directory entry, then `EFI_BUFFER_TOO_SMALL` is returned and the current file
+    /// position is not updated. `buffer_size` is set to be the size of the buffer needed to read
+    /// the entry. On success, the current position is updated to the next directory entry. If there
+    /// are no more directory entries, the read returns a zero-length buffer.
     read: unsafe extern "efiapi" fn(
         this: &mut FileImpl,
         buffer_size: &mut usize,

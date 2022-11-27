@@ -21,7 +21,7 @@ impl RegularFile {
         Self(handle)
     }
 
-    /// Read data from file
+    /// Read data from file.
     ///
     /// Try to read as much as possible into `buffer`. Returns the number of bytes that were
     /// actually read.
@@ -38,10 +38,15 @@ impl RegularFile {
     ///                                      and the required buffer size is provided as output.
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) }.into_with(
+        let status =
+            unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) };
+
+        status.into_with(
             || buffer_size,
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {
+                    // `buffer_size` was updated to the required buffer size by the underlying read
+                    // function.
                     Some(buffer_size)
                 } else {
                     None

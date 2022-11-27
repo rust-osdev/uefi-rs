@@ -110,7 +110,7 @@ impl<'boot> Output<'boot> {
         (self.query_mode)(self, index, &mut columns, &mut rows).into_with_val(|| (columns, rows))
     }
 
-    /// Returns the the current text mode.
+    /// Returns the current text mode.
     pub fn current_mode(&self) -> Result<Option<OutputMode>> {
         match self.data.mode {
             -1 => Ok(None),

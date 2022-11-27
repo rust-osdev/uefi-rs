@@ -14,8 +14,8 @@ pub use self::status::Status;
 /// Almost all UEFI operations provide a status code as an output which
 /// indicates either success, a warning, or an error. This type alias maps
 /// [`Status::SUCCESS`] to the `Ok` variant (with optional `Output` data), and
-/// maps both warning and error statuses to the `Err` variant (with optional
-/// `ErrData`).
+/// maps both warning and error statuses to the `Err` variant of type [`Error`],
+/// which may carry optional inner `ErrData`.
 ///
 /// Warnings are treated as errors by default because they generally indicate
 /// an abnormal situation.

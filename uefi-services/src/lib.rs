@@ -14,6 +14,16 @@
 //! Library code can simply use global UEFI functions
 //! through the reference provided by `system_table`.
 //!
+//! ## Optional crate features
+//!
+//! - `logger` (enabled by default): Initialize a global logger.
+//! - `panic_handler` (enabled by default): Register a panic handler. A
+//!   panic handler must be provided for your program to compile, but
+//!   you can choose to provide your own if you don't want to use this
+//!   one.
+//! - `qemu`: On x86_64, make qemu exit with code 3 if a panic
+//!   occurs. This feature assumes the program is running under QEMU.
+//!
 //! [`exit_boot_services`]: uefi::table::SystemTable::exit_boot_services
 
 #![no_std]

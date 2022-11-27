@@ -47,11 +47,13 @@ impl<'boot> Pointer<'boot> {
 
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for input from the pointer device
+    #[must_use]
     pub const fn wait_for_input_event(&self) -> &Event {
         &self.wait_for_input
     }
 
     /// Returns a reference to the pointer device information.
+    #[must_use]
     pub const fn mode(&self) -> &PointerMode {
         self.mode
     }

@@ -27,6 +27,7 @@ pub struct UnicodeCollation {
 impl UnicodeCollation {
     /// Performs a case insensitive comparison of two
     /// null-terminated strings.
+    #[must_use]
     pub fn stri_coll(&self, s1: &CStr16, s2: &CStr16) -> Ordering {
         let order = (self.stri_coll)(self, s1.as_ptr(), s2.as_ptr());
         order.cmp(&0)
@@ -54,6 +55,7 @@ impl UnicodeCollation {
     /// letter in the alphabet. The pattern "z" will match the letter "z".
     /// The pattern "d?.*" will match the character "D" or "d" followed by
     /// any single character followed by a "." followed by any string.
+    #[must_use]
     pub fn metai_match(&self, s: &CStr16, pattern: &CStr16) -> bool {
         (self.metai_match)(self, s.as_ptr(), pattern.as_ptr())
     }

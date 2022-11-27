@@ -271,6 +271,7 @@ impl NodeField {
 
         Some(quote!(
             #(#field_docs)*
+            #[must_use]
             pub fn #field_name(&self) -> #ret_type {
                 #ret_val
             }

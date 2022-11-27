@@ -29,6 +29,7 @@
 #![no_std]
 #![feature(alloc_error_handler)]
 #![feature(abi_efiapi)]
+#![deny(clippy::must_use_candidate)]
 
 extern crate log;
 // Core types.
@@ -64,6 +65,7 @@ static mut LOGGER: Option<uefi::logger::Logger> = None;
 /// `init` must have been called first by the UEFI app.
 ///
 /// The returned pointer is only valid until boot services are exited.
+#[must_use]
 pub fn system_table() -> NonNull<SystemTable<Boot>> {
     unsafe {
         let table_ref = SYSTEM_TABLE

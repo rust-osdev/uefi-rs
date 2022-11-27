@@ -129,6 +129,7 @@ impl<'boot> Output<'boot> {
     }
 
     /// Returns whether the cursor is currently shown or not.
+    #[must_use]
     pub const fn cursor_visible(&self) -> bool {
         self.data.cursor_visible
     }
@@ -142,6 +143,7 @@ impl<'boot> Output<'boot> {
     }
 
     /// Returns the column and row of the cursor.
+    #[must_use]
     pub const fn cursor_position(&self) -> (usize, usize) {
         let column = self.data.cursor_column;
         let row = self.data.cursor_row;
@@ -260,18 +262,21 @@ pub struct OutputMode {
 impl OutputMode {
     /// Returns the index of this mode.
     #[inline]
+    #[must_use]
     pub const fn index(&self) -> usize {
         self.index
     }
 
     /// Returns the width in columns.
     #[inline]
+    #[must_use]
     pub const fn columns(&self) -> usize {
         self.dims.0
     }
 
     /// Returns the height in rows.
     #[inline]
+    #[must_use]
     pub const fn rows(&self) -> usize {
         self.dims.1
     }

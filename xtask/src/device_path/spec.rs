@@ -294,6 +294,7 @@ mod acpi {
     impl AdrSlice {
         /// Create a new `AdrSlice`. Returns `None` if the input slice
         /// is empty.
+        #[must_use]
         pub fn new(slice: &[u32]) -> Option<&Self> {
             if slice.is_empty() {
                 None
@@ -896,6 +897,7 @@ mod messaging {
         /// service type is [`VENDOR`], otherwise returns None.
         ///
         /// [`VENDOR`]: uefi::proto::device_path::messaging::RestServiceType
+        #[must_use]
         pub fn vendor_guid_and_data(&self) -> Option<(Guid, &[u8])> {
             if self.service_type == RestServiceType::VENDOR
                 && self.vendor_guid_and_data.len() >= size_of::<Guid>()
@@ -1032,6 +1034,7 @@ mod media {
 
     impl HardDrive {
         /// Signature unique to this partition.
+        #[must_use]
         pub fn partition_signature(&self) -> PartitionSignature {
             match self.signature_type {
                 0 => PartitionSignature::None,

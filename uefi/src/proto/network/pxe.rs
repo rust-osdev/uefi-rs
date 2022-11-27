@@ -611,6 +611,7 @@ impl BaseCode {
     }
 
     /// Returns a reference to the `Mode` struct.
+    #[must_use]
     pub const fn mode(&self) -> &Mode {
         unsafe { &*self.mode }
     }
@@ -664,6 +665,7 @@ pub struct DiscoverInfo<T: ?Sized> {
 
 impl<const N: usize> DiscoverInfo<[Server; N]> {
     /// Create a `DiscoverInfo`.
+    #[must_use]
     pub const fn new(
         use_m_cast: bool,
         use_b_cast: bool,
@@ -742,6 +744,7 @@ impl Server {
     /// Construct a `Server` for a Boot Server reply type. If `ip_addr` is not
     /// `None` only Boot Server replies with matching the IP address will be
     /// accepted.
+    #[must_use]
     pub fn new(ty: u16, ip_addr: Option<IpAddress>) -> Self {
         Self {
             ty,
@@ -753,6 +756,7 @@ impl Server {
 
     /// Returns a `None` if the any response should be accepted or the IP
     /// address of a Boot Server whose responses should be accepted.
+    #[must_use]
     pub const fn ip_addr(&self) -> Option<&IpAddress> {
         if self.accept_any_response {
             None
@@ -837,6 +841,7 @@ impl IpFilter {
     /// # Panics
     ///
     /// Panics if `ip_list` contains more than 8 entries.
+    #[must_use]
     pub fn new(filters: IpFilters, ip_list: &[IpAddress]) -> Self {
         assert!(ip_list.len() <= 8);
 
@@ -854,6 +859,7 @@ impl IpFilter {
 
     /// A list of IP addresses other than the Station Ip that should be
     /// enabled. Maybe be multicast or unicast.
+    #[must_use]
     pub fn ip_list(&self) -> &[IpAddress] {
         &self.ip_list[..usize::from(self.ip_cnt)]
     }
@@ -944,21 +950,25 @@ impl DhcpV4Packet {
     pub const DHCP_MAGIK: u32 = 0x63825363;
 
     /// Transaction ID, a random number, used to match this boot request with the responses it generates.
+    #[must_use]
     pub const fn bootp_ident(&self) -> u32 {
         u32::from_be(self.bootp_ident)
     }
 
     /// Filled in by client, seconds elapsed since client started trying to boot.
+    #[must_use]
     pub const fn bootp_seconds(&self) -> u16 {
         u16::from_be(self.bootp_seconds)
     }
 
     /// The flags.
+    #[must_use]
     pub const fn bootp_flags(&self) -> DhcpV4Flags {
         DhcpV4Flags::from_bits_truncate(u16::from_be(self.bootp_flags))
     }
 
     /// A magic cookie, should be [`Self::DHCP_MAGIK`].
+    #[must_use]
     pub const fn dhcp_magik(&self) -> u32 {
         u32::from_be(self.dhcp_magik)
     }
@@ -988,6 +998,7 @@ pub struct DhcpV6Packet {
 
 impl DhcpV6Packet {
     /// The transaction id.
+    #[must_use]
     pub fn transaction_id(&self) -> u32 {
         u32::from(self.transaction_id[0]) << 16
             | u32::from(self.transaction_id[1]) << 8

@@ -36,17 +36,20 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     }
 
     /// Returns true if the slice has a length of 0.
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 
     /// Returns the number of elements in the slice.
+    #[must_use]
     pub const fn len(&self) -> usize {
         self.len
     }
 
     /// Returns the element at `index`, or `None` if the `index` is out
     /// of bounds.
+    #[must_use]
     pub fn get(&self, index: usize) -> Option<T> {
         if index < self.len {
             Some(unsafe { self.data.add(index).read_unaligned() })
@@ -58,6 +61,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     /// Returns an iterator over the slice.
     ///
     /// The iterator yields all items from start to end.
+    #[must_use]
     pub const fn iter(&'a self) -> UnalignedSliceIter<'a, T> {
         UnalignedSliceIter {
             slice: self,
@@ -111,6 +115,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
 
     /// Copies `self` into a new `Vec`.
     #[cfg(feature = "alloc")]
+    #[must_use]
     pub fn to_vec(&self) -> Vec<T> {
         let len = self.len();
         let mut v = Vec::with_capacity(len);

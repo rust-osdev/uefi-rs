@@ -13,6 +13,7 @@ pub struct IpAddress(pub [u8; 16]);
 
 impl IpAddress {
     /// Construct a new IPv4 address.
+    #[must_use]
     pub const fn new_v4(ip_addr: [u8; 4]) -> Self {
         let mut buffer = [0; 16];
         buffer[0] = ip_addr[0];
@@ -23,6 +24,7 @@ impl IpAddress {
     }
 
     /// Construct a new IPv6 address.
+    #[must_use]
     pub const fn new_v6(ip_addr: [u8; 16]) -> Self {
         Self(ip_addr)
     }

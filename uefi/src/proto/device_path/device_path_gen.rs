@@ -91,11 +91,13 @@ pub mod hardware {
 
     impl Pci {
         /// PCI function number.
+        #[must_use]
         pub fn function(&self) -> u8 {
             self.function
         }
 
         /// PCI device number.
+        #[must_use]
         pub fn device(&self) -> u8 {
             self.device
         }
@@ -132,6 +134,7 @@ pub mod hardware {
 
     impl Pccard {
         /// Function number starting from 0.
+        #[must_use]
         pub fn function(&self) -> u8 {
             self.function
         }
@@ -169,16 +172,19 @@ pub mod hardware {
 
     impl MemoryMapped {
         /// Memory type.
+        #[must_use]
         pub fn memory_type(&self) -> MemoryType {
             self.memory_type
         }
 
         /// Starting memory address.
+        #[must_use]
         pub fn start_address(&self) -> u64 {
             self.start_address
         }
 
         /// Ending memory address.
+        #[must_use]
         pub fn end_address(&self) -> u64 {
             self.end_address
         }
@@ -217,11 +223,13 @@ pub mod hardware {
 
     impl Vendor {
         /// Vendor-assigned GUID that defines the data that follows.
+        #[must_use]
         pub fn vendor_guid(&self) -> Guid {
             self.vendor_guid
         }
 
         /// Vendor-defined data.
+        #[must_use]
         pub fn vendor_defined_data(&self) -> &[u8] {
             &self.vendor_defined_data
         }
@@ -268,6 +276,7 @@ pub mod hardware {
 
     impl Controller {
         /// Controller number.
+        #[must_use]
         pub fn controller_number(&self) -> u32 {
             self.controller_number
         }
@@ -305,6 +314,7 @@ pub mod hardware {
 
     impl Bmc {
         /// Host interface type.
+        #[must_use]
         pub fn interface_type(&self) -> crate::proto::device_path::hardware::BmcInterfaceType {
             self.interface_type
         }
@@ -312,6 +322,7 @@ pub mod hardware {
         /// Base address of the BMC. If the least-significant bit of the
         /// field is a 1 then the address is in I/O space, otherwise the
         /// address is memory-mapped.
+        #[must_use]
         pub fn base_address(&self) -> u64 {
             self.base_address
         }
@@ -358,12 +369,14 @@ pub mod acpi {
     impl Acpi {
         /// Device's PnP hardware ID stored in a numeric 32-bit
         /// compressed EISA-type ID.
+        #[must_use]
         pub fn hid(&self) -> u32 {
             self.hid
         }
 
         /// Unique ID that is required by ACPI if two devices have the
         /// same HID.
+        #[must_use]
         pub fn uid(&self) -> u32 {
             self.uid
         }
@@ -404,18 +417,21 @@ pub mod acpi {
     impl Expanded {
         /// Device's PnP hardware ID stored in a numeric 32-bit compressed
         /// EISA-type ID.
+        #[must_use]
         pub fn hid(&self) -> u32 {
             self.hid
         }
 
         /// Unique ID that is required by ACPI if two devices have the
         /// same HID.
+        #[must_use]
         pub fn uid(&self) -> u32 {
             self.uid
         }
 
         /// Device's compatible PnP hardware ID stored in a numeric 32-bit
         /// compressed EISA-type ID.
+        #[must_use]
         pub fn cid(&self) -> u32 {
             self.cid
         }
@@ -424,6 +440,7 @@ pub mod acpi {
         /// string. This value must match the corresponding HID in the
         /// ACPI name space. If the length of this string not including
         /// the null-terminator is 0, then the numeric HID is used.
+        #[must_use]
         pub fn hid_str(&self) -> &[u8] {
             self.get_hid_str()
         }
@@ -432,6 +449,7 @@ pub mod acpi {
         /// same HID. This value is stored as a null-terminated ASCII
         /// string. If the length of this string not including the
         /// null-terminator is 0, then the numeric UID is used.
+        #[must_use]
         pub fn uid_str(&self) -> &[u8] {
             self.get_uid_str()
         }
@@ -440,6 +458,7 @@ pub mod acpi {
         /// null-terminated ASCII string. If the length of this string
         /// not including the null-terminator is 0, then the numeric CID
         /// is used.
+        #[must_use]
         pub fn cid_str(&self) -> &[u8] {
             self.get_cid_str()
         }
@@ -485,6 +504,7 @@ pub mod acpi {
         /// ADR values. For video output devices the value of this field
         /// comes from Table B-2 ACPI 3.0 specification. At least one
         /// ADR value is required.
+        #[must_use]
         pub fn adr(&self) -> UnalignedSlice<u32> {
             let ptr: *const [u32] = addr_of!(self.adr);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
@@ -532,6 +552,7 @@ pub mod acpi {
 
     impl Nvdimm {
         /// NFIT device handle.
+        #[must_use]
         pub fn nfit_device_handle(&self) -> u32 {
             self.nfit_device_handle
         }
@@ -686,16 +707,19 @@ pub mod messaging {
 
     impl Atapi {
         /// Whether the ATAPI device is primary or secondary.
+        #[must_use]
         pub fn primary_secondary(&self) -> crate::proto::device_path::messaging::PrimarySecondary {
             self.primary_secondary
         }
 
         /// Whether the ATAPI device is master or slave.
+        #[must_use]
         pub fn master_slave(&self) -> crate::proto::device_path::messaging::MasterSlave {
             self.master_slave
         }
 
         /// Logical Unit Number (LUN).
+        #[must_use]
         pub fn logical_unit_number(&self) -> u16 {
             self.logical_unit_number
         }
@@ -734,11 +758,13 @@ pub mod messaging {
 
     impl Scsi {
         /// Target ID on the SCSI bus.
+        #[must_use]
         pub fn target_id(&self) -> u16 {
             self.target_id
         }
 
         /// Logical Unit Number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> u16 {
             self.logical_unit_number
         }
@@ -777,11 +803,13 @@ pub mod messaging {
 
     impl FibreChannel {
         /// Fibre Channel World Wide Name.
+        #[must_use]
         pub fn world_wide_name(&self) -> u64 {
             self.world_wide_name
         }
 
         /// Fibre Channel Logical Unit Number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> u64 {
             self.logical_unit_number
         }
@@ -821,11 +849,13 @@ pub mod messaging {
 
     impl FibreChannelEx {
         /// Fibre Channel end device port name (aka World Wide Name).
+        #[must_use]
         pub fn world_wide_name(&self) -> [u8; 8usize] {
             self.world_wide_name
         }
 
         /// Fibre Channel Logical Unit Number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> [u8; 8usize] {
             self.logical_unit_number
         }
@@ -865,6 +895,7 @@ pub mod messaging {
     impl Ieee1394 {
         /// 1394 Global Unique ID. Note that this is not the same as a
         /// UEFI GUID.
+        #[must_use]
         pub fn guid(&self) -> [u8; 8usize] {
             self.guid
         }
@@ -902,11 +933,13 @@ pub mod messaging {
 
     impl Usb {
         /// USB parent port number.
+        #[must_use]
         pub fn parent_port_number(&self) -> u8 {
             self.parent_port_number
         }
 
         /// USB interface number.
+        #[must_use]
         pub fn interface(&self) -> u8 {
             self.interface
         }
@@ -946,6 +979,7 @@ pub mod messaging {
     impl Sata {
         /// The HBA port number that facilitates the connection to the
         /// device or a port multiplier. The value 0xffff is reserved.
+        #[must_use]
         pub fn hba_port_number(&self) -> u16 {
             self.hba_port_number
         }
@@ -953,11 +987,13 @@ pub mod messaging {
         /// the port multiplier port number that facilitates the
         /// connection to the device. Must be set to 0xffff if the
         /// device is directly connected to the HBA.
+        #[must_use]
         pub fn port_multiplier_port_number(&self) -> u16 {
             self.port_multiplier_port_number
         }
 
         /// Logical unit number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> u16 {
             self.logical_unit_number
         }
@@ -1000,21 +1036,25 @@ pub mod messaging {
 
     impl UsbWwid {
         /// USB interface number.
+        #[must_use]
         pub fn interface_number(&self) -> u16 {
             self.interface_number
         }
 
         /// USB vendor ID.
+        #[must_use]
         pub fn device_vendor_id(&self) -> u16 {
             self.device_vendor_id
         }
 
         /// USB product ID.
+        #[must_use]
         pub fn device_product_id(&self) -> u16 {
             self.device_product_id
         }
 
         /// Last 64 (or fewer) characters of the USB Serial number.
+        #[must_use]
         pub fn serial_number(&self) -> UnalignedSlice<u16> {
             let ptr: *const [u16] = addr_of!(self.serial_number);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
@@ -1065,6 +1105,7 @@ pub mod messaging {
 
     impl DeviceLogicalUnit {
         /// Logical Unit Number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> u8 {
             self.logical_unit_number
         }
@@ -1104,26 +1145,31 @@ pub mod messaging {
 
     impl UsbClass {
         /// USB vendor ID.
+        #[must_use]
         pub fn vendor_id(&self) -> u16 {
             self.vendor_id
         }
 
         /// USB product ID.
+        #[must_use]
         pub fn product_id(&self) -> u16 {
             self.product_id
         }
 
         /// USB device class.
+        #[must_use]
         pub fn device_class(&self) -> u8 {
             self.device_class
         }
 
         /// USB device subclass.
+        #[must_use]
         pub fn device_subclass(&self) -> u8 {
             self.device_subclass
         }
 
         /// USB device protocol.
+        #[must_use]
         pub fn device_protocol(&self) -> u8 {
             self.device_protocol
         }
@@ -1163,6 +1209,7 @@ pub mod messaging {
 
     impl I2o {
         /// Target ID (TID).
+        #[must_use]
         pub fn target_id(&self) -> u32 {
             self.target_id
         }
@@ -1199,12 +1246,14 @@ pub mod messaging {
 
     impl MacAddress {
         /// MAC address for a network interface, padded with zeros.
+        #[must_use]
         pub fn mac_address(&self) -> [u8; 32usize] {
             self.mac_address
         }
 
         /// Network interface type. See
         /// <https://www.iana.org/assignments/smi-numbers/smi-numbers.xhtml#smi-numbers-5>
+        #[must_use]
         pub fn interface_type(&self) -> u8 {
             self.interface_type
         }
@@ -1248,42 +1297,50 @@ pub mod messaging {
 
     impl Ipv4 {
         /// Local IPv4 address.
+        #[must_use]
         pub fn local_ip_address(&self) -> [u8; 4usize] {
             self.local_ip_address
         }
 
         /// Remote IPv4 address.
+        #[must_use]
         pub fn remote_ip_address(&self) -> [u8; 4usize] {
             self.remote_ip_address
         }
 
         /// Local port number.
+        #[must_use]
         pub fn local_port(&self) -> u16 {
             self.local_port
         }
 
         /// Remote port number.
+        #[must_use]
         pub fn remote_port(&self) -> u16 {
             self.remote_port
         }
 
         /// Network protocol. See
         /// <https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>
+        #[must_use]
         pub fn protocol(&self) -> u16 {
             self.protocol
         }
 
         /// Whether the source IP address is static or assigned via DHCP.
+        #[must_use]
         pub fn ip_address_origin(&self) -> crate::proto::device_path::messaging::Ipv4AddressOrigin {
             self.ip_address_origin
         }
 
         /// Gateway IP address.
+        #[must_use]
         pub fn gateway_ip_address(&self) -> [u8; 4usize] {
             self.gateway_ip_address
         }
 
         /// Subnet mask.
+        #[must_use]
         pub fn subnet_mask(&self) -> [u8; 4usize] {
             self.subnet_mask
         }
@@ -1333,42 +1390,50 @@ pub mod messaging {
 
     impl Ipv6 {
         /// Local Ipv6 address.
+        #[must_use]
         pub fn local_ip_address(&self) -> [u8; 16usize] {
             self.local_ip_address
         }
 
         /// Remote Ipv6 address.
+        #[must_use]
         pub fn remote_ip_address(&self) -> [u8; 16usize] {
             self.remote_ip_address
         }
 
         /// Local port number.
+        #[must_use]
         pub fn local_port(&self) -> u16 {
             self.local_port
         }
 
         /// Remote port number.
+        #[must_use]
         pub fn remote_port(&self) -> u16 {
             self.remote_port
         }
 
         /// Network protocol. See
         /// <https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>
+        #[must_use]
         pub fn protocol(&self) -> u16 {
             self.protocol
         }
 
         /// Origin of the local IP address.
+        #[must_use]
         pub fn ip_address_origin(&self) -> crate::proto::device_path::messaging::Ipv6AddressOrigin {
             self.ip_address_origin
         }
 
         /// Prefix length.
+        #[must_use]
         pub fn prefix_length(&self) -> u8 {
             self.prefix_length
         }
 
         /// Gateway IP address.
+        #[must_use]
         pub fn gateway_ip_address(&self) -> [u8; 16usize] {
             self.gateway_ip_address
         }
@@ -1411,6 +1476,7 @@ pub mod messaging {
 
     impl Vlan {
         /// VLAN identifier (0-4094).
+        #[must_use]
         pub fn vlan_id(&self) -> u16 {
             self.vlan_id
         }
@@ -1450,6 +1516,7 @@ pub mod messaging {
 
     impl Infiniband {
         /// Flags to identify/manage InfiniBand elements.
+        #[must_use]
         pub fn resource_flags(
             &self,
         ) -> crate::proto::device_path::messaging::InfinibandResourceFlags {
@@ -1458,22 +1525,26 @@ pub mod messaging {
 
         /// 128-bit Global Identifier for remote fabric port. Note that
         /// this is not the same as a UEFI GUID.
+        #[must_use]
         pub fn port_gid(&self) -> [u8; 16usize] {
             self.port_gid
         }
 
         /// IOC GUID if bit 0 of `resource_flags` is unset, or Service
         /// ID if bit 0 of `resource_flags` is set.
+        #[must_use]
         pub fn ioc_guid_or_service_id(&self) -> u64 {
             self.ioc_guid_or_service_id
         }
 
         /// 64-bit persistent ID of remote IOC port.
+        #[must_use]
         pub fn target_port_id(&self) -> u64 {
             self.target_port_id
         }
 
         /// 64-bit persistent ID of remote device..
+        #[must_use]
         pub fn device_id(&self) -> u64 {
             self.device_id
         }
@@ -1517,21 +1588,25 @@ pub mod messaging {
 
     impl Uart {
         /// Baud rate setting, or 0 to use the device's default.
+        #[must_use]
         pub fn baud_rate(&self) -> u64 {
             self.baud_rate
         }
 
         /// Number of data bits, or 0 to use the device's default.
+        #[must_use]
         pub fn data_bits(&self) -> u8 {
             self.data_bits
         }
 
         /// Parity setting.
+        #[must_use]
         pub fn parity(&self) -> crate::proto::device_path::messaging::Parity {
             self.parity
         }
 
         /// Number of stop bits.
+        #[must_use]
         pub fn stop_bits(&self) -> crate::proto::device_path::messaging::StopBits {
             self.stop_bits
         }
@@ -1572,11 +1647,13 @@ pub mod messaging {
 
     impl Vendor {
         /// Vendor-assigned GUID that defines the data that follows.
+        #[must_use]
         pub fn vendor_guid(&self) -> Guid {
             self.vendor_guid
         }
 
         /// Vendor-defined data.
+        #[must_use]
         pub fn vendor_defined_data(&self) -> &[u8] {
             &self.vendor_defined_data
         }
@@ -1626,21 +1703,25 @@ pub mod messaging {
 
     impl SasEx {
         /// SAS address.
+        #[must_use]
         pub fn sas_address(&self) -> [u8; 8usize] {
             self.sas_address
         }
 
         /// Logical Unit Number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> [u8; 8usize] {
             self.logical_unit_number
         }
 
         /// Information about the device and its interconnect.
+        #[must_use]
         pub fn info(&self) -> u16 {
             self.info
         }
 
         /// Relative Target Port (RTP).
+        #[must_use]
         pub fn relative_target_port(&self) -> u16 {
             self.relative_target_port
         }
@@ -1683,22 +1764,26 @@ pub mod messaging {
 
     impl Iscsi {
         /// Network protocol.
+        #[must_use]
         pub fn protocol(&self) -> crate::proto::device_path::messaging::IscsiProtocol {
             self.protocol
         }
 
         /// iSCSI login options (bitfield).
+        #[must_use]
         pub fn options(&self) -> crate::proto::device_path::messaging::IscsiLoginOptions {
             self.options
         }
 
         /// iSCSI Logical Unit Number.
+        #[must_use]
         pub fn logical_unit_number(&self) -> [u8; 8usize] {
             self.logical_unit_number
         }
 
         /// iSCSI Target Portal group tag the initiator intends to
         /// establish a session with.
+        #[must_use]
         pub fn target_portal_group_tag(&self) -> u16 {
             self.target_portal_group_tag
         }
@@ -1708,6 +1793,7 @@ pub mod messaging {
         /// The UEFI Specification does not specify how the string is
         /// encoded, but gives one example that appears to be
         /// null-terminated ASCII.
+        #[must_use]
         pub fn iscsi_target_name(&self) -> &[u8] {
             &self.iscsi_target_name
         }
@@ -1759,12 +1845,14 @@ pub mod messaging {
     impl NvmeNamespace {
         /// Namespace identifier (NSID). The values 0 and 0xffff_ffff
         /// are invalid.
+        #[must_use]
         pub fn namespace_identifier(&self) -> u32 {
             self.namespace_identifier
         }
 
         /// IEEE Extended Unique Identifier (EUI-64), or 0 if the device
         /// does not have a EUI-64.
+        #[must_use]
         pub fn ieee_extended_unique_identifier(&self) -> u64 {
             self.ieee_extended_unique_identifier
         }
@@ -1803,6 +1891,7 @@ pub mod messaging {
 
     impl Uri {
         /// URI as defined by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986).
+        #[must_use]
         pub fn value(&self) -> &[u8] {
             &self.value
         }
@@ -1849,11 +1938,13 @@ pub mod messaging {
 
     impl Ufs {
         /// Target ID on the UFS interface (PUN).
+        #[must_use]
         pub fn target_id(&self) -> u8 {
             self.target_id
         }
 
         /// Logical Unit Number (LUN).
+        #[must_use]
         pub fn logical_unit_number(&self) -> u8 {
             self.logical_unit_number
         }
@@ -1890,6 +1981,7 @@ pub mod messaging {
 
     impl Sd {
         /// Slot number.
+        #[must_use]
         pub fn slot_number(&self) -> u8 {
             self.slot_number
         }
@@ -1925,6 +2017,7 @@ pub mod messaging {
 
     impl Bluetooth {
         /// 48-bit bluetooth device address.
+        #[must_use]
         pub fn device_address(&self) -> [u8; 6usize] {
             self.device_address
         }
@@ -1960,6 +2053,7 @@ pub mod messaging {
 
     impl Wifi {
         /// Service set identifier (SSID).
+        #[must_use]
         pub fn ssid(&self) -> [u8; 32usize] {
             self.ssid
         }
@@ -1995,6 +2089,7 @@ pub mod messaging {
 
     impl Emmc {
         /// Slot number.
+        #[must_use]
         pub fn slot_number(&self) -> u8 {
             self.slot_number
         }
@@ -2031,11 +2126,13 @@ pub mod messaging {
 
     impl BluetoothLe {
         /// 48-bit bluetooth device address.
+        #[must_use]
         pub fn device_address(&self) -> [u8; 6usize] {
             self.device_address
         }
 
         /// Address type.
+        #[must_use]
         pub fn address_type(&self) -> crate::proto::device_path::messaging::BluetoothLeAddressType {
             self.address_type
         }
@@ -2073,11 +2170,13 @@ pub mod messaging {
 
     impl Dns {
         /// Whether the addresses are IPv4 or IPv6.
+        #[must_use]
         pub fn address_type(&self) -> crate::proto::device_path::messaging::DnsAddressType {
             self.address_type
         }
 
         /// One or more instances of the DNS server address.
+        #[must_use]
         pub fn addresses(&self) -> UnalignedSlice<IpAddress> {
             let ptr: *const [IpAddress] = addr_of!(self.addresses);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
@@ -2126,6 +2225,7 @@ pub mod messaging {
 
     impl NvdimmNamespace {
         /// Namespace unique label identifier.
+        #[must_use]
         pub fn uuid(&self) -> [u8; 16usize] {
             self.uuid
         }
@@ -2163,11 +2263,13 @@ pub mod messaging {
 
     impl RestService {
         /// Type of REST service.
+        #[must_use]
         pub fn service_type(&self) -> crate::proto::device_path::messaging::RestServiceType {
             self.service_type
         }
 
         /// Whether the service is in-band or out-of-band.
+        #[must_use]
         pub fn access_mode(&self) -> crate::proto::device_path::messaging::RestServiceAccessMode {
             self.access_mode
         }
@@ -2217,17 +2319,20 @@ pub mod messaging {
 
     impl NvmeOfNamespace {
         /// Namespace Identifier Type (NIDT).
+        #[must_use]
         pub fn nidt(&self) -> u8 {
             self.nidt
         }
 
         /// Namespace Identifier (NID).
+        #[must_use]
         pub fn nid(&self) -> [u8; 16usize] {
             self.nid
         }
 
         /// Unique identifier of an NVM subsystem stored as a
         /// null-terminated UTF-8 string. Maximum length of 224 bytes.
+        #[must_use]
         pub fn subsystem_nqn(&self) -> &[u8] {
             &self.subsystem_nqn
         }
@@ -2316,6 +2421,7 @@ pub mod messaging {
         /// service type is [`VENDOR`], otherwise returns None.
         ///
         /// [`VENDOR`]: uefi::proto::device_path::messaging::RestServiceType
+        #[must_use]
         pub fn vendor_guid_and_data(&self) -> Option<(Guid, &[u8])> {
             if self.service_type == RestServiceType::VENDOR
                 && self.vendor_guid_and_data.len() >= size_of::<Guid>()
@@ -2355,21 +2461,25 @@ pub mod media {
 
     impl HardDrive {
         /// Index of the partition, starting from 1.
+        #[must_use]
         pub fn partition_number(&self) -> u32 {
             self.partition_number
         }
 
         /// Starting LBA (logical block address) of the partition.
+        #[must_use]
         pub fn partition_start(&self) -> u64 {
             self.partition_start
         }
 
         /// Size of the partition in blocks.
+        #[must_use]
         pub fn partition_size(&self) -> u64 {
             self.partition_size
         }
 
         /// Partition format.
+        #[must_use]
         pub fn partition_format(&self) -> crate::proto::device_path::media::PartitionFormat {
             self.partition_format
         }
@@ -2413,16 +2523,19 @@ pub mod media {
     impl CdRom {
         /// Boot entry number from the boot catalog, or 0 for the
         /// default entry.
+        #[must_use]
         pub fn boot_entry(&self) -> u32 {
             self.boot_entry
         }
 
         /// Starting RBA (Relative logical Block Address).
+        #[must_use]
         pub fn partition_start(&self) -> u64 {
             self.partition_start
         }
 
         /// Size of the partition in blocks.
+        #[must_use]
         pub fn partition_size(&self) -> u64 {
             self.partition_size
         }
@@ -2461,11 +2574,13 @@ pub mod media {
 
     impl Vendor {
         /// Vendor-assigned GUID that defines the data that follows.
+        #[must_use]
         pub fn vendor_guid(&self) -> Guid {
             self.vendor_guid
         }
 
         /// Vendor-defined data.
+        #[must_use]
         pub fn vendor_defined_data(&self) -> &[u8] {
             &self.vendor_defined_data
         }
@@ -2512,6 +2627,7 @@ pub mod media {
 
     impl FilePath {
         /// Null-terminated path.
+        #[must_use]
         pub fn path_name(&self) -> UnalignedSlice<u16> {
             let ptr: *const [u16] = addr_of!(self.path_name);
             let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
@@ -2559,6 +2675,7 @@ pub mod media {
 
     impl Protocol {
         /// The ID of the protocol.
+        #[must_use]
         pub fn protocol_guid(&self) -> Guid {
             self.protocol_guid
         }
@@ -2594,6 +2711,7 @@ pub mod media {
 
     impl PiwgFirmwareFile {
         /// Contents are defined in the UEFI PI Specification.
+        #[must_use]
         pub fn data(&self) -> &[u8] {
             &self.data
         }
@@ -2640,6 +2758,7 @@ pub mod media {
 
     impl PiwgFirmwareVolume {
         /// Contents are defined in the UEFI PI Specification.
+        #[must_use]
         pub fn data(&self) -> &[u8] {
             &self.data
         }
@@ -2688,11 +2807,13 @@ pub mod media {
 
     impl RelativeOffsetRange {
         /// Offset of the first byte, relative to the parent device node.
+        #[must_use]
         pub fn starting_offset(&self) -> u64 {
             self.starting_offset
         }
 
         /// Offset of the last byte, relative to the parent device node.
+        #[must_use]
         pub fn ending_offset(&self) -> u64 {
             self.ending_offset
         }
@@ -2733,21 +2854,25 @@ pub mod media {
 
     impl RamDisk {
         /// Starting memory address.
+        #[must_use]
         pub fn starting_address(&self) -> u64 {
             self.starting_address
         }
 
         /// Ending memory address.
+        #[must_use]
         pub fn ending_address(&self) -> u64 {
             self.ending_address
         }
 
         /// Type of RAM disk.
+        #[must_use]
         pub fn disk_type(&self) -> crate::proto::device_path::media::RamDiskType {
             self.disk_type
         }
 
         /// RAM disk instance number if supported, otherwise 0.
+        #[must_use]
         pub fn disk_instance(&self) -> u16 {
             self.disk_instance
         }
@@ -2779,6 +2904,7 @@ pub mod media {
 
     impl HardDrive {
         /// Signature unique to this partition.
+        #[must_use]
         pub fn partition_signature(&self) -> PartitionSignature {
             match self.signature_type {
                 0 => PartitionSignature::None,
@@ -2838,17 +2964,20 @@ pub mod bios_boot_spec {
 
     impl BootSpecification {
         /// Device type as defined by the BIOS Boot Specification.
+        #[must_use]
         pub fn device_type(&self) -> u16 {
             self.device_type
         }
 
         /// Status flags as defined by the BIOS Boot Specification.
+        #[must_use]
         pub fn status_flag(&self) -> u16 {
             self.status_flag
         }
 
         /// Description of the boot device encoded as a null-terminated
         /// ASCII string.
+        #[must_use]
         pub fn description_string(&self) -> &[u8] {
             &self.description_string
         }
@@ -3640,6 +3769,7 @@ pub mod build {
         impl AdrSlice {
             /// Create a new `AdrSlice`. Returns `None` if the input slice
             /// is empty.
+            #[must_use]
             pub fn new(slice: &[u32]) -> Option<&Self> {
                 if slice.is_empty() {
                     None

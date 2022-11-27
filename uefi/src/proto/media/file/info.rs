@@ -189,36 +189,43 @@ impl FileInfo {
     }
 
     /// File size (number of bytes stored in the file)
+    #[must_use]
     pub const fn file_size(&self) -> u64 {
         self.file_size
     }
 
     /// Physical space consumed by the file on the file system volume
+    #[must_use]
     pub const fn physical_size(&self) -> u64 {
         self.physical_size
     }
 
     /// Time when the file was created
+    #[must_use]
     pub const fn create_time(&self) -> &Time {
         &self.create_time
     }
 
     /// Time when the file was last accessed
+    #[must_use]
     pub const fn last_access_time(&self) -> &Time {
         &self.last_access_time
     }
 
     /// Time when the file's contents were last modified
+    #[must_use]
     pub const fn modification_time(&self) -> &Time {
         &self.modification_time
     }
 
     /// Attribute bits for the file
+    #[must_use]
     pub const fn attribute(&self) -> FileAttribute {
         self.attribute
     }
 
     /// Name of the file
+    #[must_use]
     pub fn file_name(&self) -> &CStr16 {
         unsafe { CStr16::from_ptr(self.file_name.as_ptr()) }
     }
@@ -286,26 +293,31 @@ impl FileSystemInfo {
     }
 
     /// Truth that the volume only supports read access
+    #[must_use]
     pub const fn read_only(&self) -> bool {
         self.read_only
     }
 
     /// Number of bytes managed by the file system
+    #[must_use]
     pub const fn volume_size(&self) -> u64 {
         self.volume_size
     }
 
     /// Number of available bytes for use by the file system
+    #[must_use]
     pub const fn free_space(&self) -> u64 {
         self.free_space
     }
 
     /// Nominal block size by which files are typically grown
+    #[must_use]
     pub const fn block_size(&self) -> u32 {
         self.block_size
     }
 
     /// Volume label
+    #[must_use]
     pub fn volume_label(&self) -> &CStr16 {
         unsafe { CStr16::from_ptr(self.volume_label.as_ptr()) }
     }
@@ -353,6 +365,7 @@ impl FileSystemVolumeLabel {
     }
 
     /// Volume label
+    #[must_use]
     pub fn volume_label(&self) -> &CStr16 {
         unsafe { CStr16::from_ptr(self.volume_label.as_ptr()) }
     }

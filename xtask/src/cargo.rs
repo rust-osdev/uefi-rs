@@ -95,8 +95,18 @@ impl Feature {
     }
 
     /// Set of features that enables more code in the root uefi crate.
-    pub fn more_code() -> Vec<Self> {
-        vec![Self::GlobalAllocator, Self::Alloc, Self::Logger]
+    /// # Parameters
+    /// - `include_unstable` - add all functionality behind the `unstable` feature
+    /// - `runtime_features` - add all functionality that effect the runtime of Rust
+    pub fn more_code(include_unstable: bool, runtime_features: bool) -> Vec<Self> {
+        let mut base_features = vec![Self::Alloc, Self::Logger];
+        if include_unstable {
+            base_features.extend([Self::Unstable])
+        }
+        if runtime_features {
+            base_features.extend([Self::GlobalAllocator])
+        }
+        base_features
     }
 
     fn comma_separated_string(features: &[Feature]) -> String {
@@ -316,8 +326,20 @@ mod tests {
     #[test]
     fn test_comma_separated_features() {
         assert_eq!(
-            Feature::comma_separated_string(&Feature::more_code()),
-            "global_allocator,alloc,logger"
+            Feature::comma_separated_string(&Feature::more_code(false, false)),
+            "alloc,logger"
+        );
+        assert_eq!(
+            Feature::comma_separated_string(&Feature::more_code(false, true)),
+            "alloc,logger,global_allocator"
+        );
+        assert_eq!(
+            Feature::comma_separated_string(&Feature::more_code(true, false)),
+            "alloc,logger,unstable"
+        );
+        assert_eq!(
+            Feature::comma_separated_string(&Feature::more_code(true, true)),
+            "alloc,logger,unstable,global_allocator"
         );
     }
 

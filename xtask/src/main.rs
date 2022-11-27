@@ -9,6 +9,7 @@ mod platform;
 mod qemu;
 mod util;
 
+use crate::opt::TestOpt;
 use anyhow::Result;
 use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
@@ -47,7 +48,7 @@ fn build(opt: &BuildOpt) -> Result<()> {
 
     let cargo = Cargo {
         action: CargoAction::Build,
-        features: Feature::more_code(),
+        features: Feature::more_code(true, true),
         packages: Package::all_except_xtask(),
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -61,7 +62,8 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     // Run clippy on all the UEFI packages.
     let cargo = Cargo {
         action: CargoAction::Clippy,
-        features: Feature::more_code(),
+        // for all possible features
+        features: Feature::more_code(true, true),
         packages: Package::all_except_xtask(),
         release: false,
         target: Some(*opt.target),
@@ -90,7 +92,8 @@ fn doc(opt: &DocOpt) -> Result<()> {
             open: opt.open,
             document_private_items: opt.document_private_items,
         },
-        features: Feature::more_code(),
+        // for all possible features
+        features: Feature::more_code(true, true),
         packages: Package::published(),
         release: false,
         target: None,
@@ -143,7 +146,7 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
 /// Run unit tests and doctests on the host. Most of uefi-rs is tested
 /// with VM tests, but a few things like macros and data types can be
 /// tested with regular tests.
-fn run_host_tests() -> Result<()> {
+fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
     // Run xtask tests.
     let cargo = Cargo {
         action: CargoAction::Test,
@@ -159,7 +162,11 @@ fn run_host_tests() -> Result<()> {
     // Run uefi-rs and uefi-macros tests.
     let cargo = Cargo {
         action: CargoAction::Test,
-        features: vec![Feature::Alloc],
+        // At least one unit test, for make_boxed() currently, has different behaviour dependent on
+        // the unstable feature. Because of this, we need to allow to test both variants. Runtime
+        // features is set to no as it is not possible as as soon a #[global_allocator] is
+        // registered, the Rust runtime executing the tests uses it as well.
+        features: Feature::more_code(test_opt.include_unstable, false),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
         packages: vec![Package::Uefi, Package::UefiMacros],
@@ -222,7 +229,7 @@ fn main() -> Result<()> {
         Action::GenCode(gen_opt) => device_path::gen_code(gen_opt),
         Action::Miri(_) => run_miri(),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
-        Action::Test(_) => run_host_tests(),
+        Action::Test(test_opt) => run_host_tests(test_opt),
         Action::TestLatestRelease(_) => test_latest_release(),
     }
 }

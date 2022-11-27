@@ -45,21 +45,52 @@ impl Package {
 
 #[derive(Clone, Copy, Debug)]
 pub enum Feature {
-    GlobalAllocator,
+    // `uefi` features.
     Alloc,
+    GlobalAllocator,
     Logger,
+    PanicOnLoggerErrors,
+    Unstable,
 
+    // `uefi-services` features.
+    PanicHandler,
+    Qemu,
+    ServicesLogger,
+
+    // `uefi-test-runner` features.
     Ci,
 }
 
 impl Feature {
     fn as_str(&self) -> &'static str {
         match self {
-            Self::GlobalAllocator => "global_allocator",
             Self::Alloc => "alloc",
+            Self::GlobalAllocator => "global_allocator",
             Self::Logger => "logger",
+            Self::PanicOnLoggerErrors => "panic-on-logger-errors",
+            Self::Unstable => "unstable",
+
+            Self::PanicHandler => "uefi-services/panic_handler",
+            Self::Qemu => "uefi-services/qemu",
+            Self::ServicesLogger => "uefi-services/logger",
 
             Self::Ci => "uefi-test-runner/ci",
+        }
+    }
+
+    /// Get the features for the given package.
+    pub fn package_features(package: Package) -> Vec<Self> {
+        match package {
+            Package::Uefi => vec![
+                Self::Alloc,
+                Self::GlobalAllocator,
+                Self::Logger,
+                Self::PanicOnLoggerErrors,
+                Self::Unstable,
+            ],
+            Package::UefiServices => vec![Self::PanicHandler, Self::Qemu, Self::ServicesLogger],
+            Package::UefiTestRunner => vec![Self::Ci],
+            _ => vec![],
         }
     }
 

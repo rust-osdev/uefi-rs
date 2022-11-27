@@ -12,12 +12,39 @@ mod util;
 use anyhow::Result;
 use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
+use itertools::Itertools;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
 use std::process::Command;
 use tempfile::TempDir;
 use util::{command_to_string, run_cmd};
 
+fn build_feature_permutations(opt: &BuildOpt) -> Result<()> {
+    for package in [Package::Uefi, Package::UefiServices] {
+        let all_package_features = Feature::package_features(package);
+        for features in all_package_features.iter().powerset() {
+            let features = features.iter().map(|f| **f).collect();
+
+            let cargo = Cargo {
+                action: CargoAction::Build,
+                features,
+                packages: vec![package],
+                release: opt.build_mode.release,
+                target: Some(*opt.target),
+                warnings_as_errors: true,
+                target_types: TargetTypes::BinsExamplesLib,
+            };
+            run_cmd(cargo.command()?)?;
+        }
+    }
+
+    Ok(())
+}
+
 fn build(opt: &BuildOpt) -> Result<()> {
+    if opt.feature_permutations {
+        return build_feature_permutations(opt);
+    }
+
     let cargo = Cargo {
         action: CargoAction::Build,
         features: Feature::more_code(),

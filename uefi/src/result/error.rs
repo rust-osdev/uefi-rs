@@ -46,4 +46,5 @@ impl<Data: Debug + Display> Display for Error<Data> {
     }
 }
 
+#[cfg(feature = "unstable")]
 impl<Data: Debug + Display> core::error::Error for Error<Data> {}

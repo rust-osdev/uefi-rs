@@ -159,3 +159,13 @@ jobs:
 
     - name: Build
       run: cargo xtask build
+
+  build_feature_permutations:
+    name: Check that the build works for all feature combinations
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v3
+
+    - name: Build
+      run: cargo xtask build --feature-permutations

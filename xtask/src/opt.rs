@@ -62,6 +62,11 @@ pub struct BuildOpt {
 
     #[clap(flatten)]
     pub build_mode: BuildModeOpt,
+
+    /// Build multiple times to check that different feature
+    /// combinations work.
+    #[clap(long, action)]
+    pub feature_permutations: bool,
 }
 
 /// Run clippy on all the packages.

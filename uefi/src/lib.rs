@@ -32,6 +32,12 @@
 //!   is not a high-performance logger.
 //! - `panic-on-logger-errors` (enabled by default): Panic if a text
 //!   output error occurs in the logger.
+//! - `unstable`: Enable functionality that depends on [unstable
+//!   features] in the nightly compiler. Note that currently the `uefi`
+//!   crate _always_ requires unstable features even if the `unstable`
+//!   feature is not enabled, but once a couple more required features
+//!   are stabilized we intend to make the `uefi` crate work on the
+//!   stable channel by default.
 //!
 //! The `global_allocator` and `logger` features require special
 //! handling to perform initialization and tear-down. The
@@ -48,13 +54,14 @@
 //!
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`uefi-services`]: https://crates.io/crates/uefi-services
+//! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
 #![feature(abi_efiapi)]
 #![feature(maybe_uninit_slice)]
 #![feature(negative_impls)]
 #![feature(ptr_metadata)]
-#![feature(error_in_core)]
 #![cfg_attr(feature = "alloc", feature(vec_into_raw_parts))]
+#![cfg_attr(feature = "unstable", feature(error_in_core))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 // Enable some additional warnings and lints.

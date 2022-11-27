@@ -24,22 +24,12 @@ Check out the [UEFI application template] for a quick start.
 
 ## Optional features
 
-- `alloc`: Enables functionality requiring the `alloc` crate from the Rust standard library.
-  - For example, this allows many convenient `uefi-rs` functions to operate on heap data (`Box`).
-  - It is up to the user to provide a `#[global_allocator]`.
-- `global_allocator`: implements a `#[global_allocator]` using UEFI functions.
-  - This allows you to use all abstractions from the `alloc` crate from the Rust standard library
-    during runtime. Hence, `Vec`, `Box`, etc. will be able to allocate memory.
-    **This is optional**, so you can provide a custom `#[global_allocator]` as well.
-  - There's no guarantee of the efficiency of UEFI's allocator.
-- `logger`: logging implementation for the standard [`log`] crate.
-  - Prints output to UEFI console.
-  - No buffering is done: this is not a high-performance logger.
+This crate's features are described in [`src/lib.rs`].
   
 See also the [`uefi-services`] crate, which provides a panic handler and
 initializes the `global_allocator` and `logger` features.
 
-[`log`]: https://github.com/rust-lang-nursery/log
+[`src/lib.rs`]: src/lib.rs
 [`uefi-services`]: https://crates.io/crates/uefi-services
 
 ## Documentation

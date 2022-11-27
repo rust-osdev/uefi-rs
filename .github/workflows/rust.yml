@@ -44,7 +44,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install qemu-system-x86 ovmf -y
 
-    - name: Build
+    - name: Build (without unstable)
       run: cargo xtask build --target x86_64
 
     - name: Run VM tests
@@ -77,8 +77,13 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Run cargo test
+      - name: Run cargo test (without unstable)
         run: cargo xtask test
+
+      # At least one unit test, for make_boxed() currently, has different behaviour dependent on
+      # the unstable feature.
+      - name: Run cargo test (with unstable)
+        run: cargo xtask test --include-unstable
 
   lints:
     name: Lints

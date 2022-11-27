@@ -150,7 +150,12 @@ pub struct QemuOpt {
 
 /// Run unit tests and doctests on the host.
 #[derive(Debug, Parser)]
-pub struct TestOpt;
+pub struct TestOpt {
+    /// Include all features behind the "unstable" gate. uefi-rs must build without unstable
+    /// functionality on stable (eventually) and with it in our nightly MSRV.
+    #[clap(long, action)]
+    pub include_unstable: bool,
+}
 
 /// Build the template against the crates.io packages.
 #[derive(Debug, Parser)]

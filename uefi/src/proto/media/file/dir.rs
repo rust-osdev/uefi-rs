@@ -2,9 +2,10 @@ use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
 use crate::data_types::Align;
 use crate::Result;
 use core::ffi::c_void;
-
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
+#[cfg(all(feature = "unstable", feature = "alloc"))]
+use {alloc::alloc::Global, core::alloc::Allocator};
 
 /// A `FileHandle` that is also a directory.
 ///
@@ -62,8 +63,7 @@ impl Directory {
         })
     }
 
-    /// Wrapper around [`Self::read_entry`] that returns an owned copy of the data. It has the same
-    /// implications and requirements. On failure, the payload of `Err` is `()´.
+    /// Wrapper around [`Self::read_entry_boxed_in`] that uses the [`Global`] allocator.
     #[cfg(feature = "alloc")]
     pub fn read_entry_boxed(&mut self) -> Result<Option<Box<FileInfo>>> {
         let read_entry_res = self.read_entry(&mut []);
@@ -80,7 +80,42 @@ impl Directory {
                     maybe_info.expect("Should have more entries")
                 })
         };
+
+        #[cfg(not(feature = "unstable"))]
         let file_info = make_boxed::<FileInfo, _>(fetch_data_fn)?;
+
+        #[cfg(feature = "unstable")]
+        let file_info = make_boxed::<FileInfo, _, _>(fetch_data_fn, Global)?;
+
+        Ok(Some(file_info))
+    }
+
+    /// Wrapper around [`Self::read_entry`] that returns an owned copy of the data. It has the same
+    /// implications and requirements. On failure, the payload of `Err` is `()´.
+    ///
+    /// It allows to use a custom allocator via the `allocator_api` feature.
+    #[cfg(all(feature = "unstable", feature = "alloc"))]
+    pub fn read_entry_boxed_in<A: Allocator>(
+        &mut self,
+        allocator: A,
+    ) -> Result<Option<Box<FileInfo>>> {
+        let read_entry_res = self.read_entry(&mut []);
+
+        // If no more entries are available, return early.
+        if let Ok(None) = read_entry_res {
+            return Ok(None);
+        }
+
+        let fetch_data_fn = |buf| {
+            self.read_entry(buf)
+                // this is safe, as above, we checked that there are more entries
+                .map(|maybe_info: Option<&mut FileInfo>| {
+                    maybe_info.expect("Should have more entries")
+                })
+        };
+
+        let file_info = make_boxed::<FileInfo, _, A>(fetch_data_fn, allocator)?;
+
         Ok(Some(file_info))
     }
 

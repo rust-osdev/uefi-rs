@@ -38,6 +38,8 @@
 //!   feature is not enabled, but once a couple more required features
 //!   are stabilized we intend to make the `uefi` crate work on the
 //!   stable channel by default.
+//!   As example, in conjunction with the `alloc`-feature, this gate allows
+//!   the `allocator_api` on certain functions.
 //!
 //! The `global_allocator` and `logger` features require special
 //! handling to perform initialization and tear-down. The
@@ -62,6 +64,7 @@
 #![feature(ptr_metadata)]
 #![cfg_attr(feature = "alloc", feature(vec_into_raw_parts))]
 #![cfg_attr(feature = "unstable", feature(error_in_core))]
+#![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 // Enable some additional warnings and lints.
@@ -101,5 +104,6 @@ pub mod global_allocator;
 #[cfg(feature = "logger")]
 pub mod logger;
 
+// As long as this is behind "alloc", we can simplify cfg-feature attributes in this module.
 #[cfg(feature = "alloc")]
 pub(crate) mod mem;

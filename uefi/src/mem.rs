@@ -2,12 +2,18 @@
 
 use crate::ResultExt;
 use crate::{Result, Status};
-use ::alloc::{alloc, boxed::Box};
+use ::alloc::boxed::Box;
 use core::alloc::Layout;
 use core::fmt::Debug;
 use core::slice;
 use uefi::data_types::Align;
 use uefi::Error;
+
+#[cfg(not(feature = "unstable"))]
+use ::alloc::alloc::{alloc, dealloc};
+
+#[cfg(feature = "unstable")]
+use {core::alloc::Allocator, core::ptr::NonNull};
 
 /// Helper to return owned versions of certain UEFI data structures on the heap in a [`Box`]. This
 /// function is intended to wrap low-level UEFI functions of this crate that
@@ -17,12 +23,24 @@ use uefi::Error;
 ///   buffer size is sufficient, and
 /// - return a mutable typed reference that points to the same memory as the input buffer on
 ///   success.
-pub fn make_boxed<
+///
+/// # Feature `unstable` / `allocator_api`
+/// By default, this function works with Rust's default allocation mechanism. If you activate the
+/// `unstable`-feature, it uses the `allocator_api` instead. In that case, the function takes an
+/// additional parameter describing the specific [`Allocator`]. You can use [`alloc::alloc::Global`]
+/// as default.
+pub(crate) fn make_boxed<
     'a,
+    // The UEFI data structure.
     Data: Align + ?Sized + Debug + 'a,
     F: FnMut(&'a mut [u8]) -> Result<&'a mut Data, Option<usize>>,
+    #[cfg(feature = "unstable")] A: Allocator,
 >(
+    // A function to read the UEFI data structure into a provided buffer.
     mut fetch_data_fn: F,
+    #[cfg(feature = "unstable")]
+    // Allocator of the `allocator_api` feature. You can use `Global` as default.
+    allocator: A,
 ) -> Result<Box<Data>> {
     let required_size = match fetch_data_fn(&mut []).map_err(Error::split) {
         // This is the expected case: the empty buffer passed in is too
@@ -40,13 +58,23 @@ pub fn make_boxed<
         .unwrap()
         .pad_to_align();
 
-    // Allocate the buffer.
-    let heap_buf: *mut u8 = unsafe {
-        let ptr = alloc::alloc(layout);
-        if ptr.is_null() {
-            return Err(Status::OUT_OF_RESOURCES.into());
+    // Allocate the buffer on the heap.
+    let heap_buf: *mut u8 = {
+        #[cfg(not(feature = "unstable"))]
+        {
+            let ptr = unsafe { alloc(layout) };
+            if ptr.is_null() {
+                return Err(Status::OUT_OF_RESOURCES.into());
+            }
+            ptr
         }
-        ptr
+
+        #[cfg(feature = "unstable")]
+        allocator
+            .allocate(layout)
+            .map_err(|_| <Status as Into<Error>>::into(Status::OUT_OF_RESOURCES))?
+            .as_ptr()
+            .cast::<u8>()
     };
 
     // Read the data into the provided buffer.
@@ -59,7 +87,14 @@ pub fn make_boxed<
     let data: &mut Data = match data {
         Ok(data) => data,
         Err(err) => {
-            unsafe { alloc::dealloc(heap_buf, layout) };
+            #[cfg(not(feature = "unstable"))]
+            unsafe {
+                dealloc(heap_buf, layout)
+            };
+            #[cfg(feature = "unstable")]
+            unsafe {
+                allocator.deallocate(NonNull::new(heap_buf).unwrap(), layout)
+            }
             return Err(err);
         }
     };
@@ -73,6 +108,8 @@ pub fn make_boxed<
 mod tests {
     use super::*;
     use crate::ResultExt;
+    #[cfg(feature = "unstable")]
+    use alloc::alloc::Global;
     use core::mem::{align_of, size_of};
 
     /// Some simple dummy type to test [`make_boxed`].
@@ -166,14 +203,27 @@ mod tests {
         assert_eq!(&data.0 .0, &[1, 2, 3, 4]);
     }
 
+    /// This unit tests checks the [`make_boxed`] utility. The test has different code and behavior
+    /// depending on whether the "unstable" feature is active or not.
     #[test]
     fn test_make_boxed_utility() {
         let fetch_data_fn = |buf| uefi_function_stub_read(buf);
+
+        #[cfg(not(feature = "unstable"))]
         let data: Box<SomeData> = make_boxed(fetch_data_fn).unwrap();
+
+        #[cfg(feature = "unstable")]
+        let data: Box<SomeData> = make_boxed(fetch_data_fn, Global).unwrap();
         assert_eq!(&data.0, &[1, 2, 3, 4]);
 
         let fetch_data_fn = |buf| uefi_function_stub_read(buf);
+
+        #[cfg(not(feature = "unstable"))]
         let data: Box<SomeDataAlign16> = make_boxed(fetch_data_fn).unwrap();
+
+        #[cfg(feature = "unstable")]
+        let data: Box<SomeDataAlign16> = make_boxed(fetch_data_fn, Global).unwrap();
+
         assert_eq!(&data.0 .0, &[1, 2, 3, 4]);
     }
 }

@@ -6,7 +6,8 @@ publish = false
 edition = "2021"
 
 [dependencies]
-uefi = { path = "../uefi", features = ['alloc'] }
+# TODO we should let the uefi-test-runner run with and without unstable.
+uefi = { path = "../uefi", features = ["alloc", "unstable"] }
 uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.17", default-features = false }

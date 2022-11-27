@@ -1,14 +1,22 @@
 # Changelog
 
 ## uefi - [Unreleased]
+
+### Added
 - Implementations for the trait `EqStrUntilNul` now allow `?Sized` inputs. This means that
   you can write `some_cstr16.eq_str_until_nul("test")` instead of
   `some_cstr16.eq_str_until_nul(&"test")` now.
 - Added `TryFrom<core::ffi::CStr>` implementation for `CStr8`.
 - Added `Directory::read_entry_boxed` which works similar to `File::get_boxed_info`. This allows
-  easier iteration over the entries in a directory.
+  easier iteration over the entries in a directory. (requires the **alloc** feature)
+- Added `Directory::read_entry_boxed_in` and `File::get_boxed_info_in` that use the `allocator_api`
+  feature. (requires the **unstable** and **alloc** features)
 - Added an `core::error::Error` implementation for `Error` to ease
-  integration with error-handling crates.
+  integration with error-handling crates. (requires the **unstable** feature)
+
+### Changed
+
+### Removed
 
 ## uefi-macros - [Unreleased]
 

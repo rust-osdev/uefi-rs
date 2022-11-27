@@ -160,7 +160,10 @@ impl TargetTypes {
 pub enum CargoAction {
     Build,
     Clippy,
-    Doc { open: bool },
+    Doc {
+        open: bool,
+        document_private_items: bool,
+    },
     Miri,
     Test,
 }
@@ -235,10 +238,16 @@ impl Cargo {
                     tool_args.extend(["-D", "warnings"]);
                 }
             }
-            CargoAction::Doc { open } => {
+            CargoAction::Doc {
+                open,
+                document_private_items,
+            } => {
                 action = "doc";
                 if self.warnings_as_errors {
                     cmd.env("RUSTDOCFLAGS", "-Dwarnings");
+                }
+                if document_private_items {
+                    extra_args.push("--document-private-items");
                 }
                 if open {
                     extra_args.push("--open");
@@ -326,7 +335,10 @@ mod tests {
     #[test]
     fn test_cargo_command() {
         let cargo = Cargo {
-            action: CargoAction::Doc { open: true },
+            action: CargoAction::Doc {
+                open: true,
+                document_private_items: true,
+            },
             features: vec![Feature::GlobalAllocator],
             packages: vec![Package::Uefi, Package::Xtask],
             release: false,
@@ -336,7 +348,7 @@ mod tests {
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features global_allocator --open"
+            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features global_allocator --document-private-items --open"
         );
     }
 }

@@ -14,7 +14,7 @@ heck = "0.4.0"
 itertools = "0.10.5"
 # Use git as a temporary workaround for https://github.com/rust-osdev/uefi-rs/issues/573.
 mbrman = { git = "https://github.com/cecton/mbrman.git", rev = "78565860e55c272488d94480e72a4e2cd159ad8e" }
-nix = "0.25.0"
+nix = "0.26.1"
 proc-macro2 = "1.0.46"
 quote = "1.0.21"
 regex = "1.5.4"

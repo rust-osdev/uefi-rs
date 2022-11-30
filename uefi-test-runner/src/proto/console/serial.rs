@@ -1,33 +1,14 @@
 use uefi::proto::console::serial::{ControlBits, Serial};
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
-use uefi::Handle;
+use uefi::table::boot::BootServices;
+use uefi::{Result, ResultExt, Status};
 
-pub unsafe fn test(image: Handle, bt: &BootServices) {
-    info!("Running serial protocol test");
-    let handle = bt
-        .get_handle_for_protocol::<Serial>()
-        .expect("missing Serial protocol");
-    let mut serial = bt
-        .open_protocol::<Serial>(
-            OpenProtocolParams {
-                handle,
-                agent: image,
-                controller: None,
-            },
-            // For this test, don't open in exclusive mode. That
-            // would break the connection between stdout and the
-            // serial device.
-            OpenProtocolAttributes::GetProtocol,
-        )
-        .expect("failed to open serial protocol");
-    // BUG: there are multiple failures in the serial tests on AArch64
-    if cfg!(target_arch = "aarch64") {
-        return;
-    }
-
-    let old_ctrl_bits = serial
-        .get_control_bits()
-        .expect("Failed to get device control bits");
+// For the duration of this function, the serial device is opened in
+// exclusive mode. That means logs will not work, which means we should
+// avoid panicking here because the panic log would be hidden. Instead,
+// return a result that gets asserted in `test` *after* the logger has
+// been restored.
+fn serial_test_helper(serial: &mut Serial) -> Result {
+    let old_ctrl_bits = serial.get_control_bits()?;
     let mut ctrl_bits = ControlBits::empty();
 
     // For the purposes of testing, we're _not_ going to implement
@@ -37,28 +18,57 @@ pub unsafe fn test(image: Handle, bt: &BootServices) {
     // Use a loop back device for testing.
     ctrl_bits |= ControlBits::SOFTWARE_LOOPBACK_ENABLE;
 
-    serial
-        .set_control_bits(ctrl_bits)
-        .expect("Failed to set device control bits");
+    serial.set_control_bits(ctrl_bits)?;
 
     // Keep this message short, we need it to fit in the FIFO.
     const OUTPUT: &[u8] = b"Hello world!";
     const MSG_LEN: usize = OUTPUT.len();
 
-    serial
-        .write(OUTPUT)
-        .expect("Failed to write to serial port");
+    serial.write(OUTPUT).discard_errdata()?;
 
     let mut input = [0u8; MSG_LEN];
-    serial
-        .read(&mut input)
-        .expect("Failed to read from serial port");
-
-    assert_eq!(OUTPUT, &input[..]);
+    serial.read(&mut input).discard_errdata()?;
 
     // Clean up after ourselves
-    serial.reset().expect("Could not reset the serial device");
-    serial
-        .set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)
-        .expect("Could not restore the serial device state");
+    serial.reset()?;
+    serial.set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)?;
+
+    if OUTPUT == input {
+        Ok(())
+    } else {
+        Err(Status::ABORTED.into())
+    }
+}
+
+pub unsafe fn test(bt: &BootServices) {
+    // The serial device under aarch64 doesn't support the software
+    // loopback feature needed for this test.
+    if cfg!(target_arch = "aarch64") {
+        return;
+    }
+
+    info!("Running serial protocol test");
+    let handle = bt
+        .get_handle_for_protocol::<Serial>()
+        .expect("missing Serial protocol");
+
+    let mut serial = bt
+        .open_protocol_exclusive::<Serial>(handle)
+        .expect("failed to open serial protocol");
+
+    // Send the request, but don't check the result yet so that first
+    // we can reconnect the console output for the logger.
+    let res = serial_test_helper(&mut serial);
+
+    // Release the serial device and reconnect all controllers to the
+    // serial handle. This is necessary to restore the connection
+    // between the console output device used for logging and the serial
+    // device, which was broken when we opened the protocol in exclusive
+    // mode above.
+    drop(serial);
+    let _ = bt.connect_controller(handle, None, None, true);
+
+    if let Err(err) = res {
+        panic!("serial test failed: {:?}", err.status());
+    }
 }

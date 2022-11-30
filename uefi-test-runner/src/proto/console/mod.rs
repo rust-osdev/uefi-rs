@@ -7,7 +7,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
 
     let bt = st.boot_services();
     unsafe {
-        serial::test(image, bt);
+        serial::test(bt);
         gop::test(image, bt);
     }
     pointer::test(bt);

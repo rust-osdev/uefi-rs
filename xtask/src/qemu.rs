@@ -444,6 +444,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
             // A72 is a very generic 64-bit ARM CPU in the wild.
             cmd.args(["-cpu", "cortex-a72"]);
+
+            // Graphics device.
+            cmd.args(["-device", "virtio-gpu-pci"]);
         }
         UefiArch::IA32 | UefiArch::X86_64 => {
             // Use a modern machine.
@@ -454,6 +457,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
             // Allocate some memory.
             cmd.args(["-m", "256M"]);
+
+            // Graphics device.
+            cmd.args(["-vga", "std"]);
 
             // Enable hardware-accelerated virtualization if possible.
             if platform::is_linux() && !opt.disable_kvm && !opt.ci {
@@ -500,9 +506,6 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     drive_arg.push(esp_dir);
     cmd.arg(drive_arg);
 
-    // When running in headless mode we don't have video, but we can still have
-    // QEMU emulate a display and take screenshots from it.
-    cmd.args(["-vga", "std"]);
     if opt.headless {
         cmd.args(["-display", "none"]);
     }

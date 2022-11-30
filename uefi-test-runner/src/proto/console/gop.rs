@@ -24,7 +24,10 @@ pub unsafe fn test(image: Handle, bt: &BootServices) {
         fill_color(gop);
         draw_fb(gop);
 
-        send_request_to_host(bt, HostRequest::Screenshot("gop_test"));
+        // `draw_fb` is skipped on aarch64, so the screenshot doesn't match.
+        if cfg!(not(target_arch = "aarch64")) {
+            send_request_to_host(bt, HostRequest::Screenshot("gop_test"));
+        }
     } else {
         // No tests can be run.
         warn!("UEFI Graphics Output Protocol is not supported");
@@ -59,6 +62,12 @@ fn fill_color(gop: &mut GraphicsOutput) {
 
 // Draw directly to the frame buffer.
 fn draw_fb(gop: &mut GraphicsOutput) {
+    // The `virtio-gpu-pci` graphics device we use on aarch64 doesn't
+    // support `PixelFormat::BltOnly`.
+    if cfg!(target_arch = "aarch64") {
+        return;
+    }
+
     let mi = gop.current_mode_info();
     let stride = mi.stride();
     let (width, height) = mi.resolution();

@@ -1105,6 +1105,19 @@ impl BootServices {
     ///
     /// [`handle_protocol`]: BootServices::handle_protocol
     /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.OpenProtocol()`. Some errors have multiple
+    /// different causes. See the function definition in the UEFI
+    /// Specification, Chapter 7.3 for more information on possible causes
+    /// for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
     pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
         &self,
         params: OpenProtocolParams,

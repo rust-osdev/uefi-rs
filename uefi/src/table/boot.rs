@@ -338,6 +338,19 @@ impl BootServices {
     /// UEFI OS loaders should allocate memory of the type `LoaderData`. An `u64`
     /// is returned even on 32-bit platforms because some hardware configurations
     /// like Intel PAE enable 64-bit physical addressing on a 32-bit processor.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.AllocatePages()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.2 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
     pub fn allocate_pages(
         &self,
         ty: AllocateType,
@@ -353,6 +366,17 @@ impl BootServices {
     }
 
     /// Frees memory pages allocated by UEFI.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.FreePages()`.
+    ///
+    /// See the function definition in the UEFI Specification, Chapter 7.2 for
+    /// more information on each error type.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
         (self.free_pages)(addr, count).into()
     }
@@ -399,6 +423,18 @@ impl BootServices {
     ///
     /// If you want to store the resulting memory map without having to keep
     /// the buffer around, you can use `.copied().collect()` on the iterator.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.GetMemoryMap()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.2 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::BUFFER_TOO_SMALL`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn memory_map<'buf>(
         &self,
         buffer: &'buf mut [u8],
@@ -441,12 +477,34 @@ impl BootServices {
     }
 
     /// Allocates from a memory pool. The pointer will be 8-byte aligned.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.AllocatePool()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.2 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
         (self.allocate_pool)(mem_ty, size, &mut buffer).into_with_val(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.FreePool()`.
+    ///
+    /// See the function definition in the UEFI Specification, Chapter 7.2 for
+    /// more information on this error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pool(&self, addr: *mut u8) -> Result {
         (self.free_pool)(addr).into()
     }
@@ -466,6 +524,18 @@ impl BootServices {
     ///
     /// This function is unsafe because callbacks must handle exit from boot
     /// services correctly.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.CreateEvent()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.1 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
     pub unsafe fn create_event(
         &self,
         event_ty: EventType,
@@ -519,6 +589,18 @@ impl BootServices {
     /// # Safety
     ///
     /// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.CreateEventEx()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.1 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
     pub unsafe fn create_event_ex(
         &self,
         event_type: EventType,
@@ -545,6 +627,16 @@ impl BootServices {
     }
 
     /// Sets the trigger for `EventType::TIMER` event.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.SetTimer()`.
+    ///
+    /// See the function definition in the UEFI Specification, Chapter 7.1 for more
+    /// information on this error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn set_timer(&self, event: &Event, trigger_time: TimerTrigger) -> Result {
         let (ty, time) = match trigger_time {
             TimerTrigger::Cancel => (0, 0),
@@ -581,6 +673,18 @@ impl BootServices {
     /// To check if an event is signaled without waiting, an already signaled
     /// event can be used as the last event in the slice being checked, or the
     /// check_event() interface may be used.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.WaitForEvent()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.1 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = MaybeUninit::<usize>::uninit();
@@ -608,6 +712,13 @@ impl BootServices {
     ///
     /// When signaling an event group, it is possible to create an event in the group, signal
     /// it, and then close the event to remove it from the group.
+    ///
+    /// # Errors
+    ///
+    /// This function directly calls the UEFI function `EFI_BOOT_SERVICES.SignalEvent()`.
+    ///
+    /// Since the UEFI function does not return any errors, this function shouldn't either.
+    /// See the function definition in the UEFI Specification, Chapter 7.1 for more details.
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
         // and not keeping the clone around.
@@ -814,6 +925,17 @@ impl BootServices {
     /// If the first node of `device_path` matches the
     /// protocol, the `device_path` is advanced to the device path terminator node. If `device_path`
     /// is a multi-instance device path, the function will operate on the first instance.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.LocateDevicePath()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition in the UEFI
+    /// Specification, Chapter 7.3 for more information on possible causes for each error type.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
         let mut handle = MaybeUninit::uninit();
         let mut device_path_ptr = device_path.as_ffi_ptr();
@@ -1109,10 +1231,11 @@ impl BootServices {
     /// # Errors
     ///
     /// This function returns errors directly from the UEFI function
-    /// `EFI_BOOT_SERVICES.OpenProtocol()`. Some errors have multiple
-    /// different causes. See the function definition in the UEFI
-    /// Specification, Chapter 7.3 for more information on possible causes
-    /// for each error type.
+    /// `EFI_BOOT_SERVICES.OpenProtocol()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.3 for more information on possible
+    /// causes for each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     /// * [`uefi::Status::UNSUPPORTED`]
@@ -1150,6 +1273,20 @@ impl BootServices {
     /// automatically close the protocol interface when dropped.
     ///
     /// [`handle_protocol`]: BootServices::handle_protocol
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors from the UEFI function
+    /// `EFI_BOOT_SERVICES.OpenProtocol()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.3 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
     pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
         &self,
         handle: Handle,
@@ -1170,6 +1307,20 @@ impl BootServices {
     }
 
     /// Test whether a handle supports a protocol.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.OpenProtocol()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.3 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
     pub fn test_protocol<P: Protocol>(&self, params: OpenProtocolParams) -> Result<()> {
         const TEST_PROTOCOL: u32 = 0x04;
         let mut interface = ptr::null_mut();
@@ -1186,6 +1337,18 @@ impl BootServices {
 
     /// Get the list of protocol interface [`Guids`][Guid] that are installed
     /// on a [`Handle`].
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.ProtocolsPerHandle()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.3 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
     pub fn protocols_per_handle(&self, handle: Handle) -> Result<ProtocolsPerHandle> {
         let mut protocols = ptr::null_mut();
         let mut count = 0;
@@ -1214,6 +1377,19 @@ impl BootServices {
 
     /// Returns an array of handles that support the requested protocol in a buffer allocated from
     /// pool.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors directly from the UEFI function
+    /// `EFI_BOOT_SERVICES.LocateHandleBuffer()`.
+    ///
+    /// Some errors have multiple different causes. See the function definition
+    /// in the UEFI Specification, Chapter 7.3 for more information on possible
+    /// causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
     pub fn locate_handle_buffer(&self, search_ty: SearchType) -> Result<HandleBuffer> {
         let mut num_handles: usize = 0;
         let mut buffer: *mut Handle = ptr::null_mut();
@@ -1311,6 +1487,20 @@ impl BootServices {
     ///
     /// You can retrieve the SFS protocol associated with the boot partition
     /// by passing the image handle received by the UEFI entry point to this function.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors from the UEFI functions `EFI_BOOT_SERVICES.OpenProtocol()`
+    /// and `EFI_BOOT_SERVICES.LocateDevicePath()`.
+    ///
+    /// Some errors have multiple different causes. See the function definitions in the UEFI
+    /// Specification, Chapter 7.3 for more information on possible causes for each error type.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    /// * [`uefi::Status::NOT_FOUND`]
     pub fn get_image_file_system(
         &self,
         image_handle: Handle,

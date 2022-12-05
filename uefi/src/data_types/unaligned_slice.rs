@@ -1,3 +1,4 @@
+use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 
@@ -10,7 +11,7 @@ use crate::alloc::vec::Vec;
 /// [`repr(packed)`] struct. The element type must be [`Copy`].
 ///
 /// [`repr(packed)`]: https://doc.rust-lang.org/nomicon/other-reprs.html#reprpacked
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct UnalignedSlice<'a, T: Copy> {
     data: *const T,
     len: usize,
@@ -124,6 +125,12 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
             v.set_len(len);
         }
         v
+    }
+}
+
+impl<'a, T: Copy + Debug> Debug for UnalignedSlice<'a, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.iter()).finish()
     }
 }
 

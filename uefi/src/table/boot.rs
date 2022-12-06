@@ -717,7 +717,12 @@ impl BootServices {
     ///
     /// This function directly calls the UEFI function `EFI_BOOT_SERVICES.SignalEvent()`.
     ///
-    /// Since the UEFI function does not return any errors, this function shouldn't either.
+    /// Note: The UEFI Specification v2.9 states that this may only return `EFI_SUCCESS`, but,
+    /// depending on the UEFI implementation, it is possible that this may return an error.
+    /// More research should be done to determine if any UEFI implementations (specifically EDK2)
+    /// return error codes for this function. To be safe, ensure that error codes are handled
+    /// properly.
+    ///
     /// See the function definition in the UEFI Specification, Chapter 7.1 for more details.
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
@@ -729,9 +734,17 @@ impl BootServices {
     /// registered with `register_protocol_notify()`, then the corresponding registration will
     /// be removed. It is safe to call this function within the corresponding notify function.
     ///
+    /// # Errors
+    ///
+    /// This function directly calls the UEFI function `EFI_BOOT_SERVICES.CloseEvent()`.
     ///
     /// Note: The UEFI Specification v2.9 states that this may only return `EFI_SUCCESS`, but,
     /// at least for application based on EDK2 (such as OVMF), it may also return `EFI_INVALID_PARAMETER`.
+    /// To be safe, ensure that error codes are handled properly.
+    ///
+    /// See the function definition in the UEFI Specification, Chapter 7.1 for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn close_event(&self, event: Event) -> Result {
         unsafe { (self.close_event)(event).into() }
     }
@@ -740,6 +753,17 @@ impl BootServices {
     ///
     /// The returned value will be `true` if the event is in the signaled state,
     /// otherwise `false` is returned.
+    ///
+    /// # Errors
+    ///
+    /// This function returns errors from the UEFI function `EFI_BOOT_SERVICES.CheckEvent()`.
+    ///
+    /// Note: Instead of returning the `EFI_NOT_READY` error from `EFI_BOOT_SERVICES.CheckEvent()`,
+    /// as listed in the UEFI Specification, this function will return `false`.
+    ///
+    /// See the function definition in the UEFI Specification, Chapter 7.1 for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn check_event(&self, event: Event) -> Result<bool> {
         let status = unsafe { (self.check_event)(event) };
         match status {

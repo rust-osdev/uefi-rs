@@ -16,6 +16,9 @@
 
 ### Changed
 
+- `UnalignedSlice` now implements `Clone`, and the `Debug` impl now
+  prints the elements instead of the internal fields.
+
 ### Removed
 
 ## uefi-macros - [Unreleased]

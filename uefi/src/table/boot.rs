@@ -717,12 +717,7 @@ impl BootServices {
     ///
     /// This function directly calls the UEFI function `EFI_BOOT_SERVICES.SignalEvent()`.
     ///
-    /// Note: The UEFI Specification v2.9 states that this may only return `EFI_SUCCESS`, but,
-    /// depending on the UEFI implementation, it is possible that this may return an error.
-    /// More research should be done to determine if any UEFI implementations (specifically EDK2)
-    /// return error codes for this function. To be safe, ensure that error codes are handled
-    /// properly.
-    ///
+    /// Currently, (as of UEFI Spec v2.9) this only returns `EFI_SUCCESS`.
     /// See the function definition in the UEFI Specification, Chapter 7.1 for more details.
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware

@@ -42,13 +42,13 @@ jobs:
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86 ovmf -y
+        sudo apt-get install qemu-system-x86 ovmf swtpm -y
 
     - name: Build (without unstable)
       run: cargo xtask build --target x86_64
 
     - name: Run VM tests
-      run: cargo xtask run --target x86_64 --headless --ci
+      run: cargo xtask run --target x86_64 --headless --ci --tpm=v1
       timeout-minutes: 2
 
   test_ia32:
@@ -61,13 +61,13 @@ jobs:
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86 ovmf-ia32 -y
+        sudo apt-get install qemu-system-x86 ovmf-ia32 swtpm -y
 
     - name: Build
       run: cargo xtask build --target ia32
 
     - name: Run VM tests
-      run: cargo xtask run --target ia32 --headless --ci
+      run: cargo xtask run --target ia32 --headless --ci --tpm=v2
       timeout-minutes: 2
 
   test:

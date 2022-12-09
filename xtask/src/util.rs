@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn test_command_to_string() {
         let mut cmd = Command::new("MyCommand");
-        cmd.args(&["abc", "123"]).envs([
+        cmd.args(["abc", "123"]).envs([
             ("VAR1", "val1"),
             ("VAR2", "val2"),
             ("PATH", "pathval"),

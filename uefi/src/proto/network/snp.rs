@@ -7,12 +7,13 @@
 //! No interface function must be called until `SimpleNetwork.start` is successfully
 //! called first.
 
+use super::{IpAddress, MacAddress};
+use crate::data_types::Event;
+use crate::{Result, Status};
 use core::ffi::c_void;
 use core::ptr;
+use core::ptr::NonNull;
 use uefi_macros::{unsafe_guid, Protocol};
-use crate::{Status, Result};
-use crate::data_types::Event;
-use super::{IpAddress, MacAddress};
 
 /// The Simple Network Protocol
 #[repr(C)]
@@ -24,8 +25,8 @@ pub struct SimpleNetwork {
     stop: extern "efiapi" fn(this: &Self) -> Status,
     initialize: extern "efiapi" fn(
         this: &Self,
-        extra_recv_buffer_size: Option<usize>,
-        extra_transmit_buffer_size: Option<usize>
+        extra_recv_buffer_size: usize,
+        extra_transmit_buffer_size: usize,
     ) -> Status,
     reset: extern "efiapi" fn(this: &Self, extended_verification: bool) -> Status,
     shutdown: extern "efiapi" fn(this: &Self) -> Status,
@@ -34,33 +35,30 @@ pub struct SimpleNetwork {
         enable: u32,
         disable: u32,
         reset_mcast_filter: bool,
-        mcast_filter_count: Option<usize>,
-        mcast_filter: Option<*const [MacAddress]>
+        mcast_filter_count: usize,
+        mcast_filter: Option<NonNull<MacAddress>>,
     ) -> Status,
-    station_address: extern "efiapi" fn(this: &Self, reset: bool, new: Option<&MacAddress>) -> Status,
+    station_address:
+        extern "efiapi" fn(this: &Self, reset: bool, new: Option<&MacAddress>) -> Status,
     statistics: extern "efiapi" fn(
         this: &Self,
         reset: bool,
         stats_size: Option<&mut usize>,
-        stats_table: Option<&mut NetworkStats>
+        stats_table: Option<&mut NetworkStats>,
     ) -> Status,
-    mcast_ip_to_mac: extern "efiapi" fn(
-        this: &Self,
-        ipv6: bool,
-        ip: &IpAddress,
-        mac: &mut MacAddress
-    ) -> Status,
+    mcast_ip_to_mac:
+        extern "efiapi" fn(this: &Self, ipv6: bool, ip: &IpAddress, mac: &mut MacAddress) -> Status,
     nv_data: extern "efiapi" fn(
         this: &Self,
         read_write: bool,
         offset: usize,
         buffer_size: usize,
-        buffer: *mut c_void
+        buffer: *mut c_void,
     ) -> Status,
     get_status: extern "efiapi" fn(
         this: &Self,
         interrupt_status: Option<&mut InterruptStatus>,
-        tx_buf: Option<&mut *mut c_void>
+        tx_buf: Option<&mut *mut c_void>,
     ) -> Status,
     transmit: extern "efiapi" fn(
         this: &Self,
@@ -69,7 +67,7 @@ pub struct SimpleNetwork {
         buffer: *const c_void,
         src_addr: Option<&MacAddress>,
         dest_addr: Option<&MacAddress>,
-        protocol: Option<&u16>
+        protocol: Option<&u16>,
     ) -> Status,
     receive: extern "efiapi" fn(
         this: &Self,
@@ -78,8 +76,9 @@ pub struct SimpleNetwork {
         buffer: *mut c_void,
         src_addr: Option<&mut MacAddress>,
         dest_addr: Option<&mut MacAddress>,
-        protocol: Option<&mut u16>
+        protocol: Option<&mut u16>,
     ) -> Status,
+    // On QEMU, this event seems to never fire.
     wait_for_packet: Event,
     mode: *const NetworkMode,
 }
@@ -98,11 +97,7 @@ impl SimpleNetwork {
     /// Resets a network adapter and allocates the transmit and receive buffers
     /// required by the network interface; optionally, also requests allocation of
     /// additional transmit and receive buffers
-    pub fn initialize(
-        &self,
-        extra_rx_buffer_size: Option<usize>,
-        extra_tx_buffer_size: Option<usize>
-    ) -> Result {
+    pub fn initialize(&self, extra_rx_buffer_size: usize, extra_tx_buffer_size: usize) -> Result {
         (self.initialize)(self, extra_rx_buffer_size, extra_tx_buffer_size).into()
     }
 
@@ -124,26 +119,26 @@ impl SimpleNetwork {
         enable: u32,
         disable: u32,
         reset_mcast_filter: bool,
-        mcast_filter_count: Option<usize>,
-        mcast_filter: Option<*const [MacAddress]>
+        mcast_filter: Option<&[MacAddress]>,
     ) -> Result {
-        (self.receive_filters)(
-            self,
-            enable,
-            disable,
-            reset_mcast_filter,
-            mcast_filter_count,
-            mcast_filter
-        ).into()
+        if let Some(mcast_filter) = mcast_filter {
+            (self.receive_filters)(
+                self,
+                enable,
+                disable,
+                reset_mcast_filter,
+                mcast_filter.len(),
+                NonNull::new(mcast_filter.as_ptr() as *mut _),
+            )
+            .into()
+        } else {
+            (self.receive_filters)(self, enable, disable, reset_mcast_filter, 0, None).into()
+        }
     }
 
     /// Modifies or resets the current station address, if supported
     pub fn station_address(&self, reset: bool, new: Option<&MacAddress>) -> Result {
-        (self.station_address)(
-            self,
-            reset,
-            new
-        ).into()
+        (self.station_address)(self, reset, new).into()
     }
 
     /// Resets statistics on a network interface
@@ -171,24 +166,12 @@ impl SimpleNetwork {
     /// Performs read operations on the NVRAM device attached to
     /// a network interface
     pub fn read_nv_data(&self, offset: usize, buffer_size: usize, buffer: *mut c_void) -> Result {
-        (self.nv_data)(
-            self,
-            true,
-            offset,
-            buffer_size,
-            buffer
-        ).into()
+        (self.nv_data)(self, true, offset, buffer_size, buffer).into()
     }
 
     /// Performs write operations on the NVRAM device attached to a network interface
     pub fn write_nv_data(&self, offset: usize, buffer_size: usize, buffer: *mut c_void) -> Result {
-        (self.nv_data)(
-            self,
-            false,
-            offset,
-            buffer_size,
-            buffer
-        ).into()
+        (self.nv_data)(self, false, offset, buffer_size, buffer).into()
     }
 
     /// Reads the current interrupt status and recycled transmit buffer
@@ -206,7 +189,7 @@ impl SimpleNetwork {
         let mut tx_buf: *mut c_void = ptr::null_mut();
         let status = (self.get_status)(self, None, Some(&mut tx_buf));
         Result::from(status)?;
-        if tx_buf == ptr::null_mut() {
+        if tx_buf.is_null() {
             Ok(None)
         } else {
             Ok(Some(tx_buf.cast()))
@@ -220,7 +203,7 @@ impl SimpleNetwork {
         buffer: &[u8],
         src_addr: Option<&MacAddress>,
         dest_addr: Option<&MacAddress>,
-        protocol: Option<&u16>
+        protocol: Option<&u16>,
     ) -> Result {
         (self.transmit)(
             self,
@@ -229,8 +212,9 @@ impl SimpleNetwork {
             buffer.as_ptr().cast(),
             src_addr,
             dest_addr,
-            protocol
-        ).into()
+            protocol,
+        )
+        .into()
     }
 
     /// Receives a packet from a network interface
@@ -242,7 +226,7 @@ impl SimpleNetwork {
         header_size: Option<&mut usize>,
         src_addr: Option<&mut MacAddress>,
         dest_addr: Option<&mut MacAddress>,
-        protocol: Option<&mut u16>
+        protocol: Option<&mut u16>,
     ) -> Result<usize> {
         let mut buffer_size = buffer.len();
         let status = (self.receive)(
@@ -252,17 +236,29 @@ impl SimpleNetwork {
             buffer.as_mut_ptr().cast(),
             src_addr,
             dest_addr,
-            protocol
+            protocol,
         );
         Result::from(status)?;
         Ok(buffer_size)
     }
 
     /// Returns a reference to the Simple Network mode
+    #[must_use]
     pub fn mode(&self) -> &NetworkMode {
         unsafe { &*self.mode }
     }
 }
+
+/// Receive unicast packets.
+pub const EFI_SIMPLE_NETWORK_RECEIVE_UNICAST: u32 = 0x01;
+/// Receive multicast packets.
+pub const EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST: u32 = 0x02;
+/// Receive broadcast packets.
+pub const EFI_SIMPLE_NETWORK_RECEIVE_BROADCAST: u32 = 0x04;
+/// Receive packets in promiscuous mode.
+pub const EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS: u32 = 0x08;
+/// Receive packets in promiscuous multicast mode.
+pub const EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST: u32 = 0x10;
 
 /// A bitmask of currently active interrupts
 #[derive(Debug)]
@@ -271,24 +267,35 @@ pub struct InterruptStatus(u32);
 
 impl InterruptStatus {
     /// Creates a new InterruptStatus instance with all bits unset
+    #[must_use]
     pub fn new() -> Self {
         Self(0)
     }
     /// The receive interrupt bit
+    #[must_use]
     pub fn receive_interrupt(&self) -> bool {
         self.0 & 0x01 != 0
     }
     /// The transmit interrupt bit
+    #[must_use]
     pub fn transmit_interrupt(&self) -> bool {
         self.0 & 0x02 != 0
     }
     /// The command interrupt bit
+    #[must_use]
     pub fn command_interrupt(&self) -> bool {
         self.0 & 0x04 != 0
     }
     /// The software interrupt bit
+    #[must_use]
     pub fn software_interrupt(&self) -> bool {
         self.0 & 0x08 != 0
+    }
+}
+
+impl Default for InterruptStatus {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -327,7 +334,7 @@ pub struct NetworkStats {
     rx_duplicated_frames: u64,
     rx_decrypt_error_frames: u64,
     tx_error_frames: u64,
-    tx_retry_frames: u64
+    tx_retry_frames: u64,
 }
 
 impl NetworkStats {
@@ -342,155 +349,181 @@ impl NetworkStats {
     fn to_option(&self, stat: u64) -> Option<u64> {
         match self.available(stat) {
             true => Some(stat),
-            false => None
+            false => None,
         }
     }
 
     /// The total number of frames received, including error frames
     /// and dropped frames
+    #[must_use]
     pub fn rx_total_frames(&self) -> Option<u64> {
         self.to_option(self.rx_total_frames)
     }
 
     /// The total number of good frames received and copied
     /// into receive buffers
+    #[must_use]
     pub fn rx_good_frames(&self) -> Option<u64> {
         self.to_option(self.rx_good_frames)
     }
 
     /// The number of frames below the minimum length for the
     /// communications device
+    #[must_use]
     pub fn rx_undersize_frames(&self) -> Option<u64> {
         self.to_option(self.rx_undersize_frames)
     }
 
     /// The number of frames longer than the maximum length for
     /// the communications length device
+    #[must_use]
     pub fn rx_oversize_frames(&self) -> Option<u64> {
         self.to_option(self.rx_oversize_frames)
     }
 
     /// The number of valid frames that were dropped because
     /// the receive buffers were full
+    #[must_use]
     pub fn rx_dropped_frames(&self) -> Option<u64> {
         self.to_option(self.rx_dropped_frames)
     }
 
     /// The number of valid unicast frames received and not dropped
+    #[must_use]
     pub fn rx_unicast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_unicast_frames)
     }
 
     /// The number of valid broadcast frames received and not dropped
+    #[must_use]
     pub fn rx_broadcast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_broadcast_frames)
     }
 
     /// The number of valid multicast frames received and not dropped
+    #[must_use]
     pub fn rx_multicast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_multicast_frames)
     }
 
     /// Number of frames with CRC or alignment errors
+    #[must_use]
     pub fn rx_crc_error_frames(&self) -> Option<u64> {
         self.to_option(self.rx_crc_error_frames)
     }
 
     /// The total number of bytes received including frames with errors
     /// and dropped frames
+    #[must_use]
     pub fn rx_total_bytes(&self) -> Option<u64> {
         self.to_option(self.rx_total_bytes)
     }
 
     /// The total number of frames transmitted including frames
     /// with errors and dropped frames
+    #[must_use]
     pub fn tx_total_frames(&self) -> Option<u64> {
         self.to_option(self.tx_total_frames)
     }
 
     /// The total number of valid frames transmitted and copied
     /// into receive buffers
+    #[must_use]
     pub fn tx_good_frames(&self) -> Option<u64> {
         self.to_option(self.tx_good_frames)
     }
 
     /// The number of frames below the minimum length for
     /// the media. This would be less than 64 for Ethernet
+    #[must_use]
     pub fn tx_undersize_frames(&self) -> Option<u64> {
         self.to_option(self.tx_undersize_frames)
     }
 
     /// The number of frames longer than the maximum length for
     /// the media. This would be 1500 for Ethernet
+    #[must_use]
     pub fn tx_oversize_frames(&self) -> Option<u64> {
         self.to_option(self.tx_oversize_frames)
     }
 
     /// The number of valid frames that were dropped because
     /// received buffers were full
+    #[must_use]
     pub fn tx_dropped_frames(&self) -> Option<u64> {
         self.to_option(self.tx_dropped_frames)
     }
 
     /// The number of valid unicast frames transmitted and not
     /// dropped
+    #[must_use]
     pub fn tx_unicast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_unicast_frames)
     }
 
     /// The number of valid broadcast frames transmitted and
     /// not dropped
+    #[must_use]
     pub fn tx_broadcast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_broadcast_frames)
     }
 
     /// The number of valid multicast frames transmitted
     /// and not dropped
+    #[must_use]
     pub fn tx_multicast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_multicast_frames)
     }
 
     /// The number of transmitted frames with CRC or
     /// alignment errors
+    #[must_use]
     pub fn tx_crc_error_frames(&self) -> Option<u64> {
         self.to_option(self.tx_crc_error_frames)
     }
 
     /// The total number of bytes transmitted including
     /// error frames and dropped frames
+    #[must_use]
     pub fn tx_total_bytes(&self) -> Option<u64> {
         self.to_option(self.tx_total_bytes)
     }
 
     /// The number of collisions detected on this subnet
+    #[must_use]
     pub fn collisions(&self) -> Option<u64> {
         self.to_option(self.collisions)
     }
 
     /// The number of frames destined for unsupported protocol
+    #[must_use]
     pub fn unsupported_protocol(&self) -> Option<u64> {
         self.to_option(self.unsupported_protocol)
     }
 
     /// The number of valid frames received that were duplicated
+    #[must_use]
     pub fn rx_duplicated_frames(&self) -> Option<u64> {
         self.to_option(self.rx_duplicated_frames)
     }
 
     /// The number of encrypted frames received that failed
     /// to decrypt
+    #[must_use]
     pub fn rx_decrypt_error_frames(&self) -> Option<u64> {
         self.to_option(self.rx_decrypt_error_frames)
     }
 
     /// The number of frames that failed to transmit after
     /// exceeding the retry limit
+    #[must_use]
     pub fn tx_error_frames(&self) -> Option<u64> {
         self.to_option(self.tx_error_frames)
     }
 
     /// The number of frames that transmitted successfully
     /// after more than one attempt
+    #[must_use]
     pub fn tx_retry_frames(&self) -> Option<u64> {
         self.to_option(self.tx_retry_frames)
     }
@@ -536,7 +569,7 @@ pub struct NetworkMode {
     /// Tells if the presence of the media can be determined
     pub media_present_supported: bool,
     /// Tells if media are connected to the network interface
-    pub media_present: bool
+    pub media_present: bool,
 }
 
 newtype_enum! {

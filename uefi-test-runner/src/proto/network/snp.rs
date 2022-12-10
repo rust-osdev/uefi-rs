@@ -1,8 +1,5 @@
 use uefi::prelude::BootServices;
-use uefi::proto::network::snp::SimpleNetwork;
-use uefi::proto::network::snp::EFI_SIMPLE_NETWORK_RECEIVE_BROADCAST;
-use uefi::proto::network::snp::EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST;
-use uefi::proto::network::snp::EFI_SIMPLE_NETWORK_RECEIVE_UNICAST;
+use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::proto::network::MacAddress;
 use uefi::Status;
 
@@ -46,10 +43,8 @@ pub fn test(bt: &BootServices) {
         // Set receive filters
         simple_network
             .receive_filters(
-                EFI_SIMPLE_NETWORK_RECEIVE_UNICAST
-                    | EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST
-                    | EFI_SIMPLE_NETWORK_RECEIVE_BROADCAST,
-                0,
+                ReceiveFlags::UNICAST | ReceiveFlags::MULTICAST | ReceiveFlags::BROADCAST,
+                ReceiveFlags::empty(),
                 false,
                 None,
             )
@@ -80,15 +75,16 @@ pub fn test(bt: &BootServices) {
         assert!(!simple_network
             .get_interrupt_status()
             .unwrap()
-            .transmit_interrupt());
+            .contains(InterruptStatus::TRANSMIT));
+
         // Send the frame
         simple_network
             .transmit(
                 simple_network.mode().media_header_size as usize,
                 payload,
                 None,
-                Some(&dest_addr),
-                Some(&0x0800),
+                Some(dest_addr),
+                Some(0x0800),
             )
             .expect("Failed to transmit frame");
 
@@ -96,7 +92,7 @@ pub fn test(bt: &BootServices) {
         while !simple_network
             .get_interrupt_status()
             .unwrap()
-            .transmit_interrupt()
+            .contains(InterruptStatus::TRANSMIT)
         {}
 
         // Attempt to receive a frame

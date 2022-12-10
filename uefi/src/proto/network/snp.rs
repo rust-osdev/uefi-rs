@@ -10,6 +10,7 @@
 use super::{IpAddress, MacAddress};
 use crate::data_types::Event;
 use crate::{Result, Status};
+use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;
 use core::ptr::NonNull;
@@ -84,69 +85,70 @@ pub struct SimpleNetwork {
 }
 
 impl SimpleNetwork {
-    /// Changes the state of a network from "Stopped" to "Started"
+    /// Change the state of a network from "Stopped" to "Started".
     pub fn start(&self) -> Result {
         (self.start)(self).into()
     }
 
-    /// Changes the state of a network interface from "Started" to "Stopped"
+    /// Change the state of a network interface from "Started" to "Stopped".
     pub fn stop(&self) -> Result {
         (self.stop)(self).into()
     }
 
-    /// Resets a network adapter and allocates the transmit and receive buffers
-    /// required by the network interface; optionally, also requests allocation of
-    /// additional transmit and receive buffers
+    /// Reset a network adapter and allocate the transmit and receive buffers
+    /// required by the network interface; optionally, also request allocation of
+    /// additional transmit and receive buffers.
     pub fn initialize(&self, extra_rx_buffer_size: usize, extra_tx_buffer_size: usize) -> Result {
         (self.initialize)(self, extra_rx_buffer_size, extra_tx_buffer_size).into()
     }
 
-    /// Resets a network adapter and reinitializes it with the parameters that were
-    /// provided in the previous call to `initialize`
+    /// Reset a network adapter and reinitialize it with the parameters that were
+    /// provided in the previous call to `initialize`.
     pub fn reset(&self, extended_verification: bool) -> Result {
         (self.reset)(self, extended_verification).into()
     }
 
-    /// Resets a network adapter and leaves it in a state that is safe
+    /// Reset a network adapter, leaving it in a state that is safe
     /// for another driver to initialize
     pub fn shutdown(&self) -> Result {
         (self.shutdown)(self).into()
     }
 
-    /// Manages the multicast receive filters of a network
+    /// Manage the multicast receive filters of a network.
     pub fn receive_filters(
         &self,
-        enable: u32,
-        disable: u32,
+        enable: ReceiveFlags,
+        disable: ReceiveFlags,
         reset_mcast_filter: bool,
         mcast_filter: Option<&[MacAddress]>,
     ) -> Result {
         if let Some(mcast_filter) = mcast_filter {
             (self.receive_filters)(
                 self,
-                enable,
-                disable,
+                enable.bits,
+                disable.bits,
                 reset_mcast_filter,
                 mcast_filter.len(),
                 NonNull::new(mcast_filter.as_ptr() as *mut _),
             )
             .into()
         } else {
-            (self.receive_filters)(self, enable, disable, reset_mcast_filter, 0, None).into()
+            (self.receive_filters)(self, enable.bits, disable.bits, reset_mcast_filter, 0, None)
+                .into()
         }
     }
 
-    /// Modifies or resets the current station address, if supported
+    /// Modify or reset the current station address, if supported.
     pub fn station_address(&self, reset: bool, new: Option<&MacAddress>) -> Result {
         (self.station_address)(self, reset, new).into()
     }
 
-    /// Resets statistics on a network interface
+    /// Reset statistics on a network interface.
     pub fn reset_statistics(&self) -> Result {
         (self.statistics)(self, true, None, None).into()
     }
 
-    /// Collects statistics on a network interface
+    /// Collect statistics on a network interface.
     pub fn collect_statistics(&self) -> Result<NetworkStats> {
         let mut stats_table: NetworkStats = Default::default();
         let mut stats_size = core::mem::size_of::<NetworkStats>();
@@ -155,7 +157,7 @@ impl SimpleNetwork {
         Ok(stats_table)
     }
 
-    /// Converts a multicast IP address to a multicast HW MAC Address
+    /// Convert a multicast IP address to a multicast HW MAC Address.
     pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddress) -> Result<MacAddress> {
         let mut mac_address = MacAddress([0; 32]);
         let status = (self.mcast_ip_to_mac)(self, ipv6, &ip, &mut mac_address);
@@ -163,63 +165,73 @@ impl SimpleNetwork {
         Ok(mac_address)
     }
 
-    /// Performs read operations on the NVRAM device attached to
-    /// a network interface
-    pub fn read_nv_data(&self, offset: usize, buffer_size: usize, buffer: *mut c_void) -> Result {
-        (self.nv_data)(self, true, offset, buffer_size, buffer).into()
+    /// Perform read operations on the NVRAM device attached to
+    /// a network interface.
+    pub fn read_nv_data(&self, offset: usize, buffer: &[u8]) -> Result {
+        (self.nv_data)(
+            self,
+            true,
+            offset,
+            buffer.len(),
+            buffer.as_ptr() as *mut c_void,
+        )
+        .into()
     }
 
-    /// Performs write operations on the NVRAM device attached to a network interface
-    pub fn write_nv_data(&self, offset: usize, buffer_size: usize, buffer: *mut c_void) -> Result {
-        (self.nv_data)(self, false, offset, buffer_size, buffer).into()
+    /// Perform write operations on the NVRAM device attached to a network interface.
+    pub fn write_nv_data(&self, offset: usize, buffer: &mut [u8]) -> Result {
+        (self.nv_data)(
+            self,
+            false,
+            offset,
+            buffer.len(),
+            buffer.as_mut_ptr().cast(),
+        )
+        .into()
     }
 
-    /// Reads the current interrupt status and recycled transmit buffer
-    /// status from a network interface
+    /// Read the current interrupt status and recycled transmit buffer
+    /// status from a network interface.
     pub fn get_interrupt_status(&self) -> Result<InterruptStatus> {
-        let mut interrupt_status = InterruptStatus::new();
+        let mut interrupt_status = InterruptStatus::empty();
         let status = (self.get_status)(self, Some(&mut interrupt_status), None);
         Result::from(status)?;
         Ok(interrupt_status)
     }
 
-    /// Reads the current recycled transmit buffer status from a
-    /// network interface
-    pub fn get_recycled_transmit_buffer_status(&self) -> Result<Option<*mut u8>> {
+    /// Read the current recycled transmit buffer status from a
+    /// network interface.
+    pub fn get_recycled_transmit_buffer_status(&self) -> Result<Option<NonNull<u8>>> {
         let mut tx_buf: *mut c_void = ptr::null_mut();
         let status = (self.get_status)(self, None, Some(&mut tx_buf));
         Result::from(status)?;
-        if tx_buf.is_null() {
-            Ok(None)
-        } else {
-            Ok(Some(tx_buf.cast()))
-        }
+        Ok(NonNull::new(tx_buf.cast()))
     }
 
-    /// Places a packet in the transmit queue of a network interface
+    /// Place a packet in the transmit queue of a network interface.
     pub fn transmit(
         &self,
         header_size: usize,
         buffer: &[u8],
-        src_addr: Option<&MacAddress>,
-        dest_addr: Option<&MacAddress>,
-        protocol: Option<&u16>,
+        src_addr: Option<MacAddress>,
+        dest_addr: Option<MacAddress>,
+        protocol: Option<u16>,
     ) -> Result {
         (self.transmit)(
             self,
             header_size,
             buffer.len() + header_size,
             buffer.as_ptr().cast(),
-            src_addr,
-            dest_addr,
-            protocol,
+            src_addr.as_ref(),
+            dest_addr.as_ref(),
+            protocol.as_ref(),
         )
         .into()
     }
 
-    /// Receives a packet from a network interface
+    /// Receive a packet from a network interface.
     ///
-    /// On success, returns the size of bytes of the received packet
+    /// On success, returns the size of bytes of the received packet.
     pub fn receive(
         &self,
         buffer: &mut [u8],
@@ -242,60 +254,50 @@ impl SimpleNetwork {
         Ok(buffer_size)
     }
 
-    /// Returns a reference to the Simple Network mode
+    /// Event that fires once a packet is available to be received.
+    ///
+    /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
+    /// of UEFI properly implements this event before using it.
+    #[must_use]
+    pub fn wait_for_packet(&self) -> &Event {
+        &self.wait_for_packet
+    }
+
+    /// Returns a reference to the Simple Network mode.
     #[must_use]
     pub fn mode(&self) -> &NetworkMode {
         unsafe { &*self.mode }
     }
 }
 
-/// Receive unicast packets.
-pub const EFI_SIMPLE_NETWORK_RECEIVE_UNICAST: u32 = 0x01;
-/// Receive multicast packets.
-pub const EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST: u32 = 0x02;
-/// Receive broadcast packets.
-pub const EFI_SIMPLE_NETWORK_RECEIVE_BROADCAST: u32 = 0x04;
-/// Receive packets in promiscuous mode.
-pub const EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS: u32 = 0x08;
-/// Receive packets in promiscuous multicast mode.
-pub const EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST: u32 = 0x10;
-
-/// A bitmask of currently active interrupts
-#[derive(Debug)]
-#[repr(transparent)]
-pub struct InterruptStatus(u32);
-
-impl InterruptStatus {
-    /// Creates a new InterruptStatus instance with all bits unset
-    #[must_use]
-    pub fn new() -> Self {
-        Self(0)
-    }
-    /// The receive interrupt bit
-    #[must_use]
-    pub fn receive_interrupt(&self) -> bool {
-        self.0 & 0x01 != 0
-    }
-    /// The transmit interrupt bit
-    #[must_use]
-    pub fn transmit_interrupt(&self) -> bool {
-        self.0 & 0x02 != 0
-    }
-    /// The command interrupt bit
-    #[must_use]
-    pub fn command_interrupt(&self) -> bool {
-        self.0 & 0x04 != 0
-    }
-    /// The software interrupt bit
-    #[must_use]
-    pub fn software_interrupt(&self) -> bool {
-        self.0 & 0x08 != 0
+bitflags! {
+    /// Flags to pass to receive_filters to enable/disable reception of some kinds of packets.
+    pub struct ReceiveFlags : u32 {
+        /// Receive unicast packets.
+        const UNICAST = 0x01;
+        /// Receive multicast packets.
+        const MULTICAST = 0x02;
+        /// Receive broadcast packets.
+        const BROADCAST = 0x04;
+        /// Receive packets in promiscuous mode.
+        const PROMISCUOUS = 0x08;
+        /// Receive packets in promiscuous multicast mode.
+        const PROMISCUOUS_MULTICAST = 0x10;
     }
 }
 
-impl Default for InterruptStatus {
-    fn default() -> Self {
-        Self::new()
+bitflags! {
+    /// Flags returned by get_interrupt_status to indicate which interrupts have fired on the
+    /// interace since the last call.
+    pub struct InterruptStatus : u32 {
+        /// Packet received.
+        const RECEIVE = 0x01;
+        /// Packet transmitted.
+        const TRANSMIT = 0x02;
+        /// Command interrupt fired.
+        const COMMAND = 0x04;
+        /// Software interrupt fired.
+        const SOFTWARE = 0x08;
     }
 }
 

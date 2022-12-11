@@ -60,7 +60,6 @@
 
 #![feature(abi_efiapi)]
 #![feature(maybe_uninit_slice)]
-#![feature(negative_impls)]
 #![feature(ptr_metadata)]
 #![cfg_attr(feature = "alloc", feature(vec_into_raw_parts))]
 #![cfg_attr(feature = "unstable", feature(error_in_core))]

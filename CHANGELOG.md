@@ -3,6 +3,7 @@
 ## uefi - [Unreleased]
 
 ### Added
+
 - Implementations for the trait `EqStrUntilNul` now allow `?Sized` inputs. This means that
   you can write `some_cstr16.eq_str_until_nul("test")` instead of
   `some_cstr16.eq_str_until_nul(&"test")` now.
@@ -14,13 +15,21 @@
 - Added an `core::error::Error` implementation for `Error` to ease
   integration with error-handling crates. (requires the **unstable** feature)
 - Added partial support for the TCG protocols for TPM devices under `uefi::proto::tcg`.
+- Added the `unsafe_protocol` macro to provide a slightly nicer way to
+  implement protocols.
 
 ### Changed
 
 - `UnalignedSlice` now implements `Clone`, and the `Debug` impl now
   prints the elements instead of the internal fields.
+- The unstable `negative_impls` feature is no longer required to use this library.
 
 ### Removed
+
+- The `unsafe_guid` attribute macro and `Protocol` derive macro have
+  been removed. For implementing protocols, use the `unsafe_protocol`
+  macro instead. For any other implementations of the `Identify` trait,
+  implement it directly.
 
 ## uefi-macros - [Unreleased]
 

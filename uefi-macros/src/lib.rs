@@ -10,7 +10,8 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input, parse_quote,
     spanned::Spanned,
-    DeriveInput, Error, FnArg, Generics, Ident, ItemFn, ItemType, LitStr, Pat, Visibility,
+    DeriveInput, Error, Fields, FnArg, Generics, Ident, ItemFn, ItemStruct, ItemType, LitStr, Pat,
+    Visibility,
 };
 
 /// Parses a type definition, extracts its identifier and generic parameters
@@ -78,6 +79,84 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
     result.into()
+}
+
+/// Attribute macro for marking structs as UEFI protocols.
+///
+/// The macro takes one argument, a GUID string.
+///
+/// The macro can only be applied to a struct, and the struct must have
+/// named fields (i.e. not a unit or tuple struct). It implements the
+/// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
+/// struct. It also adds a hidden field that causes the struct to be
+/// marked as [`!Send` and `!Sync`][send-and-sync].
+///
+/// # Safety
+///
+/// The caller must ensure that the correct GUID is attached to the
+/// type. An incorrect GUID could lead to invalid casts and other
+/// unsound behavior.
+///
+/// # Example
+///
+/// ```
+/// use uefi::{Identify, guid};
+/// use uefi::proto::unsafe_protocol;
+///
+/// #[unsafe_protocol("12345678-9abc-def0-1234-56789abcdef0")]
+/// struct ExampleProtocol {}
+///
+/// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
+/// ```
+///
+/// [`Identify`]: https://docs.rs/uefi/latest/uefi/trait.Identify.html
+/// [`Protocol`]: https://docs.rs/uefi/latest/uefi/proto/trait.Protocol.html
+/// [send-and-sync]: https://doc.rust-lang.org/nomicon/send-and-sync.html
+#[proc_macro_attribute]
+pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
+    // Parse `args` as a GUID string.
+    let (time_low, time_mid, time_high_and_version, clock_seq_and_variant, node) =
+        match parse_guid(parse_macro_input!(args as LitStr)) {
+            Ok(data) => data,
+            Err(tokens) => return tokens.into(),
+        };
+
+    let item_struct = parse_macro_input!(input as ItemStruct);
+
+    let ident = &item_struct.ident;
+    let struct_attrs = &item_struct.attrs;
+    let struct_vis = &item_struct.vis;
+    let struct_fields = if let Fields::Named(struct_fields) = &item_struct.fields {
+        &struct_fields.named
+    } else {
+        return err!(item_struct, "Protocol struct must used named fields").into();
+    };
+    let struct_generics = &item_struct.generics;
+    let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
+
+    quote! {
+        #(#struct_attrs)*
+        #struct_vis struct #ident #struct_generics {
+            // Add a hidden field with `PhantomData` of a raw
+            // pointer. This has the implicit side effect of making the
+            // struct !Send and !Sync.
+            _no_send_or_sync: ::core::marker::PhantomData<*const u8>,
+            #struct_fields
+        }
+
+        unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
+            const GUID: ::uefi::Guid = ::uefi::Guid::from_values(
+                #time_low,
+                #time_mid,
+                #time_high_and_version,
+                #clock_seq_and_variant,
+                #node,
+            );
+        }
+
+        impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {}
+    }
+    .into()
 }
 
 /// Create a `Guid` at compile time.

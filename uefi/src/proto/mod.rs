@@ -62,7 +62,7 @@ where
     }
 }
 
-pub use uefi_macros::Protocol;
+pub use uefi_macros::{unsafe_protocol, Protocol};
 
 pub mod console;
 pub mod debug;

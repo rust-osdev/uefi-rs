@@ -10,9 +10,9 @@
 
 use crate::{
     proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath},
-    proto::Protocol,
+    proto::unsafe_protocol,
     table::boot::BootServices,
-    unsafe_guid, CStr16, Char16, Result, Status,
+    CStr16, Char16, Result, Status,
 };
 use core::ops::Deref;
 
@@ -82,8 +82,7 @@ impl Drop for PoolString<'_> {
 /// This protocol provides common utility functions for converting device
 /// nodes and device paths to a text representation.
 #[repr(C)]
-#[unsafe_guid("8b843e20-8132-4852-90cc-551a4e4a7f1c")]
-#[derive(Protocol)]
+#[unsafe_protocol("8b843e20-8132-4852-90cc-551a4e4a7f1c")]
 pub struct DevicePathToText {
     convert_device_node_to_text: unsafe extern "efiapi" fn(
         device_node: *const FfiDevicePath,
@@ -150,8 +149,7 @@ impl DevicePathToText {
 /// This protocol provides common utilities for converting text to
 /// device paths and device nodes.
 #[repr(C)]
-#[unsafe_guid("05c99a21-c70f-4ad2-8a5f-35df3343f51e")]
-#[derive(Protocol)]
+#[unsafe_protocol("05c99a21-c70f-4ad2-8a5f-35df3343f51e")]
 pub struct DevicePathFromText {
     convert_text_to_device_node:
         unsafe extern "efiapi" fn(text_device_node: *const Char16) -> *const FfiDevicePath,

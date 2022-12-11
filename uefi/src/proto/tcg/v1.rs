@@ -10,8 +10,8 @@
 
 use super::{usize_from_u32, EventType, HashAlgorithm, PcrIndex};
 use crate::data_types::PhysicalAddress;
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
@@ -249,8 +249,7 @@ impl<'a> Iterator for EventLogIter<'a> {
 ///
 /// The corresponding C type is `EFI_TCG_PROTOCOL`.
 #[repr(C)]
-#[unsafe_guid("f541796d-a62e-4954-a775-9584f61b9cdd")]
-#[derive(Protocol)]
+#[unsafe_protocol("f541796d-a62e-4954-a775-9584f61b9cdd")]
 pub struct Tcg {
     status_check: unsafe extern "efiapi" fn(
         this: *mut Tcg,

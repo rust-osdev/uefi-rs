@@ -11,8 +11,8 @@
 
 use core::ffi::c_void;
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 
 // re-export for ease of use
 pub use self::context::SystemContext;
@@ -30,8 +30,7 @@ mod exception;
 ///
 /// NOTE: OVMF only implements this protocol interface for the virtual EBC processor
 #[repr(C)]
-#[unsafe_guid("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
-#[derive(Protocol)]
+#[unsafe_protocol("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
 pub struct DebugSupport {
     isa: ProcessorArch,
     get_maximum_processor_index:

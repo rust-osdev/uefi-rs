@@ -3,16 +3,15 @@
 use crate::{
     data_types::FromSliceWithNulError,
     proto::device_path::{DevicePath, FfiDevicePath},
-    proto::Protocol,
+    proto::unsafe_protocol,
     table::boot::MemoryType,
-    unsafe_guid, CStr16, Handle, Status,
+    CStr16, Handle, Status,
 };
 use core::{ffi::c_void, mem, slice};
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
 #[repr(C)]
-#[unsafe_guid("5b1b31a1-9562-11d2-8e3f-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("5b1b31a1-9562-11d2-8e3f-00a0c969723b")]
 pub struct LoadedImage {
     revision: u32,
     parent_handle: Handle,

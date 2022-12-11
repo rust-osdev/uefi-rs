@@ -3,16 +3,15 @@
 //! This protocol is used in the boot services environment to perform
 //! lexical comparison functions on Unicode strings for given languages.
 
+use crate::proto::unsafe_protocol;
 use core::cmp::Ordering;
 use uefi::data_types::{CStr16, CStr8, Char16, Char8};
-use uefi_macros::{unsafe_guid, Protocol};
 
 /// The Unicode Collation Protocol.
 ///
 /// Used to perform case-insensitive comaprisons of strings.
 #[repr(C)]
-#[unsafe_guid("a4c751fc-23ae-4c3e-92e9-4964cf63f349")]
-#[derive(Protocol)]
+#[unsafe_protocol("a4c751fc-23ae-4c3e-92e9-4964cf63f349")]
 pub struct UnicodeCollation {
     stri_coll: extern "efiapi" fn(this: &Self, s1: *const Char16, s2: *const Char16) -> isize,
     metai_match:

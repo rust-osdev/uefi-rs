@@ -14,12 +14,11 @@ use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;
 use core::ptr::NonNull;
-use uefi_macros::{unsafe_guid, Protocol};
+use uefi_macros::unsafe_protocol;
 
 /// The Simple Network Protocol
 #[repr(C)]
-#[unsafe_guid("a19832b9-ac25-11d3-9a2d-0090273fc14d")]
-#[derive(Protocol)]
+#[unsafe_protocol("a19832b9-ac25-11d3-9a2d-0090273fc14d")]
 pub struct SimpleNetwork {
     revision: u64,
     start: extern "efiapi" fn(this: &Self) -> Status,

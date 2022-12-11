@@ -1,11 +1,10 @@
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Char16, Event, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Char16, Event, Result, Status};
 use core::mem::MaybeUninit;
 
 /// Interface for text-based input devices.
 #[repr(C)]
-#[unsafe_guid("387477c1-69c7-11d2-8e39-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("387477c1-69c7-11d2-8e39-00a0c969723b")]
 pub struct Input {
     reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut RawKey) -> Status,

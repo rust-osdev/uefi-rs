@@ -15,6 +15,22 @@ pub enum FromStrError {
     InteriorNul,
 }
 
+impl fmt::Display for FromStrError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "UCS-2 Conversion Error: {}",
+            match self {
+                Self::InvalidChar => "Invalid character",
+                Self::InteriorNul => "Interior null terminator",
+            }
+        )
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for FromStrError {}
+
 /// An owned UCS-2 null-terminated string.
 ///
 /// For convenience, a [CString16] is comparable with `&str` and `String` from the standard library

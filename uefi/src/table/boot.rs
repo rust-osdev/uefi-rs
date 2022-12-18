@@ -344,7 +344,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.AllocatePages()`.
     ///
-    /// See the UEFI Specification, Chapter 7.2 for more information on each
+    /// See the UEFI Specification, Chapter 7.2.1 for more information on each
     /// error type.
     ///
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
@@ -371,7 +371,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.FreePages()`.
     ///
-    /// See the UEFI Specification, Chapter 7.2 for more information on each error type.
+    /// See the UEFI Specification, Chapter 7.2.2 for more information on each error type.
     ///
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -427,7 +427,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.GetMemoryMap()`.
     ///
-    /// See the UEFI Specification, Chapter 7.2 for more information on each error
+    /// See the UEFI Specification, Chapter 7.2.3 for more information on each error
     /// type.
     ///
     /// * [`uefi::Status::BUFFER_TOO_SMALL`]
@@ -480,7 +480,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.AllocatePool()`.
     ///
-    /// See the UEFI Specification, Chapter 7.2 for more information on each error type.
+    /// See the UEFI Specification, Chapter 7.2.4 for more information on each error type.
     ///
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -496,7 +496,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.FreePool()`.
     ///
-    /// See the UEFI Specification, Chapter 7.2 for more details.
+    /// See the UEFI Specification, Chapter 7.2.5 for more details.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pool(&self, addr: *mut u8) -> Result {
@@ -524,7 +524,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.CreateEvent()`.
     ///
-    /// See the UEFI Specification, Chapter 7.1 for more information on each
+    /// See the UEFI Specification, Chapter 7.1.1 for more information on each
     /// error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -588,7 +588,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.CreateEventEx()`.
     ///
-    /// See the UEFI Specification, Chapter 7.1 for more information on each error type.
+    /// See the UEFI Specification, Chapter 7.1.2 for more information on each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
@@ -624,7 +624,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.SetTimer()`.
     ///
-    /// See the UEFI Specification, Chapter 7.1 for more details.
+    /// See the UEFI Specification, Chapter 7.1.7 for more details.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn set_timer(&self, event: &Event, trigger_time: TimerTrigger) -> Result {
@@ -669,7 +669,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.WaitForEvent()`.
     ///
-    /// See the UEFI Specification, Chapter 7.1 for more information on each
+    /// See the UEFI Specification, Chapter 7.1.5 for more information on each
     /// error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -707,7 +707,7 @@ impl BootServices {
     /// This function directly calls the UEFI function `EFI_BOOT_SERVICES.SignalEvent()`.
     ///
     /// Currently, (as of UEFI Spec v2.9) this only returns `EFI_SUCCESS`.
-    /// See the UEFI Specification, Chapter 7.1 for more details.
+    /// See the UEFI Specification, Chapter 7.1.4 for more details.
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
         // and not keeping the clone around.
@@ -726,7 +726,7 @@ impl BootServices {
     /// at least for application based on EDK2 (such as OVMF), it may also return `EFI_INVALID_PARAMETER`.
     /// To be safe, ensure that error codes are handled properly.
     ///
-    /// See the UEFI Specification, Chapter 7.1 for more details.
+    /// See the UEFI Specification, Chapter 7.1.3 for more details.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn close_event(&self, event: Event) -> Result {
@@ -745,7 +745,7 @@ impl BootServices {
     /// Note: Instead of returning the `EFI_NOT_READY` error from `EFI_BOOT_SERVICES.CheckEvent()`,
     /// as listed in the UEFI Specification, this function will return `false`.
     ///
-    /// See the UEFI Specification, Chapter 7.1 for more details.
+    /// See the UEFI Specification, Chapter 7.1.6 for more details.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn check_event(&self, event: Event) -> Result<bool> {
@@ -939,7 +939,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.LocateDevicePath()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more information on each error type.
+    /// See the UEFI Specification, Chapter 7.3.8 for more information on each error type.
     ///
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -1240,7 +1240,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.OpenProtocol()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more information on
+    /// See the UEFI Specification, Chapter 7.3.9 for more information on
     /// each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -1285,7 +1285,7 @@ impl BootServices {
     /// This function returns errors from the UEFI function
     /// `EFI_BOOT_SERVICES.OpenProtocol()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more
+    /// See the UEFI Specification, Chapter 7.3.9 for more
     /// information on each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -1318,7 +1318,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.OpenProtocol()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more information
+    /// See the UEFI Specification, Chapter 7.3.9 for more information
     /// on each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -1347,7 +1347,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.ProtocolsPerHandle()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more information on each
+    /// See the UEFI Specification, Chapter 7.3.14 for more information on each
     /// error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
@@ -1386,7 +1386,7 @@ impl BootServices {
     /// This function returns errors directly from the UEFI function
     /// `EFI_BOOT_SERVICES.LocateHandleBuffer()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more information on each error type.
+    /// See the UEFI Specification, Chapter 7.3.15 for more information on each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     /// * [`uefi::Status::NOT_FOUND`]
@@ -1494,7 +1494,8 @@ impl BootServices {
     /// This function returns errors from the UEFI functions `EFI_BOOT_SERVICES.OpenProtocol()`
     /// and `EFI_BOOT_SERVICES.LocateDevicePath()`.
     ///
-    /// See the UEFI Specification, Chapter 7.3 for more information on each error type.
+    /// See the UEFI Specification, Chapters 7.3.8 and 7.3.9 for more information on
+    /// each error type.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     /// * [`uefi::Status::UNSUPPORTED`]

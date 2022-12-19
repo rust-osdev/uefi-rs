@@ -1,8 +1,6 @@
 //! Graphics output protocol.
 //!
 //! The UEFI GOP is meant to replace existing [VGA][vga] hardware interfaces.
-//! It can be used in the boot environment as well as at runtime,
-//! until a high-performance driver is loaded by the OS.
 //!
 //! The GOP provides access to a hardware frame buffer and allows UEFI apps
 //! to draw directly to the graphics output device.
@@ -10,8 +8,6 @@
 //! The advantage of the GOP over legacy VGA is that it allows multiple GPUs
 //! to exist and be used on the system. There is a GOP implementation for every
 //! unique GPU in the system which supports UEFI.
-//!
-//! This protocol _can_ be used after boot services are exited.
 //!
 //! [vga]: https://en.wikipedia.org/wiki/Video_Graphics_Array
 //!
@@ -586,6 +582,9 @@ impl<'gop> FrameBuffer<'gop> {
     /// - Keep memory accesses in bound
     /// - Use volatile reads and writes
     /// - Make sure that the pointer does not outlive the FrameBuffer
+    ///
+    /// On some implementations this framebuffer pointer can be used after
+    /// exiting boot services, but that is not guaranteed by the UEFI Specification.
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.base
     }

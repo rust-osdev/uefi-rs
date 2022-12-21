@@ -41,16 +41,27 @@ pub trait File: Sized {
     /// * `attributes`  Only valid when `FILE_MODE_CREATE` is used as a mode
     ///
     /// # Errors
-    /// * `uefi::Status::INVALID_PARAMETER`  The filename exceeds the maximum length of 255 chars
-    /// * `uefi::Status::NOT_FOUND`          Could not find file
-    /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::MEDIA_CHANGED`      The device has a different medium in it
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::WRITE_PROTECTED`    Write/Create attempted on readonly file
-    /// * `uefi::Status::ACCESS_DENIED`      The service denied access to the file
-    /// * `uefi::Status::OUT_OF_RESOURCES`    Not enough resources to open file
-    /// * `uefi::Status::VOLUME_FULL`        The volume is full
+    ///
+    /// See section `EFI_FILE_PROTOCOL.Open()` in the UEFI Specification for more details.
+    ///
+    /// ## Note
+    ///
+    /// Although [`INVALID_PARAMETER`] is not defined as an error in the UEFI Specification,
+    /// it can be returned if the opened filename exceeds the maximum length of 255 UCS-2
+    /// characters (not including the null terminator).
+    ///
+    /// [`INVALID_PARAMETER`]: uefi::Status::INVALID_PARAMETER
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::MEDIA_CHANGED`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::WRITE_PROTECTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::VOLUME_FULL`]
     fn open(
         &mut self,
         filename: &CStr16,
@@ -77,7 +88,10 @@ pub trait File: Sized {
     /// Closes and deletes this file
     ///
     /// # Warnings
-    /// * `uefi::Status::WARN_DELETE_FAILURE` The file was closed, but deletion failed
+    ///
+    /// See section `EFI_FILE_PROTOCOL.Delete()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::WARN_DELETE_FAILURE`]
     fn delete(mut self) -> Result {
         let result = (self.imp().delete)(self.imp()).into();
         mem::forget(self);
@@ -95,11 +109,14 @@ pub trait File: Sized {
     /// * `buffer`  Buffer that the information should be written into
     ///
     /// # Errors
-    /// * `uefi::Status::UNSUPPORTED`        The file does not possess this information type
-    /// * `uefi::Status::NO_MEDIA`           The device has no medium
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The file system structures are corrupted
-    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small for the requested
+    ///
+    /// See section `EFI_FILE_PROTOCOL.GetInfo()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::BUFFER_TOO_SMALL`]
     fn get_info<'buf, Info: FileProtocolInfo + ?Sized>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -137,13 +154,17 @@ pub trait File: Sized {
     /// * `info`  Info that should be set for the file
     ///
     /// # Errors
-    /// * `uefi::Status::UNSUPPORTED`       The file does not possess this information type
-    /// * `uefi::Status::NO_MEDIA`          The device has no medium
-    /// * `uefi::Status::DEVICE_ERROR`      The device reported an error
-    /// * `uefi::Status::VOLUME_CORRUPTED`  The file system structures are corrupted
-    /// * `uefi::Status::WRITE_PROTECTED`   Attempted to set information on a read-only media
-    /// * `uefi::Status::ACCESS_DENIED`     Requested change is invalid for this information type
-    /// * `uefi::Status::VOLUME_FULL`       Not enough space left on the volume to change the info
+    ///
+    /// See section `EFI_FILE_PROTOCOL.SetInfo()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::WRITE_PROTECTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::VOLUME_FULL`]
+    /// * [`uefi::Status::BAD_BUFFER_SIZE`]
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = (info as *const Info).cast::<c_void>();
         let info_size = mem::size_of_val(&info);
@@ -153,12 +174,15 @@ pub trait File: Sized {
     /// Flushes all modified data associated with the file handle to the device
     ///
     /// # Errors
-    /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::WRITE_PROTECTED`    The file or medium is write protected
-    /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only
-    /// * `uefi::Status::VOLUME_FULL`        The volume is full
+    ///
+    /// See section `EFI_FILE_PROTOCOL.Flush()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::WRITE_PROTECTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::VOLUME_FULL`]
     fn flush(&mut self) -> Result {
         (self.imp().flush)(self.imp()).into()
     }

@@ -31,12 +31,13 @@ impl RegularFile {
     /// * `buffer`  The target buffer of the read operation
     ///
     /// # Errors
-    /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error, the file was deleted,
-    ///                                      or the end of the file was reached before the `read()`.
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry,
-    ///                                      and the required buffer size is provided as output.
+    ///
+    /// See section `EFI_FILE_PROTOCOL.Read()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::BUFFER_TOO_SMALL`]
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
         let status =
@@ -67,12 +68,15 @@ impl RegularFile {
     /// * `buffer`  Buffer to write to file
     ///
     /// # Errors
-    /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error or the file was deleted.
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::WRITE_PROTECTED`    Attempt to write to readonly file
-    /// * `uefi::Status::ACCESS_DENIED`      The file was opened read only.
-    /// * `uefi::Status::VOLUME_FULL`        The volume is full
+    ///
+    /// See section `EFI_FILE_PROTOCOL.Write()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::WRITE_PROTECTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::VOLUME_FULL`]
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
         unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr()) }
@@ -82,7 +86,10 @@ impl RegularFile {
     /// Get the file's current position
     ///
     /// # Errors
-    /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to get the position of a deleted file
+    ///
+    /// See section `EFI_FILE_PROTOCOL.GetPosition()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
         (self.imp().get_position)(self.imp(), &mut pos).into_with_val(|| pos)
@@ -99,7 +106,10 @@ impl RegularFile {
     /// * `position` The new absolution position of the file handle
     ///
     /// # Errors
-    /// * `uefi::Status::DEVICE_ERROR`   An attempt was made to set the position of a deleted file
+    ///
+    /// See section `EFI_FILE_PROTOCOL.SetPosition()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn set_position(&mut self, position: u64) -> Result {
         (self.imp().set_position)(self.imp(), position).into()
     }

@@ -996,6 +996,10 @@ impl BootServices {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns [`NOT_FOUND`] if no handles support the requested protocol.
     pub fn get_handle_for_protocol<P: Protocol>(&self) -> Result<Handle> {
         // Delegate to a non-generic function to potentially reduce code size.
         self.get_handle_for_protocol_impl(&P::GUID)
@@ -1523,6 +1527,12 @@ impl BootServices {
 #[cfg(feature = "alloc")]
 impl BootServices {
     /// Returns all the handles implementing a certain protocol.
+    ///
+    /// # Errors
+    ///
+    /// All errors come from calls to [`locate_handle`].
+    ///
+    /// [`locate_handle`]: Self::locate_handle
     pub fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>> {
         // Search by protocol.
         let search_type = SearchType::from_proto::<P>();

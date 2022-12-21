@@ -31,13 +31,21 @@ impl SimpleFileSystem {
     /// Open the root directory on a volume.
     ///
     /// # Errors
-    /// * `uefi::Status::UNSUPPORTED` - The volume does not support the requested filesystem type
-    /// * `uefi::Status::NO_MEDIA` - The device has no media
-    /// * `uefi::Status::DEVICE_ERROR` - The device reported an error
-    /// * `uefi::Status::VOLUME_CORRUPTED` - The file system structures are corrupted
-    /// * `uefi::Status::ACCESS_DENIED` - The service denied access to the file
-    /// * `uefi::Status::OUT_OF_RESOURCES` - The volume was not opened
-    /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
+    ///
+    /// See section `EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.OpenVolume()` in the UEFI Specification
+    /// for more details.
+    ///
+    /// If you can't find the function definition, try searching for
+    /// `EFI_SIMPLE_FILE SYSTEM_PROTOCOL.OpenVolume()` (this has a space in between FILE and
+    /// SYSTEM; it could be a typo in the UEFI spec).
+    ///
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::MEDIA_CHANGED`]
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)

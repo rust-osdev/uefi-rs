@@ -38,12 +38,8 @@ impl Directory {
     /// * `buffer`  The target buffer of the read operation
     ///
     /// # Errors
-    /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error, the file was deleted,
-    ///                                      or the end of the file was reached before the `read()`.
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry,
-    ///                                      the required buffer size is provided into the error.
+    ///
+    /// All errors come from calls to [`RegularFile::read`].
     pub fn read_entry<'buf>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -120,6 +116,10 @@ impl Directory {
     }
 
     /// Start over the process of enumerating directory entries
+    ///
+    /// # Errors
+    ///
+    /// All errors come from calls to [`RegularFile::set_position`].
     pub fn reset_entry_readout(&mut self) -> Result {
         self.0.set_position(0)
     }

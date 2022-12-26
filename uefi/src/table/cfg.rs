@@ -36,6 +36,9 @@ pub const SMBIOS_GUID: Guid = guid!("eb9d2d31-2d88-11d3-9a16-0090273fc14d");
 /// Entry pointing to the SMBIOS 3.0 table.
 pub const SMBIOS3_GUID: Guid = guid!("f2fd1544-9794-4a2c-992e-e5bbcf20e394");
 
+/// Entry pointing to the EFI System Resource table (ESRT).
+pub const ESRT_GUID: Guid = guid!("b122a263-3661-4f68-9929-78f8b0d62180");
+
 /// GUID of the UEFI properties table.
 ///
 /// The properties table is used to provide additional info

@@ -113,6 +113,9 @@ pub mod allocator;
 #[cfg(feature = "logger")]
 pub mod logger;
 
+#[cfg(feature = "alloc")]
+pub mod fs;
+
 // As long as this is behind "alloc", we can simplify cfg-feature attributes in this module.
 #[cfg(feature = "alloc")]
 pub(crate) mod mem;

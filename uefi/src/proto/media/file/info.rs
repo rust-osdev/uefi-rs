@@ -1,7 +1,7 @@
 use super::FileAttribute;
 use crate::data_types::Align;
 use crate::table::runtime::Time;
-use crate::{unsafe_guid, CStr16, Char16, Identify};
+use crate::{guid, CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
 use core::{mem, ptr};
 
@@ -142,7 +142,6 @@ pub enum FileInfoCreationError {
 ///   attribute. Other changes must be carried out in a separate transaction.
 #[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
-#[unsafe_guid("09576e92-6d3f-11d2-8e39-00a0c969723b")]
 pub struct FileInfo {
     size: u64,
     file_size: u64,
@@ -237,6 +236,10 @@ impl Align for FileInfo {
     }
 }
 
+unsafe impl Identify for FileInfo {
+    const GUID: Guid = guid!("09576e92-6d3f-11d2-8e39-00a0c969723b");
+}
+
 impl InfoInternal for FileInfo {
     fn name_offset() -> usize {
         80
@@ -253,7 +256,6 @@ impl FileProtocolInfo for FileInfo {}
 /// this information structure. Consider using `FileSystemVolumeLabel` instead.
 #[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
-#[unsafe_guid("09576e93-6d3f-11d2-8e39-00a0c969723b")]
 pub struct FileSystemInfo {
     size: u64,
     read_only: bool,
@@ -329,6 +331,10 @@ impl Align for FileSystemInfo {
     }
 }
 
+unsafe impl Identify for FileSystemInfo {
+    const GUID: Guid = guid!("09576e93-6d3f-11d2-8e39-00a0c969723b");
+}
+
 impl InfoInternal for FileSystemInfo {
     fn name_offset() -> usize {
         36
@@ -342,7 +348,6 @@ impl FileProtocolInfo for FileSystemInfo {}
 /// May only be obtained on the root directory's file handle.
 #[derive(Debug, Eq, PartialEq)]
 #[repr(C)]
-#[unsafe_guid("db47d7d3-fe81-11d3-9a35-0090273fc14d")]
 pub struct FileSystemVolumeLabel {
     volume_label: [Char16],
 }
@@ -375,6 +380,10 @@ impl Align for FileSystemVolumeLabel {
     fn alignment() -> usize {
         2
     }
+}
+
+unsafe impl Identify for FileSystemVolumeLabel {
+    const GUID: Guid = guid!("db47d7d3-fe81-11d3-9a35-0090273fc14d");
 }
 
 impl InfoInternal for FileSystemVolumeLabel {

@@ -60,7 +60,6 @@
 
 #![feature(abi_efiapi)]
 #![feature(maybe_uninit_slice)]
-#![feature(negative_impls)]
 #![feature(ptr_metadata)]
 #![cfg_attr(feature = "alloc", feature(vec_into_raw_parts))]
 #![cfg_attr(feature = "unstable", feature(error_in_core))]
@@ -85,7 +84,7 @@ extern crate self as uefi;
 pub mod data_types;
 #[cfg(feature = "alloc")]
 pub use self::data_types::CString16;
-pub use self::data_types::{unsafe_guid, Identify};
+pub use self::data_types::Identify;
 pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
 pub use uefi_macros::guid;
 

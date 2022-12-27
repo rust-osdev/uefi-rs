@@ -54,8 +54,8 @@
 //! You will have to implement your own double buffering if you want to
 //! avoid tearing with animations.
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
@@ -65,8 +65,7 @@ use core::ptr;
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
-#[unsafe_guid("9042a9de-23dc-4a38-96fb-7aded080516a")]
-#[derive(Protocol)]
+#[unsafe_protocol("9042a9de-23dc-4a38-96fb-7aded080516a")]
 pub struct GraphicsOutput<'boot> {
     query_mode: extern "efiapi" fn(
         &GraphicsOutput,

@@ -11,8 +11,8 @@
 //! * dispatching user-provided function to APs
 //! * maintaining MP-related processor status
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;
@@ -93,8 +93,7 @@ pub struct CpuPhysicalLocation {
 
 /// Protocol that provides services needed for multi-processor management.
 #[repr(C)]
-#[unsafe_guid("3fdda605-a76e-4f46-ad29-12f4531b3d08")]
-#[derive(Protocol)]
+#[unsafe_protocol("3fdda605-a76e-4f46-ad29-12f4531b3d08")]
 pub struct MpServices {
     get_number_of_processors: extern "efiapi" fn(
         this: *const MpServices,

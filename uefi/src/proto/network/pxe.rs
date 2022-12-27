@@ -6,8 +6,8 @@ use core::{
     ptr::{null, null_mut},
 };
 
+use crate::proto::unsafe_protocol;
 use bitflags::bitflags;
-use uefi_macros::{unsafe_guid, Protocol};
 
 use crate::{CStr8, Char8, Result, Status};
 
@@ -15,8 +15,7 @@ use super::{IpAddress, MacAddress};
 
 /// PXE Base Code protocol
 #[repr(C)]
-#[unsafe_guid("03c4e603-ac28-11d3-9a2d-0090273fc14d")]
-#[derive(Protocol)]
+#[unsafe_protocol("03c4e603-ac28-11d3-9a2d-0090273fc14d")]
 #[allow(clippy::type_complexity)]
 pub struct BaseCode {
     revision: u64,

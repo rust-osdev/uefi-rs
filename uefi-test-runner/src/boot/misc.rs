@@ -1,9 +1,9 @@
 use core::ffi::c_void;
 use core::ptr::{self, NonNull};
 
-use uefi::proto::Protocol;
+use uefi::proto::unsafe_protocol;
 use uefi::table::boot::{BootServices, EventType, SearchType, TimerTrigger, Tpl};
-use uefi::{unsafe_guid, Event, Identify};
+use uefi::{Event, Identify};
 
 pub fn test(bt: &BootServices) {
     info!("Testing timer...");
@@ -80,8 +80,7 @@ fn test_watchdog(bt: &BootServices) {
 }
 
 /// Dummy protocol for tests
-#[unsafe_guid("1a972918-3f69-4b5d-8cb4-cece2309c7f5")]
-#[derive(Protocol)]
+#[unsafe_protocol("1a972918-3f69-4b5d-8cb4-cece2309c7f5")]
 struct TestProtocol {}
 
 unsafe extern "efiapi" fn _test_notify(_event: Event, _context: Option<NonNull<c_void>>) {

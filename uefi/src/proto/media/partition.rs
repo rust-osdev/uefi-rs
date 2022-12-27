@@ -1,7 +1,7 @@
 //! Partition information protocol.
 
-use crate::proto::Protocol;
-use crate::{guid, unsafe_guid, Char16, Guid};
+use crate::proto::unsafe_protocol;
+use crate::{guid, Char16, Guid};
 use bitflags::bitflags;
 
 newtype_enum! {
@@ -175,8 +175,7 @@ newtype_enum! {
 /// Protocol for accessing partition information.
 #[repr(C)]
 #[repr(packed)]
-#[unsafe_guid("8cf2f62c-bc9b-4821-808d-ec9ec421a1a0")]
-#[derive(Clone, Copy, Protocol)]
+#[unsafe_protocol("8cf2f62c-bc9b-4821-808d-ec9ec421a1a0")]
 pub struct PartitionInfo {
     /// Revision of the partition info protocol.
     pub revision: PartitionInfoRevision,

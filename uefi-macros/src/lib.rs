@@ -7,35 +7,9 @@ use proc_macro::TokenStream;
 use proc_macro2::{TokenStream as TokenStream2, TokenTree};
 use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{
-    parse::{Parse, ParseStream},
-    parse_macro_input, parse_quote,
-    spanned::Spanned,
-    DeriveInput, Error, FnArg, Generics, Ident, ItemFn, ItemType, LitStr, Pat, Visibility,
+    parse_macro_input, parse_quote, spanned::Spanned, Error, Fields, FnArg, Ident, ItemFn,
+    ItemStruct, LitStr, Pat, Visibility,
 };
-
-/// Parses a type definition, extracts its identifier and generic parameters
-struct TypeDefinition {
-    ident: Ident,
-    generics: Generics,
-}
-
-impl Parse for TypeDefinition {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        if let Ok(d) = DeriveInput::parse(input) {
-            Ok(Self {
-                ident: d.ident,
-                generics: d.generics,
-            })
-        } else if let Ok(t) = ItemType::parse(input) {
-            Ok(Self {
-                ident: t.ident,
-                generics: t.generics,
-            })
-        } else {
-            Err(input.error("Input is not an alias, enum, struct or union definition"))
-        }
-    }
-}
 
 macro_rules! err {
     ($span:expr, $message:expr $(,)?) => {
@@ -46,28 +20,70 @@ macro_rules! err {
     };
 }
 
-/// `unsafe_guid` attribute macro, implements the `Identify` trait for any type
-/// (mostly works like a custom derive, but also supports type aliases)
+/// Attribute macro for marking structs as UEFI protocols.
+///
+/// The macro takes one argument, a GUID string.
+///
+/// The macro can only be applied to a struct, and the struct must have
+/// named fields (i.e. not a unit or tuple struct). It implements the
+/// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
+/// struct. It also adds a hidden field that causes the struct to be
+/// marked as [`!Send` and `!Sync`][send-and-sync].
+///
+/// # Safety
+///
+/// The caller must ensure that the correct GUID is attached to the
+/// type. An incorrect GUID could lead to invalid casts and other
+/// unsound behavior.
+///
+/// # Example
+///
+/// ```
+/// use uefi::{Identify, guid};
+/// use uefi::proto::unsafe_protocol;
+///
+/// #[unsafe_protocol("12345678-9abc-def0-1234-56789abcdef0")]
+/// struct ExampleProtocol {}
+///
+/// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
+/// ```
+///
+/// [`Identify`]: https://docs.rs/uefi/latest/uefi/trait.Identify.html
+/// [`Protocol`]: https://docs.rs/uefi/latest/uefi/proto/trait.Protocol.html
+/// [send-and-sync]: https://doc.rust-lang.org/nomicon/send-and-sync.html
 #[proc_macro_attribute]
-pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
-    // Parse the arguments and input using Syn
+pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
+    // Parse `args` as a GUID string.
     let (time_low, time_mid, time_high_and_version, clock_seq_and_variant, node) =
         match parse_guid(parse_macro_input!(args as LitStr)) {
             Ok(data) => data,
             Err(tokens) => return tokens.into(),
         };
 
-    let mut result: TokenStream2 = input.clone().into();
+    let item_struct = parse_macro_input!(input as ItemStruct);
 
-    let type_definition = parse_macro_input!(input as TypeDefinition);
+    let ident = &item_struct.ident;
+    let struct_attrs = &item_struct.attrs;
+    let struct_vis = &item_struct.vis;
+    let struct_fields = if let Fields::Named(struct_fields) = &item_struct.fields {
+        &struct_fields.named
+    } else {
+        return err!(item_struct, "Protocol struct must used named fields").into();
+    };
+    let struct_generics = &item_struct.generics;
+    let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
 
-    // At this point, we know everything we need to implement Identify
-    let ident = &type_definition.ident;
-    let (impl_generics, ty_generics, where_clause) = type_definition.generics.split_for_impl();
+    quote! {
+        #(#struct_attrs)*
+        #struct_vis struct #ident #struct_generics {
+            // Add a hidden field with `PhantomData` of a raw
+            // pointer. This has the implicit side effect of making the
+            // struct !Send and !Sync.
+            _no_send_or_sync: ::core::marker::PhantomData<*const u8>,
+            #struct_fields
+        }
 
-    result.append_all(quote! {
         unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
-            #[doc(hidden)]
             const GUID: ::uefi::Guid = ::uefi::Guid::from_values(
                 #time_low,
                 #time_mid,
@@ -76,8 +92,10 @@ pub fn unsafe_guid(args: TokenStream, input: TokenStream) -> TokenStream {
                 #node,
             );
         }
-    });
-    result.into()
+
+        impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {}
+    }
+    .into()
 }
 
 /// Create a `Guid` at compile time.
@@ -162,28 +180,6 @@ fn parse_guid(guid_lit: LitStr) -> Result<(u32, u16, u16, u16, u64), TokenStream
         next_guid_int(2)? as u16,
         next_guid_int(6)?,
     ))
-}
-
-/// Custom derive for the `Protocol` trait
-#[proc_macro_derive(Protocol)]
-pub fn derive_protocol(item: TokenStream) -> TokenStream {
-    // Parse the input using Syn
-    let item = parse_macro_input!(item as DeriveInput);
-
-    // Then implement Protocol
-    let ident = item.ident.clone();
-    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
-    let result = quote! {
-        // Mark this as a `Protocol` implementation
-        impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {}
-
-        // Most UEFI functions expect to be called on the bootstrap processor.
-        impl #impl_generics !Send for #ident #ty_generics #where_clause {}
-
-        // Most UEFI functions do not support multithreaded access.
-        impl #impl_generics !Sync for #ident #ty_generics #where_clause {}
-    };
-    result.into()
 }
 
 /// Get the name of a function's argument at `arg_index`.

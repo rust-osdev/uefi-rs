@@ -1,7 +1,7 @@
 //! Disk I/O protocols.
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Event, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Event, Result, Status};
 use core::ptr::NonNull;
 
 /// The disk I/O protocol.
@@ -11,8 +11,7 @@ use core::ptr::NonNull;
 /// reponsible for adding this protocol to any block I/O interface that
 /// appears in the system that does not already have a disk I/O protocol.
 #[repr(C)]
-#[unsafe_guid("ce345171-ba0b-11d2-8e4f-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("ce345171-ba0b-11d2-8e4f-00a0c969723b")]
 pub struct DiskIo {
     revision: u64,
     read_disk: extern "efiapi" fn(
@@ -84,8 +83,7 @@ pub struct DiskIo2Token {
 /// This protocol provides an extension to the disk I/O protocol to enable
 /// non-blocking / asynchronous byte-oriented disk operation.
 #[repr(C)]
-#[unsafe_guid("151c8eae-7f2c-472c-9e54-9828194f6a88")]
-#[derive(Protocol)]
+#[unsafe_protocol("151c8eae-7f2c-472c-9e54-9828194f6a88")]
 pub struct DiskIo2 {
     revision: u64,
     cancel: extern "efiapi" fn(this: &mut DiskIo2) -> Status,

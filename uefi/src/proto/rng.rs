@@ -1,6 +1,6 @@
 //! `Rng` protocol.
 
-use crate::{data_types::Guid, guid, proto::Protocol, unsafe_guid, Result, Status};
+use crate::{data_types::Guid, guid, proto::unsafe_protocol, Result, Status};
 use core::{mem, ptr};
 
 newtype_enum! {
@@ -35,8 +35,7 @@ newtype_enum! {
 
 /// Rng protocol
 #[repr(C)]
-#[unsafe_guid("3152bca5-eade-433d-862e-c01cdc291f44")]
-#[derive(Protocol)]
+#[unsafe_protocol("3152bca5-eade-433d-862e-c01cdc291f44")]
 pub struct Rng {
     get_info: unsafe extern "efiapi" fn(
         this: &Rng,

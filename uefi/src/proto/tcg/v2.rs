@@ -11,8 +11,8 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::HashAlgorithm;
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use bitflags::bitflags;
 use core::mem;
 
@@ -124,8 +124,7 @@ impl BootServiceCapability {
 ///
 /// The corresponding C type is `EFI_TCG2_PROTOCOL`.
 #[repr(C)]
-#[unsafe_guid("607f766c-7455-42be-930b-e4d76db2720f")]
-#[derive(Protocol)]
+#[unsafe_protocol("607f766c-7455-42be-930b-e4d76db2720f")]
 pub struct Tcg {
     get_capability: unsafe extern "efiapi" fn(
         this: *mut Tcg,

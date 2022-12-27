@@ -1,7 +1,7 @@
 use crate::data_types::PhysicalAddress;
-use crate::proto::Protocol;
+use crate::proto::unsafe_protocol;
 use crate::table::boot::MemoryAttribute;
-use crate::{unsafe_guid, Result, Status};
+use crate::{Result, Status};
 use core::ops::Range;
 
 /// Protocol for getting and setting memory protection attributes.
@@ -10,8 +10,7 @@ use core::ops::Range;
 ///
 /// [proposal]: https://bugzilla.tianocore.org/show_bug.cgi?id=3519
 #[repr(C)]
-#[unsafe_guid("f4560cf6-40ec-4b4a-a192-bf1d57d0b189")]
-#[derive(Protocol)]
+#[unsafe_protocol("f4560cf6-40ec-4b4a-a192-bf1d57d0b189")]
 pub struct MemoryProtection {
     get_memory_attributes: unsafe extern "efiapi" fn(
         this: *const Self,

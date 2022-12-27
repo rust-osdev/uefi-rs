@@ -69,6 +69,7 @@
 //!
 //! [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 //! [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
+//! [`Protocol`]: crate::proto::Protocol
 //! [`device_type`]: DevicePathNode::device_type
 //! [`sub_type`]: DevicePathNode::sub_type
 
@@ -80,8 +81,7 @@ pub use device_path_gen::{
     acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
 };
 
-use crate::proto::{Protocol, ProtocolPointer};
-use crate::unsafe_guid;
+use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::marker::{PhantomData, PhantomPinned};
 use core::{mem, ptr};
@@ -225,8 +225,8 @@ impl DevicePathInstance {
 /// [module-level documentation]: crate::proto::device_path
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 #[repr(C, packed)]
-#[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
-#[derive(Debug, Eq, PartialEq, Protocol)]
+#[unsafe_protocol("09576e91-6d3f-11d2-8e39-00a0c969723b")]
+#[derive(Debug, Eq, PartialEq)]
 pub struct DevicePath {
     data: [u8],
 }

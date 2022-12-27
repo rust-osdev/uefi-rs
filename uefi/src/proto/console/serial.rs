@@ -2,8 +2,8 @@
 
 use core::fmt::Write;
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use bitflags::bitflags;
 
 /// Provides access to a serial I/O device.
@@ -14,8 +14,7 @@ use bitflags::bitflags;
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
 #[repr(C)]
-#[unsafe_guid("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd")]
-#[derive(Protocol)]
+#[unsafe_protocol("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd")]
 pub struct Serial<'boot> {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.

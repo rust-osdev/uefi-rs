@@ -81,7 +81,7 @@ in the order the UEFI spec requires.
 Each protocol also has a Globally Unique Identifier (in the C API, they're usually
 found in a `EFI_*_PROTOCOL_GUID` define). In Rust, we store the GUID as an associated
 constant, by implementing the unsafe trait `uefi::proto::Identify`. For convenience,
-this is done through the `unsafe_guid` macro.
+this is done through the `unsafe_protocol` macro.
 
 Finally, you should derive the `Protocol` trait. This is a marker trait,
 extending `Identify`, which is used as a generic bound in the functions which retrieve
@@ -92,8 +92,7 @@ An example protocol declaration:
 ```rust
 /// Protocol which does something.
 #[repr(C)]
-#[unsafe_guid("abcdefgh-1234-5678-9012-123456789abc")]
-#[derive(Protocol)]
+#[unsafe_protocol("abcdefgh-1234-5678-9012-123456789abc")]
 pub struct NewProtocol {
   some_entry_point: extern "efiapi" fn(
     this: *const NewProtocol,

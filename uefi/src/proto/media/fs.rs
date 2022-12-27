@@ -1,8 +1,8 @@
 //! File system support protocols.
 
 use super::file::{Directory, FileHandle, FileImpl};
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use core::ptr;
 
 /// Allows access to a FAT-12/16/32 file system.
@@ -20,8 +20,7 @@ use core::ptr;
 /// [`BootServices::get_image_file_system`]: crate::table::boot::BootServices::get_image_file_system
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 #[repr(C)]
-#[unsafe_guid("964e5b22-6459-11d2-8e39-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("964e5b22-6459-11d2-8e39-00a0c969723b")]
 pub struct SimpleFileSystem {
     revision: u64,
     open_volume:

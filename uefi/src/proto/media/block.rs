@@ -1,12 +1,11 @@
 //! Block I/O protocols.
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 
 /// The Block I/O protocol.
 #[repr(C)]
-#[unsafe_guid("964e5b21-6459-11d2-8e39-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("964e5b21-6459-11d2-8e39-00a0c969723b")]
 pub struct BlockIO {
     revision: u64,
     media: *const BlockIOMedia,

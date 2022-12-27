@@ -7,9 +7,9 @@
     target_arch = "aarch64"
 ))]
 
-use crate::proto::Protocol;
+use crate::proto::unsafe_protocol;
 use crate::result::Error;
-use crate::{unsafe_guid, Result, Status};
+use crate::{Result, Status};
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 
@@ -65,8 +65,7 @@ macro_rules! shim_function {
 /// another EFI application before running it, and the shim lock
 /// protocol exists to support that.
 #[repr(C)]
-#[unsafe_guid("605dab50-e046-4300-abb6-3dd810dd8b23")]
-#[derive(Protocol)]
+#[unsafe_protocol("605dab50-e046-4300-abb6-3dd810dd8b23")]
 pub struct ShimLock {
     verify: shim_function! { fn(buffer: *const u8, size: u32) -> Status },
     hash: shim_function! {

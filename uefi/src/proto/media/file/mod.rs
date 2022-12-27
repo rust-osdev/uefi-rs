@@ -43,12 +43,9 @@ pub trait File: Sized {
     /// # Errors
     ///
     /// See section `EFI_FILE_PROTOCOL.Open()` in the UEFI Specification for more details.
-    ///
-    /// ## Note
-    ///
-    /// Although [`INVALID_PARAMETER`] is not defined as an error in the UEFI Specification,
-    /// it can be returned if the opened filename exceeds the maximum length of 255 UCS-2
-    /// characters (not including the null terminator).
+    /// Note that [`INVALID_PARAMETER`] is not listed in the specification as one of the
+    /// errors returned by this function, but some implementations (such as EDK2) perform
+    /// additional validation and may return that status for invalid inputs.
     ///
     /// [`INVALID_PARAMETER`]: uefi::Status::INVALID_PARAMETER
     ///

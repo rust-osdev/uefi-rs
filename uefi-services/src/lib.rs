@@ -27,7 +27,6 @@
 //! [`exit_boot_services`]: uefi::table::SystemTable::exit_boot_services
 
 #![no_std]
-#![feature(alloc_error_handler)]
 #![feature(abi_efiapi)]
 #![deny(clippy::must_use_candidate)]
 #![allow(stable_features)]
@@ -256,12 +255,4 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             }
         }
     }
-}
-
-#[alloc_error_handler]
-fn out_of_memory(layout: ::core::alloc::Layout) -> ! {
-    panic!(
-        "Ran out of free memory while trying to allocate {:#?}",
-        layout
-    );
 }

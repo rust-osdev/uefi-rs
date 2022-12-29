@@ -426,7 +426,7 @@ impl BootServices {
         buffer: &'buf mut [u8],
     ) -> Result<(
         MemoryMapKey,
-        impl ExactSizeIterator<Item = &'buf MemoryDescriptor> + Clone,
+        MemoryMapIter<'buf>
     )> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
@@ -2079,7 +2079,7 @@ pub struct MemoryMapSize {
 
 /// An iterator of memory descriptors
 #[derive(Debug, Clone)]
-struct MemoryMapIter<'buf> {
+pub struct MemoryMapIter<'buf> {
     buffer: &'buf [u8],
     entry_size: usize,
     index: usize,

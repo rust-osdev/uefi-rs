@@ -23,6 +23,8 @@
 - `UnalignedSlice` now implements `Clone`, and the `Debug` impl now
   prints the elements instead of the internal fields.
 - The unstable `negative_impls` feature is no longer required to use this library.
+- `BootServices::memory_map` and `SystemTable::exit_boot_services` now return `MemoryMapIter`
+  instead of generic `ExactSizeIterator<Item = &'a MemoryDescriptor> + Clone`.
 
 ### Removed
 

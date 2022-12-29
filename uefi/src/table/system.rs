@@ -7,7 +7,7 @@ use core::{ptr, slice};
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
 
-use super::boot::{BootServices, MemoryDescriptor};
+use super::boot::{BootServices, MemoryDescriptor, MemoryMapIter};
 use super::runtime::RuntimeServices;
 use super::{cfg, Header, Revision};
 
@@ -184,7 +184,7 @@ impl SystemTable<Boot> {
         mmap_buf: &mut [u8],
     ) -> Result<(
         SystemTable<Runtime>,
-        impl ExactSizeIterator<Item = &MemoryDescriptor> + Clone,
+        MemoryMapIter,
     )> {
         unsafe {
             let boot_services = self.boot_services();

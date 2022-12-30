@@ -109,7 +109,7 @@ impl<'boot> GraphicsOutput<'boot> {
 
     /// Returns information about all available graphics modes.
     #[must_use]
-    pub fn modes(&'_ self) -> impl ExactSizeIterator<Item = Mode> + '_ {
+    pub fn modes(&self) -> ModeIter {
         ModeIter {
             gop: self,
             current: 0,
@@ -437,8 +437,8 @@ impl ModeInfo {
     }
 }
 
-/// Iterator for graphics modes.
-struct ModeIter<'gop> {
+/// Iterator for [`Mode`]s of the [`GraphicsOutput`] protocol.
+pub struct ModeIter<'gop> {
     gop: &'gop GraphicsOutput<'gop>,
     current: u32,
     max: u32,

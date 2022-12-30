@@ -253,7 +253,7 @@ impl NodeField {
                 ret_type = quote!(UnalignedSlice<#slice_elem>);
                 ret_val = quote!(
                     let ptr: *const [#slice_elem] = addr_of!(self.#field_name);
-                    let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+                    let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
                     unsafe {
                         UnalignedSlice::new(ptr.cast::<#slice_elem>(), len)
                     }

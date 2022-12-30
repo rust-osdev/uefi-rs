@@ -84,7 +84,8 @@ pub use device_path_gen::{
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::marker::{PhantomData, PhantomPinned};
-use core::{mem, ptr};
+use core::mem;
+use ptr_meta::Pointee;
 
 /// Opaque type that should be used to represent a pointer to a
 /// [`DevicePath`] or [`DevicePathNode`] in foreign function interfaces. This
@@ -118,7 +119,7 @@ pub struct DevicePathHeader {
 /// See the [module-level documentation] for more details.
 ///
 /// [module-level documentation]: crate::proto::device_path
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C, packed)]
 pub struct DevicePathNode {
     header: DevicePathHeader,
@@ -138,7 +139,7 @@ impl DevicePathNode {
         let header = *ptr.cast::<DevicePathHeader>();
 
         let data_len = usize::from(header.length) - mem::size_of::<DevicePathHeader>();
-        &*ptr::from_raw_parts(ptr.cast(), data_len)
+        &*ptr_meta::from_raw_parts(ptr.cast(), data_len)
     }
 
     /// Cast to a [`FfiDevicePath`] pointer.
@@ -195,7 +196,7 @@ impl DevicePathNode {
 /// [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
 /// [module-level documentation]: crate::proto::device_path
 #[repr(C, packed)]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 pub struct DevicePathInstance {
     data: [u8],
 }
@@ -226,18 +227,18 @@ impl DevicePathInstance {
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 #[repr(C, packed)]
 #[unsafe_protocol("09576e91-6d3f-11d2-8e39-00a0c969723b")]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 pub struct DevicePath {
     data: [u8],
 }
 
 impl ProtocolPointer for DevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
-        ptr::from_raw_parts(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
-        ptr::from_raw_parts_mut(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts_mut(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
     }
 }
 
@@ -336,7 +337,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
             self.remaining_path = None;
         } else {
             self.remaining_path = unsafe {
-                Some(&*ptr::from_raw_parts(
+                Some(&*ptr_meta::from_raw_parts(
                     rest.as_ptr().cast::<()>(),
                     rest.len(),
                 ))
@@ -344,7 +345,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
         }
 
         unsafe {
-            Some(&*ptr::from_raw_parts(
+            Some(&*ptr_meta::from_raw_parts(
                 head.as_ptr().cast::<()>(),
                 head.len(),
             ))

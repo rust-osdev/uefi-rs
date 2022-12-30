@@ -121,9 +121,17 @@ impl Node {
             fields.push(quote!(data: [u8]));
         }
 
+        // If the struct is a DST, derive the `ptr_meta::Pointee` trait.
+        let derive_pointee = if self.is_dst() {
+            quote!(#[derive(Pointee)])
+        } else {
+            quote!()
+        };
+
         quote!(
             #(#struct_docs)*
             #[repr(C, packed)]
+            #derive_pointee
             pub struct #struct_ident {
                 #(pub(super) #fields),*
             }
@@ -169,7 +177,7 @@ impl Node {
                     // slice instead.
                     quote!({
                         let ptr = addr_of!(#field_val);
-                        let (ptr, len) = ptr.to_raw_parts();
+                        let (ptr, len) = PtrExt::to_raw_parts(ptr);
                         let byte_len = size_of::<#slice_elem_ty>() * len;
                         unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                     })
@@ -216,7 +224,7 @@ impl Node {
                     return Err(NodeConversionError::InvalidLength);
                 }
                 let node: *const DevicePathNode = node;
-                let node: *const #struct_ident = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                let node: *const #struct_ident = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             )
         } else {
             quote!(

@@ -424,10 +424,7 @@ impl BootServices {
     pub fn memory_map<'buf>(
         &self,
         buffer: &'buf mut [u8],
-    ) -> Result<(
-        MemoryMapKey,
-        impl ExactSizeIterator<Item = &'buf MemoryDescriptor> + Clone,
-    )> {
+    ) -> Result<(MemoryMapKey, MemoryMapIter<'buf>)> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
         let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
@@ -2077,9 +2074,10 @@ pub struct MemoryMapSize {
     pub map_size: usize,
 }
 
-/// An iterator of memory descriptors
+/// An iterator of [`MemoryDescriptor`]. The underlying memory map is always
+/// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
-struct MemoryMapIter<'buf> {
+pub struct MemoryMapIter<'buf> {
     buffer: &'buf [u8],
     entry_size: usize,
     index: usize,

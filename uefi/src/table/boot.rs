@@ -2108,7 +2108,11 @@ impl<'buf> Iterator for MemoryMapIter<'buf> {
     }
 }
 
-impl ExactSizeIterator for MemoryMapIter<'_> {}
+impl ExactSizeIterator for MemoryMapIter<'_> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]

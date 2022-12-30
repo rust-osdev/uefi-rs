@@ -429,7 +429,7 @@ impl Node {
                 // the length of `out` matches the node's size.
                 assert_eq!(size, out.len());
 
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(DevicePathHeader {
                         device_type: DeviceType::#device_type,

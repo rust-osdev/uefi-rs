@@ -6,6 +6,7 @@
 // See `/xtask/src/device_path/README.md` for more details.
 
 use crate::data_types::UnalignedSlice;
+use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::device_path::{
     DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
@@ -3333,7 +3334,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3359,7 +3360,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3393,7 +3394,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3429,7 +3430,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3465,7 +3466,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3507,7 +3508,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3546,7 +3547,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3583,7 +3584,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3627,7 +3628,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3682,7 +3683,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3730,7 +3731,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3762,7 +3763,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3824,7 +3825,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3866,7 +3867,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3904,7 +3905,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3943,7 +3944,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3981,7 +3982,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4016,7 +4017,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4059,7 +4060,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4105,7 +4106,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4152,7 +4153,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4192,7 +4193,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4240,7 +4241,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4275,7 +4276,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4326,7 +4327,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4401,7 +4402,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4461,7 +4462,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4503,7 +4504,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4557,7 +4558,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4604,7 +4605,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4649,7 +4650,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4706,7 +4707,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4761,7 +4762,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4797,7 +4798,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4831,7 +4832,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4867,7 +4868,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4899,7 +4900,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4931,7 +4932,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4963,7 +4964,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4997,7 +4998,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5035,7 +5036,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5071,7 +5072,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5109,7 +5110,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5151,7 +5152,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5206,12 +5207,12 @@ pub mod build {
                             == crate::proto::device_path::messaging::RestServiceType::VENDOR
                     );
                     let (guid_out, data_out) = out.split_at_mut(size_of::<Guid>());
-                    let guid_out_ptr: *mut Guid = MaybeUninit::slice_as_mut_ptr(guid_out).cast();
+                    let guid_out_ptr: *mut Guid = maybe_uninit_slice_as_mut_ptr(guid_out).cast();
                     unsafe {
                         guid_out_ptr.write_unaligned(src.vendor_guid);
                     }
 
-                    let data_out_ptr = MaybeUninit::slice_as_mut_ptr(data_out);
+                    let data_out_ptr = maybe_uninit_slice_as_mut_ptr(data_out);
                     unsafe {
                         src.vendor_defined_data
                             .as_ptr()
@@ -5248,7 +5249,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5305,7 +5306,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5347,7 +5348,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5386,7 +5387,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5418,7 +5419,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5450,7 +5451,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5482,7 +5483,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5516,7 +5517,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5559,7 +5560,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5639,7 +5640,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()

@@ -3,6 +3,7 @@ use super::strs::{CStr16, FromSliceWithNulError};
 use crate::alloc::vec::Vec;
 use crate::data_types::strs::EqStrUntilNul;
 use crate::data_types::UnalignedSlice;
+use crate::polyfill::vec_into_raw_parts;
 use core::fmt;
 use core::ops;
 
@@ -92,7 +93,7 @@ impl TryFrom<Vec<u16>> for CString16 {
         // Safety: `Char16` is a transparent struct wrapping `u16`, so
         // the types are compatible. The pattern used here matches the
         // example in the docs for `into_raw_parts`.
-        let (ptr, len, cap) = input.into_raw_parts();
+        let (ptr, len, cap) = vec_into_raw_parts(input);
         let rebuilt = unsafe {
             let ptr = ptr.cast::<Char16>();
             Vec::from_raw_parts(ptr, len, cap)

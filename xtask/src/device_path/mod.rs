@@ -23,6 +23,7 @@ fn gen_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         use bitflags::bitflags;
         use crate::data_types::UnalignedSlice;
         use crate::{guid, Guid};
+        use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
         use crate::proto::device_path::{
             DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType,
             NodeConversionError,

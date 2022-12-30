@@ -14,8 +14,9 @@ use crate::table::boot::MemoryType;
 use crate::{guid, Guid};
 use bitflags::bitflags;
 use core::mem::{size_of, size_of_val};
-use core::ptr::{self, addr_of};
+use core::ptr::addr_of;
 use core::{fmt, slice};
+use ptr_meta::{Pointee, PtrExt};
 /// Device path nodes for [`DeviceType::END`].
 pub mod end {
     use super::*;
@@ -215,6 +216,7 @@ pub mod hardware {
 
     /// Vendor-defined hardware device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Vendor {
         pub(super) header: DevicePathHeader,
         pub(super) vendor_guid: Guid,
@@ -241,7 +243,7 @@ pub mod hardware {
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", {
                     let ptr = addr_of!(self.vendor_defined_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -262,7 +264,7 @@ pub mod hardware {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Vendor = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -406,6 +408,7 @@ pub mod acpi {
 
     /// Expanded ACPI device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Expanded {
         pub(super) header: DevicePathHeader,
         pub(super) hid: u32,
@@ -488,13 +491,14 @@ pub mod acpi {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Expanded = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Expanded = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// ADR ACPI device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Adr {
         pub(super) header: DevicePathHeader,
         pub(super) adr: [u32],
@@ -507,7 +511,7 @@ pub mod acpi {
         #[must_use]
         pub fn adr(&self) -> UnalignedSlice<u32> {
             let ptr: *const [u32] = addr_of!(self.adr);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u32>(), len) }
         }
     }
@@ -517,7 +521,7 @@ pub mod acpi {
             f.debug_struct("Adr")
                 .field("adr", {
                     let ptr = addr_of!(self.adr);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u32>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -538,7 +542,7 @@ pub mod acpi {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Adr = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Adr = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1026,6 +1030,7 @@ pub mod messaging {
 
     /// USB World Wide ID (WWID) messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct UsbWwid {
         pub(super) header: DevicePathHeader,
         pub(super) interface_number: u16,
@@ -1057,7 +1062,7 @@ pub mod messaging {
         #[must_use]
         pub fn serial_number(&self) -> UnalignedSlice<u16> {
             let ptr: *const [u16] = addr_of!(self.serial_number);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
         }
     }
@@ -1070,7 +1075,7 @@ pub mod messaging {
                 .field("device_product_id", &{ self.device_product_id })
                 .field("serial_number", {
                     let ptr = addr_of!(self.serial_number);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1091,7 +1096,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const UsbWwid = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const UsbWwid = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1639,6 +1644,7 @@ pub mod messaging {
 
     /// Vendor-defined messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Vendor {
         pub(super) header: DevicePathHeader,
         pub(super) vendor_guid: Guid,
@@ -1665,7 +1671,7 @@ pub mod messaging {
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", {
                     let ptr = addr_of!(self.vendor_defined_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1686,7 +1692,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Vendor = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1753,6 +1759,7 @@ pub mod messaging {
 
     /// iSCSI messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Iscsi {
         pub(super) header: DevicePathHeader,
         pub(super) protocol: crate::proto::device_path::messaging::IscsiProtocol,
@@ -1808,7 +1815,7 @@ pub mod messaging {
                 .field("target_portal_group_tag", &{ self.target_portal_group_tag })
                 .field("iscsi_target_name", {
                     let ptr = addr_of!(self.iscsi_target_name);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1829,7 +1836,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Iscsi = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Iscsi = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1884,6 +1891,7 @@ pub mod messaging {
 
     /// Uniform Resource Identifier (URI) messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Uri {
         pub(super) header: DevicePathHeader,
         pub(super) value: [u8],
@@ -1902,7 +1910,7 @@ pub mod messaging {
             f.debug_struct("Uri")
                 .field("value", {
                     let ptr = addr_of!(self.value);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1923,7 +1931,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Uri = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Uri = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2162,6 +2170,7 @@ pub mod messaging {
 
     /// DNS messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Dns {
         pub(super) header: DevicePathHeader,
         pub(super) address_type: crate::proto::device_path::messaging::DnsAddressType,
@@ -2179,7 +2188,7 @@ pub mod messaging {
         #[must_use]
         pub fn addresses(&self) -> UnalignedSlice<IpAddress> {
             let ptr: *const [IpAddress] = addr_of!(self.addresses);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<IpAddress>(), len) }
         }
     }
@@ -2190,7 +2199,7 @@ pub mod messaging {
                 .field("address_type", &{ self.address_type })
                 .field("addresses", {
                     let ptr = addr_of!(self.addresses);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<IpAddress>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2211,7 +2220,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Dns = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Dns = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2254,6 +2263,7 @@ pub mod messaging {
 
     /// REST service messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct RestService {
         pub(super) header: DevicePathHeader,
         pub(super) service_type: crate::proto::device_path::messaging::RestServiceType,
@@ -2282,7 +2292,7 @@ pub mod messaging {
                 .field("access_mode", &{ self.access_mode })
                 .field("vendor_guid_and_data", {
                     let ptr = addr_of!(self.vendor_guid_and_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2303,13 +2313,15 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const RestService = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const RestService =
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// NVME over Fabric (NVMe-oF) namespace messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct NvmeOfNamespace {
         pub(super) header: DevicePathHeader,
         pub(super) nidt: u8,
@@ -2345,7 +2357,7 @@ pub mod messaging {
                 .field("nid", &{ self.nid })
                 .field("subsystem_nqn", {
                     let ptr = addr_of!(self.subsystem_nqn);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2367,7 +2379,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const NvmeOfNamespace =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2566,6 +2578,7 @@ pub mod media {
 
     /// Vendor-defined media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Vendor {
         pub(super) header: DevicePathHeader,
         pub(super) vendor_guid: Guid,
@@ -2592,7 +2605,7 @@ pub mod media {
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", {
                     let ptr = addr_of!(self.vendor_defined_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2613,13 +2626,14 @@ pub mod media {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Vendor = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// File path media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct FilePath {
         pub(super) header: DevicePathHeader,
         pub(super) path_name: [u16],
@@ -2630,7 +2644,7 @@ pub mod media {
         #[must_use]
         pub fn path_name(&self) -> UnalignedSlice<u16> {
             let ptr: *const [u16] = addr_of!(self.path_name);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
         }
     }
@@ -2640,7 +2654,7 @@ pub mod media {
             f.debug_struct("FilePath")
                 .field("path_name", {
                     let ptr = addr_of!(self.path_name);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2661,7 +2675,7 @@ pub mod media {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const FilePath = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const FilePath = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2704,6 +2718,7 @@ pub mod media {
 
     /// PIWG firmware file media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct PiwgFirmwareFile {
         pub(super) header: DevicePathHeader,
         pub(super) data: [u8],
@@ -2722,7 +2737,7 @@ pub mod media {
             f.debug_struct("PiwgFirmwareFile")
                 .field("data", {
                     let ptr = addr_of!(self.data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2744,13 +2759,14 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const PiwgFirmwareFile =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// PIWG firmware volume media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct PiwgFirmwareVolume {
         pub(super) header: DevicePathHeader,
         pub(super) data: [u8],
@@ -2769,7 +2785,7 @@ pub mod media {
             f.debug_struct("PiwgFirmwareVolume")
                 .field("data", {
                     let ptr = addr_of!(self.data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2791,7 +2807,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const PiwgFirmwareVolume =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2955,6 +2971,7 @@ pub mod bios_boot_spec {
     use super::*;
     /// BIOS Boot Specification device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct BootSpecification {
         pub(super) header: DevicePathHeader,
         pub(super) device_type: u16,
@@ -2990,7 +3007,7 @@ pub mod bios_boot_spec {
                 .field("status_flag", &{ self.status_flag })
                 .field("description_string", {
                     let ptr = addr_of!(self.description_string);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -3012,7 +3029,7 @@ pub mod bios_boot_spec {
 
             let node: *const DevicePathNode = node;
             let node: *const BootSpecification =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }

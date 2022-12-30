@@ -29,6 +29,8 @@
   `impl Iterator` which simplifies usage.
 - `GraphicsOutput::modes()` now returns `ModesIter` instead of `impl Iterator`
    which simplifies usage.
+- Use of the unstable `ptr_metadata` feature has been replaced with a dependency
+  on the [`ptr_meta`](https://docs.rs/ptr_meta) crate.
 
 ### Removed
 

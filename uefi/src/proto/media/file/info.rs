@@ -4,6 +4,7 @@ use crate::table::runtime::Time;
 use crate::{guid, CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
 use core::{mem, ptr};
+use ptr_meta::Pointee;
 
 /// Common trait for data structures that can be used with
 /// `File::set_info()` or `File::get_info()`.
@@ -32,7 +33,7 @@ pub trait FromUefi {
 /// `FileSystemVolumeLabel`, all of which are dynamically-sized structs
 /// that have zero or more header fields followed by a variable-length
 /// [Char16] name.
-trait InfoInternal: Align + ptr::Pointee<Metadata = usize> {
+trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
     /// Offset in bytes of the start of the name slice at the end of
     /// the struct.
     fn name_offset() -> usize;
@@ -83,7 +84,7 @@ trait InfoInternal: Align + ptr::Pointee<Metadata = usize> {
 
         // Create a raw fat pointer using the `storage` as a base.
         let info_ptr: *mut Self =
-            ptr::from_raw_parts_mut(storage.as_mut_ptr().cast::<()>(), name_length_ucs2);
+            ptr_meta::from_raw_parts_mut(storage.as_mut_ptr().cast::<()>(), name_length_ucs2);
 
         // Initialize the struct header.
         init(info_ptr, info_size as u64);
@@ -110,7 +111,7 @@ where
         let name_ptr = Self::name_ptr(ptr.cast::<u8>());
         let name = CStr16::from_ptr(name_ptr);
         let name_len = name.as_slice_with_nul().len();
-        &mut *ptr::from_raw_parts_mut(ptr.cast::<()>(), name_len)
+        &mut *ptr_meta::from_raw_parts_mut(ptr.cast::<()>(), name_len)
     }
 }
 
@@ -140,7 +141,7 @@ pub enum FileInfoCreationError {
 ///   existing file in the same directory.
 /// - If a file is read-only, the only allowed change is to remove the read-only
 ///   attribute. Other changes must be carried out in a separate transaction.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C)]
 pub struct FileInfo {
     size: u64,
@@ -254,7 +255,7 @@ impl FileProtocolInfo for FileInfo {}
 ///
 /// Please note that only the system volume's volume label may be set using
 /// this information structure. Consider using `FileSystemVolumeLabel` instead.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C)]
 pub struct FileSystemInfo {
     size: u64,
@@ -346,7 +347,7 @@ impl FileProtocolInfo for FileSystemInfo {}
 /// System volume label
 ///
 /// May only be obtained on the root directory's file handle.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C)]
 pub struct FileSystemVolumeLabel {
     volume_label: [Char16],

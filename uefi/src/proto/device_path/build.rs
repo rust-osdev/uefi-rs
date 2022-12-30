@@ -9,7 +9,6 @@ pub use uefi::proto::device_path::device_path_gen::build::*;
 
 use crate::proto::device_path::{DevicePath, DevicePathNode};
 use core::mem::MaybeUninit;
-use core::ptr;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
@@ -139,7 +138,7 @@ impl<'a> DevicePathBuilder<'a> {
         };
 
         let ptr: *const () = data.as_ptr().cast();
-        Ok(unsafe { &*ptr::from_raw_parts(ptr, data.len()) })
+        Ok(unsafe { &*ptr_meta::from_raw_parts(ptr, data.len()) })
     }
 }
 

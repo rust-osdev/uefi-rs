@@ -15,6 +15,7 @@ use crate::{Result, Status};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
+use ptr_meta::Pointee;
 
 /// 20-byte SHA-1 digest.
 pub type Sha1Digest = [u8; 20];
@@ -96,6 +97,7 @@ pub struct Version {
 /// field. These two are independent; although the event data _can_ be
 /// what is hashed in the digest field, it doesn't have to be.
 #[repr(C, packed)]
+#[derive(Pointee)]
 pub struct PcrEvent {
     pcr_index: PcrIndex,
     event_type: EventType,
@@ -110,7 +112,7 @@ impl PcrEvent {
         let ptr_u32: *const u32 = ptr.cast();
         let event_size = ptr_u32.add(7).read_unaligned();
         let event_size = usize_from_u32(event_size);
-        unsafe { &*ptr::from_raw_parts(ptr.cast(), event_size) }
+        unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), event_size) }
     }
 
     /// PCR index for the event.

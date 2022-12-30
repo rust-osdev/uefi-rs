@@ -27,6 +27,8 @@
   `impl Iterator` which simplifies usage.
 - `BootServices::exit_boot_services()` now returns `MemoryMapIter` instead of
   `impl Iterator` which simplifies usage.
+- `GraphicsOutput::modes()` now returns `ModesIter` instead of `impl Iterator`
+   which simplifies usage.
 
 ### Removed
 

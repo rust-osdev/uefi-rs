@@ -1,5 +1,6 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
+use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::ffi::CStr;
 use core::fmt;
 use core::iter::Iterator;
@@ -300,7 +301,7 @@ impl CStr16 {
         src.copy_to_maybe_uninit(buf);
         let buf = unsafe {
             // Safety: `copy_buf` fully initializes the slice.
-            MaybeUninit::slice_assume_init_ref(buf)
+            maybe_uninit_slice_assume_init_ref(buf)
         };
         CStr16::from_u16_with_nul(buf).map_err(|e| match e {
             FromSliceWithNulError::InvalidChar(v) => UnalignedCStr16Error::InvalidChar(v),

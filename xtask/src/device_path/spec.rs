@@ -973,12 +973,12 @@ mod messaging {
 
                 let (guid_out, data_out) = out.split_at_mut(size_of::<Guid>());
 
-                let guid_out_ptr: *mut Guid = MaybeUninit::slice_as_mut_ptr(guid_out).cast();
+                let guid_out_ptr: *mut Guid = maybe_uninit_slice_as_mut_ptr(guid_out).cast();
                 unsafe {
                     guid_out_ptr.write_unaligned(src.vendor_guid);
                 }
 
-                let data_out_ptr = MaybeUninit::slice_as_mut_ptr(data_out);
+                let data_out_ptr = maybe_uninit_slice_as_mut_ptr(data_out);
                 unsafe {
                     src.vendor_defined_data
                         .as_ptr()

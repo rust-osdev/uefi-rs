@@ -3,7 +3,7 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 
 #[cfg(feature = "alloc")]
-use crate::alloc::vec::Vec;
+use alloc::vec::Vec;
 
 /// Slice backed by a potentially-unaligned pointer.
 ///

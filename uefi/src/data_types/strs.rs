@@ -478,7 +478,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::String;
+    use alloc::string::String;
     use uefi_macros::{cstr16, cstr8};
 
     // Tests if our CStr8 type can be constructed from a valid core::ffi::CStr

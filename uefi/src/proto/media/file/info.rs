@@ -398,10 +398,10 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::vec;
     use crate::table::runtime::TimeParams;
     use crate::table::runtime::{Daylight, Time};
     use crate::CString16;
+    use alloc::vec;
 
     fn validate_layout<T: InfoInternal + ?Sized>(info: &T, name: &[Char16]) {
         // Check the hardcoded struct alignment.

@@ -68,8 +68,6 @@
 #![deny(clippy::all)]
 #![deny(clippy::must_use_candidate)]
 
-// Enable once we use vec![] or similar
-// #[cfg_attr(feature = "alloc", macro_use)]
 #[cfg(feature = "alloc")]
 extern crate alloc;
 

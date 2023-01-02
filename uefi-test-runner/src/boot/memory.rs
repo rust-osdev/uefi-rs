@@ -1,6 +1,6 @@
 use uefi::table::boot::{AllocateType, BootServices, MemoryType};
 
-use crate::alloc::vec::Vec;
+use alloc::vec::Vec;
 
 pub fn test(bt: &BootServices) {
     info!("Testing memory functions");

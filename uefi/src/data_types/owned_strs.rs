@@ -1,9 +1,9 @@
 use super::chars::{Char16, NUL_16};
 use super::strs::{CStr16, FromSliceWithNulError};
-use crate::alloc::vec::Vec;
 use crate::data_types::strs::EqStrUntilNul;
 use crate::data_types::UnalignedSlice;
 use crate::polyfill::vec_into_raw_parts;
+use alloc::vec::Vec;
 use core::fmt;
 use core::ops;
 
@@ -155,8 +155,8 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CString16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::String;
-    use crate::alloc::vec;
+    use alloc::string::String;
+    use alloc::vec;
 
     #[test]
     fn test_cstring16_from_str() {

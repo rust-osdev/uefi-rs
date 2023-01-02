@@ -187,6 +187,54 @@ fn test_create_file(directory: &mut Directory) {
     file.write(b"test output data").unwrap();
 }
 
+/// Test directory creation by
+/// - creating a new directory
+/// - creating a file in that directory
+/// - accessing the new directory via a flat path and a deep path
+fn test_create_directory(root_dir: &mut Directory) {
+    info!("Testing directory creation");
+
+    // Create a new directory.
+    let new_dir = root_dir
+        .open(
+            cstr16!("created_dir"),
+            FileMode::CreateReadWrite,
+            FileAttribute::DIRECTORY,
+        )
+        .expect("failed to create directory");
+
+    let mut new_dir = new_dir.into_directory().expect("Should be a directory");
+
+    // create new file in new director
+    let msg = "hello_world";
+    let file = new_dir
+        .open(
+            cstr16!("foobar"),
+            FileMode::CreateReadWrite,
+            FileAttribute::empty(),
+        )
+        .unwrap();
+
+    let mut file = file.into_regular_file().expect("Should be a file!");
+    file.write(msg.as_bytes()).unwrap();
+
+    // now access the new file with a deep path and read its content
+    let file = root_dir
+        .open(
+            cstr16!("created_dir\\foobar"),
+            FileMode::Read,
+            FileAttribute::empty(),
+        )
+        .expect("Must open created file with deep path.");
+    let mut file = file.into_regular_file().expect("Should be a file!");
+
+    let mut buf = vec![0; msg.len()];
+    let read_bytes = file.read(&mut buf).unwrap();
+    let read = &buf[0..read_bytes];
+
+    assert_eq!(msg.as_bytes(), read);
+}
+
 /// Get the media ID via the BlockIO protocol.
 fn get_block_media_id(handle: Handle, bt: &BootServices) -> u32 {
     // This cannot be opened in `EXCLUSIVE` mode, as doing so
@@ -339,6 +387,7 @@ pub fn test_known_disk(bt: &BootServices) {
             test_delete_warning(&mut root_directory);
             test_existing_file(&mut root_directory);
             test_create_file(&mut root_directory);
+            test_create_directory(&mut root_directory);
         }
 
         test_raw_disk_io(handle, bt);

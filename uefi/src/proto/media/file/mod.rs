@@ -236,6 +236,7 @@ impl<T: File> FileInternal for T {}
 ///
 /// Dropping this structure will result in the file handle being closed.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct FileHandle(*mut FileImpl);
 
 impl FileHandle {
@@ -365,7 +366,8 @@ pub(super) struct FileImpl {
     flush: extern "efiapi" fn(this: &mut FileImpl) -> Status,
 }
 
-/// Disambiguates the file type. Returned by `File::into_type()`.
+/// Disambiguate the file type. Returned by `File::into_type()`.
+#[derive(Debug)]
 pub enum FileType {
     /// The file was a regular (data) file.
     Regular(RegularFile),

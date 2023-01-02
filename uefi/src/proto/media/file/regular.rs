@@ -7,6 +7,7 @@ use crate::{Result, Status};
 /// In addition to supporting the normal `File` operations, `RegularFile`
 /// supports direct reading and writing.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct RegularFile(FileHandle);
 
 impl RegularFile {

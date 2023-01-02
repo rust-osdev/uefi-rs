@@ -13,6 +13,7 @@ use {alloc::alloc::Global, core::alloc::Allocator};
 /// addition to supporting the normal `File` operations, `Directory`
 /// supports iterating over its contained files.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct Directory(RegularFile);
 
 impl Directory {

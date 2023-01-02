@@ -7,6 +7,7 @@
 - Added the `ComponentName1` and `ComponentName2` protocols. The `ComponentName`
   wrapper will automatically select `ComponentName2` if available, and fall back
   to `ComponentName1` otherwise.
+- `FileType`, `FileHandle`, `RegularFile`, and `Directory` now implement `Debug`.
 
 ### Changed
 

@@ -25,7 +25,7 @@ Check out the [UEFI application template] for a quick start.
 ## Optional features
 
 This crate's features are described in [`src/lib.rs`].
-  
+
 See also the [`uefi-services`] crate, which provides a panic handler and
 initializes the `global_allocator` and `logger` features.
 
@@ -52,7 +52,7 @@ For additional information, refer to the [UEFI specification][spec].
 For instructions on how to create your own UEFI apps, see the [tutorial].
 
 The uefi-rs crates currently require some [unstable features].
-The nightly MSRV is currently 2022-08-08.
+The nightly MSRV is currently 2022-08-25.
 
 [unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
 [tutorial]: https://rust-osdev.github.io/uefi-rs/HEAD/tutorial/introduction.html

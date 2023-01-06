@@ -1979,8 +1979,6 @@ pub const MEMORY_DESCRIPTOR_VERSION: u32 = 1;
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
-    /// Skip 4 bytes as UEFI declares items in structs should be naturally aligned
-    padding: u32,
     /// Starting physical address.
     pub phys_start: PhysicalAddress,
     /// Starting virtual address.
@@ -1995,7 +1993,6 @@ impl Default for MemoryDescriptor {
     fn default() -> MemoryDescriptor {
         MemoryDescriptor {
             ty: MemoryType::RESERVED,
-            padding: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,

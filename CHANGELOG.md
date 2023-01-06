@@ -33,6 +33,8 @@
   on the [`ptr_meta`](https://docs.rs/ptr_meta) crate.
 - `pxe::DiscoverInfo` is now a DST. Create with `new_in_buffer` by supplying a
   `MaybeUninit<u8>` slice of appropriate length.
+- Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
+  fields of this struct are public.
 
 ### Removed
 

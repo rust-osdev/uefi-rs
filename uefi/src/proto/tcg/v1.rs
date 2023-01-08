@@ -8,7 +8,9 @@
 //! [TCG]: https://trustedcomputinggroup.org/
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
-use super::{ptr_write_unaligned_and_add, usize_from_u32, EventType, HashAlgorithm, PcrIndex};
+use super::{
+    ptr_write_unaligned_and_add, usize_from_u32, AlgorithmId, EventType, HashAlgorithm, PcrIndex,
+};
 use crate::data_types::PhysicalAddress;
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
@@ -416,6 +418,97 @@ impl Tcg {
             })
         } else {
             Err(status.into())
+        }
+    }
+
+    /// Add an entry to the event log without extending a PCR.
+    ///
+    /// Usually [`hash_log_extend_event`] should be used instead. An
+    /// entry added via `log_event` cannot be verified, so it is mainly
+    /// intended for adding an informational entry.
+    ///
+    /// [`hash_log_extend_event`]: Self::hash_log_extend_event
+    pub fn log_event(&mut self, event: &PcrEvent) -> Result {
+        // This is the only valid value; it indicates that the extend
+        // operation should not be performed.
+        let flags = 0x1;
+
+        // Don't bother returning this, it's not very useful info.
+        let mut event_number = 0;
+
+        let event_ptr: *const PcrEvent = event;
+
+        unsafe { (self.log_event)(self, event_ptr.cast(), &mut event_number, flags).into() }
+    }
+
+    /// Extend a PCR and add an entry to the event log.
+    ///
+    /// If `data_to_hash` is `None` then the `digest` field of the `event`
+    /// should be used as-is. Otherwise, the `digest` field will be overwritten
+    /// with the SHA-1 hash of the data.
+    pub fn hash_log_extend_event(
+        &mut self,
+        event: &mut PcrEvent,
+        data_to_hash: Option<&[u8]>,
+    ) -> Result {
+        let hash_data;
+        let hash_data_len;
+        if let Some(data_to_hash) = data_to_hash {
+            hash_data = data_to_hash.as_ptr() as PhysicalAddress;
+            hash_data_len = u64::try_from(data_to_hash.len()).unwrap();
+        } else {
+            hash_data = 0;
+            hash_data_len = 0;
+        }
+
+        // Don't bother returning these, it's not very useful info.
+        let mut event_number = 0;
+        let mut event_log_last_entry = 0;
+
+        let event_ptr: *mut PcrEvent = event;
+
+        unsafe {
+            (self.hash_log_extend_event)(
+                self,
+                hash_data,
+                hash_data_len,
+                AlgorithmId::SHA1.0.into(),
+                event_ptr.cast(),
+                &mut event_number,
+                &mut event_log_last_entry,
+            )
+            .into()
+        }
+    }
+
+    /// Send a command directly to the TPM.
+    ///
+    /// Constructing the input block and parsing the output block are outside
+    /// the scope of this crate. See the [TPM 1.2 Main Specification][spec]
+    /// documents for details of these blocks, in particular Part 3, Commands.
+    ///
+    /// Note that TPM structures are big endian.
+    ///
+    /// [spec]: https://trustedcomputinggroup.org/resource/tpm-main-specification/
+    pub fn pass_through_to_tpm(
+        &mut self,
+        input_parameter_block: &[u8],
+        output_parameter_block: &mut [u8],
+    ) -> Result {
+        let input_parameter_block_len = u32::try_from(input_parameter_block.len())
+            .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
+        let output_parameter_block_len = u32::try_from(output_parameter_block.len())
+            .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
+
+        unsafe {
+            (self.pass_through_to_tpm)(
+                self,
+                input_parameter_block_len,
+                input_parameter_block.as_ptr(),
+                output_parameter_block_len,
+                output_parameter_block.as_mut_ptr(),
+            )
+            .into()
         }
     }
 }

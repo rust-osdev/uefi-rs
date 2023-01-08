@@ -21,6 +21,7 @@ use bitflags::bitflags;
 
 /// Platform Configuration Register (PCR) index.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
 pub struct PcrIndex(pub u32);
 
 bitflags! {

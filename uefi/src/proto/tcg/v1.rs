@@ -13,12 +13,17 @@ use crate::data_types::PhysicalAddress;
 use crate::proto::unsafe_protocol;
 use crate::{Result, Status};
 use core::fmt::{self, Debug, Formatter};
-use core::marker::PhantomData;
+use core::marker::{PhantomData, PhantomPinned};
 use core::{mem, ptr};
 use ptr_meta::Pointee;
 
 /// 20-byte SHA-1 digest.
 pub type Sha1Digest = [u8; 20];
+
+/// This corresponds to the `AlgorithmId` enum, but in the v1 spec it's `u32`
+/// instead of `u16`.
+#[allow(non_camel_case_types)]
+type TCG_ALGORITHM_ID = u32;
 
 /// Information about the protocol and the TPM device.
 ///
@@ -161,6 +166,17 @@ impl Debug for PcrEvent {
     }
 }
 
+/// Opaque type that should be used to represent a pointer to a [`PcrEvent`] in
+/// foreign function interfaces. This type produces a thin pointer, unlike
+/// [`PcrEvent`].
+#[repr(C, packed)]
+pub struct FfiPcrEvent {
+    // This representation is recommended by the nomicon:
+    // https://doc.rust-lang.org/stable/nomicon/ffi.html#representing-opaque-structs
+    _data: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+
 /// TPM event log.
 ///
 /// This type of event log always uses SHA-1 hashes.
@@ -261,11 +277,46 @@ pub struct Tcg {
         event_log_last_entry: *mut PhysicalAddress,
     ) -> Status,
 
-    // TODO: fill these in and provide a public interface.
+    // Note: we do not currently expose this function because the spec
+    // for this is not well written. The function allocates memory, but
+    // the spec doesn't say how to free it. Most likely
+    // `EFI_BOOT_SERVICES.FreePool` would work, but this is not
+    // mentioned in the spec so it is unsafe to rely on.
+    //
+    // Also, this function is not that useful in practice for a couple
+    // reasons. First, it takes an algorithm ID, but only SHA-1 is
+    // supported with TPM v1. Second, TPMs are not cryptographic
+    // accelerators, so it is very likely faster to calculate the hash
+    // on the CPU, e.g. with the `sha1` crate.
     hash_all: unsafe extern "efiapi" fn() -> Status,
-    log_event: unsafe extern "efiapi" fn() -> Status,
-    pass_through_to_tpm: unsafe extern "efiapi" fn() -> Status,
-    hash_log_extend_event: unsafe extern "efiapi" fn() -> Status,
+
+    log_event: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        // The spec does not guarantee that the `event` will not be mutated
+        // through the pointer, but it seems reasonable to assume and makes the
+        // public interface clearer, so use a const pointer.
+        event: *const FfiPcrEvent,
+        event_number: *mut u32,
+        flags: u32,
+    ) -> Status,
+
+    pass_through_to_tpm: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        tpm_input_parameter_block_size: u32,
+        tpm_input_parameter_block: *const u8,
+        tpm_output_parameter_block_size: u32,
+        tpm_output_parameter_block: *mut u8,
+    ) -> Status,
+
+    hash_log_extend_event: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        hash_data: PhysicalAddress,
+        hash_data_len: u64,
+        algorithm_id: TCG_ALGORITHM_ID,
+        event: *mut FfiPcrEvent,
+        event_number: *mut u32,
+        event_log_last_entry: *mut PhysicalAddress,
+    ) -> Status,
 }
 
 /// Return type of [`Tcg::status_check`].

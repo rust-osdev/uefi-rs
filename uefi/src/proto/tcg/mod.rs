@@ -18,6 +18,7 @@ mod enums;
 pub use enums::*;
 
 use bitflags::bitflags;
+use core::mem;
 
 /// Platform Configuration Register (PCR) index.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -54,4 +55,11 @@ bitflags! {
 /// infallable on supported targets.
 fn usize_from_u32(val: u32) -> usize {
     val.try_into().expect("`u32` does not fit in `usize`")
+}
+
+/// Copy the bytes of `val` to `ptr`, then advance pointer to just after the
+/// newly-copied bytes.
+unsafe fn ptr_write_unaligned_and_add<T>(ptr: &mut *mut u8, val: T) {
+    ptr.cast::<T>().write_unaligned(val);
+    *ptr = ptr.add(mem::size_of::<T>());
 }

@@ -8,13 +8,15 @@
 //! [TCG]: https://trustedcomputinggroup.org/
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
-use super::{usize_from_u32, EventType, HashAlgorithm, PcrIndex};
+use super::{ptr_write_unaligned_and_add, usize_from_u32, EventType, HashAlgorithm, PcrIndex};
 use crate::data_types::PhysicalAddress;
+use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Error, Result, Status};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::{PhantomData, PhantomPinned};
-use core::{mem, ptr};
+use core::mem::{self, MaybeUninit};
+use core::ptr;
 use ptr_meta::Pointee;
 
 /// 20-byte SHA-1 digest.
@@ -118,6 +120,50 @@ impl PcrEvent {
         let event_size = ptr_u32.add(7).read_unaligned();
         let event_size = usize_from_u32(event_size);
         unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), event_size) }
+    }
+
+    /// Create a new `PcrEvent` using a byte buffer for storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::BUFFER_TOO_SMALL`] if the `buffer` is not large
+    /// enough.
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
+    /// large.
+    pub fn new_in_buffer<'buf>(
+        buffer: &'buf mut [MaybeUninit<u8>],
+        pcr_index: PcrIndex,
+        event_type: EventType,
+        digest: Sha1Digest,
+        event_data: &[u8],
+    ) -> Result<&'buf mut Self> {
+        let event_data_size =
+            u32::try_from(event_data.len()).map_err(|_| Error::from(Status::INVALID_PARAMETER))?;
+
+        let required_size = mem::size_of::<PcrIndex>()
+            + mem::size_of::<EventType>()
+            + mem::size_of::<Sha1Digest>()
+            + mem::size_of::<u32>()
+            + event_data.len();
+
+        if buffer.len() < required_size {
+            return Err(Status::BUFFER_TOO_SMALL.into());
+        }
+
+        let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
+
+        unsafe {
+            ptr_write_unaligned_and_add(&mut ptr, pcr_index);
+            ptr_write_unaligned_and_add(&mut ptr, event_type);
+            ptr_write_unaligned_and_add(&mut ptr, digest);
+            ptr_write_unaligned_and_add(&mut ptr, event_data_size);
+            ptr::copy(event_data.as_ptr(), ptr, event_data.len());
+
+            let ptr: *mut PcrEvent =
+                ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
+            Ok(&mut *ptr)
+        }
     }
 
     /// PCR index for the event.
@@ -377,6 +423,49 @@ impl Tcg {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::slice;
+
+    #[test]
+    fn test_new_pcr_event() {
+        let mut event_buf = [MaybeUninit::uninit(); 256];
+        #[rustfmt::skip]
+        let digest = [
+            0x00, 0x01, 0x02, 0x03,
+            0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b,
+            0x0c, 0x0d, 0x0e, 0x0f,
+            0x10, 0x11, 0x12, 0x13,
+        ];
+        let data = [0x14, 0x15, 0x16, 0x17];
+        let event =
+            PcrEvent::new_in_buffer(&mut event_buf, PcrIndex(4), EventType::IPL, digest, &data)
+                .unwrap();
+        assert_eq!(event.pcr_index(), PcrIndex(4));
+        assert_eq!(event.event_type(), EventType::IPL);
+        assert_eq!(event.digest(), digest);
+        assert_eq!(event.event_data(), data);
+
+        let event_ptr: *const PcrEvent = event;
+        let bytes =
+            unsafe { slice::from_raw_parts(event_ptr.cast::<u8>(), mem::size_of_val(event)) };
+        #[rustfmt::skip]
+        assert_eq!(bytes, [
+            // PCR index
+            0x04, 0x00, 0x00, 0x00,
+            // Event type
+            0x0d, 0x00, 0x00, 0x00,
+            // Digest
+            0x00, 0x01, 0x02, 0x03,
+            0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b,
+            0x0c, 0x0d, 0x0e, 0x0f,
+            0x10, 0x11, 0x12, 0x13,
+            // Event data len
+            0x04, 0x00, 0x00, 0x00,
+            // Event data
+            0x14, 0x15, 0x16, 0x17,
+        ]);
+    }
 
     #[test]
     fn test_event_log_v1() {

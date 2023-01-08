@@ -27,7 +27,7 @@ pub struct BaseCode {
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: bool,
-        info: Option<*const DiscoverInfo<[Server; 0]>>,
+        info: *const DiscoverInfo<0>,
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
@@ -122,21 +122,20 @@ impl BaseCode {
 
     /// Attempts to complete the PXE Boot Server and/or boot image discovery
     /// sequence.
-    pub fn discover(
+    ///
+    /// The const `N` is the number of server entries in the [`DiscoverInfo`].
+    pub fn discover<const N: usize>(
         &mut self,
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: bool,
-        info: Option<&DiscoverInfo<[Server]>>,
+        info: Option<&DiscoverInfo<N>>,
     ) -> Result {
-        (self.discover)(
-            self,
-            ty,
-            layer,
-            use_bis,
-            info.map(|info| (info as *const DiscoverInfo<[Server]>).cast()),
-        )
-        .into()
+        let info = info
+            .map(|info| (info as *const DiscoverInfo<N>).cast())
+            .unwrap_or(core::ptr::null());
+
+        (self.discover)(self, ty, layer, use_bis, info).into()
     }
 
     /// Returns the size of a file located on a TFTP server.
@@ -652,17 +651,17 @@ pub enum BootstrapType {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_DISCOVER_INFO` type in the C API.
 #[repr(C)]
-pub struct DiscoverInfo<T: ?Sized> {
+pub struct DiscoverInfo<const N: usize> {
     use_m_cast: bool,
     use_b_cast: bool,
     use_u_cast: bool,
     must_use_list: bool,
     server_m_cast_ip: IpAddress,
     ip_cnt: u16,
-    srv_list: T,
+    srv_list: [Server; N],
 }
 
-impl<const N: usize> DiscoverInfo<[Server; N]> {
+impl<const N: usize> DiscoverInfo<N> {
     /// Create a `DiscoverInfo`.
     #[must_use]
     pub const fn new(
@@ -687,41 +686,48 @@ impl<const N: usize> DiscoverInfo<[Server; N]> {
     }
 }
 
-impl<T> DiscoverInfo<T> {
+impl<const N: usize> DiscoverInfo<N> {
     /// Returns whether discovery should use multicast.
+    #[must_use]
     pub const fn use_m_cast(&self) -> bool {
         self.use_m_cast
     }
 
     /// Returns whether discovery should use broadcast.
+    #[must_use]
     pub const fn use_b_cast(&self) -> bool {
         self.use_b_cast
     }
 
     /// Returns whether discovery should use unicast.
+    #[must_use]
     pub const fn use_u_cast(&self) -> bool {
         self.use_u_cast
     }
 
     /// Returns whether discovery should only accept boot servers in the server
     /// list (boot server verification).
+    #[must_use]
     pub const fn must_use_list(&self) -> bool {
         self.must_use_list
     }
 
     /// Returns the address used in multicast discovery.
+    #[must_use]
     pub const fn server_m_cast_ip(&self) -> &IpAddress {
         &self.server_m_cast_ip
     }
 
     /// Returns the amount of Boot Server.
+    #[must_use]
     pub const fn ip_cnt(&self) -> u16 {
         self.ip_cnt
     }
 
     /// Returns the Boot Server list used for unicast discovery or boot server
     /// verification.
-    pub const fn srv_list(&self) -> &T {
+    #[must_use]
+    pub const fn srv_list(&self) -> &[Server] {
         &self.srv_list
     }
 }

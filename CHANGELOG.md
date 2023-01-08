@@ -31,6 +31,10 @@
    which simplifies usage.
 - Use of the unstable `ptr_metadata` feature has been replaced with a dependency
   on the [`ptr_meta`](https://docs.rs/ptr_meta) crate.
+- `pxe::DiscoverInfo` is now generic over the number of Servers it specifies instead
+  of `[Server]` and `[Server; N]` (of which only the later is FFI safe).
+- `BaseCode::discover` is now generic over the number of Servers in `DiscoverInfo`,
+  but the source-level interface should remain compatible with existing correct code.
 
 ### Removed
 

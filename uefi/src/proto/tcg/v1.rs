@@ -106,7 +106,7 @@ pub struct Version {
 /// field. These two are independent; although the event data _can_ be
 /// what is hashed in the digest field, it doesn't have to be.
 #[repr(C, packed)]
-#[derive(Pointee)]
+#[derive(Eq, Pointee)]
 pub struct PcrEvent {
     pcr_index: PcrIndex,
     event_type: EventType,
@@ -211,6 +211,17 @@ impl Debug for PcrEvent {
             .field("event_data_size", &{ self.event_data_size })
             .field("event_data", &&self.event_data)
             .finish()
+    }
+}
+
+// Manual `PartialEq` implementation since it can't be derived for a packed DST.
+impl PartialEq for PcrEvent {
+    fn eq(&self, rhs: &Self) -> bool {
+        self.pcr_index() == rhs.pcr_index()
+            && self.event_type() == rhs.event_type()
+            && self.digest == rhs.digest
+            && self.event_data_size == rhs.event_data_size
+            && self.event_data == rhs.event_data
     }
 }
 

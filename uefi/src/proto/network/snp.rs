@@ -14,7 +14,7 @@ use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;
 use core::ptr::NonNull;
-use uefi_macros::unsafe_protocol;
+use crate::uefi_macros::unsafe_protocol;
 
 /// The Simple Network Protocol
 #[repr(C)]

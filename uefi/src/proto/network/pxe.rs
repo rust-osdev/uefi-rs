@@ -3,11 +3,14 @@
 use core::{
     ffi::c_void,
     iter::from_fn,
+    marker::{PhantomData, PhantomPinned},
+    mem::MaybeUninit,
     ptr::{null, null_mut},
 };
 
-use crate::proto::unsafe_protocol;
+use crate::{polyfill::maybe_uninit_slice_as_mut_ptr, proto::unsafe_protocol};
 use bitflags::bitflags;
+use ptr_meta::Pointee;
 
 use crate::{CStr8, Char8, Result, Status};
 
@@ -27,7 +30,7 @@ pub struct BaseCode {
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: bool,
-        info: *const DiscoverInfo<0>,
+        info: *const FfiDiscoverInfo,
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
@@ -122,18 +125,19 @@ impl BaseCode {
 
     /// Attempts to complete the PXE Boot Server and/or boot image discovery
     /// sequence.
-    ///
-    /// The const `N` is the number of server entries in the [`DiscoverInfo`].
-    pub fn discover<const N: usize>(
+    pub fn discover(
         &mut self,
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: bool,
-        info: Option<&DiscoverInfo<N>>,
+        info: Option<&DiscoverInfo>,
     ) -> Result {
-        let info = info
-            .map(|info| (info as *const DiscoverInfo<N>).cast())
-            .unwrap_or(core::ptr::null());
+        let info: *const FfiDiscoverInfo = info
+            .map(|info| {
+                let info_ptr: *const DiscoverInfo = info;
+                info_ptr.cast()
+            })
+            .unwrap_or(null());
 
         (self.discover)(self, ty, layer, use_bis, info).into()
     }
@@ -647,46 +651,81 @@ pub enum BootstrapType {
     PxeTest = 65535,
 }
 
+/// Opaque type that should be used to represent a pointer to a [`DiscoverInfo`] in
+/// foreign function interfaces. This type produces a thin pointer, unlike
+/// [`DiscoverInfo`].
+#[repr(C, packed)]
+pub struct FfiDiscoverInfo {
+    // This representation is recommended by the nomicon:
+    // https://doc.rust-lang.org/stable/nomicon/ffi.html#representing-opaque-structs
+    _data: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
+
 /// This struct contains optional parameters for [`BaseCode::discover`].
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_DISCOVER_INFO` type in the C API.
 #[repr(C)]
-pub struct DiscoverInfo<const N: usize> {
+#[derive(Pointee)]
+pub struct DiscoverInfo {
     use_m_cast: bool,
     use_b_cast: bool,
     use_u_cast: bool,
     must_use_list: bool,
     server_m_cast_ip: IpAddress,
     ip_cnt: u16,
-    srv_list: [Server; N],
+    srv_list: [Server],
 }
 
-impl<const N: usize> DiscoverInfo<N> {
+impl DiscoverInfo {
     /// Create a `DiscoverInfo`.
-    #[must_use]
-    pub const fn new(
+    pub fn new_in_buffer<'buf>(
+        buffer: &'buf mut [MaybeUninit<u8>],
         use_m_cast: bool,
         use_b_cast: bool,
         use_u_cast: bool,
         must_use_list: bool,
         server_m_cast_ip: IpAddress,
-        srv_list: [Server; N],
-    ) -> Self {
-        assert!(N <= u16::MAX as usize, "too many servers");
-        let ip_cnt = N as u16;
-        Self {
-            use_m_cast,
-            use_b_cast,
-            use_u_cast,
-            must_use_list,
-            server_m_cast_ip,
-            ip_cnt,
-            srv_list,
+        srv_list: &[Server],
+    ) -> Result<&'buf mut Self> {
+        let server_count = srv_list.len();
+        assert!(server_count <= u16::MAX as usize, "too many servers");
+
+        let required_size = core::mem::size_of::<bool>() * 4
+            + core::mem::size_of::<IpAddress>()
+            + core::mem::size_of::<u16>()
+            + core::mem::size_of::<Server>() * server_count;
+
+        if buffer.len() < required_size {
+            return Err(Status::BUFFER_TOO_SMALL.into());
+        }
+
+        /// Write `value` to `ptr` unaligned, then advance `ptr` by `sizeof(value)`.
+        unsafe fn ptr_write_unaligned_and_add<T>(ptr: &mut *mut u8, val: T) {
+            ptr.cast::<T>().write_unaligned(val);
+            *ptr = ptr.add(core::mem::size_of::<T>());
+        }
+
+        let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
+        unsafe {
+            ptr_write_unaligned_and_add(&mut ptr, use_m_cast);
+            ptr_write_unaligned_and_add(&mut ptr, use_b_cast);
+            ptr_write_unaligned_and_add(&mut ptr, use_u_cast);
+            ptr_write_unaligned_and_add(&mut ptr, must_use_list);
+            ptr_write_unaligned_and_add(&mut ptr, server_m_cast_ip);
+            ptr_write_unaligned_and_add(&mut ptr, server_count as u16);
+
+            ptr = ptr.add(2); // Align server list (4-byte alignment).
+            core::ptr::copy(srv_list.as_ptr(), ptr.cast(), server_count);
+
+            let ptr: *mut Self =
+                ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), server_count);
+            Ok(&mut *ptr)
         }
     }
 }
 
-impl<const N: usize> DiscoverInfo<N> {
+impl DiscoverInfo {
     /// Returns whether discovery should use multicast.
     #[must_use]
     pub const fn use_m_cast(&self) -> bool {

@@ -157,6 +157,63 @@ fn test_tcg_v1(bt: &BootServices) {
     assert_eq!(event_last, event);
 }
 
+/// Get the SHA-1 digest stored in the given PCR index.
+fn tcg_v2_read_pcr_8(tcg: &mut v2::Tcg) -> v1::Sha1Digest {
+    // Input command block.
+    #[rustfmt::skip]
+    let input = [
+        // tag: TPM_ST_NO_SESSIONS
+        0x80, 0x01,
+        // commandSize
+        0x00, 0x00, 0x00, 0x14,
+        // commandCode: TPM_CC_PCR_Read
+        0x00, 0x00, 0x01, 0x7e,
+
+        // pcrSelectionIn.count: 1
+        0x00, 0x00, 0x00, 0x01,
+        // pcrSelectionIn.pcrSelections[0].hash: SHA-1
+        0x00, 0x04,
+        // pcrSelectionIn.pcrSelections[0].sizeofSelect: 3 bytes
+        0x03,
+        // pcrSelectionIn.pcrSelections[0].pcrSelect: bitmask array
+        // PCR 0-7: don't select
+        0x00,
+        // PCR 8-15: select only PCR 8
+        0x01,
+        // PCR 16-23: don't select
+        0x00,
+    ];
+
+    let mut output = [0; 50];
+    tcg.submit_command(&input, &mut output)
+        .expect("failed to get PCR value");
+
+    // tag: TPM_ST_NO_SESSIONS
+    assert_eq!(output[0..2], [0x80, 0x01]);
+    // responseSize
+    assert_eq!(output[2..6], [0x00, 0x00, 0x00, 0x32]);
+    // responseCode: TPM_RC_SUCCESS
+    assert_eq!(output[6..10], [0x00, 0x00, 0x00, 0x00]);
+    // Bytes 10..14 are the TPM update counter, ignore.
+
+    // pcrSelectionIn.count: 1
+    assert_eq!(output[14..18], [0x00, 0x00, 0x00, 0x01]);
+    // pcrSelectionIn.pcrSelections[0].hash: SHA-1
+    assert_eq!(output[18..20], [0x00, 0x04]);
+    // pcrSelectionIn.pcrSelections[0].sizeofSelect: 3 bytes
+    assert_eq!(output[20], 0x03);
+    // pcrSelectionIn.pcrSelections[0].pcrSelect: bitmap selecting PCR 8
+    assert_eq!(output[21..24], [0x00, 0x01, 0x00]);
+
+    // pcrValues.count: 1
+    assert_eq!(output[24..28], [0x00, 0x00, 0x00, 0x01]);
+    // pcrValues.digests[0].size: 20 bytes
+    assert_eq!(output[28..30], [0x00, 0x14]);
+
+    // The rest of the output is the SHA-1 digest.
+    output[30..].try_into().unwrap()
+}
+
 pub fn test_tcg_v2(bt: &BootServices) {
     info!("Running TCG v2 test");
 
@@ -216,6 +273,9 @@ pub fn test_tcg_v2(bt: &BootServices) {
         .get_result_of_set_active_pcr_banks()
         .expect("get_result_of_set_active_pcr_banks failed")
         .is_none());
+
+    // PCR 8 is initially zero.
+    assert_eq!(tcg_v2_read_pcr_8(&mut tcg), [0; 20]);
 }
 
 pub fn test(bt: &BootServices) {

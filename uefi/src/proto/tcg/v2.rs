@@ -13,7 +13,7 @@
 use super::HashAlgorithm;
 use crate::data_types::PhysicalAddress;
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Error, Result, Status};
 use bitflags::bitflags;
 use core::mem;
 
@@ -189,6 +189,37 @@ impl Tcg {
     pub fn get_capability(&mut self) -> Result<BootServiceCapability> {
         let mut capability = BootServiceCapability::default();
         unsafe { (self.get_capability)(self, &mut capability).into_with_val(|| capability) }
+    }
+
+    /// Send a command directly to the TPM.
+    ///
+    /// Constructing the input block and parsing the output block are outside
+    /// the scope of this crate. See the [TPM 2.0 Specification][spec], in
+    /// particular Part 2 (Structures) and Part 3 (Commands).
+    ///
+    /// Note that TPM structures are big endian.
+    ///
+    /// [spec]: https://trustedcomputinggroup.org/resource/tpm-library-specification/
+    pub fn submit_command(
+        &mut self,
+        input_parameter_block: &[u8],
+        output_parameter_block: &mut [u8],
+    ) -> Result {
+        let input_parameter_block_len = u32::try_from(input_parameter_block.len())
+            .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
+        let output_parameter_block_len = u32::try_from(output_parameter_block.len())
+            .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
+
+        unsafe {
+            (self.submit_command)(
+                self,
+                input_parameter_block_len,
+                input_parameter_block.as_ptr(),
+                output_parameter_block_len,
+                output_parameter_block.as_mut_ptr(),
+            )
+            .into()
+        }
     }
 
     /// Get a bitmap of the active PCR banks. Each bank corresponds to a hash

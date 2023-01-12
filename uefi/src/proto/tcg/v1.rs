@@ -238,10 +238,13 @@ pub struct FfiPcrEvent {
 
 /// TPM event log.
 ///
-/// This type of event log always uses SHA-1 hashes.
+/// This type of event log always uses SHA-1 hashes. The [`v1::Tcg`]
+/// protocol always uses this type of event log, but it can also be
+/// provided by the [`v2::Tcg`] protocol via [`get_event_log_v2`].
 ///
 /// [`v1::Tcg`]: Tcg
 /// [`v2::Tcg`]: super::v2::Tcg
+/// [`get_event_log_v2`]: super::v2::Tcg::get_event_log_v2
 pub struct EventLog<'a> {
     // Tie the lifetime to the protocol, and by extension, boot services.
     _lifetime: PhantomData<&'a Tcg>,

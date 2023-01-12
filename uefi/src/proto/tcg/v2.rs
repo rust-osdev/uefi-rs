@@ -11,6 +11,7 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::HashAlgorithm;
+use crate::data_types::PhysicalAddress;
 use crate::proto::unsafe_protocol;
 use crate::{Result, Status};
 use bitflags::bitflags;
@@ -117,6 +118,19 @@ impl BootServiceCapability {
     }
 }
 
+bitflags! {
+    /// Flags for the [`Tcg::hash_log_extend_event`] function.
+    #[derive(Default)]
+    #[repr(transparent)]
+    pub struct HashLogExtendEventFlags: u64 {
+        /// Extend an event but don't log it.
+        const EFI_TCG2_EXTEND_ONLY = 0x0000_0000_0000_0001;
+
+        /// Use when measuring a PE/COFF image.
+        const PE_COFF_IMAGE = 0x0000_0000_0000_0010;
+    }
+}
+
 /// Protocol for interacting with TPM devices.
 ///
 /// This protocol can be used for interacting with older TPM 1.1/1.2
@@ -131,13 +145,43 @@ pub struct Tcg {
         protocol_capability: *mut BootServiceCapability,
     ) -> Status,
 
-    // TODO: fill these in and provide a public interface.
-    get_event_log: unsafe extern "efiapi" fn() -> Status,
-    hash_log_extend_event: unsafe extern "efiapi" fn() -> Status,
-    submit_command: unsafe extern "efiapi" fn() -> Status,
-    get_active_pcr_banks: unsafe extern "efiapi" fn() -> Status,
-    set_active_pcr_banks: unsafe extern "efiapi" fn() -> Status,
-    get_result_of_set_active_pcr_banks: unsafe extern "efiapi" fn() -> Status,
+    get_event_log: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        event_log_format: EventLogFormat,
+        event_log_location: *mut PhysicalAddress,
+        event_log_last_entry: *mut PhysicalAddress,
+        event_log_truncated: *mut u8,
+    ) -> Status,
+
+    hash_log_extend_event: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        flags: HashLogExtendEventFlags,
+        data_to_hash: PhysicalAddress,
+        data_to_hash_len: u64,
+        // Use `()` here rather than `PcrEventInputs` so that it's a
+        // thin pointer.
+        event: *const (),
+    ) -> Status,
+
+    submit_command: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        input_parameter_block_size: u32,
+        input_parameter_block: *const u8,
+        output_parameter_block_size: u32,
+        output_parameter_block: *mut u8,
+    ) -> Status,
+
+    get_active_pcr_banks:
+        unsafe extern "efiapi" fn(this: *mut Tcg, active_pcr_banks: *mut HashAlgorithm) -> Status,
+
+    set_active_pcr_banks:
+        unsafe extern "efiapi" fn(this: *mut Tcg, active_pcr_banks: HashAlgorithm) -> Status,
+
+    get_result_of_set_active_pcr_banks: unsafe extern "efiapi" fn(
+        this: *mut Tcg,
+        operation_present: *mut u32,
+        response: *mut u32,
+    ) -> Status,
 }
 
 impl Tcg {

@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
-use uefi::proto::tcg::{v1, v2, EventType, HashAlgorithm, PcrIndex};
+use uefi::proto::tcg::{v1, v2, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
 use uefi::table::boot::BootServices;
 
 // Environmental note:
@@ -276,6 +276,89 @@ pub fn test_tcg_v2(bt: &BootServices) {
 
     // PCR 8 is initially zero.
     assert_eq!(tcg_v2_read_pcr_8(&mut tcg), [0; 20]);
+
+    // Create a PCR event.
+    let pcr_index = PcrIndex(8);
+    let mut event_buf = [MaybeUninit::uninit(); 256];
+    let event_data = [0x12, 0x13, 0x14, 0x15];
+    let data_to_hash = b"some-data";
+    let event =
+        v2::PcrEventInputs::new_in_buffer(&mut event_buf, pcr_index, EventType::IPL, &event_data)
+            .unwrap();
+
+    // Extend a PCR and add the event to the log.
+    tcg.hash_log_extend_event(v2::HashLogExtendEventFlags::empty(), data_to_hash, event)
+        .unwrap();
+
+    // Hashes of `data_to_hash`.
+    #[rustfmt::skip]
+    let expected_hash_sha1 = [
+        0x2e, 0x75, 0xc6, 0x98, 0x23, 0x96, 0x8a, 0x24, 0x4f, 0x0c,
+        0x55, 0x59, 0xbb, 0x46, 0x8f, 0x36, 0x5f, 0x12, 0x11, 0xb6,
+    ];
+    #[rustfmt::skip]
+    let expected_hash_sha256 = [
+        0x93, 0x32, 0xd9, 0x4d, 0x5e, 0xe6, 0x9a, 0xd1,
+        0x7d, 0x31, 0x0e, 0x62, 0xcd, 0x10, 0x1d, 0x70,
+        0xf5, 0x78, 0x02, 0x4f, 0xd5, 0xe8, 0xd1, 0x64,
+        0x7f, 0x80, 0x73, 0xf8, 0x86, 0xc8, 0x94, 0xe1,
+    ];
+    #[rustfmt::skip]
+    let expected_hash_sha384 = [
+        0xce, 0x4c, 0xbb, 0x09, 0x78, 0x37, 0x49, 0xbe,
+        0xff, 0xc7, 0x17, 0x84, 0x5d, 0x27, 0x69, 0xae,
+        0xd1, 0xe7, 0x23, 0x02, 0xdc, 0xeb, 0x95, 0xaf,
+        0x34, 0xe7, 0xb4, 0xeb, 0xb9, 0xa8, 0x50, 0x25,
+        0xc8, 0x40, 0xc1, 0xca, 0xf8, 0x9e, 0xb7, 0x36,
+        0x23, 0x73, 0x09, 0x99, 0x82, 0x10, 0x82, 0x80,
+    ];
+    #[rustfmt::skip]
+    let expected_hash_sha512 = [
+        0xe1, 0xc4, 0xfc, 0x67, 0xf1, 0x90, 0x9e, 0x35,
+        0x08, 0x3c, 0xc5, 0x30, 0x9f, 0xcb, 0xa3, 0x6d,
+        0x27, 0x43, 0x33, 0xa3, 0xc4, 0x00, 0x9a, 0x94,
+        0xa9, 0x70, 0x52, 0x73, 0xe4, 0x1f, 0xc8, 0x8b,
+        0x61, 0x89, 0xad, 0x15, 0x75, 0x51, 0xe3, 0xd3,
+        0x9d, 0x1d, 0xaa, 0x44, 0x12, 0x26, 0x4d, 0x13,
+        0x12, 0x0b, 0x67, 0x13, 0xc9, 0x9d, 0x3b, 0xe4,
+        0xd6, 0x4c, 0x7d, 0xf4, 0xea, 0x7a, 0x4c, 0x7b,
+    ];
+
+    // Get the v1 log, and validate the last entry is the one we just added above.
+    let log = tcg.get_event_log_v1().unwrap();
+    assert!(!log.is_truncated());
+    let entry = log.iter().last().unwrap();
+    assert_eq!(entry.pcr_index(), pcr_index);
+    assert_eq!(entry.event_type(), EventType::IPL);
+    assert_eq!(entry.event_data(), event_data);
+    #[rustfmt::skip]
+    assert_eq!(entry.digest(), expected_hash_sha1);
+
+    // Get the v2 log, and validate the last entry is the one we just added above.
+    let log = tcg.get_event_log_v2().unwrap();
+    assert!(!log.is_truncated());
+    let entry = log.iter().last().unwrap();
+    assert_eq!(entry.pcr_index(), pcr_index);
+    assert_eq!(entry.event_type(), EventType::IPL);
+    assert_eq!(entry.event_data(), event_data);
+    assert_eq!(
+        entry.digests().into_iter().collect::<Vec<_>>(),
+        [
+            (AlgorithmId::SHA1, expected_hash_sha1.as_slice()),
+            (AlgorithmId::SHA256, expected_hash_sha256.as_slice()),
+            (AlgorithmId::SHA384, expected_hash_sha384.as_slice()),
+            (AlgorithmId::SHA512, expected_hash_sha512.as_slice()),
+        ]
+    );
+
+    // PCR 8 has been extended: `sha1([0; 20], sha1("some-data"))`.
+    assert_eq!(
+        tcg_v2_read_pcr_8(&mut tcg),
+        [
+            0x16, 0x53, 0x7d, 0xaa, 0x5d, 0xbd, 0xa8, 0x45, 0xe3, 0x30, 0x9e, 0x40, 0xe8, 0x74,
+            0xd1, 0x50, 0x64, 0x73, 0x2f, 0x87,
+        ]
+    );
 }
 
 pub fn test(bt: &BootServices) {

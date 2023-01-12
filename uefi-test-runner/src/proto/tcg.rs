@@ -173,8 +173,30 @@ pub fn test_tcg_v2(bt: &BootServices) {
         .open_protocol_exclusive::<v2::Tcg>(handle)
         .expect("failed to open TCG protocol");
 
+    let expected_banks =
+        HashAlgorithm::SHA1 | HashAlgorithm::SHA256 | HashAlgorithm::SHA384 | HashAlgorithm::SHA512;
+
+    // Check basic TPM info.
     let capability = tcg.get_capability().expect("failed to call get_capability");
-    info!("capability: {:?}", capability);
+    assert_eq!(
+        capability.structure_version,
+        v2::Version { major: 1, minor: 1 }
+    );
+    assert_eq!(
+        capability.protocol_version,
+        v2::Version { major: 1, minor: 1 }
+    );
+    assert_eq!(capability.hash_algorithm_bitmap, expected_banks,);
+    assert_eq!(
+        capability.supported_event_logs,
+        v2::EventLogFormat::TCG_1_2 | v2::EventLogFormat::TCG_2
+    );
+    assert!(capability.tpm_present());
+    assert_eq!(capability.max_command_size, 4096);
+    assert_eq!(capability.max_response_size, 4096);
+    assert_eq!(capability.manufacturer_id, 0x4d4249);
+    assert_eq!(capability.number_of_pcr_banks, 4);
+    assert_eq!(capability.active_pcr_banks, expected_banks);
 }
 
 pub fn test(bt: &BootServices) {

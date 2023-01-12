@@ -190,4 +190,47 @@ impl Tcg {
         let mut capability = BootServiceCapability::default();
         unsafe { (self.get_capability)(self, &mut capability).into_with_val(|| capability) }
     }
+
+    /// Get a bitmap of the active PCR banks. Each bank corresponds to a hash
+    /// algorithm.
+    pub fn get_active_pcr_banks(&mut self) -> Result<HashAlgorithm> {
+        let mut active_pcr_banks = HashAlgorithm::empty();
+
+        let status = unsafe { (self.get_active_pcr_banks)(self, &mut active_pcr_banks) };
+
+        status.into_with_val(|| active_pcr_banks)
+    }
+
+    /// Set the active PCR banks. Each bank corresponds to a hash
+    /// algorithm. This change will not take effect until the system is
+    /// rebooted twice.
+    pub fn set_active_pcr_banks(&mut self, active_pcr_banks: HashAlgorithm) -> Result {
+        unsafe { (self.set_active_pcr_banks)(self, active_pcr_banks) }.into()
+    }
+
+    /// Get the stored result of calling [`Tcg::set_active_pcr_banks`] in a
+    /// previous boot.
+    ///
+    /// If there was no attempt to set the active PCR banks in a previous boot,
+    /// this returns `None`. Otherwise, it returns a numeric response code:
+    /// * `0x00000000`: Success
+    /// * `0x00000001..=0x00000FFF`: TPM error code
+    /// * `0xfffffff0`: The operation was canceled by the user or timed out
+    /// * `0xfffffff1`: Firmware error
+    pub fn get_result_of_set_active_pcr_banks(&mut self) -> Result<Option<u32>> {
+        let mut operation_present = 0;
+        let mut response = 0;
+
+        let status = unsafe {
+            (self.get_result_of_set_active_pcr_banks)(self, &mut operation_present, &mut response)
+        };
+
+        status.into_with_val(|| {
+            if operation_present == 0 {
+                None
+            } else {
+                Some(response)
+            }
+        })
+    }
 }

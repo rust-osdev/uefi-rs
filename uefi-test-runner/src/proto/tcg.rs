@@ -197,6 +197,25 @@ pub fn test_tcg_v2(bt: &BootServices) {
     assert_eq!(capability.manufacturer_id, 0x4d4249);
     assert_eq!(capability.number_of_pcr_banks, 4);
     assert_eq!(capability.active_pcr_banks, expected_banks);
+
+    // Check the active PCR banks.
+    assert_eq!(
+        tcg.get_active_pcr_banks()
+            .expect("get_active_pcr_banks failed"),
+        expected_banks,
+    );
+
+    // Set the active PCR banks. This should succeed, but won't have any effect
+    // since we're not rebooting the system.
+    tcg.set_active_pcr_banks(HashAlgorithm::SHA256)
+        .expect("set_active_pcr_banks failed");
+
+    // Check that there was no attempt to change the active banks in the
+    // previous boot.
+    assert!(tcg
+        .get_result_of_set_active_pcr_banks()
+        .expect("get_result_of_set_active_pcr_banks failed")
+        .is_none());
 }
 
 pub fn test(bt: &BootServices) {

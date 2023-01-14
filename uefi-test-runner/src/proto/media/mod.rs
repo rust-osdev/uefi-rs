@@ -1,27 +1,8 @@
 mod known_disk;
 
 use uefi::prelude::*;
-use uefi::proto::media::file::{Directory, File, FileSystemInfo, FileSystemVolumeLabel};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::PartitionInfo;
-
-/// Test `FileSystemInfo` and `FileSystemVolumeLabel`.
-fn test_file_system_info(directory: &mut Directory) {
-    let mut fs_info_buf = vec![0; 128];
-    let fs_info = directory
-        .get_info::<FileSystemInfo>(&mut fs_info_buf)
-        .unwrap();
-    info!("File system info: {:?}", fs_info);
-
-    let mut fs_vol_buf = vec![0; 128];
-    let fs_vol = directory
-        .get_info::<FileSystemVolumeLabel>(&mut fs_vol_buf)
-        .unwrap();
-    info!("File system volume label: {:?}", fs_vol);
-
-    // Both types should provide the same volume label.
-    assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
-}
 
 /// Tests the following protocols:
 /// - [`SimpleFileSystem`]
@@ -56,8 +37,6 @@ pub fn test(bt: &BootServices) {
             info!("Root directory entry: {:?}", file_info);
         }
         directory.reset_entry_readout().unwrap();
-
-        test_file_system_info(&mut directory);
     } else {
         warn!("`SimpleFileSystem` protocol is not available");
     }

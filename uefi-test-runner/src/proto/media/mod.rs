@@ -9,7 +9,9 @@ use uefi::proto::media::file::{
 };
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::{MbrOsType, PartitionInfo};
-use uefi::table::boot::{EventType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
+use uefi::table::boot::{
+    EventType, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, Tpl,
+};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
 
 /// Test directory entry iteration.
@@ -354,76 +356,86 @@ fn test_partition_info(bt: &BootServices, disk_handle: Handle) {
     assert_eq!(mbr.os_type, MbrOsType(6));
 }
 
-/// Run various file-system related tests on a special test disk. The disk is created by
-/// `xtask/src/disk.rs`.
-pub fn test(bt: &BootServices) {
+/// Find the disk with the "MbrTestDisk" label. Return the handle and opened
+/// `SimpleFileSystem` protocol for that disk.
+fn find_test_disk(bt: &BootServices) -> (Handle, ScopedProtocol<SimpleFileSystem>) {
     let handles = bt
         .find_handles::<SimpleFileSystem>()
         .expect("Failed to get handles for `SimpleFileSystem` protocol");
     assert_eq!(handles.len(), 2);
 
-    let mut found_test_disk = false;
     for handle in handles {
+        let mut sfs = bt
+            .open_protocol_exclusive::<SimpleFileSystem>(handle)
+            .expect("Failed to get simple file system");
+        let mut root_directory = sfs.open_volume().unwrap();
+
+        let vol_info = root_directory
+            .get_boxed_info::<FileSystemVolumeLabel>()
+            .unwrap();
+
+        if vol_info.volume_label().to_string() == "MbrTestDisk" {
+            return (handle, sfs);
+        }
+    }
+
+    panic!("MbrTestDisk not found");
+}
+
+/// Run various file-system related tests on a special test disk. The disk is created by
+/// `xtask/src/disk.rs`.
+pub fn test(bt: &BootServices) {
+    let (handle, mut sfs) = find_test_disk(bt);
+
+    {
+        let mut root_directory = sfs.open_volume().unwrap();
+
+        // test is_directory() and is_regular_file() from the File trait which is the
+        // base for into_type() used later in the test.
         {
-            let mut sfs = bt
-                .open_protocol_exclusive::<SimpleFileSystem>(handle)
-                .expect("Failed to get simple file system");
-            let mut root_directory = sfs.open_volume().unwrap();
-
-            // test is_directory() and is_regular_file() from the File trait which is the
-            // base for into_type() used later in the test.
-            {
-                // because File is "Sized", we cannot cast it to &dyn
-                fn test_is_directory(file: &impl File) {
-                    assert_eq!(Ok(true), file.is_directory());
-                    assert_eq!(Ok(false), file.is_regular_file());
-                }
-                test_is_directory(&root_directory);
+            // because File is "Sized", we cannot cast it to &dyn
+            fn test_is_directory(file: &impl File) {
+                assert_eq!(Ok(true), file.is_directory());
+                assert_eq!(Ok(false), file.is_regular_file());
             }
-
-            let mut fs_info_buf = vec![0; 128];
-            let fs_info = root_directory
-                .get_info::<FileSystemInfo>(&mut fs_info_buf)
-                .unwrap();
-
-            if fs_info.volume_label().to_string() == "MbrTestDisk" {
-                info!("Checking MbrTestDisk");
-                found_test_disk = true;
-            } else {
-                continue;
-            }
-
-            assert!(!fs_info.read_only());
-            assert_eq!(fs_info.volume_size(), 512 * 1192);
-            assert_eq!(fs_info.free_space(), 512 * 1190);
-            assert_eq!(fs_info.block_size(), 512);
-
-            // Check that `get_boxed_info` returns the same info.
-            let boxed_fs_info = root_directory.get_boxed_info::<FileSystemInfo>().unwrap();
-            assert_eq!(*fs_info, *boxed_fs_info);
-
-            // Check that `FileSystemVolumeLabel` provides the same volume label
-            // as `FileSystemInfo`.
-            let mut fs_vol_buf = vec![0; 128];
-            let fs_vol = root_directory
-                .get_info::<FileSystemVolumeLabel>(&mut fs_vol_buf)
-                .unwrap();
-            assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
-
-            test_existing_dir(&mut root_directory);
-            test_delete_warning(&mut root_directory);
-            test_existing_file(&mut root_directory);
-            test_create_file(&mut root_directory);
-            test_create_directory(&mut root_directory);
-
-            test_partition_info(bt, handle);
+            test_is_directory(&root_directory);
         }
 
-        test_raw_disk_io(handle, bt);
-        test_raw_disk_io2(handle, bt);
+        let mut fs_info_buf = vec![0; 128];
+        let fs_info = root_directory
+            .get_info::<FileSystemInfo>(&mut fs_info_buf)
+            .unwrap();
+
+        assert!(!fs_info.read_only());
+        assert_eq!(fs_info.volume_size(), 512 * 1192);
+        assert_eq!(fs_info.free_space(), 512 * 1190);
+        assert_eq!(fs_info.block_size(), 512);
+        assert_eq!(fs_info.volume_label().to_string(), "MbrTestDisk");
+
+        // Check that `get_boxed_info` returns the same info.
+        let boxed_fs_info = root_directory.get_boxed_info::<FileSystemInfo>().unwrap();
+        assert_eq!(*fs_info, *boxed_fs_info);
+
+        // Check that `FileSystemVolumeLabel` provides the same volume label
+        // as `FileSystemInfo`.
+        let mut fs_vol_buf = vec![0; 128];
+        let fs_vol = root_directory
+            .get_info::<FileSystemVolumeLabel>(&mut fs_vol_buf)
+            .unwrap();
+        assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
+
+        test_existing_dir(&mut root_directory);
+        test_delete_warning(&mut root_directory);
+        test_existing_file(&mut root_directory);
+        test_create_file(&mut root_directory);
+        test_create_directory(&mut root_directory);
+
+        test_partition_info(bt, handle);
     }
 
-    if !found_test_disk {
-        panic!("MbrTestDisk not found");
-    }
+    // Close the `SimpleFileSystem` protocol so that the raw disk tests work.
+    drop(sfs);
+
+    test_raw_disk_io(handle, bt);
+    test_raw_disk_io2(handle, bt);
 }

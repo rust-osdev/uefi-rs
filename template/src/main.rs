@@ -1,7 +1,5 @@
 #![no_main]
 #![no_std]
-#![feature(abi_efiapi)]
-#![allow(stable_features)]
 
 use uefi::prelude::*;
 

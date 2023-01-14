@@ -15,8 +15,6 @@
 - Added an `core::error::Error` implementation for `Error` to ease
   integration with error-handling crates. (requires the **unstable** feature)
 - Added partial support for the TCG protocols for TPM devices under `uefi::proto::tcg`.
-- Added the `unsafe_protocol` macro to provide a slightly nicer way to
-  implement protocols.
 
 ### Changed
 
@@ -36,14 +34,19 @@
 - Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
   fields of this struct are public.
 
+## uefi-macros - [Unreleased]
+
+### Added
+
+- Added the `unsafe_protocol` macro to provide a slightly nicer way to
+  implement protocols.
+
 ### Removed
 
 - The `unsafe_guid` attribute macro and `Protocol` derive macro have
   been removed. For implementing protocols, use the `unsafe_protocol`
   macro instead. For any other implementations of the `Identify` trait,
   implement it directly.
-
-## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]
 

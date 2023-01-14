@@ -8,6 +8,7 @@ use uefi::proto::media::file::{
     Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo, FileSystemVolumeLabel,
 };
 use uefi::proto::media::fs::SimpleFileSystem;
+use uefi::proto::media::partition::{MbrOsType, PartitionInfo};
 use uefi::table::boot::{EventType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
 
@@ -335,6 +336,24 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
     }
 }
 
+/// Check that `disk_handle` points to the expected MBR partition.
+fn test_partition_info(bt: &BootServices, disk_handle: Handle) {
+    let pi = bt
+        .open_protocol_exclusive::<PartitionInfo>(disk_handle)
+        .expect("Failed to get partition info");
+
+    let mbr = pi.mbr_partition_record().expect("Not an MBR disk");
+
+    info!("MBR partition: {:?}", mbr);
+
+    assert_eq!(mbr.boot_indicator, 0);
+    assert_eq!({ mbr.starting_lba }, 1);
+    assert_eq!({ mbr.size_in_lba }, 1233);
+    assert_eq!({ mbr.starting_chs }, [0, 0, 0]);
+    assert_eq!(mbr.ending_chs, [0, 0, 0]);
+    assert_eq!(mbr.os_type, MbrOsType(6));
+}
+
 /// Run various file-system related tests on a special test disk. The disk is created by
 /// `xtask/src/disk.rs`.
 pub fn test_known_disk(bt: &BootServices) {
@@ -396,6 +415,8 @@ pub fn test_known_disk(bt: &BootServices) {
             test_existing_file(&mut root_directory);
             test_create_file(&mut root_directory);
             test_create_directory(&mut root_directory);
+
+            test_partition_info(bt, handle);
         }
 
         test_raw_disk_io(handle, bt);

@@ -5,7 +5,7 @@ use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
 use uefi::proto::media::disk::{DiskIo, DiskIo2, DiskIo2Token};
 use uefi::proto::media::file::{
-    Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo,
+    Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo, FileSystemVolumeLabel,
 };
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::{EventType, OpenProtocolAttributes, OpenProtocolParams, Tpl};
@@ -382,6 +382,14 @@ pub fn test_known_disk(bt: &BootServices) {
             // Check that `get_boxed_info` returns the same info.
             let boxed_fs_info = root_directory.get_boxed_info::<FileSystemInfo>().unwrap();
             assert_eq!(*fs_info, *boxed_fs_info);
+
+            // Check that `FileSystemVolumeLabel` provides the same volume label
+            // as `FileSystemInfo`.
+            let mut fs_vol_buf = vec![0; 128];
+            let fs_vol = root_directory
+                .get_info::<FileSystemVolumeLabel>(&mut fs_vol_buf)
+                .unwrap();
+            assert_eq!(fs_info.volume_label(), fs_vol.volume_label());
 
             test_existing_dir(&mut root_directory);
             test_delete_warning(&mut root_directory);

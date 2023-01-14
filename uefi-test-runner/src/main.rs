@@ -1,7 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(abi_efiapi)]
-#![allow(stable_features)]
 
 #[macro_use]
 extern crate log;

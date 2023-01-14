@@ -79,7 +79,6 @@
 //! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
-#![feature(abi_efiapi)]
 #![cfg_attr(feature = "unstable", feature(error_in_core))]
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
@@ -88,7 +87,6 @@
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(clippy::all)]
 #![deny(clippy::must_use_candidate)]
-#![allow(stable_features)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

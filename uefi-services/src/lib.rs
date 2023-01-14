@@ -30,6 +30,7 @@
 #![feature(alloc_error_handler)]
 #![feature(abi_efiapi)]
 #![deny(clippy::must_use_candidate)]
+#![allow(stable_features)]
 
 extern crate log;
 // Core types.

@@ -222,7 +222,6 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
 /// ```no_run
 /// #![no_main]
 /// #![no_std]
-/// #![feature(abi_efiapi)]
 /// # // A bit of boilerplate needed to make the example compile in the
 /// # // context of `cargo test`.
 /// # #![feature(lang_items)]

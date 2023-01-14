@@ -41,9 +41,7 @@ This is some boilerplate that all Rust UEFI applications will
 need. `no_main` is needed because the UEFI application entry point is
 different from the standard Rust `main` function. `no_std` is needed to
 turn off the `std` library; the `core` and `alloc` crates can still be
-used. And `feature(abi_efiapi)` is needed because UEFI applications have
-a special calling convention that is not yet stabilized in the Rust
-compiler.
+used.
 
 Next up are some `use` lines. Nothing too exciting here; the
 `uefi::prelude` module is intended to be glob-imported, and exports a

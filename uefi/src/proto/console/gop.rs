@@ -55,6 +55,7 @@
 //! avoid tearing with animations.
 
 use crate::proto::unsafe_protocol;
+use crate::util::usize_from_u32;
 use crate::{Result, Status};
 use core::marker::PhantomData;
 use core::mem;
@@ -409,7 +410,7 @@ impl ModeInfo {
     /// On desktop monitors, this usually means (width, height).
     #[must_use]
     pub const fn resolution(&self) -> (usize, usize) {
-        (self.hor_res as usize, self.ver_res as usize)
+        (usize_from_u32(self.hor_res), usize_from_u32(self.ver_res))
     }
 
     /// Returns the format of the frame buffer.
@@ -433,7 +434,7 @@ impl ModeInfo {
     /// instead the stride might be bigger for better alignment.
     #[must_use]
     pub const fn stride(&self) -> usize {
-        self.stride as usize
+        usize_from_u32(self.stride)
     }
 }
 

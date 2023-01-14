@@ -5,6 +5,7 @@ use crate::{
     proto::device_path::{DevicePath, FfiDevicePath},
     proto::unsafe_protocol,
     table::boot::MemoryType,
+    util::usize_from_u32,
     CStr16, Handle, Status,
 };
 use core::{ffi::c_void, mem, slice};
@@ -78,7 +79,7 @@ impl LoadedImage {
     /// [`&CStr16`]: `CStr16`
     /// [`load_options_as_bytes`]: `Self::load_options_as_bytes`
     pub fn load_options_as_cstr16(&self) -> Result<&CStr16, LoadOptionsError> {
-        let load_options_size = usize::try_from(self.load_options_size).unwrap();
+        let load_options_size = usize_from_u32(self.load_options_size);
 
         if self.load_options.is_null() {
             Err(LoadOptionsError::NotSet)
@@ -115,7 +116,7 @@ impl LoadedImage {
             unsafe {
                 Some(slice::from_raw_parts(
                     self.load_options,
-                    usize::try_from(self.load_options_size).unwrap(),
+                    usize_from_u32(self.load_options_size),
                 ))
             }
         }

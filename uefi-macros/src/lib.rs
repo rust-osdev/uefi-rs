@@ -224,7 +224,6 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
 ///
 /// ```no_run
 /// #![no_main]
-/// #![feature(abi_efiapi)]
 ///
 /// use uefi::prelude::*;
 ///

@@ -27,9 +27,7 @@
 //! [`exit_boot_services`]: uefi::table::SystemTable::exit_boot_services
 
 #![no_std]
-#![feature(abi_efiapi)]
 #![deny(clippy::must_use_candidate)]
-#![allow(stable_features)]
 
 extern crate log;
 // Core types.

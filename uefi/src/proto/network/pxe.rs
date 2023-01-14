@@ -8,6 +8,7 @@ use core::{
     ptr::{null, null_mut},
 };
 
+use crate::util::ptr_write_unaligned_and_add;
 use crate::{polyfill::maybe_uninit_slice_as_mut_ptr, proto::unsafe_protocol};
 use bitflags::bitflags;
 use ptr_meta::Pointee;
@@ -698,12 +699,6 @@ impl DiscoverInfo {
 
         if buffer.len() < required_size {
             return Err(Status::BUFFER_TOO_SMALL.into());
-        }
-
-        /// Write `value` to `ptr` unaligned, then advance `ptr` by `sizeof(value)`.
-        unsafe fn ptr_write_unaligned_and_add<T>(ptr: &mut *mut u8, val: T) {
-            ptr.cast::<T>().write_unaligned(val);
-            *ptr = ptr.add(core::mem::size_of::<T>());
         }
 
         let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);

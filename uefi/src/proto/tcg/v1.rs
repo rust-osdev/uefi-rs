@@ -8,12 +8,11 @@
 //! [TCG]: https://trustedcomputinggroup.org/
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
-use super::{
-    ptr_write_unaligned_and_add, usize_from_u32, AlgorithmId, EventType, HashAlgorithm, PcrIndex,
-};
+use super::{usize_from_u32, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
 use crate::data_types::PhysicalAddress;
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
+use crate::util::ptr_write_unaligned_and_add;
 use crate::{Error, Result, Status};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::{PhantomData, PhantomPinned};

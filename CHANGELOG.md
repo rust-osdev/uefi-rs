@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.19.0 (2023-01-16)
+
 ### Added
 
 - Implementations for the trait `EqStrUntilNul` now allow `?Sized` inputs. This means that
@@ -34,7 +40,7 @@
 - Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
   fields of this struct are public.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.10.0 (2023-01-16)
 
 ### Added
 
@@ -48,7 +54,9 @@
   macro instead. For any other implementations of the `Identify` trait,
   implement it directly.
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.16.0 (2023-01-16)
+
+No changes in this release except depending on a newer version of `uefi`.
 
 ## uefi - 0.18.0 (2022-11-15)
 

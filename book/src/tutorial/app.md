@@ -18,8 +18,8 @@ In `cargo.toml`, add a few dependencies:
 ```toml
 [dependencies]
 log = "0.4"
-uefi = "0.18"
-uefi-services = "0.15"
+uefi = "0.19"
+uefi-services = "0.16"
 ```
 
 Replace the contents of `src/main.rs` with this:

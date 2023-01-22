@@ -2,6 +2,13 @@
 
 ## uefi - [Unreleased]
 
+### Changed
+
+- Fixed several protocol functions so that they work with unsized protocols
+  (like `DevicePath`): `BootServices::locate_device_path`,
+  `BootServices::get_handle_for_protocol`, `BootServices::test_protocol`,
+  `BootServices::find_handles`, and `SearchType::from_proto`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

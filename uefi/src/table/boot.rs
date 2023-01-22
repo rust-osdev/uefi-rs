@@ -949,7 +949,10 @@ impl BootServices {
     ///
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
+    pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
+        &self,
+        device_path: &mut &DevicePath,
+    ) -> Result<Handle> {
         let mut handle = MaybeUninit::uninit();
         let mut device_path_ptr = device_path.as_ffi_ptr();
         unsafe {
@@ -997,7 +1000,7 @@ impl BootServices {
     /// # Errors
     ///
     /// Returns [`NOT_FOUND`] if no handles support the requested protocol.
-    pub fn get_handle_for_protocol<P: Protocol>(&self) -> Result<Handle> {
+    pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<Handle> {
         // Delegate to a non-generic function to potentially reduce code size.
         self.get_handle_for_protocol_impl(&P::GUID)
     }
@@ -1389,7 +1392,10 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::ALREADY_STARTED`]
-    pub fn test_protocol<P: Protocol>(&self, params: OpenProtocolParams) -> Result<()> {
+    pub fn test_protocol<P: ProtocolPointer + ?Sized>(
+        &self,
+        params: OpenProtocolParams,
+    ) -> Result<()> {
         const TEST_PROTOCOL: u32 = 0x04;
         let mut interface = ptr::null_mut();
         (self.open_protocol)(
@@ -1530,7 +1536,7 @@ impl BootServices {
     /// All errors come from calls to [`locate_handle`].
     ///
     /// [`locate_handle`]: Self::locate_handle
-    pub fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>> {
+    pub fn find_handles<P: ProtocolPointer + ?Sized>(&self) -> Result<Vec<Handle>> {
         // Search by protocol.
         let search_type = SearchType::from_proto::<P>();
 
@@ -2129,7 +2135,7 @@ pub enum SearchType<'guid> {
 impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
     #[must_use]
-    pub const fn from_proto<P: Protocol>() -> Self {
+    pub const fn from_proto<P: ProtocolPointer + ?Sized>() -> Self {
         SearchType::ByProtocol(&P::GUID)
     }
 }

@@ -32,6 +32,12 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
     handle: UnsafeCell::new(None),
 };
 
+/// Size in bytes of a UEFI page.
+///
+/// Note that this is not necessarily the processor's page size. The UEFI page
+/// size is always 4 KiB.
+pub const PAGE_SIZE: usize = 4096;
+
 /// Contains pointers to all of the boot services.
 ///
 /// # Accessing `BootServices`

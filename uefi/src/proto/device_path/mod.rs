@@ -83,6 +83,7 @@ pub use device_path_gen::{
 
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
+use core::fmt::{self, Debug, Formatter};
 use core::marker::{PhantomData, PhantomPinned};
 use core::mem;
 use ptr_meta::Pointee;
@@ -119,7 +120,7 @@ pub struct DevicePathHeader {
 /// See the [module-level documentation] for more details.
 ///
 /// [module-level documentation]: crate::proto::device_path
-#[derive(Debug, Eq, PartialEq, Pointee)]
+#[derive(Eq, Pointee)]
 #[repr(C, packed)]
 pub struct DevicePathNode {
     header: DevicePathHeader,
@@ -186,6 +187,21 @@ impl DevicePathNode {
     }
 }
 
+impl Debug for DevicePathNode {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("DevicePathNode")
+            .field("header", &self.header)
+            .field("data", &&self.data)
+            .finish()
+    }
+}
+
+impl PartialEq for DevicePathNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.header == other.header && self.data == other.data
+    }
+}
+
 /// A single device path instance that ends with either an [`END_INSTANCE`]
 /// or [`END_ENTIRE`] node. Use [`DevicePath::instance_iter`] to get the
 /// path instances in a [`DevicePath`].
@@ -196,7 +212,7 @@ impl DevicePathNode {
 /// [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
 /// [module-level documentation]: crate::proto::device_path
 #[repr(C, packed)]
-#[derive(Debug, Eq, PartialEq, Pointee)]
+#[derive(Eq, Pointee)]
 pub struct DevicePathInstance {
     data: [u8],
 }
@@ -216,6 +232,20 @@ impl DevicePathInstance {
     }
 }
 
+impl Debug for DevicePathInstance {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("DevicePathInstance")
+            .field("data", &&self.data)
+            .finish()
+    }
+}
+
+impl PartialEq for DevicePathInstance {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
 /// Device path protocol.
 ///
 /// A device path contains one or more device path instances made of up
@@ -227,7 +257,7 @@ impl DevicePathInstance {
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 #[repr(C, packed)]
 #[unsafe_protocol("09576e91-6d3f-11d2-8e39-00a0c969723b")]
-#[derive(Debug, Eq, PartialEq, Pointee)]
+#[derive(Eq, Pointee)]
 pub struct DevicePath {
     data: [u8],
 }
@@ -299,6 +329,20 @@ impl DevicePath {
             nodes: &self.data,
             stop_condition: StopCondition::EndEntireNode,
         }
+    }
+}
+
+impl Debug for DevicePath {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("DevicePath")
+            .field("data", &&self.data)
+            .finish()
+    }
+}
+
+impl PartialEq for DevicePath {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
     }
 }
 

@@ -141,11 +141,18 @@ jobs:
     name: Check that the build works on a Windows target
     runs-on: windows-latest
     steps:
+      - name: Install QEMU
+        run: choco install qemu
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
       - name: Build
         run: cargo xtask build
+
+      - name: Run VM tests
+        run: cargo xtask run --target x86_64 --ci
+        timeout-minutes: 2
 
   # Run the build with our current nightly MSRV (specified in
   # ./msrv_toolchain.toml). This serves to check that we don't

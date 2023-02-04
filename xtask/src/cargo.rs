@@ -58,7 +58,9 @@ pub enum Feature {
     ServicesLogger,
 
     // `uefi-test-runner` features.
-    Ci,
+    MultiProcessor,
+    TpmV1,
+    TpmV2,
 }
 
 impl Feature {
@@ -74,7 +76,9 @@ impl Feature {
             Self::Qemu => "uefi-services/qemu",
             Self::ServicesLogger => "uefi-services/logger",
 
-            Self::Ci => "uefi-test-runner/ci",
+            Self::MultiProcessor => "uefi-test-runner/multi_processor",
+            Self::TpmV1 => "uefi-test-runner/tpm_v1",
+            Self::TpmV2 => "uefi-test-runner/tpm_v2",
         }
     }
 
@@ -89,7 +93,7 @@ impl Feature {
                 Self::Unstable,
             ],
             Package::UefiServices => vec![Self::PanicHandler, Self::Qemu, Self::ServicesLogger],
-            Package::UefiTestRunner => vec![Self::Ci],
+            Package::UefiTestRunner => vec![Self::MultiProcessor, Self::TpmV1, Self::TpmV2],
             _ => vec![],
         }
     }

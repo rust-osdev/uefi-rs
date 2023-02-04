@@ -15,7 +15,7 @@ use anyhow::Result;
 use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
-use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
+use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt, TpmVersion};
 use std::process::Command;
 use tempfile::TempDir;
 use util::{command_to_string, run_cmd};
@@ -122,11 +122,17 @@ fn run_miri() -> Result<()> {
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![];
 
-    // Always enable the ci feature when not building on Linux so that
-    // the MP test is skipped. That test doesn't work with kvm disabled
-    // (see https://github.com/rust-osdev/uefi-rs/issues/103).
-    if opt.ci || !platform::is_linux() {
-        features.push(Feature::Ci);
+    // Enable TPM tests if a TPM device is present.
+    match opt.tpm {
+        Some(TpmVersion::V1) => features.push(Feature::TpmV1),
+        Some(TpmVersion::V2) => features.push(Feature::TpmV2),
+        None => {}
+    }
+
+    // Enable the multi-processor test if KVM is available. KVM is
+    // available on Linux generally, but not in our CI.
+    if platform::is_linux() && !opt.ci {
+        features.push(Feature::MultiProcessor);
     }
 
     // Build uefi-test-runner.

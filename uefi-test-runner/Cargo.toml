@@ -15,7 +15,11 @@ log = { version = "0.4.17", default-features = false }
 qemu-exit = "3.0.0"
 
 [features]
-# This feature should only be enabled in our CI, it disables some tests
-# which currently fail in that environment (see #103 for discussion).
-ci = []
+# Enable the multiprocessor test. This only works if KVM is enabled.
+multi_processor = []
 
+# Enable the TPM v1 test.
+tpm_v1 = []
+
+# Enable the TPM v2 test.
+tpm_v2 = []

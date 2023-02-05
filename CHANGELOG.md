@@ -2,16 +2,24 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.19.1 (2023-02-04)
+
+### Added
+
+* Added `table::boot::PAGE_SIZE` constant.
+
 ### Changed
 
 - Fixed several protocol functions so that they work with unsized protocols
   (like `DevicePath`): `BootServices::locate_device_path`,
   `BootServices::get_handle_for_protocol`, `BootServices::test_protocol`,
   `BootServices::find_handles`, and `SearchType::from_proto`.
-
-## uefi-macros - [Unreleased]
-
-## uefi-services - [Unreleased]
+- Fixed a warning printed when using `uefi` as a dependency: "the following
+  packages contain code that will be rejected by a future version".
 
 ## uefi - 0.19.0 (2023-01-16)
 

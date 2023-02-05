@@ -5,10 +5,10 @@ use core::ptr::NonNull;
 use core::{ptr, slice};
 
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, ResultExt, Status};
+use crate::{CStr16, Char16, Handle, Result, Status};
 
-use super::boot::{BootServices, MemoryDescriptor, MemoryMapIter};
-use super::runtime::RuntimeServices;
+use super::boot::{BootServices, MemoryDescriptor, MemoryMapIter, MemoryType};
+use super::runtime::{ResetType, RuntimeServices};
 use super::{cfg, Header, Revision};
 
 /// Marker trait used to provide different views of the UEFI System Table
@@ -136,7 +136,45 @@ impl SystemTable<Boot> {
         unsafe { &*self.table.boot }
     }
 
-    /// Exit the UEFI boot services
+    /// Get the size in bytes of the buffer to allocate for storing the memory
+    /// map in `exit_boot_services`.
+    ///
+    /// This map contains some extra room to avoid needing to allocate more than
+    /// once.
+    ///
+    /// Returns `None` on overflow.
+    fn memory_map_size_for_exit_boot_services(&self) -> Option<usize> {
+        // Allocate space for extra entries beyond the current size of the
+        // memory map. The value of 8 matches the value in the Linux kernel:
+        // https://github.com/torvalds/linux/blob/e544a07438/drivers/firmware/efi/libstub/efistub.h#L173
+        let extra_entries = 8;
+
+        let memory_map_size = self.boot_services().memory_map_size();
+        let extra_size = memory_map_size.entry_size.checked_mul(extra_entries)?;
+        memory_map_size.map_size.checked_add(extra_size)
+    }
+
+    /// Get the current memory map and exit boot services.
+    unsafe fn get_memory_map_and_exit_boot_services(
+        &self,
+        buf: &'static mut [u8],
+    ) -> Result<MemoryMapIter<'static>> {
+        let boot_services = self.boot_services();
+
+        // Get the memory map.
+        let (memory_map_key, memory_map_iter) = boot_services.memory_map(buf)?;
+
+        // Try to exit boot services using the memory map key. Note that after
+        // the first call to `exit_boot_services`, there are restrictions on
+        // what boot services functions can be called. In UEFI 2.8 and earlier,
+        // only `get_memory_map` and `exit_boot_services` are allowed. Starting
+        // in UEFI 2.9 other memory allocation functions may also be called.
+        boot_services
+            .exit_boot_services(boot_services.image_handle(), memory_map_key)
+            .map(move |()| memory_map_iter)
+    }
+
+    /// Exit the UEFI boot services.
     ///
     /// After this function completes, UEFI hands over control of the hardware
     /// to the executing OS loader, which implies that the UEFI boot services
@@ -146,6 +184,13 @@ impl SystemTable<Boot> {
     /// `SystemTable<Boot>` view of the System Table and returning a more
     /// restricted `SystemTable<Runtime>` view as an output.
     ///
+    /// The memory map at the time of exiting boot services is also
+    /// returned. The map is backed by a [`MemoryType::LOADER_DATA`]
+    /// allocation. Since the boot services function to free that memory is no
+    /// longer available after calling `exit_boot_services`, the allocation is
+    /// live until the program ends. The lifetime of the memory map is therefore
+    /// `'static`.
+    ///
     /// Once boot services are exited, the logger and allocator provided by
     /// this crate can no longer be used. The logger should be disabled using
     /// the [`Logger::disable`] method, and the allocator should be disabled by
@@ -153,66 +198,61 @@ impl SystemTable<Boot> {
     /// allocator were initialized with [`uefi_services::init`], they will be
     /// disabled automatically when `exit_boot_services` is called.
     ///
-    /// The handle passed must be the one of the currently executing image,
-    /// which is received by the entry point of the UEFI application. In
-    /// addition, the application must provide storage for a memory map, which
-    /// will be retrieved automatically (as having an up-to-date memory map is a
-    /// prerequisite for exiting UEFI boot services).
+    /// # Errors
     ///
-    /// The storage must be aligned like a `MemoryDescriptor`.
+    /// This function will fail if it is unable to allocate memory for
+    /// the memory map, if it fails to retrieve the memory map, or if
+    /// exiting boot services fails (with up to one retry).
     ///
-    /// The size of the memory map can be estimated by calling
-    /// `BootServices::memory_map_size()`. But the memory map can grow under the
-    /// hood between the moment where this size estimate is returned and the
-    /// moment where boot services are exited, and calling the UEFI memory
-    /// allocator will not be possible after the first attempt to exit the boot
-    /// services. Therefore, UEFI applications are advised to allocate storage
-    /// for the memory map right before exiting boot services, and to allocate a
-    /// bit more storage than requested by memory_map_size.
-    ///
-    /// If `exit_boot_services` succeeds, it will return a runtime view of the
-    /// system table which more accurately reflects the state of the UEFI
-    /// firmware following exit from boot services, along with a high-level
-    /// iterator to the UEFI memory map.
+    /// All errors are treated as unrecoverable because the system is
+    /// now in an undefined state. Rather than returning control to the
+    /// caller, the system will be reset.
     ///
     /// [`global_allocator::exit_boot_services`]: crate::global_allocator::exit_boot_services
     /// [`Logger::disable`]: crate::logger::Logger::disable
     /// [`uefi_services::init`]: https://docs.rs/uefi-services/latest/uefi_services/fn.init.html
-    pub fn exit_boot_services(
-        self,
-        image: Handle,
-        mmap_buf: &mut [u8],
-    ) -> Result<(SystemTable<Runtime>, MemoryMapIter<'_>)> {
-        unsafe {
-            let boot_services = self.boot_services();
+    #[must_use]
+    pub fn exit_boot_services(self) -> (SystemTable<Runtime>, MemoryMapIter<'static>) {
+        let boot_services = self.boot_services();
 
-            loop {
-                // Fetch a memory map, propagate errors and split the completion
-                // FIXME: This sad pointer hack works around a current
-                //        limitation of the NLL analysis (see Rust bug 51526).
-                let mmap_buf = &mut *(mmap_buf as *mut [u8]);
-                let mmap_comp = boot_services.memory_map(mmap_buf)?;
-                let (mmap_key, mmap_iter) = mmap_comp;
+        // Reboot the device.
+        let reset = |status| -> ! { self.runtime_services().reset(ResetType::Cold, status, None) };
 
-                // Try to exit boot services using this memory map key
-                let result = boot_services.exit_boot_services(image, mmap_key);
+        // Get the size of the buffer to allocate. If that calculation
+        // overflows treat it as an unrecoverable error.
+        let buf_size = match self.memory_map_size_for_exit_boot_services() {
+            Some(buf_size) => buf_size,
+            None => reset(Status::ABORTED),
+        };
 
-                // Did we fail because the memory map was updated concurrently?
-                if result.status() == Status::INVALID_PARAMETER {
-                    // If so, fetch another memory map and try again
-                    continue;
-                } else {
-                    // If not, report the outcome of the operation
-                    return result.map(|_| {
-                        let st = SystemTable {
-                            table: self.table,
-                            _marker: PhantomData,
-                        };
-                        (st, mmap_iter)
-                    });
+        // Allocate a byte slice to hold the memory map. If the
+        // allocation fails treat it as an unrecoverable error.
+        let buf: *mut u8 = match boot_services.allocate_pool(MemoryType::LOADER_DATA, buf_size) {
+            Ok(buf) => buf,
+            Err(err) => reset(err.status()),
+        };
+
+        // Calling `exit_boot_services` can fail if the memory map key is not
+        // current. Retry a second time if that occurs. This matches the
+        // behavior of the Linux kernel:
+        // https://github.com/torvalds/linux/blob/e544a0743/drivers/firmware/efi/libstub/efi-stub-helper.c#L375
+        let mut status = Status::ABORTED;
+        for _ in 0..2 {
+            let buf: &mut [u8] = unsafe { slice::from_raw_parts_mut(buf, buf_size) };
+            match unsafe { self.get_memory_map_and_exit_boot_services(buf) } {
+                Ok(memory_map) => {
+                    let st = SystemTable {
+                        table: self.table,
+                        _marker: PhantomData,
+                    };
+                    return (st, memory_map);
                 }
+                Err(err) => status = err.status(),
             }
         }
+
+        // Failed to exit boot services.
+        reset(status)
     }
 
     /// Clone this boot-time UEFI system table interface

@@ -46,16 +46,16 @@ fn tcg_v1_read_pcr(tcg: &mut v1::Tcg, pcr_index: PcrIndex) -> v1::Sha1Digest {
 }
 
 fn test_tcg_v1(bt: &BootServices) {
+    // Skip the test of the `tpm_v1` feature is not enabled.
+    if cfg!(not(feature = "tpm_v1")) {
+        return;
+    }
+
     info!("Running TCG v1 test");
 
-    let handle = if let Ok(handle) = bt.get_handle_for_protocol::<v1::Tcg>() {
-        handle
-    } else if cfg!(all(feature = "ci", target_arch = "x86_64")) {
-        panic!("TPM v1 is required on x86_64 CI");
-    } else {
-        info!("No TCG handle found");
-        return;
-    };
+    let handle = bt
+        .get_handle_for_protocol::<v1::Tcg>()
+        .expect("no TCG handle found");
 
     let mut tcg = bt
         .open_protocol_exclusive::<v1::Tcg>(handle)
@@ -215,16 +215,16 @@ fn tcg_v2_read_pcr_8(tcg: &mut v2::Tcg) -> v1::Sha1Digest {
 }
 
 pub fn test_tcg_v2(bt: &BootServices) {
+    // Skip the test of the `tpm_v2` feature is not enabled.
+    if cfg!(not(feature = "tpm_v2")) {
+        return;
+    }
+
     info!("Running TCG v2 test");
 
-    let handle = if let Ok(handle) = bt.get_handle_for_protocol::<v2::Tcg>() {
-        handle
-    } else if cfg!(all(feature = "ci", target_arch = "x86")) {
-        panic!("TPM v2 is required on x86 (32-bit) CI");
-    } else {
-        info!("No TCG handle found");
-        return;
-    };
+    let handle = bt
+        .get_handle_for_protocol::<v2::Tcg>()
+        .expect("no TCG handle found");
 
     let mut tcg = bt
         .open_protocol_exclusive::<v2::Tcg>(handle)

@@ -9,8 +9,10 @@ use uefi::Status;
 const NUM_CPUS: usize = 4;
 
 pub fn test(bt: &BootServices) {
-    // These tests break CI. See #103.
-    if cfg!(feature = "ci") {
+    // Skip the test if the `multi_processing` feature is not
+    // enabled. This toggle is needed because the test only works with
+    // KVM, which is not available in CI or on Windows.
+    if cfg!(not(feature = "multi_processor")) {
         return;
     }
 

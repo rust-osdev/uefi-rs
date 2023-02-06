@@ -520,10 +520,11 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     cmd.arg(drive_arg);
 
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
+    let serial_pipe = Pipe::new(tmp_dir, "serial")?;
 
     // Open a serial device connected to stdio. This is used for
     // printing logs and to receive and reply to commands.
-    cmd.args(["-serial", "stdio"]);
+    cmd.args(["-serial", serial_pipe.qemu_arg()]);
 
     // Map the QEMU monitor to a pair of named pipes
     cmd.args(["-qmp", qemu_monitor_pipe.qemu_arg()]);
@@ -556,14 +557,11 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let mut child = ChildWrapper(cmd.spawn().context("failed to launch qemu")?);
 
     let monitor_io = qemu_monitor_pipe.open_io()?;
-    let child_io = Io::new(
-        child.0.stdout.take().unwrap(),
-        child.0.stdin.take().unwrap(),
-    );
+    let serial_io = serial_pipe.open_io()?;
 
     // Capture the result to check it, but first wait for the child to
     // exit.
-    let res = process_qemu_io(monitor_io, child_io, tmp_dir);
+    let res = process_qemu_io(monitor_io, serial_io, tmp_dir);
     let status = child.0.wait()?;
 
     if let Some(echo_service) = echo_service {

@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- Added the `CompnentName1` and `ComponentName2` protocols. The `ComponentName`
+  wrapper will automatically select `ComponentName2` if available, and fall back
+  to `ComponentName1` otherwise.
+
 ### Changed
 
 - `SystemTable::exit_boot_services` now takes no parameters and handles
@@ -16,7 +22,7 @@
 
 ### Added
 
-* Added `table::boot::PAGE_SIZE` constant.
+- Added `table::boot::PAGE_SIZE` constant.
 
 ### Changed
 

@@ -14,6 +14,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
 
     debug::test(bt);
     device_path::test(image, bt);
+    driver::test(bt);
     loaded_image::test(image, bt);
     media::test(bt);
     network::test(bt);
@@ -61,6 +62,7 @@ fn test_protocols_per_handle(image: Handle, bt: &BootServices) {
 mod console;
 mod debug;
 mod device_path;
+mod driver;
 mod loaded_image;
 mod media;
 mod network;

@@ -20,7 +20,7 @@ fn test_locate_handle_buffer(bt: &BootServices) {
         let handles = bt
             .locate_handle_buffer(SearchType::AllHandles)
             .expect("Failed to locate handle buffer");
-        assert!(!handles.handles().is_empty(), "Could not find any handles");
+        assert!(!handles.is_empty(), "Could not find any handles");
     }
 
     {
@@ -29,7 +29,7 @@ fn test_locate_handle_buffer(bt: &BootServices) {
             .locate_handle_buffer(SearchType::ByProtocol(&Output::GUID))
             .expect("Failed to locate handle buffer");
         assert!(
-            !handles.handles().is_empty(),
+            !handles.is_empty(),
             "Could not find any OUTPUT protocol handles"
         );
     }

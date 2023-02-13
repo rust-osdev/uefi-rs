@@ -1013,7 +1013,6 @@ impl BootServices {
 
     fn get_handle_for_protocol_impl(&self, guid: &Guid) -> Result<Handle> {
         self.locate_handle_buffer(SearchType::ByProtocol(guid))?
-            .handles()
             .first()
             .cloned()
             .ok_or_else(|| Status::NOT_FOUND.into())
@@ -2214,10 +2213,19 @@ impl<'a> Drop for ProtocolsPerHandle<'a> {
     }
 }
 
+impl<'a> Deref for ProtocolsPerHandle<'a> {
+    type Target = [&'a Guid];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.protocols, self.count) }
+    }
+}
+
 impl<'a> ProtocolsPerHandle<'a> {
     /// Get the protocol interface [`Guids`][Guid] that are installed on the
     /// [`Handle`].
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[deprecated = "use Deref instead"]
     #[must_use]
     pub fn protocols<'b>(&'b self) -> &'b [&'a Guid] {
         // convert raw pointer to slice here so that we can get
@@ -2243,9 +2251,18 @@ impl<'a> Drop for HandleBuffer<'a> {
     }
 }
 
+impl<'a> Deref for HandleBuffer<'a> {
+    type Target = [Handle];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.buffer, self.count) }
+    }
+}
+
 impl<'a> HandleBuffer<'a> {
     /// Get an array of [`Handles`][Handle] that support the requested protocol.
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[deprecated = "use Deref instead"]
     #[must_use]
     pub fn handles(&self) -> &[Handle] {
         // convert raw pointer to slice here so that we can get

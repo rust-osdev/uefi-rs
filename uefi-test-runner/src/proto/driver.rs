@@ -103,7 +103,6 @@ fn test_component_name<'a, C: ComponentNameInterface<'a>>(
 
     // Find the FAT driver by name.
     let component_name: C = all_handles
-        .handles()
         .iter()
         .find_map(|handle| {
             let component_name = C::open(boot_services, *handle).ok()?;
@@ -124,7 +123,6 @@ fn test_component_name<'a, C: ComponentNameInterface<'a>>(
 
     // Now check that the FAT controller can be found by name.
     all_handles
-        .handles()
         .iter()
         .find(|handle| {
             let controller_name = if let Ok(controller_name) =

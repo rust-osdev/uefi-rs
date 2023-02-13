@@ -120,8 +120,7 @@ fn test_reinstall_protocol_interface(bt: &BootServices) {
     info!("Reinstalling TestProtocol");
     let handle = bt
         .locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
-        .expect("Failed to find protocol to uninstall")
-        .handles()[0];
+        .expect("Failed to find protocol to uninstall")[0];
 
     unsafe {
         let _ = bt.reinstall_protocol_interface(
@@ -137,8 +136,7 @@ fn test_uninstall_protocol_interface(bt: &BootServices) {
     info!("Uninstalling TestProtocol");
     let handle = bt
         .locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
-        .expect("Failed to find protocol to uninstall")
-        .handles()[0];
+        .expect("Failed to find protocol to uninstall")[0];
 
     unsafe {
         bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, ptr::null_mut())

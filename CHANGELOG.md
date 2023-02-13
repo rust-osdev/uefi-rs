@@ -15,6 +15,9 @@
   unrecoverable and will cause the system to reset.
 - Re-export the `cstr8`, `cstr16`, and `entry` macros from the root of the
   `uefi` crate.
+- `HandleBuffer` and `ProtocolsPerHandle` now implement `Deref`. The
+  `HandleBuffer::handles` and `ProtocolsPerHandle::protocols` methods have been
+  deprecated.
 
 ## uefi-macros - [Unreleased]
 

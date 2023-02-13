@@ -50,13 +50,10 @@ fn test_protocols_per_handle(image: Handle, bt: &BootServices) {
         .protocols_per_handle(image)
         .expect("Failed to get protocols for image handle");
 
-    info!("Image handle has {} protocols", pph.protocols().len());
+    info!("Image handle has {} protocols", pph.len());
 
     // Check that one of the image's protocols is `LoadedImage`.
-    assert!(pph
-        .protocols()
-        .iter()
-        .any(|guid| **guid == LoadedImage::GUID));
+    assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
 }
 
 mod console;

@@ -13,6 +13,8 @@
 - `SystemTable::exit_boot_services` now takes no parameters and handles
   the memory map allocation itself. Errors are now treated as
   unrecoverable and will cause the system to reset.
+- Re-export the `cstr8`, `cstr16`, and `entry` macros from the root of the
+  `uefi` crate.
 
 ## uefi-macros - [Unreleased]
 

@@ -425,10 +425,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::BUFFER_TOO_SMALL`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn memory_map<'buf>(
-        &self,
-        buffer: &'buf mut [u8],
-    ) -> Result<(MemoryMapKey, MemoryMapIter<'buf>)> {
+    pub fn memory_map<'buf>(&self, buffer: &'buf mut [u8]) -> Result<MemoryMap<'buf>> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
         let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
@@ -453,13 +450,13 @@ impl BootServices {
         }
         .into_with_val(move || {
             let len = map_size / entry_size;
-            let iter = MemoryMapIter {
-                buffer,
+
+            MemoryMap {
+                key: map_key,
+                buf: buffer,
                 entry_size,
-                index: 0,
                 len,
-            };
-            (map_key, iter)
+            }
         })
     }
 
@@ -1993,6 +1990,103 @@ pub struct MemoryMapSize {
     pub map_size: usize,
 }
 
+/// An iterator of [`MemoryDescriptor`] which returns elements in sorted order. The underlying memory map is always
+/// associated with the unique [`MemoryMapKey`] contained in the struct.
+pub struct MemoryMap<'buf> {
+    key: MemoryMapKey,
+    buf: &'buf mut [u8],
+    entry_size: usize,
+    len: usize,
+}
+
+impl<'buf> MemoryMap<'buf> {
+    #[must_use]
+    /// Returns the unique [`MemoryMapKey`] associated with the memory map.
+    pub fn key(&self) -> MemoryMapKey {
+        self.key
+    }
+
+    /// Sorts the memory map by physical address in place.
+    pub fn sort(&mut self) {
+        unsafe {
+            self.qsort(0, self.len - 1);
+        }
+    }
+
+    /// Hoare partition scheme for quicksort.
+    /// Must be called with `low` and `high` being indices within bounds.
+    unsafe fn qsort(&mut self, low: usize, high: usize) {
+        if low >= high {
+            return;
+        }
+
+        let p = self.partition(low, high);
+        self.qsort(low, p);
+        self.qsort(p + 1, high);
+    }
+
+    unsafe fn partition(&mut self, low: usize, high: usize) -> usize {
+        let pivot = self.get_element_phys_addr(low + (high - low) / 2);
+
+        let mut left_index = low.wrapping_sub(1);
+        let mut right_index = high.wrapping_add(1);
+
+        loop {
+            while {
+                left_index = left_index.wrapping_add(1);
+
+                self.get_element_phys_addr(left_index) < pivot
+            } {}
+
+            while {
+                right_index = right_index.wrapping_sub(1);
+
+                self.get_element_phys_addr(right_index) > pivot
+            } {}
+
+            if left_index >= right_index {
+                return right_index;
+            }
+
+            self.swap(left_index, right_index);
+        }
+    }
+
+    /// Indices must be smaller than len.
+    unsafe fn swap(&mut self, index1: usize, index2: usize) {
+        if index1 == index2 {
+            return;
+        }
+
+        let base = self.buf.as_mut_ptr();
+
+        unsafe {
+            ptr::swap_nonoverlapping(
+                base.add(index1 * self.entry_size),
+                base.add(index2 * self.entry_size),
+                self.entry_size,
+            );
+        }
+    }
+
+    fn get_element_phys_addr(&self, index: usize) -> PhysicalAddress {
+        let offset = index.checked_mul(self.entry_size).unwrap();
+        let elem = unsafe { &*self.buf.as_ptr().add(offset).cast::<MemoryDescriptor>() };
+        elem.phys_start
+    }
+
+    #[must_use]
+    /// Returns an iterator over the contained memory map
+    pub fn entries(&self) -> MemoryMapIter {
+        MemoryMapIter {
+            buffer: self.buf,
+            entry_size: self.entry_size,
+            index: 0,
+            len: self.len,
+        }
+    }
+}
+
 /// An iterator of [`MemoryDescriptor`]. The underlying memory map is always
 /// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
@@ -2014,11 +2108,15 @@ impl<'buf> Iterator for MemoryMapIter<'buf> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.len {
-            let ptr = self.buffer.as_ptr() as usize + self.entry_size * self.index;
+            let descriptor = unsafe {
+                &*self
+                    .buffer
+                    .as_ptr()
+                    .add(self.entry_size * self.index)
+                    .cast::<MemoryDescriptor>()
+            };
 
             self.index += 1;
-
-            let descriptor = unsafe { &*(ptr as *const MemoryDescriptor) };
 
             Some(descriptor)
         } else {
@@ -2197,3 +2295,94 @@ pub enum InterfaceType: i32 => {
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct ProtocolSearchKey(NonNull<c_void>);
+
+#[cfg(test)]
+mod tests {
+    use core::mem::size_of;
+
+    use crate::table::boot::{MemoryAttribute, MemoryMap, MemoryMapKey, MemoryType};
+
+    use super::{MemoryDescriptor, MemoryMapIter};
+
+    #[test]
+    fn mem_map_sorting() {
+        // Doesn't matter what type it is.
+        const TY: MemoryType = MemoryType::RESERVED;
+
+        const BASE: MemoryDescriptor = MemoryDescriptor {
+            ty: TY,
+            phys_start: 0,
+            virt_start: 0,
+            page_count: 0,
+            att: MemoryAttribute::empty(),
+        };
+
+        let mut buffer = [
+            MemoryDescriptor {
+                phys_start: 2000,
+                ..BASE
+            },
+            MemoryDescriptor {
+                phys_start: 3000,
+                ..BASE
+            },
+            BASE,
+            MemoryDescriptor {
+                phys_start: 1000,
+                ..BASE
+            },
+        ];
+
+        let desc_count = buffer.len();
+
+        let byte_buffer = {
+            let size = desc_count * size_of::<MemoryDescriptor>();
+            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size) }
+        };
+
+        let mut mem_map = MemoryMap {
+            // Key doesn't matter
+            key: MemoryMapKey(0),
+            len: desc_count,
+            buf: byte_buffer,
+            entry_size: size_of::<MemoryDescriptor>(),
+        };
+
+        mem_map.sort();
+
+        if !is_sorted(&mem_map.entries()) {
+            panic!("mem_map is not sorted: {}", mem_map);
+        }
+    }
+
+    // Added for debug purposes on test failure
+    #[cfg(test)]
+    impl core::fmt::Display for MemoryMap<'_> {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            writeln!(f)?;
+            for desc in self.entries() {
+                writeln!(f, "{:?}", desc)?;
+            }
+            Ok(())
+        }
+    }
+
+    fn is_sorted(iter: &MemoryMapIter) -> bool {
+        let mut iter = iter.clone();
+        let mut curr_start;
+
+        if let Some(val) = iter.next() {
+            curr_start = val.phys_start;
+        } else {
+            return true;
+        }
+
+        for desc in iter {
+            if desc.phys_start <= curr_start {
+                return false;
+            }
+            curr_start = desc.phys_start
+        }
+        true
+    }
+}

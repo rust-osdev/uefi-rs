@@ -7,7 +7,7 @@ use core::{ptr, slice};
 use crate::proto::console::text;
 use crate::{CStr16, Char16, Handle, Result, Status};
 
-use super::boot::{BootServices, MemoryDescriptor, MemoryMapIter, MemoryType};
+use super::boot::{BootServices, MemoryDescriptor, MemoryMap, MemoryType};
 use super::runtime::{ResetType, RuntimeServices};
 use super::{cfg, Header, Revision};
 
@@ -158,11 +158,11 @@ impl SystemTable<Boot> {
     unsafe fn get_memory_map_and_exit_boot_services(
         &self,
         buf: &'static mut [u8],
-    ) -> Result<MemoryMapIter<'static>> {
+    ) -> Result<MemoryMap<'static>> {
         let boot_services = self.boot_services();
 
         // Get the memory map.
-        let (memory_map_key, memory_map_iter) = boot_services.memory_map(buf)?;
+        let memory_map = boot_services.memory_map(buf)?;
 
         // Try to exit boot services using the memory map key. Note that after
         // the first call to `exit_boot_services`, there are restrictions on
@@ -170,8 +170,8 @@ impl SystemTable<Boot> {
         // only `get_memory_map` and `exit_boot_services` are allowed. Starting
         // in UEFI 2.9 other memory allocation functions may also be called.
         boot_services
-            .exit_boot_services(boot_services.image_handle(), memory_map_key)
-            .map(move |()| memory_map_iter)
+            .exit_boot_services(boot_services.image_handle(), memory_map.key())
+            .map(move |()| memory_map)
     }
 
     /// Exit the UEFI boot services.
@@ -212,7 +212,7 @@ impl SystemTable<Boot> {
     /// [`Logger::disable`]: crate::logger::Logger::disable
     /// [`uefi_services::init`]: https://docs.rs/uefi-services/latest/uefi_services/fn.init.html
     #[must_use]
-    pub fn exit_boot_services(self) -> (SystemTable<Runtime>, MemoryMapIter<'static>) {
+    pub fn exit_boot_services(self) -> (SystemTable<Runtime>, MemoryMap<'static>) {
         let boot_services = self.boot_services();
 
         // Reboot the device.

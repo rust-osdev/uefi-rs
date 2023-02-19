@@ -623,7 +623,7 @@ impl BootServices {
     /// performed on each event:
     ///
     /// * If an event is of type `NotifySignal`, then an `InvalidParameter`
-    ///   error is returned with the index of the eve,t that caused the failure.
+    ///   error is returned with the index of the event that caused the failure.
     /// * If an event is in the signaled state, the signaled state is cleared
     ///   and the index of the event that was signaled is returned.
     /// * If an event is not in the signaled state but does have a notification

@@ -17,20 +17,19 @@ pub fn test(bt: &BootServices) {
     }
 
     info!("Running UEFI multi-processor services protocol test");
-    if let Ok(handle) = bt.get_handle_for_protocol::<MpServices>() {
-        let mp_support = &bt
-            .open_protocol_exclusive::<MpServices>(handle)
-            .expect("failed to open multi-processor services protocol");
+    let handle = bt
+        .get_handle_for_protocol::<MpServices>()
+        .expect("failed to get multi-processor services handle");
+    let mp_support = &bt
+        .open_protocol_exclusive::<MpServices>(handle)
+        .expect("failed to open multi-processor services protocol");
 
-        test_get_number_of_processors(mp_support);
-        test_get_processor_info(mp_support);
-        test_startup_all_aps(mp_support, bt);
-        test_startup_this_ap(mp_support, bt);
-        test_enable_disable_ap(mp_support);
-        test_switch_bsp_and_who_am_i(mp_support);
-    } else {
-        warn!("Multi-processor services protocol is not supported");
-    }
+    test_get_number_of_processors(mp_support);
+    test_get_processor_info(mp_support);
+    test_startup_all_aps(mp_support, bt);
+    test_startup_this_ap(mp_support, bt);
+    test_enable_disable_ap(mp_support);
+    test_switch_bsp_and_who_am_i(mp_support);
 }
 
 fn test_get_number_of_processors(mps: &MpServices) {

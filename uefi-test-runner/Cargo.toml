@@ -18,6 +18,9 @@ qemu-exit = "3.0.0"
 # Enable the multiprocessor test. This only works if KVM is enabled.
 multi_processor = []
 
+# Enable the PXE test.
+pxe = []
+
 # Enable the TPM v1 test.
 tpm_v1 = []
 

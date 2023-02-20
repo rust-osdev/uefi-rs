@@ -12,6 +12,7 @@ mod util;
 
 use crate::opt::TestOpt;
 use anyhow::Result;
+use arch::UefiArch;
 use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
@@ -121,6 +122,12 @@ fn run_miri() -> Result<()> {
 /// Build uefi-test-runner and run it in QEMU.
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![];
+
+    // Enable the PXE test unless networking is disabled or the arch doesn't
+    // support it.
+    if *opt.target == UefiArch::X86_64 && !opt.disable_network {
+        features.push(Feature::Pxe);
+    }
 
     // Enable TPM tests if a TPM device is present.
     match opt.tpm {

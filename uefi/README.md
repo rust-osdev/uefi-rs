@@ -49,10 +49,10 @@ For additional information, refer to the [UEFI specification][spec].
 
 ## MSRV
 
-The uefi-rs crates currently require some [unstable features].
-The nightly MSRV is currently 2022-11-22.
+The minimum supported Rust version is currently 1.68, which is the first Rust
+release that fully supports UEFI with allocation on the stable channel.
 
-[unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
+In the future, our policy will be to support at least the past two stable releases.
 
 ## License
 

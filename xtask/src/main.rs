@@ -50,7 +50,7 @@ fn build(opt: &BuildOpt) -> Result<()> {
 
     let cargo = Cargo {
         action: CargoAction::Build,
-        features: Feature::more_code(true, true),
+        features: Feature::more_code(false, true),
         packages: Package::all_except_xtask(),
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -64,8 +64,7 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     // Run clippy on all the UEFI packages.
     let cargo = Cargo {
         action: CargoAction::Clippy,
-        // for all possible features
-        features: Feature::more_code(true, true),
+        features: Feature::more_code(false, true),
         packages: Package::all_except_xtask(),
         release: false,
         target: Some(*opt.target),

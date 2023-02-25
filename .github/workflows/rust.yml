@@ -108,6 +108,10 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
+    # TODO: for now our latest release (0.19.1) requires nightly.
+    - name: Set nightly toolchain
+      run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+
     - name: Build
       run: cargo xtask test-latest-release
 
@@ -143,12 +147,17 @@ jobs:
     - name: Build
       run: cargo xtask build
 
+  # This job requires the nightly channel, but keep it as a separate job from
+  # `nightly_channel` because it takes a while to run.
   build_feature_permutations:
     name: Check that the build works for all feature combinations
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
       uses: actions/checkout@v3
+
+    - name: Set nightly toolchain so that `unstable` can be included
+      run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
 
     - name: Build
       run: cargo xtask build --feature-permutations

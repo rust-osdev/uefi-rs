@@ -60,6 +60,7 @@ pub enum Feature {
     // `uefi-test-runner` features.
     MultiProcessor,
     Pxe,
+    TestUnstable,
     TpmV1,
     TpmV2,
 }
@@ -79,6 +80,7 @@ impl Feature {
 
             Self::MultiProcessor => "uefi-test-runner/multi_processor",
             Self::Pxe => "uefi-test-runner/pxe",
+            Self::TestUnstable => "uefi-test-runner/unstable",
             Self::TpmV1 => "uefi-test-runner/tpm_v1",
             Self::TpmV2 => "uefi-test-runner/tpm_v2",
         }
@@ -96,7 +98,13 @@ impl Feature {
             ],
             Package::UefiServices => vec![Self::PanicHandler, Self::Qemu, Self::ServicesLogger],
             Package::UefiTestRunner => {
-                vec![Self::MultiProcessor, Self::Pxe, Self::TpmV1, Self::TpmV2]
+                vec![
+                    Self::MultiProcessor,
+                    Self::Pxe,
+                    Self::TestUnstable,
+                    Self::TpmV1,
+                    Self::TpmV2,
+                ]
             }
             _ => vec![],
         }

@@ -35,6 +35,21 @@ pub struct BuildModeOpt {
 }
 
 #[derive(Debug, Parser)]
+pub struct UnstableOpt {
+    /// Enable the `unstable` feature (requires nightly).
+    #[clap(long, action)]
+    pub unstable: bool,
+}
+
+impl Deref for UnstableOpt {
+    type Target = bool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.unstable
+    }
+}
+
+#[derive(Debug, Parser)]
 pub struct WarningOpt {
     /// Treat warnings as errors.
     #[clap(long, action)]
@@ -156,15 +171,16 @@ pub struct QemuOpt {
     /// Run an example instead of the main binary.
     #[clap(long, action)]
     pub example: Option<String>,
+
+    #[clap(flatten)]
+    pub unstable: UnstableOpt,
 }
 
 /// Run unit tests and doctests on the host.
 #[derive(Debug, Parser)]
 pub struct TestOpt {
-    /// Include all features behind the "unstable" gate. uefi-rs must build without unstable
-    /// functionality on stable (eventually) and with it in our nightly MSRV.
-    #[clap(long, action)]
-    pub include_unstable: bool,
+    #[clap(flatten)]
+    pub unstable: UnstableOpt,
 }
 
 /// Build the template against the crates.io packages.

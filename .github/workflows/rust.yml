@@ -74,7 +74,7 @@ jobs:
       # At least one unit test, for make_boxed() currently, has different behaviour dependent on
       # the unstable feature.
       - name: Run cargo test (with unstable)
-        run: cargo xtask test --include-unstable
+        run: cargo xtask test --unstable
 
   lints:
     name: Lints
@@ -169,3 +169,19 @@ jobs:
 
     - name: Build
       run: cargo xtask build --feature-permutations
+
+  vm_test_unstable:
+    name: Run uefi-test-runner with `unstable` on x86_64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v3
+
+    - name: Install qemu and OVMF
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu-system-x86 ovmf -y
+
+    - name: Run VM tests
+      run: cargo xtask run --target x86_64 --headless --ci --unstable
+      timeout-minutes: 4

@@ -142,6 +142,11 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
         features.push(Feature::MultiProcessor);
     }
 
+    // Enable `unstable` if requested.
+    if *opt.unstable {
+        features.push(Feature::TestUnstable);
+    }
+
     // Build uefi-test-runner.
     let cargo = Cargo {
         action: CargoAction::Build,
@@ -180,7 +185,7 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
         // the unstable feature. Because of this, we need to allow to test both variants. Runtime
         // features is set to no as it is not possible as as soon a #[global_allocator] is
         // registered, the Rust runtime executing the tests uses it as well.
-        features: Feature::more_code(test_opt.include_unstable, false),
+        features: Feature::more_code(*test_opt.unstable, false),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
         packages: vec![Package::Uefi, Package::UefiMacros],

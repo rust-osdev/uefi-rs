@@ -5,7 +5,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 
 use proc_macro2::{TokenStream as TokenStream2, TokenTree};
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::{
     parse_macro_input, parse_quote, spanned::Spanned, Error, Fields, FnArg, Ident, ItemFn,
     ItemStruct, LitStr, Pat, Visibility,
@@ -302,14 +302,42 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         );
     }
 
-    let ident = &f.sig.ident;
+    let fn_ident = &f.sig.ident;
+    // Get an iterator of the function inputs types. This is needed instead of
+    // directly using `sig.inputs` because patterns you can use in fn items like
+    // `mut <arg>` aren't valid in fn pointers.
+    let fn_inputs = f.sig.inputs.iter().map(|arg| match arg {
+        FnArg::Receiver(arg) => quote!(#arg),
+        FnArg::Typed(arg) => {
+            let ty = &arg.ty;
+            quote!(#ty)
+        }
+    });
+    let fn_output = &f.sig.output;
+    let signature_span = f.sig.span();
+
+    let fn_type_check = quote_spanned! {signature_span=>
+        // Cast from the function type to a function pointer with the same
+        // signature first, then try to assign that to an unnamed constant with
+        // the desired function pointer type.
+        //
+        // The cast is used to avoid an "expected fn pointer, found fn item"
+        // error if the signature is wrong, since that's not what we are
+        // interested in here. Instead we want to tell the user what
+        // specifically in the function signature is incorrect.
+        const _:
+            // The expected fn pointer type.
+            #unsafety extern "efiapi" fn(::uefi::Handle, ::uefi::table::SystemTable<::uefi::table::Boot>) -> ::uefi::Status =
+            // Cast from a fn item to a function pointer.
+            #fn_ident as #unsafety extern "efiapi" fn(#(#fn_inputs),*) #fn_output;
+    };
 
     let result = quote! {
+        #fn_type_check
+
         #[export_name = "efi_main"]
         #unsafety extern "efiapi" #f
 
-        // typecheck the function pointer
-        const _: #unsafety extern "efiapi" fn(::uefi::Handle, ::uefi::table::SystemTable<::uefi::table::Boot>) -> ::uefi::Status = #ident;
     };
     result.into()
 }

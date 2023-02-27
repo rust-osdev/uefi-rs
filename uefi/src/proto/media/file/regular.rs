@@ -12,7 +12,7 @@ pub struct RegularFile(FileHandle);
 
 impl RegularFile {
     /// A special position used to seek to the end of a file with `set_position()`.
-    pub const END_OF_FILE: u64 = core::u64::MAX;
+    pub const END_OF_FILE: u64 = u64::MAX;
 
     /// Coverts a `FileHandle` into a `RegularFile` without checking the file kind.
     /// # Safety

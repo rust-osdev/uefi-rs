@@ -1,5 +1,5 @@
 use anyhow::Result;
-use fatfs::{Date, DateTime, FileSystem, FormatVolumeOptions, FsOptions, StdIoWrapper, Time};
+use fatfs::{Date, DateTime, FileSystem, FormatVolumeOptions, FsOptions, Time};
 use mbrman::{MBRPartitionEntry, BOOT_INACTIVE, CHS, MBR};
 use std::io::{Cursor, Read, Write};
 use std::ops::Range;
@@ -45,9 +45,9 @@ pub fn create_mbr_test_disk(path: &Path) -> Result<()> {
 
 fn init_fat_test_partition(disk: &mut [u8], partition_byte_range: Range<usize>) -> Result<()> {
     {
-        let mut cursor = StdIoWrapper::from(Cursor::new(&mut disk[partition_byte_range.clone()]));
+        let cursor = Cursor::new(&mut disk[partition_byte_range.clone()]);
         fatfs::format_volume(
-            &mut cursor,
+            cursor,
             FormatVolumeOptions::new().volume_label(*b"MbrTestDisk"),
         )?;
     }
@@ -72,10 +72,33 @@ fn init_fat_test_partition(disk: &mut [u8], partition_byte_range: Range<usize>) 
     // test.
     #[allow(deprecated)]
     {
-        let time = Time::new(0, 0, 0, 0);
-        file.set_created(DateTime::new(Date::new(2000, 1, 24), time));
-        file.set_accessed(Date::new(2001, 2, 25));
-        file.set_modified(DateTime::new(Date::new(2002, 3, 26), time));
+        let time = Time {
+            hour: 0,
+            min: 0,
+            sec: 0,
+            millis: 0,
+        };
+        file.set_created(DateTime {
+            date: Date {
+                year: 2000,
+                month: 1,
+                day: 24,
+            },
+            time,
+        });
+        file.set_accessed(Date {
+            year: 2001,
+            month: 2,
+            day: 25,
+        });
+        file.set_modified(DateTime {
+            date: Date {
+                year: 2002,
+                month: 3,
+                day: 26,
+            },
+            time,
+        });
     }
 
     let stats = fs.stats()?;

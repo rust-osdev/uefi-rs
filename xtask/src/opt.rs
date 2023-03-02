@@ -113,6 +113,9 @@ pub struct DocOpt {
     pub document_private_items: bool,
 
     #[clap(flatten)]
+    pub unstable: UnstableOpt,
+
+    #[clap(flatten)]
     pub warning: WarningOpt,
 }
 

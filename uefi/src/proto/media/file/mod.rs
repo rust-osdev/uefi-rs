@@ -184,7 +184,7 @@ pub trait File: Sized {
         (self.imp().flush)(self.imp()).into()
     }
 
-    /// Wrapper around [`Self::get_boxed_info_in`] that uses the [`Global`] allocator.
+    /// Read the dynamically allocated info for a file.
     #[cfg(feature = "alloc")]
     fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
         let fetch_data_fn = |buf| self.get_info::<Info>(buf);

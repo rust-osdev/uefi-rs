@@ -60,7 +60,8 @@ impl Directory {
         })
     }
 
-    /// Wrapper around [`Self::read_entry_boxed_in`] that uses the [`Global`] allocator.
+    /// Wrapper around [`Self::read_entry`] that returns an owned copy of the data. It has the same
+    /// implications and requirements. On failure, the payload of `Err` is `()´.
     #[cfg(feature = "alloc")]
     pub fn read_entry_boxed(&mut self) -> Result<Option<Box<FileInfo>>> {
         let read_entry_res = self.read_entry(&mut []);

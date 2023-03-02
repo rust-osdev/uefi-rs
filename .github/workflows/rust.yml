@@ -93,8 +93,11 @@ jobs:
           rustup component add clippy
           cargo xtask clippy --warnings-as-errors
 
-      - name: Run cargo doc
+      - name: Run cargo doc (without unstable)
         run: cargo xtask doc --warnings-as-errors --document-private-items
+
+      - name: Run cargo doc (with unstable)
+        run: cargo xtask doc --warnings-as-errors --document-private-items --unstable
 
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check

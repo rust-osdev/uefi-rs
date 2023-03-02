@@ -94,8 +94,7 @@ fn doc(opt: &DocOpt) -> Result<()> {
             open: opt.open,
             document_private_items: opt.document_private_items,
         },
-        // for all possible features
-        features: Feature::more_code(true, true),
+        features: Feature::more_code(*opt.unstable, true),
         packages: Package::published(),
         release: false,
         target: None,

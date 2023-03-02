@@ -29,6 +29,9 @@ use {core::alloc::Allocator, core::ptr::NonNull};
 /// `unstable`-feature, it uses the `allocator_api` instead. In that case, the function takes an
 /// additional parameter describing the specific [`Allocator`]. You can use [`alloc::alloc::Global`]
 /// as default.
+///
+/// [`Allocator`]: https://doc.rust-lang.org/alloc/alloc/trait.Allocator.html
+/// [`alloc::alloc::Global`]: https://doc.rust-lang.org/alloc/alloc/struct.Global.html
 pub(crate) fn make_boxed<
     'a,
     // The UEFI data structure.

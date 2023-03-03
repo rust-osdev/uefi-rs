@@ -71,11 +71,6 @@ jobs:
       - name: Run cargo test (without unstable)
         run: cargo xtask test
 
-      # At least one unit test, for make_boxed() currently, has different behaviour dependent on
-      # the unstable feature.
-      - name: Run cargo test (with unstable)
-        run: cargo xtask test --unstable
-
   lints:
     name: Lints
     runs-on: ubuntu-latest
@@ -96,23 +91,8 @@ jobs:
       - name: Run cargo doc (without unstable)
         run: cargo xtask doc --warnings-as-errors --document-private-items
 
-      - name: Run cargo doc (with unstable)
-        run: cargo xtask doc --warnings-as-errors --document-private-items --unstable
-
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check
-
-  miri:
-    name: Run unit tests and doctests under Miri
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v3
-
-      - name: Run miri
-        run: |
-          rustup component add miri
-          cargo xtask miri
 
   # This job tests that the template app builds successfully with the
   # released versions of the libraries on crates.io.
@@ -173,8 +153,8 @@ jobs:
     - name: Build
       run: cargo xtask build --feature-permutations
 
-  vm_test_unstable:
-    name: Run uefi-test-runner with `unstable` on x86_64
+  nightly_channel:
+    name: Run checks that require the nightly channel
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
@@ -185,6 +165,20 @@ jobs:
         sudo apt-get update
         sudo apt-get install qemu-system-x86 ovmf -y
 
-    - name: Run VM tests
+    - name: Enable nightly toolchain
+      run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+
+    - name: Run VM tests with the `unstable` feature
       run: cargo xtask run --target x86_64 --headless --ci --unstable
       timeout-minutes: 4
+
+    - name: Run cargo doc with the `unstable` feature
+      run: cargo xtask doc --warnings-as-errors --document-private-items --unstable
+
+    - name: Run tests with the `unstable` feature
+      run: cargo xtask test --unstable
+
+    - name: Run unit tests and doctests under Miri
+      run: |
+        rustup component add miri
+        cargo xtask miri

@@ -177,6 +177,11 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
     };
     run_cmd(cargo.command()?)?;
 
+    let mut packages = vec![Package::Uefi];
+    if !test_opt.skip_macro_tests {
+        packages.push(Package::UefiMacros);
+    }
+
     // Run uefi-rs and uefi-macros tests.
     let cargo = Cargo {
         action: CargoAction::Test,
@@ -187,7 +192,7 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
         features: Feature::more_code(*test_opt.unstable, false),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
-        packages: vec![Package::Uefi, Package::UefiMacros],
+        packages,
         release: false,
         // Use the host target so that tests can run without a VM.
         target: None,

@@ -184,6 +184,10 @@ pub struct QemuOpt {
 pub struct TestOpt {
     #[clap(flatten)]
     pub unstable: UnstableOpt,
+
+    /// Skip the uefi-macros tests.
+    #[clap(long, action)]
+    pub skip_macro_tests: bool,
 }
 
 /// Build the template against the crates.io packages.

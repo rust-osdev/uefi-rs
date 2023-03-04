@@ -175,8 +175,10 @@ jobs:
     - name: Run cargo doc with the `unstable` feature
       run: cargo xtask doc --warnings-as-errors --document-private-items --unstable
 
-    - name: Run tests with the `unstable` feature
-      run: cargo xtask test --unstable
+    - name: Run test with the `unstable` feature
+      # Skip testing uefi-macros on nightly because the tests that check the
+      # compiler error output produce different output on stable vs nightly.
+      run: cargo xtask test --unstable --skip-macro-tests
 
     - name: Run unit tests and doctests under Miri
       run: |

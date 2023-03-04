@@ -255,8 +255,14 @@ pub struct BootServices {
         registration: *mut c_void,
         out_proto: &mut *mut c_void,
     ) -> Status,
-    install_multiple_protocol_interfaces: usize,
-    uninstall_multiple_protocol_interfaces: usize,
+    install_multiple_protocol_interfaces: extern "efiapi" fn(
+        handle: Handle,
+        ...
+    ),
+    uninstall_multiple_protocol_interfaces: extern "efiapi" fn(
+        handle: Handle,
+        ...
+    ),
 
     // CRC services
     calculate_crc32: usize,

@@ -190,7 +190,10 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
             Some(pat_ident.ident.clone())
         } else {
             // The argument is unnamed, i.e. `_`.
-            errors.append_all(err!(arg.span(), "Entry method's arguments must be named"));
+            errors.append_all(err!(
+                arg.pat.span(),
+                "Entry method's arguments must be named"
+            ));
             None
         }
     } else {

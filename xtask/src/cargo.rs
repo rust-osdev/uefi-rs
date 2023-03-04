@@ -269,6 +269,7 @@ impl Cargo {
             CargoAction::Miri => {
                 action = "miri";
                 sub_action = Some("test");
+                cmd.env("MIRIFLAGS", "-Zmiri-strict-provenance");
             }
             CargoAction::Test => {
                 action = "test";

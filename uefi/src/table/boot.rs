@@ -258,11 +258,11 @@ pub struct BootServices {
     install_multiple_protocol_interfaces: extern "efiapi" fn(
         handle: Handle,
         ...
-    ),
+    ) -> Status,
     uninstall_multiple_protocol_interfaces: extern "efiapi" fn(
         handle: Handle,
         ...
-    ),
+    ) -> Status,
 
     // CRC services
     calculate_crc32: usize,
@@ -793,6 +793,19 @@ impl BootServices {
         (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface).into()
     }
 
+    /// Installs one or more protocol interfaces to the boot services environment.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.InstallMultipleProtocolInterfaces()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    pub fn install_multiple_protocol_interfaces(&self, handle: Handle, mut args: ...) -> Result {
+        (self.install_multiple_protocol_interfaces)(handle, args).into()
+    }
+
     /// Removes a protocol interface from a device handle.
     ///
     /// # Safety
@@ -819,6 +832,17 @@ impl BootServices {
         interface: *mut c_void,
     ) -> Result<()> {
         (self.uninstall_protocol_interface)(handle, protocol, interface).into()
+    }
+
+    /// Removes one or more protocol interfaces from the boot services environment.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.UninstallMultipleProtocolInterfaces()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub fn uninstall_multiple_protocol_interfaces(&self, handle: Handle, mut args: ...) -> Result {
+        (self.uninstall_multiple_protocol_interfaces)(handle, args).into()
     }
 
     /// Query a handle for a certain protocol.

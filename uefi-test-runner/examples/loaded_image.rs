@@ -37,7 +37,7 @@ fn print_image_path(boot_services: &BootServices) -> Result {
     // ANCHOR: device_path
     let device_path_to_text_handle = *boot_services
         .locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))?
-        .first()
+        .handles().first()
         .expect("DevicePathToText is missing");
 
     let device_path_to_text = boot_services

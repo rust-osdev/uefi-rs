@@ -47,15 +47,12 @@ For additional information, refer to the [UEFI specification][spec].
 [spec]: http://www.uefi.org/specifications
 [uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD
 
-## Building UEFI programs
-
-For instructions on how to create your own UEFI apps, see the [tutorial].
+## MSRV
 
 The uefi-rs crates currently require some [unstable features].
 The nightly MSRV is currently 2022-11-22.
 
 [unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
-[tutorial]: https://rust-osdev.github.io/uefi-rs/HEAD/tutorial/introduction.html
 
 ## License
 

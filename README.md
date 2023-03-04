@@ -89,14 +89,9 @@ most of the library's functionality.
 Check out the testing project's [`README.md`](uefi-test-runner/README.md) for
 prerequisites for running the tests.
 
-## Building UEFI programs
+## MSRV
 
-For instructions on how to create your own UEFI apps, see the [BUILDING.md](BUILDING.md) file.
-
-The uefi-rs crates currently require some [unstable features].
-The nightly MSRV is currently 2022-11-22.
-
-[unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
+See the [uefi package's README](uefi/README.md#MSRV).
 
 ## Contributing
 

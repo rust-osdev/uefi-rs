@@ -2,6 +2,7 @@ use log::info;
 use uefi::guid;
 use uefi::prelude::*;
 use uefi::table::runtime::{VariableAttributes, VariableVendor};
+use uefi::Status;
 
 fn test_variables(rt: &RuntimeServices) {
     let name = cstr16!("UefiRsTestVar");
@@ -37,6 +38,16 @@ fn test_variables(rt: &RuntimeServices) {
     if let Some(key) = variable_keys.first() {
         info!("First variable: {}", key);
     }
+
+    info!("Testing delete_variable()");
+    rt.delete_variable(name, &vendor)
+        .expect("failed to delete variable");
+    assert_eq!(
+        rt.get_variable(name, &vendor, &mut buf)
+            .unwrap_err()
+            .status(),
+        Status::NOT_FOUND
+    );
 }
 
 fn test_variable_info(rt: &RuntimeServices) {

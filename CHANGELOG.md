@@ -8,6 +8,7 @@
   wrapper will automatically select `ComponentName2` if available, and fall back
   to `ComponentName1` otherwise.
 - `FileType`, `FileHandle`, `RegularFile`, and `Directory` now implement `Debug`.
+- Added `RuntimeServices::delete_variable()` helper method.
 
 ### Changed
 

@@ -1,19 +1,40 @@
-//! Rusty wrapper for the Unified Extensible Firmware Interface.
+//! Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
+//!
+//! See the [Rust UEFI Book] for a tutorial, how-tos, and overviews of some
+//! important UEFI concepts. For more details of UEFI, see the latest [UEFI
+//! Specification][spec].
+//!
+//! Feel free to file bug reports and questions in our [issue tracker], and [PR
+//! contributions][contributing] are also welcome!
 //!
 //! # Crate organisation
 //!
-//! The top-level module contains some of the most used types,
-//! such as the result and error types, or other common data structures
-//! such as GUIDs and handles.
+//! The top-level module contains some of the most used types and macros,
+//! including the [`Handle`] and [`Result`] types, the [`CStr16`] and
+//! [`CString16`] types for working with UCS-2 strings, and the [`entry`] and
+//! [`guid`] macros.
 //!
-//! ## Tables and protocols
+//! ## Tables
 //!
-//! The `table` module contains definitions of the UEFI tables,
-//! which are structures containing some basic functions and references to other tables.
-//! Most importantly, the boot services table also provides a way to obtain **protocol** handles.
+//! The [`SystemTable`] provides access to almost everything in UEFI. It comes
+//! in two flavors:
+//! - `SystemTable<Boot>`: for boot-time applications such as bootloaders,
+//!   provides access to both boot and runtime services.
+//! - `SystemTable<Runtime>`: for operating systems after boot services have
+//!   been exited.
 //!
-//! The `proto` module contains the standard UEFI protocols, which are normally provided
-//! by the various UEFI drivers and firmware layers.
+//! ## Protocols
+//!
+//! When boot services are active, most functionality is provided via UEFI
+//! protocols. Protocols provide operations such as reading and writing files,
+//! drawing to the screen, sending and receiving network requests, and much
+//! more. The list of protocols that are actually available when running an
+//! application depends on the device. For example, a PC with no network card
+//! may not provide network protocols.
+//!
+//! See the [`BootServices`] documentation for details of how to open a
+//! protocol, and see the [`proto`] module for protocol implementations. New
+//! protocols can be defined with the [`unsafe_protocol`] macro.
 //!
 //! ## Optional crate features
 //!
@@ -46,16 +67,16 @@
 //! [`uefi-services`] crate provides an `init` method that takes care of
 //! this.
 //!
-//! ## Adapting to local conditions
-//!
-//! Unlike system tables, which are present on *all* UEFI implementations,
-//! protocols *may* or *may not* be present on a certain system.
-//!
-//! For example, a PC with no network card might not contain a network driver,
-//! therefore all the network protocols will be unavailable.
-//!
+//! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
+//! [UEFI]: https://uefi.org/
+//! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
+//! [`SystemTable`]: table::SystemTable
 //! [`uefi-services`]: https://crates.io/crates/uefi-services
+//! [`unsafe_protocol`]: proto::unsafe_protocol
+//! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
+//! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
+//! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
 #![feature(abi_efiapi)]

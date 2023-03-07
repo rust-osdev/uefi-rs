@@ -245,6 +245,11 @@ impl RuntimeServices {
         }
     }
 
+    /// Deletes a UEFI variable.
+    pub fn delete_variable(&self, name: &CStr16, vendor: &VariableVendor) -> Result {
+        self.set_variable(name, vendor, VariableAttributes::empty(), &[])
+    }
+
     /// Get information about UEFI variable storage space for the type
     /// of variable specified in `attributes`.
     ///

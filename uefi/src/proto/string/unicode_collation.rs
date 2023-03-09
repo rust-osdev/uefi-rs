@@ -9,7 +9,7 @@ use uefi::data_types::{CStr16, CStr8, Char16, Char8};
 
 /// The Unicode Collation Protocol.
 ///
-/// Used to perform case-insensitive comaprisons of strings.
+/// Used to perform case-insensitive comparisons of strings.
 #[repr(C)]
 #[unsafe_protocol("a4c751fc-23ae-4c3e-92e9-4964cf63f349")]
 pub struct UnicodeCollation {

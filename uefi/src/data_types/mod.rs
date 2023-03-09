@@ -176,7 +176,7 @@ mod tests {
         assert_eq!(X::round_up_to_alignment(7), 8);
         assert_eq!(X::round_up_to_alignment(8), 8);
 
-        // Get an intentionally mis-aligned buffer.
+        // Get an intentionally misaligned buffer.
         let mut buffer = [0u8; 16];
         let mut buffer = &mut buffer[..];
         if (buffer.as_ptr() as usize) % X::alignment() == 0 {

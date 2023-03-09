@@ -70,7 +70,7 @@ struct, is motivated primarily by DST nodes. Many nodes end in a
 dynamically-sized slice, which prevents the normal struct construction
 syntax from being used. One option would be to generate a construction
 function that takes an argument for each field, but that can negatively
-impact readibility since there's no named-argument syntax. Having a
+impact readability since there's no named-argument syntax. Having a
 separate builder struct allows us to use the normal struct construction
 syntax. DST fields in the builder are replaced with slice references.
 

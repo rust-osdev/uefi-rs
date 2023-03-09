@@ -63,7 +63,7 @@ impl RegularFile {
     /// Write `buffer` to file, increment the file pointer.
     ///
     /// If an error occurs, returns the number of bytes that were actually written. If no error
-    /// occured, the entire buffer is guaranteed to have been written successfully.
+    /// occurred, the entire buffer is guaranteed to have been written successfully.
     ///
     /// # Arguments
     /// * `buffer`  Buffer to write to file

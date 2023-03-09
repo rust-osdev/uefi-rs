@@ -631,7 +631,7 @@ impl<'gop> FrameBuffer<'gop> {
     /// # Safety
     ///
     /// This operation is unsafe because...
-    /// - It is your reponsibility to make sure that the value type makes sense
+    /// - It is your responsibility to make sure that the value type makes sense
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
     #[inline]
@@ -653,7 +653,7 @@ impl<'gop> FrameBuffer<'gop> {
     /// # Safety
     ///
     /// This operation is unsafe because...
-    /// - It is your reponsibility to make sure that the value type makes sense
+    /// - It is your responsibility to make sure that the value type makes sense
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
     #[inline]

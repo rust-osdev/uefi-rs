@@ -1,7 +1,7 @@
 //! Device Path protocol
 //!
 //! A UEFI device path is a very flexible structure for encoding a
-//! programatic path such as a hard drive or console.
+//! programmatic path such as a hard drive or console.
 //!
 //! A device path is made up of a packed list of variable-length nodes of
 //! various types. The entire device path is terminated with an

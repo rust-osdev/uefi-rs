@@ -15,7 +15,7 @@ which crates were modified and how should their version numbers be incremented.
 
 Incrementing the version number of a crate is as simple as editing
 the corresponding `Cargo.toml` file and updating the `version = ...` line,
-then commiting the change (preferrably on a new branch, so that all of the version bumps
+then committing the change (preferably on a new branch, so that all the version bumps
 can be combined in a single pull request).
 
 ### Crate dependencies

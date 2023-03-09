@@ -2,6 +2,9 @@
 
 ## uefi - [Unreleased]
 
+As of this release, the UEFI crates work on the stable channel. This requires
+Rust 1.68 or higher.
+
 ### Added
 
 - Added the `ComponentName1` and `ComponentName2` protocols. The `ComponentName`

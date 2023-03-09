@@ -54,11 +54,7 @@
 //! - `panic-on-logger-errors` (enabled by default): Panic if a text
 //!   output error occurs in the logger.
 //! - `unstable`: Enable functionality that depends on [unstable
-//!   features] in the nightly compiler. Note that currently the `uefi`
-//!   crate _always_ requires unstable features even if the `unstable`
-//!   feature is not enabled, but once a couple more required features
-//!   are stabilized we intend to make the `uefi` crate work on the
-//!   stable channel by default.
+//!   features] in the nightly compiler.
 //!   As example, in conjunction with the `alloc`-feature, this gate allows
 //!   the `allocator_api` on certain functions.
 //!

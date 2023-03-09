@@ -8,7 +8,7 @@ UEFI application developed using `uefi-rs`.
 
 ## File structure
 
-- [`rust-toolchain.toml`](rust-toolchain.toml) sets the nightly channel.
+- [`rust-toolchain.toml`](rust-toolchain.toml) adds the UEFI targets.
 - [`Cargo.toml`](./Cargo.toml) shows the necessary dependencies.
 - [`src/main.rs`](./src/main.rs) has a minimal entry point that
   initializes the `uefi-services` crate and exits successfully.

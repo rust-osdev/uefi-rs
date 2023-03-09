@@ -1,24 +1,18 @@
 # Building
 
-## Nightly toolchain
+## Toolchain
 
-Rust's nightly toolchain is currently required because uefi-rs uses some
-unstable features.
-
-The easiest way to set this up is using a [rustup toolchain file]. In
-the root of your repository, add `rust-toolchain.toml`:
+In order to compile for UEFI, an appropriate target must be installed. The
+easiest way to set this up is using a [rustup toolchain file]. In the root of
+your repository, add `rust-toolchain.toml`:
 
 ```toml
 [toolchain]
-channel = "nightly"
-targets = ["x86_64-unknown-uefi"]
+targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]
 ```
 
-Here we have specified the `x86_64-unknown-uefi` target; there are also
-`i686-unknown-uefi` and `aarch64-unknown-uefi` targets available.
-
-Note that nightly releases can sometimes break, so you might opt to pin
-to a specific release. For example, `channel = "nightly-2022-11-10"`.
+Here we have specified all three of the currently-supported UEFI targets; you
+can remove some if you don't need them.
 
 ## Build the application
 

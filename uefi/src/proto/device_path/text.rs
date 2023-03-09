@@ -99,7 +99,7 @@ pub struct DevicePathToText {
 impl DevicePathToText {
     /// Convert a device node to its text representation.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
@@ -122,7 +122,7 @@ impl DevicePathToText {
 
     /// Convert a device path to its text representation.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
@@ -164,7 +164,7 @@ impl DevicePathFromText {
     /// Conversion starts with the first character and continues until
     /// the first non-device node character.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
@@ -188,7 +188,7 @@ impl DevicePathFromText {
     /// Conversion starts with the first character and continues until
     /// the first non-device path character.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES

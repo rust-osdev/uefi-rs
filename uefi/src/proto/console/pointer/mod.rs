@@ -27,7 +27,7 @@ impl<'boot> Pointer<'boot> {
         (self.reset)(self, extended_verification).into()
     }
 
-    /// Retrieves the pointer device's current state, if a state change occured
+    /// Retrieves the pointer device's current state, if a state change occurred
     /// since the last time this function was called.
     ///
     /// Use `wait_for_input_event()` with the `BootServices::wait_for_event()`

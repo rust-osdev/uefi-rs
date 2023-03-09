@@ -1,0 +1,13 @@
+# Configuration for the typos spell checker utility (<https://github.com/crate-ci/typos>).
+
+[files]
+extend-exclude = [
+    # "uefi/src/table/boot.rs"
+]
+
+[default.extend-words]
+# FOOBAR = "FOOBAR"
+
+[default.extend-identifiers]
+# FOOBAR = "FOOBAR"
+

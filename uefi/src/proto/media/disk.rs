@@ -8,7 +8,7 @@ use core::ptr::NonNull;
 ///
 /// This protocol is used to abstract the block accesses of the block I/O
 /// protocol to a more general offset-length protocol. Firmware is
-/// reponsible for adding this protocol to any block I/O interface that
+/// responsible for adding this protocol to any block I/O interface that
 /// appears in the system that does not already have a disk I/O protocol.
 #[repr(C)]
 #[unsafe_protocol("ce345171-ba0b-11d2-8e4f-00a0c969723b")]

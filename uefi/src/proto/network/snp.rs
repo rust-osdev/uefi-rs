@@ -287,7 +287,7 @@ bitflags! {
 
 bitflags! {
     /// Flags returned by get_interrupt_status to indicate which interrupts have fired on the
-    /// interace since the last call.
+    /// interface since the last call.
     pub struct InterruptStatus : u32 {
         /// Packet received.
         const RECEIVE = 0x01;

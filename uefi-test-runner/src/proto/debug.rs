@@ -96,7 +96,7 @@ fn test_invalidate_instruction_cache(debug_support: &mut DebugSupport) {
         debug_support
             .invalidate_instruction_cache(0, ptr, 64)
             // Should always pass, since the spec says this always returns EFI_SUCCESS
-            .expect("Error occured while invalidating instruction cache");
+            .expect("Error occurred while invalidating instruction cache");
     }
 }
 

@@ -33,10 +33,8 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
 }
 
 fn find_protocol(bt: &BootServices) {
-    type SearchedProtocol<'boot> = proto::console::text::Output<'boot>;
-
     let handles = bt
-        .find_handles::<SearchedProtocol>()
+        .find_handles::<proto::console::text::Output>()
         .expect("Failed to retrieve list of handles");
 
     assert!(

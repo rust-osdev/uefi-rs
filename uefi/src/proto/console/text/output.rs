@@ -22,7 +22,7 @@ use core::fmt::{Debug, Formatter};
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 #[repr(C)]
 #[unsafe_protocol("387477c2-69c7-11d2-8e39-00a0c969723b")]
-pub struct Output<'boot> {
+pub struct Output {
     reset: extern "efiapi" fn(this: &Output, extended: bool) -> Status,
     output_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
     test_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
@@ -37,10 +37,10 @@ pub struct Output<'boot> {
     clear_screen: extern "efiapi" fn(this: &mut Output) -> Status,
     set_cursor_position: extern "efiapi" fn(this: &mut Output, column: usize, row: usize) -> Status,
     enable_cursor: extern "efiapi" fn(this: &mut Output, visible: bool) -> Status,
-    data: &'boot OutputData,
+    data: *const OutputData,
 }
 
-impl<'boot> Output<'boot> {
+impl Output {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
         (self.reset)(self, extended).into()
@@ -85,8 +85,8 @@ impl<'boot> Output<'boot> {
 
     /// Returns an iterator of all supported text modes.
     // TODO: Bring back impl Trait once the story around bounds improves
-    pub fn modes<'out>(&'out mut self) -> OutputModeIter<'out, 'boot> {
-        let max = self.data.max_mode as usize;
+    pub fn modes(&mut self) -> OutputModeIter<'_> {
+        let max = self.data().max_mode as usize;
         OutputModeIter {
             output: self,
             current: 0,
@@ -111,7 +111,7 @@ impl<'boot> Output<'boot> {
 
     /// Returns the current text mode.
     pub fn current_mode(&self) -> Result<Option<OutputMode>> {
-        match self.data.mode {
+        match self.data().mode {
             -1 => Ok(None),
             n if n >= 0 => {
                 let index = n as usize;
@@ -130,7 +130,7 @@ impl<'boot> Output<'boot> {
     /// Returns whether the cursor is currently shown or not.
     #[must_use]
     pub const fn cursor_visible(&self) -> bool {
-        self.data.cursor_visible
+        self.data().cursor_visible
     }
 
     /// Make the cursor visible or invisible.
@@ -144,8 +144,8 @@ impl<'boot> Output<'boot> {
     /// Returns the column and row of the cursor.
     #[must_use]
     pub const fn cursor_position(&self) -> (usize, usize) {
-        let column = self.data.cursor_column;
-        let row = self.data.cursor_row;
+        let column = self.data().cursor_column;
+        let row = self.data().cursor_row;
         (column as usize, row as usize)
     }
 
@@ -169,9 +169,15 @@ impl<'boot> Output<'boot> {
         let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
         (self.set_attribute)(self, attr).into()
     }
+
+    /// Get a reference to `OutputData`. The lifetime of the reference is tied
+    /// to `self`.
+    const fn data(&self) -> &OutputData {
+        unsafe { &*self.data }
+    }
 }
 
-impl<'boot> fmt::Write for Output<'boot> {
+impl fmt::Write for Output {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         // Allocate a small buffer on the stack.
         const BUF_SIZE: usize = 128;
@@ -222,7 +228,7 @@ impl<'boot> fmt::Write for Output<'boot> {
     }
 }
 
-impl<'boot> Debug for Output<'boot> {
+impl Debug for Output {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Output")
             .field("reset (fn ptr)", &(self.reset as *const u64))
@@ -282,13 +288,13 @@ impl OutputMode {
 }
 
 /// An iterator of the text modes (possibly) supported by a device.
-pub struct OutputModeIter<'out, 'boot: 'out> {
-    output: &'out mut Output<'boot>,
+pub struct OutputModeIter<'out> {
+    output: &'out mut Output,
     current: usize,
     max: usize,
 }
 
-impl<'out, 'boot> Iterator for OutputModeIter<'out, 'boot> {
+impl<'out> Iterator for OutputModeIter<'out> {
     type Item = OutputMode;
 
     fn next(&mut self) -> Option<Self::Item> {

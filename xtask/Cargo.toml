@@ -13,6 +13,7 @@ heck = "0.4.0"
 itertools = "0.10.5"
 mbrman = "0.5.1"
 nix = "0.26.1"
+os_info = { version = "3.6.0", default-features = false }
 proc-macro2 = "1.0.46"
 quote = "1.0.21"
 regex = "1.5.4"

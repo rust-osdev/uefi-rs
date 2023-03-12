@@ -15,7 +15,7 @@ use bitflags::bitflags;
 /// check for input/output, some data might be lost.
 #[repr(C)]
 #[unsafe_protocol("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd")]
-pub struct Serial<'boot> {
+pub struct Serial {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
     revision: u32,
@@ -33,10 +33,10 @@ pub struct Serial<'boot> {
     get_control_bits: extern "efiapi" fn(&Serial, &mut ControlBits) -> Status,
     write: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *const u8) -> Status,
     read: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *mut u8) -> Status,
-    io_mode: &'boot IoMode,
+    io_mode: *const IoMode,
 }
 
-impl<'boot> Serial<'boot> {
+impl Serial {
     /// Reset the device.
     pub fn reset(&mut self) -> Result {
         (self.reset)(self).into()
@@ -45,7 +45,7 @@ impl<'boot> Serial<'boot> {
     /// Returns the current I/O mode.
     #[must_use]
     pub const fn io_mode(&self) -> &IoMode {
-        self.io_mode
+        unsafe { &*self.io_mode }
     }
 
     /// Sets the device's new attributes.
@@ -115,7 +115,7 @@ impl<'boot> Serial<'boot> {
     }
 }
 
-impl<'boot> Write for Serial<'boot> {
+impl Write for Serial {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         self.write(s.as_bytes()).map_err(|_| core::fmt::Error)
     }

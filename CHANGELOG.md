@@ -21,6 +21,9 @@
   `HandleBuffer::handles` and `ProtocolsPerHandle::protocols` methods have been
   deprecated.
 - Removed `'boot` lifetime from the `Output` protocol.
+- The generic type `Data` of `uefi::Error<Data: Debug>` doesn't need to be
+  `Display` to be compatible with `core::error::Error`. Note that the error
+  Trait requires the `unstable` feature.
 
 ## uefi-macros - [Unreleased]
 

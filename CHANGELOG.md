@@ -9,6 +9,7 @@
   to `ComponentName1` otherwise.
 - `FileType`, `FileHandle`, `RegularFile`, and `Directory` now implement `Debug`.
 - Added `RuntimeServices::delete_variable()` helper method.
+- Implement `Borrow` for `CString16` and `ToOwned` for `CStr16`.
 
 ### Changed
 

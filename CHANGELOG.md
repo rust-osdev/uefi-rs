@@ -20,6 +20,7 @@
 - `HandleBuffer` and `ProtocolsPerHandle` now implement `Deref`. The
   `HandleBuffer::handles` and `ProtocolsPerHandle::protocols` methods have been
   deprecated.
+- Removed `'boot` lifetime from the `Output` protocol.
 
 ## uefi-macros - [Unreleased]
 

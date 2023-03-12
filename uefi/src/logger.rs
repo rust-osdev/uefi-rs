@@ -23,7 +23,7 @@ use core::ptr::NonNull;
 /// `disable` method before exiting UEFI boot services in order to prevent
 /// undefined behaviour from inadvertent logging.
 pub struct Logger {
-    writer: Option<NonNull<Output<'static>>>,
+    writer: Option<NonNull<Output>>,
 }
 
 impl Logger {

@@ -346,9 +346,9 @@ struct SystemTableImpl {
     stdin_handle: Handle,
     stdin: *mut text::Input,
     stdout_handle: Handle,
-    stdout: *mut text::Output<'static>,
+    stdout: *mut text::Output,
     stderr_handle: Handle,
-    stderr: *mut text::Output<'static>,
+    stderr: *mut text::Output,
     /// Runtime services table.
     runtime: &'static RuntimeServices,
     /// Boot services table.

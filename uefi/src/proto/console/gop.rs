@@ -63,7 +63,7 @@ use core::ptr;
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
 #[unsafe_protocol("9042a9de-23dc-4a38-96fb-7aded080516a")]
-pub struct GraphicsOutput<'boot> {
+pub struct GraphicsOutput {
     query_mode: extern "efiapi" fn(
         &GraphicsOutput,
         mode: u32,
@@ -84,10 +84,10 @@ pub struct GraphicsOutput<'boot> {
         height: usize,
         stride: usize,
     ) -> Status,
-    mode: &'boot ModeData<'boot>,
+    mode: *const ModeData,
 }
 
-impl<'boot> GraphicsOutput<'boot> {
+impl GraphicsOutput {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
     pub fn query_mode(&self, index: u32) -> Result<Mode> {
@@ -110,7 +110,7 @@ impl<'boot> GraphicsOutput<'boot> {
         ModeIter {
             gop: self,
             current: 0,
-            max: self.mode.max_mode,
+            max: self.mode().max_mode,
         }
     }
 
@@ -293,17 +293,17 @@ impl<'boot> GraphicsOutput<'boot> {
     /// Returns the frame buffer information for the current mode.
     #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
-        *self.mode.info
+        *self.mode().info()
     }
 
     /// Access the frame buffer directly
     pub fn frame_buffer(&mut self) -> FrameBuffer {
         assert!(
-            self.mode.info.format != PixelFormat::BltOnly,
+            self.mode().info().format != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
-        let base = self.mode.fb_address as *mut u8;
-        let size = self.mode.fb_size;
+        let base = self.mode().fb_address as *mut u8;
+        let size = self.mode().fb_size;
 
         FrameBuffer {
             base,
@@ -311,22 +311,32 @@ impl<'boot> GraphicsOutput<'boot> {
             _lifetime: PhantomData,
         }
     }
+
+    const fn mode(&self) -> &ModeData {
+        unsafe { &*self.mode }
+    }
 }
 
 #[repr(C)]
-struct ModeData<'info> {
+struct ModeData {
     // Number of modes which the GOP supports.
     max_mode: u32,
     // Current mode.
     mode: u32,
     // Information about the current mode.
-    info: &'info ModeInfo,
+    info: *const ModeInfo,
     // Size of the above structure.
     info_sz: usize,
     // Physical address of the frame buffer.
     fb_address: u64,
     // Size in bytes. Equal to (pixel size) * height * stride.
     fb_size: usize,
+}
+
+impl ModeData {
+    const fn info(&self) -> &ModeInfo {
+        unsafe { &*self.info }
+    }
 }
 
 /// Represents the format of the pixels in a frame buffer.
@@ -436,7 +446,7 @@ impl ModeInfo {
 
 /// Iterator for [`Mode`]s of the [`GraphicsOutput`] protocol.
 pub struct ModeIter<'gop> {
-    gop: &'gop GraphicsOutput<'gop>,
+    gop: &'gop GraphicsOutput,
     current: u32,
     max: u32,
 }

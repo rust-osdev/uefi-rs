@@ -26,6 +26,12 @@
 - The generic type `Data` of `uefi::Error<Data: Debug>` doesn't need to be
   `Display` to be compatible with `core::error::Error`. Note that the error
   Trait requires the `unstable` feature.
+- deprecation removals:
+  - interfaces `BootServices::locate_protocol` and
+    `BootServices::handle_protocol` were removed. `BootServices::open_protocol`
+    and `BootServices::open_protocol_exclusive` are better variants and 
+    available since EFI 1.10 (2002).
+  - `ScopedProtocol::interface` is not public anymore. Use the `Deref` trait.
 
 ## uefi-macros - [Unreleased]
 

@@ -58,8 +58,6 @@ pub const PAGE_SIZE: usize = 4096;
 ///
 /// * [`open_protocol`]
 /// * [`get_image_file_system`]
-/// * [`handle_protocol`]
-/// * [`locate_protocol`]
 ///
 /// For protocol definitions, see the [`proto`] module.
 ///
@@ -67,8 +65,6 @@ pub const PAGE_SIZE: usize = 4096;
 /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
 /// [`open_protocol`]: BootServices::open_protocol
 /// [`get_image_file_system`]: BootServices::get_image_file_system
-/// [`locate_protocol`]: BootServices::locate_protocol
-/// [`handle_protocol`]: BootServices::handle_protocol
 ///
 /// ## Use of [`UnsafeCell`] for protocol references
 ///
@@ -151,6 +147,7 @@ pub struct BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Status,
+    #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
     handle_protocol:
         extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
@@ -250,6 +247,7 @@ pub struct BootServices {
         no_handles: &mut usize,
         buf: &mut *mut Handle,
     ) -> Status,
+    #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
     locate_protocol: extern "efiapi" fn(
         proto: &Guid,
         registration: *mut c_void,
@@ -815,50 +813,6 @@ impl BootServices {
         (self.uninstall_protocol_interface)(handle, protocol, interface).into()
     }
 
-    /// Query a handle for a certain protocol.
-    ///
-    /// This function attempts to get the protocol implementation of a handle,
-    /// based on the protocol GUID.
-    ///
-    /// It is recommended that all new drivers and applications use
-    /// [`open_protocol_exclusive`] or [`open_protocol`] instead of `handle_protocol`.
-    ///
-    /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
-    /// provides no mechanism to protect against concurrent usage. Such
-    /// protections must be implemented by user-level code, for example via a
-    /// global `HashSet`.
-    ///
-    /// # Safety
-    ///
-    /// This method is unsafe because the handle database is not
-    /// notified that the handle and protocol are in use; there is no
-    /// guarantee that they will remain valid for the duration of their
-    /// use. Use [`open_protocol_exclusive`] if possible, otherwise use
-    /// [`open_protocol`].
-    ///
-    /// [`open_protocol`]: BootServices::open_protocol
-    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
-    ///
-    /// # Errors
-    ///
-    /// See section `EFI_BOOT_SERVICES.HandleProtocol()` in the UEFI Specification for more details.
-    ///
-    /// * [`uefi::Status::UNSUPPORTED`]
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    #[deprecated(
-        note = "it is recommended to use `open_protocol_exclusive` or `open_protocol` instead"
-    )]
-    pub unsafe fn handle_protocol<P: ProtocolPointer + ?Sized>(
-        &self,
-        handle: Handle,
-    ) -> Result<&UnsafeCell<P>> {
-        let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
-            let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
-            &*ptr
-        })
-    }
-
     /// Registers `event` to be signalled whenever a protocol interface is registered for
     /// `protocol` by `install_protocol_interface()` or `reinstall_protocol_interface()`.
     ///
@@ -1290,10 +1244,9 @@ impl BootServices {
     /// subset of this functionality.
     ///
     /// This function attempts to get the protocol implementation of a
-    /// handle, based on the protocol GUID. It is an extended version of
-    /// [`handle_protocol`]. It is recommended that all
-    /// new drivers and applications use `open_protocol_exclusive` or
-    /// `open_protocol` instead of `handle_protocol`.
+    /// handle, based on the protocol GUID. It is recommended that all
+    /// new drivers and applications use [`open_protocol_exclusive`] or
+    /// [`open_protocol`].
     ///
     /// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for
     /// details of the input parameters.
@@ -1316,7 +1269,7 @@ impl BootServices {
     /// responsible for ensuring that the handle and protocol remain
     /// valid until the `ScopedProtocol` is dropped.
     ///
-    /// [`handle_protocol`]: BootServices::handle_protocol
+    /// [`open_protocol`]: BootServices::open_protocol
     /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
     ///
     /// # Errors
@@ -1344,7 +1297,6 @@ impl BootServices {
         .into_with_val(|| {
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
 
-            #[allow(deprecated)]
             ScopedProtocol {
                 interface: &*interface,
                 open_params: params,
@@ -1357,8 +1309,6 @@ impl BootServices {
     ///
     /// If successful, a [`ScopedProtocol`] is returned that will
     /// automatically close the protocol interface when dropped.
-    ///
-    /// [`handle_protocol`]: BootServices::handle_protocol
     ///
     /// # Errors
     ///
@@ -1478,39 +1428,6 @@ impl BootServices {
             })
     }
 
-    /// Returns a protocol implementation, if present on the system.
-    ///
-    /// The caveats of `BootServices::handle_protocol()` also apply here.
-    ///
-    /// # Safety
-    ///
-    /// This method is unsafe because the handle database is not
-    /// notified that the handle and protocol are in use; there is no
-    /// guarantee that they will remain valid for the duration of their
-    /// use. Use [`get_handle_for_protocol`] and either
-    /// [`open_protocol_exclusive`] or [`open_protocol`] instead.
-    ///
-    /// [`get_handle_for_protocol`]: BootServices::get_handle_for_protocol
-    /// [`open_protocol`]: BootServices::open_protocol
-    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
-    ///
-    /// # Errors
-    ///
-    /// See section `EFI_BOOT_SERVICES.LocateProtocol()` in the UEFI Specification for more details.
-    ///
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    /// * [`uefi::Status::NOT_FOUND`]
-    #[deprecated(
-        note = "it is recommended to use `open_protocol_exclusive` or `open_protocol` instead"
-    )]
-    pub unsafe fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
-        let mut ptr = ptr::null_mut();
-        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
-            let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
-            &*ptr
-        })
-    }
-
     /// Copies memory from source to destination. The buffers can overlap.
     ///
     /// # Safety
@@ -1603,6 +1520,7 @@ impl super::Table for BootServices {
 
 impl Debug for BootServices {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        #[allow(deprecated)]
         f.debug_struct("BootServices")
             .field("header", &self.header)
             .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const usize))
@@ -1870,8 +1788,7 @@ pub struct OpenProtocolParams {
 /// protocol and why [`UnsafeCell`] is used.
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
-    #[deprecated(since = "0.17.0", note = "use Deref and DerefMut instead")]
-    pub interface: &'a UnsafeCell<P>,
+    interface: &'a UnsafeCell<P>,
 
     open_params: OpenProtocolParams,
     boot_services: &'a BootServices,
@@ -1898,19 +1815,13 @@ impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {
     type Target = P;
 
     fn deref(&self) -> &Self::Target {
-        #[allow(deprecated)]
-        unsafe {
-            &*self.interface.get()
-        }
+        unsafe { &*self.interface.get() }
     }
 }
 
 impl<'a, P: Protocol + ?Sized> DerefMut for ScopedProtocol<'a, P> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        #[allow(deprecated)]
-        unsafe {
-            &mut *self.interface.get()
-        }
+        unsafe { &mut *self.interface.get() }
     }
 }
 

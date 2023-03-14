@@ -79,7 +79,7 @@
 //! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
-#![feature(abi_efiapi)]
+#![feature(extended_varargs_abi_support)]
 #![cfg_attr(feature = "unstable", feature(error_in_core))]
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

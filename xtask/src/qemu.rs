@@ -28,6 +28,30 @@ impl OvmfFileType {
             Self::Vars => "vars",
         }
     }
+
+    /// Get a user-provided path for the given OVMF file type.
+    ///
+    /// This uses the command-line arg if present, otherwise it falls back to an
+    /// environment variable. If neither is present, returns `None`.
+    fn get_user_provided_path(self, opt: &QemuOpt) -> Option<PathBuf> {
+        let opt_path;
+        let var_name;
+        match self {
+            Self::Code => {
+                opt_path = &opt.ovmf_code;
+                var_name = "OVMF_CODE";
+            }
+            Self::Vars => {
+                opt_path = &opt.ovmf_vars;
+                var_name = "OVMF_VARS";
+            }
+        }
+        if let Some(path) = opt_path {
+            Some(path.clone())
+        } else {
+            env::var_os(var_name).map(PathBuf::from)
+        }
+    }
 }
 
 struct OvmfPaths {
@@ -173,14 +197,14 @@ impl OvmfPaths {
     /// that exists. If none of them exist, an error is returned.
     fn find_ovmf_file(
         file_type: OvmfFileType,
-        user_provided_path: &Option<PathBuf>,
+        opt: &QemuOpt,
         candidates: &[Self],
     ) -> Result<PathBuf> {
-        if let Some(path) = user_provided_path {
+        if let Some(path) = file_type.get_user_provided_path(opt) {
             // The user provided an exact path to use; verify that it
             // exists.
             if path.exists() {
-                Ok(path.to_owned())
+                Ok(path)
             } else {
                 bail!(
                     "ovmf {} file does not exist: {}",
@@ -211,8 +235,8 @@ impl OvmfPaths {
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
         let candidates = Self::get_candidate_paths(arch);
 
-        let code = Self::find_ovmf_file(OvmfFileType::Code, &opt.ovmf_code, &candidates)?;
-        let vars = Self::find_ovmf_file(OvmfFileType::Vars, &opt.ovmf_vars, &candidates)?;
+        let code = Self::find_ovmf_file(OvmfFileType::Code, opt, &candidates)?;
+        let vars = Self::find_ovmf_file(OvmfFileType::Vars, opt, &candidates)?;
 
         Ok(Self { code, vars })
     }

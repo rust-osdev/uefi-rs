@@ -4,6 +4,8 @@ let
 in
 pkgs.mkShell rec {
   nativeBuildInputs = with pkgs; [
+    rustup
+    qemu
   ];
 
   buildInputs = with pkgs; [

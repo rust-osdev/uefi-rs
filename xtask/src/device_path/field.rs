@@ -1,10 +1,7 @@
 use crate::device_path::util::is_doc_attr;
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::{
-    Attribute, Expr, ExprLit, Field, Ident, Lit, Meta, MetaList, MetaNameValue, NestedMeta, Path,
-    Type, TypeArray,
-};
+use syn::{Attribute, Expr, ExprLit, Field, Ident, Lit, Path, Type, TypeArray};
 
 /// A fixed-size non-array type.
 ///
@@ -344,58 +341,44 @@ impl FieldNodeAttr {
     /// readme. Returns `None` if the attribute does not exactly match
     /// the expected format.
     fn from_attr(attr: &Attribute) -> Option<Self> {
-        let meta = attr.parse_meta().ok()?;
+        if !attr.path().is_ident("node") {
+            return None;
+        }
 
-        if let Meta::List(MetaList { path, nested, .. }) = meta {
-            if path.get_ident()? != "node" {
-                return None;
-            }
+        let mut out = Self::default();
 
-            let mut out = Self::default();
+        attr.parse_nested_meta(|meta| {
+            let path = &meta.path;
+            if path.is_ident("no_get_func") {
+                out.get_func = GetFunc::None;
+            } else if path.is_ident("custom_get_impl") {
+                out.get_func = GetFunc::Custom;
+            } else if path.is_ident("custom_build_impl") {
+                out.custom_build_impl = true;
+            } else if path.is_ident("custom_build_size_impl") {
+                out.custom_build_size_impl = true;
+            } else if path.is_ident("build_type") {
+                let value = meta.value()?;
+                let lit: Lit = value.parse()?;
 
-            for nested in nested.iter() {
-                match nested {
-                    NestedMeta::Meta(Meta::Path(path)) => {
-                        let ident = path.get_ident()?;
-                        if ident == "no_get_func" {
-                            out.get_func = GetFunc::None;
-                        } else if ident == "custom_get_impl" {
-                            out.get_func = GetFunc::Custom;
-                        } else if ident == "custom_build_impl" {
-                            out.custom_build_impl = true;
-                        } else if ident == "custom_build_size_impl" {
-                            out.custom_build_size_impl = true;
-                        } else {
-                            return None;
-                        }
+                match lit {
+                    Lit::Str(s) => {
+                        out.build_type = BuildType::Custom(syn::parse_str(&s.value())?);
                     }
-                    NestedMeta::Meta(Meta::NameValue(MetaNameValue { path, lit, .. })) => {
-                        if path.get_ident()? != "build_type" {
-                            return None;
-                        }
-
-                        match lit {
-                            Lit::Str(s) => {
-                                out.build_type =
-                                    BuildType::Custom(syn::parse_str(&s.value()).ok()?);
-                            }
-                            Lit::Bool(b) if !b.value() => {
-                                out.build_type = BuildType::None;
-                            }
-                            _ => {
-                                return None;
-                            }
-                        }
+                    Lit::Bool(b) if !b.value() => {
+                        out.build_type = BuildType::None;
                     }
                     _ => {
-                        return None;
+                        return Err(meta.error("invalid build_type"));
                     }
                 }
+            } else {
+                return Err(meta.error("invalid field node attribute"));
             }
+            Ok(())
+        })
+        .ok()?;
 
-            Some(out)
-        } else {
-            None
-        }
+        Some(out)
     }
 }

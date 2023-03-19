@@ -5,7 +5,7 @@ use heck::ToShoutySnakeCase;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Attribute, Fields, Ident, ItemStruct, Lit, Meta, MetaList, MetaNameValue, NestedMeta};
+use syn::{Attribute, Fields, Ident, ItemStruct, LitInt, LitStr};
 
 /// Device path node specification.
 pub struct Node {
@@ -467,44 +467,34 @@ struct NodeAttr {
 /// Parse a `node` attribute. Returns `None` for any other attribute, or
 /// if the contents don't match the expected format.
 fn parse_node_attr(attr: &Attribute) -> Option<NodeAttr> {
-    let meta = attr.parse_meta().ok()?;
-
-    if let Meta::List(MetaList { path, nested, .. }) = meta {
-        if path.get_ident()? != "node" {
-            return None;
-        }
-
-        let mut static_size = None;
-        let mut sub_type = None;
-
-        for nested in nested.iter() {
-            if let NestedMeta::Meta(Meta::NameValue(MetaNameValue { path, lit, .. })) = nested {
-                let ident = path.get_ident()?;
-
-                match lit {
-                    Lit::Int(lit) if ident == "static_size" => {
-                        let lit = lit.base10_parse().ok()?;
-                        static_size = Some(lit);
-                    }
-                    Lit::Str(lit) if ident == "sub_type" => {
-                        sub_type = Some(lit.value());
-                    }
-                    _ => {
-                        return None;
-                    }
-                }
-            } else {
-                return None;
-            }
-        }
-
-        Some(NodeAttr {
-            static_size: static_size?,
-            sub_type,
-        })
-    } else {
-        None
+    if !attr.path().is_ident("node") {
+        return None;
     }
+
+    let mut static_size = None;
+    let mut sub_type = None;
+    attr.parse_nested_meta(|meta| {
+        if meta.path.is_ident("static_size") {
+            let value = meta.value()?;
+            let lit: LitInt = value.parse()?;
+            let lit = lit.base10_parse()?;
+            static_size = Some(lit);
+            Ok(())
+        } else if meta.path.is_ident("sub_type") {
+            let value = meta.value()?;
+            let lit: LitStr = value.parse()?;
+            sub_type = Some(lit.value());
+            Ok(())
+        } else {
+            Err(meta.error("invalid struct node attribute"))
+        }
+    })
+    .ok()?;
+
+    Some(NodeAttr {
+        static_size: static_size?,
+        sub_type,
+    })
 }
 
 /// Returns `true` if the attribute is a valid `node` attribute, false

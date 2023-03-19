@@ -2,18 +2,12 @@ use anyhow::{bail, Context, Result};
 use std::io::Write;
 use std::process::{Command, Stdio};
 use std::thread;
-use syn::{Attribute, Meta};
+use syn::Attribute;
 
 /// Returns true if the attribute is a `#[doc = "..."]` attribute,
 /// otherwise returns false.
 pub fn is_doc_attr(attr: &Attribute) -> bool {
-    if let Ok(Meta::NameValue(nv)) = attr.parse_meta() {
-        if let Some(ident) = nv.path.get_ident() {
-            return ident == "doc";
-        }
-    }
-
-    false
+    attr.path().is_ident("doc")
 }
 
 /// Run `rustfmt` on the `input` string and return the formatted code.

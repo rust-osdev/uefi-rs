@@ -1990,8 +1990,11 @@ pub struct MemoryMapSize {
     pub map_size: usize,
 }
 
-/// An iterator of [`MemoryDescriptor`] which returns elements in sorted order. The underlying memory map is always
-/// associated with the unique [`MemoryMapKey`] contained in the struct.
+/// An iterator of [`MemoryDescriptor`] that is always associated with the
+/// unique [`MemoryMapKey`] contained in the struct.
+///
+/// To iterate over the entries, call [`MemoryMap::entries`]. To get a sorted
+/// map, you manually have to call [`MemoryMap::sort`] first.
 pub struct MemoryMap<'buf> {
     key: MemoryMapKey,
     buf: &'buf mut [u8],
@@ -2007,6 +2010,7 @@ impl<'buf> MemoryMap<'buf> {
     }
 
     /// Sorts the memory map by physical address in place.
+    /// This operation is optional and should be invoked only once.
     pub fn sort(&mut self) {
         unsafe {
             self.qsort(0, self.len - 1);
@@ -2075,8 +2079,9 @@ impl<'buf> MemoryMap<'buf> {
         elem.phys_start
     }
 
+    /// Returns an iterator over the contained memory map. To get a sorted map,
+    /// call [`MemoryMap::sort`] first.
     #[must_use]
-    /// Returns an iterator over the contained memory map
     pub fn entries(&self) -> MemoryMapIter {
         MemoryMapIter {
             buffer: self.buf,
@@ -2356,7 +2361,6 @@ mod tests {
     }
 
     // Added for debug purposes on test failure
-    #[cfg(test)]
     impl core::fmt::Display for MemoryMap<'_> {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             writeln!(f)?;

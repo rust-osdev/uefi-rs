@@ -22,6 +22,7 @@ use core::ptr::NonNull;
 /// If this logger is used as a global logger, you must disable it using the
 /// `disable` method before exiting UEFI boot services in order to prevent
 /// undefined behaviour from inadvertent logging.
+#[derive(Debug)]
 pub struct Logger {
     writer: Option<NonNull<Output>>,
 }

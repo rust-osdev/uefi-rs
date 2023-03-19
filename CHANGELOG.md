@@ -26,6 +26,9 @@ Rust 1.68 or higher.
 - `FileType`, `FileHandle`, `RegularFile`, and `Directory` now implement `Debug`.
 - Added `RuntimeServices::delete_variable()` helper method.
 - Implement `Borrow` for `CString16` and `ToOwned` for `CStr16`.
+- Every public struct now implements `Debug`. Exceptions are cases when there
+  is no sensible way of presenting a useful Debug representation, such as for
+  Unions.
 
 ### Changed
 

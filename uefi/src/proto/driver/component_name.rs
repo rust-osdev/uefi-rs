@@ -7,6 +7,7 @@
 use crate::proto::unsafe_protocol;
 use crate::table::boot::{BootServices, ScopedProtocol};
 use crate::{CStr16, Error, Handle, Result, Status};
+use core::fmt::{Debug, Formatter};
 use core::{ptr, slice};
 
 /// Protocol that provides human-readable names for a driver and for each of the
@@ -239,6 +240,15 @@ impl<'a> ComponentName<'a> {
     }
 }
 
+impl<'a> Debug for ComponentName<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self {
+            ComponentName::V1(_) => f.debug_tuple("V1").finish(),
+            ComponentName::V2(_) => f.debug_tuple("V2").finish(),
+        }
+    }
+}
+
 /// Error returned by [`ComponentName1::supported_languages`] and
 /// [`ComponentName2::supported_languages`].
 #[derive(Debug, Eq, PartialEq)]
@@ -251,7 +261,7 @@ pub enum LanguageError {
     },
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum LanguageIterKind {
     V1,
     V2,
@@ -259,6 +269,7 @@ enum LanguageIterKind {
 
 /// Iterator returned by [`ComponentName1::supported_languages`] and
 /// [`ComponentName2::supported_languages`].
+#[derive(Debug)]
 pub struct LanguageIter<'a> {
     languages: &'a [u8],
     kind: LanguageIterKind,

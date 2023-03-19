@@ -41,6 +41,7 @@ impl Handle {
 ///
 /// If you need to have a nullable event, use `Option<Event>`.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct Event(NonNull<c_void>);
 
 impl Event {

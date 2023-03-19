@@ -44,6 +44,7 @@ pub const PROPERTIES_TABLE_GUID: Guid = guid!("880aaca3-4adc-4a04-9079-b74734082
 
 /// This table contains additional information about the UEFI implementation.
 #[repr(C)]
+#[derive(Debug)]
 pub struct PropertiesTable {
     /// Version of the UEFI properties table.
     ///

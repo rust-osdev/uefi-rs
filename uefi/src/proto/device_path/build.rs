@@ -69,6 +69,7 @@ use alloc::vec::Vec;
 /// # Ok(())
 /// # }
 /// ```
+#[derive(Debug)]
 pub struct DevicePathBuilder<'a> {
     storage: BuilderStorage<'a>,
 }
@@ -143,6 +144,7 @@ impl<'a> DevicePathBuilder<'a> {
     }
 }
 
+#[derive(Debug)]
 enum BuilderStorage<'a> {
     Buf {
         buf: &'a mut [MaybeUninit<u8>],

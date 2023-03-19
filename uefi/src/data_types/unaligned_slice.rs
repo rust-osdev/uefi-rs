@@ -163,6 +163,7 @@ impl<'a, T: Copy> IntoIterator for &'a UnalignedSlice<'a, T> {
 }
 
 /// Iterator for a [`UnalignedSlice`].
+#[derive(Debug)]
 pub struct UnalignedSliceIntoIter<'a, T: Copy> {
     slice: UnalignedSlice<'a, T>,
     index: usize,
@@ -179,6 +180,7 @@ impl<'a, T: Copy> Iterator for UnalignedSliceIntoIter<'a, T> {
 }
 
 /// Iterator for a [`UnalignedSlice`] reference.
+#[derive(Debug)]
 pub struct UnalignedSliceIter<'a, T: Copy> {
     slice: &'a UnalignedSlice<'a, T>,
     index: usize,

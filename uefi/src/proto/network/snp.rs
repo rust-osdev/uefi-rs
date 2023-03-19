@@ -532,6 +532,7 @@ impl NetworkStats {
 
 /// The Simple Network Mode
 #[repr(C)]
+#[derive(Debug)]
 pub struct NetworkMode {
     /// Reports the current state of the network interface
     pub state: NetworkState,
@@ -574,7 +575,7 @@ pub struct NetworkMode {
 }
 
 newtype_enum! {
-    /// The state of a network interface
+    /// The state of a network interface.
     pub enum NetworkState: u32 => {
         /// The interface has been stopped
         STOPPED = 0,

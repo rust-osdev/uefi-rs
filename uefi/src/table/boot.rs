@@ -1644,6 +1644,7 @@ impl Debug for BootServices {
 
 /// Used as a parameter of [`BootServices::load_image`] to provide the
 /// image source.
+#[derive(Debug)]
 pub enum LoadImageSource<'a> {
     /// Load an image from a buffer. The data will copied from the
     /// buffer, so the input reference doesn't need to remain valid
@@ -1701,6 +1702,7 @@ pub enum Tpl: usize => {
 /// RAII guard for task priority level changes
 ///
 /// Will automatically restore the former task priority level when dropped.
+#[derive(Debug)]
 pub struct TplGuard<'boot> {
     boot_services: &'boot BootServices,
     old_tpl: Tpl,
@@ -1731,6 +1733,7 @@ impl Drop for TplGuard<'_> {
 
 /// Attributes for [`BootServices::open_protocol`].
 #[repr(u32)]
+#[derive(Debug)]
 pub enum OpenProtocolAttributes {
     /// Used by drivers to get a protocol interface for a handle. The
     /// driver will not be informed if the interface is uninstalled or
@@ -1763,6 +1766,7 @@ pub enum OpenProtocolAttributes {
 }
 
 /// Parameters passed to [`BootServices::open_protocol`].
+#[derive(Debug)]
 pub struct OpenProtocolParams {
     /// The handle for the protocol to open.
     pub handle: Handle,
@@ -1783,6 +1787,7 @@ pub struct OpenProtocolParams {
 ///
 /// See also the [`BootServices`] documentation for details of how to open a
 /// protocol and why [`UnsafeCell`] is used.
+#[derive(Debug)]
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
     interface: &'a UnsafeCell<P>,
@@ -1982,7 +1987,9 @@ bitflags! {
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
-/// A structure containing the size of a memory descriptor and the size of the memory map
+/// A structure containing the size of a memory descriptor and the size of the
+/// memory map.
+#[derive(Debug)]
 pub struct MemoryMapSize {
     /// Size of a single memory descriptor in bytes
     pub entry_size: usize,
@@ -1995,6 +2002,7 @@ pub struct MemoryMapSize {
 ///
 /// To iterate over the entries, call [`MemoryMap::entries`]. To get a sorted
 /// map, you manually have to call [`MemoryMap::sort`] first.
+#[derive(Debug)]
 pub struct MemoryMap<'buf> {
     key: MemoryMapKey,
     buf: &'buf mut [u8],
@@ -2195,7 +2203,8 @@ bitflags! {
 /// Raw event notification function
 type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
-/// Timer events manipulation
+/// Timer events manipulation.
+#[derive(Debug)]
 pub enum TimerTrigger {
     /// Cancel event's timer
     Cancel,
@@ -2211,6 +2220,7 @@ pub enum TimerTrigger {
 
 /// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
 /// returned by [`BootServices::protocols_per_handle`].
+#[derive(Debug)]
 pub struct ProtocolsPerHandle<'a> {
     // The pointer returned by `protocols_per_handle` has to be free'd with
     // `free_pool`, so keep a reference to boot services for that purpose.
@@ -2248,10 +2258,11 @@ impl<'a> ProtocolsPerHandle<'a> {
     }
 }
 
-/// A buffer that contains an array of [`Handles`][Handle] that support the requested protocol.
-/// Returned by [`BootServices::locate_handle_buffer`].
+/// A buffer that contains an array of [`Handles`][Handle] that support the
+/// requested protocol. Returned by [`BootServices::locate_handle_buffer`].
+#[derive(Debug)]
 pub struct HandleBuffer<'a> {
-    // The pointer returned by `locate_handle_buffer` has to be free'd with
+    // The pointer returned by `locate_handle_buffer` has to be freed with
     // `free_pool`, so keep a reference to boot services for that purpose.
     boot_services: &'a BootServices,
     count: usize,

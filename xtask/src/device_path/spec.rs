@@ -288,6 +288,7 @@ mod acpi {
     /// element is present.
     #[build]
     #[repr(transparent)]
+    #[derive(Debug)]
     pub struct AdrSlice([u32]);
 
     #[build]
@@ -941,6 +942,7 @@ mod messaging {
     ///
     /// [`VENDOR`]: uefi::proto::device_path::messaging::RestServiceType
     #[build]
+    #[derive(Debug)]
     pub struct RestServiceVendorData<'a> {
         /// Vendor GUID.
         pub vendor_guid: Guid,

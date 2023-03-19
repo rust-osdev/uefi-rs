@@ -213,6 +213,16 @@ impl PcrEventInputs {
     }
 }
 
+impl Debug for PcrEventInputs {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PcrEventInputs")
+            .field("size", &{ self.size })
+            .field("event_header", &self.event_header)
+            .field("event", &"<binary data>")
+            .finish()
+    }
+}
+
 #[repr(C, packed)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct AlgorithmDigestSize {
@@ -313,6 +323,7 @@ impl<'a> EventLogHeader<'a> {
 ///
 /// This type of event log can contain multiple hash types (e.g. SHA-1, SHA-256,
 /// SHA-512, etc).
+#[derive(Debug)]
 pub struct EventLog<'a> {
     // Tie the lifetime to the protocol, and by extension, boot services.
     _lifetime: PhantomData<&'a Tcg>,
@@ -394,6 +405,7 @@ impl<'a> IntoIterator for PcrEventDigests<'a> {
 }
 
 /// Iterator over a list of digests.
+#[derive(Debug)]
 pub struct PcrEventDigestIter<'a> {
     digests: PcrEventDigests<'a>,
     offset: usize,
@@ -511,6 +523,7 @@ impl<'a> PcrEvent<'a> {
 }
 
 /// Iterator for events in [`EventLog`].
+#[derive(Debug)]
 pub struct EventLogIter<'a> {
     log: &'a EventLog<'a>,
     header: Option<EventLogHeader<'a>>,

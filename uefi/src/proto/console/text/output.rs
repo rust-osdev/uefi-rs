@@ -288,6 +288,7 @@ impl OutputMode {
 }
 
 /// An iterator of the text modes (possibly) supported by a device.
+#[derive(Debug)]
 pub struct OutputModeIter<'out> {
     output: &'out mut Output,
     current: usize,

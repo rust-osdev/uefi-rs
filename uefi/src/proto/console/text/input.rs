@@ -111,6 +111,7 @@ impl From<RawKey> for Key {
 
 /// A key read from the console (UEFI version)
 #[repr(C)]
+#[derive(Debug)]
 pub struct RawKey {
     /// The key's scan code.
     /// or 0 if printable

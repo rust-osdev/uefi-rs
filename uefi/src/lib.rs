@@ -83,6 +83,7 @@
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(clippy::all)]
 #![deny(clippy::must_use_candidate)]
+#![deny(missing_debug_implementations)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

@@ -11,7 +11,7 @@ categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
 
 [dependencies]
-uefi = { version = "0.19.0", features = ["global_allocator"] }
+uefi = { version = "0.20.0", features = ["global_allocator"] }
 log = { version = "0.4.5", default-features = false }
 cfg-if = "1.0.0"
 qemu-exit = { version = "3.0.1", optional = true }

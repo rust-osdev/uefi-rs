@@ -20,6 +20,8 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
+    - uses: Swatinem/rust-cache@v2
+
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
@@ -35,6 +37,8 @@ jobs:
     steps:
     - name: Checkout sources
       uses: actions/checkout@v3
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Install qemu and OVMF
       run: |
@@ -52,6 +56,8 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
+    - uses: Swatinem/rust-cache@v2
+
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
@@ -68,6 +74,8 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Run cargo test (without unstable)
         run: cargo xtask test
 
@@ -77,6 +85,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo fmt
         run: |
@@ -111,6 +121,8 @@ jobs:
     - name: Set MSRV toolchain
       run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
 
+    - uses: Swatinem/rust-cache@v2
+
     - name: Build
       run: cargo xtask test-latest-release
 
@@ -123,6 +135,8 @@ jobs:
 
       - name: Checkout sources
         uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Run VM tests
         run: cargo xtask run --target x86_64 --ci
@@ -143,6 +157,8 @@ jobs:
     - name: Set toolchain
       run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
 
+    - uses: Swatinem/rust-cache@v2
+
     - name: Build
       run: cargo xtask build
 
@@ -157,6 +173,8 @@ jobs:
 
     - name: Set nightly toolchain so that `unstable` can be included
       run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Build
       run: cargo xtask build --feature-permutations
@@ -175,6 +193,8 @@ jobs:
 
     - name: Enable nightly toolchain
       run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Run VM tests with the `unstable` feature
       run: cargo xtask run --target x86_64 --headless --ci --unstable

@@ -1,6 +1,6 @@
 [package]
 name = "uefi-macros"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["The Rust OSDev team"]
 readme = "README.md"
 edition = "2021"

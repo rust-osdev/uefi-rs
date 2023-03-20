@@ -6,4 +6,4 @@ publish = false
 
 [dependencies]
 uefi = { version = "0.20.0", features = ["alloc"] }
-uefi-services = "0.16.0"
+uefi-services = "0.17.0"

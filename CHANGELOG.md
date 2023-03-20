@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.20.0 (2023-03-19)
+
 As of this release, the UEFI crates work on the stable channel. This requires
 Rust 1.68 or higher.
 
@@ -32,13 +38,23 @@ Rust 1.68 or higher.
 - deprecation removals:
   - interfaces `BootServices::locate_protocol` and
     `BootServices::handle_protocol` were removed. `BootServices::open_protocol`
-    and `BootServices::open_protocol_exclusive` are better variants and 
+    and `BootServices::open_protocol_exclusive` are better variants and
     available since EFI 1.10 (2002).
   - `ScopedProtocol::interface` is not public anymore. Use the `Deref` trait.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.11.0 (2023-03-19)
 
-## uefi-services - [Unreleased]
+### Changed
+
+- Errors produced by the `entry` macro have been improved.
+
+## uefi-services - 0.17.0 (2023-03-19)
+
+### Changed
+
+- Drop use of unstable `alloc_error_handler` feature. As of Rust 1.68 we can use
+  [`default_alloc_error_handler`](https://github.com/rust-lang/rust/pull/102318)
+  instead.
 
 ## uefi - 0.19.1 (2023-02-04)
 

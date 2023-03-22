@@ -109,7 +109,7 @@ pub mod proto;
 pub mod prelude;
 
 #[cfg(feature = "global_allocator")]
-pub mod global_allocator;
+pub mod allocator;
 
 #[cfg(feature = "logger")]
 pub mod logger;

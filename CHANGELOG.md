@@ -2,6 +2,10 @@
 
 ## uefi - [Unreleased]
 
+### Changed
+
+- The `uefi::global_allocator` module has been renamed to `uefi::allocator`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

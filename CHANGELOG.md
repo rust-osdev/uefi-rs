@@ -4,7 +4,10 @@
 
 ### Changed
 
-- The `uefi::global_allocator` module has been renamed to `uefi::allocator`.
+- The `global_allocator` module has been renamed to `allocator`, and is now
+  available regardless of whether the `global_allocator` feature is enabled. The
+  `global_allocator` feature now only controls whether `allocator::Allocator` is
+  set as Rust's global allocator.
 
 ## uefi-macros - [Unreleased]
 

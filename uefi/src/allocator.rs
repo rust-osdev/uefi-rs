@@ -1,7 +1,7 @@
 //! This module implements Rust's global allocator interface using UEFI's memory allocation functions.
 //!
-//! Enabling the `alloc` optional feature in your app will allow you to use Rust's higher-level data structures,
-//! like boxes, vectors, hash maps, linked lists and so on.
+//! If the `global_allocator` feature is enabled, the [`Allocator`] will be used
+//! as the global Rust allocator.
 //!
 //! # Usage
 //!
@@ -112,5 +112,6 @@ unsafe impl GlobalAlloc for Allocator {
     }
 }
 
+#[cfg(feature = "global_allocator")]
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator;

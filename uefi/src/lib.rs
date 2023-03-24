@@ -43,8 +43,8 @@
 //!   `Vec` rather than filling a statically-sized array. This requires
 //!   a global allocator; you can use the `global_allocator` feature or
 //!   provide your own.
-//! - `global_allocator`: Implement a [global allocator] using UEFI
-//!   functions. This is a simple allocator that relies on the UEFI pool
+//! - `global_allocator`: Set [`allocator::Allocator`] as the global Rust
+//!   allocator. This is a simple allocator that relies on the UEFI pool
 //!   allocator. You can choose to provide your own allocator instead of
 //!   using this feature, or no allocator at all if you don't need to
 //!   dynamically allocate any memory.
@@ -108,8 +108,7 @@ pub mod proto;
 
 pub mod prelude;
 
-#[cfg(feature = "global_allocator")]
-pub mod global_allocator;
+pub mod allocator;
 
 #[cfg(feature = "logger")]
 pub mod logger;

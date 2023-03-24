@@ -93,7 +93,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
         init_logger(st);
 
         let boot_services = st.boot_services();
-        uefi::global_allocator::init(boot_services);
+        uefi::allocator::init(boot_services);
 
         // Schedule these tools to be disabled on exit from UEFI boot services
         boot_services
@@ -191,7 +191,7 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
         logger.disable();
     }
 
-    uefi::global_allocator::exit_boot_services();
+    uefi::allocator::exit_boot_services();
 }
 
 #[cfg(feature = "panic_handler")]

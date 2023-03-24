@@ -5,7 +5,7 @@ use crate::pipe::Pipe;
 use crate::tpm::Swtpm;
 use crate::util::command_to_string;
 use crate::{net, platform};
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use regex::bytes::Regex;
 use serde_json::{json, Value};
 use std::env;
@@ -14,6 +14,8 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use tempfile::TempDir;
+#[cfg(target_os = "linux")]
+use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
 #[derive(Clone, Copy, Debug)]
 enum OvmfFileType {
@@ -60,6 +62,18 @@ struct OvmfPaths {
 }
 
 impl OvmfPaths {
+    /// If OVMF files can not or should not be found at well-known locations,
+    /// this optional environment variable can point to it.
+    ///
+    /// This variable points to the `_CODE.fd` file.
+
+    const ENV_VAR_OVMF_CODE: &'static str = "OVMF_CODE";
+    /// If OVMF files can not or should not be found at well-known locations,
+    /// this optional environment variable can point to it.
+    ///
+    /// This variable points to the `_VARS.fd` file.
+    const ENV_VAR_OVMF_VARS: &'static str = "OVMF_VARS";
+
     fn get_path(&self, file_type: OvmfFileType) -> &Path {
         match file_type {
             OvmfFileType::Code => &self.code,
@@ -151,6 +165,24 @@ impl OvmfPaths {
         }
     }
 
+    /// If a user uses NixOS, this function returns an error if the user didn't
+    /// set the environment variables `OVMF_CODE` and `OVMF_VARS`.
+    ///
+    /// It returns nothing as the environment variables are resolved at a
+    /// higher level. NixOS doesn't have globally installed software (without
+    /// hacky and non-idiomatic workarounds).
+    fn assist_nixos_users() -> Result<()> {
+        let os_info = os_info::get();
+        if os_info.os_type() == os_info::Type::NixOS {
+            let code = env::var_os(Self::ENV_VAR_OVMF_CODE);
+            let vars = env::var_os(Self::ENV_VAR_OVMF_VARS);
+            if !matches!((code, vars), (Some(_), Some(_))) {
+                return Err(anyhow!("Run `$ nix-shell` for OVMF files."));
+            }
+        }
+        Ok(())
+    }
+
     /// Get the Windows OVMF paths for the given guest arch.
     fn windows(arch: UefiArch) -> Self {
         match arch {
@@ -172,7 +204,7 @@ impl OvmfPaths {
 
     /// Get candidate paths where OVMF code/vars might exist for the
     /// given guest arch and host platform.
-    fn get_candidate_paths(arch: UefiArch) -> Vec<Self> {
+    fn get_candidate_paths(arch: UefiArch) -> Result<Vec<Self>> {
         let mut candidates = Vec::new();
         if platform::is_linux() {
             candidates.push(Self::arch_linux(arch));
@@ -181,20 +213,21 @@ impl OvmfPaths {
             }
             candidates.push(Self::debian_linux(arch));
             candidates.push(Self::fedora_linux(arch));
+            Self::assist_nixos_users()?;
         }
         if platform::is_windows() {
             candidates.push(Self::windows(arch));
         }
-        candidates
+        Ok(candidates)
     }
 
     /// Search for an OVMF file (either code or vars).
     ///
-    /// If `user_provided_path` is not None, it is always used. An error
-    /// is returned if the path does not exist.
-    ///
-    /// Otherwise, the paths in `candidates` are searched to find one
-    /// that exists. If none of them exist, an error is returned.
+    /// There are multiple locations where a file is searched at in the following
+    /// priority:
+    /// 1. User-defined location: See [`OvmfFileType::get_user_provided_path`]
+    /// 2. Well-known location of common Linux distributions by using the
+    ///    paths in `candidates`.
     fn find_ovmf_file(
         file_type: OvmfFileType,
         opt: &QemuOpt,
@@ -231,9 +264,10 @@ impl OvmfPaths {
         }
     }
 
-    /// Find path to OVMF files.
+    /// Find path to OVMF files by the strategy documented for
+    /// [`Self::find_ovmf_file`].
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
-        let candidates = Self::get_candidate_paths(arch);
+        let candidates = Self::get_candidate_paths(arch)?;
 
         let code = Self::find_ovmf_file(OvmfFileType::Code, opt, &candidates)?;
         let vars = Self::find_ovmf_file(OvmfFileType::Vars, opt, &candidates)?;
@@ -521,6 +555,10 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // versions of OVMF won't boot if the vars file isn't writeable.
     let ovmf_vars = tmp_dir.join("ovmf_vars");
     fs_err::copy(&ovmf_paths.vars, &ovmf_vars)?;
+    // Necessary, as for example on NixOS, the files are read-only inside
+    // the Nix store.
+    #[cfg(target_os = "linux")]
+    fs_err::set_permissions(&ovmf_vars, Permissions::from_mode(0o666))?;
 
     add_pflash_args(&mut cmd, &ovmf_paths.code, PflashMode::ReadOnly);
     add_pflash_args(&mut cmd, &ovmf_vars, PflashMode::ReadWrite);

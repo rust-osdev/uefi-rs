@@ -34,7 +34,8 @@ struct Context {
 const SHA1_DIGEST_SIZE: usize = 20;
 const SHA256_DIGEST_SIZE: usize = 32;
 
-/// Authenticode hashes of some UEFI application
+/// Authenticode hashes of some UEFI application.
+#[derive(Debug)]
 pub struct Hashes {
     /// SHA256 Authenticode Digest
     pub sha256: [u8; SHA256_DIGEST_SIZE],

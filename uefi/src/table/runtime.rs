@@ -331,7 +331,7 @@ pub struct Time {
 }
 
 /// Input parameters for [`Time::new`].
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct TimeParams {
     /// Year in the range `1900..=9999`.
     pub year: u16,

@@ -151,6 +151,7 @@ impl NodeGroup {
         quote!(
             /// Enum of references to all the different device path node
             /// types. Return type of [`DevicePathNode::as_enum`].
+            #[derive(Debug)]
             pub enum DevicePathNodeEnum<'a> {
                 #(#variants),*
             }

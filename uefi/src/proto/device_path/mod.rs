@@ -93,6 +93,7 @@ use ptr_meta::Pointee;
 /// type produces a thin pointer, unlike [`DevicePath`] and
 /// [`DevicePathNode`].
 #[repr(C, packed)]
+#[derive(Debug)]
 pub struct FfiDevicePath {
     // This representation is recommended by the nomicon:
     // https://doc.rust-lang.org/stable/nomicon/ffi.html#representing-opaque-structs
@@ -349,6 +350,7 @@ impl PartialEq for DevicePath {
 /// Iterator over the [`DevicePathInstance`]s in a [`DevicePath`].
 ///
 /// This struct is returned by [`DevicePath::instance_iter`].
+#[derive(Debug)]
 pub struct DevicePathInstanceIterator<'a> {
     remaining_path: Option<&'a DevicePath>,
 }
@@ -397,6 +399,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
     }
 }
 
+#[derive(Debug)]
 enum StopCondition {
     AnyEndNode,
     EndEntireNode,
@@ -407,6 +410,7 @@ enum StopCondition {
 ///
 /// This struct is returned by [`DevicePath::node_iter`] and
 /// [`DevicePathInstance::node_iter`].
+#[derive(Debug)]
 pub struct DevicePathNodeIterator<'a> {
     nodes: &'a [u8],
     stop_condition: StopCondition,

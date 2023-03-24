@@ -28,6 +28,7 @@
 
 #![no_std]
 #![deny(clippy::must_use_candidate)]
+#![deny(missing_debug_implementations)]
 
 extern crate log;
 // Core types.

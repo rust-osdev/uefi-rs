@@ -11,14 +11,16 @@ use super::boot::{BootServices, MemoryDescriptor, MemoryMap, MemoryType};
 use super::runtime::{ResetType, RuntimeServices};
 use super::{cfg, Header, Revision};
 
-/// Marker trait used to provide different views of the UEFI System Table
+/// Marker trait used to provide different views of the UEFI System Table.
 pub trait SystemTableView {}
 
-/// Marker struct associated with the boot view of the UEFI System Table
+/// Marker struct associated with the boot view of the UEFI System Table.
+#[derive(Debug)]
 pub struct Boot;
 impl SystemTableView for Boot {}
 
-/// Marker struct associated with the run-time view of the UEFI System Table
+/// Marker struct associated with the run-time view of the UEFI System Table.
+#[derive(Debug)]
 pub struct Runtime;
 impl SystemTableView for Runtime {}
 
@@ -44,7 +46,6 @@ impl SystemTableView for Runtime {}
 /// UEFI boot services in the eye of the Rust borrow checker) and a runtime view
 /// will be provided to replace it.
 #[repr(transparent)]
-#[derive(Debug)]
 pub struct SystemTable<View: SystemTableView> {
     table: &'static SystemTableImpl,
     _marker: PhantomData<View>,

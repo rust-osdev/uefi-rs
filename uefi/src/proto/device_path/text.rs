@@ -25,7 +25,7 @@ use core::ops::Deref;
 /// representation of the display node is used, where applicable.
 /// If `display_only` is FALSE, then the longer text representation
 /// of the display node is used.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DisplayOnly(pub bool);
 
 /// This struct is a wrapper of `allow_shortcuts` parameter
@@ -37,11 +37,12 @@ pub struct DisplayOnly(pub bool);
 /// type or subtype. If `allow_shortcuts is TRUE, then the
 /// shortcut forms of text representation for a device node
 /// can be used, where applicable.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct AllowShortcuts(pub bool);
 
 /// Wrapper for a string internally allocated from
 /// UEFI boot services memory.
+#[derive(Debug)]
 pub struct PoolString<'a> {
     boot_services: &'a BootServices,
     text: *const Char16,

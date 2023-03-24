@@ -4,6 +4,7 @@
 /// Universal EFI_SYSTEM_CONTEXT definition
 /// This is passed to debug callbacks
 #[repr(C)]
+#[allow(missing_debug_implementations)]
 pub union SystemContext {
     ebc: *mut SystemContextEBC,
     riscv_32: *mut SystemContextRiscV32,

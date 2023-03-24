@@ -3038,6 +3038,7 @@ pub mod bios_boot_spec {
 
 /// Enum of references to all the different device path node
 /// types. Return type of [`DevicePathNode::as_enum`].
+#[derive(Debug)]
 pub enum DevicePathNodeEnum<'a> {
     /// Node that terminates a [`DevicePathInstance`].
     ///
@@ -3324,6 +3325,7 @@ pub mod build {
         /// Node that terminates a [`DevicePathInstance`].
         ///
         /// [`DevicePathInstance`]: crate::proto::device_path::DevicePathInstance
+        #[derive(Debug)]
         pub struct Instance;
         unsafe impl BuildNode for Instance {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
@@ -3350,6 +3352,7 @@ pub mod build {
         /// Node that terminates an entire [`DevicePath`].
         ///
         /// [`DevicePath`]: crate::proto::device_path::DevicePath
+        #[derive(Debug)]
         pub struct Entire;
         unsafe impl BuildNode for Entire {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
@@ -3378,6 +3381,7 @@ pub mod build {
     pub mod hardware {
         use super::*;
         /// PCI hardware device path node.
+        #[derive(Debug)]
         pub struct Pci {
             /// PCI function number.
             pub function: u8,
@@ -3416,6 +3420,7 @@ pub mod build {
         }
 
         /// PCCARD hardware device path node.
+        #[derive(Debug)]
         pub struct Pccard {
             /// Function number starting from 0.
             pub function: u8,
@@ -3448,6 +3453,7 @@ pub mod build {
         }
 
         /// Memory mapped hardware device path node.
+        #[derive(Debug)]
         pub struct MemoryMapped {
             /// Memory type.
             pub memory_type: MemoryType,
@@ -3492,6 +3498,7 @@ pub mod build {
         }
 
         /// Vendor-defined hardware device path node.
+        #[derive(Debug)]
         pub struct Vendor<'a> {
             /// Vendor-assigned GUID that defines the data that follows.
             pub vendor_guid: Guid,
@@ -3533,6 +3540,7 @@ pub mod build {
         }
 
         /// Controller hardware device path node.
+        #[derive(Debug)]
         pub struct Controller {
             /// Controller number.
             pub controller_number: u32,
@@ -3566,6 +3574,7 @@ pub mod build {
 
         /// Baseboard Management Controller (BMC) host interface hardware
         /// device path node.
+        #[derive(Debug)]
         pub struct Bmc {
             /// Host interface type.
             pub interface_type: crate::proto::device_path::hardware::BmcInterfaceType,
@@ -3610,6 +3619,7 @@ pub mod build {
     pub mod acpi {
         use super::*;
         /// ACPI device path node.
+        #[derive(Debug)]
         pub struct Acpi {
             /// Device's PnP hardware ID stored in a numeric 32-bit
             /// compressed EISA-type ID.
@@ -3644,6 +3654,7 @@ pub mod build {
         }
 
         /// Expanded ACPI device path node.
+        #[derive(Debug)]
         pub struct Expanded<'a> {
             /// Device's PnP hardware ID stored in a numeric 32-bit compressed
             /// EISA-type ID.
@@ -3715,6 +3726,7 @@ pub mod build {
         }
 
         /// ADR ACPI device path node.
+        #[derive(Debug)]
         pub struct Adr<'a> {
             /// ADR values. For video output devices the value of this field
             /// comes from Table B-2 ACPI 3.0 specification. At least one
@@ -3749,6 +3761,7 @@ pub mod build {
         }
 
         /// NVDIMM ACPI device path node.
+        #[derive(Debug)]
         pub struct Nvdimm {
             /// NFIT device handle.
             pub nfit_device_handle: u32,
@@ -3783,6 +3796,7 @@ pub mod build {
         /// Wrapper for [`u32`] ADR values that enforces at least one
         /// element is present.
         #[repr(transparent)]
+        #[derive(Debug)]
         pub struct AdrSlice([u32]);
         impl AdrSlice {
             /// Create a new `AdrSlice`. Returns `None` if the input slice
@@ -3807,6 +3821,7 @@ pub mod build {
     pub mod messaging {
         use super::*;
         /// ATAPI messaging device path node.
+        #[derive(Debug)]
         pub struct Atapi {
             /// Whether the ATAPI device is primary or secondary.
             pub primary_secondary: crate::proto::device_path::messaging::PrimarySecondary,
@@ -3851,6 +3866,7 @@ pub mod build {
         }
 
         /// SCSI messaging device path node.
+        #[derive(Debug)]
         pub struct Scsi {
             /// Target ID on the SCSI bus.
             pub target_id: u16,
@@ -3889,6 +3905,7 @@ pub mod build {
         }
 
         /// Fibre channel messaging device path node.
+        #[derive(Debug)]
         pub struct FibreChannel {
             /// Fibre Channel World Wide Name.
             pub world_wide_name: u64,
@@ -3928,6 +3945,7 @@ pub mod build {
         }
 
         /// Fibre channel extended messaging device path node.
+        #[derive(Debug)]
         pub struct FibreChannelEx {
             /// Fibre Channel end device port name (aka World Wide Name).
             pub world_wide_name: [u8; 8usize],
@@ -3967,6 +3985,7 @@ pub mod build {
         }
 
         /// 1394 messaging device path node.
+        #[derive(Debug)]
         pub struct Ieee1394 {
             /// 1394 Global Unique ID. Note that this is not the same as a
             /// UEFI GUID.
@@ -4001,6 +4020,7 @@ pub mod build {
         }
 
         /// USB messaging device path node.
+        #[derive(Debug)]
         pub struct Usb {
             /// USB parent port number.
             pub parent_port_number: u8,
@@ -4039,6 +4059,7 @@ pub mod build {
         }
 
         /// SATA messaging device path node.
+        #[derive(Debug)]
         pub struct Sata {
             /// The HBA port number that facilitates the connection to the
             /// device or a port multiplier. The value 0xffff is reserved.
@@ -4086,6 +4107,7 @@ pub mod build {
         }
 
         /// USB World Wide ID (WWID) messaging device path node.
+        #[derive(Debug)]
         pub struct UsbWwid<'a> {
             /// USB interface number.
             pub interface_number: u16,
@@ -4139,6 +4161,7 @@ pub mod build {
         }
 
         /// Device logical unit messaging device path node.
+        #[derive(Debug)]
         pub struct DeviceLogicalUnit {
             /// Logical Unit Number.
             pub logical_unit_number: u8,
@@ -4171,6 +4194,7 @@ pub mod build {
         }
 
         /// USB class messaging device path node.
+        #[derive(Debug)]
         pub struct UsbClass {
             /// USB vendor ID.
             pub vendor_id: u16,
@@ -4227,6 +4251,7 @@ pub mod build {
         }
 
         /// I2O messaging device path node.
+        #[derive(Debug)]
         pub struct I2o {
             /// Target ID (TID).
             pub target_id: u32,
@@ -4259,6 +4284,7 @@ pub mod build {
         }
 
         /// MAC address messaging device path node.
+        #[derive(Debug)]
         pub struct MacAddress {
             /// MAC address for a network interface, padded with zeros.
             pub mac_address: [u8; 32usize],
@@ -4298,6 +4324,7 @@ pub mod build {
         }
 
         /// IPv4 messaging device path node.
+        #[derive(Debug)]
         pub struct Ipv4 {
             /// Local IPv4 address.
             pub local_ip_address: [u8; 4usize],
@@ -4373,6 +4400,7 @@ pub mod build {
         }
 
         /// IPv6 messaging device path node.
+        #[derive(Debug)]
         pub struct Ipv6 {
             /// Local Ipv6 address.
             pub local_ip_address: [u8; 16usize],
@@ -4448,6 +4476,7 @@ pub mod build {
         }
 
         /// VLAN messaging device path node.
+        #[derive(Debug)]
         pub struct Vlan {
             /// VLAN identifier (0-4094).
             pub vlan_id: u16,
@@ -4480,6 +4509,7 @@ pub mod build {
         }
 
         /// InfiniBand messaging device path node.
+        #[derive(Debug)]
         pub struct Infiniband {
             /// Flags to identify/manage InfiniBand elements.
             pub resource_flags: crate::proto::device_path::messaging::InfinibandResourceFlags,
@@ -4538,6 +4568,7 @@ pub mod build {
         }
 
         /// UART messaging device path node.
+        #[derive(Debug)]
         pub struct Uart {
             /// Baud rate setting, or 0 to use the device's default.
             pub baud_rate: u64,
@@ -4589,6 +4620,7 @@ pub mod build {
         }
 
         /// Vendor-defined messaging device path node.
+        #[derive(Debug)]
         pub struct Vendor<'a> {
             /// Vendor-assigned GUID that defines the data that follows.
             pub vendor_guid: Guid,
@@ -4630,6 +4662,7 @@ pub mod build {
         }
 
         /// Serial Attached SCSI (SAS) extended messaging device path node.
+        #[derive(Debug)]
         pub struct SasEx {
             /// SAS address.
             pub sas_address: [u8; 8usize],
@@ -4680,6 +4713,7 @@ pub mod build {
         }
 
         /// iSCSI messaging device path node.
+        #[derive(Debug)]
         pub struct Iscsi<'a> {
             /// Network protocol.
             pub protocol: crate::proto::device_path::messaging::IscsiProtocol,
@@ -4744,6 +4778,7 @@ pub mod build {
         }
 
         /// NVM Express namespace messaging device path node.
+        #[derive(Debug)]
         pub struct NvmeNamespace {
             /// Namespace identifier (NSID). The values 0 and 0xffff_ffff
             /// are invalid.
@@ -4784,6 +4819,7 @@ pub mod build {
         }
 
         /// Uniform Resource Identifier (URI) messaging device path node.
+        #[derive(Debug)]
         pub struct Uri<'a> {
             /// URI as defined by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986).
             pub value: &'a [u8],
@@ -4816,6 +4852,7 @@ pub mod build {
         }
 
         /// Universal Flash Storage (UFS) messaging device path node.
+        #[derive(Debug)]
         pub struct Ufs {
             /// Target ID on the UFS interface (PUN).
             pub target_id: u8,
@@ -4854,6 +4891,7 @@ pub mod build {
         }
 
         /// Secure Digital (SD) messaging device path node.
+        #[derive(Debug)]
         pub struct Sd {
             /// Slot number.
             pub slot_number: u8,
@@ -4886,6 +4924,7 @@ pub mod build {
         }
 
         /// Bluetooth messaging device path node.
+        #[derive(Debug)]
         pub struct Bluetooth {
             /// 48-bit bluetooth device address.
             pub device_address: [u8; 6usize],
@@ -4918,6 +4957,7 @@ pub mod build {
         }
 
         /// Wi-Fi messaging device path node.
+        #[derive(Debug)]
         pub struct Wifi {
             /// Service set identifier (SSID).
             pub ssid: [u8; 32usize],
@@ -4950,6 +4990,7 @@ pub mod build {
         }
 
         /// Embedded Multi-Media Card (eMMC) messaging device path node.
+        #[derive(Debug)]
         pub struct Emmc {
             /// Slot number.
             pub slot_number: u8,
@@ -4982,6 +5023,7 @@ pub mod build {
         }
 
         /// BluetoothLE messaging device path node.
+        #[derive(Debug)]
         pub struct BluetoothLe {
             /// 48-bit bluetooth device address.
             pub device_address: [u8; 6usize],
@@ -5020,6 +5062,7 @@ pub mod build {
         }
 
         /// DNS messaging device path node.
+        #[derive(Debug)]
         pub struct Dns<'a> {
             /// Whether the addresses are IPv4 or IPv6.
             pub address_type: crate::proto::device_path::messaging::DnsAddressType,
@@ -5058,6 +5101,7 @@ pub mod build {
         }
 
         /// NVDIMM namespace messaging device path node.
+        #[derive(Debug)]
         pub struct NvdimmNamespace {
             /// Namespace unique label identifier.
             pub uuid: [u8; 16usize],
@@ -5090,6 +5134,7 @@ pub mod build {
         }
 
         /// REST service messaging device path node.
+        #[derive(Debug)]
         pub struct RestService<'a> {
             /// Type of REST service.
             pub service_type: crate::proto::device_path::messaging::RestServiceType,
@@ -5133,6 +5178,7 @@ pub mod build {
         }
 
         /// NVME over Fabric (NVMe-oF) namespace messaging device path node.
+        #[derive(Debug)]
         pub struct NvmeOfNamespace<'a> {
             /// Namespace Identifier Type (NIDT).
             pub nidt: u8,
@@ -5180,6 +5226,7 @@ pub mod build {
         /// Vendor-specific REST service data. Only used for service type [`VENDOR`].
         ///
         /// [`VENDOR`]: uefi::proto::device_path::messaging::RestServiceType
+        #[derive(Debug)]
         pub struct RestServiceVendorData<'a> {
             /// Vendor GUID.
             pub vendor_guid: Guid,
@@ -5227,6 +5274,7 @@ pub mod build {
     pub mod media {
         use super::*;
         /// Hard drive media device path node.
+        #[derive(Debug)]
         pub struct HardDrive {
             /// Index of the partition, starting from 1.
             pub partition_number: u32,
@@ -5287,6 +5335,7 @@ pub mod build {
         }
 
         /// CD-ROM media device path node.
+        #[derive(Debug)]
         pub struct CdRom {
             /// Boot entry number from the boot catalog, or 0 for the
             /// default entry.
@@ -5332,6 +5381,7 @@ pub mod build {
         }
 
         /// Vendor-defined media device path node.
+        #[derive(Debug)]
         pub struct Vendor<'a> {
             /// Vendor-assigned GUID that defines the data that follows.
             pub vendor_guid: Guid,
@@ -5373,6 +5423,7 @@ pub mod build {
         }
 
         /// File path media device path node.
+        #[derive(Debug)]
         pub struct FilePath<'a> {
             /// Null-terminated path.
             pub path_name: &'a CStr16,
@@ -5405,6 +5456,7 @@ pub mod build {
         }
 
         /// Media protocol media device path node.
+        #[derive(Debug)]
         pub struct Protocol {
             /// The ID of the protocol.
             pub protocol_guid: Guid,
@@ -5437,6 +5489,7 @@ pub mod build {
         }
 
         /// PIWG firmware file media device path node.
+        #[derive(Debug)]
         pub struct PiwgFirmwareFile<'a> {
             /// Contents are defined in the UEFI PI Specification.
             pub data: &'a [u8],
@@ -5469,6 +5522,7 @@ pub mod build {
         }
 
         /// PIWG firmware volume media device path node.
+        #[derive(Debug)]
         pub struct PiwgFirmwareVolume<'a> {
             /// Contents are defined in the UEFI PI Specification.
             pub data: &'a [u8],
@@ -5501,6 +5555,7 @@ pub mod build {
         }
 
         /// Relative offset range media device path node.
+        #[derive(Debug)]
         pub struct RelativeOffsetRange {
             /// Offset of the first byte, relative to the parent device node.
             pub starting_offset: u64,
@@ -5540,6 +5595,7 @@ pub mod build {
         }
 
         /// RAM disk media device path node.
+        #[derive(Debug)]
         pub struct RamDisk {
             /// Starting memory address.
             pub starting_address: u64,
@@ -5621,6 +5677,7 @@ pub mod build {
     pub mod bios_boot_spec {
         use super::*;
         /// BIOS Boot Specification device path node.
+        #[derive(Debug)]
         pub struct BootSpecification<'a> {
             /// Device type as defined by the BIOS Boot Specification.
             pub device_type: u16,

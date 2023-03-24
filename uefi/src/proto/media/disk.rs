@@ -71,6 +71,7 @@ impl DiskIo {
 
 /// Asynchronous transaction token for disk I/O 2 operations.
 #[repr(C)]
+#[derive(Debug)]
 pub struct DiskIo2Token {
     /// Event to be signalled when an asynchronous disk I/O operation completes.
     pub event: Option<Event>,

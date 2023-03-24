@@ -53,6 +53,7 @@
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
 use crate::{Result, Status};
+use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
@@ -375,6 +376,7 @@ pub struct PixelBitmask {
 }
 
 /// Represents a graphics mode compatible with a given graphics device.
+#[derive(Debug)]
 pub struct Mode {
     index: u32,
     info_sz: usize,
@@ -469,6 +471,15 @@ impl<'gop> Iterator for ModeIter<'gop> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = (self.max - self.current) as usize;
         (size, Some(size))
+    }
+}
+
+impl<'gop> Debug for ModeIter<'gop> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ModeIter")
+            .field("current", &self.current)
+            .field("max", &self.max)
+            .finish()
     }
 }
 
@@ -578,6 +589,7 @@ pub enum BltOp<'buf> {
 }
 
 /// Direct access to a memory-mapped frame buffer
+#[derive(Debug)]
 pub struct FrameBuffer<'gop> {
     base: *mut u8,
     size: usize,

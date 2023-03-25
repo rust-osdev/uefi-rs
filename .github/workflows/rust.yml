@@ -108,9 +108,8 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
-    # TODO: for now our latest release (0.19.1) requires nightly.
-    - name: Set nightly toolchain
-      run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+    - name: Set MSRV toolchain
+      run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
 
     - name: Build
       run: cargo xtask test-latest-release
@@ -129,13 +128,13 @@ jobs:
         run: cargo xtask run --target x86_64 --ci
         timeout-minutes: 6
 
-  # Run the build with our current nightly MSRV (specified in
+  # Run the build with our current stable MSRV (specified in
   # ./msrv_toolchain.toml). This serves to check that we don't
   # accidentally start relying on a new feature without intending
   # to. Having a test for this makes it easier for us to be intentional
   # about making changes that require a newer version.
   build_msrv:
-    name: Check that the build works on our nightly MSRV
+    name: Check that the build works on our stable MSRV
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources

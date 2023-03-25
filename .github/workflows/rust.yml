@@ -104,28 +104,6 @@ jobs:
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check
 
-  # This job tests that the template app builds successfully with the
-  # released versions of the libraries on crates.io.
-  #
-  # Since a nightly toolchain is currently required to build uefi-rs,
-  # the released versions can suddenly stop building when a new nightly
-  # compiler with a breaking change is released. This job provides an
-  # alert when this situation occurs.
-  test_latest_release:
-    name: Build the template against the released version of uefi-rs
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout sources
-      uses: actions/checkout@v3
-
-    - name: Set MSRV toolchain
-      run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
-
-    - uses: Swatinem/rust-cache@v2
-
-    - name: Build
-      run: cargo xtask test-latest-release
-
   windows:
     name: Check that the build works on a Windows target
     runs-on: windows-latest

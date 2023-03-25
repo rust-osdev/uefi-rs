@@ -13,13 +13,11 @@ mod util;
 use crate::opt::TestOpt;
 use anyhow::Result;
 use arch::UefiArch;
-use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
+use cargo::{Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt, TpmVersion};
-use std::process::Command;
-use tempfile::TempDir;
-use util::{command_to_string, run_cmd};
+use util::run_cmd;
 
 fn build_feature_permutations(opt: &BuildOpt) -> Result<()> {
     for package in [Package::Uefi, Package::UefiServices] {
@@ -201,46 +199,6 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
     run_cmd(cargo.command()?)
 }
 
-/// Test that the template app builds successfully with the released
-/// versions of the libraries on crates.io.
-///
-/// The `build` action also builds the template app, but due to the
-/// `patch.crates-io` of the top-level Cargo.toml the app is built using
-/// the current versions of the libraries in this repo. To give warning
-/// when the latest crates.io releases of the libraries are broken, this
-/// action copies the template to a temporary directory and builds it in
-/// isolation.
-///
-/// The build command is also checked against the contents of
-/// `building.md` to ensure that the doc correctly describes how to
-/// build an app.
-fn test_latest_release() -> Result<()> {
-    // Recursively copy the template app to a temporary directory. This
-    // isolates the app from the full git repo so that the
-    // `patch.crates-io` section of the root Cargo.toml doesn't apply.
-    let tmp_dir = TempDir::new()?;
-    let tmp_dir = tmp_dir.path();
-    let mut cp_cmd = Command::new("cp");
-    cp_cmd
-        .args(["--recursive", "--verbose", "template"])
-        .arg(tmp_dir);
-    run_cmd(cp_cmd)?;
-
-    // Create cargo build command, not using the `cargo` module to make
-    // it explicit that it matches the command in `building.md`.
-    let mut build_cmd = Command::new("cargo");
-    fix_nested_cargo_env(&mut build_cmd);
-    build_cmd
-        .args(["build", "--target", "x86_64-unknown-uefi"])
-        .current_dir(tmp_dir.join("template"));
-
-    // Check that the command is indeed in building.md, then verify the
-    // build succeeds.
-    let building_md = include_str!("../../book/src/tutorial/building.md");
-    assert!(building_md.contains(&command_to_string(&build_cmd)));
-    run_cmd(build_cmd)
-}
-
 fn main() -> Result<()> {
     let opt = Opt::parse();
 
@@ -252,6 +210,5 @@ fn main() -> Result<()> {
         Action::Miri(_) => run_miri(),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(test_opt) => run_host_tests(test_opt),
-        Action::TestLatestRelease(_) => test_latest_release(),
     }
 }

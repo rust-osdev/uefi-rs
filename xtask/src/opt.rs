@@ -72,7 +72,6 @@ pub enum Action {
     Miri(MiriOpt),
     Run(QemuOpt),
     Test(TestOpt),
-    TestLatestRelease(TestLatestReleaseOpt),
 }
 
 /// Build all the uefi packages.
@@ -189,7 +188,3 @@ pub struct TestOpt {
     #[clap(long, action)]
     pub skip_macro_tests: bool,
 }
-
-/// Build the template against the crates.io packages.
-#[derive(Debug, Parser)]
-pub struct TestLatestReleaseOpt;

@@ -207,9 +207,9 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
 /// The `build` action also builds the template app, but due to the
 /// `patch.crates-io` of the top-level Cargo.toml the app is built using
 /// the current versions of the libraries in this repo. To give warning
-/// when the latest crates.io releases of the libraries are broken (due
-/// to changes in the nightly toolchain), this action copies the
-/// template to a temporary directory and builds it in isolation.
+/// when the latest crates.io releases of the libraries are broken, this
+/// action copies the template to a temporary directory and builds it in
+/// isolation.
 ///
 /// The build command is also checked against the contents of
 /// `building.md` to ensure that the doc correctly describes how to

@@ -9,6 +9,7 @@ use crate::{guid, CStr16, Char16, Guid, Result, Status};
 #[cfg(feature = "alloc")]
 use alloc::{vec, vec::Vec};
 use bitflags::bitflags;
+use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 #[cfg(feature = "alloc")]
 use core::mem;
@@ -30,15 +31,17 @@ pub struct RuntimeServices {
     get_time:
         unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
     set_time: unsafe extern "efiapi" fn(time: &Time) -> Status,
-    // Skip some useless functions.
-    _pad: [usize; 2],
+    get_wakeup_time:
+        unsafe extern "efiapi" fn(enabled: *mut u8, pending: *mut u8, time: *mut Time) -> Status,
+    set_wakeup_time: unsafe extern "efiapi" fn(enable: u8, time: *const Time) -> Status,
     pub(crate) set_virtual_address_map: unsafe extern "efiapi" fn(
         map_size: usize,
         desc_size: usize,
         desc_version: u32,
         virtual_map: *mut MemoryDescriptor,
     ) -> Status,
-    _pad2: usize,
+    convert_pointer:
+        unsafe extern "efiapi" fn(debug_disposition: usize, address: *mut *const c_void) -> Status,
     get_variable: unsafe extern "efiapi" fn(
         variable_name: *const Char16,
         vendor_guid: *const Guid,
@@ -58,7 +61,7 @@ pub struct RuntimeServices {
         data_size: usize,
         data: *const u8,
     ) -> Status,
-    _pad3: usize,
+    get_next_high_monotonic_count: unsafe extern "efiapi" fn(high_count: *mut u32) -> Status,
     reset: unsafe extern "efiapi" fn(
         rt: ResetType,
 

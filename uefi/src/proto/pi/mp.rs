@@ -25,8 +25,8 @@ bitflags! {
     /// Flags indicating if the processor is BSP or AP,
     /// if the processor is enabled or disabled, and if
     /// the processor is healthy.
-    #[derive(Default)]
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     struct StatusFlag: u32 {
         /// Processor is playing the role of BSP.
         const PROCESSOR_AS_BSP_BIT = 1;

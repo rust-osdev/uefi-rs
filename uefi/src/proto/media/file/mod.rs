@@ -394,6 +394,7 @@ pub enum FileMode {
 
 bitflags! {
     /// Attributes describing the properties of a file on the file system.
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct FileAttribute: u64 {
         /// File can only be opened in [`FileMode::READ`] mode.

@@ -38,7 +38,7 @@ bitflags! {
     /// Event log formats supported by the firmware.
     ///
     /// Corresponds to the C typedef `EFI_TCG2_EVENT_ALGORITHM_BITMAP`.
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct EventLogFormat: u32 {
         /// Firmware supports the SHA-1 log format.
@@ -125,7 +125,7 @@ impl BootServiceCapability {
 
 bitflags! {
     /// Flags for the [`Tcg::hash_log_extend_event`] function.
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct HashLogExtendEventFlags: u64 {
         /// Extend an event but don't log it.

@@ -2401,7 +2401,7 @@ pub mod messaging {
 
     }
 
-    bitflags! { # [doc = " Flags to identify/manage InfiniBand elements."] # [repr (transparent)] pub struct InfinibandResourceFlags : u32 { # [doc = " Set = service, unset = IOC."] const SERVICE = 0x0000_0001 ; # [doc = " Extended boot environment."] const EXTENDED_BOOT_ENVIRONMENT = 0x0000_0002 ; # [doc = " Console protocol."] const CONSOLE_PROTOCOL = 0x0000_0004 ; # [doc = " Storage protocol."] const STORAGE_PROTOCOL = 0x0000_0008 ; # [doc = " Network protocol."] const NETWORK_PROTOCOL = 0x0000_0010 ; }
+    bitflags! { # [doc = " Flags to identify/manage InfiniBand elements."] # [derive (Clone , Copy , Debug , Default , PartialEq , Eq , PartialOrd , Ord)] # [repr (transparent)] pub struct InfinibandResourceFlags : u32 { # [doc = " Set = service, unset = IOC."] const SERVICE = 0x0000_0001 ; # [doc = " Extended boot environment."] const EXTENDED_BOOT_ENVIRONMENT = 0x0000_0002 ; # [doc = " Console protocol."] const CONSOLE_PROTOCOL = 0x0000_0004 ; # [doc = " Storage protocol."] const STORAGE_PROTOCOL = 0x0000_0008 ; # [doc = " Network protocol."] const NETWORK_PROTOCOL = 0x0000_0010 ; }
 
     }
 
@@ -2417,7 +2417,7 @@ pub mod messaging {
 
     }
 
-    bitflags! { # [doc = " iSCSI login options."] # [repr (transparent)] pub struct IscsiLoginOptions : u16 { # [doc = " Header digest using CRC32. If not set, no header digest."] const HEADER_DIGEST_USING_CRC32 = 0x0002 ; # [doc = " Data digest using CRC32. If not set, no data digest."] const DATA_DIGEST_USING_CRC32 = 0x0008 ; # [doc = " Auth method none. If not set, auth method CHAP."] const AUTH_METHOD_NONE = 0x0800 ; # [doc = " CHAP UNI. If not set, CHAP BI."] const CHAP_UNI = 0x1000 ; }
+    bitflags! { # [doc = " iSCSI login options."] # [derive (Clone , Copy , Debug , Default , PartialEq , Eq , PartialOrd , Ord)] # [repr (transparent)] pub struct IscsiLoginOptions : u16 { # [doc = " Header digest using CRC32. If not set, no header digest."] const HEADER_DIGEST_USING_CRC32 = 0x0002 ; # [doc = " Data digest using CRC32. If not set, no data digest."] const DATA_DIGEST_USING_CRC32 = 0x0008 ; # [doc = " Auth method none. If not set, auth method CHAP."] const AUTH_METHOD_NONE = 0x0800 ; # [doc = " CHAP UNI. If not set, CHAP BI."] const CHAP_UNI = 0x1000 ; }
 
     }
 

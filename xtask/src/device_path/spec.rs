@@ -598,6 +598,7 @@ mod messaging {
 
     bitflags! {
         /// Flags to identify/manage InfiniBand elements.
+        #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
         #[repr(transparent)]
         pub struct InfinibandResourceFlags: u32 {
             /// Set = service, unset = IOC.
@@ -742,6 +743,7 @@ mod messaging {
 
     bitflags! {
         /// iSCSI login options.
+        #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
         #[repr(transparent)]
         pub struct IscsiLoginOptions: u16 {
             /// Header digest using CRC32. If not set, no header digest.

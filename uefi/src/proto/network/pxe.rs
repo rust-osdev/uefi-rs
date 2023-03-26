@@ -829,6 +829,7 @@ pub struct MtftpInfo {
 // No corresponding type in the UEFI spec, it just uses UINT16.
 bitflags! {
     /// Flags for UDP read and write operations.
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct UdpOpFlags: u16 {
         /// Receive a packet sent from any IP address in UDP read operations.
@@ -893,6 +894,7 @@ impl IpFilter {
 
 bitflags! {
     /// IP receive filters.
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct IpFilters: u8 {
         /// Enable the Station IP address.
@@ -1009,6 +1011,7 @@ impl DhcpV4Packet {
 bitflags! {
     /// Represents the 'flags' field for a [`DhcpV4Packet`].
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct DhcpV4Flags: u16 {
         /// Should be set when the client cannot receive unicast IP datagrams
         /// until its protocol software has been configured with an IP address.

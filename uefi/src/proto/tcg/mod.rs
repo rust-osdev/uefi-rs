@@ -28,7 +28,7 @@ bitflags! {
     /// Hash algorithms the protocol can provide.
     ///
     /// The [`v1`] protocol only supports SHA1.
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct HashAlgorithm: u32 {
         /// SHA-1 hash.

@@ -60,7 +60,7 @@ impl BootServiceCapability {
     pub fn hash_algorithm(&self) -> HashAlgorithm {
         // Safety: the value should always be 0x1 (indicating SHA-1), but
         // we don't care if it's some unexpected value.
-        unsafe { HashAlgorithm::from_bits_unchecked(u32::from(self.hash_algorithm_bitmap)) }
+        HashAlgorithm::from_bits_retain(u32::from(self.hash_algorithm_bitmap))
     }
 
     /// Whether the TPM device is present.

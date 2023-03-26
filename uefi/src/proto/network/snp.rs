@@ -124,16 +124,23 @@ impl SimpleNetwork {
         if let Some(mcast_filter) = mcast_filter {
             (self.receive_filters)(
                 self,
-                enable.bits,
-                disable.bits,
+                enable.bits(),
+                disable.bits(),
                 reset_mcast_filter,
                 mcast_filter.len(),
                 NonNull::new(mcast_filter.as_ptr() as *mut _),
             )
             .to_result()
         } else {
-            (self.receive_filters)(self, enable.bits, disable.bits, reset_mcast_filter, 0, None)
-                .to_result()
+            (self.receive_filters)(
+                self,
+                enable.bits(),
+                disable.bits(),
+                reset_mcast_filter,
+                0,
+                None,
+            )
+            .to_result()
         }
     }
 
@@ -267,6 +274,7 @@ impl SimpleNetwork {
 bitflags! {
     /// Flags to pass to receive_filters to enable/disable reception of some kinds of packets.
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct ReceiveFlags : u32 {
         /// Receive unicast packets.
         const UNICAST = 0x01;
@@ -285,6 +293,7 @@ bitflags! {
     /// Flags returned by get_interrupt_status to indicate which interrupts have fired on the
     /// interface since the last call.
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct InterruptStatus : u32 {
         /// Packet received.
         const RECEIVE = 0x01;

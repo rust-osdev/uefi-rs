@@ -9,6 +9,7 @@ repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
+rust-version = "1.68"
 
 [dependencies]
 uefi = { version = "0.20.0", features = ["global_allocator"] }

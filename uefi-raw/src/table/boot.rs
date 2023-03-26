@@ -6,6 +6,7 @@ use bitflags::bitflags;
 bitflags! {
     /// Flags describing the capabilities of a memory range.
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct MemoryAttribute: u64 {
         /// Supports marking as uncacheable.
         const UNCACHEABLE = 0x1;

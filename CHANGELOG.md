@@ -52,6 +52,9 @@
 - Renamed `CStr8::to_bytes` to `CStr8::as_bytes` and changed the semantics:
   The trailing null character is now always included in the returned slice.
 - `DevicePathBuilder::with_vec` now clears the `Vec` before use.
+- `bitflags` bumped from `1.3` to `2.1`
+  - `GptPartitionAttributes` now has 16 additional `TYPE_SPECIFIC_BIT_<N>`
+    constants.
 
 ## uefi-macros - [Unreleased]
 

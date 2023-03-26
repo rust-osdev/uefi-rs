@@ -2011,6 +2011,7 @@ impl<'guid> SearchType<'guid> {
 bitflags! {
     /// Flags describing the type of an UEFI event and its attributes.
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct EventType: u32 {
         /// The event is a timer event and may be passed to `BootServices::set_timer()`
         /// Note that timers only function during boot services time.

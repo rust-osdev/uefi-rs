@@ -2,7 +2,6 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{guid, Char16, Guid};
-use bitflags::bitflags;
 
 newtype_enum! {
     /// MBR OS type.
@@ -66,7 +65,8 @@ newtype_enum! {
     }
 }
 
-bitflags! {
+bitflags::bitflags! {
+
     /// Attributes describing a GPT partition.
     ///
     /// * Bit 0: [`REQUIRED_PARTITION`][Self::REQUIRED_PARTITION]
@@ -76,18 +76,17 @@ bitflags! {
     /// * Bits `48..=63`: See
     /// [`type_specific_bits`][Self::type_specific_bits] and
     /// [`RESERVED_FOR_PARTITION_TYPE`][Self::RESERVED_FOR_PARTITION_TYPE].
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct GptPartitionAttributes: u64 {
-        /// Partition is required for the platform to function.
-        const REQUIRED_PARTITION = 1 << 0;
-
-        /// No [`BlockIO`] protocol will be created for this partition.
+        /// Bit: Partition is required for the platform to function.
+        const REQUIRED_PARTITION = 1;
+        /// Bit: No [`BlockIO`] protocol will be created for this partition.
         ///
         /// [`BlockIO`]: uefi::proto::media::block::BlockIO
         const NO_BLOCK_IO_PROTOCOL = 1 << 1;
 
-        /// Indicates that special software on a legacy BIOS system may
+        /// Bit: Indicates that special software on a legacy BIOS system may
         /// treat this partition as bootable. UEFI boot managers must
         /// ignore the partition.
         const LEGACY_BIOS_BOOTABLE = 1 << 2;
@@ -95,6 +94,54 @@ bitflags! {
         /// Mask for bits `48..=63`. The meaning of these bits depends
         /// on the partition type.
         const RESERVED_FOR_PARTITION_TYPE = 0xffff_0000_0000_0000;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_0 = 1 << 47;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_1 = 1 << 48;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_2 = 1 << 49;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_3 = 1 << 50;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_4 = 1 << 51;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_5 = 1 << 52;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_6 = 1 << 53;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_7 = 1 << 54;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_8 = 1 << 55;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_9 = 1 << 56;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_10 = 1 << 57;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_11 = 1 << 58;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_12 = 1 << 59;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_13 = 1 << 60;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_14 = 1 << 61;
+
+        /// The meaning of this bit depends on the partition type.
+        const TYPE_SPECIFIC_BIT_15 = 1 << 62;
     }
 }
 
@@ -103,7 +150,7 @@ impl GptPartitionAttributes {
     /// on the partition's type (see [`GptPartitionEntry::partition_type_guid`]).
     #[must_use]
     pub const fn type_specific_bits(&self) -> u16 {
-        (self.bits >> 48) as u16
+        (self.0.bits() >> 48) as u16
     }
 }
 
@@ -232,7 +279,8 @@ mod tests {
 
     #[test]
     fn test_partition_attributes() {
-        let attr = GptPartitionAttributes::from_bits(0xabcd_0000_0000_0007).unwrap();
+        let attr: GptPartitionAttributes =
+            GptPartitionAttributes::from_bits_retain(0xabcd_0000_0000_0007);
         assert_eq!(attr.type_specific_bits(), 0xabcd);
     }
 }

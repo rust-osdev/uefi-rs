@@ -157,6 +157,7 @@ bitflags! {
     ///
     /// [RS-232]: https://en.wikipedia.org/wiki/RS-232
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct ControlBits: u32 {
         /// Clear to send
         const CLEAR_TO_SEND = 0x10;
@@ -186,11 +187,11 @@ bitflags! {
         ///
         /// Up to date as of UEFI 2.7 / Serial protocol v1
         const SETTABLE =
-            ControlBits::DATA_TERMINAL_READY.bits
-            | ControlBits::REQUEST_TO_SEND.bits
-            | ControlBits::HARDWARE_LOOPBACK_ENABLE.bits
-            | ControlBits::SOFTWARE_LOOPBACK_ENABLE.bits
-            | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE.bits;
+            ControlBits::DATA_TERMINAL_READY.bits()
+            | ControlBits::REQUEST_TO_SEND.bits()
+            | ControlBits::HARDWARE_LOOPBACK_ENABLE.bits()
+            | ControlBits::SOFTWARE_LOOPBACK_ENABLE.bits()
+            | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE.bits();
     }
 }
 

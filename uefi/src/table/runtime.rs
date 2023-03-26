@@ -403,6 +403,7 @@ pub struct TimeParams {
 bitflags! {
     /// A bitmask containing daylight savings time information.
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Daylight: u8 {
         /// Time is affected by daylight savings time.
         const ADJUST_DAYLIGHT = 0x01;
@@ -620,6 +621,7 @@ pub struct TimeCapabilities {
 bitflags! {
     /// Flags describing the attributes of a variable.
     #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct VariableAttributes: u32 {
         /// Variable is maintained across a power cycle.
         const NON_VOLATILE = 0x01;

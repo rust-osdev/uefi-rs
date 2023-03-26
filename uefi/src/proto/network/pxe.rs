@@ -4,7 +4,6 @@ use core::fmt::{Debug, Formatter};
 use core::{
     ffi::c_void,
     iter::from_fn,
-    marker::{PhantomData, PhantomPinned},
     mem::MaybeUninit,
     ptr::{null, null_mut},
 };
@@ -653,16 +652,11 @@ pub enum BootstrapType {
     PxeTest = 65535,
 }
 
-/// Opaque type that should be used to represent a pointer to a [`DiscoverInfo`] in
-/// foreign function interfaces. This type produces a thin pointer, unlike
-/// [`DiscoverInfo`].
-#[repr(C, packed)]
-#[derive(Debug)]
-pub struct FfiDiscoverInfo {
-    // This representation is recommended by the nomicon:
-    // https://doc.rust-lang.org/stable/nomicon/ffi.html#representing-opaque-structs
-    _data: [u8; 0],
-    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+opaque_type! {
+    /// Opaque type that should be used to represent a pointer to a [`DiscoverInfo`] in
+    /// foreign function interfaces. This type produces a thin pointer, unlike
+    /// [`DiscoverInfo`].
+    pub struct FfiDiscoverInfo;
 }
 
 /// This struct contains optional parameters for [`BaseCode::discover`].

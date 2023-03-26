@@ -130,6 +130,9 @@ pub use self::chars::{Char16, Char8};
 #[macro_use]
 mod enums;
 
+#[macro_use]
+mod opaque;
+
 mod strs;
 pub use self::strs::{
     CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16Error,

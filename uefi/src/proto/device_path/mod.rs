@@ -84,21 +84,15 @@ pub use device_path_gen::{
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
-use core::marker::{PhantomData, PhantomPinned};
 use core::mem;
 use ptr_meta::Pointee;
 
-/// Opaque type that should be used to represent a pointer to a
-/// [`DevicePath`] or [`DevicePathNode`] in foreign function interfaces. This
-/// type produces a thin pointer, unlike [`DevicePath`] and
-/// [`DevicePathNode`].
-#[repr(C, packed)]
-#[derive(Debug)]
-pub struct FfiDevicePath {
-    // This representation is recommended by the nomicon:
-    // https://doc.rust-lang.org/stable/nomicon/ffi.html#representing-opaque-structs
-    _data: [u8; 0],
-    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+opaque_type! {
+    /// Opaque type that should be used to represent a pointer to a
+    /// [`DevicePath`] or [`DevicePathNode`] in foreign function interfaces. This
+    /// type produces a thin pointer, unlike [`DevicePath`] and
+    /// [`DevicePathNode`].
+    pub struct FfiDevicePath;
 }
 
 /// Header that appears at the start of every [`DevicePathNode`].

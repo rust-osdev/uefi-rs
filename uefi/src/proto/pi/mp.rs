@@ -26,6 +26,7 @@ bitflags! {
     /// if the processor is enabled or disabled, and if
     /// the processor is healthy.
     #[derive(Default)]
+    #[repr(transparent)]
     struct StatusFlag: u32 {
         /// Processor is playing the role of BSP.
         const PROCESSOR_AS_BSP_BIT = 1;

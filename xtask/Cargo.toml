@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-anyhow = "1.0.51"
+anyhow = "1.0.70"
 clap = { version = "4.0.4", default-features = false, features = ["derive", "help", "usage", "std"] }
 fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std"] }
 fs-err = "2.6.0"

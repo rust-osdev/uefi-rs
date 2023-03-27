@@ -1019,6 +1019,7 @@ impl DhcpV4Packet {
 
 bitflags! {
     /// Represents the 'flags' field for a [`DhcpV4Packet`].
+    #[repr(transparent)]
     pub struct DhcpV4Flags: u16 {
         /// Should be set when the client cannot receive unicast IP datagrams
         /// until its protocol software has been configured with an IP address.

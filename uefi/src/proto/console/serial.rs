@@ -156,6 +156,7 @@ bitflags! {
     /// The control bits of a device. These are defined in the [RS-232] standard.
     ///
     /// [RS-232]: https://en.wikipedia.org/wiki/RS-232
+    #[repr(transparent)]
     pub struct ControlBits: u32 {
         /// Clear to send
         const CLEAR_TO_SEND = 0x10;

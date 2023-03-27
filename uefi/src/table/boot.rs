@@ -1933,6 +1933,7 @@ impl Align for MemoryDescriptor {
 
 bitflags! {
     /// Flags describing the capabilities of a memory range.
+    #[repr(transparent)]
     pub struct MemoryAttribute: u64 {
         /// Supports marking as uncacheable.
         const UNCACHEABLE = 0x1;
@@ -2169,6 +2170,7 @@ impl<'guid> SearchType<'guid> {
 
 bitflags! {
     /// Flags describing the type of an UEFI event and its attributes.
+    #[repr(transparent)]
     pub struct EventType: u32 {
         /// The event is a timer event and may be passed to `BootServices::set_timer()`
         /// Note that timers only function during boot services time.

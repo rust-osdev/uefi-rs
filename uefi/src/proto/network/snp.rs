@@ -271,6 +271,7 @@ impl SimpleNetwork {
 
 bitflags! {
     /// Flags to pass to receive_filters to enable/disable reception of some kinds of packets.
+    #[repr(transparent)]
     pub struct ReceiveFlags : u32 {
         /// Receive unicast packets.
         const UNICAST = 0x01;
@@ -288,6 +289,7 @@ bitflags! {
 bitflags! {
     /// Flags returned by get_interrupt_status to indicate which interrupts have fired on the
     /// interface since the last call.
+    #[repr(transparent)]
     pub struct InterruptStatus : u32 {
         /// Packet received.
         const RECEIVE = 0x01;

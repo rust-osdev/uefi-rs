@@ -60,6 +60,7 @@ pub struct PropertiesTable {
 
 bitflags! {
     /// Flags describing memory protection.
+    #[repr(transparent)]
     pub struct MemoryProtectionAttribute: usize {
         /// If this bit is set, then the UEFI implementation will mark pages
         /// containing data as non-executable.

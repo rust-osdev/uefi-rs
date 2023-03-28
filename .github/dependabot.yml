@@ -6,4 +6,5 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
   ignore:
-    - update-types: ["version-update:semver-patch"]
+    - dependency-name: "*"
+      update-types: ["version-update:semver-patch"]

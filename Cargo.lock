@@ -236,9 +236,9 @@ dependencies = [
 
 [[package]]
 name = "mbrman"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4b239f4755d00466e3ac1d55ddeaf77a66c7580352fc6cbc40d56c218fc94a9"
+checksum = "9c487024623ae38584610237dd1be8932bb2b324474b23c37a25f9fbe6bf5e9e"
 dependencies = [
  "bincode",
  "bitvec",

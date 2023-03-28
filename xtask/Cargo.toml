@@ -11,7 +11,7 @@ fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std
 fs-err = "2.6.0"
 heck = "0.4.0"
 itertools = "0.10.5"
-mbrman = "0.5.1"
+mbrman = "0.5.2"
 nix = { version = "0.26.1", default-features = false, features = ["fs"] }
 os_info = { version = "3.6.0", default-features = false }
 proc-macro2 = "1.0.46"

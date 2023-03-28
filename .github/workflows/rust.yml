@@ -118,7 +118,7 @@ jobs:
 
       - name: Run VM tests
         run: cargo xtask run --target x86_64 --ci
-        timeout-minutes: 6
+        timeout-minutes: 10
 
   # Run the build with our current stable MSRV (specified in
   # ./msrv_toolchain.toml). This serves to check that we don't

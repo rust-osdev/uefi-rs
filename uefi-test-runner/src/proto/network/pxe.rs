@@ -80,8 +80,12 @@ pub fn test(bt: &BootServices) {
         let mut dest_port = write_src_port;
         let mut header = [0; 1];
         let mut received = [0; 4];
-        base_code
-            .udp_read(
+
+        // The Windows CI job sometimes fails the read with a timeout error;
+        // retry a few times before giving up.
+        let mut read_result = Ok(0);
+        for i in 0..5 {
+            read_result = base_code.udp_read(
                 UdpOpFlags::USE_FILTER,
                 Some(&mut dest_ip),
                 Some(&mut dest_port),
@@ -89,8 +93,14 @@ pub fn test(bt: &BootServices) {
                 Some(&mut src_port),
                 Some(&mut header),
                 &mut received,
-            )
-            .unwrap();
+            );
+            if read_result.is_ok() {
+                break;
+            }
+
+            info!("Read attempt {i} failed: {read_result:?}");
+        }
+        read_result.unwrap();
 
         // Check the header.
         assert_eq!(header[0] as usize, payload.len());

@@ -1,5 +1,6 @@
 use uefi::prelude::*;
-use uefi::proto::device_path::{text::*, DevicePath};
+use uefi::proto::device_path::text::*;
+use uefi::proto::device_path::DevicePath;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::table::boot::BootServices;
 

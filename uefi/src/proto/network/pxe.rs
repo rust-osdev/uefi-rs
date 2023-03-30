@@ -1,15 +1,14 @@
 //! PXE Base Code protocol.
 
+use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
-use core::{
-    ffi::c_void,
-    iter::from_fn,
-    mem::MaybeUninit,
-    ptr::{null, null_mut},
-};
+use core::iter::from_fn;
+use core::mem::MaybeUninit;
+use core::ptr::{null, null_mut};
 
+use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
+use crate::proto::unsafe_protocol;
 use crate::util::ptr_write_unaligned_and_add;
-use crate::{polyfill::maybe_uninit_slice_as_mut_ptr, proto::unsafe_protocol};
 use bitflags::bitflags;
 use ptr_meta::Pointee;
 

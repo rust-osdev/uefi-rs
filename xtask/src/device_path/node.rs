@@ -2,8 +2,7 @@ use super::field::NodeField;
 use super::group::DeviceType;
 use crate::device_path::util::is_doc_attr;
 use heck::ToShoutySnakeCase;
-use proc_macro2::Span;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Attribute, Fields, Ident, ItemStruct, LitInt, LitStr};
 

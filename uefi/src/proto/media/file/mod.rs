@@ -14,15 +14,15 @@ use crate::{CStr16, Char16, Guid, Result, Status};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::Debug;
-use core::mem;
-use core::ptr;
+use core::{mem, ptr};
 #[cfg(all(feature = "unstable", feature = "alloc"))]
 use {alloc::alloc::Global, core::alloc::Allocator};
 #[cfg(feature = "alloc")]
 use {alloc::boxed::Box, uefi::mem::make_boxed};
 
+pub use self::dir::Directory;
 pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
-pub use self::{dir::Directory, regular::RegularFile};
+pub use self::regular::RegularFile;
 
 /// Common interface to `FileHandle`, `RegularFile`, and `Directory`.
 ///

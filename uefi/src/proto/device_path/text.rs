@@ -8,12 +8,10 @@
 // if there is insufficient memory. So we treat any NULL output as an
 // `OUT_OF_RESOURCES` error.
 
-use crate::{
-    proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath},
-    proto::unsafe_protocol,
-    table::boot::BootServices,
-    CStr16, Char16, Result, Status,
-};
+use crate::proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath};
+use crate::proto::unsafe_protocol;
+use crate::table::boot::BootServices;
+use crate::{CStr16, Char16, Result, Status};
 use core::ops::Deref;
 
 /// This struct is a wrapper of `display_only` parameter

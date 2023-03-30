@@ -5,8 +5,7 @@ use crate::data_types::UnalignedSlice;
 use crate::polyfill::vec_into_raw_parts;
 use alloc::borrow::{Borrow, ToOwned};
 use alloc::vec::Vec;
-use core::fmt;
-use core::ops;
+use core::{fmt, ops};
 
 /// Error returned by [`CString16::try_from::<&str>`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

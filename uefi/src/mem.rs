@@ -1,7 +1,6 @@
 //! This is a utility module with helper methods for allocations/memory.
 
-use crate::ResultExt;
-use crate::{Result, Status};
+use crate::{Result, ResultExt, Status};
 use ::alloc::boxed::Box;
 use core::alloc::Layout;
 use core::fmt::Debug;

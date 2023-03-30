@@ -6,9 +6,10 @@ use proc_macro::TokenStream;
 
 use proc_macro2::{TokenStream as TokenStream2, TokenTree};
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
+use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, spanned::Spanned, Error, Fields, FnArg, Ident, ItemFn,
-    ItemStruct, LitStr, Pat, Visibility,
+    parse_macro_input, parse_quote, Error, Fields, FnArg, Ident, ItemFn, ItemStruct, LitStr, Pat,
+    Visibility,
 };
 
 macro_rules! err {

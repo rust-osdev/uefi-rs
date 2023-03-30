@@ -1,11 +1,7 @@
-use uefi::{
-    prelude::BootServices,
-    proto::network::{
-        pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, UdpOpFlags},
-        IpAddress,
-    },
-    CStr8,
-};
+use uefi::prelude::BootServices;
+use uefi::proto::network::pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, UdpOpFlags};
+use uefi::proto::network::IpAddress;
+use uefi::CStr8;
 
 pub fn test(bt: &BootServices) {
     // Skip the test if the `pxe` feature is not enabled.

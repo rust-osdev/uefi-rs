@@ -1,14 +1,13 @@
 //! `LoadedImage` protocol.
 
-use crate::{
-    data_types::FromSliceWithNulError,
-    proto::device_path::{DevicePath, FfiDevicePath},
-    proto::unsafe_protocol,
-    table::boot::MemoryType,
-    util::usize_from_u32,
-    CStr16, Handle, Status,
-};
-use core::{ffi::c_void, mem, slice};
+use crate::data_types::FromSliceWithNulError;
+use crate::proto::device_path::{DevicePath, FfiDevicePath};
+use crate::proto::unsafe_protocol;
+use crate::table::boot::MemoryType;
+use crate::util::usize_from_u32;
+use crate::{CStr16, Handle, Status};
+use core::ffi::c_void;
+use core::{mem, slice};
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
 #[repr(C)]

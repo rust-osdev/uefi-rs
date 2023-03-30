@@ -2,11 +2,10 @@ use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::ffi::CStr;
-use core::fmt;
 use core::iter::Iterator;
 use core::mem::MaybeUninit;
 use core::result::Result;
-use core::slice;
+use core::{fmt, slice};
 
 #[cfg(feature = "alloc")]
 use super::CString16;

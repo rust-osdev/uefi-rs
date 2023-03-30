@@ -55,8 +55,7 @@ use crate::util::usize_from_u32;
 use crate::{Result, Status};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem;
-use core::ptr;
+use core::{mem, ptr};
 
 /// Provides access to the video hardware's frame buffer.
 ///

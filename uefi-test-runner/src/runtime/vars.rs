@@ -1,8 +1,7 @@
 use log::info;
-use uefi::guid;
 use uefi::prelude::*;
 use uefi::table::runtime::{VariableAttributes, VariableVendor};
-use uefi::Status;
+use uefi::{guid, Status};
 
 fn test_variables(rt: &RuntimeServices) {
     let name = cstr16!("UefiRsTestVar");

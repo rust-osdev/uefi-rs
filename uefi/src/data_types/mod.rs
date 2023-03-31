@@ -128,9 +128,6 @@ pub mod chars;
 pub use self::chars::{Char16, Char8};
 
 #[macro_use]
-mod enums;
-
-#[macro_use]
 mod opaque;
 
 mod strs;

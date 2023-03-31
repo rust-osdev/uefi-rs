@@ -30,7 +30,7 @@
 ///
 /// Usage example:
 /// ```
-/// use uefi::newtype_enum;
+/// # use uefi_raw::newtype_enum;
 /// newtype_enum! {
 /// #[derive(Ord, PartialOrd)]
 /// pub enum UnixBool: i32 => #[allow(missing_docs)] {

@@ -590,6 +590,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "uefi-raw"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "ptr_meta",
+ "uefi-macros",
+]
+
+[[package]]
 name = "uefi-services"
 version = "0.17.0"
 dependencies = [

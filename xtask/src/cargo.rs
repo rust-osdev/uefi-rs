@@ -9,6 +9,7 @@ pub enum Package {
     Uefi,
     UefiApp,
     UefiMacros,
+    UefiRaw,
     UefiServices,
     UefiTestRunner,
     Xtask,
@@ -20,6 +21,7 @@ impl Package {
             Self::Uefi => "uefi",
             Self::UefiApp => "uefi_app",
             Self::UefiMacros => "uefi-macros",
+            Self::UefiRaw => "uefi-raw",
             Self::UefiServices => "uefi-services",
             Self::UefiTestRunner => "uefi-test-runner",
             Self::Xtask => "xtask",
@@ -28,7 +30,12 @@ impl Package {
 
     /// All published packages.
     pub fn published() -> Vec<Package> {
-        vec![Self::Uefi, Self::UefiMacros, Self::UefiServices]
+        vec![
+            Self::Uefi,
+            Self::UefiMacros,
+            Self::UefiRaw,
+            Self::UefiServices,
+        ]
     }
 
     /// All the packages except for xtask.
@@ -37,6 +44,7 @@ impl Package {
             Self::Uefi,
             Self::UefiApp,
             Self::UefiMacros,
+            Self::UefiRaw,
             Self::UefiServices,
             Self::UefiTestRunner,
         ]

@@ -1,10 +1,11 @@
 use super::chars::{Char16, NUL_16};
 use super::strs::{CStr16, FromSliceWithNulError};
-use crate::alloc::vec::Vec;
 use crate::data_types::strs::EqStrUntilNul;
 use crate::data_types::UnalignedSlice;
-use core::fmt;
-use core::ops;
+use crate::polyfill::vec_into_raw_parts;
+use alloc::borrow::{Borrow, ToOwned};
+use alloc::vec::Vec;
+use core::{fmt, ops};
 
 /// Error returned by [`CString16::try_from::<&str>`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -92,7 +93,7 @@ impl TryFrom<Vec<u16>> for CString16 {
         // Safety: `Char16` is a transparent struct wrapping `u16`, so
         // the types are compatible. The pattern used here matches the
         // example in the docs for `into_raw_parts`.
-        let (ptr, len, cap) = input.into_raw_parts();
+        let (ptr, len, cap) = vec_into_raw_parts(input);
         let rebuilt = unsafe {
             let ptr = ptr.cast::<Char16>();
             Vec::from_raw_parts(ptr, len, cap)
@@ -132,6 +133,20 @@ impl AsRef<CStr16> for CString16 {
     }
 }
 
+impl Borrow<CStr16> for CString16 {
+    fn borrow(&self) -> &CStr16 {
+        self
+    }
+}
+
+impl ToOwned for CStr16 {
+    type Owned = CString16;
+
+    fn to_owned(&self) -> CString16 {
+        CString16(self.as_slice_with_nul().to_vec())
+    }
+}
+
 impl fmt::Display for CString16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_ref().fmt(f)
@@ -154,8 +169,9 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CString16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::string::String;
-    use crate::alloc::vec;
+    use crate::cstr16;
+    use alloc::string::String;
+    use alloc::vec;
 
     #[test]
     fn test_cstring16_from_str() {
@@ -222,5 +238,22 @@ mod tests {
         // now other direction
         assert!(String::from("test").eq_str_until_nul(&input));
         assert!("test".eq_str_until_nul(&input));
+    }
+
+    /// Test the `Borrow` and `ToOwned` impls.
+    #[test]
+    fn test_borrow_and_to_owned() {
+        let s1: &CStr16 = cstr16!("ab");
+        let owned: CString16 = s1.to_owned();
+        let s2: &CStr16 = owned.borrow();
+        assert_eq!(s1, s2);
+        assert_eq!(
+            owned.0,
+            [
+                Char16::try_from('a').unwrap(),
+                Char16::try_from('b').unwrap(),
+                NUL_16
+            ]
+        );
     }
 }

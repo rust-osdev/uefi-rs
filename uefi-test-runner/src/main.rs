@@ -1,7 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(abi_efiapi)]
-#![feature(negative_impls)]
 
 #[macro_use]
 extern crate log;
@@ -61,7 +59,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     runtime::test(st.runtime_services());
 
-    shutdown(image, st);
+    shutdown(st);
 }
 
 fn check_revision(rev: uefi::table::Revision) {
@@ -152,7 +150,7 @@ fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     }
 }
 
-fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
+fn shutdown(mut st: SystemTable<Boot>) -> ! {
     // Get our text output back.
     st.stdout().reset(false).unwrap();
 
@@ -164,12 +162,7 @@ fn shutdown(image: uefi::Handle, mut st: SystemTable<Boot>) -> ! {
     send_request_to_host(st.boot_services(), HostRequest::TestsComplete);
 
     // Exit boot services as a proof that it works :)
-    let sizes = st.boot_services().memory_map_size();
-    let max_mmap_size = sizes.map_size + 2 * sizes.entry_size;
-    let mut mmap_storage = vec![0; max_mmap_size].into_boxed_slice();
-    let (st, _iter) = st
-        .exit_boot_services(image, &mut mmap_storage[..])
-        .expect("Failed to exit boot services");
+    let (st, _iter) = st.exit_boot_services();
 
     #[cfg(target_arch = "x86_64")]
     {

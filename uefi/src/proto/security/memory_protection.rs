@@ -1,17 +1,14 @@
 use crate::data_types::PhysicalAddress;
-use crate::proto::Protocol;
+use crate::proto::unsafe_protocol;
 use crate::table::boot::MemoryAttribute;
-use crate::{unsafe_guid, Result, Status};
+use crate::{Result, Status};
 use core::ops::Range;
 
 /// Protocol for getting and setting memory protection attributes.
 ///
-/// This corresponds to the `EFI_MEMORY_ATTRIBUTE_PROTOCOL` [proposal].
-///
-/// [proposal]: https://bugzilla.tianocore.org/show_bug.cgi?id=3519
+/// Corresponds to the C type `EFI_MEMORY_ATTRIBUTE_PROTOCOL`.
 #[repr(C)]
-#[unsafe_guid("f4560cf6-40ec-4b4a-a192-bf1d57d0b189")]
-#[derive(Protocol)]
+#[unsafe_protocol("f4560cf6-40ec-4b4a-a192-bf1d57d0b189")]
 pub struct MemoryProtection {
     get_memory_attributes: unsafe extern "efiapi" fn(
         this: *const Self,
@@ -44,9 +41,13 @@ impl MemoryProtection {
     /// If the attributes are not consistent within the region,
     /// [`Status::NO_MAPPING`] is returned.
     ///
+    /// Implementations typically require that the start and end of the memory
+    /// region are aligned to the [UEFI page size].
+    ///
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
+    /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
     pub fn get_memory_attributes(
         &self,
         byte_region: Range<PhysicalAddress>,
@@ -64,9 +65,13 @@ impl MemoryProtection {
     /// The valid attributes to set are [`READ_PROTECT`],
     /// [`EXECUTE_PROTECT`], and [`READ_ONLY`].
     ///
+    /// Implementations typically require that the start and end of the memory
+    /// region are aligned to the [UEFI page size].
+    ///
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
+    /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
     pub fn set_memory_attributes(
         &self,
         byte_region: Range<PhysicalAddress>,
@@ -81,9 +86,13 @@ impl MemoryProtection {
     /// The valid attributes to clear are [`READ_PROTECT`],
     /// [`EXECUTE_PROTECT`], and [`READ_ONLY`].
     ///
+    /// Implementations typically require that the start and end of the memory
+    /// region are aligned to the [UEFI page size].
+    ///
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
+    /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
     pub fn clear_memory_attributes(
         &self,
         byte_region: Range<PhysicalAddress>,

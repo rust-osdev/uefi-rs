@@ -1,7 +1,6 @@
 //! This is a utility module with helper methods for allocations/memory.
 
-use crate::ResultExt;
-use crate::{Result, Status};
+use crate::{Result, ResultExt, Status};
 use ::alloc::boxed::Box;
 use core::alloc::Layout;
 use core::fmt::Debug;
@@ -29,6 +28,9 @@ use {core::alloc::Allocator, core::ptr::NonNull};
 /// `unstable`-feature, it uses the `allocator_api` instead. In that case, the function takes an
 /// additional parameter describing the specific [`Allocator`]. You can use [`alloc::alloc::Global`]
 /// as default.
+///
+/// [`Allocator`]: https://doc.rust-lang.org/alloc/alloc/trait.Allocator.html
+/// [`alloc::alloc::Global`]: https://doc.rust-lang.org/alloc/alloc/struct.Global.html
 pub(crate) fn make_boxed<
     'a,
     // The UEFI data structure.

@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "template",
+    "uefi",
     "uefi-macros",
     "uefi-services",
     "uefi-test-runner",

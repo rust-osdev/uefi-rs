@@ -12,19 +12,23 @@
 use crate::Identify;
 use core::ffi::c_void;
 
-/// Common trait implemented by all standard UEFI protocols
+/// Common trait implemented by all standard UEFI protocols.
 ///
 /// According to the UEFI's specification, protocols are `!Send` (they expect to
 /// be run on the bootstrap processor) and `!Sync` (they are not thread-safe).
-/// You can derive the `Protocol` trait, add these bounds and specify the
-/// protocol's GUID using the following syntax:
+/// You can derive the `Protocol` trait, add these bounds, and specify the
+/// protocol's GUID using the [`unsafe_protocol`] macro.
+///
+/// # Example
 ///
 /// ```
-/// #![feature(negative_impls)]
-/// use uefi::{proto::Protocol, unsafe_guid};
-/// #[unsafe_guid("12345678-9abc-def0-1234-56789abcdef0")]
-/// #[derive(Protocol)]
-/// struct DummyProtocol {}
+/// use uefi::{Identify, guid};
+/// use uefi::proto::unsafe_protocol;
+///
+/// #[unsafe_protocol("12345678-9abc-def0-1234-56789abcdef0")]
+/// struct ExampleProtocol {}
+///
+/// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
 /// ```
 pub trait Protocol: Identify {}
 
@@ -62,11 +66,12 @@ where
     }
 }
 
-pub use uefi_macros::Protocol;
+pub use uefi_macros::unsafe_protocol;
 
 pub mod console;
 pub mod debug;
 pub mod device_path;
+pub mod driver;
 pub mod loaded_image;
 pub mod media;
 pub mod network;

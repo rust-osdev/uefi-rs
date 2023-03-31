@@ -1,9 +1,10 @@
 use super::FileAttribute;
 use crate::data_types::Align;
 use crate::table::runtime::Time;
-use crate::{unsafe_guid, CStr16, Char16, Identify};
+use crate::{guid, CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
 use core::{mem, ptr};
+use ptr_meta::Pointee;
 
 /// Common trait for data structures that can be used with
 /// `File::set_info()` or `File::get_info()`.
@@ -32,7 +33,7 @@ pub trait FromUefi {
 /// `FileSystemVolumeLabel`, all of which are dynamically-sized structs
 /// that have zero or more header fields followed by a variable-length
 /// [Char16] name.
-trait InfoInternal: Align + ptr::Pointee<Metadata = usize> {
+trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
     /// Offset in bytes of the start of the name slice at the end of
     /// the struct.
     fn name_offset() -> usize;
@@ -83,7 +84,7 @@ trait InfoInternal: Align + ptr::Pointee<Metadata = usize> {
 
         // Create a raw fat pointer using the `storage` as a base.
         let info_ptr: *mut Self =
-            ptr::from_raw_parts_mut(storage.as_mut_ptr().cast::<()>(), name_length_ucs2);
+            ptr_meta::from_raw_parts_mut(storage.as_mut_ptr().cast::<()>(), name_length_ucs2);
 
         // Initialize the struct header.
         init(info_ptr, info_size as u64);
@@ -110,7 +111,7 @@ where
         let name_ptr = Self::name_ptr(ptr.cast::<u8>());
         let name = CStr16::from_ptr(name_ptr);
         let name_len = name.as_slice_with_nul().len();
-        &mut *ptr::from_raw_parts_mut(ptr.cast::<()>(), name_len)
+        &mut *ptr_meta::from_raw_parts_mut(ptr.cast::<()>(), name_len)
     }
 }
 
@@ -140,9 +141,8 @@ pub enum FileInfoCreationError {
 ///   existing file in the same directory.
 /// - If a file is read-only, the only allowed change is to remove the read-only
 ///   attribute. Other changes must be carried out in a separate transaction.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C)]
-#[unsafe_guid("09576e92-6d3f-11d2-8e39-00a0c969723b")]
 pub struct FileInfo {
     size: u64,
     file_size: u64,
@@ -237,6 +237,10 @@ impl Align for FileInfo {
     }
 }
 
+unsafe impl Identify for FileInfo {
+    const GUID: Guid = guid!("09576e92-6d3f-11d2-8e39-00a0c969723b");
+}
+
 impl InfoInternal for FileInfo {
     fn name_offset() -> usize {
         80
@@ -251,9 +255,8 @@ impl FileProtocolInfo for FileInfo {}
 ///
 /// Please note that only the system volume's volume label may be set using
 /// this information structure. Consider using `FileSystemVolumeLabel` instead.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C)]
-#[unsafe_guid("09576e93-6d3f-11d2-8e39-00a0c969723b")]
 pub struct FileSystemInfo {
     size: u64,
     read_only: bool,
@@ -329,6 +332,10 @@ impl Align for FileSystemInfo {
     }
 }
 
+unsafe impl Identify for FileSystemInfo {
+    const GUID: Guid = guid!("09576e93-6d3f-11d2-8e39-00a0c969723b");
+}
+
 impl InfoInternal for FileSystemInfo {
     fn name_offset() -> usize {
         36
@@ -340,9 +347,8 @@ impl FileProtocolInfo for FileSystemInfo {}
 /// System volume label
 ///
 /// May only be obtained on the root directory's file handle.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Pointee)]
 #[repr(C)]
-#[unsafe_guid("db47d7d3-fe81-11d3-9a35-0090273fc14d")]
 pub struct FileSystemVolumeLabel {
     volume_label: [Char16],
 }
@@ -377,6 +383,10 @@ impl Align for FileSystemVolumeLabel {
     }
 }
 
+unsafe impl Identify for FileSystemVolumeLabel {
+    const GUID: Guid = guid!("db47d7d3-fe81-11d3-9a35-0090273fc14d");
+}
+
 impl InfoInternal for FileSystemVolumeLabel {
     fn name_offset() -> usize {
         0
@@ -388,10 +398,9 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alloc::vec;
-    use crate::table::runtime::TimeParams;
-    use crate::table::runtime::{Daylight, Time};
+    use crate::table::runtime::{Daylight, Time, TimeParams};
     use crate::CString16;
+    use alloc::vec;
 
     fn validate_layout<T: InfoInternal + ?Sized>(info: &T, name: &[Char16]) {
         // Check the hardcoded struct alignment.

@@ -1,11 +1,10 @@
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Char16, Event, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Char16, Event, Result, Status};
 use core::mem::MaybeUninit;
 
 /// Interface for text-based input devices.
 #[repr(C)]
-#[unsafe_guid("387477c1-69c7-11d2-8e39-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("387477c1-69c7-11d2-8e39-00a0c969723b")]
 pub struct Input {
     reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut RawKey) -> Status,
@@ -27,12 +26,52 @@ impl Input {
 
     /// Reads the next keystroke from the input device, if any.
     ///
-    /// Use `wait_for_key_event()` with the `BootServices::wait_for_event()`
+    /// Use [`wait_for_key_event`] with the [`BootServices::wait_for_event`]
     /// interface in order to wait for a key to be pressed.
+    ///
+    /// [`BootServices::wait_for_event`]: uefi::table::boot::BootServices::wait_for_event
+    /// [`wait_for_key_event`]: Self::wait_for_key_event
     ///
     /// # Errors
     ///
-    /// - `DeviceError` if there was an issue with the input device
+    /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use log::info;
+    /// use uefi::proto::console::text::{Input, Key, ScanCode};
+    /// use uefi::table::boot::BootServices;
+    /// use uefi::{Char16, Result, ResultExt};
+    ///
+    /// fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Result {
+    ///     loop {
+    ///         // Pause until a keyboard event occurs.
+    ///         let mut events = unsafe { [input.wait_for_key_event().unsafe_clone()] };
+    ///         boot_services
+    ///             .wait_for_event(&mut events)
+    ///             .discard_errdata()?;
+    ///
+    ///         let u_key = Char16::try_from('u').unwrap();
+    ///         match input.read_key()? {
+    ///             // Example of handling a printable key: print a message when
+    ///             // the 'u' key is pressed.
+    ///             Some(Key::Printable(key)) if key == u_key => {
+    ///                 info!("the 'u' key was pressed");
+    ///             }
+    ///
+    ///             // Example of handling a special key: exit the loop when the
+    ///             // escape key is pressed.
+    ///             Some(Key::Special(ScanCode::ESCAPE)) => {
+    ///                 break;
+    ///             }
+    ///             _ => {}
+    ///         }
+    ///     }
+    ///
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn read_key(&mut self) -> Result<Option<Key>> {
         let mut key = MaybeUninit::<RawKey>::uninit();
 
@@ -72,6 +111,7 @@ impl From<RawKey> for Key {
 
 /// A key read from the console (UEFI version)
 #[repr(C)]
+#[derive(Debug)]
 pub struct RawKey {
     /// The key's scan code.
     /// or 0 if printable

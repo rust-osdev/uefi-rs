@@ -1,19 +1,40 @@
-//! Rusty wrapper for the Unified Extensible Firmware Interface.
+//! Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
+//!
+//! See the [Rust UEFI Book] for a tutorial, how-tos, and overviews of some
+//! important UEFI concepts. For more details of UEFI, see the latest [UEFI
+//! Specification][spec].
+//!
+//! Feel free to file bug reports and questions in our [issue tracker], and [PR
+//! contributions][contributing] are also welcome!
 //!
 //! # Crate organisation
 //!
-//! The top-level module contains some of the most used types,
-//! such as the result and error types, or other common data structures
-//! such as GUIDs and handles.
+//! The top-level module contains some of the most used types and macros,
+//! including the [`Handle`] and [`Result`] types, the [`CStr16`] and
+//! [`CString16`] types for working with UCS-2 strings, and the [`entry`] and
+//! [`guid`] macros.
 //!
-//! ## Tables and protocols
+//! ## Tables
 //!
-//! The `table` module contains definitions of the UEFI tables,
-//! which are structures containing some basic functions and references to other tables.
-//! Most importantly, the boot services table also provides a way to obtain **protocol** handles.
+//! The [`SystemTable`] provides access to almost everything in UEFI. It comes
+//! in two flavors:
+//! - `SystemTable<Boot>`: for boot-time applications such as bootloaders,
+//!   provides access to both boot and runtime services.
+//! - `SystemTable<Runtime>`: for operating systems after boot services have
+//!   been exited.
 //!
-//! The `proto` module contains the standard UEFI protocols, which are normally provided
-//! by the various UEFI drivers and firmware layers.
+//! ## Protocols
+//!
+//! When boot services are active, most functionality is provided via UEFI
+//! protocols. Protocols provide operations such as reading and writing files,
+//! drawing to the screen, sending and receiving network requests, and much
+//! more. The list of protocols that are actually available when running an
+//! application depends on the device. For example, a PC with no network card
+//! may not provide network protocols.
+//!
+//! See the [`BootServices`] documentation for details of how to open a
+//! protocol, and see the [`proto`] module for protocol implementations. New
+//! protocols can be defined with the [`unsafe_protocol`] macro.
 //!
 //! ## Optional crate features
 //!
@@ -22,8 +43,8 @@
 //!   `Vec` rather than filling a statically-sized array. This requires
 //!   a global allocator; you can use the `global_allocator` feature or
 //!   provide your own.
-//! - `global_allocator`: Implement a [global allocator] using UEFI
-//!   functions. This is a simple allocator that relies on the UEFI pool
+//! - `global_allocator`: Set [`allocator::Allocator`] as the global Rust
+//!   allocator. This is a simple allocator that relies on the UEFI pool
 //!   allocator. You can choose to provide your own allocator instead of
 //!   using this feature, or no allocator at all if you don't need to
 //!   dynamically allocate any memory.
@@ -33,11 +54,7 @@
 //! - `panic-on-logger-errors` (enabled by default): Panic if a text
 //!   output error occurs in the logger.
 //! - `unstable`: Enable functionality that depends on [unstable
-//!   features] in the nightly compiler. Note that currently the `uefi`
-//!   crate _always_ requires unstable features even if the `unstable`
-//!   feature is not enabled, but once a couple more required features
-//!   are stabilized we intend to make the `uefi` crate work on the
-//!   stable channel by default.
+//!   features] in the nightly compiler.
 //!   As example, in conjunction with the `alloc`-feature, this gate allows
 //!   the `allocator_api` on certain functions.
 //!
@@ -46,23 +63,18 @@
 //! [`uefi-services`] crate provides an `init` method that takes care of
 //! this.
 //!
-//! ## Adapting to local conditions
-//!
-//! Unlike system tables, which are present on *all* UEFI implementations,
-//! protocols *may* or *may not* be present on a certain system.
-//!
-//! For example, a PC with no network card might not contain a network driver,
-//! therefore all the network protocols will be unavailable.
-//!
+//! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
+//! [UEFI]: https://uefi.org/
+//! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
+//! [`SystemTable`]: table::SystemTable
 //! [`uefi-services`]: https://crates.io/crates/uefi-services
+//! [`unsafe_protocol`]: proto::unsafe_protocol
+//! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
+//! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
+//! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
-#![feature(abi_efiapi)]
-#![feature(maybe_uninit_slice)]
-#![feature(negative_impls)]
-#![feature(ptr_metadata)]
-#![cfg_attr(feature = "alloc", feature(vec_into_raw_parts))]
 #![cfg_attr(feature = "unstable", feature(error_in_core))]
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
@@ -71,9 +83,8 @@
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(clippy::all)]
 #![deny(clippy::must_use_candidate)]
+#![deny(missing_debug_implementations)]
 
-// Enable once we use vec![] or similar
-// #[cfg_attr(feature = "alloc", macro_use)]
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
@@ -85,9 +96,8 @@ extern crate self as uefi;
 pub mod data_types;
 #[cfg(feature = "alloc")]
 pub use self::data_types::CString16;
-pub use self::data_types::{unsafe_guid, Identify};
-pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle};
-pub use uefi_macros::guid;
+pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
+pub use uefi_macros::{cstr16, cstr8, entry, guid};
 
 mod result;
 pub use self::result::{Error, Result, ResultExt, Status};
@@ -98,8 +108,7 @@ pub mod proto;
 
 pub mod prelude;
 
-#[cfg(feature = "global_allocator")]
-pub mod global_allocator;
+pub mod allocator;
 
 #[cfg(feature = "logger")]
 pub mod logger;
@@ -107,3 +116,7 @@ pub mod logger;
 // As long as this is behind "alloc", we can simplify cfg-feature attributes in this module.
 #[cfg(feature = "alloc")]
 pub(crate) mod mem;
+
+pub(crate) mod polyfill;
+
+mod util;

@@ -13,6 +13,7 @@ use {alloc::alloc::Global, core::alloc::Allocator};
 /// addition to supporting the normal `File` operations, `Directory`
 /// supports iterating over its contained files.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct Directory(RegularFile);
 
 impl Directory {
@@ -38,12 +39,8 @@ impl Directory {
     /// * `buffer`  The target buffer of the read operation
     ///
     /// # Errors
-    /// * `uefi::Status::NO_MEDIA`           The device has no media
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error, the file was deleted,
-    ///                                      or the end of the file was reached before the `read()`.
-    /// * `uefi::Status::VOLUME_CORRUPTED`   The filesystem structures are corrupted
-    /// * `uefi::Status::BUFFER_TOO_SMALL`   The buffer is too small to hold a directory entry,
-    ///                                      the required buffer size is provided into the error.
+    ///
+    /// All errors come from calls to [`RegularFile::read`].
     pub fn read_entry<'buf>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -63,7 +60,8 @@ impl Directory {
         })
     }
 
-    /// Wrapper around [`Self::read_entry_boxed_in`] that uses the [`Global`] allocator.
+    /// Wrapper around [`Self::read_entry`] that returns an owned copy of the data. It has the same
+    /// implications and requirements. On failure, the payload of `Err` is `()´.
     #[cfg(feature = "alloc")]
     pub fn read_entry_boxed(&mut self) -> Result<Option<Box<FileInfo>>> {
         let read_entry_res = self.read_entry(&mut []);
@@ -120,6 +118,10 @@ impl Directory {
     }
 
     /// Start over the process of enumerating directory entries
+    ///
+    /// # Errors
+    ///
+    /// All errors come from calls to [`RegularFile::set_position`].
     pub fn reset_entry_readout(&mut self) -> Result {
         self.0.set_position(0)
     }

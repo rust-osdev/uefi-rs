@@ -58,7 +58,11 @@ pub enum Feature {
     ServicesLogger,
 
     // `uefi-test-runner` features.
-    Ci,
+    MultiProcessor,
+    Pxe,
+    TestUnstable,
+    TpmV1,
+    TpmV2,
 }
 
 impl Feature {
@@ -74,7 +78,11 @@ impl Feature {
             Self::Qemu => "uefi-services/qemu",
             Self::ServicesLogger => "uefi-services/logger",
 
-            Self::Ci => "uefi-test-runner/ci",
+            Self::MultiProcessor => "uefi-test-runner/multi_processor",
+            Self::Pxe => "uefi-test-runner/pxe",
+            Self::TestUnstable => "uefi-test-runner/unstable",
+            Self::TpmV1 => "uefi-test-runner/tpm_v1",
+            Self::TpmV2 => "uefi-test-runner/tpm_v2",
         }
     }
 
@@ -89,7 +97,15 @@ impl Feature {
                 Self::Unstable,
             ],
             Package::UefiServices => vec![Self::PanicHandler, Self::Qemu, Self::ServicesLogger],
-            Package::UefiTestRunner => vec![Self::Ci],
+            Package::UefiTestRunner => {
+                vec![
+                    Self::MultiProcessor,
+                    Self::Pxe,
+                    Self::TestUnstable,
+                    Self::TpmV1,
+                    Self::TpmV2,
+                ]
+            }
             _ => vec![],
         }
     }
@@ -204,19 +220,6 @@ pub fn fix_nested_cargo_env(cmd: &mut Command) {
     cmd.env("PATH", sanitized_path(orig_path));
 }
 
-/// Check if the three UEFI targets are installed via rustup (only
-/// supported since nightly-2022-11-10).
-fn is_target_installed(target: &str) -> Result<bool> {
-    let output = Command::new("rustup")
-        .args(["target", "list", "--installed"])
-        .output()?;
-    if !output.status.success() {
-        bail!("failed to get installed targets");
-    }
-    let stdout = String::from_utf8(output.stdout)?;
-    Ok(stdout.lines().any(|x| x == target))
-}
-
 #[derive(Debug)]
 pub struct Cargo {
     pub action: CargoAction,
@@ -266,6 +269,7 @@ impl Cargo {
             CargoAction::Miri => {
                 action = "miri";
                 sub_action = Some("test");
+                cmd.env("MIRIFLAGS", "-Zmiri-strict-provenance");
             }
             CargoAction::Test => {
                 action = "test";
@@ -282,13 +286,6 @@ impl Cargo {
 
         if let Some(target) = self.target {
             cmd.args(["--target", target.as_triple()]);
-
-            // If the target is not installed, use build-std. Keep this
-            // around until our minimum-supported nightly version is at
-            // least 2022-11-10.
-            if !is_target_installed(target.as_triple())? {
-                cmd.args(["-Zbuild-std=core,alloc"]);
-            }
         }
 
         if self.packages.is_empty() {

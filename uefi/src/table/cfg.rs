@@ -47,6 +47,7 @@ pub const PROPERTIES_TABLE_GUID: Guid = guid!("880aaca3-4adc-4a04-9079-b74734082
 
 /// This table contains additional information about the UEFI implementation.
 #[repr(C)]
+#[derive(Debug)]
 pub struct PropertiesTable {
     /// Version of the UEFI properties table.
     ///
@@ -62,6 +63,7 @@ pub struct PropertiesTable {
 
 bitflags! {
     /// Flags describing memory protection.
+    #[repr(transparent)]
     pub struct MemoryProtectionAttribute: usize {
         /// If this bit is set, then the UEFI implementation will mark pages
         /// containing data as non-executable.

@@ -1,9 +1,10 @@
 // note from the spec:
 // When the context record field is larger than the register being stored in it, the upper bits of the
 // context record field are unused and ignored
-/// Universal EFI_SYSTEM_CONTEXT defintion
+/// Universal EFI_SYSTEM_CONTEXT definition
 /// This is passed to debug callbacks
 #[repr(C)]
+#[allow(missing_debug_implementations)]
 pub union SystemContext {
     ebc: *mut SystemContextEBC,
     riscv_32: *mut SystemContextRiscV32,

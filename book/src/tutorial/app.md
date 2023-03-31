@@ -18,8 +18,8 @@ In `cargo.toml`, add a few dependencies:
 ```toml
 [dependencies]
 log = "0.4"
-uefi = "0.18"
-uefi-services = "0.15"
+uefi = "0.20"
+uefi-services = "0.17"
 ```
 
 Replace the contents of `src/main.rs` with this:
@@ -41,9 +41,7 @@ This is some boilerplate that all Rust UEFI applications will
 need. `no_main` is needed because the UEFI application entry point is
 different from the standard Rust `main` function. `no_std` is needed to
 turn off the `std` library; the `core` and `alloc` crates can still be
-used. And `feature(abi_efiapi)` is needed because UEFI applications have
-a special calling convention that is not yet stabilized in the Rust
-compiler.
+used.
 
 Next up are some `use` lines. Nothing too exciting here; the
 `uefi::prelude` module is intended to be glob-imported, and exports a

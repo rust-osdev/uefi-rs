@@ -18,79 +18,75 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
         sudo apt-get install qemu-system-arm qemu-efi-aarch64 -y
 
-    - name: Build
-      run: cargo xtask build --target aarch64
-
     - name: Run VM tests
       run: cargo xtask run --target aarch64 --headless --ci
-      timeout-minutes: 2
+      timeout-minutes: 4
 
   test_x86_64:
     name: Build and run tests on x86_64
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
         sudo apt-get install qemu-system-x86 ovmf swtpm -y
 
-    - name: Build (without unstable)
-      run: cargo xtask build --target x86_64
-
     - name: Run VM tests
       run: cargo xtask run --target x86_64 --headless --ci --tpm=v1
-      timeout-minutes: 2
+      timeout-minutes: 4
 
   test_ia32:
     name: Build and run tests on IA32
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+
+    - uses: Swatinem/rust-cache@v2
 
     - name: Install qemu and OVMF
       run: |
         sudo apt-get update
         sudo apt-get install qemu-system-x86 ovmf-ia32 swtpm -y
 
-    - name: Build
-      run: cargo xtask build --target ia32
-
     - name: Run VM tests
       run: cargo xtask run --target ia32 --headless --ci --tpm=v2
-      timeout-minutes: 2
+      timeout-minutes: 4
 
   test:
     name: Run tests and documentation tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo test (without unstable)
         run: cargo xtask test
-
-      # At least one unit test, for make_boxed() currently, has different behaviour dependent on
-      # the unstable feature.
-      - name: Run cargo test (with unstable)
-        run: cargo xtask test --include-unstable
 
   lints:
     name: Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo fmt
         run: |
@@ -102,69 +98,50 @@ jobs:
           rustup component add clippy
           cargo xtask clippy --warnings-as-errors
 
-      - name: Run cargo doc
+      - name: Run cargo doc (without unstable)
         run: cargo xtask doc --warnings-as-errors --document-private-items
 
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check
 
-  miri:
-    name: Run unit tests and doctests under Miri
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Run miri
-        run: |
-          rustup component add miri
-          cargo xtask miri
-
-  # This job tests that the template app builds successfully with the
-  # released versions of the libraries on crates.io.
-  #
-  # Since a nightly toolchain is currently required to build uefi-rs,
-  # the released versions can suddenly stop building when a new nightly
-  # compiler with a breaking change is released. This job provides an
-  # alert when this situation occurs.
-  test_latest_release:
-    name: Build the template against the released version of uefi-rs
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout sources
-      uses: actions/checkout@v2
-
-    - name: Build
-      run: cargo xtask test-latest-release
-
   windows:
     name: Check that the build works on a Windows target
     runs-on: windows-latest
     steps:
+      - name: Install QEMU
+        run: choco install qemu
+
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Build
-        run: cargo xtask build
+      - uses: Swatinem/rust-cache@v2
 
-  # Run the build with our current nightly MSRV (specified in
+      - name: Run VM tests
+        run: cargo xtask run --target x86_64 --ci
+        timeout-minutes: 10
+
+  # Run the build with our current stable MSRV (specified in
   # ./msrv_toolchain.toml). This serves to check that we don't
   # accidentally start relying on a new feature without intending
   # to. Having a test for this makes it easier for us to be intentional
   # about making changes that require a newer version.
   build_msrv:
-    name: Check that the build works on our nightly MSRV
+    name: Check that the build works on our stable MSRV
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set toolchain
       run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
 
+    - uses: Swatinem/rust-cache@v2
+
     - name: Build
       run: cargo xtask build
 
+  # This job requires the nightly channel, but keep it as a separate job from
+  # `nightly_channel` because it takes a while to run.
   build_feature_permutations:
     name: Check that the build works for all feature combinations
     runs-on: ubuntu-latest
@@ -172,5 +149,44 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
+    - name: Set nightly toolchain so that `unstable` can be included
+      run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+
+    - uses: Swatinem/rust-cache@v2
+
     - name: Build
       run: cargo xtask build --feature-permutations
+
+  nightly_channel:
+    name: Run checks that require the nightly channel
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v3
+
+    - name: Install qemu and OVMF
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu-system-x86 ovmf -y
+
+    - name: Enable nightly toolchain
+      run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Run VM tests with the `unstable` feature
+      run: cargo xtask run --target x86_64 --headless --ci --unstable
+      timeout-minutes: 4
+
+    - name: Run cargo doc with the `unstable` feature
+      run: cargo xtask doc --warnings-as-errors --document-private-items --unstable
+
+    - name: Run test with the `unstable` feature
+      # Skip testing uefi-macros on nightly because the tests that check the
+      # compiler error output produce different output on stable vs nightly.
+      run: cargo xtask test --unstable --skip-macro-tests
+
+    - name: Run unit tests and doctests under Miri
+      run: |
+        rustup component add miri
+        cargo xtask miri

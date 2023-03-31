@@ -1,13 +1,16 @@
 //! PXE Base Code protocol.
 
-use core::{
-    ffi::c_void,
-    iter::from_fn,
-    ptr::{null, null_mut},
-};
+use core::ffi::c_void;
+use core::fmt::{Debug, Formatter};
+use core::iter::from_fn;
+use core::mem::MaybeUninit;
+use core::ptr::{null, null_mut};
 
+use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
+use crate::proto::unsafe_protocol;
+use crate::util::ptr_write_unaligned_and_add;
 use bitflags::bitflags;
-use uefi_macros::{unsafe_guid, Protocol};
+use ptr_meta::Pointee;
 
 use crate::{CStr8, Char8, Result, Status};
 
@@ -15,8 +18,7 @@ use super::{IpAddress, MacAddress};
 
 /// PXE Base Code protocol
 #[repr(C)]
-#[unsafe_guid("03c4e603-ac28-11d3-9a2d-0090273fc14d")]
-#[derive(Protocol)]
+#[unsafe_protocol("03c4e603-ac28-11d3-9a2d-0090273fc14d")]
 #[allow(clippy::type_complexity)]
 pub struct BaseCode {
     revision: u64,
@@ -28,7 +30,7 @@ pub struct BaseCode {
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: bool,
-        info: Option<*const DiscoverInfo<[Server; 0]>>,
+        info: *const FfiDiscoverInfo,
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
@@ -128,16 +130,16 @@ impl BaseCode {
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: bool,
-        info: Option<&DiscoverInfo<[Server]>>,
+        info: Option<&DiscoverInfo>,
     ) -> Result {
-        (self.discover)(
-            self,
-            ty,
-            layer,
-            use_bis,
-            info.map(|info| (info as *const DiscoverInfo<[Server]>).cast()),
-        )
-        .into()
+        let info: *const FfiDiscoverInfo = info
+            .map(|info| {
+                let info_ptr: *const DiscoverInfo = info;
+                info_ptr.cast()
+            })
+            .unwrap_or(null());
+
+        (self.discover)(self, ty, layer, use_bis, info).into()
     }
 
     /// Returns the size of a file located on a TFTP server.
@@ -620,7 +622,7 @@ impl BaseCode {
 /// A type of bootstrap to perform in [`BaseCode::discover`].
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_BOOT_` constants in the C API.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[repr(u16)]
 #[allow(missing_docs)]
 pub enum BootstrapType {
@@ -649,80 +651,112 @@ pub enum BootstrapType {
     PxeTest = 65535,
 }
 
+opaque_type! {
+    /// Opaque type that should be used to represent a pointer to a [`DiscoverInfo`] in
+    /// foreign function interfaces. This type produces a thin pointer, unlike
+    /// [`DiscoverInfo`].
+    pub struct FfiDiscoverInfo;
+}
+
 /// This struct contains optional parameters for [`BaseCode::discover`].
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_DISCOVER_INFO` type in the C API.
 #[repr(C)]
-pub struct DiscoverInfo<T: ?Sized> {
+#[derive(Debug, Pointee)]
+pub struct DiscoverInfo {
     use_m_cast: bool,
     use_b_cast: bool,
     use_u_cast: bool,
     must_use_list: bool,
     server_m_cast_ip: IpAddress,
     ip_cnt: u16,
-    srv_list: T,
+    srv_list: [Server],
 }
 
-impl<const N: usize> DiscoverInfo<[Server; N]> {
+impl DiscoverInfo {
     /// Create a `DiscoverInfo`.
-    #[must_use]
-    pub const fn new(
+    pub fn new_in_buffer<'buf>(
+        buffer: &'buf mut [MaybeUninit<u8>],
         use_m_cast: bool,
         use_b_cast: bool,
         use_u_cast: bool,
         must_use_list: bool,
         server_m_cast_ip: IpAddress,
-        srv_list: [Server; N],
-    ) -> Self {
-        assert!(N <= u16::MAX as usize, "too many servers");
-        let ip_cnt = N as u16;
-        Self {
-            use_m_cast,
-            use_b_cast,
-            use_u_cast,
-            must_use_list,
-            server_m_cast_ip,
-            ip_cnt,
-            srv_list,
+        srv_list: &[Server],
+    ) -> Result<&'buf mut Self> {
+        let server_count = srv_list.len();
+        assert!(server_count <= u16::MAX as usize, "too many servers");
+
+        let required_size = core::mem::size_of::<bool>() * 4
+            + core::mem::size_of::<IpAddress>()
+            + core::mem::size_of::<u16>()
+            + core::mem::size_of::<Server>() * server_count;
+
+        if buffer.len() < required_size {
+            return Err(Status::BUFFER_TOO_SMALL.into());
+        }
+
+        let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
+        unsafe {
+            ptr_write_unaligned_and_add(&mut ptr, use_m_cast);
+            ptr_write_unaligned_and_add(&mut ptr, use_b_cast);
+            ptr_write_unaligned_and_add(&mut ptr, use_u_cast);
+            ptr_write_unaligned_and_add(&mut ptr, must_use_list);
+            ptr_write_unaligned_and_add(&mut ptr, server_m_cast_ip);
+            ptr_write_unaligned_and_add(&mut ptr, server_count as u16);
+
+            ptr = ptr.add(2); // Align server list (4-byte alignment).
+            core::ptr::copy(srv_list.as_ptr(), ptr.cast(), server_count);
+
+            let ptr: *mut Self =
+                ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), server_count);
+            Ok(&mut *ptr)
         }
     }
 }
 
-impl<T> DiscoverInfo<T> {
+impl DiscoverInfo {
     /// Returns whether discovery should use multicast.
+    #[must_use]
     pub const fn use_m_cast(&self) -> bool {
         self.use_m_cast
     }
 
     /// Returns whether discovery should use broadcast.
+    #[must_use]
     pub const fn use_b_cast(&self) -> bool {
         self.use_b_cast
     }
 
     /// Returns whether discovery should use unicast.
+    #[must_use]
     pub const fn use_u_cast(&self) -> bool {
         self.use_u_cast
     }
 
     /// Returns whether discovery should only accept boot servers in the server
     /// list (boot server verification).
+    #[must_use]
     pub const fn must_use_list(&self) -> bool {
         self.must_use_list
     }
 
     /// Returns the address used in multicast discovery.
+    #[must_use]
     pub const fn server_m_cast_ip(&self) -> &IpAddress {
         &self.server_m_cast_ip
     }
 
     /// Returns the amount of Boot Server.
+    #[must_use]
     pub const fn ip_cnt(&self) -> u16 {
         self.ip_cnt
     }
 
     /// Returns the Boot Server list used for unicast discovery or boot server
     /// verification.
-    pub const fn srv_list(&self) -> &T {
+    #[must_use]
+    pub const fn srv_list(&self) -> &[Server] {
         &self.srv_list
     }
 }
@@ -731,6 +765,7 @@ impl<T> DiscoverInfo<T> {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_SRVLIST` type in the C API.
 #[repr(C)]
+#[derive(Debug)]
 pub struct Server {
     /// The type of Boot Server reply
     pub ty: u16,
@@ -781,7 +816,7 @@ enum TftpOpcode {
 /// MTFTP connection parameters
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_MTFTP_INFO` type in the C API.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct MtftpInfo {
     /// File multicast IP address. This is the IP address to which the server
@@ -827,6 +862,7 @@ bitflags! {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_IP_FILTER` type in the C API.
 #[repr(C)]
+#[derive(Debug)]
 pub struct IpFilter {
     /// A set of filters.
     pub filters: IpFilters,
@@ -890,6 +926,12 @@ pub union Packet {
     dhcpv6: DhcpV6Packet,
 }
 
+impl Debug for Packet {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "<binary data>")
+    }
+}
+
 impl AsRef<[u8; 1472]> for Packet {
     fn as_ref(&self) -> &[u8; 1472] {
         unsafe { &self.raw }
@@ -912,7 +954,7 @@ impl AsRef<DhcpV6Packet> for Packet {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_DHCPV4_PACKET` type in the C API.
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DhcpV4Packet {
     /// Packet op code / message type.
     pub bootp_opcode: u8,
@@ -976,6 +1018,7 @@ impl DhcpV4Packet {
 
 bitflags! {
     /// Represents the 'flags' field for a [`DhcpV4Packet`].
+    #[repr(transparent)]
     pub struct DhcpV4Flags: u16 {
         /// Should be set when the client cannot receive unicast IP datagrams
         /// until its protocol software has been configured with an IP address.
@@ -987,7 +1030,7 @@ bitflags! {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_DHCPV6_PACKET` type in the C API.
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DhcpV6Packet {
     /// The message type.
     pub message_type: u8,
@@ -1011,6 +1054,7 @@ impl DhcpV6Packet {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_MODE` type in the C API.
 #[repr(C)]
+#[derive(Debug)]
 pub struct Mode {
     /// `true` if this device has been started by calling [`BaseCode::start`].
     /// This field is set to `true` by [`BaseCode::start`] and to `false` by
@@ -1169,6 +1213,7 @@ pub struct Mode {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_ARP_ENTRY` type in the C API.
 #[repr(C)]
+#[derive(Debug)]
 pub struct ArpEntry {
     /// The IP address.
     pub ip_addr: IpAddress,
@@ -1181,6 +1226,7 @@ pub struct ArpEntry {
 /// Corresponds to the `EFI_PXE_BASE_CODE_ROUTE_ENTRY` type in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub struct RouteEntry {
     pub ip_addr: IpAddress,
     pub subnet_mask: IpAddress,
@@ -1192,6 +1238,7 @@ pub struct RouteEntry {
 /// Corresponds to the `EFI_PXE_BASE_CODE_ICMP_ERROR` type in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub struct IcmpError {
     pub ty: u8,
     pub code: u8,
@@ -1211,10 +1258,16 @@ pub union IcmpErrorUnion {
     pub echo: IcmpErrorEcho,
 }
 
+impl Debug for IcmpErrorUnion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "<binary data>")
+    }
+}
+
 /// Corresponds to the `Echo` field in the anonymous union inside
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[allow(missing_docs)]
 pub struct IcmpErrorEcho {
     pub identifier: u16,
@@ -1226,6 +1279,7 @@ pub struct IcmpErrorEcho {
 /// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_ERROR` type in the C API.
 #[repr(C)]
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub struct TftpError {
     pub error_code: u8,
     pub error_string: [u8; 127],
@@ -1233,6 +1287,7 @@ pub struct TftpError {
 
 /// Returned by [`BaseCode::tftp_read_dir`].
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub struct TftpFileInfo<'a> {
     pub filename: &'a CStr8,
     pub size: u64,
@@ -1246,6 +1301,7 @@ pub struct TftpFileInfo<'a> {
 
 /// Returned by [`BaseCode::mtftp_read_dir`].
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub struct MtftpFileInfo<'a> {
     pub filename: &'a CStr8,
     pub ip_address: IpAddress,

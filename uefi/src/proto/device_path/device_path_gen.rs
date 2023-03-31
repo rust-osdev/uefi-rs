@@ -6,6 +6,7 @@
 // See `/xtask/src/device_path/README.md` for more details.
 
 use crate::data_types::UnalignedSlice;
+use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::device_path::{
     DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
@@ -14,8 +15,9 @@ use crate::table::boot::MemoryType;
 use crate::{guid, Guid};
 use bitflags::bitflags;
 use core::mem::{size_of, size_of_val};
-use core::ptr::{self, addr_of};
+use core::ptr::addr_of;
 use core::{fmt, slice};
+use ptr_meta::{Pointee, PtrExt};
 /// Device path nodes for [`DeviceType::END`].
 pub mod end {
     use super::*;
@@ -215,6 +217,7 @@ pub mod hardware {
 
     /// Vendor-defined hardware device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Vendor {
         pub(super) header: DevicePathHeader,
         pub(super) vendor_guid: Guid,
@@ -241,7 +244,7 @@ pub mod hardware {
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", {
                     let ptr = addr_of!(self.vendor_defined_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -262,7 +265,7 @@ pub mod hardware {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Vendor = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -406,6 +409,7 @@ pub mod acpi {
 
     /// Expanded ACPI device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Expanded {
         pub(super) header: DevicePathHeader,
         pub(super) hid: u32,
@@ -488,13 +492,14 @@ pub mod acpi {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Expanded = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Expanded = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// ADR ACPI device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Adr {
         pub(super) header: DevicePathHeader,
         pub(super) adr: [u32],
@@ -507,7 +512,7 @@ pub mod acpi {
         #[must_use]
         pub fn adr(&self) -> UnalignedSlice<u32> {
             let ptr: *const [u32] = addr_of!(self.adr);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u32>(), len) }
         }
     }
@@ -517,7 +522,7 @@ pub mod acpi {
             f.debug_struct("Adr")
                 .field("adr", {
                     let ptr = addr_of!(self.adr);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u32>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -538,7 +543,7 @@ pub mod acpi {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Adr = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Adr = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1026,6 +1031,7 @@ pub mod messaging {
 
     /// USB World Wide ID (WWID) messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct UsbWwid {
         pub(super) header: DevicePathHeader,
         pub(super) interface_number: u16,
@@ -1057,7 +1063,7 @@ pub mod messaging {
         #[must_use]
         pub fn serial_number(&self) -> UnalignedSlice<u16> {
             let ptr: *const [u16] = addr_of!(self.serial_number);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
         }
     }
@@ -1070,7 +1076,7 @@ pub mod messaging {
                 .field("device_product_id", &{ self.device_product_id })
                 .field("serial_number", {
                     let ptr = addr_of!(self.serial_number);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1091,7 +1097,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const UsbWwid = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const UsbWwid = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1639,6 +1645,7 @@ pub mod messaging {
 
     /// Vendor-defined messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Vendor {
         pub(super) header: DevicePathHeader,
         pub(super) vendor_guid: Guid,
@@ -1665,7 +1672,7 @@ pub mod messaging {
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", {
                     let ptr = addr_of!(self.vendor_defined_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1686,7 +1693,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Vendor = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1753,6 +1760,7 @@ pub mod messaging {
 
     /// iSCSI messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Iscsi {
         pub(super) header: DevicePathHeader,
         pub(super) protocol: crate::proto::device_path::messaging::IscsiProtocol,
@@ -1808,7 +1816,7 @@ pub mod messaging {
                 .field("target_portal_group_tag", &{ self.target_portal_group_tag })
                 .field("iscsi_target_name", {
                     let ptr = addr_of!(self.iscsi_target_name);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1829,7 +1837,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Iscsi = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Iscsi = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -1884,6 +1892,7 @@ pub mod messaging {
 
     /// Uniform Resource Identifier (URI) messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Uri {
         pub(super) header: DevicePathHeader,
         pub(super) value: [u8],
@@ -1902,7 +1911,7 @@ pub mod messaging {
             f.debug_struct("Uri")
                 .field("value", {
                     let ptr = addr_of!(self.value);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -1923,7 +1932,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Uri = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Uri = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2162,6 +2171,7 @@ pub mod messaging {
 
     /// DNS messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Dns {
         pub(super) header: DevicePathHeader,
         pub(super) address_type: crate::proto::device_path::messaging::DnsAddressType,
@@ -2179,7 +2189,7 @@ pub mod messaging {
         #[must_use]
         pub fn addresses(&self) -> UnalignedSlice<IpAddress> {
             let ptr: *const [IpAddress] = addr_of!(self.addresses);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<IpAddress>(), len) }
         }
     }
@@ -2190,7 +2200,7 @@ pub mod messaging {
                 .field("address_type", &{ self.address_type })
                 .field("addresses", {
                     let ptr = addr_of!(self.addresses);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<IpAddress>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2211,7 +2221,7 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Dns = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Dns = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2254,6 +2264,7 @@ pub mod messaging {
 
     /// REST service messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct RestService {
         pub(super) header: DevicePathHeader,
         pub(super) service_type: crate::proto::device_path::messaging::RestServiceType,
@@ -2282,7 +2293,7 @@ pub mod messaging {
                 .field("access_mode", &{ self.access_mode })
                 .field("vendor_guid_and_data", {
                     let ptr = addr_of!(self.vendor_guid_and_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2303,13 +2314,15 @@ pub mod messaging {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const RestService = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const RestService =
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// NVME over Fabric (NVMe-oF) namespace messaging device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct NvmeOfNamespace {
         pub(super) header: DevicePathHeader,
         pub(super) nidt: u8,
@@ -2345,7 +2358,7 @@ pub mod messaging {
                 .field("nid", &{ self.nid })
                 .field("subsystem_nqn", {
                     let ptr = addr_of!(self.subsystem_nqn);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2367,7 +2380,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const NvmeOfNamespace =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2566,6 +2579,7 @@ pub mod media {
 
     /// Vendor-defined media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct Vendor {
         pub(super) header: DevicePathHeader,
         pub(super) vendor_guid: Guid,
@@ -2592,7 +2606,7 @@ pub mod media {
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", {
                     let ptr = addr_of!(self.vendor_defined_data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2613,13 +2627,14 @@ pub mod media {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const Vendor = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// File path media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct FilePath {
         pub(super) header: DevicePathHeader,
         pub(super) path_name: [u16],
@@ -2630,7 +2645,7 @@ pub mod media {
         #[must_use]
         pub fn path_name(&self) -> UnalignedSlice<u16> {
             let ptr: *const [u16] = addr_of!(self.path_name);
-            let (ptr, len): (*const (), usize) = ptr.to_raw_parts();
+            let (ptr, len): (*const (), usize) = PtrExt::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
         }
     }
@@ -2640,7 +2655,7 @@ pub mod media {
             f.debug_struct("FilePath")
                 .field("path_name", {
                     let ptr = addr_of!(self.path_name);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2661,7 +2676,7 @@ pub mod media {
             }
 
             let node: *const DevicePathNode = node;
-            let node: *const FilePath = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+            let node: *const FilePath = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2704,6 +2719,7 @@ pub mod media {
 
     /// PIWG firmware file media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct PiwgFirmwareFile {
         pub(super) header: DevicePathHeader,
         pub(super) data: [u8],
@@ -2722,7 +2738,7 @@ pub mod media {
             f.debug_struct("PiwgFirmwareFile")
                 .field("data", {
                     let ptr = addr_of!(self.data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2744,13 +2760,14 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const PiwgFirmwareFile =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
 
     /// PIWG firmware volume media device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct PiwgFirmwareVolume {
         pub(super) header: DevicePathHeader,
         pub(super) data: [u8],
@@ -2769,7 +2786,7 @@ pub mod media {
             f.debug_struct("PiwgFirmwareVolume")
                 .field("data", {
                     let ptr = addr_of!(self.data);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -2791,7 +2808,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const PiwgFirmwareVolume =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -2955,6 +2972,7 @@ pub mod bios_boot_spec {
     use super::*;
     /// BIOS Boot Specification device path node.
     #[repr(C, packed)]
+    #[derive(Pointee)]
     pub struct BootSpecification {
         pub(super) header: DevicePathHeader,
         pub(super) device_type: u16,
@@ -2990,7 +3008,7 @@ pub mod bios_boot_spec {
                 .field("status_flag", &{ self.status_flag })
                 .field("description_string", {
                     let ptr = addr_of!(self.description_string);
-                    let (ptr, len) = ptr.to_raw_parts();
+                    let (ptr, len) = PtrExt::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
@@ -3012,7 +3030,7 @@ pub mod bios_boot_spec {
 
             let node: *const DevicePathNode = node;
             let node: *const BootSpecification =
-                ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             Ok(unsafe { &*node })
         }
     }
@@ -3020,6 +3038,7 @@ pub mod bios_boot_spec {
 
 /// Enum of references to all the different device path node
 /// types. Return type of [`DevicePathNode::as_enum`].
+#[derive(Debug)]
 pub enum DevicePathNodeEnum<'a> {
     /// Node that terminates a [`DevicePathInstance`].
     ///
@@ -3306,6 +3325,7 @@ pub mod build {
         /// Node that terminates a [`DevicePathInstance`].
         ///
         /// [`DevicePathInstance`]: crate::proto::device_path::DevicePathInstance
+        #[derive(Debug)]
         pub struct Instance;
         unsafe impl BuildNode for Instance {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
@@ -3316,7 +3336,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3332,6 +3352,7 @@ pub mod build {
         /// Node that terminates an entire [`DevicePath`].
         ///
         /// [`DevicePath`]: crate::proto::device_path::DevicePath
+        #[derive(Debug)]
         pub struct Entire;
         unsafe impl BuildNode for Entire {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
@@ -3342,7 +3363,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3360,6 +3381,7 @@ pub mod build {
     pub mod hardware {
         use super::*;
         /// PCI hardware device path node.
+        #[derive(Debug)]
         pub struct Pci {
             /// PCI function number.
             pub function: u8,
@@ -3376,7 +3398,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3398,6 +3420,7 @@ pub mod build {
         }
 
         /// PCCARD hardware device path node.
+        #[derive(Debug)]
         pub struct Pccard {
             /// Function number starting from 0.
             pub function: u8,
@@ -3412,7 +3435,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3430,6 +3453,7 @@ pub mod build {
         }
 
         /// Memory mapped hardware device path node.
+        #[derive(Debug)]
         pub struct MemoryMapped {
             /// Memory type.
             pub memory_type: MemoryType,
@@ -3448,7 +3472,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3474,6 +3498,7 @@ pub mod build {
         }
 
         /// Vendor-defined hardware device path node.
+        #[derive(Debug)]
         pub struct Vendor<'a> {
             /// Vendor-assigned GUID that defines the data that follows.
             pub vendor_guid: Guid,
@@ -3490,7 +3515,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3515,6 +3540,7 @@ pub mod build {
         }
 
         /// Controller hardware device path node.
+        #[derive(Debug)]
         pub struct Controller {
             /// Controller number.
             pub controller_number: u32,
@@ -3529,7 +3555,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3548,6 +3574,7 @@ pub mod build {
 
         /// Baseboard Management Controller (BMC) host interface hardware
         /// device path node.
+        #[derive(Debug)]
         pub struct Bmc {
             /// Host interface type.
             pub interface_type: crate::proto::device_path::hardware::BmcInterfaceType,
@@ -3566,7 +3593,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3592,6 +3619,7 @@ pub mod build {
     pub mod acpi {
         use super::*;
         /// ACPI device path node.
+        #[derive(Debug)]
         pub struct Acpi {
             /// Device's PnP hardware ID stored in a numeric 32-bit
             /// compressed EISA-type ID.
@@ -3610,7 +3638,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3626,6 +3654,7 @@ pub mod build {
         }
 
         /// Expanded ACPI device path node.
+        #[derive(Debug)]
         pub struct Expanded<'a> {
             /// Device's PnP hardware ID stored in a numeric 32-bit compressed
             /// EISA-type ID.
@@ -3665,7 +3694,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3697,6 +3726,7 @@ pub mod build {
         }
 
         /// ADR ACPI device path node.
+        #[derive(Debug)]
         pub struct Adr<'a> {
             /// ADR values. For video output devices the value of this field
             /// comes from Table B-2 ACPI 3.0 specification. At least one
@@ -3713,7 +3743,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3731,6 +3761,7 @@ pub mod build {
         }
 
         /// NVDIMM ACPI device path node.
+        #[derive(Debug)]
         pub struct Nvdimm {
             /// NFIT device handle.
             pub nfit_device_handle: u32,
@@ -3745,7 +3776,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3765,6 +3796,7 @@ pub mod build {
         /// Wrapper for [`u32`] ADR values that enforces at least one
         /// element is present.
         #[repr(transparent)]
+        #[derive(Debug)]
         pub struct AdrSlice([u32]);
         impl AdrSlice {
             /// Create a new `AdrSlice`. Returns `None` if the input slice
@@ -3789,6 +3821,7 @@ pub mod build {
     pub mod messaging {
         use super::*;
         /// ATAPI messaging device path node.
+        #[derive(Debug)]
         pub struct Atapi {
             /// Whether the ATAPI device is primary or secondary.
             pub primary_secondary: crate::proto::device_path::messaging::PrimarySecondary,
@@ -3807,7 +3840,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3833,6 +3866,7 @@ pub mod build {
         }
 
         /// SCSI messaging device path node.
+        #[derive(Debug)]
         pub struct Scsi {
             /// Target ID on the SCSI bus.
             pub target_id: u16,
@@ -3849,7 +3883,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3871,6 +3905,7 @@ pub mod build {
         }
 
         /// Fibre channel messaging device path node.
+        #[derive(Debug)]
         pub struct FibreChannel {
             /// Fibre Channel World Wide Name.
             pub world_wide_name: u64,
@@ -3887,7 +3922,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3910,6 +3945,7 @@ pub mod build {
         }
 
         /// Fibre channel extended messaging device path node.
+        #[derive(Debug)]
         pub struct FibreChannelEx {
             /// Fibre Channel end device port name (aka World Wide Name).
             pub world_wide_name: [u8; 8usize],
@@ -3926,7 +3962,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3949,6 +3985,7 @@ pub mod build {
         }
 
         /// 1394 messaging device path node.
+        #[derive(Debug)]
         pub struct Ieee1394 {
             /// 1394 Global Unique ID. Note that this is not the same as a
             /// UEFI GUID.
@@ -3964,7 +4001,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -3983,6 +4020,7 @@ pub mod build {
         }
 
         /// USB messaging device path node.
+        #[derive(Debug)]
         pub struct Usb {
             /// USB parent port number.
             pub parent_port_number: u8,
@@ -3999,7 +4037,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4021,6 +4059,7 @@ pub mod build {
         }
 
         /// SATA messaging device path node.
+        #[derive(Debug)]
         pub struct Sata {
             /// The HBA port number that facilitates the connection to the
             /// device or a port multiplier. The value 0xffff is reserved.
@@ -4042,7 +4081,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4068,6 +4107,7 @@ pub mod build {
         }
 
         /// USB World Wide ID (WWID) messaging device path node.
+        #[derive(Debug)]
         pub struct UsbWwid<'a> {
             /// USB interface number.
             pub interface_number: u16,
@@ -4088,7 +4128,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4121,6 +4161,7 @@ pub mod build {
         }
 
         /// Device logical unit messaging device path node.
+        #[derive(Debug)]
         pub struct DeviceLogicalUnit {
             /// Logical Unit Number.
             pub logical_unit_number: u8,
@@ -4135,7 +4176,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4153,6 +4194,7 @@ pub mod build {
         }
 
         /// USB class messaging device path node.
+        #[derive(Debug)]
         pub struct UsbClass {
             /// USB vendor ID.
             pub vendor_id: u16,
@@ -4175,7 +4217,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4209,6 +4251,7 @@ pub mod build {
         }
 
         /// I2O messaging device path node.
+        #[derive(Debug)]
         pub struct I2o {
             /// Target ID (TID).
             pub target_id: u32,
@@ -4223,7 +4266,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4241,6 +4284,7 @@ pub mod build {
         }
 
         /// MAC address messaging device path node.
+        #[derive(Debug)]
         pub struct MacAddress {
             /// MAC address for a network interface, padded with zeros.
             pub mac_address: [u8; 32usize],
@@ -4258,7 +4302,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4280,6 +4324,7 @@ pub mod build {
         }
 
         /// IPv4 messaging device path node.
+        #[derive(Debug)]
         pub struct Ipv4 {
             /// Local IPv4 address.
             pub local_ip_address: [u8; 4usize],
@@ -4309,7 +4354,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4355,6 +4400,7 @@ pub mod build {
         }
 
         /// IPv6 messaging device path node.
+        #[derive(Debug)]
         pub struct Ipv6 {
             /// Local Ipv6 address.
             pub local_ip_address: [u8; 16usize],
@@ -4384,7 +4430,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4430,6 +4476,7 @@ pub mod build {
         }
 
         /// VLAN messaging device path node.
+        #[derive(Debug)]
         pub struct Vlan {
             /// VLAN identifier (0-4094).
             pub vlan_id: u16,
@@ -4444,7 +4491,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4462,6 +4509,7 @@ pub mod build {
         }
 
         /// InfiniBand messaging device path node.
+        #[derive(Debug)]
         pub struct Infiniband {
             /// Flags to identify/manage InfiniBand elements.
             pub resource_flags: crate::proto::device_path::messaging::InfinibandResourceFlags,
@@ -4486,7 +4534,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4520,6 +4568,7 @@ pub mod build {
         }
 
         /// UART messaging device path node.
+        #[derive(Debug)]
         pub struct Uart {
             /// Baud rate setting, or 0 to use the device's default.
             pub baud_rate: u64,
@@ -4540,7 +4589,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4571,6 +4620,7 @@ pub mod build {
         }
 
         /// Vendor-defined messaging device path node.
+        #[derive(Debug)]
         pub struct Vendor<'a> {
             /// Vendor-assigned GUID that defines the data that follows.
             pub vendor_guid: Guid,
@@ -4587,7 +4637,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4612,6 +4662,7 @@ pub mod build {
         }
 
         /// Serial Attached SCSI (SAS) extended messaging device path node.
+        #[derive(Debug)]
         pub struct SasEx {
             /// SAS address.
             pub sas_address: [u8; 8usize],
@@ -4632,7 +4683,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4662,6 +4713,7 @@ pub mod build {
         }
 
         /// iSCSI messaging device path node.
+        #[derive(Debug)]
         pub struct Iscsi<'a> {
             /// Network protocol.
             pub protocol: crate::proto::device_path::messaging::IscsiProtocol,
@@ -4689,7 +4741,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4726,6 +4778,7 @@ pub mod build {
         }
 
         /// NVM Express namespace messaging device path node.
+        #[derive(Debug)]
         pub struct NvmeNamespace {
             /// Namespace identifier (NSID). The values 0 and 0xffff_ffff
             /// are invalid.
@@ -4744,7 +4797,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4766,6 +4819,7 @@ pub mod build {
         }
 
         /// Uniform Resource Identifier (URI) messaging device path node.
+        #[derive(Debug)]
         pub struct Uri<'a> {
             /// URI as defined by [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986).
             pub value: &'a [u8],
@@ -4780,7 +4834,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4798,6 +4852,7 @@ pub mod build {
         }
 
         /// Universal Flash Storage (UFS) messaging device path node.
+        #[derive(Debug)]
         pub struct Ufs {
             /// Target ID on the UFS interface (PUN).
             pub target_id: u8,
@@ -4814,7 +4869,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4836,6 +4891,7 @@ pub mod build {
         }
 
         /// Secure Digital (SD) messaging device path node.
+        #[derive(Debug)]
         pub struct Sd {
             /// Slot number.
             pub slot_number: u8,
@@ -4850,7 +4906,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4868,6 +4924,7 @@ pub mod build {
         }
 
         /// Bluetooth messaging device path node.
+        #[derive(Debug)]
         pub struct Bluetooth {
             /// 48-bit bluetooth device address.
             pub device_address: [u8; 6usize],
@@ -4882,7 +4939,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4900,6 +4957,7 @@ pub mod build {
         }
 
         /// Wi-Fi messaging device path node.
+        #[derive(Debug)]
         pub struct Wifi {
             /// Service set identifier (SSID).
             pub ssid: [u8; 32usize],
@@ -4914,7 +4972,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4932,6 +4990,7 @@ pub mod build {
         }
 
         /// Embedded Multi-Media Card (eMMC) messaging device path node.
+        #[derive(Debug)]
         pub struct Emmc {
             /// Slot number.
             pub slot_number: u8,
@@ -4946,7 +5005,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -4964,6 +5023,7 @@ pub mod build {
         }
 
         /// BluetoothLE messaging device path node.
+        #[derive(Debug)]
         pub struct BluetoothLe {
             /// 48-bit bluetooth device address.
             pub device_address: [u8; 6usize],
@@ -4980,7 +5040,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5002,6 +5062,7 @@ pub mod build {
         }
 
         /// DNS messaging device path node.
+        #[derive(Debug)]
         pub struct Dns<'a> {
             /// Whether the addresses are IPv4 or IPv6.
             pub address_type: crate::proto::device_path::messaging::DnsAddressType,
@@ -5018,7 +5079,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5040,6 +5101,7 @@ pub mod build {
         }
 
         /// NVDIMM namespace messaging device path node.
+        #[derive(Debug)]
         pub struct NvdimmNamespace {
             /// Namespace unique label identifier.
             pub uuid: [u8; 16usize],
@@ -5054,7 +5116,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5072,6 +5134,7 @@ pub mod build {
         }
 
         /// REST service messaging device path node.
+        #[derive(Debug)]
         pub struct RestService<'a> {
             /// Type of REST service.
             pub service_type: crate::proto::device_path::messaging::RestServiceType,
@@ -5092,7 +5155,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5115,6 +5178,7 @@ pub mod build {
         }
 
         /// NVME over Fabric (NVMe-oF) namespace messaging device path node.
+        #[derive(Debug)]
         pub struct NvmeOfNamespace<'a> {
             /// Namespace Identifier Type (NIDT).
             pub nidt: u8,
@@ -5134,7 +5198,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5162,6 +5226,7 @@ pub mod build {
         /// Vendor-specific REST service data. Only used for service type [`VENDOR`].
         ///
         /// [`VENDOR`]: uefi::proto::device_path::messaging::RestServiceType
+        #[derive(Debug)]
         pub struct RestServiceVendorData<'a> {
             /// Vendor GUID.
             pub vendor_guid: Guid,
@@ -5189,12 +5254,12 @@ pub mod build {
                             == crate::proto::device_path::messaging::RestServiceType::VENDOR
                     );
                     let (guid_out, data_out) = out.split_at_mut(size_of::<Guid>());
-                    let guid_out_ptr: *mut Guid = MaybeUninit::slice_as_mut_ptr(guid_out).cast();
+                    let guid_out_ptr: *mut Guid = maybe_uninit_slice_as_mut_ptr(guid_out).cast();
                     unsafe {
                         guid_out_ptr.write_unaligned(src.vendor_guid);
                     }
 
-                    let data_out_ptr = MaybeUninit::slice_as_mut_ptr(data_out);
+                    let data_out_ptr = maybe_uninit_slice_as_mut_ptr(data_out);
                     unsafe {
                         src.vendor_defined_data
                             .as_ptr()
@@ -5209,6 +5274,7 @@ pub mod build {
     pub mod media {
         use super::*;
         /// Hard drive media device path node.
+        #[derive(Debug)]
         pub struct HardDrive {
             /// Index of the partition, starting from 1.
             pub partition_number: u32,
@@ -5231,7 +5297,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5269,6 +5335,7 @@ pub mod build {
         }
 
         /// CD-ROM media device path node.
+        #[derive(Debug)]
         pub struct CdRom {
             /// Boot entry number from the boot catalog, or 0 for the
             /// default entry.
@@ -5288,7 +5355,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5314,6 +5381,7 @@ pub mod build {
         }
 
         /// Vendor-defined media device path node.
+        #[derive(Debug)]
         pub struct Vendor<'a> {
             /// Vendor-assigned GUID that defines the data that follows.
             pub vendor_guid: Guid,
@@ -5330,7 +5398,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5355,6 +5423,7 @@ pub mod build {
         }
 
         /// File path media device path node.
+        #[derive(Debug)]
         pub struct FilePath<'a> {
             /// Null-terminated path.
             pub path_name: &'a CStr16,
@@ -5369,7 +5438,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5387,6 +5456,7 @@ pub mod build {
         }
 
         /// Media protocol media device path node.
+        #[derive(Debug)]
         pub struct Protocol {
             /// The ID of the protocol.
             pub protocol_guid: Guid,
@@ -5401,7 +5471,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5419,6 +5489,7 @@ pub mod build {
         }
 
         /// PIWG firmware file media device path node.
+        #[derive(Debug)]
         pub struct PiwgFirmwareFile<'a> {
             /// Contents are defined in the UEFI PI Specification.
             pub data: &'a [u8],
@@ -5433,7 +5504,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5451,6 +5522,7 @@ pub mod build {
         }
 
         /// PIWG firmware volume media device path node.
+        #[derive(Debug)]
         pub struct PiwgFirmwareVolume<'a> {
             /// Contents are defined in the UEFI PI Specification.
             pub data: &'a [u8],
@@ -5465,7 +5537,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5483,6 +5555,7 @@ pub mod build {
         }
 
         /// Relative offset range media device path node.
+        #[derive(Debug)]
         pub struct RelativeOffsetRange {
             /// Offset of the first byte, relative to the parent device node.
             pub starting_offset: u64,
@@ -5499,7 +5572,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5522,6 +5595,7 @@ pub mod build {
         }
 
         /// RAM disk media device path node.
+        #[derive(Debug)]
         pub struct RamDisk {
             /// Starting memory address.
             pub starting_address: u64,
@@ -5542,7 +5616,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()
@@ -5603,6 +5677,7 @@ pub mod build {
     pub mod bios_boot_spec {
         use super::*;
         /// BIOS Boot Specification device path node.
+        #[derive(Debug)]
         pub struct BootSpecification<'a> {
             /// Device type as defined by the BIOS Boot Specification.
             pub device_type: u16,
@@ -5622,7 +5697,7 @@ pub mod build {
             fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr
                         .cast::<DevicePathHeader>()

@@ -2,7 +2,6 @@
 // ANCHOR: features
 #![no_main]
 #![no_std]
-#![feature(abi_efiapi)]
 // ANCHOR_END: features
 
 // ANCHOR: use

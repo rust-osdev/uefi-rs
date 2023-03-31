@@ -14,6 +14,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
 
     debug::test(bt);
     device_path::test(image, bt);
+    driver::test(bt);
     loaded_image::test(image, bt);
     media::test(bt);
     network::test(bt);
@@ -32,10 +33,8 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
 }
 
 fn find_protocol(bt: &BootServices) {
-    type SearchedProtocol<'boot> = proto::console::text::Output<'boot>;
-
     let handles = bt
-        .find_handles::<SearchedProtocol>()
+        .find_handles::<proto::console::text::Output>()
         .expect("Failed to retrieve list of handles");
 
     assert!(
@@ -49,18 +48,16 @@ fn test_protocols_per_handle(image: Handle, bt: &BootServices) {
         .protocols_per_handle(image)
         .expect("Failed to get protocols for image handle");
 
-    info!("Image handle has {} protocols", pph.protocols().len());
+    info!("Image handle has {} protocols", pph.len());
 
     // Check that one of the image's protocols is `LoadedImage`.
-    assert!(pph
-        .protocols()
-        .iter()
-        .any(|guid| **guid == LoadedImage::GUID));
+    assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
 }
 
 mod console;
 mod debug;
 mod device_path;
+mod driver;
 mod loaded_image;
 mod media;
 mod network;

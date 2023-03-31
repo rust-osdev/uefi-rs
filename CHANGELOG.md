@@ -2,7 +2,89 @@
 
 ## uefi - [Unreleased]
 
+### Changed
+
+- The `global_allocator` module has been renamed to `allocator`, and is now
+  available regardless of whether the `global_allocator` feature is enabled. The
+  `global_allocator` feature now only controls whether `allocator::Allocator` is
+  set as Rust's global allocator.
+
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.20.0 (2023-03-19)
+
+As of this release, the UEFI crates work on the stable channel. This requires
+Rust 1.68 or higher.
+
 ### Added
+
+- Added the `ComponentName1` and `ComponentName2` protocols. The `ComponentName`
+  wrapper will automatically select `ComponentName2` if available, and fall back
+  to `ComponentName1` otherwise.
+- `FileType`, `FileHandle`, `RegularFile`, and `Directory` now implement `Debug`.
+- Added `RuntimeServices::delete_variable()` helper method.
+- Implement `Borrow` for `CString16` and `ToOwned` for `CStr16`.
+- Every public struct now implements `Debug`. Exceptions are cases when there
+  is no sensible way of presenting a useful Debug representation, such as for
+  Unions.
+
+### Changed
+
+- `SystemTable::exit_boot_services` now takes no parameters and handles
+  the memory map allocation itself. Errors are now treated as
+  unrecoverable and will cause the system to reset.
+- Re-export the `cstr8`, `cstr16`, and `entry` macros from the root of the
+  `uefi` crate.
+- `HandleBuffer` and `ProtocolsPerHandle` now implement `Deref`. The
+  `HandleBuffer::handles` and `ProtocolsPerHandle::protocols` methods have been
+  deprecated.
+- Removed `'boot` lifetime from the `GraphicsOutput`, `Output`, `Pointer`, and
+  `Serial` protocols.
+- The generic type `Data` of `uefi::Error<Data: Debug>` doesn't need to be
+  `Display` to be compatible with `core::error::Error`. Note that the error
+  Trait requires the `unstable` feature.
+- deprecation removals:
+  - interfaces `BootServices::locate_protocol` and
+    `BootServices::handle_protocol` were removed. `BootServices::open_protocol`
+    and `BootServices::open_protocol_exclusive` are better variants and
+    available since EFI 1.10 (2002).
+  - `ScopedProtocol::interface` is not public anymore. Use the `Deref` trait.
+
+## uefi-macros - 0.11.0 (2023-03-19)
+
+### Changed
+
+- Errors produced by the `entry` macro have been improved.
+
+## uefi-services - 0.17.0 (2023-03-19)
+
+### Changed
+
+- Drop use of unstable `alloc_error_handler` feature. As of Rust 1.68 we can use
+  [`default_alloc_error_handler`](https://github.com/rust-lang/rust/pull/102318)
+  instead.
+
+## uefi - 0.19.1 (2023-02-04)
+
+### Added
+
+- Added `table::boot::PAGE_SIZE` constant.
+
+### Changed
+
+- Fixed several protocol functions so that they work with unsized protocols
+  (like `DevicePath`): `BootServices::locate_device_path`,
+  `BootServices::get_handle_for_protocol`, `BootServices::test_protocol`,
+  `BootServices::find_handles`, and `SearchType::from_proto`.
+- Fixed a warning printed when using `uefi` as a dependency: "the following
+  packages contain code that will be rejected by a future version".
+
+## uefi - 0.19.0 (2023-01-16)
+
+### Added
+
 - Implementations for the trait `EqStrUntilNul` now allow `?Sized` inputs. This means that
   you can write `some_cstr16.eq_str_until_nul("test")` instead of
   `some_cstr16.eq_str_until_nul(&"test")` now.
@@ -19,12 +101,37 @@
 
 - `UnalignedSlice` now implements `Clone`, and the `Debug` impl now
   prints the elements instead of the internal fields.
+- The unstable `negative_impls` feature is no longer required to use this library.
+- `BootServices::memory_map()` now returns `MemoryMapIter` instead of
+  `impl Iterator` which simplifies usage.
+- `BootServices::exit_boot_services()` now returns `MemoryMapIter` instead of
+  `impl Iterator` which simplifies usage.
+- `GraphicsOutput::modes()` now returns `ModesIter` instead of `impl Iterator`
+   which simplifies usage.
+- Use of the unstable `ptr_metadata` feature has been replaced with a dependency
+  on the [`ptr_meta`](https://docs.rs/ptr_meta) crate.
+- `pxe::DiscoverInfo` is now a DST. Create with `new_in_buffer` by supplying a
+  `MaybeUninit<u8>` slice of appropriate length.
+- Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
+  fields of this struct are public.
+
+## uefi-macros - 0.10.0 (2023-01-16)
+
+### Added
+
+- Added the `unsafe_protocol` macro to provide a slightly nicer way to
+  implement protocols.
 
 ### Removed
 
-## uefi-macros - [Unreleased]
+- The `unsafe_guid` attribute macro and `Protocol` derive macro have
+  been removed. For implementing protocols, use the `unsafe_protocol`
+  macro instead. For any other implementations of the `Identify` trait,
+  implement it directly.
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.16.0 (2023-01-16)
+
+No changes in this release except depending on a newer version of `uefi`.
 
 ## uefi - 0.18.0 (2022-11-15)
 

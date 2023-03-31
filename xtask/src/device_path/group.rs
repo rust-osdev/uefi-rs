@@ -2,7 +2,7 @@ use super::node::{is_node_attr, Node};
 use heck::ToUpperCamelCase;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Attribute, Ident, Item, ItemMod, ItemStruct, Meta};
+use syn::{Attribute, Ident, Item, ItemMod, ItemStruct};
 
 #[derive(Clone)]
 pub struct DeviceType(Ident);
@@ -151,6 +151,7 @@ impl NodeGroup {
         quote!(
             /// Enum of references to all the different device path node
             /// types. Return type of [`DevicePathNode::as_enum`].
+            #[derive(Debug)]
             pub enum DevicePathNodeEnum<'a> {
                 #(#variants),*
             }
@@ -170,14 +171,7 @@ impl NodeGroup {
 }
 
 fn is_build_attr(attr: &Attribute) -> bool {
-    if let Ok(Meta::Path(path)) = attr.parse_meta() {
-        if let Some(ident) = path.get_ident() {
-            if ident == "build" {
-                return true;
-            }
-        }
-    }
-    false
+    attr.path().is_ident("build")
 }
 
 fn has_build_attr(item: &Item) -> bool {

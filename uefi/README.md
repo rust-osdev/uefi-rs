@@ -25,7 +25,7 @@ Check out the [UEFI application template] for a quick start.
 ## Optional features
 
 This crate's features are described in [`src/lib.rs`].
-  
+
 See also the [`uefi-services`] crate, which provides a panic handler and
 initializes the `global_allocator` and `logger` features.
 
@@ -47,15 +47,12 @@ For additional information, refer to the [UEFI specification][spec].
 [spec]: http://www.uefi.org/specifications
 [uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD
 
-## Building UEFI programs
+## MSRV
 
-For instructions on how to create your own UEFI apps, see the [tutorial].
+The minimum supported Rust version is currently 1.68, which is the first Rust
+release that fully supports all necessary features on the stable channel.
 
-The uefi-rs crates currently require some [unstable features].
-The nightly MSRV is currently 2022-08-08.
-
-[unstable features]: https://github.com/rust-osdev/uefi-rs/issues/452
-[tutorial]: https://rust-osdev.github.io/uefi-rs/HEAD/tutorial/introduction.html
+In the future, our policy will be to support at least the past two stable releases.
 
 ## License
 

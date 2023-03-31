@@ -1,8 +1,8 @@
 //! File system support protocols.
 
 use super::file::{Directory, FileHandle, FileImpl};
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::{Result, Status};
 use core::ptr;
 
 /// Allows access to a FAT-12/16/32 file system.
@@ -20,8 +20,7 @@ use core::ptr;
 /// [`BootServices::get_image_file_system`]: crate::table::boot::BootServices::get_image_file_system
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 #[repr(C)]
-#[unsafe_guid("964e5b22-6459-11d2-8e39-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("964e5b22-6459-11d2-8e39-00a0c969723b")]
 pub struct SimpleFileSystem {
     revision: u64,
     open_volume:
@@ -32,13 +31,21 @@ impl SimpleFileSystem {
     /// Open the root directory on a volume.
     ///
     /// # Errors
-    /// * `uefi::Status::UNSUPPORTED` - The volume does not support the requested filesystem type
-    /// * `uefi::Status::NO_MEDIA` - The device has no media
-    /// * `uefi::Status::DEVICE_ERROR` - The device reported an error
-    /// * `uefi::Status::VOLUME_CORRUPTED` - The file system structures are corrupted
-    /// * `uefi::Status::ACCESS_DENIED` - The service denied access to the file
-    /// * `uefi::Status::OUT_OF_RESOURCES` - The volume was not opened
-    /// * `uefi::Status::MEDIA_CHANGED` - The device has a different medium in it
+    ///
+    /// See section `EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.OpenVolume()` in the UEFI Specification
+    /// for more details.
+    ///
+    /// If you can't find the function definition, try searching for
+    /// `EFI_SIMPLE_FILE SYSTEM_PROTOCOL.OpenVolume()` (this has a space in between FILE and
+    /// SYSTEM; it could be a typo in the UEFI spec).
+    ///
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::NO_MEDIA`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::MEDIA_CHANGED`]
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)

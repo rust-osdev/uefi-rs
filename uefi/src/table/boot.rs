@@ -32,6 +32,12 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
     handle: UnsafeCell::new(None),
 };
 
+/// Size in bytes of a UEFI page.
+///
+/// Note that this is not necessarily the processor's page size. The UEFI page
+/// size is always 4 KiB.
+pub const PAGE_SIZE: usize = 4096;
+
 /// Contains pointers to all of the boot services.
 ///
 /// # Accessing `BootServices`
@@ -52,8 +58,6 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
 ///
 /// * [`open_protocol`]
 /// * [`get_image_file_system`]
-/// * [`handle_protocol`]
-/// * [`locate_protocol`]
 ///
 /// For protocol definitions, see the [`proto`] module.
 ///
@@ -61,8 +65,6 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
 /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
 /// [`open_protocol`]: BootServices::open_protocol
 /// [`get_image_file_system`]: BootServices::get_image_file_system
-/// [`locate_protocol`]: BootServices::locate_protocol
-/// [`handle_protocol`]: BootServices::handle_protocol
 ///
 /// ## Use of [`UnsafeCell`] for protocol references
 ///
@@ -145,6 +147,7 @@ pub struct BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Status,
+    #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
     handle_protocol:
         extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
     _reserved: usize,
@@ -244,6 +247,7 @@ pub struct BootServices {
         no_handles: &mut usize,
         buf: &mut *mut Handle,
     ) -> Status,
+    #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
     locate_protocol: extern "efiapi" fn(
         proto: &Guid,
         registration: *mut c_void,
@@ -421,13 +425,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::BUFFER_TOO_SMALL`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn memory_map<'buf>(
-        &self,
-        buffer: &'buf mut [u8],
-    ) -> Result<(
-        MemoryMapKey,
-        impl ExactSizeIterator<Item = &'buf MemoryDescriptor> + Clone,
-    )> {
+    pub fn memory_map<'buf>(&self, buffer: &'buf mut [u8]) -> Result<MemoryMap<'buf>> {
         let mut map_size = buffer.len();
         MemoryDescriptor::assert_aligned(buffer);
         let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
@@ -452,13 +450,13 @@ impl BootServices {
         }
         .into_with_val(move || {
             let len = map_size / entry_size;
-            let iter = MemoryMapIter {
-                buffer,
+
+            MemoryMap {
+                key: map_key,
+                buf: buffer,
                 entry_size,
-                index: 0,
                 len,
-            };
-            (map_key, iter)
+            }
         })
     }
 
@@ -620,7 +618,7 @@ impl BootServices {
     /// performed on each event:
     ///
     /// * If an event is of type `NotifySignal`, then an `InvalidParameter`
-    ///   error is returned with the index of the eve,t that caused the failure.
+    ///   error is returned with the index of the event that caused the failure.
     /// * If an event is in the signaled state, the signaled state is cleared
     ///   and the index of the event that was signaled is returned.
     /// * If an event is not in the signaled state but does have a notification
@@ -812,50 +810,6 @@ impl BootServices {
         (self.uninstall_protocol_interface)(handle, protocol, interface).into()
     }
 
-    /// Query a handle for a certain protocol.
-    ///
-    /// This function attempts to get the protocol implementation of a handle,
-    /// based on the protocol GUID.
-    ///
-    /// It is recommended that all new drivers and applications use
-    /// [`open_protocol_exclusive`] or [`open_protocol`] instead of `handle_protocol`.
-    ///
-    /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
-    /// provides no mechanism to protect against concurrent usage. Such
-    /// protections must be implemented by user-level code, for example via a
-    /// global `HashSet`.
-    ///
-    /// # Safety
-    ///
-    /// This method is unsafe because the handle database is not
-    /// notified that the handle and protocol are in use; there is no
-    /// guarantee that they will remain valid for the duration of their
-    /// use. Use [`open_protocol_exclusive`] if possible, otherwise use
-    /// [`open_protocol`].
-    ///
-    /// [`open_protocol`]: BootServices::open_protocol
-    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
-    ///
-    /// # Errors
-    ///
-    /// See section `EFI_BOOT_SERVICES.HandleProtocol()` in the UEFI Specification for more details.
-    ///
-    /// * [`uefi::Status::UNSUPPORTED`]
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    #[deprecated(
-        note = "it is recommended to use `open_protocol_exclusive` or `open_protocol` instead"
-    )]
-    pub unsafe fn handle_protocol<P: ProtocolPointer + ?Sized>(
-        &self,
-        handle: Handle,
-    ) -> Result<&UnsafeCell<P>> {
-        let mut ptr = ptr::null_mut();
-        (self.handle_protocol)(handle, &P::GUID, &mut ptr).into_with_val(|| {
-            let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
-            &*ptr
-        })
-    }
-
     /// Registers `event` to be signalled whenever a protocol interface is registered for
     /// `protocol` by `install_protocol_interface()` or `reinstall_protocol_interface()`.
     ///
@@ -952,7 +906,10 @@ impl BootServices {
     ///
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn locate_device_path<P: Protocol>(&self, device_path: &mut &DevicePath) -> Result<Handle> {
+    pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
+        &self,
+        device_path: &mut &DevicePath,
+    ) -> Result<Handle> {
         let mut handle = MaybeUninit::uninit();
         let mut device_path_ptr = device_path.as_ffi_ptr();
         unsafe {
@@ -996,14 +953,17 @@ impl BootServices {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_handle_for_protocol<P: Protocol>(&self) -> Result<Handle> {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`NOT_FOUND`] if no handles support the requested protocol.
+    pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<Handle> {
         // Delegate to a non-generic function to potentially reduce code size.
         self.get_handle_for_protocol_impl(&P::GUID)
     }
 
     fn get_handle_for_protocol_impl(&self, guid: &Guid) -> Result<Handle> {
         self.locate_handle_buffer(SearchType::ByProtocol(guid))?
-            .handles()
             .first()
             .cloned()
             .ok_or_else(|| Status::NOT_FOUND.into())
@@ -1281,10 +1241,9 @@ impl BootServices {
     /// subset of this functionality.
     ///
     /// This function attempts to get the protocol implementation of a
-    /// handle, based on the protocol GUID. It is an extended version of
-    /// [`handle_protocol`]. It is recommended that all
-    /// new drivers and applications use `open_protocol_exclusive` or
-    /// `open_protocol` instead of `handle_protocol`.
+    /// handle, based on the protocol GUID. It is recommended that all
+    /// new drivers and applications use [`open_protocol_exclusive`] or
+    /// [`open_protocol`].
     ///
     /// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for
     /// details of the input parameters.
@@ -1307,7 +1266,7 @@ impl BootServices {
     /// responsible for ensuring that the handle and protocol remain
     /// valid until the `ScopedProtocol` is dropped.
     ///
-    /// [`handle_protocol`]: BootServices::handle_protocol
+    /// [`open_protocol`]: BootServices::open_protocol
     /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
     ///
     /// # Errors
@@ -1335,7 +1294,6 @@ impl BootServices {
         .into_with_val(|| {
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
 
-            #[allow(deprecated)]
             ScopedProtocol {
                 interface: &*interface,
                 open_params: params,
@@ -1348,8 +1306,6 @@ impl BootServices {
     ///
     /// If successful, a [`ScopedProtocol`] is returned that will
     /// automatically close the protocol interface when dropped.
-    ///
-    /// [`handle_protocol`]: BootServices::handle_protocol
     ///
     /// # Errors
     ///
@@ -1388,7 +1344,10 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::ALREADY_STARTED`]
-    pub fn test_protocol<P: Protocol>(&self, params: OpenProtocolParams) -> Result<()> {
+    pub fn test_protocol<P: ProtocolPointer + ?Sized>(
+        &self,
+        params: OpenProtocolParams,
+    ) -> Result<()> {
         const TEST_PROTOCOL: u32 = 0x04;
         let mut interface = ptr::null_mut();
         (self.open_protocol)(
@@ -1466,39 +1425,6 @@ impl BootServices {
             })
     }
 
-    /// Returns a protocol implementation, if present on the system.
-    ///
-    /// The caveats of `BootServices::handle_protocol()` also apply here.
-    ///
-    /// # Safety
-    ///
-    /// This method is unsafe because the handle database is not
-    /// notified that the handle and protocol are in use; there is no
-    /// guarantee that they will remain valid for the duration of their
-    /// use. Use [`get_handle_for_protocol`] and either
-    /// [`open_protocol_exclusive`] or [`open_protocol`] instead.
-    ///
-    /// [`get_handle_for_protocol`]: BootServices::get_handle_for_protocol
-    /// [`open_protocol`]: BootServices::open_protocol
-    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
-    ///
-    /// # Errors
-    ///
-    /// See section `EFI_BOOT_SERVICES.LocateProtocol()` in the UEFI Specification for more details.
-    ///
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    /// * [`uefi::Status::NOT_FOUND`]
-    #[deprecated(
-        note = "it is recommended to use `open_protocol_exclusive` or `open_protocol` instead"
-    )]
-    pub unsafe fn locate_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<&UnsafeCell<P>> {
-        let mut ptr = ptr::null_mut();
-        (self.locate_protocol)(&P::GUID, ptr::null_mut(), &mut ptr).into_with_val(|| {
-            let ptr = P::mut_ptr_from_ffi(ptr) as *const UnsafeCell<P>;
-            &*ptr
-        })
-    }
-
     /// Copies memory from source to destination. The buffers can overlap.
     ///
     /// # Safety
@@ -1523,7 +1449,13 @@ impl BootServices {
 #[cfg(feature = "alloc")]
 impl BootServices {
     /// Returns all the handles implementing a certain protocol.
-    pub fn find_handles<P: Protocol>(&self) -> Result<Vec<Handle>> {
+    ///
+    /// # Errors
+    ///
+    /// All errors come from calls to [`locate_handle`].
+    ///
+    /// [`locate_handle`]: Self::locate_handle
+    pub fn find_handles<P: ProtocolPointer + ?Sized>(&self) -> Result<Vec<Handle>> {
         // Search by protocol.
         let search_type = SearchType::from_proto::<P>();
 
@@ -1585,6 +1517,7 @@ impl super::Table for BootServices {
 
 impl Debug for BootServices {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        #[allow(deprecated)]
         f.debug_struct("BootServices")
             .field("header", &self.header)
             .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const usize))
@@ -1711,6 +1644,7 @@ impl Debug for BootServices {
 
 /// Used as a parameter of [`BootServices::load_image`] to provide the
 /// image source.
+#[derive(Debug)]
 pub enum LoadImageSource<'a> {
     /// Load an image from a buffer. The data will copied from the
     /// buffer, so the input reference doesn't need to remain valid
@@ -1768,6 +1702,7 @@ pub enum Tpl: usize => {
 /// RAII guard for task priority level changes
 ///
 /// Will automatically restore the former task priority level when dropped.
+#[derive(Debug)]
 pub struct TplGuard<'boot> {
     boot_services: &'boot BootServices,
     old_tpl: Tpl,
@@ -1798,6 +1733,7 @@ impl Drop for TplGuard<'_> {
 
 /// Attributes for [`BootServices::open_protocol`].
 #[repr(u32)]
+#[derive(Debug)]
 pub enum OpenProtocolAttributes {
     /// Used by drivers to get a protocol interface for a handle. The
     /// driver will not be informed if the interface is uninstalled or
@@ -1830,6 +1766,7 @@ pub enum OpenProtocolAttributes {
 }
 
 /// Parameters passed to [`BootServices::open_protocol`].
+#[derive(Debug)]
 pub struct OpenProtocolParams {
     /// The handle for the protocol to open.
     pub handle: Handle,
@@ -1850,10 +1787,10 @@ pub struct OpenProtocolParams {
 ///
 /// See also the [`BootServices`] documentation for details of how to open a
 /// protocol and why [`UnsafeCell`] is used.
+#[derive(Debug)]
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
-    #[deprecated(since = "0.17.0", note = "use Deref and DerefMut instead")]
-    pub interface: &'a UnsafeCell<P>,
+    interface: &'a UnsafeCell<P>,
 
     open_params: OpenProtocolParams,
     boot_services: &'a BootServices,
@@ -1880,19 +1817,13 @@ impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {
     type Target = P;
 
     fn deref(&self) -> &Self::Target {
-        #[allow(deprecated)]
-        unsafe {
-            &*self.interface.get()
-        }
+        unsafe { &*self.interface.get() }
     }
 }
 
 impl<'a, P: Protocol + ?Sized> DerefMut for ScopedProtocol<'a, P> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        #[allow(deprecated)]
-        unsafe {
-            &mut *self.interface.get()
-        }
+        unsafe { &mut *self.interface.get() }
     }
 }
 
@@ -1972,8 +1903,6 @@ pub const MEMORY_DESCRIPTOR_VERSION: u32 = 1;
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
-    /// Skip 4 bytes as UEFI declares items in structs should be naturally aligned
-    padding: u32,
     /// Starting physical address.
     pub phys_start: PhysicalAddress,
     /// Starting virtual address.
@@ -1988,7 +1917,6 @@ impl Default for MemoryDescriptor {
     fn default() -> MemoryDescriptor {
         MemoryDescriptor {
             ty: MemoryType::RESERVED,
-            padding: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,
@@ -2005,6 +1933,7 @@ impl Align for MemoryDescriptor {
 
 bitflags! {
     /// Flags describing the capabilities of a memory range.
+    #[repr(transparent)]
     pub struct MemoryAttribute: u64 {
         /// Supports marking as uncacheable.
         const UNCACHEABLE = 0x1;
@@ -2059,7 +1988,9 @@ bitflags! {
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
-/// A structure containing the size of a memory descriptor and the size of the memory map
+/// A structure containing the size of a memory descriptor and the size of the
+/// memory map.
+#[derive(Debug)]
 pub struct MemoryMapSize {
     /// Size of a single memory descriptor in bytes
     pub entry_size: usize,
@@ -2067,9 +1998,113 @@ pub struct MemoryMapSize {
     pub map_size: usize,
 }
 
-/// An iterator of memory descriptors
+/// An iterator of [`MemoryDescriptor`] that is always associated with the
+/// unique [`MemoryMapKey`] contained in the struct.
+///
+/// To iterate over the entries, call [`MemoryMap::entries`]. To get a sorted
+/// map, you manually have to call [`MemoryMap::sort`] first.
+#[derive(Debug)]
+pub struct MemoryMap<'buf> {
+    key: MemoryMapKey,
+    buf: &'buf mut [u8],
+    entry_size: usize,
+    len: usize,
+}
+
+impl<'buf> MemoryMap<'buf> {
+    #[must_use]
+    /// Returns the unique [`MemoryMapKey`] associated with the memory map.
+    pub fn key(&self) -> MemoryMapKey {
+        self.key
+    }
+
+    /// Sorts the memory map by physical address in place.
+    /// This operation is optional and should be invoked only once.
+    pub fn sort(&mut self) {
+        unsafe {
+            self.qsort(0, self.len - 1);
+        }
+    }
+
+    /// Hoare partition scheme for quicksort.
+    /// Must be called with `low` and `high` being indices within bounds.
+    unsafe fn qsort(&mut self, low: usize, high: usize) {
+        if low >= high {
+            return;
+        }
+
+        let p = self.partition(low, high);
+        self.qsort(low, p);
+        self.qsort(p + 1, high);
+    }
+
+    unsafe fn partition(&mut self, low: usize, high: usize) -> usize {
+        let pivot = self.get_element_phys_addr(low + (high - low) / 2);
+
+        let mut left_index = low.wrapping_sub(1);
+        let mut right_index = high.wrapping_add(1);
+
+        loop {
+            while {
+                left_index = left_index.wrapping_add(1);
+
+                self.get_element_phys_addr(left_index) < pivot
+            } {}
+
+            while {
+                right_index = right_index.wrapping_sub(1);
+
+                self.get_element_phys_addr(right_index) > pivot
+            } {}
+
+            if left_index >= right_index {
+                return right_index;
+            }
+
+            self.swap(left_index, right_index);
+        }
+    }
+
+    /// Indices must be smaller than len.
+    unsafe fn swap(&mut self, index1: usize, index2: usize) {
+        if index1 == index2 {
+            return;
+        }
+
+        let base = self.buf.as_mut_ptr();
+
+        unsafe {
+            ptr::swap_nonoverlapping(
+                base.add(index1 * self.entry_size),
+                base.add(index2 * self.entry_size),
+                self.entry_size,
+            );
+        }
+    }
+
+    fn get_element_phys_addr(&self, index: usize) -> PhysicalAddress {
+        let offset = index.checked_mul(self.entry_size).unwrap();
+        let elem = unsafe { &*self.buf.as_ptr().add(offset).cast::<MemoryDescriptor>() };
+        elem.phys_start
+    }
+
+    /// Returns an iterator over the contained memory map. To get a sorted map,
+    /// call [`MemoryMap::sort`] first.
+    #[must_use]
+    pub fn entries(&self) -> MemoryMapIter {
+        MemoryMapIter {
+            buffer: self.buf,
+            entry_size: self.entry_size,
+            index: 0,
+            len: self.len,
+        }
+    }
+}
+
+/// An iterator of [`MemoryDescriptor`]. The underlying memory map is always
+/// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
-struct MemoryMapIter<'buf> {
+pub struct MemoryMapIter<'buf> {
     buffer: &'buf [u8],
     entry_size: usize,
     index: usize,
@@ -2087,11 +2122,15 @@ impl<'buf> Iterator for MemoryMapIter<'buf> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index < self.len {
-            let ptr = self.buffer.as_ptr() as usize + self.entry_size * self.index;
+            let descriptor = unsafe {
+                &*self
+                    .buffer
+                    .as_ptr()
+                    .add(self.entry_size * self.index)
+                    .cast::<MemoryDescriptor>()
+            };
 
             self.index += 1;
-
-            let descriptor = unsafe { &*(ptr as *const MemoryDescriptor) };
 
             Some(descriptor)
         } else {
@@ -2100,7 +2139,11 @@ impl<'buf> Iterator for MemoryMapIter<'buf> {
     }
 }
 
-impl ExactSizeIterator for MemoryMapIter<'_> {}
+impl ExactSizeIterator for MemoryMapIter<'_> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
 
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]
@@ -2120,13 +2163,14 @@ pub enum SearchType<'guid> {
 impl<'guid> SearchType<'guid> {
     /// Constructs a new search type for a specified protocol.
     #[must_use]
-    pub const fn from_proto<P: Protocol>() -> Self {
+    pub const fn from_proto<P: ProtocolPointer + ?Sized>() -> Self {
         SearchType::ByProtocol(&P::GUID)
     }
 }
 
 bitflags! {
     /// Flags describing the type of an UEFI event and its attributes.
+    #[repr(transparent)]
     pub struct EventType: u32 {
         /// The event is a timer event and may be passed to `BootServices::set_timer()`
         /// Note that timers only function during boot services time.
@@ -2161,7 +2205,8 @@ bitflags! {
 /// Raw event notification function
 type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
-/// Timer events manipulation
+/// Timer events manipulation.
+#[derive(Debug)]
 pub enum TimerTrigger {
     /// Cancel event's timer
     Cancel,
@@ -2177,6 +2222,7 @@ pub enum TimerTrigger {
 
 /// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
 /// returned by [`BootServices::protocols_per_handle`].
+#[derive(Debug)]
 pub struct ProtocolsPerHandle<'a> {
     // The pointer returned by `protocols_per_handle` has to be free'd with
     // `free_pool`, so keep a reference to boot services for that purpose.
@@ -2193,10 +2239,19 @@ impl<'a> Drop for ProtocolsPerHandle<'a> {
     }
 }
 
+impl<'a> Deref for ProtocolsPerHandle<'a> {
+    type Target = [&'a Guid];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.protocols, self.count) }
+    }
+}
+
 impl<'a> ProtocolsPerHandle<'a> {
     /// Get the protocol interface [`Guids`][Guid] that are installed on the
     /// [`Handle`].
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[deprecated = "use Deref instead"]
     #[must_use]
     pub fn protocols<'b>(&'b self) -> &'b [&'a Guid] {
         // convert raw pointer to slice here so that we can get
@@ -2205,10 +2260,11 @@ impl<'a> ProtocolsPerHandle<'a> {
     }
 }
 
-/// A buffer that contains an array of [`Handles`][Handle] that support the requested protocol.
-/// Returned by [`BootServices::locate_handle_buffer`].
+/// A buffer that contains an array of [`Handles`][Handle] that support the
+/// requested protocol. Returned by [`BootServices::locate_handle_buffer`].
+#[derive(Debug)]
 pub struct HandleBuffer<'a> {
-    // The pointer returned by `locate_handle_buffer` has to be free'd with
+    // The pointer returned by `locate_handle_buffer` has to be freed with
     // `free_pool`, so keep a reference to boot services for that purpose.
     boot_services: &'a BootServices,
     count: usize,
@@ -2222,9 +2278,18 @@ impl<'a> Drop for HandleBuffer<'a> {
     }
 }
 
+impl<'a> Deref for HandleBuffer<'a> {
+    type Target = [Handle];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.buffer, self.count) }
+    }
+}
+
 impl<'a> HandleBuffer<'a> {
     /// Get an array of [`Handles`][Handle] that support the requested protocol.
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
+    #[deprecated = "use Deref instead"]
     #[must_use]
     pub fn handles(&self) -> &[Handle] {
         // convert raw pointer to slice here so that we can get
@@ -2248,3 +2313,93 @@ pub enum InterfaceType: i32 => {
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct ProtocolSearchKey(NonNull<c_void>);
+
+#[cfg(test)]
+mod tests {
+    use core::mem::size_of;
+
+    use crate::table::boot::{MemoryAttribute, MemoryMap, MemoryMapKey, MemoryType};
+
+    use super::{MemoryDescriptor, MemoryMapIter};
+
+    #[test]
+    fn mem_map_sorting() {
+        // Doesn't matter what type it is.
+        const TY: MemoryType = MemoryType::RESERVED;
+
+        const BASE: MemoryDescriptor = MemoryDescriptor {
+            ty: TY,
+            phys_start: 0,
+            virt_start: 0,
+            page_count: 0,
+            att: MemoryAttribute::empty(),
+        };
+
+        let mut buffer = [
+            MemoryDescriptor {
+                phys_start: 2000,
+                ..BASE
+            },
+            MemoryDescriptor {
+                phys_start: 3000,
+                ..BASE
+            },
+            BASE,
+            MemoryDescriptor {
+                phys_start: 1000,
+                ..BASE
+            },
+        ];
+
+        let desc_count = buffer.len();
+
+        let byte_buffer = {
+            let size = desc_count * size_of::<MemoryDescriptor>();
+            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size) }
+        };
+
+        let mut mem_map = MemoryMap {
+            // Key doesn't matter
+            key: MemoryMapKey(0),
+            len: desc_count,
+            buf: byte_buffer,
+            entry_size: size_of::<MemoryDescriptor>(),
+        };
+
+        mem_map.sort();
+
+        if !is_sorted(&mem_map.entries()) {
+            panic!("mem_map is not sorted: {}", mem_map);
+        }
+    }
+
+    // Added for debug purposes on test failure
+    impl core::fmt::Display for MemoryMap<'_> {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            writeln!(f)?;
+            for desc in self.entries() {
+                writeln!(f, "{:?}", desc)?;
+            }
+            Ok(())
+        }
+    }
+
+    fn is_sorted(iter: &MemoryMapIter) -> bool {
+        let mut iter = iter.clone();
+        let mut curr_start;
+
+        if let Some(val) = iter.next() {
+            curr_start = val.phys_start;
+        } else {
+            return true;
+        }
+
+        for desc in iter {
+            if desc.phys_start <= curr_start {
+                return false;
+            }
+            curr_start = desc.phys_start
+        }
+        true
+    }
+}

@@ -2,10 +2,9 @@ use super::field::NodeField;
 use super::group::DeviceType;
 use crate::device_path::util::is_doc_attr;
 use heck::ToShoutySnakeCase;
-use proc_macro2::Span;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{Attribute, Fields, Ident, ItemStruct, Lit, Meta, MetaList, MetaNameValue, NestedMeta};
+use syn::{Attribute, Fields, Ident, ItemStruct, LitInt, LitStr};
 
 /// Device path node specification.
 pub struct Node {
@@ -121,9 +120,19 @@ impl Node {
             fields.push(quote!(data: [u8]));
         }
 
+        // If the struct is a DST, derive the `ptr_meta::Pointee` trait.
+        let derive_pointee = if self.is_dst() {
+            quote!(#[derive(Pointee)])
+        } else {
+            quote!()
+        };
+
+        // For packed structs, we do not need the #[derive(Debug)] as we
+        // generate an implementation.
         quote!(
             #(#struct_docs)*
             #[repr(C, packed)]
+            #derive_pointee
             pub struct #struct_ident {
                 #(pub(super) #fields),*
             }
@@ -169,7 +178,7 @@ impl Node {
                     // slice instead.
                     quote!({
                         let ptr = addr_of!(#field_val);
-                        let (ptr, len) = ptr.to_raw_parts();
+                        let (ptr, len) = PtrExt::to_raw_parts(ptr);
                         let byte_len = size_of::<#slice_elem_ty>() * len;
                         unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                     })
@@ -216,7 +225,7 @@ impl Node {
                     return Err(NodeConversionError::InvalidLength);
                 }
                 let node: *const DevicePathNode = node;
-                let node: *const #struct_ident = ptr::from_raw_parts(node.cast(), dst_size / elem_size);
+                let node: *const #struct_ident = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
             )
         } else {
             quote!(
@@ -283,6 +292,7 @@ impl Node {
         if self.fields.is_empty() {
             return quote!(
                 #(#struct_docs)*
+                #[derive(Debug)]
                 pub struct #struct_ident;
             );
         }
@@ -307,6 +317,7 @@ impl Node {
         let struct_lifetime = self.builder_lifetime();
         quote!(
             #(#struct_docs)*
+            #[derive(Debug)]
             pub struct #struct_ident #struct_lifetime {
                 #(#fields),*
             }
@@ -421,7 +432,7 @@ impl Node {
                 // the length of `out` matches the node's size.
                 assert_eq!(size, out.len());
 
-                let out_ptr: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+                let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(DevicePathHeader {
                         device_type: DeviceType::#device_type,
@@ -459,44 +470,34 @@ struct NodeAttr {
 /// Parse a `node` attribute. Returns `None` for any other attribute, or
 /// if the contents don't match the expected format.
 fn parse_node_attr(attr: &Attribute) -> Option<NodeAttr> {
-    let meta = attr.parse_meta().ok()?;
-
-    if let Meta::List(MetaList { path, nested, .. }) = meta {
-        if path.get_ident()? != "node" {
-            return None;
-        }
-
-        let mut static_size = None;
-        let mut sub_type = None;
-
-        for nested in nested.iter() {
-            if let NestedMeta::Meta(Meta::NameValue(MetaNameValue { path, lit, .. })) = nested {
-                let ident = path.get_ident()?;
-
-                match lit {
-                    Lit::Int(lit) if ident == "static_size" => {
-                        let lit = lit.base10_parse().ok()?;
-                        static_size = Some(lit);
-                    }
-                    Lit::Str(lit) if ident == "sub_type" => {
-                        sub_type = Some(lit.value());
-                    }
-                    _ => {
-                        return None;
-                    }
-                }
-            } else {
-                return None;
-            }
-        }
-
-        Some(NodeAttr {
-            static_size: static_size?,
-            sub_type,
-        })
-    } else {
-        None
+    if !attr.path().is_ident("node") {
+        return None;
     }
+
+    let mut static_size = None;
+    let mut sub_type = None;
+    attr.parse_nested_meta(|meta| {
+        if meta.path.is_ident("static_size") {
+            let value = meta.value()?;
+            let lit: LitInt = value.parse()?;
+            let lit = lit.base10_parse()?;
+            static_size = Some(lit);
+            Ok(())
+        } else if meta.path.is_ident("sub_type") {
+            let value = meta.value()?;
+            let lit: LitStr = value.parse()?;
+            sub_type = Some(lit.value());
+            Ok(())
+        } else {
+            Err(meta.error("invalid struct node attribute"))
+        }
+    })
+    .ok()?;
+
+    Some(NodeAttr {
+        static_size: static_size?,
+        sub_type,
+    })
 }
 
 /// Returns `true` if the attribute is a valid `node` attribute, false

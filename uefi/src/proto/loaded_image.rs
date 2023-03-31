@@ -1,18 +1,17 @@
 //! `LoadedImage` protocol.
 
-use crate::{
-    data_types::FromSliceWithNulError,
-    proto::device_path::{DevicePath, FfiDevicePath},
-    proto::Protocol,
-    table::boot::MemoryType,
-    unsafe_guid, CStr16, Handle, Status,
-};
-use core::{ffi::c_void, mem, slice};
+use crate::data_types::FromSliceWithNulError;
+use crate::proto::device_path::{DevicePath, FfiDevicePath};
+use crate::proto::unsafe_protocol;
+use crate::table::boot::MemoryType;
+use crate::util::usize_from_u32;
+use crate::{CStr16, Handle, Status};
+use core::ffi::c_void;
+use core::{mem, slice};
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
 #[repr(C)]
-#[unsafe_guid("5b1b31a1-9562-11d2-8e3f-00a0c969723b")]
-#[derive(Protocol)]
+#[unsafe_protocol("5b1b31a1-9562-11d2-8e3f-00a0c969723b")]
 pub struct LoadedImage {
     revision: u32,
     parent_handle: Handle,
@@ -79,7 +78,7 @@ impl LoadedImage {
     /// [`&CStr16`]: `CStr16`
     /// [`load_options_as_bytes`]: `Self::load_options_as_bytes`
     pub fn load_options_as_cstr16(&self) -> Result<&CStr16, LoadOptionsError> {
-        let load_options_size = usize::try_from(self.load_options_size).unwrap();
+        let load_options_size = usize_from_u32(self.load_options_size);
 
         if self.load_options.is_null() {
             Err(LoadOptionsError::NotSet)
@@ -116,7 +115,7 @@ impl LoadedImage {
             unsafe {
                 Some(slice::from_raw_parts(
                     self.load_options,
-                    usize::try_from(self.load_options_size).unwrap(),
+                    usize_from_u32(self.load_options_size),
                 ))
             }
         }

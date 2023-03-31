@@ -21,6 +21,7 @@ use bitflags::bitflags;
 
 /// Platform Configuration Register (PCR) index.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
 pub struct PcrIndex(pub u32);
 
 bitflags! {
@@ -45,12 +46,4 @@ bitflags! {
         /// SM3-256 hash.
         const SM3_256 = 0x0000_0010;
     }
-}
-
-/// Convenience function for converting from a `u32` to a `usize`
-/// without using `as` or unwrapping everywhere. This particular
-/// conversion comes up a lot in the TPM API, and it should be
-/// infallable on supported targets.
-fn usize_from_u32(val: u32) -> usize {
-    val.try_into().expect("`u32` does not fit in `usize`")
 }

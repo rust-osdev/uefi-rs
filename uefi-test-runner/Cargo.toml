@@ -6,8 +6,7 @@ publish = false
 edition = "2021"
 
 [dependencies]
-# TODO we should let the uefi-test-runner run with and without unstable.
-uefi = { path = "../uefi", features = ["alloc", "unstable"] }
+uefi = { path = "../uefi", features = ["alloc"] }
 uefi-services = { path = "../uefi-services" }
 
 log = { version = "0.4.17", default-features = false }
@@ -15,7 +14,17 @@ log = { version = "0.4.17", default-features = false }
 qemu-exit = "3.0.0"
 
 [features]
-# This feature should only be enabled in our CI, it disables some tests
-# which currently fail in that environment (see #103 for discussion).
-ci = []
+# Enable the multiprocessor test. This only works if KVM is enabled.
+multi_processor = []
 
+# Enable the PXE test.
+pxe = []
+
+# Enable the `unstable` feature of the `uefi` crate.
+unstable = ["uefi/unstable"]
+
+# Enable the TPM v1 test.
+tpm_v1 = []
+
+# Enable the TPM v2 test.
+tpm_v2 = []

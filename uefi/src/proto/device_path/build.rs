@@ -7,9 +7,9 @@
 
 pub use uefi::proto::device_path::device_path_gen::build::*;
 
+use crate::polyfill::{maybe_uninit_slice_as_mut_ptr, maybe_uninit_slice_assume_init_ref};
 use crate::proto::device_path::{DevicePath, DevicePathNode};
 use core::mem::MaybeUninit;
-use core::ptr;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
@@ -69,6 +69,7 @@ use alloc::vec::Vec;
 /// # Ok(())
 /// # }
 /// ```
+#[derive(Debug)]
 pub struct DevicePathBuilder<'a> {
     storage: BuilderStorage<'a>,
 }
@@ -132,17 +133,18 @@ impl<'a> DevicePathBuilder<'a> {
 
         let data: &[u8] = match &this.storage {
             BuilderStorage::Buf { buf, offset } => unsafe {
-                MaybeUninit::slice_assume_init_ref(&buf[..*offset])
+                maybe_uninit_slice_assume_init_ref(&buf[..*offset])
             },
             #[cfg(feature = "alloc")]
             BuilderStorage::Vec(vec) => vec,
         };
 
         let ptr: *const () = data.as_ptr().cast();
-        Ok(unsafe { &*ptr::from_raw_parts(ptr, data.len()) })
+        Ok(unsafe { &*ptr_meta::from_raw_parts(ptr, data.len()) })
     }
 }
 
+#[derive(Debug)]
 enum BuilderStorage<'a> {
     Buf {
         buf: &'a mut [MaybeUninit<u8>],
@@ -207,7 +209,7 @@ unsafe impl BuildNode for &DevicePathNode {
     fn write_data(&self, out: &mut [MaybeUninit<u8>]) {
         let src: *const u8 = self.as_ffi_ptr().cast();
 
-        let dst: *mut u8 = MaybeUninit::slice_as_mut_ptr(out);
+        let dst: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
         unsafe {
             dst.copy_from_nonoverlapping(src, out.len());
         }

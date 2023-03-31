@@ -1,0 +1,3 @@
+[toolchain]
+channel = "nightly"
+targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]

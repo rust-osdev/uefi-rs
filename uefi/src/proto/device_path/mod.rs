@@ -1,7 +1,7 @@
 //! Device Path protocol
 //!
 //! A UEFI device path is a very flexible structure for encoding a
-//! programatic path such as a hard drive or console.
+//! programmatic path such as a hard drive or console.
 //!
 //! A device path is made up of a packed list of variable-length nodes of
 //! various types. The entire device path is terminated with an
@@ -69,6 +69,7 @@
 //!
 //! [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 //! [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
+//! [`Protocol`]: crate::proto::Protocol
 //! [`device_type`]: DevicePathNode::device_type
 //! [`sub_type`]: DevicePathNode::sub_type
 
@@ -80,22 +81,18 @@ pub use device_path_gen::{
     acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
 };
 
-use crate::proto::{Protocol, ProtocolPointer};
-use crate::unsafe_guid;
+use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
-use core::marker::{PhantomData, PhantomPinned};
-use core::{mem, ptr};
+use core::fmt::{self, Debug, Formatter};
+use core::mem;
+use ptr_meta::Pointee;
 
-/// Opaque type that should be used to represent a pointer to a
-/// [`DevicePath`] or [`DevicePathNode`] in foreign function interfaces. This
-/// type produces a thin pointer, unlike [`DevicePath`] and
-/// [`DevicePathNode`].
-#[repr(C, packed)]
-pub struct FfiDevicePath {
-    // This representation is recommended by the nomicon:
-    // https://doc.rust-lang.org/stable/nomicon/ffi.html#representing-opaque-structs
-    _data: [u8; 0],
-    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+opaque_type! {
+    /// Opaque type that should be used to represent a pointer to a
+    /// [`DevicePath`] or [`DevicePathNode`] in foreign function interfaces. This
+    /// type produces a thin pointer, unlike [`DevicePath`] and
+    /// [`DevicePathNode`].
+    pub struct FfiDevicePath;
 }
 
 /// Header that appears at the start of every [`DevicePathNode`].
@@ -118,7 +115,7 @@ pub struct DevicePathHeader {
 /// See the [module-level documentation] for more details.
 ///
 /// [module-level documentation]: crate::proto::device_path
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, Pointee)]
 #[repr(C, packed)]
 pub struct DevicePathNode {
     header: DevicePathHeader,
@@ -138,7 +135,7 @@ impl DevicePathNode {
         let header = *ptr.cast::<DevicePathHeader>();
 
         let data_len = usize::from(header.length) - mem::size_of::<DevicePathHeader>();
-        &*ptr::from_raw_parts(ptr.cast(), data_len)
+        &*ptr_meta::from_raw_parts(ptr.cast(), data_len)
     }
 
     /// Cast to a [`FfiDevicePath`] pointer.
@@ -185,6 +182,21 @@ impl DevicePathNode {
     }
 }
 
+impl Debug for DevicePathNode {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("DevicePathNode")
+            .field("header", &self.header)
+            .field("data", &&self.data)
+            .finish()
+    }
+}
+
+impl PartialEq for DevicePathNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.header == other.header && self.data == other.data
+    }
+}
+
 /// A single device path instance that ends with either an [`END_INSTANCE`]
 /// or [`END_ENTIRE`] node. Use [`DevicePath::instance_iter`] to get the
 /// path instances in a [`DevicePath`].
@@ -195,7 +207,7 @@ impl DevicePathNode {
 /// [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
 /// [module-level documentation]: crate::proto::device_path
 #[repr(C, packed)]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, Pointee)]
 pub struct DevicePathInstance {
     data: [u8],
 }
@@ -215,6 +227,20 @@ impl DevicePathInstance {
     }
 }
 
+impl Debug for DevicePathInstance {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("DevicePathInstance")
+            .field("data", &&self.data)
+            .finish()
+    }
+}
+
+impl PartialEq for DevicePathInstance {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
 /// Device path protocol.
 ///
 /// A device path contains one or more device path instances made of up
@@ -225,19 +251,19 @@ impl DevicePathInstance {
 /// [module-level documentation]: crate::proto::device_path
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 #[repr(C, packed)]
-#[unsafe_guid("09576e91-6d3f-11d2-8e39-00a0c969723b")]
-#[derive(Debug, Eq, PartialEq, Protocol)]
+#[unsafe_protocol("09576e91-6d3f-11d2-8e39-00a0c969723b")]
+#[derive(Eq, Pointee)]
 pub struct DevicePath {
     data: [u8],
 }
 
 impl ProtocolPointer for DevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
-        ptr::from_raw_parts(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
-        ptr::from_raw_parts_mut(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts_mut(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
     }
 }
 
@@ -301,9 +327,24 @@ impl DevicePath {
     }
 }
 
+impl Debug for DevicePath {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.debug_struct("DevicePath")
+            .field("data", &&self.data)
+            .finish()
+    }
+}
+
+impl PartialEq for DevicePath {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+
 /// Iterator over the [`DevicePathInstance`]s in a [`DevicePath`].
 ///
 /// This struct is returned by [`DevicePath::instance_iter`].
+#[derive(Debug)]
 pub struct DevicePathInstanceIterator<'a> {
     remaining_path: Option<&'a DevicePath>,
 }
@@ -336,7 +377,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
             self.remaining_path = None;
         } else {
             self.remaining_path = unsafe {
-                Some(&*ptr::from_raw_parts(
+                Some(&*ptr_meta::from_raw_parts(
                     rest.as_ptr().cast::<()>(),
                     rest.len(),
                 ))
@@ -344,7 +385,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
         }
 
         unsafe {
-            Some(&*ptr::from_raw_parts(
+            Some(&*ptr_meta::from_raw_parts(
                 head.as_ptr().cast::<()>(),
                 head.len(),
             ))
@@ -352,6 +393,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
     }
 }
 
+#[derive(Debug)]
 enum StopCondition {
     AnyEndNode,
     EndEntireNode,
@@ -362,6 +404,7 @@ enum StopCondition {
 ///
 /// This struct is returned by [`DevicePath::node_iter`] and
 /// [`DevicePathInstance::node_iter`].
+#[derive(Debug)]
 pub struct DevicePathNodeIterator<'a> {
     nodes: &'a [u8],
     stop_condition: StopCondition,

@@ -8,12 +8,10 @@
 // if there is insufficient memory. So we treat any NULL output as an
 // `OUT_OF_RESOURCES` error.
 
-use crate::{
-    proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath},
-    proto::Protocol,
-    table::boot::BootServices,
-    unsafe_guid, CStr16, Char16, Result, Status,
-};
+use crate::proto::device_path::{DevicePath, DevicePathNode, FfiDevicePath};
+use crate::proto::unsafe_protocol;
+use crate::table::boot::BootServices;
+use crate::{CStr16, Char16, Result, Status};
 use core::ops::Deref;
 
 /// This struct is a wrapper of `display_only` parameter
@@ -25,7 +23,7 @@ use core::ops::Deref;
 /// representation of the display node is used, where applicable.
 /// If `display_only` is FALSE, then the longer text representation
 /// of the display node is used.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DisplayOnly(pub bool);
 
 /// This struct is a wrapper of `allow_shortcuts` parameter
@@ -37,11 +35,12 @@ pub struct DisplayOnly(pub bool);
 /// type or subtype. If `allow_shortcuts is TRUE, then the
 /// shortcut forms of text representation for a device node
 /// can be used, where applicable.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct AllowShortcuts(pub bool);
 
 /// Wrapper for a string internally allocated from
 /// UEFI boot services memory.
+#[derive(Debug)]
 pub struct PoolString<'a> {
     boot_services: &'a BootServices,
     text: *const Char16,
@@ -82,8 +81,7 @@ impl Drop for PoolString<'_> {
 /// This protocol provides common utility functions for converting device
 /// nodes and device paths to a text representation.
 #[repr(C)]
-#[unsafe_guid("8b843e20-8132-4852-90cc-551a4e4a7f1c")]
-#[derive(Protocol)]
+#[unsafe_protocol("8b843e20-8132-4852-90cc-551a4e4a7f1c")]
 pub struct DevicePathToText {
     convert_device_node_to_text: unsafe extern "efiapi" fn(
         device_node: *const FfiDevicePath,
@@ -100,7 +98,7 @@ pub struct DevicePathToText {
 impl DevicePathToText {
     /// Convert a device node to its text representation.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
@@ -123,7 +121,7 @@ impl DevicePathToText {
 
     /// Convert a device path to its text representation.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
@@ -150,8 +148,7 @@ impl DevicePathToText {
 /// This protocol provides common utilities for converting text to
 /// device paths and device nodes.
 #[repr(C)]
-#[unsafe_guid("05c99a21-c70f-4ad2-8a5f-35df3343f51e")]
-#[derive(Protocol)]
+#[unsafe_protocol("05c99a21-c70f-4ad2-8a5f-35df3343f51e")]
 pub struct DevicePathFromText {
     convert_text_to_device_node:
         unsafe extern "efiapi" fn(text_device_node: *const Char16) -> *const FfiDevicePath,
@@ -166,7 +163,7 @@ impl DevicePathFromText {
     /// Conversion starts with the first character and continues until
     /// the first non-device node character.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
@@ -190,7 +187,7 @@ impl DevicePathFromText {
     /// Conversion starts with the first character and continues until
     /// the first non-device path character.
     ///
-    /// Returns an [`OUT_OF_RESOURCES`] error if there is unsufficient
+    /// Returns an [`OUT_OF_RESOURCES`] error if there is insufficient
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES

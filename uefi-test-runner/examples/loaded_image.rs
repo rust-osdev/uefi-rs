@@ -1,7 +1,6 @@
 // ANCHOR: all
 #![no_main]
 #![no_std]
-#![feature(abi_efiapi)]
 
 use log::info;
 use uefi::prelude::*;
@@ -36,7 +35,6 @@ fn print_image_path(boot_services: &BootServices) -> Result {
     // ANCHOR: device_path
     let device_path_to_text_handle = *boot_services
         .locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))?
-        .handles()
         .first()
         .expect("DevicePathToText is missing");
 

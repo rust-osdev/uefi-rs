@@ -1,8 +1,6 @@
 //! Graphics output protocol.
 //!
 //! The UEFI GOP is meant to replace existing [VGA][vga] hardware interfaces.
-//! It can be used in the boot environment as well as at runtime,
-//! until a high-performance driver is loaded by the OS.
 //!
 //! The GOP provides access to a hardware frame buffer and allows UEFI apps
 //! to draw directly to the graphics output device.
@@ -10,8 +8,6 @@
 //! The advantage of the GOP over legacy VGA is that it allows multiple GPUs
 //! to exist and be used on the system. There is a GOP implementation for every
 //! unique GPU in the system which supports UEFI.
-//!
-//! This protocol _can_ be used after boot services are exited.
 //!
 //! [vga]: https://en.wikipedia.org/wiki/Video_Graphics_Array
 //!
@@ -54,20 +50,20 @@
 //! You will have to implement your own double buffering if you want to
 //! avoid tearing with animations.
 
-use crate::proto::Protocol;
-use crate::{unsafe_guid, Result, Status};
+use crate::proto::unsafe_protocol;
+use crate::util::usize_from_u32;
+use crate::{Result, Status};
+use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem;
-use core::ptr;
+use core::{mem, ptr};
 
 /// Provides access to the video hardware's frame buffer.
 ///
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
 #[repr(C)]
-#[unsafe_guid("9042a9de-23dc-4a38-96fb-7aded080516a")]
-#[derive(Protocol)]
-pub struct GraphicsOutput<'boot> {
+#[unsafe_protocol("9042a9de-23dc-4a38-96fb-7aded080516a")]
+pub struct GraphicsOutput {
     query_mode: extern "efiapi" fn(
         &GraphicsOutput,
         mode: u32,
@@ -88,10 +84,10 @@ pub struct GraphicsOutput<'boot> {
         height: usize,
         stride: usize,
     ) -> Status,
-    mode: &'boot ModeData<'boot>,
+    mode: *const ModeData,
 }
 
-impl<'boot> GraphicsOutput<'boot> {
+impl GraphicsOutput {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
     pub fn query_mode(&self, index: u32) -> Result<Mode> {
@@ -110,11 +106,11 @@ impl<'boot> GraphicsOutput<'boot> {
 
     /// Returns information about all available graphics modes.
     #[must_use]
-    pub fn modes(&'_ self) -> impl ExactSizeIterator<Item = Mode> + '_ {
+    pub fn modes(&self) -> ModeIter {
         ModeIter {
             gop: self,
             current: 0,
-            max: self.mode.max_mode,
+            max: self.mode().max_mode,
         }
     }
 
@@ -297,17 +293,17 @@ impl<'boot> GraphicsOutput<'boot> {
     /// Returns the frame buffer information for the current mode.
     #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
-        *self.mode.info
+        *self.mode().info()
     }
 
     /// Access the frame buffer directly
     pub fn frame_buffer(&mut self) -> FrameBuffer {
         assert!(
-            self.mode.info.format != PixelFormat::BltOnly,
+            self.mode().info().format != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
-        let base = self.mode.fb_address as *mut u8;
-        let size = self.mode.fb_size;
+        let base = self.mode().fb_address as *mut u8;
+        let size = self.mode().fb_size;
 
         FrameBuffer {
             base,
@@ -315,22 +311,32 @@ impl<'boot> GraphicsOutput<'boot> {
             _lifetime: PhantomData,
         }
     }
+
+    const fn mode(&self) -> &ModeData {
+        unsafe { &*self.mode }
+    }
 }
 
 #[repr(C)]
-struct ModeData<'info> {
+struct ModeData {
     // Number of modes which the GOP supports.
     max_mode: u32,
     // Current mode.
     mode: u32,
     // Information about the current mode.
-    info: &'info ModeInfo,
+    info: *const ModeInfo,
     // Size of the above structure.
     info_sz: usize,
     // Physical address of the frame buffer.
     fb_address: u64,
     // Size in bytes. Equal to (pixel size) * height * stride.
     fb_size: usize,
+}
+
+impl ModeData {
+    const fn info(&self) -> &ModeInfo {
+        unsafe { &*self.info }
+    }
 }
 
 /// Represents the format of the pixels in a frame buffer.
@@ -369,6 +375,7 @@ pub struct PixelBitmask {
 }
 
 /// Represents a graphics mode compatible with a given graphics device.
+#[derive(Debug)]
 pub struct Mode {
     index: u32,
     info_sz: usize,
@@ -410,7 +417,7 @@ impl ModeInfo {
     /// On desktop monitors, this usually means (width, height).
     #[must_use]
     pub const fn resolution(&self) -> (usize, usize) {
-        (self.hor_res as usize, self.ver_res as usize)
+        (usize_from_u32(self.hor_res), usize_from_u32(self.ver_res))
     }
 
     /// Returns the format of the frame buffer.
@@ -434,13 +441,13 @@ impl ModeInfo {
     /// instead the stride might be bigger for better alignment.
     #[must_use]
     pub const fn stride(&self) -> usize {
-        self.stride as usize
+        usize_from_u32(self.stride)
     }
 }
 
-/// Iterator for graphics modes.
-struct ModeIter<'gop> {
-    gop: &'gop GraphicsOutput<'gop>,
+/// Iterator for [`Mode`]s of the [`GraphicsOutput`] protocol.
+pub struct ModeIter<'gop> {
+    gop: &'gop GraphicsOutput,
     current: u32,
     max: u32,
 }
@@ -463,6 +470,15 @@ impl<'gop> Iterator for ModeIter<'gop> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let size = (self.max - self.current) as usize;
         (size, Some(size))
+    }
+}
+
+impl<'gop> Debug for ModeIter<'gop> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ModeIter")
+            .field("current", &self.current)
+            .field("max", &self.max)
+            .finish()
     }
 }
 
@@ -572,6 +588,7 @@ pub enum BltOp<'buf> {
 }
 
 /// Direct access to a memory-mapped frame buffer
+#[derive(Debug)]
 pub struct FrameBuffer<'gop> {
     base: *mut u8,
     size: usize,
@@ -586,6 +603,9 @@ impl<'gop> FrameBuffer<'gop> {
     /// - Keep memory accesses in bound
     /// - Use volatile reads and writes
     /// - Make sure that the pointer does not outlive the FrameBuffer
+    ///
+    /// On some implementations this framebuffer pointer can be used after
+    /// exiting boot services, but that is not guaranteed by the UEFI Specification.
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.base
     }
@@ -632,7 +652,7 @@ impl<'gop> FrameBuffer<'gop> {
     /// # Safety
     ///
     /// This operation is unsafe because...
-    /// - It is your reponsibility to make sure that the value type makes sense
+    /// - It is your responsibility to make sure that the value type makes sense
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
     #[inline]
@@ -654,7 +674,7 @@ impl<'gop> FrameBuffer<'gop> {
     /// # Safety
     ///
     /// This operation is unsafe because...
-    /// - It is your reponsibility to make sure that the value type makes sense
+    /// - It is your responsibility to make sure that the value type makes sense
     /// - You must honor the pixel format and stride specified by the mode info
     /// - There is no bound checking on memory accesses in release mode
     #[inline]

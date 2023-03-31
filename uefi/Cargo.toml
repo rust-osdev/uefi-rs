@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.18.0"
+version = "0.20.0"
 authors = ["The Rust OSDev team"]
 readme = "README.md"
 edition = "2021"
@@ -9,6 +9,7 @@ repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
+rust-version = "1.68"
 
 [features]
 default = ["panic-on-logger-errors"]
@@ -25,8 +26,9 @@ unstable = []
 [dependencies]
 bitflags = "1.3.1"
 log = { version = "0.4.5", default-features = false }
+ptr_meta = { version = "0.2.0", default-features = false }
 ucs2 = "0.3.2"
-uefi-macros = "0.9.0"
+uefi-macros = "0.11.0"
 
 [package.metadata.docs.rs]
 all-features = true

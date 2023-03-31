@@ -1,6 +1,6 @@
 [package]
 name = "uefi-services"
-version = "0.15.0"
+version = "0.17.0"
 authors = ["The Rust OSDev team"]
 readme = "README.md"
 edition = "2021"
@@ -9,9 +9,10 @@ repository = "https://github.com/rust-osdev/uefi-rs"
 keywords = ["uefi", "efi"]
 categories = ["embedded", "no-std", "api-bindings"]
 license = "MPL-2.0"
+rust-version = "1.68"
 
 [dependencies]
-uefi = { version = "0.18.0", features = ["global_allocator"] }
+uefi = { version = "0.20.0", features = ["global_allocator"] }
 log = { version = "0.4.5", default-features = false }
 cfg-if = "1.0.0"
 qemu-exit = { version = "3.0.1", optional = true }

@@ -19,6 +19,6 @@ PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1
 
 See [`uefi::proto::device_path::text`] for details.
 
-[handles]: handles.md
+[handles]: handles_and_protocols.md
 [`uefi::proto::device_path`]: https://docs.rs/uefi/latest/uefi/proto/device_path/index.html
 [`uefi::proto::device_path::text`]: https://docs.rs/uefi/latest/uefi/proto/device_path/text/index.html

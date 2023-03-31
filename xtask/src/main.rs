@@ -12,13 +12,12 @@ mod util;
 
 use crate::opt::TestOpt;
 use anyhow::Result;
-use cargo::{fix_nested_cargo_env, Cargo, CargoAction, Feature, Package, TargetTypes};
+use arch::UefiArch;
+use cargo::{Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
-use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt};
-use std::process::Command;
-use tempfile::TempDir;
-use util::{command_to_string, run_cmd};
+use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt, TpmVersion};
+use util::run_cmd;
 
 fn build_feature_permutations(opt: &BuildOpt) -> Result<()> {
     for package in [Package::Uefi, Package::UefiServices] {
@@ -49,7 +48,7 @@ fn build(opt: &BuildOpt) -> Result<()> {
 
     let cargo = Cargo {
         action: CargoAction::Build,
-        features: Feature::more_code(true, true),
+        features: Feature::more_code(false, true),
         packages: Package::all_except_xtask(),
         release: opt.build_mode.release,
         target: Some(*opt.target),
@@ -63,8 +62,7 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
     // Run clippy on all the UEFI packages.
     let cargo = Cargo {
         action: CargoAction::Clippy,
-        // for all possible features
-        features: Feature::more_code(true, true),
+        features: Feature::more_code(false, true),
         packages: Package::all_except_xtask(),
         release: false,
         target: Some(*opt.target),
@@ -93,8 +91,7 @@ fn doc(opt: &DocOpt) -> Result<()> {
             open: opt.open,
             document_private_items: opt.document_private_items,
         },
-        // for all possible features
-        features: Feature::more_code(true, true),
+        features: Feature::more_code(*opt.unstable, true),
         packages: Package::published(),
         release: false,
         target: None,
@@ -122,11 +119,28 @@ fn run_miri() -> Result<()> {
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![];
 
-    // Always enable the ci feature when not building on Linux so that
-    // the MP test is skipped. That test doesn't work with kvm disabled
-    // (see https://github.com/rust-osdev/uefi-rs/issues/103).
-    if opt.ci || !platform::is_linux() {
-        features.push(Feature::Ci);
+    // Enable the PXE test unless networking is disabled or the arch doesn't
+    // support it.
+    if *opt.target == UefiArch::X86_64 && !opt.disable_network {
+        features.push(Feature::Pxe);
+    }
+
+    // Enable TPM tests if a TPM device is present.
+    match opt.tpm {
+        Some(TpmVersion::V1) => features.push(Feature::TpmV1),
+        Some(TpmVersion::V2) => features.push(Feature::TpmV2),
+        None => {}
+    }
+
+    // Enable the multi-processor test if KVM is available. KVM is
+    // available on Linux generally, but not in our CI.
+    if platform::is_linux() && !opt.ci {
+        features.push(Feature::MultiProcessor);
+    }
+
+    // Enable `unstable` if requested.
+    if *opt.unstable {
+        features.push(Feature::TestUnstable);
     }
 
     // Build uefi-test-runner.
@@ -160,6 +174,11 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
     };
     run_cmd(cargo.command()?)?;
 
+    let mut packages = vec![Package::Uefi];
+    if !test_opt.skip_macro_tests {
+        packages.push(Package::UefiMacros);
+    }
+
     // Run uefi-rs and uefi-macros tests.
     let cargo = Cargo {
         action: CargoAction::Test,
@@ -167,10 +186,10 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
         // the unstable feature. Because of this, we need to allow to test both variants. Runtime
         // features is set to no as it is not possible as as soon a #[global_allocator] is
         // registered, the Rust runtime executing the tests uses it as well.
-        features: Feature::more_code(test_opt.include_unstable, false),
+        features: Feature::more_code(*test_opt.unstable, false),
         // Don't test uefi-services (or the packages that depend on it)
         // as it has lang items that conflict with `std`.
-        packages: vec![Package::Uefi, Package::UefiMacros],
+        packages,
         release: false,
         // Use the host target so that tests can run without a VM.
         target: None,
@@ -178,46 +197,6 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
         target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)
-}
-
-/// Test that the template app builds successfully with the released
-/// versions of the libraries on crates.io.
-///
-/// The `build` action also builds the template app, but due to the
-/// `patch.crates-io` of the top-level Cargo.toml the app is built using
-/// the current versions of the libraries in this repo. To give warning
-/// when the latest crates.io releases of the libraries are broken (due
-/// to changes in the nightly toolchain), this action copies the
-/// template to a temporary directory and builds it in isolation.
-///
-/// The build command is also checked against the contents of
-/// `building.md` to ensure that the doc correctly describes how to
-/// build an app.
-fn test_latest_release() -> Result<()> {
-    // Recursively copy the template app to a temporary directory. This
-    // isolates the app from the full git repo so that the
-    // `patch.crates-io` section of the root Cargo.toml doesn't apply.
-    let tmp_dir = TempDir::new()?;
-    let tmp_dir = tmp_dir.path();
-    let mut cp_cmd = Command::new("cp");
-    cp_cmd
-        .args(["--recursive", "--verbose", "template"])
-        .arg(tmp_dir);
-    run_cmd(cp_cmd)?;
-
-    // Create cargo build command, not using the `cargo` module to make
-    // it explicit that it matches the command in `building.md`.
-    let mut build_cmd = Command::new("cargo");
-    fix_nested_cargo_env(&mut build_cmd);
-    build_cmd
-        .args(["build", "--target", "x86_64-unknown-uefi"])
-        .current_dir(tmp_dir.join("template"));
-
-    // Check that the command is indeed in building.md, then verify the
-    // build succeeds.
-    let building_md = include_str!("../../book/src/tutorial/building.md");
-    assert!(building_md.contains(&command_to_string(&build_cmd)));
-    run_cmd(build_cmd)
 }
 
 fn main() -> Result<()> {
@@ -231,6 +210,5 @@ fn main() -> Result<()> {
         Action::Miri(_) => run_miri(),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(test_opt) => run_host_tests(test_opt),
-        Action::TestLatestRelease(_) => test_latest_release(),
     }
 }

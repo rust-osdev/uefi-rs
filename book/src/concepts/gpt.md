@@ -10,7 +10,7 @@ systems too. There are a couple big advantages of using GPT over MBR:
 
 A GPT disk contains a primary header near the beginning of the disk,
 followed by a partition entry array. The header and partition entry
-array have a secondary copy at the end of the disk for redundency. The
+array have a secondary copy at the end of the disk for redundancy. The
 partition entry arrays contain structures that describe each partition,
 including a GUID to identify the individual partition, a partition type
 GUID to indicate the purpose of the partition, and start/end block

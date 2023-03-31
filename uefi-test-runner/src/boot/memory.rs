@@ -1,6 +1,6 @@
 use uefi::table::boot::{AllocateType, BootServices, MemoryType};
 
-use crate::alloc::vec::Vec;
+use alloc::vec::Vec;
 
 pub fn test(bt: &BootServices) {
     info!("Testing memory functions");
@@ -91,16 +91,27 @@ fn memory_map(bt: &BootServices) {
     // We will use vectors for convenience.
     let mut buffer = vec![0_u8; buf_sz];
 
-    let (_key, desc_iter) = bt
+    let mut memory_map = bt
         .memory_map(&mut buffer)
         .expect("Failed to retrieve UEFI memory map");
 
+    memory_map.sort();
+
     // Collect the descriptors into a vector
-    let descriptors = desc_iter.copied().collect::<Vec<_>>();
+    let descriptors = memory_map.entries().copied().collect::<Vec<_>>();
 
     // Ensured we have at least one entry.
     // Real memory maps usually have dozens of entries.
     assert!(!descriptors.is_empty(), "Memory map is empty");
+
+    let mut curr_value = descriptors[0];
+
+    for value in descriptors.iter().skip(1) {
+        if value.phys_start <= curr_value.phys_start {
+            panic!("memory map sorting failed");
+        }
+        curr_value = *value;
+    }
 
     // This is pretty much a sanity test to ensure returned memory isn't filled with random values.
     let first_desc = descriptors[0];

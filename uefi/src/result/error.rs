@@ -14,7 +14,12 @@ pub struct Error<Data: Debug = ()> {
 
 impl<Data: Debug> Error<Data> {
     /// Create an `Error`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `status` is [`Status::SUCCESS`].
     pub const fn new(status: Status, data: Data) -> Self {
+        assert!(!matches!(status, Status::SUCCESS));
         Self { status, data }
     }
 
@@ -39,7 +44,7 @@ impl<Data: Debug> Error<Data> {
 
 impl From<Status> for Error<()> {
     fn from(status: Status) -> Self {
-        Self { status, data: () }
+        Error::new(status, ())
     }
 }
 

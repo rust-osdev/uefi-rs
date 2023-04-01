@@ -7,14 +7,11 @@ const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
 newtype_enum! {
 /// UEFI uses status codes in order to report successes, errors, and warnings.
 ///
-/// Unfortunately, the spec allows and encourages implementation-specific
-/// non-portable status codes. Therefore, these cannot be modeled as a Rust
-/// enum, as injecting an unknown value in a Rust enum is undefined behaviour.
+/// The spec allows implementation-specific status codes, so the `Status`
+/// constants are not a comprehensive list of all possible values.
 ///
-/// For lack of a better option, we therefore model them as a newtype of usize.
-///
-/// For a convenient integration into the Rust ecosystem, there are multiple
-/// factory methods to convert a Status into a [`uefi::Result`]:
+/// For a convenient integration into the Rust ecosystem, there are several
+/// methods to convert a Status into a [`uefi::Result`]:
 /// - [`Status::into_with`]
 /// - [`Status::into_with_val`]
 /// - [`Status::into_with_err`]

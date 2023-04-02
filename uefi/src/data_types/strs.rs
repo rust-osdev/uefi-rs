@@ -192,7 +192,7 @@ impl CStr16 {
     /// # Safety
     ///
     /// The function will start accessing memory from `ptr` until the first
-    /// null byte. It's the callers responsibility to ensure `ptr` points to
+    /// null character. It's the callers responsibility to ensure `ptr` points to
     /// a valid string, in accessible memory.
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
@@ -232,7 +232,7 @@ impl CStr16 {
     /// # Safety
     ///
     /// It's the callers responsibility to ensure chars is a valid UCS-2
-    /// null-terminated string, with no interior null bytes.
+    /// null-terminated string, with no interior null characters.
     #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
         &*(codes as *const [u16] as *const Self)
@@ -309,26 +309,32 @@ impl CStr16 {
         })
     }
 
-    /// Returns the inner pointer to this C string
+    /// Returns the inner pointer to this C16 string.
     #[must_use]
     pub const fn as_ptr(&self) -> *const Char16 {
         self.0.as_ptr()
     }
 
-    /// Get the underlying [`Char16`] slice, including the trailing null.
+    /// Get the underlying [`Char16`]s as slice without the trailing null.
+    #[must_use]
+    pub fn as_slice(&self) -> &[Char16] {
+        &self.0[..self.num_chars()]
+    }
+
+    /// Get the underlying [`Char16`]s as slice including the trailing null.
     #[must_use]
     pub const fn as_slice_with_nul(&self) -> &[Char16] {
         &self.0
     }
 
-    /// Converts this C string to a u16 slice
+    /// Converts this C string to a u16 slice without the trailing null.
     #[must_use]
     pub fn to_u16_slice(&self) -> &[u16] {
         let chars = self.to_u16_slice_with_nul();
         &chars[..chars.len() - 1]
     }
 
-    /// Converts this C string to a u16 slice containing the trailing 0 char
+    /// Converts this C string to a u16 slice containing the trailing null.
     #[must_use]
     pub const fn to_u16_slice_with_nul(&self) -> &[u16] {
         unsafe { &*(&self.0 as *const [Char16] as *const [u16]) }
@@ -343,7 +349,19 @@ impl CStr16 {
         }
     }
 
-    /// Get the number of bytes in the string (including the trailing null character).
+    /// Returns the number of characters without the trailing null. character
+    #[must_use]
+    pub const fn num_chars(&self) -> usize {
+        self.0.len() - 1
+    }
+
+    /// Returns if the string is empty. This ignores the null character.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.num_chars() == 0
+    }
+
+    /// Get the number of bytes in the string (including the trailing null).
     #[must_use]
     pub const fn num_bytes(&self) -> usize {
         self.0.len() * 2
@@ -373,6 +391,20 @@ impl CStr16 {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl From<&CStr16> for alloc::string::String {
+    fn from(value: &CStr16) -> Self {
+        value
+            .as_slice()
+            .iter()
+            .copied()
+            .map(u16::from)
+            .map(|int| int as u32)
+            .map(|int| char::from_u32(int).expect("Should be encodable as UTF-8"))
+            .collect::<alloc::string::String>()
+    }
+}
+
 impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CStr16 {
     fn eq_str_until_nul(&self, other: &StrType) -> bool {
         let other = other.as_ref();
@@ -391,7 +423,7 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CStr16 {
     }
 }
 
-/// An iterator over `CStr16`.
+/// An iterator over the [`Char16`]s in a [`CStr16`].
 #[derive(Debug)]
 pub struct CStr16Iter<'a> {
     inner: &'a CStr16,
@@ -451,11 +483,11 @@ impl<'a> UnalignedSlice<'a, u16> {
 /// get the other direction (`right.eq_str_until_nul(&left)`) for free. Hence, the relation is
 /// reflexive.
 pub trait EqStrUntilNul<StrType: ?Sized> {
-    /// Checks if the provided Rust string `StrType` is equal to [Self] until the first null-byte
-    /// is found. An exception is the terminating null-byte of [Self] which is ignored.
+    /// Checks if the provided Rust string `StrType` is equal to [Self] until the first null character
+    /// is found. An exception is the terminating null character of [Self] which is ignored.
     ///
-    /// As soon as the first null byte in either `&self` or `other` is found, this method returns.
-    /// Note that Rust strings are allowed to contain null-bytes that do not terminate the string.
+    /// As soon as the first null character in either `&self` or `other` is found, this method returns.
+    /// Note that Rust strings are allowed to contain null bytes that do not terminate the string.
     /// Although this is rather unusual, you can compare `"foo\0bar"` with an instance of [Self].
     /// In that case, only `foo"` is compared against [Self] (if [Self] is long enough).
     fn eq_str_until_nul(&self, other: &StrType) -> bool;
@@ -572,6 +604,16 @@ mod tests {
         assert_eq!(
             us.to_cstring16().unwrap(),
             CString16::try_from("test").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_cstr16_as_slice() {
+        let string: &CStr16 = cstr16!("a");
+        assert_eq!(string.as_slice(), &[Char16::try_from('a').unwrap()]);
+        assert_eq!(
+            string.as_slice_with_nul(),
+            &[Char16::try_from('a').unwrap(), NUL_16]
         );
     }
 

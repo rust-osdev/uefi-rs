@@ -13,6 +13,7 @@ use uefi::Result;
 use uefi_services::{print, println};
 
 mod boot;
+mod fs;
 mod proto;
 mod runtime;
 

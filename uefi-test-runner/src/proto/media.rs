@@ -433,8 +433,12 @@ pub fn test(bt: &BootServices) {
         test_partition_info(bt, handle);
     }
 
-    // Close the `SimpleFileSystem` protocol so that the raw disk tests work.
-    drop(sfs);
+    // Invoke the fs test after the basic low-level file system protocol
+    // tests succeeded.
+
+    // This will also drop the `SimpleFileSystem` protocol so that the raw disk
+    // tests work.
+    crate::fs::test(sfs).unwrap();
 
     test_raw_disk_io(handle, bt);
     test_raw_disk_io2(handle, bt);

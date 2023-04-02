@@ -2,6 +2,11 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- There is a new `fs` module that provides a high-level API for file-system
+  access. The API is close to the `std::fs` module.
+
 ### Changed
 
 - The `global_allocator` module has been renamed to `allocator`, and is now
@@ -9,6 +14,8 @@
   `global_allocator` feature now only controls whether `allocator::Allocator` is
   set as Rust's global allocator.
 - `Error::new` and `Error::from` now panic if the status is `SUCCESS`.
+- `Image::get_image_file_system` now returns a `fs::FileSystem` instead of the
+  protocol.
 
 ## uefi-macros - [Unreleased]
 

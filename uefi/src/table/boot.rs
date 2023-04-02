@@ -3,12 +3,8 @@
 use super::{Header, Revision};
 use crate::data_types::{Align, PhysicalAddress, VirtualAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
-#[cfg(feature = "alloc")]
-use crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem};
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{Char16, Event, Guid, Handle, Result, Status};
-#[cfg(feature = "alloc")]
-use ::alloc::vec::Vec;
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -17,6 +13,12 @@ use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::{ptr, slice};
+#[cfg(feature = "alloc")]
+use {
+    crate::fs::FileSystem,
+    crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem},
+    ::alloc::vec::Vec,
+};
 
 // TODO: this similar to `SyncUnsafeCell`. Once that is stabilized we
 // can use it instead.
@@ -1478,36 +1480,32 @@ impl BootServices {
         Ok(handles)
     }
 
-    /// Retrieves the `SimpleFileSystem` protocol associated with
-    /// the device the given image was loaded from.
-    ///
-    /// You can retrieve the SFS protocol associated with the boot partition
-    /// by passing the image handle received by the UEFI entry point to this function.
+    /// Retrieves a [`FileSystem`] protocol associated with the device the given
+    /// image was loaded from.
     ///
     /// # Errors
     ///
-    /// This function can return errors from [`open_protocol_exclusive`] and [`locate_device_path`].
-    /// See those functions for more details.
+    /// This function can return errors from [`open_protocol_exclusive`] and
+    /// [`locate_device_path`]. See those functions for more details.
     ///
     /// [`open_protocol_exclusive`]: Self::open_protocol_exclusive
     /// [`locate_device_path`]: Self::locate_device_path
+    /// [`FileSystem`]: uefi::fs::FileSystem
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::ALREADY_STARTED`]
     /// * [`uefi::Status::NOT_FOUND`]
-    pub fn get_image_file_system(
-        &self,
-        image_handle: Handle,
-    ) -> Result<ScopedProtocol<SimpleFileSystem>> {
+    pub fn get_image_file_system(&self, image_handle: Handle) -> Result<FileSystem> {
         let loaded_image = self.open_protocol_exclusive::<LoadedImage>(image_handle)?;
 
         let device_path = self.open_protocol_exclusive::<DevicePath>(loaded_image.device())?;
 
         let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
 
-        self.open_protocol_exclusive(device_handle)
+        let protocol = self.open_protocol_exclusive(device_handle)?;
+        Ok(FileSystem::new(protocol))
     }
 }
 

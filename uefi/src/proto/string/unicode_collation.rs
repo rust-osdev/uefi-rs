@@ -3,9 +3,9 @@
 //! This protocol is used in the boot services environment to perform
 //! lexical comparison functions on Unicode strings for given languages.
 
+use crate::data_types::{CStr16, CStr8, Char16, Char8};
 use crate::proto::unsafe_protocol;
 use core::cmp::Ordering;
-use uefi::data_types::{CStr16, CStr8, Char16, Char8};
 
 /// The Unicode Collation Protocol.
 ///

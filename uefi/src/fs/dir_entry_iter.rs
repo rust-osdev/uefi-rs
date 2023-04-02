@@ -1,8 +1,8 @@
 //! Module for directory iteration. See [`UefiDirectoryIter`].
 
 use super::*;
+use crate::Result;
 use alloc::boxed::Box;
-use uefi::Result;
 
 /// Iterates over the entries of an UEFI directory. It returns boxed values of
 /// type [`UefiFileInfo`].

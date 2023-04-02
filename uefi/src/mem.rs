@@ -1,12 +1,11 @@
 //! This is a utility module with helper methods for allocations/memory.
 
-use crate::{Result, ResultExt, Status};
+use crate::data_types::Align;
+use crate::{Error, Result, ResultExt, Status};
 use ::alloc::boxed::Box;
 use core::alloc::Layout;
 use core::fmt::Debug;
 use core::slice;
-use uefi::data_types::Align;
-use uefi::Error;
 
 #[cfg(not(feature = "unstable"))]
 use ::alloc::alloc::{alloc, dealloc};

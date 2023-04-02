@@ -1,13 +1,13 @@
 //! Module for path normalization. See [`NormalizedPath`].
 
 use super::*;
+use crate::data_types::FromStrError;
+use crate::CString16;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::ops::Deref;
 use derive_more::Display;
-use uefi::data_types::FromStrError;
-use uefi::CString16;
 
 /// The default separator for paths.
 pub const SEPARATOR: char = '\\';

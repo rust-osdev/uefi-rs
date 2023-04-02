@@ -5,7 +5,7 @@
 //!
 //! [`DevicePaths`]: DevicePath
 
-pub use uefi::proto::device_path::device_path_gen::build::*;
+pub use crate::proto::device_path::device_path_gen::build::*;
 
 use crate::polyfill::{maybe_uninit_slice_as_mut_ptr, maybe_uninit_slice_assume_init_ref};
 use crate::proto::device_path::{DevicePath, DevicePathNode};

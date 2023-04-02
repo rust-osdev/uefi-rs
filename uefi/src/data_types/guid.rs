@@ -136,7 +136,7 @@ pub unsafe trait Identify {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uefi::guid;
+    use crate::guid;
 
     #[test]
     fn test_guid_display() {

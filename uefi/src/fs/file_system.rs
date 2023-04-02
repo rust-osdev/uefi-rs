@@ -1,6 +1,8 @@
 //! Module for [`FileSystem`].
 
 use super::*;
+use crate::proto::media::file::{FileAttribute, FileInfo, FileType};
+use crate::table::boot::ScopedProtocol;
 use alloc::boxed::Box;
 use alloc::string::{FromUtf8Error, String, ToString};
 use alloc::vec::Vec;
@@ -10,8 +12,6 @@ use core::fmt::{Debug, Formatter};
 use core::ops::Deref;
 use derive_more::Display;
 use log::info;
-use uefi::proto::media::file::{FileAttribute, FileInfo, FileType};
-use uefi::table::boot::ScopedProtocol;
 
 /// All errors that can happen when working with the [`FileSystem`].
 #[derive(Debug, Clone, Display, PartialEq, Eq)]

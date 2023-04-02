@@ -14,7 +14,7 @@ on:
 
 jobs:
   test_aarch64:
-    name: Build and run tests on AArch64
+    name: Integration Test (AArch64)
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout sources
@@ -32,7 +32,7 @@ jobs:
       timeout-minutes: 4
 
   test_x86_64:
-    name: Build and run tests on x86_64
+    name: Integration Test (x86_64)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
@@ -50,7 +50,7 @@ jobs:
       timeout-minutes: 4
 
   test_ia32:
-    name: Build and run tests on IA32
+    name: Integration Test (IA-32)
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout sources
@@ -67,8 +67,25 @@ jobs:
       run: cargo xtask run --target ia32 --headless --ci --tpm=v2
       timeout-minutes: 4
 
+  # Ensure that developers can build and use this crate on Windows.
+  test_x86_64_windows:
+    name: Integration Test (x86_64 Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Install QEMU
+        run: choco install qemu
+
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run VM tests
+        run: cargo xtask run --target x86_64 --ci
+        timeout-minutes: 10
+
   test:
-    name: Run tests and documentation tests
+    name: Unit + Doc Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -104,29 +121,13 @@ jobs:
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check
 
-  windows:
-    name: Check that the build works on a Windows target
-    runs-on: windows-latest
-    steps:
-      - name: Install QEMU
-        run: choco install qemu
-
-      - name: Checkout sources
-        uses: actions/checkout@v3
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Run VM tests
-        run: cargo xtask run --target x86_64 --ci
-        timeout-minutes: 10
-
   # Run the build with our current stable MSRV (specified in
   # ./msrv_toolchain.toml). This serves to check that we don't
   # accidentally start relying on a new feature without intending
   # to. Having a test for this makes it easier for us to be intentional
   # about making changes that require a newer version.
   build_msrv:
-    name: Check that the build works on our stable MSRV
+    name: Build (stable MSRV)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
@@ -143,7 +144,7 @@ jobs:
   # This job requires the nightly channel, but keep it as a separate job from
   # `nightly_channel` because it takes a while to run.
   build_feature_permutations:
-    name: Check that the build works for all feature combinations
+    name: Build (feature permutations)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
@@ -158,7 +159,7 @@ jobs:
       run: cargo xtask build --feature-permutations
 
   nightly_channel:
-    name: Run checks that require the nightly channel
+    name: Build (nightly + unstable feature)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources

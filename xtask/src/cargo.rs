@@ -256,6 +256,7 @@ impl Cargo {
                 document_private_items,
             } => {
                 action = "doc";
+                extra_args.push("--no-deps");
                 if self.warnings_as_errors {
                     cmd.env("RUSTDOCFLAGS", "-Dwarnings");
                 }
@@ -367,7 +368,7 @@ mod tests {
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features global_allocator --document-private-items --open"
+            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features global_allocator --no-deps --document-private-items --open"
         );
     }
 }

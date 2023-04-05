@@ -4,6 +4,8 @@ use crate::data_types::strs::EqStrUntilNul;
 use crate::data_types::UnalignedSlice;
 use crate::polyfill::vec_into_raw_parts;
 use alloc::borrow::{Borrow, ToOwned};
+use alloc::string::String;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::{fmt, ops};
 
@@ -47,15 +49,79 @@ impl core::error::Error for FromStrError {}
 /// let s = CString16::try_from("abc").unwrap();
 /// assert_eq!(s.to_string(), "abc");
 /// ```
-#[derive(Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CString16(Vec<Char16>);
+
+impl CString16 {
+    /// Creates a new empty string with a terminating null character.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(vec![NUL_16])
+    }
+
+    /// Inserts a character at the end of the string, right before the null
+    /// character.
+    ///
+    /// # Panics
+    /// Panics if the char is a null character.
+    pub fn push(&mut self, char: Char16) {
+        assert_ne!(char, NUL_16, "Pushing a null-character is illegal");
+        let last_elem = self
+            .0
+            .last_mut()
+            .expect("There should be at least a null character");
+        *last_elem = char;
+        self.0.push(NUL_16);
+    }
+
+    /// Extends the string with the given [`CStr16`]. The null character is
+    /// automatically kept at the end.
+    pub fn push_str(&mut self, str: &CStr16) {
+        str.as_slice()
+            .iter()
+            .copied()
+            .for_each(|char| self.push(char));
+    }
+
+    /// Replaces all chars in the string with the replace value in-place.
+    pub fn replace_char(&mut self, search: Char16, replace: Char16) {
+        assert_ne!(search, NUL_16, "Replacing a null character is illegal");
+        assert_ne!(
+            replace, NUL_16,
+            "Replacing with a null character is illegal"
+        );
+        self.0
+            .as_mut_slice()
+            .iter_mut()
+            .filter(|char| **char == search)
+            .for_each(|char| *char = replace);
+    }
+
+    /// Returns the number of characters without the trailing null character.
+    #[must_use]
+    pub fn num_chars(&self) -> usize {
+        self.0.len() - 1
+    }
+
+    /// Returns if the string is empty. This ignores the null character.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.num_chars() == 0
+    }
+}
+
+impl Default for CString16 {
+    fn default() -> Self {
+        CString16::new()
+    }
+}
 
 impl TryFrom<&str> for CString16 {
     type Error = FromStrError;
 
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         // Initially allocate one Char16 for each byte of the input, plus
-        // one for the null byte. This should be a good guess for ASCII-ish
+        // one for the null character. This should be a good guess for ASCII-ish
         // input.
         let mut output = Vec::with_capacity(input.len() + 1);
 
@@ -109,6 +175,20 @@ impl<'a> TryFrom<&UnalignedSlice<'a, u16>> for CString16 {
     fn try_from(input: &UnalignedSlice<u16>) -> Result<Self, Self::Error> {
         let v = input.to_vec();
         CString16::try_from(v)
+    }
+}
+
+impl From<&CStr16> for CString16 {
+    fn from(value: &CStr16) -> Self {
+        let vec = value.as_slice_with_nul().to_vec();
+        Self(vec)
+    }
+}
+
+impl From<&CString16> for String {
+    fn from(value: &CString16) -> Self {
+        let slice: &CStr16 = value.as_ref();
+        String::from(slice)
     }
 }
 
@@ -255,5 +335,46 @@ mod tests {
                 NUL_16
             ]
         );
+    }
+
+    /// This tests the following UCS-2 string functions:
+    /// - runtime constructor
+    /// - len()
+    /// - push() / push_str()
+    /// - to rust string
+    #[test]
+    fn test_push_str() {
+        let mut str1 = CString16::new();
+        assert_eq!(str1.num_bytes(), 2, "Should have null character");
+        assert_eq!(str1.num_chars(), 0);
+        str1.push(Char16::try_from('h').unwrap());
+        str1.push(Char16::try_from('i').unwrap());
+        assert_eq!(str1.num_chars(), 2);
+
+        let mut str2 = CString16::new();
+        str2.push(Char16::try_from('!').unwrap());
+
+        str2.push_str(str1.as_ref());
+        assert_eq!(str2.num_chars(), 3);
+
+        let rust_str = String::from(&str2);
+        assert_eq!(rust_str, "!hi");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_push_str_panic() {
+        CString16::new().push(NUL_16);
+    }
+
+    #[test]
+    fn test_char_replace_all_in_place() {
+        let mut input = CString16::try_from("foo/bar/foobar//").unwrap();
+        let search = Char16::try_from('/').unwrap();
+        let replace = Char16::try_from('\\').unwrap();
+        input.replace_char(search, replace);
+
+        let input = String::from(&input);
+        assert_eq!(input, "foo\\bar\\foobar\\\\")
     }
 }

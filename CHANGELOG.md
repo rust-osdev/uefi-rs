@@ -6,6 +6,19 @@
 
 - There is a new `fs` module that provides a high-level API for file-system
   access. The API is close to the `std::fs` module.
+- Multiple convenience methods for `CString16` and `CStr16`, including:
+  - `CStr16::as_slice()`
+  - `CStr16::num_chars()`
+  - `CStr16::is_empty()`
+  - `CString16::new()`
+  - `CString16::is_empty()`
+  - `CString16::num_chars()`
+  - `CString16::replace_char()`
+  - `CString16::push()`
+  - `CString16::push_str()`
+  - `From<&CStr16>` for `CString16`
+  - `From<&CStr16>` for `String`
+  - `From<&CString16>` for `String`
 
 ### Changed
 
@@ -16,6 +29,7 @@
 - `Error::new` and `Error::from` now panic if the status is `SUCCESS`.
 - `Image::get_image_file_system` now returns a `fs::FileSystem` instead of the
   protocol.
+- `CString16::default` now always contains a null character.
 
 ## uefi-macros - [Unreleased]
 

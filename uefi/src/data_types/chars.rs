@@ -65,6 +65,17 @@ pub const NUL_8: Char8 = Char8(0);
 #[repr(transparent)]
 pub struct Char16(u16);
 
+impl Char16 {
+    /// Creates a UCS-2 character from a Rust character without checks.
+    ///
+    /// # Safety
+    /// The caller must be sure that the character is valid.
+    #[must_use]
+    pub const unsafe fn from_u16_unchecked(val: u16) -> Self {
+        Self(val)
+    }
+}
+
 impl TryFrom<char> for Char16 {
     type Error = CharConversionError;
 
@@ -125,4 +136,4 @@ impl fmt::Display for Char16 {
 }
 
 /// UCS-2 version of the NUL character
-pub const NUL_16: Char16 = Char16(0);
+pub const NUL_16: Char16 = unsafe { Char16::from_u16_unchecked(0) };

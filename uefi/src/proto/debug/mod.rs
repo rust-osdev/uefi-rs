@@ -170,3 +170,72 @@ pub enum ProcessorArch: u32 => {
     /// RISC-V 128-bit
     RISCV_128   = 0x5128,
 }}
+
+/// The debug port protocol abstracts the underlying debug port
+/// hardware, whether it is a regular Serial port or something else.
+#[repr(C)]
+#[unsafe_protocol("eba4e8d2-3858-41ec-a281-2647ba9660d0")]
+pub struct DebugPort {
+    reset: extern "efiapi" fn(this: &DebugPort) -> Status,
+    write: extern "efiapi" fn(
+        this: &DebugPort,
+        timeout: u32,
+        buffer_size: &mut usize,
+        buffer: *const c_void,
+    ) -> Status,
+    read: extern "efiapi" fn(
+        this: &DebugPort,
+        timeout: u32,
+        buffer_size: &mut usize,
+        buffer: *mut c_void,
+    ) -> Status,
+    poll: extern "efiapi" fn(this: &DebugPort) -> Status,
+}
+
+impl DebugPort {
+    /// Resets the debugport device.
+    pub fn reset(&self) -> Result {
+        (self.reset)(self).into()
+    }
+
+    /// Write data to the debugport device.
+    ///
+    /// Note: `timeout` is given in microseconds
+    pub fn write(&self, timeout: u32, data: &[u8]) -> Result<(), usize> {
+        let mut buffer_size = data.len();
+
+        (self.write)(
+            self,
+            timeout,
+            &mut buffer_size,
+            data.as_ptr().cast::<c_void>(),
+        )
+        .into_with(
+            || debug_assert_eq!(buffer_size, data.len()),
+            |_| buffer_size,
+        )
+    }
+
+    /// Read data from the debugport device.
+    ///
+    /// Note: `timeout` is given in microseconds
+    pub fn read(&self, timeout: u32, data: &mut [u8]) -> Result<(), usize> {
+        let mut buffer_size = data.len();
+
+        (self.read)(
+            self,
+            timeout,
+            &mut buffer_size,
+            data.as_mut_ptr().cast::<c_void>(),
+        )
+        .into_with(
+            || debug_assert_eq!(buffer_size, data.len()),
+            |_| buffer_size,
+        )
+    }
+
+    /// Check to see if any data is available to be read from the debugport device.
+    pub fn poll(&self) -> Result {
+        (self.poll)(self).into()
+    }
+}

@@ -1,8 +1,72 @@
+use alloc::vec::Vec;
 use core::ffi::c_void;
-use uefi::proto::debug::{DebugSupport, ExceptionType, ProcessorArch, SystemContext};
+use uefi::proto::debug::{DebugPort, DebugSupport, ExceptionType, ProcessorArch, SystemContext};
 use uefi::table::boot::BootServices;
 
 pub fn test(bt: &BootServices) {
+    test_debug_support(bt);
+    test_debug_port(bt);
+}
+
+fn test_debug_port(bt: &BootServices) {
+    info!("Running UEFI debug port protocol test");
+    if let Ok(handles) = bt.find_handles::<DebugPort>() {
+        for handle in handles {
+            if let Ok(debug_port) = bt.open_protocol_exclusive::<DebugPort>(handle) {
+                let timeout = 1000;
+
+                debug_port
+                    .reset()
+                    .expect("Error while resetting debug port");
+                let data: Vec<_> = r##"
+                                ..    .=-     .                                 
+                          .    :##+  .*##=  -*#+    ..                          
+                         =#*=:.*####+#####**####-.-*##                          
+                   .=-.  *############################:  :-:                    
+                   -###**##############################*###*                    
+               :.  -#######################################*  .::               
+              =##################################################               
+              .#################################################=               
+          -====#################################################+====.          
+          =##########################################################.          
+           +########################################################.           
+       -==+#########################################################*+=-.       
+       +######################=:=@@%#########+:-%@%####################*:       
+        =####################+   +@@@%######%.  -@@@##################*.        
+      :+#####################@-.:%@@@@#####%@*::#@@@%###################+:      
+     +#######################@@@@@@@@@######@@@@@@@@%#####################-     
+    -#########################@@@@@@@########@@@@@@%#######################     
+    -#######%%%##################%##############################%%%%######*     
+     +########%%%%############################################*%%%%#######:     
+      =######+=%%%#####***##%%#####################%#**++####=:%%%#######:      
+       :*#####:.*%#-####+==*########+-::::::=*#######*=+###*- *%*:-####*.       
+         -####*  .+. -*###############=   .*#############*-  .*:  *###+         
+           =###:        *##############+ .##############+        .###=          
+            .+#*        -######*=+++**** =###***++######-        :#*.           
+              .-         -######-               .*#####-         .-             
+                           =*####*.            =####+-                          
+                              .:--:           ::::.                             
+"##
+                .bytes()
+                .collect();
+
+                debug_port
+                    .write(timeout, &data)
+                    .expect("Error while writing to debug port");
+
+                debug_port.poll().expect("Error while polling debug port");
+
+                let mut data = Vec::with_capacity(4096);
+
+                debug_port
+                    .read(timeout, &mut data)
+                    .expect("Error while reading from debug port");
+            }
+        }
+    }
+}
+
+fn test_debug_support(bt: &BootServices) {
     info!("Running UEFI debug connection protocol test");
     let handles = bt
         .find_handles::<DebugSupport>()

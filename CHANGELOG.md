@@ -33,6 +33,11 @@
 
 ## uefi-macros - [Unreleased]
 
+- The `unsafe_protocol` struct no longer makes protocols `!Send` and
+  `!Sync`. Protocols can only be used while boot services are active, and that's
+  already a single-threaded environment, so these negative traits do not have
+  any effect.
+
 ## uefi-services - [Unreleased]
 
 ## uefi - 0.20.0 (2023-03-19)

@@ -8,7 +8,7 @@ use proc_macro2::{TokenStream as TokenStream2, TokenTree};
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, Error, Fields, FnArg, Ident, ItemFn, ItemStruct, LitStr, Pat,
+    parse_macro_input, parse_quote, Error, FnArg, Ident, ItemFn, ItemStruct, LitStr, Pat,
     Visibility,
 };
 
@@ -25,11 +25,9 @@ macro_rules! err {
 ///
 /// The macro takes one argument, a GUID string.
 ///
-/// The macro can only be applied to a struct, and the struct must have
-/// named fields (i.e. not a unit or tuple struct). It implements the
+/// The macro can only be applied to a struct. It implements the
 /// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
-/// struct. It also adds a hidden field that causes the struct to be
-/// marked as [`!Send` and `!Sync`][send-and-sync].
+/// struct.
 ///
 /// # Safety
 ///
@@ -64,25 +62,16 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
     let item_struct = parse_macro_input!(input as ItemStruct);
 
     let ident = &item_struct.ident;
-    let struct_attrs = &item_struct.attrs;
-    let struct_vis = &item_struct.vis;
-    let struct_fields = if let Fields::Named(struct_fields) = &item_struct.fields {
-        &struct_fields.named
-    } else {
-        return err!(item_struct, "Protocol struct must used named fields").into();
-    };
-    let struct_generics = &item_struct.generics;
     let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
 
     quote! {
-        #(#struct_attrs)*
-        #struct_vis struct #ident #struct_generics {
-            // Add a hidden field with `PhantomData` of a raw
-            // pointer. This has the implicit side effect of making the
-            // struct !Send and !Sync.
-            _no_send_or_sync: ::core::marker::PhantomData<*const u8>,
-            #struct_fields
-        }
+        // Disable this lint for now. It doesn't account for the fact that
+        // currently it doesn't work to `derive(Debug)` on structs that have
+        // `extern "efiapi" fn` fields, which most protocol structs have. The
+        // derive _does_ work in current nightly (1.70.0) though, so hopefully
+        // in a couple Rust releases we can drop this.
+        #[allow(missing_debug_implementations)]
+        #item_struct
 
         unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
             const GUID: ::uefi::Guid = ::uefi::Guid::from_values(

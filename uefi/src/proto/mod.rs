@@ -14,10 +14,8 @@ use core::ffi::c_void;
 
 /// Common trait implemented by all standard UEFI protocols.
 ///
-/// According to the UEFI's specification, protocols are `!Send` (they expect to
-/// be run on the bootstrap processor) and `!Sync` (they are not thread-safe).
-/// You can derive the `Protocol` trait, add these bounds, and specify the
-/// protocol's GUID using the [`unsafe_protocol`] macro.
+/// You can derive the `Protocol` trait and specify the protocol's GUID using
+/// the [`unsafe_protocol`] macro.
 ///
 /// # Example
 ///

@@ -33,10 +33,12 @@
 
 ## uefi-macros - [Unreleased]
 
-- The `unsafe_protocol` struct no longer makes protocols `!Send` and
+- The `unsafe_protocol` macro no longer makes protocols `!Send` and
   `!Sync`. Protocols can only be used while boot services are active, and that's
   already a single-threaded environment, so these negative traits do not have
   any effect.
+- The `unsafe_protocol` macro now accepts the path of a `Guid` constant in
+  addition to a string literal.
 
 ## uefi-services - [Unreleased]
 

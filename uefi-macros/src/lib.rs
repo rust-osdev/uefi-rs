@@ -8,8 +8,8 @@ use proc_macro2::{TokenStream as TokenStream2, TokenTree};
 use quote::{quote, quote_spanned, ToTokens, TokenStreamExt};
 use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, Error, FnArg, Ident, ItemFn, ItemStruct, LitStr, Pat,
-    Visibility,
+    parse_macro_input, parse_quote, Error, Expr, ExprLit, ExprPath, FnArg, Ident, ItemFn,
+    ItemStruct, Lit, LitStr, Pat, Visibility,
 };
 
 macro_rules! err {
@@ -23,7 +23,8 @@ macro_rules! err {
 
 /// Attribute macro for marking structs as UEFI protocols.
 ///
-/// The macro takes one argument, a GUID string.
+/// The macro takes one argument, either a GUID string or the path to a `Guid`
+/// constant.
 ///
 /// The macro can only be applied to a struct. It implements the
 /// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
@@ -38,13 +39,18 @@ macro_rules! err {
 /// # Example
 ///
 /// ```
-/// use uefi::{Identify, guid};
+/// use uefi::{Guid, Identify, guid};
 /// use uefi::proto::unsafe_protocol;
 ///
 /// #[unsafe_protocol("12345678-9abc-def0-1234-56789abcdef0")]
-/// struct ExampleProtocol {}
+/// struct ExampleProtocol1 {}
 ///
-/// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
+/// const PROTO_GUID: Guid = guid!("12345678-9abc-def0-1234-56789abcdef0");
+/// #[unsafe_protocol(PROTO_GUID)]
+/// struct ExampleProtocol2 {}
+///
+/// assert_eq!(ExampleProtocol1::GUID, PROTO_GUID);
+/// assert_eq!(ExampleProtocol2::GUID, PROTO_GUID);
 /// ```
 ///
 /// [`Identify`]: https://docs.rs/uefi/latest/uefi/trait.Identify.html
@@ -52,12 +58,35 @@ macro_rules! err {
 /// [send-and-sync]: https://doc.rust-lang.org/nomicon/send-and-sync.html
 #[proc_macro_attribute]
 pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
-    // Parse `args` as a GUID string.
-    let (time_low, time_mid, time_high_and_version, clock_seq_and_variant, node) =
-        match parse_guid(parse_macro_input!(args as LitStr)) {
-            Ok(data) => data,
-            Err(tokens) => return tokens.into(),
-        };
+    let expr = parse_macro_input!(args as Expr);
+
+    let guid_val = match expr {
+        Expr::Lit(ExprLit {
+            lit: Lit::Str(lit), ..
+        }) => {
+            // Parse as a GUID string.
+            let (time_low, time_mid, time_high_and_version, clock_seq_and_variant, node) =
+                match parse_guid(lit) {
+                    Ok(data) => data,
+                    Err(tokens) => return tokens.into(),
+                };
+            quote!(::uefi::Guid::from_values(
+                #time_low,
+                #time_mid,
+                #time_high_and_version,
+                #clock_seq_and_variant,
+                #node,
+            ))
+        }
+        Expr::Path(ExprPath { path, .. }) => quote!(#path),
+        _ => {
+            return err!(
+                expr,
+                "macro input must be either a string literal or path to a constant"
+            )
+            .into()
+        }
+    };
 
     let item_struct = parse_macro_input!(input as ItemStruct);
 
@@ -74,13 +103,7 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
         #item_struct
 
         unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
-            const GUID: ::uefi::Guid = ::uefi::Guid::from_values(
-                #time_low,
-                #time_mid,
-                #time_high_and_version,
-                #clock_seq_and_variant,
-                #node,
-            );
+            const GUID: ::uefi::Guid = #guid_val;
         }
 
         impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {}

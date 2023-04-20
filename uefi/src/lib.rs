@@ -93,6 +93,9 @@ extern crate alloc;
 extern crate self as uefi;
 
 #[macro_use]
+extern crate uefi_raw;
+
+#[macro_use]
 pub mod data_types;
 #[cfg(feature = "alloc")]
 pub use self::data_types::CString16;

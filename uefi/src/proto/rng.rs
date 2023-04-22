@@ -61,19 +61,20 @@ impl Rng {
         let mut algorithm_list_size = algorithm_list.len() * mem::size_of::<RngAlgorithmType>();
 
         unsafe {
-            (self.get_info)(self, &mut algorithm_list_size, algorithm_list.as_mut_ptr()).into_with(
-                || {
-                    let len = algorithm_list_size / mem::size_of::<RngAlgorithmType>();
-                    &algorithm_list[..len]
-                },
-                |status| {
-                    if status == Status::BUFFER_TOO_SMALL {
-                        Some(algorithm_list_size)
-                    } else {
-                        None
-                    }
-                },
-            )
+            (self.get_info)(self, &mut algorithm_list_size, algorithm_list.as_mut_ptr())
+                .to_result_with(
+                    || {
+                        let len = algorithm_list_size / mem::size_of::<RngAlgorithmType>();
+                        &algorithm_list[..len]
+                    },
+                    |status| {
+                        if status == Status::BUFFER_TOO_SMALL {
+                            Some(algorithm_list_size)
+                        } else {
+                            None
+                        }
+                    },
+                )
         }
     }
 

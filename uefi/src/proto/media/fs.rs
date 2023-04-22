@@ -49,6 +49,6 @@ impl SimpleFileSystem {
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)
-            .into_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
+            .to_result_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
     }
 }

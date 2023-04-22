@@ -324,7 +324,7 @@ impl SystemTable<Runtime> {
             entry_version,
             map_ptr,
         )
-        .into_with_val(|| {
+        .to_result_with_val(|| {
             let new_table_ref =
                 &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
             Self {

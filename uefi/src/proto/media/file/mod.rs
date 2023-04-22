@@ -76,7 +76,7 @@ pub trait File: Sized {
                 attributes,
             )
         }
-        .into_with_val(|| unsafe { FileHandle::new(ptr) })
+        .to_result_with_val(|| unsafe { FileHandle::new(ptr) })
     }
 
     /// Close this file handle. Same as dropping this structure.
@@ -128,7 +128,7 @@ pub trait File: Sized {
                 buffer.as_mut_ptr(),
             )
         }
-        .into_with(
+        .to_result_with(
             || unsafe { Info::from_uefi(buffer.as_mut_ptr().cast::<c_void>()) },
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {

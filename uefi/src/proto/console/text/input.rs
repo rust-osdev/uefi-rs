@@ -77,7 +77,7 @@ impl Input {
 
         match (self.read_key_stroke)(self, key.as_mut_ptr()) {
             Status::NOT_READY => Ok(None),
-            other => other.into_with_val(|| Some(unsafe { key.assume_init() }.into())),
+            other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
     }
 

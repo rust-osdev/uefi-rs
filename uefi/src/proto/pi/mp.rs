@@ -144,13 +144,13 @@ impl MpServices {
         let mut total: usize = 0;
         let mut enabled: usize = 0;
         (self.get_number_of_processors)(self, &mut total, &mut enabled)
-            .into_with_val(|| ProcessorCount { total, enabled })
+            .to_result_with_val(|| ProcessorCount { total, enabled })
     }
 
     /// Gets detailed information on the requested processor at the instant this call is made.
     pub fn get_processor_info(&self, processor_number: usize) -> Result<ProcessorInformation> {
         let mut pi: ProcessorInformation = Default::default();
-        (self.get_processor_info)(self, processor_number, &mut pi).into_with_val(|| pi)
+        (self.get_processor_info)(self, processor_number, &mut pi).to_result_with_val(|| pi)
     }
 
     /// Executes provided function on all APs in blocking mode.
@@ -233,6 +233,6 @@ impl MpServices {
     /// Gets the handle number of the caller processor.
     pub fn who_am_i(&self) -> Result<usize> {
         let mut processor_number: usize = 0;
-        (self.who_am_i)(self, &mut processor_number).into_with_val(|| processor_number)
+        (self.who_am_i)(self, &mut processor_number).to_result_with_val(|| processor_number)
     }
 }

@@ -210,7 +210,7 @@ impl DebugPort {
             &mut buffer_size,
             data.as_ptr().cast::<c_void>(),
         )
-        .into_with(
+        .to_result_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
@@ -228,7 +228,7 @@ impl DebugPort {
             &mut buffer_size,
             data.as_mut_ptr().cast::<c_void>(),
         )
-        .into_with(
+        .to_result_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )

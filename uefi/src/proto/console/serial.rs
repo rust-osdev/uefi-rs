@@ -77,7 +77,7 @@ impl Serial {
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
-        (self.get_control_bits)(self, &mut bits).into_with_val(|| bits)
+        (self.get_control_bits)(self, &mut bits).to_result_with_val(|| bits)
     }
 
     /// Sets the device's new control bits.
@@ -95,7 +95,7 @@ impl Serial {
     /// bytes were actually read from the device.
     pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }.into_with(
+        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }.to_result_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
@@ -108,7 +108,7 @@ impl Serial {
     /// were actually written to the device.
     pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }.into_with(
+        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }.to_result_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )

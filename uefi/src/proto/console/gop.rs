@@ -94,7 +94,7 @@ impl GraphicsOutput {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with_val(|| {
+        (self.query_mode)(self, index, &mut info_sz, &mut info).to_result_with_val(|| {
             let info = unsafe { *info };
             Mode {
                 index,

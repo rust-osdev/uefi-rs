@@ -88,7 +88,7 @@ impl RuntimeServices {
     pub fn get_time(&self) -> Result<Time> {
         let mut time = MaybeUninit::<Time>::uninit();
         unsafe { (self.get_time)(time.as_mut_ptr(), ptr::null_mut()) }
-            .into_with_val(|| unsafe { time.assume_init() })
+            .to_result_with_val(|| unsafe { time.assume_init() })
     }
 
     /// Query the current time and date information and the RTC capabilities
@@ -96,7 +96,7 @@ impl RuntimeServices {
         let mut time = MaybeUninit::<Time>::uninit();
         let mut caps = MaybeUninit::<TimeCapabilities>::uninit();
         unsafe { (self.get_time)(time.as_mut_ptr(), caps.as_mut_ptr()) }
-            .into_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
+            .to_result_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
     }
 
     /// Sets the current local time and date information
@@ -127,7 +127,7 @@ impl RuntimeServices {
         };
 
         if status == Status::BUFFER_TOO_SMALL {
-            Status::SUCCESS.into_with_val(|| data_size)
+            Status::SUCCESS.to_result_with_val(|| data_size)
         } else {
             Err(Error::from(status))
         }
@@ -155,7 +155,7 @@ impl RuntimeServices {
                 &mut data_size,
                 buf.as_mut_ptr(),
             )
-            .into_with_val(move || (&buf[..data_size], attributes))
+            .to_result_with_val(move || (&buf[..data_size], attributes))
         }
     }
 
@@ -217,7 +217,7 @@ impl RuntimeServices {
             }
         }
 
-        status.into_with_val(|| all_variables)
+        status.to_result_with_val(|| all_variables)
     }
 
     /// Set the value of a variable. This can be used to create a new variable,
@@ -276,7 +276,7 @@ impl RuntimeServices {
                 &mut info.remaining_variable_storage_size,
                 &mut info.maximum_variable_size,
             )
-            .into_with_val(|| info)
+            .to_result_with_val(|| info)
         }
     }
 

@@ -614,7 +614,7 @@ impl Tcg {
     /// Get information about the protocol and TPM device.
     pub fn get_capability(&mut self) -> Result<BootServiceCapability> {
         let mut capability = BootServiceCapability::default();
-        unsafe { (self.get_capability)(self, &mut capability).into_with_val(|| capability) }
+        unsafe { (self.get_capability)(self, &mut capability).to_result_with_val(|| capability) }
     }
 
     /// Get the V1 event log. This provides events in the same format as a V1
@@ -739,7 +739,7 @@ impl Tcg {
 
         let status = unsafe { (self.get_active_pcr_banks)(self, &mut active_pcr_banks) };
 
-        status.into_with_val(|| active_pcr_banks)
+        status.to_result_with_val(|| active_pcr_banks)
     }
 
     /// Set the active PCR banks. Each bank corresponds to a hash
@@ -766,7 +766,7 @@ impl Tcg {
             (self.get_result_of_set_active_pcr_banks)(self, &mut operation_present, &mut response)
         };
 
-        status.into_with_val(|| {
+        status.to_result_with_val(|| {
             if operation_present == 0 {
                 None
             } else {

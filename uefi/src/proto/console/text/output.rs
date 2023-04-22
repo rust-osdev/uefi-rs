@@ -79,7 +79,7 @@ impl Output {
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
         match unsafe { (self.test_string)(self, string.as_ptr()) } {
             Status::UNSUPPORTED => Ok(false),
-            other => other.into_with_val(|| true),
+            other => other.to_result_with_val(|| true),
         }
     }
 
@@ -106,7 +106,8 @@ impl Output {
     /// alternative to this method.
     fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
-        (self.query_mode)(self, index, &mut columns, &mut rows).into_with_val(|| (columns, rows))
+        (self.query_mode)(self, index, &mut columns, &mut rows)
+            .to_result_with_val(|| (columns, rows))
     }
 
     /// Returns the current text mode.

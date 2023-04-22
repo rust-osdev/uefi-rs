@@ -56,7 +56,7 @@ impl MemoryProtection {
         let (base_address, length) = range_to_base_and_len(byte_region);
         unsafe {
             (self.get_memory_attributes)(self, base_address, length, &mut attributes)
-                .into_with_val(|| attributes)
+                .to_result_with_val(|| attributes)
         }
     }
 

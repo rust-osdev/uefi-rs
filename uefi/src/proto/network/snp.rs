@@ -152,14 +152,14 @@ impl SimpleNetwork {
         let mut stats_table: NetworkStats = Default::default();
         let mut stats_size = core::mem::size_of::<NetworkStats>();
         let status = (self.statistics)(self, false, Some(&mut stats_size), Some(&mut stats_table));
-        status.into_with_val(|| stats_table)
+        status.to_result_with_val(|| stats_table)
     }
 
     /// Convert a multicast IP address to a multicast HW MAC Address.
     pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddress) -> Result<MacAddress> {
         let mut mac_address = MacAddress([0; 32]);
         let status = (self.mcast_ip_to_mac)(self, ipv6, &ip, &mut mac_address);
-        status.into_with_val(|| mac_address)
+        status.to_result_with_val(|| mac_address)
     }
 
     /// Perform read operations on the NVRAM device attached to
@@ -192,7 +192,7 @@ impl SimpleNetwork {
     pub fn get_interrupt_status(&self) -> Result<InterruptStatus> {
         let mut interrupt_status = InterruptStatus::empty();
         let status = (self.get_status)(self, Some(&mut interrupt_status), None);
-        status.into_with_val(|| interrupt_status)
+        status.to_result_with_val(|| interrupt_status)
     }
 
     /// Read the current recycled transmit buffer status from a
@@ -200,7 +200,7 @@ impl SimpleNetwork {
     pub fn get_recycled_transmit_buffer_status(&self) -> Result<Option<NonNull<u8>>> {
         let mut tx_buf: *mut c_void = ptr::null_mut();
         let status = (self.get_status)(self, None, Some(&mut tx_buf));
-        status.into_with_val(|| NonNull::new(tx_buf.cast()))
+        status.to_result_with_val(|| NonNull::new(tx_buf.cast()))
     }
 
     /// Place a packet in the transmit queue of a network interface.
@@ -245,7 +245,7 @@ impl SimpleNetwork {
             dest_addr,
             protocol,
         );
-        status.into_with_val(|| buffer_size)
+        status.to_result_with_val(|| buffer_size)
     }
 
     /// Event that fires once a packet is available to be received.

@@ -12,9 +12,9 @@ newtype_enum! {
 ///
 /// For a convenient integration into the Rust ecosystem, there are several
 /// methods to convert a Status into a [`uefi::Result`]:
-/// - [`Status::into_with`]
-/// - [`Status::into_with_val`]
-/// - [`Status::into_with_err`]
+/// - [`Status::to_result_with`]
+/// - [`Status::to_result_with_val`]
+/// - [`Status::to_result_with_err`]
 #[must_use]
 pub enum Status: usize => {
     /// The operation completed successfully.
@@ -135,13 +135,13 @@ pub trait StatusExt {
     ///
     /// If the status does not indicate success, the status representing the specific error
     /// code is embedded into the `Err` variant of type [`uefi::Error`].
-    fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()>;
+    fn to_result_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()>;
 
     /// Converts this status code into a [`uefi::Result`] with a given `Err` payload.
     ///
     /// If the status does not indicate success, the status representing the specific error
     /// code is embedded into the `Err` variant of type [`uefi::Error`].
-    fn into_with_err<ErrData: Debug>(
+    fn to_result_with_err<ErrData: Debug>(
         self,
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<(), ErrData>;
@@ -150,7 +150,7 @@ pub trait StatusExt {
     ///
     /// If the status does not indicate success, the status representing the specific error
     /// code is embedded into the `Err` variant of type [`uefi::Error`].
-    fn into_with<T, ErrData: Debug>(
+    fn to_result_with<T, ErrData: Debug>(
         self,
         val: impl FnOnce() -> T,
         err: impl FnOnce(Status) -> ErrData,
@@ -159,7 +159,7 @@ pub trait StatusExt {
 
 impl StatusExt for Status {
     #[inline]
-    fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
+    fn to_result_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if self.is_success() {
             Ok(val())
         } else {
@@ -168,7 +168,7 @@ impl StatusExt for Status {
     }
 
     #[inline]
-    fn into_with_err<ErrData: Debug>(
+    fn to_result_with_err<ErrData: Debug>(
         self,
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<(), ErrData> {
@@ -180,7 +180,7 @@ impl StatusExt for Status {
     }
 
     #[inline]
-    fn into_with<T, ErrData: Debug>(
+    fn to_result_with<T, ErrData: Debug>(
         self,
         val: impl FnOnce() -> T,
         err: impl FnOnce(Status) -> ErrData,
@@ -197,7 +197,7 @@ impl StatusExt for Status {
 impl From<Status> for Result<(), ()> {
     #[inline]
     fn from(status: Status) -> Result<(), ()> {
-        status.into_with(|| (), |_| ())
+        status.to_result_with(|| (), |_| ())
     }
 }
 
@@ -217,37 +217,42 @@ mod tests {
         assert!(Result::from(Status::WARN_DELETE_FAILURE).is_err());
         assert!(Result::from(Status::BUFFER_TOO_SMALL).is_err());
 
-        assert_eq!(Status::SUCCESS.into_with_val(|| 123).unwrap(), 123);
-        assert!(Status::WARN_DELETE_FAILURE.into_with_val(|| 123).is_err());
-        assert!(Status::BUFFER_TOO_SMALL.into_with_val(|| 123).is_err());
+        assert_eq!(Status::SUCCESS.to_result_with_val(|| 123).unwrap(), 123);
+        assert!(Status::WARN_DELETE_FAILURE
+            .to_result_with_val(|| 123)
+            .is_err());
+        assert!(Status::BUFFER_TOO_SMALL.to_result_with_val(|| 123).is_err());
 
-        assert!(Status::SUCCESS.into_with_err(|_| 123).is_ok());
+        assert!(Status::SUCCESS.to_result_with_err(|_| 123).is_ok());
         assert_eq!(
             *Status::WARN_DELETE_FAILURE
-                .into_with_err(|_| 123)
+                .to_result_with_err(|_| 123)
                 .unwrap_err()
                 .data(),
             123
         );
         assert_eq!(
             *Status::BUFFER_TOO_SMALL
-                .into_with_err(|_| 123)
+                .to_result_with_err(|_| 123)
                 .unwrap_err()
                 .data(),
             123
         );
 
-        assert_eq!(Status::SUCCESS.into_with(|| 123, |_| 456).unwrap(), 123);
+        assert_eq!(
+            Status::SUCCESS.to_result_with(|| 123, |_| 456).unwrap(),
+            123
+        );
         assert_eq!(
             *Status::WARN_DELETE_FAILURE
-                .into_with(|| 123, |_| 456)
+                .to_result_with(|| 123, |_| 456)
                 .unwrap_err()
                 .data(),
             456
         );
         assert_eq!(
             *Status::BUFFER_TOO_SMALL
-                .into_with(|| 123, |_| 456)
+                .to_result_with(|| 123, |_| 456)
                 .unwrap_err()
                 .data(),
             456

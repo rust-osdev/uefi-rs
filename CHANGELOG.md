@@ -30,6 +30,11 @@
 - `Image::get_image_file_system` now returns a `fs::FileSystem` instead of the
   protocol.
 - `CString16::default` now always contains a null character.
+- Conversion from `Status` to `Result` has been reworked. The `into_with`,
+  `into_with_val`, and `into_with_err` methods have been removed from
+  `Status`. `impl From<Status> for Result` has also been removed. A new
+  `StatusExt` trait has been added that provides conversion methods to replace
+  the ones that have been removed. `StatusExt` has been added to the prelude.
 
 ## uefi-macros - [Unreleased]
 

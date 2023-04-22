@@ -160,9 +160,7 @@ impl BaseCode {
                 false,
             )
         };
-        Result::from(status)?;
-
-        Ok(buffer_size)
+        status.into_with_val(|| buffer_size)
     }
 
     /// Reads a file located on a TFTP server.
@@ -193,9 +191,7 @@ impl BaseCode {
                 dont_use_buffer,
             )
         };
-        Result::from(status)?;
-
-        Ok(buffer_size)
+        status.into_with_val(|| buffer_size)
     }
 
     /// Writes to a file located on a TFTP server.
@@ -324,9 +320,7 @@ impl BaseCode {
                 false,
             )
         };
-        Result::from(status)?;
-
-        Ok(buffer_size)
+        status.into_with_val(|| buffer_size)
     }
 
     /// Reads a file located on a MTFTP server.
@@ -358,9 +352,7 @@ impl BaseCode {
                 dont_use_buffer,
             )
         };
-        Result::from(status)?;
-
-        Ok(buffer_size)
+        status.into_with_val(|| buffer_size)
     }
 
     /// Reads a directory listing of a directory on a MTFTP server.
@@ -530,9 +522,7 @@ impl BaseCode {
                 (&mut buffer[0] as *mut u8).cast(),
             )
         };
-        Result::from(status)?;
-
-        Ok(buffer_size)
+        status.into_with_val(|| buffer_size)
     }
 
     /// Updates the IP receive filters of a network device and enables software

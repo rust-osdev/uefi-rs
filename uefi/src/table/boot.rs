@@ -375,7 +375,7 @@ impl BootServices {
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
-        (self.free_pages)(addr, count).into()
+        (self.free_pages)(addr, count).to_result()
     }
 
     /// Returns struct which contains the size of a single memory descriptor
@@ -483,7 +483,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pool(&self, addr: *mut u8) -> Result {
-        (self.free_pool)(addr).into()
+        (self.free_pool)(addr).to_result()
     }
 
     /// Creates an event
@@ -606,7 +606,7 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.into()
+        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.to_result()
     }
 
     /// Stops execution until an event is signaled.
@@ -680,7 +680,7 @@ impl BootServices {
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
         // and not keeping the clone around.
-        unsafe { (self.signal_event)(event.unsafe_clone()).into() }
+        unsafe { (self.signal_event)(event.unsafe_clone()).to_result() }
     }
 
     /// Removes `event` from any event group to which it belongs and closes it. If `event` was
@@ -697,7 +697,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn close_event(&self, event: Event) -> Result {
-        unsafe { (self.close_event)(event).into() }
+        unsafe { (self.close_event)(event).to_result() }
     }
 
     /// Checks to see if an event is signaled, without blocking execution to wait for it.
@@ -782,7 +782,8 @@ impl BootServices {
         old_interface: *mut c_void,
         new_interface: *mut c_void,
     ) -> Result<()> {
-        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface).into()
+        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface)
+            .to_result()
     }
 
     /// Removes a protocol interface from a device handle.
@@ -810,7 +811,7 @@ impl BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Result<()> {
-        (self.uninstall_protocol_interface)(handle, protocol, interface).into()
+        (self.uninstall_protocol_interface)(handle, protocol, interface).to_result()
     }
 
     /// Registers `event` to be signalled whenever a protocol interface is registered for
@@ -1059,7 +1060,7 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn unload_image(&self, image_handle: Handle) -> Result {
-        (self.unload_image)(image_handle).into()
+        (self.unload_image)(image_handle).to_result()
     }
 
     /// Transfer control to a loaded image's entry point.
@@ -1079,7 +1080,7 @@ impl BootServices {
             // TODO: implement returning exit data to the caller.
             let mut exit_data_size: usize = 0;
             let mut exit_data: *mut Char16 = ptr::null_mut();
-            (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).into()
+            (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).to_result()
         }
     }
 
@@ -1123,7 +1124,7 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        (self.exit_boot_services)(image, mmap_key).into()
+        (self.exit_boot_services)(image, mmap_key).to_result()
     }
 
     /// Stalls the processor for an amount of time.
@@ -1180,7 +1181,7 @@ impl BootServices {
             })
             .unwrap_or((0, ptr::null_mut()));
 
-        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.to_result()
     }
 
     /// Connect one or more drivers to a controller.

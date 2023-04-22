@@ -175,7 +175,7 @@ impl MpServices {
             procedure_argument,
             ptr::null_mut(),
         )
-        .into()
+        .to_result()
     }
 
     /// Executes provided function on a specific AP in blocking mode.
@@ -200,12 +200,12 @@ impl MpServices {
             procedure_argument,
             ptr::null_mut(),
         )
-        .into()
+        .to_result()
     }
 
     /// Switches the requested AP to be the BSP from that point onward.
     pub fn switch_bsp(&self, processor_number: usize, enable_old_bsp: bool) -> Result {
-        (self.switch_bsp)(self, processor_number, enable_old_bsp).into()
+        (self.switch_bsp)(self, processor_number, enable_old_bsp).to_result()
     }
 
     /// Enables or disables an AP from this point onward.
@@ -227,7 +227,7 @@ impl MpServices {
             }
             None => ptr::null(),
         };
-        (self.enable_disable_ap)(self, processor_number, enable_ap, health_flag_ptr).into()
+        (self.enable_disable_ap)(self, processor_number, enable_ap, health_flag_ptr).to_result()
     }
 
     /// Gets the handle number of the caller processor.

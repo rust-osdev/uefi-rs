@@ -45,8 +45,9 @@ pub trait ResultExt<Output, ErrData: Debug> {
     /// ```
     /// use uefi::{Result, ResultExt, Status};
     ///
+    /// # use uefi::StatusExt;
     /// # fn x() -> uefi::Result {
-    /// # let some_result = Result::from(Status::WARN_RESET_REQUIRED);
+    /// # let some_result = Status::WARN_RESET_REQUIRED.to_result();
     /// // Treat a specific warning as success, propagate others as errors.
     /// some_result.handle_warning(|err| {
     ///     if err.status() == Status::WARN_RESET_REQUIRED {
@@ -55,7 +56,7 @@ pub trait ResultExt<Output, ErrData: Debug> {
     ///         Err(err)
     ///     }
     /// })?;
-    /// # Status::SUCCESS.into()
+    /// # Status::SUCCESS.to_result()
     /// # }
     /// ```
     fn handle_warning<O>(self, op: O) -> Result<Output, ErrData>

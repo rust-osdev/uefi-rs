@@ -697,7 +697,7 @@ impl Tcg {
                 u64::try_from(data_to_hash.len()).unwrap(),
                 event,
             )
-            .into()
+            .to_result()
         }
     }
 
@@ -728,7 +728,7 @@ impl Tcg {
                 output_parameter_block_len,
                 output_parameter_block.as_mut_ptr(),
             )
-            .into()
+            .to_result()
         }
     }
 
@@ -746,7 +746,7 @@ impl Tcg {
     /// algorithm. This change will not take effect until the system is
     /// rebooted twice.
     pub fn set_active_pcr_banks(&mut self, active_pcr_banks: HashAlgorithm) -> Result {
-        unsafe { (self.set_active_pcr_banks)(self, active_pcr_banks) }.into()
+        unsafe { (self.set_active_pcr_banks)(self, active_pcr_banks) }.to_result()
     }
 
     /// Get the stored result of calling [`Tcg::set_active_pcr_banks`] in a

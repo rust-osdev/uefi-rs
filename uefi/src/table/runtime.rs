@@ -109,7 +109,7 @@ impl RuntimeServices {
     /// Undefined behavior could happen if multiple tasks try to
     /// use this function at the same time without synchronisation.
     pub unsafe fn set_time(&mut self, time: &Time) -> Result {
-        (self.set_time)(time).into()
+        (self.set_time)(time).to_result()
     }
 
     /// Get the size (in bytes) of a variable. This can be used to find out how
@@ -244,7 +244,7 @@ impl RuntimeServices {
                 data.len(),
                 data.as_ptr(),
             )
-            .into()
+            .to_result()
         }
     }
 

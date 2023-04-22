@@ -228,9 +228,9 @@ mod tests {
 
     #[test]
     fn test_status_to_result() {
-        assert!(Result::from(Status::SUCCESS).is_ok());
-        assert!(Result::from(Status::WARN_DELETE_FAILURE).is_err());
-        assert!(Result::from(Status::BUFFER_TOO_SMALL).is_err());
+        assert!(Status::SUCCESS.to_result().is_ok());
+        assert!(Status::WARN_DELETE_FAILURE.to_result().is_err());
+        assert!(Status::BUFFER_TOO_SMALL.to_result().is_err());
 
         assert_eq!(Status::SUCCESS.to_result_with_val(|| 123).unwrap(), 123);
         assert!(Status::WARN_DELETE_FAILURE

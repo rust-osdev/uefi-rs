@@ -87,6 +87,6 @@ impl Rng {
             Some(algo) => algo as *const RngAlgorithmType,
         };
 
-        unsafe { (self.get_rng)(self, algo, buffer_length, buffer.as_mut_ptr()).into() }
+        unsafe { (self.get_rng)(self, algo, buffer_length, buffer.as_mut_ptr()).to_result() }
     }
 }

@@ -112,7 +112,7 @@ impl RegularFile {
     ///
     /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn set_position(&mut self, position: u64) -> Result {
-        (self.imp().set_position)(self.imp(), position).into()
+        (self.imp().set_position)(self.imp(), position).to_result()
     }
 }
 

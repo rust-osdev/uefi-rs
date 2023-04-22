@@ -39,7 +39,7 @@ pub struct Serial {
 impl Serial {
     /// Reset the device.
     pub fn reset(&mut self) -> Result {
-        (self.reset)(self).into()
+        (self.reset)(self).to_result()
     }
 
     /// Returns the current I/O mode.
@@ -71,7 +71,7 @@ impl Serial {
             mode.data_bits as u8,
             mode.stop_bits,
         )
-        .into()
+        .to_result()
     }
 
     /// Retrieve the device's current control bits.
@@ -85,7 +85,7 @@ impl Serial {
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
-        (self.set_control_bits)(self, bits).into()
+        (self.set_control_bits)(self, bits).to_result()
     }
 
     /// Reads data from this device.

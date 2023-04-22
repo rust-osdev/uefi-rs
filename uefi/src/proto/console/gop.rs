@@ -119,7 +119,7 @@ impl GraphicsOutput {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
-        (self.set_mode)(self, mode.index).into()
+        (self.set_mode)(self, mode.index).to_result()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
@@ -147,7 +147,7 @@ impl GraphicsOutput {
                         height,
                         0,
                     )
-                    .into()
+                    .to_result()
                 }
                 BltOp::VideoToBltBuffer {
                     buffer,
@@ -170,7 +170,7 @@ impl GraphicsOutput {
                             height,
                             0,
                         )
-                        .into(),
+                        .to_result(),
                         BltRegion::SubRectangle {
                             coords: (dest_x, dest_y),
                             px_stride,
@@ -186,7 +186,7 @@ impl GraphicsOutput {
                             height,
                             px_stride * core::mem::size_of::<BltPixel>(),
                         )
-                        .into(),
+                        .to_result(),
                     }
                 }
                 BltOp::BufferToVideo {
@@ -210,7 +210,7 @@ impl GraphicsOutput {
                             height,
                             0,
                         )
-                        .into(),
+                        .to_result(),
                         BltRegion::SubRectangle {
                             coords: (src_x, src_y),
                             px_stride,
@@ -226,7 +226,7 @@ impl GraphicsOutput {
                             height,
                             px_stride * core::mem::size_of::<BltPixel>(),
                         )
-                        .into(),
+                        .to_result(),
                     }
                 }
                 BltOp::VideoToVideo {
@@ -248,7 +248,7 @@ impl GraphicsOutput {
                         height,
                         0,
                     )
-                    .into()
+                    .to_result()
                 }
             }
         }

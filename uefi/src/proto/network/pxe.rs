@@ -109,18 +109,18 @@ pub struct BaseCode {
 impl BaseCode {
     /// Enables the use of the PXE Base Code Protocol functions.
     pub fn start(&mut self, use_ipv6: bool) -> Result {
-        (self.start)(self, use_ipv6).into()
+        (self.start)(self, use_ipv6).to_result()
     }
 
     /// Disables the use of the PXE Base Code Protocol functions.
     pub fn stop(&mut self) -> Result {
-        (self.stop)(self).into()
+        (self.stop)(self).to_result()
     }
 
     /// Attempts to complete a DHCPv4 D.O.R.A. (discover / offer / request /
     /// acknowledge) or DHCPv6 S.A.R.R (solicit / advertise / request / reply) sequence.
     pub fn dhcp(&mut self, sort_offers: bool) -> Result {
-        (self.dhcp)(self, sort_offers).into()
+        (self.dhcp)(self, sort_offers).to_result()
     }
 
     /// Attempts to complete the PXE Boot Server and/or boot image discovery
@@ -139,7 +139,7 @@ impl BaseCode {
             })
             .unwrap_or(null());
 
-        (self.discover)(self, ty, layer, use_bis, info).into()
+        (self.discover)(self, ty, layer, use_bis, info).to_result()
     }
 
     /// Returns the size of a file located on a TFTP server.
@@ -219,7 +219,7 @@ impl BaseCode {
                 false,
             )
         }
-        .into()
+        .to_result()
     }
 
     /// Reads a directory listing of a directory on a TFTP server.
@@ -247,7 +247,7 @@ impl BaseCode {
                 false,
             )
         };
-        Result::from(status)?;
+        status.to_result()?;
 
         let buffer_size = usize::try_from(buffer_size).expect("buffer length should fit in usize");
         let buffer = &buffer[..buffer_size];
@@ -380,7 +380,7 @@ impl BaseCode {
                 false,
             )
         };
-        Result::from(status)?;
+        status.to_result()?;
 
         let buffer_size = usize::try_from(buffer_size).expect("buffer length should fit in usize");
         let buffer = &buffer[..buffer_size];
@@ -483,7 +483,7 @@ impl BaseCode {
                 (&buffer[0] as *const u8).cast(),
             )
         }
-        .into()
+        .to_result()
     }
 
     /// Reads a UDP packet from the network interface.
@@ -528,12 +528,12 @@ impl BaseCode {
     /// Updates the IP receive filters of a network device and enables software
     /// filtering.
     pub fn set_ip_filter(&mut self, new_filter: &IpFilter) -> Result {
-        (self.set_ip_filter)(self, new_filter).into()
+        (self.set_ip_filter)(self, new_filter).to_result()
     }
 
     /// Uses the ARP protocol to resolve a MAC address.
     pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
-        (self.arp)(self, ip_addr, mac_addr).into()
+        (self.arp)(self, ip_addr, mac_addr).to_result()
     }
 
     /// Updates the parameters that affect the operation of the PXE Base Code
@@ -554,7 +554,7 @@ impl BaseCode {
             new_tos.as_ref(),
             new_make_callback.as_ref(),
         )
-        .into()
+        .to_result()
     }
 
     /// Updates the station IP address and/or subnet mask values of a network
@@ -564,7 +564,7 @@ impl BaseCode {
         new_station_ip: Option<&IpAddress>,
         new_subnet_mask: Option<&IpAddress>,
     ) -> Result {
-        (self.set_station_ip)(self, new_station_ip, new_subnet_mask).into()
+        (self.set_station_ip)(self, new_station_ip, new_subnet_mask).to_result()
     }
 
     /// Updates the contents of the cached DHCP and Discover packets.
@@ -599,7 +599,7 @@ impl BaseCode {
             new_pxe_reply,
             new_pxe_bis_reply,
         )
-        .into()
+        .to_result()
     }
 
     /// Returns a reference to the `Mode` struct.

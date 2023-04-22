@@ -95,7 +95,7 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
-        (self.register_periodic_callback)(self, processor_index, callback).into()
+        (self.register_periodic_callback)(self, processor_index, callback).to_result()
     }
 
     /// Registers a function to be called when a given processor exception occurs.
@@ -119,7 +119,8 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
-        (self.register_exception_callback)(self, processor_index, callback, exception_type).into()
+        (self.register_exception_callback)(self, processor_index, callback, exception_type)
+            .to_result()
     }
 
     /// Invalidates processor instruction cache for a memory range for a given `processor_index`.
@@ -140,7 +141,7 @@ impl DebugSupport {
 
         // per the UEFI spec, this call should only return EFI_SUCCESS
         // Safety: As we've validated the `processor_index`, this should always be safe
-        (self.invalidate_instruction_cache)(self, processor_index, start, length).into()
+        (self.invalidate_instruction_cache)(self, processor_index, start, length).to_result()
     }
 }
 
@@ -195,7 +196,7 @@ pub struct DebugPort {
 impl DebugPort {
     /// Resets the debugport device.
     pub fn reset(&self) -> Result {
-        (self.reset)(self).into()
+        (self.reset)(self).to_result()
     }
 
     /// Write data to the debugport device.
@@ -236,6 +237,6 @@ impl DebugPort {
 
     /// Check to see if any data is available to be read from the debugport device.
     pub fn poll(&self) -> Result {
-        (self.poll)(self).into()
+        (self.poll)(self).to_result()
     }
 }

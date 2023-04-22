@@ -78,7 +78,7 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
-        unsafe { (self.set_memory_attributes)(self, base_address, length, attributes).into() }
+        unsafe { (self.set_memory_attributes)(self, base_address, length, attributes).to_result() }
     }
 
     /// Clear the attributes of a memory region.
@@ -99,7 +99,9 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
-        unsafe { (self.clear_memory_attributes)(self, base_address, length, attributes).into() }
+        unsafe {
+            (self.clear_memory_attributes)(self, base_address, length, attributes).to_result()
+        }
     }
 }
 

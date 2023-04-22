@@ -43,7 +43,7 @@ pub struct Output {
 impl Output {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
-        (self.reset)(self, extended).into()
+        (self.reset)(self, extended).to_result()
     }
 
     /// Clears the output screen.
@@ -51,12 +51,12 @@ impl Output {
     /// The background is set to the current background color.
     /// The cursor is moved to (0, 0).
     pub fn clear(&mut self) -> Result {
-        (self.clear_screen)(self).into()
+        (self.clear_screen)(self).to_result()
     }
 
     /// Writes a string to the output device.
     pub fn output_string(&mut self, string: &CStr16) -> Result {
-        unsafe { (self.output_string)(self, string.as_ptr()) }.into()
+        unsafe { (self.output_string)(self, string.as_ptr()) }.to_result()
     }
 
     /// Writes a string to the output device. If the string contains
@@ -125,7 +125,7 @@ impl Output {
 
     /// Sets a mode as current.
     pub fn set_mode(&mut self, mode: OutputMode) -> Result {
-        (self.set_mode)(self, mode.index).into()
+        (self.set_mode)(self, mode.index).to_result()
     }
 
     /// Returns whether the cursor is currently shown or not.
@@ -139,7 +139,7 @@ impl Output {
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result {
-        (self.enable_cursor)(self, visible).into()
+        (self.enable_cursor)(self, visible).to_result()
     }
 
     /// Returns the column and row of the cursor.
@@ -154,7 +154,7 @@ impl Output {
     ///
     /// This function will fail if the cursor's new position would exceed the screen's bounds.
     pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result {
-        (self.set_cursor_position)(self, column, row).into()
+        (self.set_cursor_position)(self, column, row).to_result()
     }
 
     /// Sets the text and background colors for the console.
@@ -168,7 +168,7 @@ impl Output {
         assert!(bgc < 8, "An invalid background color was requested");
 
         let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
-        (self.set_attribute)(self, attr).into()
+        (self.set_attribute)(self, attr).to_result()
     }
 
     /// Get a reference to `OutputData`. The lifetime of the reference is tied

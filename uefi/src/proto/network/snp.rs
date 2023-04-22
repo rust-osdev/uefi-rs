@@ -86,31 +86,31 @@ pub struct SimpleNetwork {
 impl SimpleNetwork {
     /// Change the state of a network from "Stopped" to "Started".
     pub fn start(&self) -> Result {
-        (self.start)(self).into()
+        (self.start)(self).to_result()
     }
 
     /// Change the state of a network interface from "Started" to "Stopped".
     pub fn stop(&self) -> Result {
-        (self.stop)(self).into()
+        (self.stop)(self).to_result()
     }
 
     /// Reset a network adapter and allocate the transmit and receive buffers
     /// required by the network interface; optionally, also request allocation of
     /// additional transmit and receive buffers.
     pub fn initialize(&self, extra_rx_buffer_size: usize, extra_tx_buffer_size: usize) -> Result {
-        (self.initialize)(self, extra_rx_buffer_size, extra_tx_buffer_size).into()
+        (self.initialize)(self, extra_rx_buffer_size, extra_tx_buffer_size).to_result()
     }
 
     /// Reset a network adapter and reinitialize it with the parameters that were
     /// provided in the previous call to `initialize`.
     pub fn reset(&self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).into()
+        (self.reset)(self, extended_verification).to_result()
     }
 
     /// Reset a network adapter, leaving it in a state that is safe
     /// for another driver to initialize
     pub fn shutdown(&self) -> Result {
-        (self.shutdown)(self).into()
+        (self.shutdown)(self).to_result()
     }
 
     /// Manage the multicast receive filters of a network.
@@ -130,21 +130,21 @@ impl SimpleNetwork {
                 mcast_filter.len(),
                 NonNull::new(mcast_filter.as_ptr() as *mut _),
             )
-            .into()
+            .to_result()
         } else {
             (self.receive_filters)(self, enable.bits, disable.bits, reset_mcast_filter, 0, None)
-                .into()
+                .to_result()
         }
     }
 
     /// Modify or reset the current station address, if supported.
     pub fn station_address(&self, reset: bool, new: Option<&MacAddress>) -> Result {
-        (self.station_address)(self, reset, new).into()
+        (self.station_address)(self, reset, new).to_result()
     }
 
     /// Reset statistics on a network interface.
     pub fn reset_statistics(&self) -> Result {
-        (self.statistics)(self, true, None, None).into()
+        (self.statistics)(self, true, None, None).to_result()
     }
 
     /// Collect statistics on a network interface.
@@ -172,7 +172,7 @@ impl SimpleNetwork {
             buffer.len(),
             buffer.as_ptr() as *mut c_void,
         )
-        .into()
+        .to_result()
     }
 
     /// Perform write operations on the NVRAM device attached to a network interface.
@@ -184,7 +184,7 @@ impl SimpleNetwork {
             buffer.len(),
             buffer.as_mut_ptr().cast(),
         )
-        .into()
+        .to_result()
     }
 
     /// Read the current interrupt status and recycled transmit buffer
@@ -221,7 +221,7 @@ impl SimpleNetwork {
             dest_addr.as_ref(),
             protocol.as_ref(),
         )
-        .into()
+        .to_result()
     }
 
     /// Receive a packet from a network interface.

@@ -208,14 +208,6 @@ impl StatusExt for Status {
     }
 }
 
-// An UEFI status is equivalent to a Result with no data or error payload
-impl From<Status> for Result<(), ()> {
-    #[inline]
-    fn from(status: Status) -> Result<(), ()> {
-        status.to_result_with(|| (), |_| ())
-    }
-}
-
 impl core::fmt::Display for Status {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         Debug::fmt(self, f)

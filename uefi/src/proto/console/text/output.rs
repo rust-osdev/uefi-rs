@@ -1,5 +1,5 @@
 use crate::proto::unsafe_protocol;
-use crate::{CStr16, Char16, Result, ResultExt, Status};
+use crate::{CStr16, Char16, Result, ResultExt, Status, StatusExt};
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 

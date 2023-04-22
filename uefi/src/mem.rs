@@ -108,7 +108,7 @@ pub(crate) fn make_boxed<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ResultExt;
+    use crate::{ResultExt, StatusExt};
     #[cfg(feature = "unstable")]
     use alloc::alloc::Global;
     use core::mem::{align_of, size_of};

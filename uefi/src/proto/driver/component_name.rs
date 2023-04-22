@@ -6,7 +6,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::table::boot::{BootServices, ScopedProtocol};
-use crate::{CStr16, Error, Handle, Result, Status};
+use crate::{CStr16, Error, Handle, Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::{ptr, slice};
 

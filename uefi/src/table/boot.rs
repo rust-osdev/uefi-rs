@@ -4,7 +4,7 @@ use super::{Header, Revision};
 use crate::data_types::{Align, PhysicalAddress, VirtualAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
 use crate::proto::{Protocol, ProtocolPointer};
-use crate::{Char16, Event, Guid, Handle, Result, Status};
+use crate::{Char16, Event, Guid, Handle, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;

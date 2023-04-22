@@ -5,7 +5,7 @@ use core::ptr::NonNull;
 use core::{ptr, slice};
 
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, Status};
+use crate::{CStr16, Char16, Handle, Result, Status, StatusExt};
 
 use super::boot::{BootServices, MemoryDescriptor, MemoryMap, MemoryType};
 use super::runtime::{ResetType, RuntimeServices};

@@ -2,7 +2,7 @@
 
 use super::file::{Directory, FileHandle, FileImpl};
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use core::ptr;
 
 /// Allows access to a FAT-12/16/32 file system.

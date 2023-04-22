@@ -52,7 +52,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};

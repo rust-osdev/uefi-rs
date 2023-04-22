@@ -12,7 +12,7 @@ use crate::util::ptr_write_unaligned_and_add;
 use bitflags::bitflags;
 use ptr_meta::Pointee;
 
-use crate::{CStr8, Char8, Result, Status};
+use crate::{CStr8, Char8, Result, Status, StatusExt};
 
 use super::{IpAddress, MacAddress};
 

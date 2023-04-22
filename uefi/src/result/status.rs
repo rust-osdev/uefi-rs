@@ -127,13 +127,39 @@ impl Status {
     pub const fn is_error(self) -> bool {
         self.0 & ERROR_BIT != 0
     }
+}
 
+/// Extension trait which provides some convenience methods for [`Status`].
+pub trait StatusExt {
     /// Converts this status code into a [`uefi::Result`] with a given `Ok` value.
     ///
     /// If the status does not indicate success, the status representing the specific error
     /// code is embedded into the `Err` variant of type [`uefi::Error`].
+    fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()>;
+
+    /// Converts this status code into a [`uefi::Result`] with a given `Err` payload.
+    ///
+    /// If the status does not indicate success, the status representing the specific error
+    /// code is embedded into the `Err` variant of type [`uefi::Error`].
+    fn into_with_err<ErrData: Debug>(
+        self,
+        err: impl FnOnce(Status) -> ErrData,
+    ) -> Result<(), ErrData>;
+
+    /// Convert this status code into a result with a given `Ok` value and `Err` payload.
+    ///
+    /// If the status does not indicate success, the status representing the specific error
+    /// code is embedded into the `Err` variant of type [`uefi::Error`].
+    fn into_with<T, ErrData: Debug>(
+        self,
+        val: impl FnOnce() -> T,
+        err: impl FnOnce(Status) -> ErrData,
+    ) -> Result<T, ErrData>;
+}
+
+impl StatusExt for Status {
     #[inline]
-    pub fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
+    fn into_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if self.is_success() {
             Ok(val())
         } else {
@@ -141,12 +167,8 @@ impl Status {
         }
     }
 
-    /// Converts this status code into a [`uefi::Result`] with a given `Err` payload.
-    ///
-    /// If the status does not indicate success, the status representing the specific error
-    /// code is embedded into the `Err` variant of type [`uefi::Error`].
     #[inline]
-    pub fn into_with_err<ErrData: Debug>(
+    fn into_with_err<ErrData: Debug>(
         self,
         err: impl FnOnce(Status) -> ErrData,
     ) -> Result<(), ErrData> {
@@ -157,12 +179,8 @@ impl Status {
         }
     }
 
-    /// Convert this status code into a result with a given `Ok` value and `Err` payload.
-    ///
-    /// If the status does not indicate success, the status representing the specific error
-    /// code is embedded into the `Err` variant of type [`uefi::Error`].
     #[inline]
-    pub fn into_with<T, ErrData: Debug>(
+    fn into_with<T, ErrData: Debug>(
         self,
         val: impl FnOnce() -> T,
         err: impl FnOnce(Status) -> ErrData,

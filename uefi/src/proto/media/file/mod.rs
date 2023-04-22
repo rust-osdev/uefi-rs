@@ -10,7 +10,7 @@ mod dir;
 mod info;
 mod regular;
 
-use crate::{CStr16, Char16, Guid, Result, Status};
+use crate::{CStr16, Char16, Guid, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::Debug;

@@ -3,7 +3,7 @@
 use core::fmt::Write;
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use bitflags::bitflags;
 
 /// Provides access to a serial I/O device.

@@ -2,7 +2,7 @@
 
 use crate::data_types::Guid;
 use crate::proto::unsafe_protocol;
-use crate::{guid, Result, Status};
+use crate::{guid, Result, Status, StatusExt};
 use core::{mem, ptr};
 
 newtype_enum! {

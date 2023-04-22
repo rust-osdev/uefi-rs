@@ -9,7 +9,7 @@
 
 use super::{IpAddress, MacAddress};
 use crate::data_types::Event;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;

@@ -1,7 +1,7 @@
 use crate::data_types::PhysicalAddress;
 use crate::proto::unsafe_protocol;
 use crate::table::boot::MemoryAttribute;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use core::ops::Range;
 
 /// Protocol for getting and setting memory protection attributes.

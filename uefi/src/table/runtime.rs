@@ -5,7 +5,7 @@ use super::{Header, Revision};
 use crate::data_types::FromSliceWithNulError;
 use crate::result::Error;
 use crate::table::boot::MemoryDescriptor;
-use crate::{guid, CStr16, Char16, Guid, Result, Status};
+use crate::{guid, CStr16, Char16, Guid, Result, Status, StatusExt};
 #[cfg(feature = "alloc")]
 use alloc::{vec, vec::Vec};
 use bitflags::bitflags;

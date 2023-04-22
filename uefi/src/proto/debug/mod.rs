@@ -12,7 +12,7 @@
 use core::ffi::c_void;
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 
 // re-export for ease of use
 pub use self::context::SystemContext;

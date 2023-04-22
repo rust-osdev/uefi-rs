@@ -1,5 +1,5 @@
 use super::{File, FileHandle, FileInternal};
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 
 /// A `FileHandle` that is also a regular (data) file.
 ///

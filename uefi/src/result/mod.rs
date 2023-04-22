@@ -7,7 +7,7 @@ pub use self::error::Error;
 
 /// Definition of UEFI's standard status codes
 mod status;
-pub use self::status::Status;
+pub use self::status::{Status, StatusExt};
 
 /// Return type of most UEFI functions. Both success and error payloads are optional.
 ///

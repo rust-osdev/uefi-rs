@@ -12,7 +12,7 @@
 //! * maintaining MP-related processor status
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;

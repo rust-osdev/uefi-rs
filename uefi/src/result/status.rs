@@ -131,6 +131,12 @@ impl Status {
 
 /// Extension trait which provides some convenience methods for [`Status`].
 pub trait StatusExt {
+    /// Converts this status code into a [`uefi::Result`].
+    ///
+    /// If the status does not indicate success, the status representing the specific error
+    /// code is embedded into the `Err` variant of type [`uefi::Error`].
+    fn to_result(self) -> Result;
+
     /// Converts this status code into a [`uefi::Result`] with a given `Ok` value.
     ///
     /// If the status does not indicate success, the status representing the specific error
@@ -158,6 +164,15 @@ pub trait StatusExt {
 }
 
 impl StatusExt for Status {
+    #[inline]
+    fn to_result(self) -> Result {
+        if self.is_success() {
+            Ok(())
+        } else {
+            Err(self.into())
+        }
+    }
+
     #[inline]
     fn to_result_with_val<T>(self, val: impl FnOnce() -> T) -> Result<T, ()> {
         if self.is_success() {

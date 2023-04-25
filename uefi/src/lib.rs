@@ -103,7 +103,7 @@ pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Id
 pub use uefi_macros::{cstr16, cstr8, entry, guid};
 
 mod result;
-pub use self::result::{Error, Result, ResultExt, Status};
+pub use self::result::{Error, Result, ResultExt, Status, StatusExt};
 
 pub mod table;
 

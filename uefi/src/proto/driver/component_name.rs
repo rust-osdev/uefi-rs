@@ -6,7 +6,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::table::boot::{BootServices, ScopedProtocol};
-use crate::{CStr16, Error, Handle, Result, Status};
+use crate::{CStr16, Error, Handle, Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::{ptr, slice};
 
@@ -62,7 +62,7 @@ impl ComponentName1 {
         let language = language_to_cstr(language)?;
         let mut driver_name = ptr::null();
         unsafe { (self.get_driver_name)(self, language.as_ptr(), &mut driver_name) }
-            .into_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+            .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 
     /// Get the human-readable name of a controller in the given language.
@@ -87,7 +87,7 @@ impl ComponentName1 {
                 &mut driver_name,
             )
         }
-        .into_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+        .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 }
 
@@ -142,7 +142,7 @@ impl ComponentName2 {
         let language = language_to_cstr(language)?;
         let mut driver_name = ptr::null();
         unsafe { (self.get_driver_name)(self, language.as_ptr(), &mut driver_name) }
-            .into_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+            .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 
     /// Get the human-readable name of a controller in the given language.
@@ -167,7 +167,7 @@ impl ComponentName2 {
                 &mut driver_name,
             )
         }
-        .into_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+        .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 }
 

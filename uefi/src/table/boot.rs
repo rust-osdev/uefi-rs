@@ -4,7 +4,7 @@ use super::{Header, Revision};
 use crate::data_types::{Align, PhysicalAddress, VirtualAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
 use crate::proto::{Protocol, ProtocolPointer};
-use crate::{Char16, Event, Guid, Handle, Result, Status};
+use crate::{Char16, Event, Guid, Handle, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -363,7 +363,7 @@ impl BootServices {
             AllocateType::MaxAddress(addr) => (1, addr),
             AllocateType::Address(addr) => (2, addr),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).into_with_val(|| addr)
+        (self.allocate_pages)(ty, mem_ty, count, &mut addr).to_result_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
@@ -375,7 +375,7 @@ impl BootServices {
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
-        (self.free_pages)(addr, count).into()
+        (self.free_pages)(addr, count).to_result()
     }
 
     /// Returns struct which contains the size of a single memory descriptor
@@ -450,7 +450,7 @@ impl BootServices {
                 &mut entry_version,
             )
         }
-        .into_with_val(move || {
+        .to_result_with_val(move || {
             let len = map_size / entry_size;
 
             MemoryMap {
@@ -472,7 +472,7 @@ impl BootServices {
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        (self.allocate_pool)(mem_ty, size, &mut buffer).into_with_val(|| buffer)
+        (self.allocate_pool)(mem_ty, size, &mut buffer).to_result_with_val(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
@@ -483,7 +483,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pool(&self, addr: *mut u8) -> Result {
-        (self.free_pool)(addr).into()
+        (self.free_pool)(addr).to_result()
     }
 
     /// Creates an event
@@ -526,7 +526,7 @@ impl BootServices {
             notify_ctx,
             event.as_mut_ptr(),
         )
-        .into_with_val(|| event.assume_init())
+        .to_result_with_val(|| event.assume_init())
     }
 
     /// Creates a new `Event` of type `event_type`. The event's notification function, context,
@@ -590,7 +590,7 @@ impl BootServices {
             event_group,
             event.as_mut_ptr(),
         )
-        .into_with_val(|| event.assume_init())
+        .to_result_with_val(|| event.assume_init())
     }
 
     /// Sets the trigger for `EventType::TIMER` event.
@@ -606,7 +606,7 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.into()
+        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.to_result()
     }
 
     /// Stops execution until an event is signaled.
@@ -646,16 +646,17 @@ impl BootServices {
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = MaybeUninit::<usize>::uninit();
-        unsafe { (self.wait_for_event)(number_of_events, events, index.as_mut_ptr()) }.into_with(
-            || unsafe { index.assume_init() },
-            |s| {
-                if s == Status::INVALID_PARAMETER {
-                    unsafe { Some(index.assume_init()) }
-                } else {
-                    None
-                }
-            },
-        )
+        unsafe { (self.wait_for_event)(number_of_events, events, index.as_mut_ptr()) }
+            .to_result_with(
+                || unsafe { index.assume_init() },
+                |s| {
+                    if s == Status::INVALID_PARAMETER {
+                        unsafe { Some(index.assume_init()) }
+                    } else {
+                        None
+                    }
+                },
+            )
     }
 
     /// Place 'event' in the signaled stated. If 'event' is already in the signaled state,
@@ -679,7 +680,7 @@ impl BootServices {
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
         // and not keeping the clone around.
-        unsafe { (self.signal_event)(event.unsafe_clone()).into() }
+        unsafe { (self.signal_event)(event.unsafe_clone()).to_result() }
     }
 
     /// Removes `event` from any event group to which it belongs and closes it. If `event` was
@@ -696,7 +697,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn close_event(&self, event: Event) -> Result {
-        unsafe { (self.close_event)(event).into() }
+        unsafe { (self.close_event)(event).to_result() }
     }
 
     /// Checks to see if an event is signaled, without blocking execution to wait for it.
@@ -752,7 +753,7 @@ impl BootServices {
         ))
         // this `unwrapped_unchecked` is safe, `handle` is guaranteed to be Some() if this call is
         // successful
-        .into_with_val(|| handle.unwrap_unchecked())
+        .to_result_with_val(|| handle.unwrap_unchecked())
     }
 
     /// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
@@ -781,7 +782,8 @@ impl BootServices {
         old_interface: *mut c_void,
         new_interface: *mut c_void,
     ) -> Result<()> {
-        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface).into()
+        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface)
+            .to_result()
     }
 
     /// Removes a protocol interface from a device handle.
@@ -809,7 +811,7 @@ impl BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Result<()> {
-        (self.uninstall_protocol_interface)(handle, protocol, interface).into()
+        (self.uninstall_protocol_interface)(handle, protocol, interface).to_result()
     }
 
     /// Registers `event` to be signalled whenever a protocol interface is registered for
@@ -837,7 +839,7 @@ impl BootServices {
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
         unsafe { (self.register_protocol_notify)(protocol, event.unsafe_clone(), key.as_mut_ptr()) }
             // Safety: as long as this call is successful, `key` will be valid.
-            .into_with_val(|| unsafe {
+            .to_result_with_val(|| unsafe {
                 (
                     event.unsafe_clone(),
                     SearchType::ByRegisterNotify(key.assume_init()),
@@ -887,7 +889,7 @@ impl BootServices {
 
         match (buffer, status) {
             (NULL_BUFFER, Status::BUFFER_TOO_SMALL) => Ok(buffer_len),
-            (_, other_status) => other_status.into_with_val(|| buffer_len),
+            (_, other_status) => other_status.to_result_with_val(|| buffer_len),
         }
     }
 
@@ -915,12 +917,11 @@ impl BootServices {
         let mut handle = MaybeUninit::uninit();
         let mut device_path_ptr = device_path.as_ffi_ptr();
         unsafe {
-            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).into_with_val(
-                || {
+            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
+                .to_result_with_val(|| {
                     *device_path = DevicePath::from_ffi_ptr(device_path_ptr);
                     handle.assume_init()
-                },
-            )
+                })
         }
     }
 
@@ -1041,7 +1042,7 @@ impl BootServices {
                 source_size,
                 &mut image_handle,
             )
-            .into_with_val(|| image_handle.assume_init())
+            .to_result_with_val(|| image_handle.assume_init())
         }
     }
 
@@ -1059,7 +1060,7 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn unload_image(&self, image_handle: Handle) -> Result {
-        (self.unload_image)(image_handle).into()
+        (self.unload_image)(image_handle).to_result()
     }
 
     /// Transfer control to a loaded image's entry point.
@@ -1079,7 +1080,7 @@ impl BootServices {
             // TODO: implement returning exit data to the caller.
             let mut exit_data_size: usize = 0;
             let mut exit_data: *mut Char16 = ptr::null_mut();
-            (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).into()
+            (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).to_result()
         }
     }
 
@@ -1123,7 +1124,7 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        (self.exit_boot_services)(image, mmap_key).into()
+        (self.exit_boot_services)(image, mmap_key).to_result()
     }
 
     /// Stalls the processor for an amount of time.
@@ -1180,7 +1181,7 @@ impl BootServices {
             })
             .unwrap_or((0, ptr::null_mut()));
 
-        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.into()
+        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.to_result()
     }
 
     /// Connect one or more drivers to a controller.
@@ -1213,7 +1214,7 @@ impl BootServices {
                 recursive,
             )
         }
-        .into_with_err(|_| ())
+        .to_result_with_err(|_| ())
     }
 
     /// Disconnect one or more drivers from a controller.
@@ -1234,7 +1235,7 @@ impl BootServices {
         child: Option<Handle>,
     ) -> Result {
         unsafe { (self.disconnect_controller)(controller, driver_image, child) }
-            .into_with_err(|_| ())
+            .to_result_with_err(|_| ())
     }
 
     /// Open a protocol interface for a handle.
@@ -1293,7 +1294,7 @@ impl BootServices {
             params.controller,
             attributes as u32,
         )
-        .into_with_val(|| {
+        .to_result_with_val(|| {
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
 
             ScopedProtocol {
@@ -1360,7 +1361,7 @@ impl BootServices {
             params.controller,
             TEST_PROTOCOL,
         )
-        .into_with_val(|| ())
+        .to_result_with_val(|| ())
     }
 
     /// Get the list of protocol interface [`Guids`][Guid] that are installed
@@ -1391,7 +1392,7 @@ impl BootServices {
             }
         }
 
-        status.into_with_val(|| ProtocolsPerHandle {
+        status.to_result_with_val(|| ProtocolsPerHandle {
             boot_services: self,
             protocols: protocols.cast::<&Guid>(),
             count,
@@ -1420,7 +1421,7 @@ impl BootServices {
         };
 
         unsafe { (self.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
-            .into_with_val(|| HandleBuffer {
+            .to_result_with_val(|| HandleBuffer {
                 boot_services: self,
                 count: num_handles,
                 buffer,

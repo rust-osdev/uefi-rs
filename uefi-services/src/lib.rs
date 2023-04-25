@@ -82,7 +82,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {
-            return Status::SUCCESS.into();
+            return Status::SUCCESS.to_result();
         }
 
         // Setup the system table singleton

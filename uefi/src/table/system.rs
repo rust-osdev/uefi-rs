@@ -5,7 +5,7 @@ use core::ptr::NonNull;
 use core::{ptr, slice};
 
 use crate::proto::console::text;
-use crate::{CStr16, Char16, Handle, Result, Status};
+use crate::{CStr16, Char16, Handle, Result, Status, StatusExt};
 
 use super::boot::{BootServices, MemoryDescriptor, MemoryMap, MemoryType};
 use super::runtime::{ResetType, RuntimeServices};
@@ -324,7 +324,7 @@ impl SystemTable<Runtime> {
             entry_version,
             map_ptr,
         )
-        .into_with_val(|| {
+        .to_result_with_val(|| {
             let new_table_ref =
                 &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
             Self {

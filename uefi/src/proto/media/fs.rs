@@ -2,7 +2,7 @@
 
 use super::file::{Directory, FileHandle, FileImpl};
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use core::ptr;
 
 /// Allows access to a FAT-12/16/32 file system.
@@ -49,6 +49,6 @@ impl SimpleFileSystem {
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
         (self.open_volume)(self, &mut ptr)
-            .into_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
+            .to_result_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
     }
 }

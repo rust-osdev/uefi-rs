@@ -1,5 +1,5 @@
 use crate::proto::unsafe_protocol;
-use crate::{Char16, Event, Result, Status};
+use crate::{Char16, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
 
 /// Interface for text-based input devices.
@@ -21,7 +21,7 @@ impl Input {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).into()
+        (self.reset)(self, extended_verification).to_result()
     }
 
     /// Reads the next keystroke from the input device, if any.
@@ -77,7 +77,7 @@ impl Input {
 
         match (self.read_key_stroke)(self, key.as_mut_ptr()) {
             Status::NOT_READY => Ok(None),
-            other => other.into_with_val(|| Some(unsafe { key.assume_init() }.into())),
+            other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
     }
 

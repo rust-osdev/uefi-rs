@@ -52,7 +52,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
@@ -94,7 +94,7 @@ impl GraphicsOutput {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).into_with_val(|| {
+        (self.query_mode)(self, index, &mut info_sz, &mut info).to_result_with_val(|| {
             let info = unsafe { *info };
             Mode {
                 index,
@@ -119,7 +119,7 @@ impl GraphicsOutput {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
-        (self.set_mode)(self, mode.index).into()
+        (self.set_mode)(self, mode.index).to_result()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
@@ -147,7 +147,7 @@ impl GraphicsOutput {
                         height,
                         0,
                     )
-                    .into()
+                    .to_result()
                 }
                 BltOp::VideoToBltBuffer {
                     buffer,
@@ -170,7 +170,7 @@ impl GraphicsOutput {
                             height,
                             0,
                         )
-                        .into(),
+                        .to_result(),
                         BltRegion::SubRectangle {
                             coords: (dest_x, dest_y),
                             px_stride,
@@ -186,7 +186,7 @@ impl GraphicsOutput {
                             height,
                             px_stride * core::mem::size_of::<BltPixel>(),
                         )
-                        .into(),
+                        .to_result(),
                     }
                 }
                 BltOp::BufferToVideo {
@@ -210,7 +210,7 @@ impl GraphicsOutput {
                             height,
                             0,
                         )
-                        .into(),
+                        .to_result(),
                         BltRegion::SubRectangle {
                             coords: (src_x, src_y),
                             px_stride,
@@ -226,7 +226,7 @@ impl GraphicsOutput {
                             height,
                             px_stride * core::mem::size_of::<BltPixel>(),
                         )
-                        .into(),
+                        .to_result(),
                     }
                 }
                 BltOp::VideoToVideo {
@@ -248,7 +248,7 @@ impl GraphicsOutput {
                         height,
                         0,
                     )
-                    .into()
+                    .to_result()
                 }
             }
         }

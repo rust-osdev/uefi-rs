@@ -1,5 +1,5 @@
 use super::{File, FileHandle, FileInternal};
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 
 /// A `FileHandle` that is also a regular (data) file.
 ///
@@ -44,7 +44,7 @@ impl RegularFile {
         let status =
             unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) };
 
-        status.into_with(
+        status.to_result_with(
             || buffer_size,
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {
@@ -81,7 +81,7 @@ impl RegularFile {
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
         unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr()) }
-            .into_with_err(|_| buffer_size)
+            .to_result_with_err(|_| buffer_size)
     }
 
     /// Get the file's current position
@@ -93,7 +93,7 @@ impl RegularFile {
     /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.imp().get_position)(self.imp(), &mut pos).into_with_val(|| pos)
+        (self.imp().get_position)(self.imp(), &mut pos).to_result_with_val(|| pos)
     }
 
     /// Sets the file's current position
@@ -112,7 +112,7 @@ impl RegularFile {
     ///
     /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn set_position(&mut self, position: u64) -> Result {
-        (self.imp().set_position)(self.imp(), position).into()
+        (self.imp().set_position)(self.imp(), position).to_result()
     }
 }
 

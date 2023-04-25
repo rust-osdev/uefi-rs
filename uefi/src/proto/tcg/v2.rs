@@ -14,7 +14,7 @@ use super::{v1, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
 use crate::data_types::{PhysicalAddress, UnalignedSlice};
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
-use crate::{Error, Result, Status};
+use crate::{Error, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
@@ -614,7 +614,7 @@ impl Tcg {
     /// Get information about the protocol and TPM device.
     pub fn get_capability(&mut self) -> Result<BootServiceCapability> {
         let mut capability = BootServiceCapability::default();
-        unsafe { (self.get_capability)(self, &mut capability).into_with_val(|| capability) }
+        unsafe { (self.get_capability)(self, &mut capability).to_result_with_val(|| capability) }
     }
 
     /// Get the V1 event log. This provides events in the same format as a V1
@@ -697,7 +697,7 @@ impl Tcg {
                 u64::try_from(data_to_hash.len()).unwrap(),
                 event,
             )
-            .into()
+            .to_result()
         }
     }
 
@@ -728,7 +728,7 @@ impl Tcg {
                 output_parameter_block_len,
                 output_parameter_block.as_mut_ptr(),
             )
-            .into()
+            .to_result()
         }
     }
 
@@ -739,14 +739,14 @@ impl Tcg {
 
         let status = unsafe { (self.get_active_pcr_banks)(self, &mut active_pcr_banks) };
 
-        status.into_with_val(|| active_pcr_banks)
+        status.to_result_with_val(|| active_pcr_banks)
     }
 
     /// Set the active PCR banks. Each bank corresponds to a hash
     /// algorithm. This change will not take effect until the system is
     /// rebooted twice.
     pub fn set_active_pcr_banks(&mut self, active_pcr_banks: HashAlgorithm) -> Result {
-        unsafe { (self.set_active_pcr_banks)(self, active_pcr_banks) }.into()
+        unsafe { (self.set_active_pcr_banks)(self, active_pcr_banks) }.to_result()
     }
 
     /// Get the stored result of calling [`Tcg::set_active_pcr_banks`] in a
@@ -766,7 +766,7 @@ impl Tcg {
             (self.get_result_of_set_active_pcr_banks)(self, &mut operation_present, &mut response)
         };
 
-        status.into_with_val(|| {
+        status.to_result_with_val(|| {
             if operation_present == 0 {
                 None
             } else {

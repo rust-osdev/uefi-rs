@@ -1,7 +1,7 @@
 //! Pointer device access.
 
 use crate::proto::unsafe_protocol;
-use crate::{Event, Result, Status};
+use crate::{Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
 
 /// Provides information about a pointer device.
@@ -24,7 +24,7 @@ impl Pointer {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).into()
+        (self.reset)(self, extended_verification).to_result()
     }
 
     /// Retrieves the pointer device's current state, if a state change occurred
@@ -40,7 +40,7 @@ impl Pointer {
 
         match (self.get_state)(self, pointer_state.as_mut_ptr()) {
             Status::NOT_READY => Ok(None),
-            other => other.into_with_val(|| unsafe { Some(pointer_state.assume_init()) }),
+            other => other.to_result_with_val(|| unsafe { Some(pointer_state.assume_init()) }),
         }
     }
 

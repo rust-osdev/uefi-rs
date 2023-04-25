@@ -10,7 +10,7 @@ mod dir;
 mod info;
 mod regular;
 
-use crate::{CStr16, Char16, Guid, Result, Status};
+use crate::{CStr16, Char16, Guid, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::Debug;
@@ -76,7 +76,7 @@ pub trait File: Sized {
                 attributes,
             )
         }
-        .into_with_val(|| unsafe { FileHandle::new(ptr) })
+        .to_result_with_val(|| unsafe { FileHandle::new(ptr) })
     }
 
     /// Close this file handle. Same as dropping this structure.
@@ -90,7 +90,7 @@ pub trait File: Sized {
     ///
     /// * [`uefi::Status::WARN_DELETE_FAILURE`]
     fn delete(mut self) -> Result {
-        let result = (self.imp().delete)(self.imp()).into();
+        let result = (self.imp().delete)(self.imp()).to_result();
         mem::forget(self);
         result
     }
@@ -128,7 +128,7 @@ pub trait File: Sized {
                 buffer.as_mut_ptr(),
             )
         }
-        .into_with(
+        .to_result_with(
             || unsafe { Info::from_uefi(buffer.as_mut_ptr().cast::<c_void>()) },
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {
@@ -165,7 +165,7 @@ pub trait File: Sized {
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = (info as *const Info).cast::<c_void>();
         let info_size = mem::size_of_val(info);
-        unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).into() }
+        unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).to_result() }
     }
 
     /// Flushes all modified data associated with the file handle to the device
@@ -181,7 +181,7 @@ pub trait File: Sized {
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::VOLUME_FULL`]
     fn flush(&mut self) -> Result {
-        (self.imp().flush)(self.imp()).into()
+        (self.imp().flush)(self.imp()).to_result()
     }
 
     /// Read the dynamically allocated info for a file.
@@ -307,7 +307,7 @@ impl File for FileHandle {
 
 impl Drop for FileHandle {
     fn drop(&mut self) {
-        let result: Result = (self.imp().close)(self.imp()).into();
+        let result: Result = (self.imp().close)(self.imp()).to_result();
         // The spec says this always succeeds.
         result.expect("Failed to close file");
     }

@@ -1,7 +1,7 @@
 use crate::data_types::PhysicalAddress;
 use crate::proto::unsafe_protocol;
 use crate::table::boot::MemoryAttribute;
-use crate::{Result, Status};
+use crate::{Result, Status, StatusExt};
 use core::ops::Range;
 
 /// Protocol for getting and setting memory protection attributes.
@@ -56,7 +56,7 @@ impl MemoryProtection {
         let (base_address, length) = range_to_base_and_len(byte_region);
         unsafe {
             (self.get_memory_attributes)(self, base_address, length, &mut attributes)
-                .into_with_val(|| attributes)
+                .to_result_with_val(|| attributes)
         }
     }
 
@@ -78,7 +78,7 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
-        unsafe { (self.set_memory_attributes)(self, base_address, length, attributes).into() }
+        unsafe { (self.set_memory_attributes)(self, base_address, length, attributes).to_result() }
     }
 
     /// Clear the attributes of a memory region.
@@ -99,7 +99,9 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
-        unsafe { (self.clear_memory_attributes)(self, base_address, length, attributes).into() }
+        unsafe {
+            (self.clear_memory_attributes)(self, base_address, length, attributes).to_result()
+        }
     }
 }
 

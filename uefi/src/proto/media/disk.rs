@@ -1,7 +1,7 @@
 //! Disk I/O protocols.
 
 use crate::proto::unsafe_protocol;
-use crate::{Event, Result, Status};
+use crate::{Event, Result, Status, StatusExt};
 use core::ptr::NonNull;
 
 /// The disk I/O protocol.
@@ -46,7 +46,7 @@ impl DiskIo {
     /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
     /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
     pub fn read_disk(&self, media_id: u32, offset: u64, buffer: &mut [u8]) -> Result {
-        (self.read_disk)(self, media_id, offset, buffer.len(), buffer.as_mut_ptr()).into()
+        (self.read_disk)(self, media_id, offset, buffer.len(), buffer.as_mut_ptr()).to_result()
     }
 
     /// Writes bytes to the disk device.
@@ -65,7 +65,7 @@ impl DiskIo {
     /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
     /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
     pub fn write_disk(&mut self, media_id: u32, offset: u64, buffer: &[u8]) -> Result {
-        (self.write_disk)(self, media_id, offset, buffer.len(), buffer.as_ptr()).into()
+        (self.write_disk)(self, media_id, offset, buffer.len(), buffer.as_ptr()).to_result()
     }
 }
 
@@ -115,7 +115,7 @@ impl DiskIo2 {
     /// * `uefi::status::DEVICE_ERROR`  The device reported an error while performing
     ///                                 the cancel operation.
     pub fn cancel(&mut self) -> Result {
-        (self.cancel)(self).into()
+        (self.cancel)(self).to_result()
     }
 
     /// Reads bytes from the disk device.
@@ -149,7 +149,7 @@ impl DiskIo2 {
         len: usize,
         buffer: *mut u8,
     ) -> Result {
-        (self.read_disk_ex)(self, media_id, offset, token, len, buffer).into()
+        (self.read_disk_ex)(self, media_id, offset, token, len, buffer).to_result()
     }
 
     /// Writes bytes to the disk device.
@@ -184,7 +184,7 @@ impl DiskIo2 {
         len: usize,
         buffer: *const u8,
     ) -> Result {
-        (self.write_disk_ex)(self, media_id, offset, token, len, buffer).into()
+        (self.write_disk_ex)(self, media_id, offset, token, len, buffer).to_result()
     }
 
     /// Flushes all modified data to the physical device.
@@ -202,6 +202,6 @@ impl DiskIo2 {
     ///                                     the flush operation.
     /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
     pub fn flush_disk(&mut self, token: Option<NonNull<DiskIo2Token>>) -> Result {
-        (self.flush_disk_ex)(self, token).into()
+        (self.flush_disk_ex)(self, token).to_result()
     }
 }

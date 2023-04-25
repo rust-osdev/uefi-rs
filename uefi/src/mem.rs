@@ -108,7 +108,7 @@ pub(crate) fn make_boxed<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ResultExt;
+    use crate::{ResultExt, StatusExt};
     #[cfg(feature = "unstable")]
     use alloc::alloc::Global;
     use core::mem::{align_of, size_of};
@@ -146,7 +146,7 @@ mod tests {
 
         if buf.len() < required_size {
             // We can use an zero-length buffer to find the required size.
-            return Status::BUFFER_TOO_SMALL.into_with(|| panic!(), |_| Some(required_size));
+            return Status::BUFFER_TOO_SMALL.to_result_with(|| panic!(), |_| Some(required_size));
         };
 
         // assert alignment

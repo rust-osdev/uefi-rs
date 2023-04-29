@@ -1,5 +1,0 @@
-error: Entry attribute accepts no arguments
- --> tests/ui/entry_bad_attr_arg.rs:7:9
-  |
-7 | #[entry(some_arg)]
-  |         ^^^^^^^^

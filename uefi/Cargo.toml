@@ -31,6 +31,7 @@ ptr_meta = { version = "0.2.0", default-features = false }
 ucs2 = "0.3.2"
 uefi-macros = "0.11.0"
 uefi-raw = "0.1.0"
+uguid = "2.0.0"
 
 [package.metadata.docs.rs]
 all-features = true

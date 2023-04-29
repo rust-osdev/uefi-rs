@@ -17,6 +17,9 @@
 #[macro_use]
 mod enums;
 
+pub mod protocol;
+
 mod status;
 
 pub use status::Status;
+pub use uguid::{guid, Guid};

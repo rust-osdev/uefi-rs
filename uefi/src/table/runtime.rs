@@ -1,20 +1,22 @@
 //! UEFI services available at runtime, even after the OS boots.
 
 use super::{Header, Revision};
-#[cfg(feature = "alloc")]
-use crate::data_types::FromSliceWithNulError;
-use crate::result::Error;
 use crate::table::boot::MemoryDescriptor;
-use crate::{guid, CStr16, Char16, Guid, Result, Status, StatusExt};
-#[cfg(feature = "alloc")]
-use alloc::{vec, vec::Vec};
+use crate::{guid, CStr16, Char16, Error, Guid, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
-#[cfg(feature = "alloc")]
-use core::mem;
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
+
+#[cfg(feature = "alloc")]
+use {
+    crate::data_types::FromSliceWithNulError,
+    alloc::boxed::Box,
+    alloc::{vec, vec::Vec},
+    core::mem,
+};
+
 /// Contains pointers to all of the runtime services.
 ///
 /// This table, and the function pointers it contains are valid
@@ -157,6 +159,38 @@ impl RuntimeServices {
             )
             .to_result_with_val(move || (&buf[..data_size], attributes))
         }
+    }
+
+    /// Get the contents and attributes of a variable.
+    #[cfg(feature = "alloc")]
+    pub fn get_variable_boxed(
+        &self,
+        name: &CStr16,
+        vendor: &VariableVendor,
+    ) -> Result<(Box<[u8]>, VariableAttributes)> {
+        let mut attributes = VariableAttributes::empty();
+
+        let mut data_size = self.get_variable_size(name, vendor)?;
+        let mut data = Vec::with_capacity(data_size);
+
+        let status = unsafe {
+            (self.get_variable)(
+                name.as_ptr(),
+                &vendor.0,
+                &mut attributes,
+                &mut data_size,
+                data.as_mut_ptr(),
+            )
+        };
+        if !status.is_success() {
+            return Err(Error::from(status));
+        }
+
+        unsafe {
+            data.set_len(data_size);
+        }
+
+        Ok((data.into_boxed_slice(), attributes))
     }
 
     /// Get the names and vendor GUIDs of all currently-set variables.

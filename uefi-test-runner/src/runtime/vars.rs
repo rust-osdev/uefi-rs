@@ -29,6 +29,13 @@ fn test_variables(rt: &RuntimeServices) {
     assert_eq!(data, test_value);
     assert_eq!(attrs, test_attrs);
 
+    info!("Testing get_variable_boxed");
+    let (data, attrs) = rt
+        .get_variable_boxed(name, &vendor)
+        .expect("failed to get variable");
+    assert_eq!(&*data, test_value);
+    assert_eq!(attrs, test_attrs);
+
     info!("Testing variable_keys");
     let variable_keys = rt.variable_keys().expect("failed to get variable keys");
     info!("Found {} variables", variable_keys.len());

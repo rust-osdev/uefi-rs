@@ -19,6 +19,7 @@
   - `From<&CStr16>` for `CString16`
   - `From<&CStr16>` for `String`
   - `From<&CString16>` for `String`
+- Added `RuntimeServices::get_variable_boxed` (requires the `alloc` feature).
 
 ### Changed
 

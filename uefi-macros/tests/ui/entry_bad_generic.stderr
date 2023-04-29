@@ -1,5 +1,0 @@
-error: Entry method should not be generic
- --> tests/ui/entry_bad_generic.rs:8:9
-  |
-8 | fn main<T>(_handle: Handle, _st: SystemTable<Boot>) -> Status {
-  |         ^

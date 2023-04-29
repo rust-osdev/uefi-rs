@@ -1,5 +1,0 @@
-error: GUID component "Gaaa" is not a hexadecimal number
- --> tests/ui/guid_bad_hex_group2.rs:5:34
-  |
-5 | const BadHexGroup2: Guid = guid!("aaaaaaaa-Gaaa-aaaa-aaaa-aaaaaaaaaaaa");
-  |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

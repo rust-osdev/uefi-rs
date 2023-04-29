@@ -35,6 +35,11 @@
   `Status`. `impl From<Status> for Result` has also been removed. A new
   `StatusExt` trait has been added that provides conversion methods to replace
   the ones that have been removed. `StatusExt` has been added to the prelude.
+- The `Guid` struct and `guid!` macro implementations have been replaced with
+  re-exports from the [`uguid`](https://docs.rs/uguid) crate. The `from_values`
+  method has been removed; usually the `guid!` macro is a more convenient
+  choice, but `new` or `from_bytes` can also be used if needed. There are also a
+  number of new `Guid` methods.
 
 ## uefi-macros - [Unreleased]
 

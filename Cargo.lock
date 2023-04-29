@@ -558,6 +558,7 @@ dependencies = [
  "bitflags",
  "ptr_meta",
  "uefi-macros",
+ "uguid",
 ]
 
 [[package]]

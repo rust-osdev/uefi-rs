@@ -20,3 +20,4 @@ mod enums;
 mod status;
 
 pub use status::Status;
+pub use uguid::{guid, Guid};

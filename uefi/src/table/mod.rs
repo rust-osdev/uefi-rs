@@ -10,9 +10,6 @@ pub trait Table {
 mod header;
 pub use self::header::Header;
 
-mod revision;
-pub use self::revision::Revision;
-
 mod system;
 pub use self::system::{Boot, Runtime, SystemTable};
 
@@ -20,3 +17,5 @@ pub mod boot;
 pub mod runtime;
 
 pub mod cfg;
+
+pub use uefi_raw::table::Revision;

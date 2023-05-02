@@ -43,6 +43,7 @@
   number of new `Guid` methods.
 - The `MEMORY_DESCRIPTOR_VERSION` constant has been moved to
   `MemoryDescriptor::VERSION`.
+- The `Revision` struct's one field is now public.
 
 ## uefi-macros - [Unreleased]
 

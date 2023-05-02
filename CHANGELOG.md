@@ -52,6 +52,8 @@
   any effect.
 - The `unsafe_protocol` macro now accepts the path of a `Guid` constant in
   addition to a string literal.
+- The `cstr8` and the `cstr16` macros now both accept `(nothing)` and `""`
+  (empty inputs) to create valid empty strings. They include the null-byte.
 
 ## uefi-services - [Unreleased]
 

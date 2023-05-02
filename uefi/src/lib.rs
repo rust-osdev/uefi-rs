@@ -127,3 +127,24 @@ pub(crate) mod mem;
 pub(crate) mod polyfill;
 
 mod util;
+
+#[cfg(test)]
+// Crates that create procedural macros can't unit test the macros they export.
+// Therefore, we do some tests here.
+mod macro_tests {
+    use uefi_macros::{cstr16, cstr8};
+
+    #[test]
+    fn cstr8_macro_literal() {
+        let _empty1 = cstr8!();
+        let _empty2 = cstr8!("");
+        let _regular = cstr8!("foobar");
+    }
+
+    #[test]
+    fn cstr16_macro_literal() {
+        let _empty1 = cstr16!();
+        let _empty2 = cstr16!("");
+        let _regular = cstr16!("foobar");
+    }
+}

@@ -258,12 +258,26 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
 /// # Example
 /// ```
 /// # use uefi_macros::cstr8;
+/// // Empty string
+/// assert_eq!(cstr8!().to_u16_slice_with_nul(), [0]);
+/// assert_eq!(cstr8!("").to_u16_slice_with_nul(), [0]);
+/// // Non-empty string
 /// assert_eq!(cstr8!("test").to_bytes_with_nul(), [116, 101, 115, 116, 0]);
 /// ```
 #[proc_macro]
 pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // Accept empty input.
+    if input.is_empty() {
+        return quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[0]) }).into();
+    }
     let input: LitStr = parse_macro_input!(input);
     let input = input.value();
+    // Accept "" input.
+    if input.is_empty() {
+        return quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[0]) }).into();
+    }
+
+    // Accept any non-empty string input.
     match input
         .chars()
         .map(u8::try_from)
@@ -283,14 +297,28 @@ pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 /// This will throw a compile error if an invalid character is in the passed string.
 ///
 /// # Example
-/// ```
+/// ```rust
 /// # use uefi_macros::cstr16;
+/// // Empty string
+/// assert_eq!(cstr16!().to_u16_slice_with_nul(), [0]);
+/// assert_eq!(cstr16!("").to_u16_slice_with_nul(), [0]);
+/// // Non-empty string
 /// assert_eq!(cstr16!("test €").to_u16_slice_with_nul(), [116, 101, 115, 116, 32, 8364, 0]);
 /// ```
 #[proc_macro]
 pub fn cstr16(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    // Accept empty input.
+    if input.is_empty() {
+        return quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[0]) }).into();
+    }
     let input: LitStr = parse_macro_input!(input);
     let input = input.value();
+    // Accept "" input.
+    if input.is_empty() {
+        return quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[0]) }).into();
+    }
+
+    // Accept any non-empty string input.
     match input
         .chars()
         .map(|c| u16::try_from(c as u32))
@@ -299,8 +327,11 @@ pub fn cstr16(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         Ok(c) => {
             quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[ #(#c),* , 0 ]) }).into()
         }
-        Err(_) => syn::Error::new_spanned(input, "invalid character in string")
-            .into_compile_error()
-            .into(),
+        Err(_) => syn::Error::new_spanned(
+            input,
+            "There are UTF-8 characters that can't be transformed to UCS-2 character",
+        )
+        .into_compile_error()
+        .into(),
     }
 }

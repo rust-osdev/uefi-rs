@@ -18,6 +18,7 @@
 mod enums;
 
 pub mod protocol;
+pub mod table;
 
 mod status;
 

@@ -2,4 +2,6 @@
 
 mod revision;
 
+pub mod boot;
+
 pub use revision::Revision;

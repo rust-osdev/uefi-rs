@@ -1893,9 +1893,6 @@ impl MemoryType {
     }
 }
 
-/// Memory descriptor version number
-pub const MEMORY_DESCRIPTOR_VERSION: u32 = 1;
-
 /// A structure describing a region of memory.
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
@@ -1910,6 +1907,11 @@ pub struct MemoryDescriptor {
     pub page_count: u64,
     /// The capability attributes of this memory range.
     pub att: MemoryAttribute,
+}
+
+impl MemoryDescriptor {
+    /// Memory descriptor version number.
+    pub const VERSION: u32 = 1;
 }
 
 impl Default for MemoryDescriptor {

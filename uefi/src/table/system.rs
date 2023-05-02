@@ -316,7 +316,7 @@ impl SystemTable<Runtime> {
         // See https://rust-lang.github.io/unsafe-code-guidelines/layout/arrays-and-slices.html
         let map_size = core::mem::size_of_val(map);
         let entry_size = core::mem::size_of::<MemoryDescriptor>();
-        let entry_version = crate::table::boot::MEMORY_DESCRIPTOR_VERSION;
+        let entry_version = MemoryDescriptor::VERSION;
         let map_ptr = map.as_mut_ptr();
         ((*(*self.table).runtime).set_virtual_address_map)(
             map_size,

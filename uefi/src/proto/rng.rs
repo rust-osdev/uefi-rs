@@ -7,7 +7,7 @@ use core::{mem, ptr};
 pub use uefi_raw::protocol::rng::RngAlgorithmType;
 
 /// Rng protocol
-#[repr(C)]
+#[repr(transparent)]
 #[unsafe_protocol(uefi_raw::protocol::rng::RngProtocol::GUID)]
 pub struct Rng(uefi_raw::protocol::rng::RngProtocol);
 

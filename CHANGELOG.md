@@ -41,6 +41,8 @@
   method has been removed; usually the `guid!` macro is a more convenient
   choice, but `new` or `from_bytes` can also be used if needed. There are also a
   number of new `Guid` methods.
+- The `MEMORY_DESCRIPTOR_VERSION` constant has been moved to
+  `MemoryDescriptor::VERSION`.
 
 ## uefi-macros - [Unreleased]
 

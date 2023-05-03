@@ -182,7 +182,7 @@ impl<'a> TryFrom<&'a CStr> for &'a CStr8 {
     }
 }
 
-/// An UCS-2 null-terminated string.
+/// An UCS-2 null-terminated string slice.
 ///
 /// This type is largely inspired by [`core::ffi::CStr`] with the exception that all characters are
 /// guaranteed to be 16 bit long.
@@ -446,6 +446,12 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CStr16 {
             .any(|(l, r)| l != r);
 
         !any_not_equal
+    }
+}
+
+impl AsRef<CStr16> for CStr16 {
+    fn as_ref(&self) -> &CStr16 {
+        self
     }
 }
 

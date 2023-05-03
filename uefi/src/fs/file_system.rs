@@ -1,17 +1,18 @@
 //! Module for [`FileSystem`].
 
 use super::*;
+use crate::fs::path::{validate_path, PathError};
 use crate::proto::media::file::{FileAttribute, FileInfo, FileType};
 use crate::table::boot::ScopedProtocol;
 use alloc::boxed::Box;
 use alloc::string::{FromUtf8Error, String, ToString};
+use alloc::vec;
 use alloc::vec::Vec;
-use alloc::{format, vec};
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::ops::Deref;
 use derive_more::Display;
-use log::info;
+use log::debug;
 
 /// All errors that can happen when working with the [`FileSystem`].
 #[derive(Debug, Clone, Display, PartialEq, Eq)]
@@ -19,6 +20,8 @@ pub enum FileSystemError {
     /// Can't open the root directory of the underlying volume.
     CantOpenVolume,
     /// The path is invalid because of the underlying [`PathError`].
+    ///
+    /// [`PathError`]: path::PathError
     IllegalPath(PathError),
     /// The file or directory was not found in the underlying volume.
     FileNotFound(String),
@@ -40,12 +43,28 @@ pub enum FileSystemError {
     ReadFailure,
     /// Can't parse file content as UTF-8.
     Utf8Error(FromUtf8Error),
-    /// Could not open the given path.
-    OpenError(String),
+    /// Could not open the given path. Carries the path that could not be opened
+    /// and the underlying UEFI error.
+    #[display(fmt = "{path:?}")]
+    OpenError {
+        /// Path that caused the failure.
+        path: String,
+        /// More detailed failure description.
+        error: crate::Error,
+    },
 }
 
 #[cfg(feature = "unstable")]
-impl core::error::Error for FileSystemError {}
+impl core::error::Error for FileSystemError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            FileSystemError::IllegalPath(e) => Some(e),
+            FileSystemError::Utf8Error(e) => Some(e),
+            FileSystemError::OpenError { path: _path, error } => Some(error),
+            _ => None,
+        }
+    }
+}
 
 impl From<PathError> for FileSystemError {
     fn from(err: PathError) -> Self {
@@ -90,10 +109,6 @@ impl<'a> FileSystem<'a> {
         let path = path.as_ref();
         self.open(path, UefiFileMode::CreateReadWrite, true)
             .map(|_| ())
-            .map_err(|err| {
-                log::debug!("failed to fetch file info: {err:#?}");
-                FileSystemError::OpenError(path.to_string())
-            })
     }
 
     /// Recursively create a directory and all of its parent components if they
@@ -101,33 +116,38 @@ impl<'a> FileSystem<'a> {
     pub fn create_dir_all(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
         let path = path.as_ref();
 
-        let normalized_path = NormalizedPath::new("\\", path)?;
-        let normalized_path_string = normalized_path.to_string();
-        let normalized_path_pathref = Path::new(&normalized_path_string);
+        // Collect all relevant sub paths in a vector.
+        let mut dirs_to_create = vec![path.to_path_buf()];
+        while let Some(parent) = dirs_to_create.last().unwrap().parent() {
+            debug!("parent={parent}");
+            dirs_to_create.push(parent)
+        }
+        // Now reverse, so that we have something like this:
+        // - a
+        // - a\\b
+        // - a\\b\\c
+        dirs_to_create.reverse();
 
-        let iter = || normalized_path_pathref.components(SEPARATOR);
-        iter()
-            .scan(String::new(), |path_acc, component| {
-                if component != Component::RootDir {
-                    *path_acc += SEPARATOR_STR;
-                    *path_acc += format!("{component}").as_str();
-                }
-                info!("path_acc: {path_acc}, component: {component}");
-                Some((component, path_acc.clone()))
-            })
-            .try_for_each(|(_component, full_path)| self.create_dir(full_path.as_str()))
+        for parent in dirs_to_create {
+            if self.try_exists(&parent).is_err() {
+                self.create_dir(parent)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Given a path, query the file system to get information about a file,
     /// directory, etc. Returns [`UefiFileInfo`].
     pub fn metadata(&mut self, path: impl AsRef<Path>) -> FileSystemResult<Box<UefiFileInfo>> {
         let path = path.as_ref();
-        let file = self.open(path, UefiFileMode::Read, false)?;
-        log::debug!("{:#?}", &file.into_type().unwrap());
         let mut file = self.open(path, UefiFileMode::Read, false)?;
         file.get_boxed_info().map_err(|err| {
-            log::debug!("failed to fetch file info: {err:#?}");
-            FileSystemError::OpenError(path.to_string())
+            log::trace!("failed to fetch file info: {err:#?}");
+            FileSystemError::OpenError {
+                path: path.to_cstr16().to_string(),
+                error: err,
+            }
         })
     }
 
@@ -138,11 +158,13 @@ impl<'a> FileSystem<'a> {
         let mut file = self
             .open(path, UefiFileMode::Read, false)?
             .into_regular_file()
-            .ok_or(FileSystemError::NotAFile(path.as_str().to_string()))?;
-        let info = file.get_boxed_info::<FileInfo>().map_err(|e| {
-            log::error!("get info failed: {e:?}");
-            FileSystemError::OpenError(path.as_str().to_string())
-        })?;
+            .ok_or(FileSystemError::NotAFile(path.to_cstr16().to_string()))?;
+        let info = file
+            .get_boxed_info::<FileInfo>()
+            .map_err(|err| FileSystemError::OpenError {
+                path: path.to_cstr16().to_string(),
+                error: err,
+            })?;
 
         let mut vec = vec![0; info.file_size() as usize];
         let read_bytes = file.read(vec.as_mut_slice()).map_err(|e| {
@@ -164,7 +186,7 @@ impl<'a> FileSystem<'a> {
         let dir = self
             .open(path, UefiFileMode::Read, false)?
             .into_directory()
-            .ok_or(FileSystemError::NotADirectory(path.as_str().to_string()))?;
+            .ok_or(FileSystemError::NotADirectory(path.to_cstr16().to_string()))?;
         Ok(UefiDirectoryIter::new(dir))
     }
 
@@ -185,16 +207,18 @@ impl<'a> FileSystem<'a> {
         match file {
             FileType::Dir(dir) => dir.delete().map_err(|e| {
                 log::error!("error removing dir: {e:?}");
-                FileSystemError::CantDeleteDirectory(path.as_str().to_string())
+                FileSystemError::CantDeleteDirectory(path.to_cstr16().to_string())
             }),
-            FileType::Regular(_) => Err(FileSystemError::NotADirectory(path.as_str().to_string())),
+            FileType::Regular(_) => {
+                Err(FileSystemError::NotADirectory(path.to_cstr16().to_string()))
+            }
         }
     }
 
     /*/// Removes a directory at this path, after removing all its contents. Use
     /// carefully!
-    pub fn remove_dir_all(&mut self, _path: impl AsRef<Path>) -> FileSystemResult<()> {
-        todo!()
+    pub fn remove_dir_all(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
+        let path = path.as_ref();
     }*/
 
     /// Removes a file from the filesystem.
@@ -209,9 +233,9 @@ impl<'a> FileSystem<'a> {
         match file {
             FileType::Regular(file) => file.delete().map_err(|e| {
                 log::error!("error removing file: {e:?}");
-                FileSystemError::CantDeleteFile(path.as_str().to_string())
+                FileSystemError::CantDeleteFile(path.to_cstr16().to_string())
             }),
-            FileType::Dir(_) => Err(FileSystemError::NotAFile(path.as_str().to_string())),
+            FileType::Dir(_) => Err(FileSystemError::NotAFile(path.to_cstr16().to_string())),
         }
     }
 
@@ -278,8 +302,8 @@ impl<'a> FileSystem<'a> {
         mode: UefiFileMode,
         is_dir: bool,
     ) -> FileSystemResult<UefiFileHandle> {
-        let path = NormalizedPath::new("\\", path)?;
-        log::debug!("normalized path: {path}");
+        validate_path(path)?;
+        log::trace!("open validated path: {path}");
 
         let attr = if mode == UefiFileMode::CreateReadWrite && is_dir {
             FileAttribute::DIRECTORY
@@ -287,10 +311,15 @@ impl<'a> FileSystem<'a> {
             FileAttribute::empty()
         };
 
-        self.open_root()?.open(&path, mode, attr).map_err(|x| {
-            log::trace!("Can't open file {path}: {x:?}");
-            FileSystemError::OpenError(path.to_string())
-        })
+        self.open_root()?
+            .open(path.to_cstr16(), mode, attr)
+            .map_err(|err| {
+                log::trace!("Can't open file {path}: {err:?}");
+                FileSystemError::OpenError {
+                    path: path.to_cstr16().to_string(),
+                    error: err,
+                }
+            })
     }
 }
 

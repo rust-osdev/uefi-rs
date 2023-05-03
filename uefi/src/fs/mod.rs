@@ -1,14 +1,14 @@
-//! A high-level file system API for UEFI applications close to the `fs` module
-//! from Rust's standard library.
+//! A high-level file system API for UEFI applications close to the `std::fs`
+//! module from Rust's standard library. The main type by this module is
+//! [`FileSystem`].
 //!
 //! # Difference to typical File System Abstractions
 //! Users perform actions on dedicated volumes: For example, the boot volume,
 //! such as a CD-rom, USB-stick, or any other storage device.
 //!
 //! Unlike in the API of typical UNIX file system abstractions, there is
-//! no virtual file system.
-//!
-//! Unlike Windows, there is no way to access volumes by a dedicated name.
+//! no virtual file system. Unlike in Windows, there is no way to access volumes
+//! by a dedicated name.
 //!
 //! # Paths
 //! All paths are absolute and follow the FAT-like file system conventions for
@@ -17,7 +17,8 @@
 //! directory is always `/`, i.e., the root, of the opened volume.
 //!
 //! Symlinks or hard-links are not supported but only directories and regular
-//! files with plain linear paths to them.
+//! files with plain linear paths to them. For more information, see
+//! [`Path`] and [`PathBuf`].
 //!
 //! # API Hints
 //! There are no `File` and `Path` abstractions similar to those from `std` that
@@ -31,14 +32,11 @@
 
 mod dir_entry_iter;
 mod file_system;
-mod normalized_path;
 mod path;
 mod uefi_types;
 
 pub use file_system::{FileSystem, FileSystemError, FileSystemResult};
-pub use normalized_path::{PathError, SEPARATOR, SEPARATOR_STR};
+pub use path::*;
 
 use dir_entry_iter::*;
-use normalized_path::*;
-use path::*;
 use uefi_types::*;

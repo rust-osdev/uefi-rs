@@ -6,7 +6,7 @@ use core::fmt::{Debug, Display};
 /// An UEFI-related error with optionally additional payload data. The error
 /// kind is encoded in the `status` field (see [`Status`]). Additional payload
 /// may be inside the `data` field.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Error<Data: Debug = ()> {
     status: Status,
     data: Data,

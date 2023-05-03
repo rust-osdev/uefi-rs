@@ -5,7 +5,9 @@
 ### Added
 
 - There is a new `fs` module that provides a high-level API for file-system
-  access. The API is close to the `std::fs` module.
+  access. The API is close to the `std::fs` module. The module also provides a
+  `Path` and a `PathBuf` abstraction that is similar to the ones from
+  `std::path`. However, they are adapted for UEFI.
 - Multiple convenience methods for `CString16` and `CStr16`, including:
   - `CStr16::as_slice()`
   - `CStr16::num_chars()`

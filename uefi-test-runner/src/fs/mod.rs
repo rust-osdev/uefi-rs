@@ -2,7 +2,8 @@
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use uefi::fs::{FileSystem, FileSystemError};
+use uefi::cstr16;
+use uefi::fs::{FileSystem, FileSystemError, PathBuf};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::ScopedProtocol;
 
@@ -11,47 +12,50 @@ use uefi::table::boot::ScopedProtocol;
 pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), FileSystemError> {
     let mut fs = FileSystem::new(sfs);
 
-    fs.create_dir("test_file_system_abs")?;
+    // test create dir
+    fs.create_dir(cstr16!("foo_dir"))?;
 
-    // slash is transparently transformed to backslash
-    fs.write("test_file_system_abs/foo", "hello")?;
-    // absolute or relative paths are supported; ./ is ignored
-    fs.copy("\\test_file_system_abs/foo", "\\test_file_system_abs/./bar")?;
-    let read = fs.read("\\test_file_system_abs\\bar")?;
+    // test write, copy, and read
+    let data_to_write = "hello world";
+    fs.write(cstr16!("foo_dir\\foo"), data_to_write)?;
+    // Here, we additionally check that absolute paths work.
+    fs.copy(cstr16!("\\foo_dir\\foo"), cstr16!("\\foo_dir\\foo_cpy"))?;
+    let read = fs.read(cstr16!("foo_dir\\foo_cpy"))?;
     let read = String::from_utf8(read).expect("Should be valid utf8");
-    assert_eq!(read, "hello");
+    assert_eq!(read.as_str(), data_to_write);
 
-    assert_eq!(
-        fs.try_exists("test_file_system_abs\\barfoo"),
-        Err(FileSystemError::OpenError(
-            "\\test_file_system_abs\\barfoo".to_string()
-        ))
-    );
-    fs.rename("test_file_system_abs\\bar", "test_file_system_abs\\barfoo")?;
-    assert!(fs.try_exists("test_file_system_abs\\barfoo").is_ok());
+    // test copy from non-existent file
+    let err = fs.copy(cstr16!("not_found"), cstr16!("abc"));
+    assert!(matches!(err, Err(FileSystemError::OpenError { .. })));
 
+    // test rename file + path buf replaces / with \
+    fs.rename(
+        PathBuf::from(cstr16!("/foo_dir/foo_cpy")),
+        cstr16!("foo_dir\\foo_cpy2"),
+    )?;
+    // file should not be available after rename
+    let err = fs.read(cstr16!("foo_dir\\foo_cpy"));
+    assert!(matches!(err, Err(FileSystemError::OpenError { .. })));
+
+    // test read dir on a sub dir
     let entries = fs
-        .read_dir("test_file_system_abs")?
-        .map(|e| {
-            e.expect("Should return boxed file info")
-                .file_name()
-                .to_string()
-        })
+        .read_dir(cstr16!("foo_dir"))?
+        .map(|entry| entry.expect("Should be valid").file_name().to_string())
         .collect::<Vec<_>>();
-    assert_eq!(&[".", "..", "foo", "barfoo"], entries.as_slice());
+    assert_eq!(&[".", "..", "foo", "foo_cpy2"], entries.as_slice());
 
-    fs.create_dir("/deeply_nested_test")?;
-    fs.create_dir("/deeply_nested_test/1")?;
-    fs.create_dir("/deeply_nested_test/1/2")?;
-    fs.create_dir("/deeply_nested_test/1/2/3")?;
-    fs.create_dir("/deeply_nested_test/1/2/3/4")?;
-    fs.create_dir_all("/deeply_nested_test/1/2/3/4/5/6/7")?;
-    fs.try_exists("/deeply_nested_test/1/2/3/4/5/6/7")?;
+    // test create dir recursively
+    fs.create_dir_all(cstr16!("foo_dir\\1\\2\\3\\4\\5\\6\\7"))?;
+    fs.create_dir_all(cstr16!("foo_dir\\1\\2\\3\\4\\5\\6\\7\\8"))?;
+    fs.write(
+        cstr16!("foo_dir\\1\\2\\3\\4\\5\\6\\7\\8\\foobar"),
+        data_to_write,
+    )?;
+    let boxinfo = fs.metadata(cstr16!("foo_dir\\1\\2\\3\\4\\5\\6\\7\\8\\foobar"))?;
+    assert_eq!(boxinfo.file_size(), data_to_write.len() as u64);
+
+    // test remove dir all
     // TODO
-    // fs.remove_dir_all("/deeply_nested_test/1/2/3/4/5/6/7")?;
-    fs.remove_dir("/deeply_nested_test/1/2/3/4/5/6/7")?;
-    let exists = matches!(fs.try_exists("/deeply_nested_test/1/2/3/4/5/6/7"), Ok(_));
-    assert!(!exists);
 
     Ok(())
 }

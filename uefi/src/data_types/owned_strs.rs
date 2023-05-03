@@ -36,8 +36,8 @@ impl core::error::Error for FromStrError {}
 
 /// An owned UCS-2 null-terminated string.
 ///
-/// For convenience, a [CString16] is comparable with `&str` and `String` from the standard library
-/// through the trait [EqStrUntilNul].
+/// For convenience, a [`CString16`] is comparable with `&str` and `String` from
+/// the standard library through the trait [`EqStrUntilNul`].
 ///
 /// # Examples
 ///

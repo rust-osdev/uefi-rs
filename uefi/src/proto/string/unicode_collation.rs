@@ -103,12 +103,12 @@ impl UnicodeCollation {
         fat: &CStr8,
         buf: &'a mut [u16],
     ) -> Result<&'a CStr16, StrConversionError> {
-        if buf.len() < fat.to_bytes_with_nul().len() {
+        if buf.len() < fat.as_bytes().len() {
             return Err(StrConversionError::BufferTooSmall);
         }
         (self.fat_to_str)(
             self,
-            fat.to_bytes_with_nul().len(),
+            fat.as_bytes().len(),
             fat.as_ptr(),
             buf.as_ptr() as *mut _,
         );

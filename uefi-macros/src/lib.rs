@@ -262,7 +262,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
 /// assert_eq!(cstr8!().to_u16_slice_with_nul(), [0]);
 /// assert_eq!(cstr8!("").to_u16_slice_with_nul(), [0]);
 /// // Non-empty string
-/// assert_eq!(cstr8!("test").to_bytes_with_nul(), [116, 101, 115, 116, 0]);
+/// assert_eq!(cstr8!("test").as_bytes(), [116, 101, 115, 116, 0]);
 /// ```
 #[proc_macro]
 pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

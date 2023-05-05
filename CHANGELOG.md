@@ -20,6 +20,8 @@
   - `From<&CStr16>` for `String`
   - `From<&CString16>` for `String`
 - Added `RuntimeServices::get_variable_boxed` (requires the `alloc` feature).
+- Added `CStr16::as_bytes`
+- Added `AsRef<[u8]>` and `Borrow<[u8]>` for `Cstr8` and `CStr16`.
 
 ### Changed
 
@@ -44,6 +46,8 @@
 - The `MEMORY_DESCRIPTOR_VERSION` constant has been moved to
   `MemoryDescriptor::VERSION`.
 - The `Revision` struct's one field is now public.
+- Renamed `CStr8::to_bytes` to `CStr8::as_bytes` and changed the semantics:
+  The trailing null character is now always included in the returned slice.
 
 ## uefi-macros - [Unreleased]
 

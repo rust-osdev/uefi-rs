@@ -1,6 +1,7 @@
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
+use core::borrow::Borrow;
 use core::ffi::CStr;
 use core::iter::Iterator;
 use core::mem::MaybeUninit;
@@ -118,16 +119,10 @@ impl CStr8 {
         self.0.as_ptr()
     }
 
-    /// Converts this CStr8 to a slice of bytes without the terminating null byte.
+    /// Returns the underlying bytes as slice including the terminating null
+    /// character.
     #[must_use]
-    pub fn to_bytes(&self) -> &[u8] {
-        let chars = self.to_bytes_with_nul();
-        &chars[..chars.len() - 1]
-    }
-
-    /// Converts this CStr8 to a slice of bytes containing the trailing null byte.
-    #[must_use]
-    pub const fn to_bytes_with_nul(&self) -> &[u8] {
+    pub const fn as_bytes(&self) -> &[u8] {
         unsafe { &*(&self.0 as *const [Char8] as *const [u8]) }
     }
 }
@@ -144,6 +139,18 @@ impl fmt::Display for CStr8 {
             <Char8 as fmt::Display>::fmt(c, f)?;
         }
         Ok(())
+    }
+}
+
+impl AsRef<[u8]> for CStr8 {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+impl Borrow<[u8]> for CStr8 {
+    fn borrow(&self) -> &[u8] {
+        self.as_bytes()
     }
 }
 
@@ -389,6 +396,25 @@ impl CStr16 {
         }
         Ok(())
     }
+
+    /// Returns the underlying bytes as slice including the terminating null
+    /// character.
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { slice::from_raw_parts(self.0.as_ptr().cast(), self.num_bytes()) }
+    }
+}
+
+impl AsRef<[u8]> for CStr16 {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+impl Borrow<[u8]> for CStr16 {
+    fn borrow(&self) -> &[u8] {
+        self.as_bytes()
+    }
 }
 
 #[cfg(feature = "alloc")]
@@ -523,6 +549,14 @@ mod tests {
     }
 
     #[test]
+    fn test_cstr8_as_bytes() {
+        let string: &CStr8 = cstr8!("a");
+        assert_eq!(string.as_bytes(), &[b'a', 0]);
+        assert_eq!(<CStr8 as AsRef<[u8]>>::as_ref(string), &[b'a', 0]);
+        assert_eq!(<CStr8 as Borrow<[u8]>>::borrow(string), &[b'a', 0]);
+    }
+
+    #[test]
     fn test_cstr16_num_bytes() {
         let s = CStr16::from_u16_with_nul(&[65, 66, 67, 0]).unwrap();
         assert_eq!(s.num_bytes(), 8);
@@ -615,6 +649,14 @@ mod tests {
             string.as_slice_with_nul(),
             &[Char16::try_from('a').unwrap(), NUL_16]
         );
+    }
+
+    #[test]
+    fn test_cstr16_as_bytes() {
+        let string: &CStr16 = cstr16!("a");
+        assert_eq!(string.as_bytes(), &[b'a', 0, 0, 0]);
+        assert_eq!(<CStr16 as AsRef<[u8]>>::as_ref(string), &[b'a', 0, 0, 0]);
+        assert_eq!(<CStr16 as Borrow<[u8]>>::borrow(string), &[b'a', 0, 0, 0]);
     }
 
     // Code generation helper for the compare tests of our CStrX types against "str" and "String"

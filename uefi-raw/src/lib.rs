@@ -24,3 +24,11 @@ mod status;
 
 pub use status::Status;
 pub use uguid::{guid, Guid};
+
+/// Physical memory address. This is always a 64-bit value, regardless
+/// of target platform.
+pub type PhysicalAddress = u64;
+
+/// Virtual memory address. This is always a 64-bit value, regardless
+/// of target platform.
+pub type VirtualAddress = u64;

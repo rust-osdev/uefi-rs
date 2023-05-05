@@ -113,14 +113,6 @@ pub trait Align {
     }
 }
 
-/// Physical memory address. This is always a 64-bit value, regardless
-/// of target platform.
-pub type PhysicalAddress = u64;
-
-/// Virtual memory address. This is always a 64-bit value, regardless
-/// of target platform.
-pub type VirtualAddress = u64;
-
 mod guid;
 pub use self::guid::{Guid, Identify};
 
@@ -142,6 +134,8 @@ pub use self::owned_strs::{CString16, FromStrError};
 
 mod unaligned_slice;
 pub use unaligned_slice::UnalignedSlice;
+
+pub use uefi_raw::{PhysicalAddress, VirtualAddress};
 
 #[cfg(test)]
 mod tests {

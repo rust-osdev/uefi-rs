@@ -288,7 +288,7 @@ impl ToOwned for DevicePathInstance {
 /// [module-level documentation]: crate::proto::device_path
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 #[repr(C, packed)]
-#[unsafe_protocol("09576e91-6d3f-11d2-8e39-00a0c969723b")]
+#[unsafe_protocol(uefi_raw::protocol::device_path::DevicePathProtocol::GUID)]
 #[derive(Eq, Pointee)]
 pub struct DevicePath {
     data: [u8],

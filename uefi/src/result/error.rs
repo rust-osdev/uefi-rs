@@ -54,5 +54,19 @@ impl<Data: Debug> Display for Error<Data> {
     }
 }
 
+impl<Data: Debug> Error<Data> {
+    /// Transforms the generic payload of an error to `()`. This is useful if
+    /// you want
+    /// - to retain the erroneous status code,
+    /// - do not care about the payload, and
+    /// - refrain from generic type complexity in a higher API level.
+    pub fn to_err_without_payload(&self) -> Error<()> {
+        Error {
+            status: self.status,
+            data: (),
+        }
+    }
+}
+
 #[cfg(feature = "unstable")]
 impl<Data: Debug> core::error::Error for Error<Data> {}

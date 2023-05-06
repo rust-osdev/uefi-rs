@@ -20,7 +20,9 @@ use {
     ::alloc::vec::Vec,
 };
 
-pub use uefi_raw::table::boot::{MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
+pub use uefi_raw::table::boot::{
+    InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
+};
 
 // TODO: this similar to `SyncUnsafeCell`. Once that is stabilized we
 // can use it instead.
@@ -2137,16 +2139,6 @@ impl<'a> HandleBuffer<'a> {
         // appropriate lifetime of the slice.
         unsafe { slice::from_raw_parts(self.buffer, self.count) }
     }
-}
-
-newtype_enum! {
-/// Interface type of a protocol interface
-///
-/// Only has one variant when this was written (v2.10 of the UEFI spec)
-pub enum InterfaceType: i32 => {
-    /// Native interface
-    NATIVE_INTERFACE    = 0,
-}
 }
 
 /// Opaque pointer returned by [`BootServices::register_protocol_notify`] to be used

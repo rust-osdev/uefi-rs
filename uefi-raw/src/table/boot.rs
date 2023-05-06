@@ -3,6 +3,13 @@
 use crate::{PhysicalAddress, VirtualAddress};
 use bitflags::bitflags;
 
+newtype_enum! {
+/// Interface type of a protocol interface.
+pub enum InterfaceType: u32 => {
+    /// Native interface
+    NATIVE_INTERFACE = 0,
+}}
+
 bitflags! {
     /// Flags describing the capabilities of a memory range.
     #[repr(transparent)]

@@ -2,14 +2,14 @@
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use uefi::cstr16;
-use uefi::fs::{FileSystem, FileSystemError, PathBuf};
+use uefi::fs::{FileSystem, FileSystemIOErrorContext, IoError, PathBuf};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::ScopedProtocol;
+use uefi::{cstr16, fs, Status};
 
 /// Tests functionality from the `uefi::fs` module. This test relies on a
 /// working File System Protocol, which is tested at a dedicated place.
-pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), FileSystemError> {
+pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), fs::Error> {
     let mut fs = FileSystem::new(sfs);
 
     // test create dir
@@ -24,9 +24,14 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), FileSystemError
     let read = String::from_utf8(read).expect("Should be valid utf8");
     assert_eq!(read.as_str(), data_to_write);
 
-    // test copy from non-existent file
+    // test copy from non-existent file: does the error type work as expected?
     let err = fs.copy(cstr16!("not_found"), cstr16!("abc"));
-    assert!(matches!(err, Err(FileSystemError::OpenError { .. })));
+    let expected_err = fs::Error::Io(IoError {
+        path: PathBuf::from(cstr16!("not_found")),
+        context: FileSystemIOErrorContext::OpenError,
+        uefi_error: uefi::Error::new(Status::NOT_FOUND, ()),
+    });
+    assert_eq!(err, Err(expected_err));
 
     // test rename file + path buf replaces / with \
     fs.rename(
@@ -35,7 +40,7 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), FileSystemError
     )?;
     // file should not be available after rename
     let err = fs.read(cstr16!("foo_dir\\foo_cpy"));
-    assert!(matches!(err, Err(FileSystemError::OpenError { .. })));
+    assert!(err.is_err());
 
     // test read dir on a sub dir
     let entries = fs

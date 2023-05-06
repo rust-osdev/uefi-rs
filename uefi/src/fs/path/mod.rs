@@ -20,8 +20,8 @@ mod validation;
 pub use path::{Components, Path};
 pub use pathbuf::PathBuf;
 
-use uefi::data_types::chars::NUL_16;
-use uefi::{CStr16, Char16};
+use crate::data_types::chars::NUL_16;
+use crate::{CStr16, Char16};
 pub(super) use validation::validate_path;
 pub use validation::PathError;
 

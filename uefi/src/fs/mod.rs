@@ -35,7 +35,7 @@ mod file_system;
 mod path;
 mod uefi_types;
 
-pub use file_system::{FileSystem, FileSystemError, FileSystemResult};
+pub use file_system::*;
 pub use path::*;
 
 use dir_entry_iter::*;

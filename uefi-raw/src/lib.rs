@@ -24,8 +24,15 @@ pub mod time;
 
 mod status;
 
+use core::ffi::c_void;
 pub use status::Status;
 pub use uguid::{guid, Guid};
+
+/// Handle to an event structure.
+pub type Event = *mut c_void;
+
+/// Handle to a UEFI entity (protocol, image, etc).
+pub type Handle = *mut c_void;
 
 /// One-byte character.
 ///

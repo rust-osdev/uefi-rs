@@ -7,7 +7,7 @@ use core::fmt::{Display, Formatter};
 /// [`CString16`] strings and [`SEPARATOR`] as separator.
 ///
 /// `/` is replaced by [`SEPARATOR`] on the fly.
-#[derive(Debug, Default, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, Eq, PartialOrd, Ord)]
 pub struct PathBuf(CString16);
 
 impl PathBuf {

@@ -2,9 +2,8 @@
 #![allow(clippy::module_inception)]
 
 use crate::fs::path::{PathBuf, SEPARATOR};
-use crate::CStr16;
+use crate::{CStr16, CString16};
 use core::fmt::{Display, Formatter};
-use uefi::CString16;
 
 /// A path similar to the `Path` of the standard library, but based on
 /// [`CStr16`] strings and [`SEPARATOR`] as separator.

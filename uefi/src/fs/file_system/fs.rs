@@ -1,79 +1,19 @@
 //! Module for [`FileSystem`].
 
-use super::super::*;
-use crate::fs::path::{validate_path, PathError};
-use crate::proto::media::file::{FileAttribute, FileInfo, FileType};
+use crate::fs::{Path, PathBuf, UefiDirectoryIter, SEPARATOR_STR, *};
 use crate::table::boot::ScopedProtocol;
+use crate::Status;
 use alloc::boxed::Box;
-use alloc::string::{FromUtf8Error, String, ToString};
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::ops::Deref;
-use derive_more::Display;
 use log::debug;
 
-/// All errors that can happen when working with the [`FileSystem`].
-#[derive(Debug, Clone, Display, PartialEq, Eq)]
-pub enum FileSystemError {
-    /// Can't open the root directory of the underlying volume.
-    CantOpenVolume,
-    /// The path is invalid because of the underlying [`PathError`].
-    ///
-    /// [`PathError`]: path::PathError
-    IllegalPath(PathError),
-    /// The file or directory was not found in the underlying volume.
-    FileNotFound(String),
-    /// The path is existent but does not correspond to a directory when a
-    /// directory was expected.
-    NotADirectory(String),
-    /// The path is existent but does not correspond to a file when a file was
-    /// expected.
-    NotAFile(String),
-    /// Can't delete the file.
-    CantDeleteFile(String),
-    /// Can't delete the directory.
-    CantDeleteDirectory(String),
-    /// Error writing bytes.
-    WriteFailure,
-    /// Error flushing file.
-    FlushFailure,
-    /// Error reading file.
-    ReadFailure,
-    /// Can't parse file content as UTF-8.
-    Utf8Error(FromUtf8Error),
-    /// Could not open the given path. Carries the path that could not be opened
-    /// and the underlying UEFI error.
-    #[display(fmt = "{path:?}")]
-    OpenError {
-        /// Path that caused the failure.
-        path: String,
-        /// More detailed failure description.
-        error: crate::Error,
-    },
-}
-
-#[cfg(feature = "unstable")]
-impl core::error::Error for FileSystemError {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
-        match self {
-            FileSystemError::IllegalPath(e) => Some(e),
-            FileSystemError::Utf8Error(e) => Some(e),
-            FileSystemError::OpenError { path: _path, error } => Some(error),
-            _ => None,
-        }
-    }
-}
-
-impl From<PathError> for FileSystemError {
-    fn from(err: PathError) -> Self {
-        Self::IllegalPath(err)
-    }
-}
-
 /// Return type for public [`FileSystem`] operations.
-pub type FileSystemResult<T> = Result<T, FileSystemError>;
+pub type FileSystemResult<T> = Result<T, Error>;
 
 /// High-level file-system abstraction for UEFI volumes with an API that is
 /// close to `std::fs`. It acts as convenient accessor around the
@@ -143,11 +83,11 @@ impl<'a> FileSystem<'a> {
         let path = path.as_ref();
         let mut file = self.open(path, UefiFileMode::Read, false)?;
         file.get_boxed_info().map_err(|err| {
-            log::trace!("failed to fetch file info: {err:#?}");
-            FileSystemError::OpenError {
-                path: path.to_cstr16().to_string(),
-                error: err,
-            }
+            Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::Metadata,
+                uefi_error: err,
+            })
         })
     }
 
@@ -158,18 +98,29 @@ impl<'a> FileSystem<'a> {
         let mut file = self
             .open(path, UefiFileMode::Read, false)?
             .into_regular_file()
-            .ok_or(FileSystemError::NotAFile(path.to_cstr16().to_string()))?;
-        let info = file
-            .get_boxed_info::<FileInfo>()
-            .map_err(|err| FileSystemError::OpenError {
-                path: path.to_cstr16().to_string(),
-                error: err,
-            })?;
+            .ok_or(Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::NotAFile,
+                // We do not have a real UEFI error here as we have a logical
+                // problem.
+                uefi_error: Status::INVALID_PARAMETER.into(),
+            }))?;
+
+        let info = file.get_boxed_info::<UefiFileInfo>().map_err(|err| {
+            Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::Metadata,
+                uefi_error: err,
+            })
+        })?;
 
         let mut vec = vec![0; info.file_size() as usize];
-        let read_bytes = file.read(vec.as_mut_slice()).map_err(|e| {
-            log::error!("reading failed: {e:?}");
-            FileSystemError::ReadFailure
+        let read_bytes = file.read(vec.as_mut_slice()).map_err(|err| {
+            Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::ReadFailure,
+                uefi_error: err.to_err_without_payload(),
+            })
         })?;
 
         // we read the whole file at once!
@@ -186,13 +137,19 @@ impl<'a> FileSystem<'a> {
         let dir = self
             .open(path, UefiFileMode::Read, false)?
             .into_directory()
-            .ok_or(FileSystemError::NotADirectory(path.to_cstr16().to_string()))?;
+            .ok_or(Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::NotADirectory,
+                // We do not have a real UEFI error here as we have a logical
+                // problem.
+                uefi_error: Status::INVALID_PARAMETER.into(),
+            }))?;
         Ok(UefiDirectoryIter::new(dir))
     }
 
-    /// Read the entire contents of a file into a string.
+    /// Read the entire contents of a file into a Rust string.
     pub fn read_to_string(&mut self, path: impl AsRef<Path>) -> FileSystemResult<String> {
-        String::from_utf8(self.read(path)?).map_err(FileSystemError::Utf8Error)
+        String::from_utf8(self.read(path)?).map_err(Error::Utf8Encoding)
     }
 
     /// Removes an empty directory.
@@ -205,12 +162,21 @@ impl<'a> FileSystem<'a> {
             .unwrap();
 
         match file {
-            FileType::Dir(dir) => dir.delete().map_err(|e| {
-                log::error!("error removing dir: {e:?}");
-                FileSystemError::CantDeleteDirectory(path.to_cstr16().to_string())
+            UefiFileType::Dir(dir) => dir.delete().map_err(|err| {
+                Error::Io(IoError {
+                    path: path.to_path_buf(),
+                    context: FileSystemIOErrorContext::CantDeleteDirectory,
+                    uefi_error: err,
+                })
             }),
-            FileType::Regular(_) => {
-                Err(FileSystemError::NotADirectory(path.to_cstr16().to_string()))
+            UefiFileType::Regular(_) => {
+                Err(Error::Io(IoError {
+                    path: path.to_path_buf(),
+                    context: FileSystemIOErrorContext::NotADirectory,
+                    // We do not have a real UEFI error here as we have a logical
+                    // problem.
+                    uefi_error: Status::INVALID_PARAMETER.into(),
+                }))
             }
         }
     }
@@ -231,11 +197,20 @@ impl<'a> FileSystem<'a> {
             .unwrap();
 
         match file {
-            FileType::Regular(file) => file.delete().map_err(|e| {
-                log::error!("error removing file: {e:?}");
-                FileSystemError::CantDeleteFile(path.to_cstr16().to_string())
+            UefiFileType::Regular(file) => file.delete().map_err(|err| {
+                Error::Io(IoError {
+                    path: path.to_path_buf(),
+                    context: FileSystemIOErrorContext::CantDeleteFile,
+                    uefi_error: err,
+                })
             }),
-            FileType::Dir(_) => Err(FileSystemError::NotAFile(path.to_cstr16().to_string())),
+            UefiFileType::Dir(_) => Err(Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::NotAFile,
+                // We do not have a real UEFI error here as we have a logical
+                // problem.
+                uefi_error: Status::INVALID_PARAMETER.into(),
+            })),
         }
     }
 
@@ -271,22 +246,35 @@ impl<'a> FileSystem<'a> {
             .into_regular_file()
             .unwrap();
 
-        handle.write(content.as_ref()).map_err(|e| {
-            log::error!("only wrote {e:?} bytes");
-            FileSystemError::WriteFailure
+        handle.write(content.as_ref()).map_err(|err| {
+            Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::WriteFailure,
+                uefi_error: err.to_err_without_payload(),
+            })
         })?;
-        handle.flush().map_err(|e| {
-            log::error!("flush failure: {e:?}");
-            FileSystemError::FlushFailure
+        handle.flush().map_err(|err| {
+            Error::Io(IoError {
+                path: path.to_path_buf(),
+                context: FileSystemIOErrorContext::FlushFailure,
+                uefi_error: err,
+            })
         })?;
         Ok(())
     }
 
     /// Opens a fresh handle to the root directory of the volume.
     fn open_root(&mut self) -> FileSystemResult<UefiDirectoryHandle> {
-        self.0.open_volume().map_err(|e| {
-            log::error!("Can't open root volume: {e:?}");
-            FileSystemError::CantOpenVolume
+        self.0.open_volume().map_err(|err| {
+            Error::Io(IoError {
+                path: {
+                    let mut path = PathBuf::new();
+                    path.push(SEPARATOR_STR);
+                    path
+                },
+                context: FileSystemIOErrorContext::CantOpenVolume,
+                uefi_error: err,
+            })
         })
     }
 
@@ -303,22 +291,22 @@ impl<'a> FileSystem<'a> {
         is_dir: bool,
     ) -> FileSystemResult<UefiFileHandle> {
         validate_path(path)?;
-        log::trace!("open validated path: {path}");
 
         let attr = if mode == UefiFileMode::CreateReadWrite && is_dir {
-            FileAttribute::DIRECTORY
+            UefiFileAttribute::DIRECTORY
         } else {
-            FileAttribute::empty()
+            UefiFileAttribute::empty()
         };
 
         self.open_root()?
             .open(path.to_cstr16(), mode, attr)
             .map_err(|err| {
                 log::trace!("Can't open file {path}: {err:?}");
-                FileSystemError::OpenError {
-                    path: path.to_cstr16().to_string(),
-                    error: err,
-                }
+                Error::Io(IoError {
+                    path: path.to_path_buf(),
+                    context: FileSystemIOErrorContext::OpenError,
+                    uefi_error: err,
+                })
             })
     }
 }

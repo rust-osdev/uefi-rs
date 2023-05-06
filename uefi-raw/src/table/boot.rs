@@ -1,7 +1,8 @@
 //! UEFI services available during boot.
 
-use crate::{PhysicalAddress, VirtualAddress};
+use crate::{Event, PhysicalAddress, VirtualAddress};
 use bitflags::bitflags;
+use core::ffi::c_void;
 
 bitflags! {
     /// Flags describing the type of an UEFI event and its attributes.
@@ -43,6 +44,9 @@ pub enum InterfaceType: u32 => {
     /// Native interface
     NATIVE_INTERFACE = 0,
 }}
+
+/// Raw event notification function.
+pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c_void);
 
 bitflags! {
     /// Flags describing the capabilities of a memory range.

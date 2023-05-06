@@ -1,6 +1,6 @@
 //! Module for [`FileSystem`].
 
-use super::*;
+use super::super::*;
 use crate::fs::path::{validate_path, PathError};
 use crate::proto::media::file::{FileAttribute, FileInfo, FileType};
 use crate::table::boot::ScopedProtocol;

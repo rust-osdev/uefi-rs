@@ -986,10 +986,11 @@ impl BootServices {
     /// image.
     ///
     /// If the image is successfully loaded, a [`Handle`] supporting the
-    /// [`LoadedImage`] and `LoadedImageDevicePath` protocols is
+    /// [`LoadedImage`] and [`LoadedImageDevicePath`] protocols is
     /// returned. The image can be started with [`start_image`] or
     /// unloaded with [`unload_image`].
     ///
+    /// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
     /// [`start_image`]: BootServices::start_image
     /// [`unload_image`]: BootServices::unload_image
     ///

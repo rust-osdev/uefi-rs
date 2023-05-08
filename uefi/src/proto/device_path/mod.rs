@@ -85,6 +85,7 @@ use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
 use core::mem;
+use core::ops::Deref;
 use ptr_meta::Pointee;
 
 opaque_type! {
@@ -608,6 +609,35 @@ pub enum NodeConversionError {
 
     /// The node type is not currently supported.
     UnsupportedType,
+}
+
+/// Protocol for accessing the device path that was passed in to [`load_image`]
+/// when loading a PE/COFF image.
+///
+/// The layout of this type is the same as a [`DevicePath`].
+///
+/// [`load_image`]: crate::table::boot::BootServices::load_image
+#[repr(transparent)]
+#[unsafe_protocol("bc62157e-3e33-4fec-9920-2d3b36d750df")]
+#[derive(Pointee)]
+pub struct LoadedImageDevicePath(DevicePath);
+
+impl ProtocolPointer for LoadedImageDevicePath {
+    unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        ptr_meta::from_raw_parts(ptr.cast(), DevicePath::size_in_bytes_from_ptr(ptr))
+    }
+
+    unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        ptr_meta::from_raw_parts_mut(ptr.cast(), DevicePath::size_in_bytes_from_ptr(ptr))
+    }
+}
+
+impl Deref for LoadedImageDevicePath {
+    type Target = DevicePath;
+
+    fn deref(&self) -> &DevicePath {
+        &self.0
+    }
 }
 
 #[cfg(test)]

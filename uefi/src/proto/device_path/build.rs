@@ -83,8 +83,11 @@ impl<'a> DevicePathBuilder<'a> {
     }
 
     /// Create a builder backed by a `Vec`.
+    ///
+    /// The `Vec` is cleared before use.
     #[cfg(feature = "alloc")]
     pub fn with_vec(v: &'a mut Vec<u8>) -> Self {
+        v.clear();
         Self {
             storage: BuilderStorage::Vec(v),
         }

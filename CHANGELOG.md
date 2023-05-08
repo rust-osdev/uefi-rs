@@ -50,6 +50,7 @@
 - The `Revision` struct's one field is now public.
 - Renamed `CStr8::to_bytes` to `CStr8::as_bytes` and changed the semantics:
   The trailing null character is now always included in the returned slice.
+- `DevicePathBuilder::with_vec` now clears the `Vec` before use.
 
 ## uefi-macros - [Unreleased]
 

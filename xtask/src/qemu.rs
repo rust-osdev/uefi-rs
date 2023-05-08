@@ -35,6 +35,9 @@ const ENV_VAR_OVMF_CODE: &str = "OVMF_CODE";
 /// Environment variable for overriding the path of the OVMF vars file.
 const ENV_VAR_OVMF_VARS: &str = "OVMF_VARS";
 
+/// Environment variable for overriding the path of the OVMF shell file.
+const ENV_VAR_OVMF_SHELL: &str = "OVMF_SHELL";
+
 /// Download `url` and return the raw data.
 fn download_url(url: &str) -> Result<Vec<u8>> {
     let agent: Agent = ureq::AgentBuilder::new()
@@ -145,6 +148,7 @@ fn update_prebuilt() -> Result<PathBuf> {
 enum OvmfFileType {
     Code,
     Vars,
+    Shell,
 }
 
 impl OvmfFileType {
@@ -152,6 +156,14 @@ impl OvmfFileType {
         match self {
             Self::Code => "code",
             Self::Vars => "vars",
+            Self::Shell => "shell",
+        }
+    }
+
+    fn extension(&self) -> &'static str {
+        match self {
+            Self::Code | Self::Vars => "fd",
+            Self::Shell => "efi",
         }
     }
 
@@ -171,6 +183,10 @@ impl OvmfFileType {
                 opt_path = &opt.ovmf_vars;
                 var_name = ENV_VAR_OVMF_VARS;
             }
+            Self::Shell => {
+                opt_path = &None;
+                var_name = ENV_VAR_OVMF_SHELL;
+            }
         }
         if let Some(path) = opt_path {
             Some(path.clone())
@@ -183,6 +199,7 @@ impl OvmfFileType {
 struct OvmfPaths {
     code: PathBuf,
     vars: PathBuf,
+    shell: PathBuf,
 }
 
 impl OvmfPaths {
@@ -209,7 +226,11 @@ impl OvmfPaths {
         } else {
             let prebuilt_dir = update_prebuilt()?;
 
-            Ok(prebuilt_dir.join(format!("{arch}/{}.fd", file_type.as_str())))
+            Ok(prebuilt_dir.join(format!(
+                "{arch}/{}.{}",
+                file_type.as_str(),
+                file_type.extension()
+            )))
         }
     }
 
@@ -218,8 +239,9 @@ impl OvmfPaths {
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
         let code = Self::find_ovmf_file(OvmfFileType::Code, opt, arch)?;
         let vars = Self::find_ovmf_file(OvmfFileType::Vars, opt, arch)?;
+        let shell = Self::find_ovmf_file(OvmfFileType::Shell, opt, arch)?;
 
-        Ok(Self { code, vars })
+        Ok(Self { code, vars, shell })
     }
 }
 
@@ -362,7 +384,7 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
 }
 
 /// Create an EFI boot directory to pass into QEMU.
-fn build_esp_dir(opt: &QemuOpt) -> Result<PathBuf> {
+fn build_esp_dir(opt: &QemuOpt, ovmf_paths: &OvmfPaths) -> Result<PathBuf> {
     let build_mode = if opt.build_mode.release {
         "release"
     } else {
@@ -372,21 +394,36 @@ fn build_esp_dir(opt: &QemuOpt) -> Result<PathBuf> {
         .join(opt.target.as_triple())
         .join(build_mode);
     let esp_dir = build_dir.join("esp");
+
+    // Create boot dir.
     let boot_dir = esp_dir.join("EFI").join("Boot");
-    let built_file = if let Some(example) = &opt.example {
-        build_dir.join("examples").join(format!("{example}.efi"))
-    } else {
-        build_dir.join("uefi-test-runner.efi")
-    };
-    let output_file = match *opt.target {
+    if !boot_dir.exists() {
+        fs_err::create_dir_all(&boot_dir)?;
+    }
+
+    let boot_file_name = match *opt.target {
         UefiArch::AArch64 => "BootAA64.efi",
         UefiArch::IA32 => "BootIA32.efi",
         UefiArch::X86_64 => "BootX64.efi",
     };
-    if !boot_dir.exists() {
-        fs_err::create_dir_all(&boot_dir)?;
-    }
-    fs_err::copy(built_file, boot_dir.join(output_file))?;
+
+    if let Some(example) = &opt.example {
+        // Launch examples directly.
+        let src_path = build_dir.join("examples").join(format!("{example}.efi"));
+        fs_err::copy(src_path, boot_dir.join(boot_file_name))?;
+    } else {
+        // For the test-runner, launch the `shell_launcher` binary first. That
+        // will then launch the UEFI shell, and run the `uefi-test-runner`
+        // inside the shell. This allows the test-runner to test protocols that
+        // use the shell.
+        let shell_launcher = build_dir.join("shell_launcher.efi");
+        fs_err::copy(shell_launcher, boot_dir.join(boot_file_name))?;
+
+        fs_err::copy(&ovmf_paths.shell, boot_dir.join("shell.efi"))?;
+
+        let test_runner = build_dir.join("uefi-test-runner.efi");
+        fs_err::copy(test_runner, boot_dir.join("test_runner.efi"))?;
+    };
 
     Ok(esp_dir)
 }
@@ -413,8 +450,6 @@ impl Drop for ChildWrapper {
 }
 
 pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
-    let esp_dir = build_esp_dir(opt)?;
-
     let qemu_exe = match arch {
         UefiArch::AArch64 => "qemu-system-aarch64",
         UefiArch::IA32 | UefiArch::X86_64 => "qemu-system-x86_64",
@@ -516,6 +551,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Mount a local directory as a FAT partition.
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("format=raw,file=fat:rw:");
+    let esp_dir = build_esp_dir(opt, &ovmf_paths)?;
     drive_arg.push(esp_dir);
     cmd.arg(drive_arg);
 

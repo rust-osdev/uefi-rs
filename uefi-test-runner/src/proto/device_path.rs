@@ -1,6 +1,6 @@
 use uefi::prelude::*;
 use uefi::proto::device_path::text::*;
-use uefi::proto::device_path::DevicePath;
+use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::table::boot::BootServices;
 
@@ -47,5 +47,17 @@ pub fn test(image: Handle, bt: &BootServices) {
             .convert_text_to_device_node(text)
             .expect("Failed to convert text to device path");
         assert_eq!(path, convert);
+    }
+
+    // Get the `LoadedImageDevicePath`. Verify it start with the same nodes as
+    // `device_path`.
+    let loaded_image_device_path = bt
+        .open_protocol_exclusive::<LoadedImageDevicePath>(image)
+        .expect("Failed to open LoadedImageDevicePath protocol");
+    for (n1, n2) in device_path
+        .node_iter()
+        .zip(loaded_image_device_path.node_iter())
+    {
+        assert_eq!(n1, n2);
     }
 }

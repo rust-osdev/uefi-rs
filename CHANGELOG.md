@@ -24,6 +24,7 @@
 - Added `RuntimeServices::get_variable_boxed` (requires the `alloc` feature).
 - Added `CStr16::as_bytes`
 - Added `AsRef<[u8]>` and `Borrow<[u8]>` for `Cstr8` and `CStr16`.
+- Added `LoadedImageDevicePath` protocol.
 
 ### Changed
 

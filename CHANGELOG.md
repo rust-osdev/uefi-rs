@@ -66,6 +66,7 @@
   addition to a string literal.
 - The `cstr8` and the `cstr16` macros now both accept `(nothing)` and `""`
   (empty inputs) to create valid empty strings. They include the null-byte.
+- The `entry` macro now works correctly with docstrings.
 
 ## uefi-services - [Unreleased]
 

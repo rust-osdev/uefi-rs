@@ -194,8 +194,12 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         return errors.into();
     }
 
+    let signature_span = f.sig.span();
+
+    f.sig.abi = Some(syn::parse2(quote_spanned! (signature_span=> extern "efiapi")).unwrap());
+
     // allow the entry function to be unsafe (by moving the keyword around so that it actually works)
-    let unsafety = f.sig.unsafety.take();
+    let unsafety = &f.sig.unsafety;
     // strip any visibility modifiers
     f.vis = Visibility::Inherited;
     // Set the global image handle. If `image_handle_ident` is `None`
@@ -223,7 +227,6 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     });
     let fn_output = &f.sig.output;
-    let signature_span = f.sig.span();
 
     let fn_type_check = quote_spanned! {signature_span=>
         // Cast from the function type to a function pointer with the same
@@ -245,7 +248,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         #fn_type_check
 
         #[export_name = "efi_main"]
-        #unsafety extern "efiapi" #f
+        #f
 
     };
     result.into()

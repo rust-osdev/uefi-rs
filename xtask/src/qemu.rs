@@ -5,17 +5,141 @@ use crate::pipe::Pipe;
 use crate::tpm::Swtpm;
 use crate::util::command_to_string;
 use crate::{net, platform};
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use regex::bytes::Regex;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::env;
 use std::ffi::OsString;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use tar::Archive;
 use tempfile::TempDir;
+use ureq::Agent;
 #[cfg(target_os = "linux")]
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
+
+/// Name of the ovmf-prebuilt release tag.
+const OVMF_PREBUILT_TAG: &str = "edk2-stable202211-r1";
+
+/// SHA-256 hash of the release tarball.
+const OVMF_PREBUILT_HASH: &str = "b085cfe18fd674bf70a31af1dc3e991bcd25cb882981c6d3523d81260f1e0d12";
+
+/// Directory into which the prebuilts will be download (relative to the repo root).
+const OVMF_PREBUILT_DIR: &str = "target/ovmf";
+
+/// Environment variable for overriding the path of the OVMF code file.
+const ENV_VAR_OVMF_CODE: &str = "OVMF_CODE";
+
+/// Environment variable for overriding the path of the OVMF vars file.
+const ENV_VAR_OVMF_VARS: &str = "OVMF_VARS";
+
+/// Download `url` and return the raw data.
+fn download_url(url: &str) -> Result<Vec<u8>> {
+    let agent: Agent = ureq::AgentBuilder::new()
+        .user_agent("uefi-rs-ovmf-downloader")
+        .build();
+
+    // Limit the size of the download.
+    let max_size_in_bytes = 4 * 1024 * 1024;
+
+    // Download the file.
+    println!("downloading {url}");
+    let resp = agent.get(url).call()?;
+    let mut data = Vec::with_capacity(max_size_in_bytes);
+    resp.into_reader()
+        .take(max_size_in_bytes.try_into().unwrap())
+        .read_to_end(&mut data)?;
+    println!("received {} bytes", data.len());
+
+    Ok(data)
+}
+
+// Extract the tarball's files into `prebuilt_dir`.
+//
+// `tarball_data` is raw decompressed tar data.
+fn extract_prebuilt(tarball_data: &[u8], prebuilt_dir: &Path) -> Result<()> {
+    let cursor = Cursor::new(tarball_data);
+    let mut archive = Archive::new(cursor);
+
+    // Extract each file entry.
+    for entry in archive.entries()? {
+        let mut entry = entry?;
+
+        // Skip directories.
+        if entry.size() == 0 {
+            continue;
+        }
+
+        let path = entry.path()?;
+        // Strip the leading directory, which is the release name.
+        let path: PathBuf = path.components().skip(1).collect();
+
+        let dir = path.parent().unwrap();
+        let dst_dir = prebuilt_dir.join(dir);
+        let dst_path = prebuilt_dir.join(path);
+        println!("unpacking to {}", dst_path.display());
+        fs_err::create_dir_all(dst_dir)?;
+        entry.unpack(dst_path)?;
+    }
+
+    Ok(())
+}
+
+/// Update the local copy of the prebuilt OVMF files. Does nothing if the local
+/// copy is already up to date.
+fn update_prebuilt() -> Result<PathBuf> {
+    let prebuilt_dir = Path::new(OVMF_PREBUILT_DIR);
+    let hash_path = prebuilt_dir.join("sha256");
+
+    // Check if the hash file already has the expected hash in it. If so, assume
+    // that we've already got the correct prebuilt downloaded and unpacked.
+    if let Ok(current_hash) = fs_err::read_to_string(&hash_path) {
+        if current_hash == OVMF_PREBUILT_HASH {
+            return Ok(prebuilt_dir.to_path_buf());
+        }
+    }
+
+    let base_url = "https://github.com/rust-osdev/ovmf-prebuilt/releases/download";
+    let url = format!(
+        "{base_url}/{release}/{release}-bin.tar.xz",
+        release = OVMF_PREBUILT_TAG
+    );
+
+    let data = download_url(&url)?;
+
+    // Validate the hash.
+    let actual_hash = format!("{:x}", Sha256::digest(&data));
+    if actual_hash != OVMF_PREBUILT_HASH {
+        bail!(
+            "file hash {actual_hash} does not match {}",
+            OVMF_PREBUILT_HASH
+        );
+    }
+
+    // Unpack the tarball.
+    println!("decompressing tarball");
+    let mut decompressed = Vec::new();
+    let mut compressed = Cursor::new(data);
+    lzma_rs::xz_decompress(&mut compressed, &mut decompressed)?;
+
+    // Clear out the existing prebuilt dir, if present.
+    let _ = fs_err::remove_dir_all(prebuilt_dir);
+
+    // Extract the files.
+    extract_prebuilt(&decompressed, prebuilt_dir)?;
+
+    // Rename the x64 directory to x86_64, to match `Arch::as_str`.
+    fs_err::rename(prebuilt_dir.join("x64"), prebuilt_dir.join("x86_64"))?;
+
+    // Write out the hash file. When we upgrade to a new release of
+    // ovmf-prebuilt, the hash will no longer match, triggering a fresh
+    // download.
+    fs_err::write(&hash_path, actual_hash)?;
+
+    Ok(prebuilt_dir.to_path_buf())
+}
 
 #[derive(Clone, Copy, Debug)]
 enum OvmfFileType {
@@ -41,11 +165,11 @@ impl OvmfFileType {
         match self {
             Self::Code => {
                 opt_path = &opt.ovmf_code;
-                var_name = "OVMF_CODE";
+                var_name = ENV_VAR_OVMF_CODE;
             }
             Self::Vars => {
                 opt_path = &opt.ovmf_vars;
-                var_name = "OVMF_VARS";
+                var_name = ENV_VAR_OVMF_VARS;
             }
         }
         if let Some(path) = opt_path {
@@ -62,177 +186,14 @@ struct OvmfPaths {
 }
 
 impl OvmfPaths {
-    /// If OVMF files can not or should not be found at well-known locations,
-    /// this optional environment variable can point to it.
-    ///
-    /// This variable points to the `_CODE.fd` file.
-
-    const ENV_VAR_OVMF_CODE: &'static str = "OVMF_CODE";
-    /// If OVMF files can not or should not be found at well-known locations,
-    /// this optional environment variable can point to it.
-    ///
-    /// This variable points to the `_VARS.fd` file.
-    const ENV_VAR_OVMF_VARS: &'static str = "OVMF_VARS";
-
-    fn get_path(&self, file_type: OvmfFileType) -> &Path {
-        match file_type {
-            OvmfFileType::Code => &self.code,
-            OvmfFileType::Vars => &self.vars,
-        }
-    }
-
-    /// Get the Arch Linux OVMF paths for the given guest arch.
-    fn arch_linux(arch: UefiArch) -> Self {
-        match arch {
-            // Package "edk2-armvirt".
-            UefiArch::AArch64 => Self {
-                code: "/usr/share/edk2-armvirt/aarch64/QEMU_CODE.fd".into(),
-                vars: "/usr/share/edk2-armvirt/aarch64/QEMU_VARS.fd".into(),
-            },
-            // Package "edk2-ovmf".
-            UefiArch::IA32 => Self {
-                code: "/usr/share/edk2-ovmf/ia32/OVMF_CODE.fd".into(),
-                vars: "/usr/share/edk2-ovmf/ia32/OVMF_VARS.fd".into(),
-            },
-            // Package "edk2-ovmf".
-            UefiArch::X86_64 => Self {
-                code: "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd".into(),
-                vars: "/usr/share/edk2-ovmf/x64/OVMF_VARS.fd".into(),
-            },
-        }
-    }
-
-    /// Get the CentOS OVMF paths for the given guest arch.
-    fn centos_linux(arch: UefiArch) -> Option<Self> {
-        match arch {
-            // Package "edk2-aarch64".
-            UefiArch::AArch64 => Some(Self {
-                code: "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw".into(),
-                vars: "/usr/share/edk2/aarch64/vars-template-pflash.raw".into(),
-            }),
-            // There's no official ia32 package.
-            UefiArch::IA32 => None,
-            // Package "edk2-ovmf".
-            UefiArch::X86_64 => Some(Self {
-                // Use the `.secboot` variant because the CentOS package
-                // doesn't have a plain "OVMF_CODE.fd".
-                code: "/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd".into(),
-                vars: "/usr/share/edk2/ovmf/OVMF_VARS.fd".into(),
-            }),
-        }
-    }
-
-    /// Get the Debian OVMF paths for the given guest arch. These paths
-    /// also work on Ubuntu.
-    fn debian_linux(arch: UefiArch) -> Self {
-        match arch {
-            // Package "qemu-efi-aarch64".
-            UefiArch::AArch64 => Self {
-                code: "/usr/share/AAVMF/AAVMF_CODE.fd".into(),
-                vars: "/usr/share/AAVMF/AAVMF_VARS.fd".into(),
-            },
-            // Package "ovmf-ia32".
-            UefiArch::IA32 => Self {
-                code: "/usr/share/OVMF/OVMF32_CODE_4M.secboot.fd".into(),
-                vars: "/usr/share/OVMF/OVMF32_VARS_4M.fd".into(),
-            },
-            // Package "ovmf".
-            UefiArch::X86_64 => Self {
-                code: "/usr/share/OVMF/OVMF_CODE.fd".into(),
-                vars: "/usr/share/OVMF/OVMF_VARS.fd".into(),
-            },
-        }
-    }
-
-    /// Get the Fedora OVMF paths for the given guest arch.
-    fn fedora_linux(arch: UefiArch) -> Self {
-        match arch {
-            // Package "edk2-aarch64".
-            UefiArch::AArch64 => Self {
-                code: "/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw".into(),
-                vars: "/usr/share/edk2/aarch64/vars-template-pflash.raw".into(),
-            },
-            // Package "edk2-ovmf-ia32".
-            UefiArch::IA32 => Self {
-                code: "/usr/share/edk2/ovmf-ia32/OVMF_CODE.fd".into(),
-                vars: "/usr/share/edk2/ovmf-ia32/OVMF_VARS.fd".into(),
-            },
-            // Package "edk2-ovmf".
-            UefiArch::X86_64 => Self {
-                code: "/usr/share/edk2/ovmf/OVMF_CODE.fd".into(),
-                vars: "/usr/share/edk2/ovmf/OVMF_VARS.fd".into(),
-            },
-        }
-    }
-
-    /// If a user uses NixOS, this function returns an error if the user didn't
-    /// set the environment variables `OVMF_CODE` and `OVMF_VARS`.
-    ///
-    /// It returns nothing as the environment variables are resolved at a
-    /// higher level. NixOS doesn't have globally installed software (without
-    /// hacky and non-idiomatic workarounds).
-    fn assist_nixos_users() -> Result<()> {
-        let os_info = os_info::get();
-        if os_info.os_type() == os_info::Type::NixOS {
-            let code = env::var_os(Self::ENV_VAR_OVMF_CODE);
-            let vars = env::var_os(Self::ENV_VAR_OVMF_VARS);
-            if !matches!((code, vars), (Some(_), Some(_))) {
-                return Err(anyhow!("Run `$ nix-shell` for OVMF files."));
-            }
-        }
-        Ok(())
-    }
-
-    /// Get the Windows OVMF paths for the given guest arch.
-    fn windows(arch: UefiArch) -> Self {
-        match arch {
-            UefiArch::AArch64 => Self {
-                code: r"C:\Program Files\qemu\share\edk2-aarch64-code.fd".into(),
-                vars: r"C:\Program Files\qemu\share\edk2-arm-vars.fd".into(),
-            },
-            UefiArch::IA32 => Self {
-                code: r"C:\Program Files\qemu\share\edk2-i386-code.fd".into(),
-                vars: r"C:\Program Files\qemu\share\edk2-i386-vars.fd".into(),
-            },
-            UefiArch::X86_64 => Self {
-                code: r"C:\Program Files\qemu\share\edk2-x86_64-code.fd".into(),
-                // There's no x86_64 vars file, but the i386 one works.
-                vars: r"C:\Program Files\qemu\share\edk2-i386-vars.fd".into(),
-            },
-        }
-    }
-
-    /// Get candidate paths where OVMF code/vars might exist for the
-    /// given guest arch and host platform.
-    fn get_candidate_paths(arch: UefiArch) -> Result<Vec<Self>> {
-        let mut candidates = Vec::new();
-        if platform::is_linux() {
-            candidates.push(Self::arch_linux(arch));
-            if let Some(candidate) = Self::centos_linux(arch) {
-                candidates.push(candidate);
-            }
-            candidates.push(Self::debian_linux(arch));
-            candidates.push(Self::fedora_linux(arch));
-            Self::assist_nixos_users()?;
-        }
-        if platform::is_windows() {
-            candidates.push(Self::windows(arch));
-        }
-        Ok(candidates)
-    }
-
     /// Search for an OVMF file (either code or vars).
     ///
     /// There are multiple locations where a file is searched at in the following
     /// priority:
-    /// 1. User-defined location: See [`OvmfFileType::get_user_provided_path`]
-    /// 2. Well-known location of common Linux distributions by using the
-    ///    paths in `candidates`.
-    fn find_ovmf_file(
-        file_type: OvmfFileType,
-        opt: &QemuOpt,
-        candidates: &[Self],
-    ) -> Result<PathBuf> {
+    /// 1. Command-line arg
+    /// 2. Environment variable
+    /// 3. Prebuilt file (automatically downloaded)
+    fn find_ovmf_file(file_type: OvmfFileType, opt: &QemuOpt, arch: UefiArch) -> Result<PathBuf> {
         if let Some(path) = file_type.get_user_provided_path(opt) {
             // The user provided an exact path to use; verify that it
             // exists.
@@ -246,31 +207,17 @@ impl OvmfPaths {
                 );
             }
         } else {
-            for candidate in candidates {
-                let path = candidate.get_path(file_type);
-                if path.exists() {
-                    return Ok(path.to_owned());
-                }
-            }
+            let prebuilt_dir = update_prebuilt()?;
 
-            bail!(
-                "no ovmf {} file found in candidates: {:?}",
-                file_type.as_str(),
-                candidates
-                    .iter()
-                    .map(|c| c.get_path(file_type))
-                    .collect::<Vec<_>>(),
-            );
+            Ok(prebuilt_dir.join(format!("{arch}/{}.fd", file_type.as_str())))
         }
     }
 
     /// Find path to OVMF files by the strategy documented for
     /// [`Self::find_ovmf_file`].
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
-        let candidates = Self::get_candidate_paths(arch)?;
-
-        let code = Self::find_ovmf_file(OvmfFileType::Code, opt, &candidates)?;
-        let vars = Self::find_ovmf_file(OvmfFileType::Vars, opt, &candidates)?;
+        let code = Self::find_ovmf_file(OvmfFileType::Code, opt, arch)?;
+        let vars = Self::find_ovmf_file(OvmfFileType::Vars, opt, arch)?;
 
         Ok(Self { code, vars })
     }

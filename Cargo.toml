@@ -15,3 +15,8 @@ uefi = { path = "uefi" }
 uefi-macros = { path = "uefi-macros" }
 uefi-raw = { path = "uefi-raw" }
 uefi-services = { path = "uefi-services" }
+
+# Enable optimization for xtask itself, not for its dependencies. This speeds up
+# OVMF prebuilt decompression without much increase in compilation time.
+[profile.dev.package.xtask]
+opt-level = 3

@@ -21,11 +21,9 @@
 //! [`Path`] and [`PathBuf`].
 //!
 //! # API Hints
-//! There are no `File` and `Path` abstractions similar to those from `std` that
-//! are publicly exported. Instead, paths to files are provided as `&str`, and
-//! will be validated and transformed internally to the correct type.
-//! Furthermore, there are no `File` objects that are exposed to users. Instead,
-//! it is intended to work with the file system as in `std::fs`.
+//! There is no `File` abstraction as in the Rust `std` library. Instead, it is
+//! intended to work with the file system via dedicated functions, similar to
+//! the public functions of the `std::fs` module.
 //!
 //! There is no automatic synchronization of the file system for concurrent
 //! accesses. This is in the responsibility of the user.

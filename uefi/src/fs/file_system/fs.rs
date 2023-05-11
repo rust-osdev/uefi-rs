@@ -11,8 +11,6 @@ use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::ops::Deref;
 use log::debug;
-use uefi::CStr16;
-use uefi_macros::cstr16;
 
 /// Return type for public [`FileSystem`] operations.
 pub type FileSystemResult<T> = Result<T, Error>;
@@ -186,13 +184,12 @@ impl<'a> FileSystem<'a> {
     /// Removes a directory at this path, after removing all its contents. Use
     /// carefully!
     pub fn remove_dir_all(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
-        const SKIP_DIRS: [&CStr16; 2] = [cstr16!("."), cstr16!("..")];
         let path = path.as_ref();
         for file_info in self
             .read_dir(path)?
             .filter_map(|file_info_result| file_info_result.ok())
         {
-            if SKIP_DIRS.contains(&file_info.file_name()) {
+            if COMMON_SKIP_DIRS.contains(&file_info.file_name()) {
                 continue;
             }
 

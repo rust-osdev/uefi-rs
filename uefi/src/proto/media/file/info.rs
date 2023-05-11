@@ -229,6 +229,18 @@ impl FileInfo {
     pub fn file_name(&self) -> &CStr16 {
         unsafe { CStr16::from_ptr(self.file_name.as_ptr()) }
     }
+
+    /// Returns if the file is a directory.
+    #[must_use]
+    pub fn is_directory(&self) -> bool {
+        self.attribute.contains(FileAttribute::DIRECTORY)
+    }
+
+    /// Returns if the file is a regular file.
+    #[must_use]
+    pub fn is_regular_file(&self) -> bool {
+        !self.is_directory()
+    }
 }
 
 impl Align for FileInfo {

@@ -11,6 +11,8 @@ use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::ops::Deref;
 use log::debug;
+use uefi::CStr16;
+use uefi_macros::cstr16;
 
 /// Return type for public [`FileSystem`] operations.
 pub type FileSystemResult<T> = Result<T, Error>;
@@ -181,11 +183,35 @@ impl<'a> FileSystem<'a> {
         }
     }
 
-    /*/// Removes a directory at this path, after removing all its contents. Use
+    /// Removes a directory at this path, after removing all its contents. Use
     /// carefully!
     pub fn remove_dir_all(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
+        const SKIP_DIRS: [&CStr16; 2] = [cstr16!("."), cstr16!("..")];
         let path = path.as_ref();
-    }*/
+        for file_info in self
+            .read_dir(path)?
+            .filter_map(|file_info_result| file_info_result.ok())
+        {
+            if SKIP_DIRS.contains(&file_info.file_name()) {
+                continue;
+            }
+
+            let mut abs_entry_path = PathBuf::new();
+            abs_entry_path.push(path);
+            abs_entry_path.push(file_info.file_name());
+            if file_info.is_directory() {
+                // delete all inner files
+                // This recursion is fine as there are no links in UEFI/FAT file
+                // systems. No cycles possible.
+                self.remove_dir_all(&abs_entry_path)?;
+            } else {
+                self.remove_file(abs_entry_path)?;
+            }
+        }
+        // Now that the dir is empty, we delete it as final step.
+        self.remove_dir(path)?;
+        Ok(())
+    }
 
     /// Removes a file from the filesystem.
     pub fn remove_file(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
@@ -282,17 +308,17 @@ impl<'a> FileSystem<'a> {
     /// absolute path.
     ///
     /// May create a file if [`UefiFileMode::CreateReadWrite`] is set. May
-    /// create a directory if [`UefiFileMode::CreateReadWrite`] and `is_dir`
-    /// is set.
+    /// create a directory if [`UefiFileMode::CreateReadWrite`] and `create_dir`
+    /// is set. The parameter `create_dir` is ignored otherwise.
     fn open(
         &mut self,
         path: &Path,
         mode: UefiFileMode,
-        is_dir: bool,
+        create_dir: bool,
     ) -> FileSystemResult<UefiFileHandle> {
         validate_path(path)?;
 
-        let attr = if mode == UefiFileMode::CreateReadWrite && is_dir {
+        let attr = if mode == UefiFileMode::CreateReadWrite && create_dir {
             UefiFileAttribute::DIRECTORY
         } else {
             UefiFileAttribute::empty()

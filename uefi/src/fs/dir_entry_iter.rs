@@ -6,6 +6,9 @@ use alloc::boxed::Box;
 
 /// Iterates over the entries of an UEFI directory. It returns boxed values of
 /// type [`UefiFileInfo`].
+///
+/// Note that on UEFI/FAT-style file systems, the root dir usually doesn't
+/// return the entries `.` and `..`, whereas sub directories do.
 #[derive(Debug)]
 pub struct UefiDirectoryIter(UefiDirectoryHandle);
 

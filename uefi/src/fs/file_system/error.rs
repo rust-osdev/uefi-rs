@@ -28,8 +28,7 @@ pub struct IoError {
     pub uefi_error: crate::Error,
 }
 
-/// Enum that further specifies the context in that a [`Error`]
-/// occurred.
+/// Enum that further specifies the context in that an [`Error`] occurred.
 #[derive(Debug, Clone, Display, PartialEq, Eq)]
 pub enum FileSystemIOErrorContext {
     /// Can't delete the directory.

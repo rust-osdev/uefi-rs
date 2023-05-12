@@ -25,6 +25,8 @@
 - Added `CStr16::as_bytes`
 - Added `AsRef<[u8]>` and `Borrow<[u8]>` for `Cstr8` and `CStr16`.
 - Added `LoadedImageDevicePath` protocol.
+- Added `FileAttribute::is_directory(&self)` and
+  `FileAttribute::is_regular_file(&self)`
 
 ### Changed
 

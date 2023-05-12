@@ -33,7 +33,7 @@ pub const SEPARATOR_STR: &CStr16 = uefi_macros::cstr16!("\\");
 
 /// Deny list of characters for path components. UEFI supports FAT-like file
 /// systems. According to <https://en.wikipedia.org/wiki/Comparison_of_file_systems>,
-/// paths should not contain the following symbols.
+/// paths should not contain these symbols.
 pub const CHARACTER_DENY_LIST: [Char16; 10] = unsafe {
     [
         NUL_16,

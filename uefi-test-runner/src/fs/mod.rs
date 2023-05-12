@@ -60,7 +60,10 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), fs::Error> {
     assert_eq!(boxinfo.file_size(), data_to_write.len() as u64);
 
     // test remove dir all
-    // TODO
+    fs.remove_dir_all(cstr16!("foo_dir\\1"))?;
+    // file should not be available after remove all
+    let err = fs.try_exists(cstr16!("foo_dir\\1"));
+    assert!(err.is_err());
 
     Ok(())
 }

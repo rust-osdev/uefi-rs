@@ -610,7 +610,6 @@ version = "0.1.0"
 dependencies = [
  "bitflags 2.2.1",
  "ptr_meta",
- "uefi-macros",
  "uguid",
 ]
 

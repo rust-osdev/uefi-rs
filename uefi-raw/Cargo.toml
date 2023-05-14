@@ -14,7 +14,6 @@ rust-version = "1.68"
 [dependencies]
 bitflags = "2.1"
 ptr_meta = { version = "0.2.0", default-features = false }
-uefi-macros = "0.11.0"
 uguid = "2.0.0"
 
 [package.metadata.docs.rs]

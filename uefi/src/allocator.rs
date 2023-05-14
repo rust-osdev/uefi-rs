@@ -14,6 +14,7 @@
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
 
+use crate::proto::loaded_image::LoadedImage;
 use crate::table::boot::{BootServices, MemoryType};
 
 /// Reference to the boot services table, used to call the pool memory allocation functions.
@@ -21,6 +22,10 @@ use crate::table::boot::{BootServices, MemoryType};
 /// The inner pointer is only safe to dereference if UEFI boot services have not been
 /// exited by the host application yet.
 static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
+
+/// The memory type used for pool memory allocations.
+/// TODO: Use OnceCell when stablilized.
+static mut MEMORY_TYPE: MemoryType = MemoryType::LOADER_DATA;
 
 /// Initializes the allocator.
 ///
@@ -30,6 +35,12 @@ static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
 /// will be called when UEFI boot services will be exited.
 pub unsafe fn init(boot_services: &BootServices) {
     BOOT_SERVICES = NonNull::new(boot_services as *const _ as *mut _);
+
+    if let Ok(loaded_image) =
+        boot_services.open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
+    {
+        MEMORY_TYPE = loaded_image.data_type()
+    }
 }
 
 /// Access the boot services
@@ -54,9 +65,9 @@ pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
     /// Allocate memory using [`BootServices::allocate_pool`]. The allocation is
-    /// of type [`MemoryType::LOADER_DATA`].
+    /// of type [`MemoryType::LOADER_DATA`] for UEFI applications, [`MemoryType::BOOT_SERVICES_DATA`]
+    /// for UEFI boot drivers and [`MemoryType::RUNTIME_SERVICES_DATA`] for UEFI runtime drivers.
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let mem_ty = MemoryType::LOADER_DATA;
         let size = layout.size();
         let align = layout.align();
 
@@ -65,12 +76,14 @@ unsafe impl GlobalAlloc for Allocator {
             // only guaranteed to provide eight-byte alignment. Allocate extra
             // space so that we can return an appropriately-aligned pointer
             // within the allocation.
-            let full_alloc_ptr =
-                if let Ok(ptr) = boot_services().as_ref().allocate_pool(mem_ty, size + align) {
-                    ptr
-                } else {
-                    return ptr::null_mut();
-                };
+            let full_alloc_ptr = if let Ok(ptr) = boot_services()
+                .as_ref()
+                .allocate_pool(MEMORY_TYPE, size + align)
+            {
+                ptr
+            } else {
+                return ptr::null_mut();
+            };
 
             // Calculate the offset needed to get an aligned pointer within the
             // full allocation. If that offset is zero, increase it to `align`
@@ -97,7 +110,7 @@ unsafe impl GlobalAlloc for Allocator {
             // use `allocate_pool` directly.
             boot_services()
                 .as_ref()
-                .allocate_pool(mem_ty, size)
+                .allocate_pool(MEMORY_TYPE, size)
                 .unwrap_or(ptr::null_mut())
         }
     }

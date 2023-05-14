@@ -492,6 +492,12 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     cmd.args(["-device", "virtio-rng-pci"]);
 
+    // Set the boot menu timeout to zero. On aarch64 in particular this speeds
+    // up the boot a lot. Note that we have to enable the menu here even though
+    // we are skipping right past it, otherwise `splash-time` is ignored in
+    // favor of a hardcoded default timeout.
+    cmd.args(["-boot", "menu=on,splash-time=0"]);
+
     match arch {
         UefiArch::AArch64 => {
             // Use a generic ARM environment. Sadly qemu can't emulate a

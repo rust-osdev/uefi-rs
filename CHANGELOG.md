@@ -28,6 +28,10 @@
 - Added `FileAttribute::is_directory(&self)` and
   `FileAttribute::is_regular_file(&self)`
 - Added `LoadedImage::code_type()` and `LoadedImage::data_type()`
+- `Allocator` will now use the memory type of the running UEFI binary:
+  - `MemoryType::LOADER_DATA` for UEFI applications
+  - `MemoryType::BOOT_SERVICES_DATA` for UEFI boot drivers
+  - `MemoryType::RUNTIME_SERVICES_DATA` for UEFI runtime drivers
 
 ### Changed
 

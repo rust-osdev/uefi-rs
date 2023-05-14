@@ -138,9 +138,9 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
         None => {}
     }
 
-    // Enable the multi-processor test if KVM is available. KVM is
-    // available on Linux generally, but not in our CI.
-    if platform::is_linux() && !opt.ci {
+    // Enable the multi-processor test if not targeting AARCH64, and if KVM is
+    // available. KVM is available on Linux generally, but not in our CI.
+    if *opt.target != UefiArch::AArch64 && platform::is_linux() && !opt.ci {
         features.push(Feature::MultiProcessor);
     }
 

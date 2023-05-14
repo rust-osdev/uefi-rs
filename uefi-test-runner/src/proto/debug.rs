@@ -67,6 +67,10 @@ fn test_debug_port(bt: &BootServices) {
 }
 
 fn test_debug_support(bt: &BootServices) {
+    if cfg!(not(feature = "debug_support")) {
+        return;
+    }
+
     info!("Running UEFI debug connection protocol test");
     let handles = bt
         .find_handles::<DebugSupport>()

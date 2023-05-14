@@ -119,6 +119,12 @@ fn run_miri() -> Result<()> {
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![];
 
+    // Enable the DebugSupport test on supported platforms. Not available on
+    // AARCH64 since edk2 commit f4213fed34.
+    if *opt.target != UefiArch::AArch64 {
+        features.push(Feature::DebugSupport);
+    }
+
     // Enable the PXE test unless networking is disabled or the arch doesn't
     // support it.
     if *opt.target == UefiArch::X86_64 && !opt.disable_network {

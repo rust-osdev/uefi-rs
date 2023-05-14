@@ -119,6 +119,12 @@ fn run_miri() -> Result<()> {
 fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     let mut features = vec![];
 
+    // Enable the DebugSupport test on supported platforms. Not available on
+    // AARCH64 since edk2 commit f4213fed34.
+    if *opt.target != UefiArch::AArch64 {
+        features.push(Feature::DebugSupport);
+    }
+
     // Enable the PXE test unless networking is disabled or the arch doesn't
     // support it.
     if *opt.target == UefiArch::X86_64 && !opt.disable_network {
@@ -132,9 +138,9 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
         None => {}
     }
 
-    // Enable the multi-processor test if KVM is available. KVM is
-    // available on Linux generally, but not in our CI.
-    if platform::is_linux() && !opt.ci {
+    // Enable the multi-processor test if not targeting AARCH64, and if KVM is
+    // available. KVM is available on Linux generally, but not in our CI.
+    if *opt.target != UefiArch::AArch64 && platform::is_linux() && !opt.ci {
         features.push(Feature::MultiProcessor);
     }
 

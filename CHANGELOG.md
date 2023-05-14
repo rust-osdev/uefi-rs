@@ -27,6 +27,7 @@
 - Added `LoadedImageDevicePath` protocol.
 - Added `FileAttribute::is_directory(&self)` and
   `FileAttribute::is_regular_file(&self)`
+- Added `LoadedImage::code_type()` and `LoadedImage::data_type()`
 
 ### Changed
 

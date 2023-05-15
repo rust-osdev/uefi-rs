@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.21.0 (2023-05-15)
+
 ### Added
 
 - There is a new `fs` module that provides a high-level API for file-system
@@ -63,7 +69,7 @@
   - `GptPartitionAttributes` now has 16 additional `TYPE_SPECIFIC_BIT_<N>`
     constants.
 
-## uefi-macros - [Unreleased]
+## uefi-macros - 0.12.0 (2023-05-15)
 
 - The `unsafe_protocol` macro no longer makes protocols `!Send` and
   `!Sync`. Protocols can only be used while boot services are active, and that's
@@ -75,7 +81,9 @@
   (empty inputs) to create valid empty strings. They include the null-byte.
 - The `entry` macro now works correctly with docstrings.
 
-## uefi-services - [Unreleased]
+## uefi-services - 0.18.0 (2023-05-15)
+
+- Internal updates for changes in `uefi`.
 
 ## uefi - 0.20.0 (2023-03-19)
 

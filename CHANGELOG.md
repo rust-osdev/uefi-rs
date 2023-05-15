@@ -2,6 +2,10 @@
 
 ## uefi - [Unreleased]
 
+### Changed
+
+- Renamed `FileSystemIOErrorContext` to `IoErrorContext`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

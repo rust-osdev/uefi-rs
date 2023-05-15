@@ -1,12 +1,12 @@
 use crate::fs::{PathBuf, PathError};
 use alloc::string::FromUtf8Error;
 use core::fmt::Debug;
-use derive_more::Display;
+use core::fmt::{self, Display, Formatter};
 
 /// All errors that can happen when working with the [`FileSystem`].
 ///
 /// [`FileSystem`]: super::FileSystem
-#[derive(Debug, Clone, Display, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
     /// IO (low-level UEFI-errors) errors. See [`IoError`].
     Io(IoError),
@@ -16,9 +16,18 @@ pub enum Error {
     Utf8Encoding(FromUtf8Error),
 }
 
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(_) => write!(f, "IO error"),
+            Self::Path(_) => write!(f, "path error"),
+            Self::Utf8Encoding(_) => write!(f, "UTF-8 encoding error"),
+        }
+    }
+}
+
 /// UEFI-error with context when working with the underlying UEFI file protocol.
-#[derive(Debug, Clone, Display, PartialEq, Eq)]
-#[display(fmt = "IoError({},{})", context, path)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IoError {
     /// The path that led to the error.
     pub path: PathBuf,
@@ -28,8 +37,14 @@ pub struct IoError {
     pub uefi_error: crate::Error,
 }
 
+impl Display for IoError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "IO error for path {}: {}", self.path, self.context)
+    }
+}
+
 /// Enum that further specifies the context in that an [`Error`] occurred.
-#[derive(Debug, Clone, Display, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IoErrorContext {
     /// Can't delete the directory.
     CantDeleteDirectory,
@@ -54,6 +69,24 @@ pub enum IoErrorContext {
     /// The path exists but does not correspond to a file when a file was
     /// expected.
     NotAFile,
+}
+
+impl Display for IoErrorContext {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Self::CantDeleteDirectory => "failed to delete directory",
+            Self::CantDeleteFile => "failed to delete file",
+            Self::FlushFailure => "failed to flush file",
+            Self::CantOpenVolume => "failed to open volume",
+            Self::Metadata => "failed to read metadata",
+            Self::OpenError => "failed to open file",
+            Self::ReadFailure => "failed to read file",
+            Self::WriteFailure => "failed to write file",
+            Self::NotADirectory => "expected a directory",
+            Self::NotAFile => "expected a file",
+        };
+        write!(f, "{s}")
+    }
 }
 
 impl From<PathError> for Error {

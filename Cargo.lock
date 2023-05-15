@@ -588,7 +588,7 @@ dependencies = [
  "log",
  "ptr_meta",
  "ucs2",
- "uefi-macros",
+ "uefi-macros 0.11.0",
  "uefi-raw",
  "uguid",
 ]
@@ -596,6 +596,17 @@ dependencies = [
 [[package]]
 name = "uefi-macros"
 version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0caeb0e7b31b9f1f347e541106be10aa8c66c76fa722a3298a4cd21433fabd4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "uefi-macros"
+version = "0.12.0"
 dependencies = [
  "proc-macro2",
  "quote",

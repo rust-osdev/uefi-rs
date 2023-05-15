@@ -23,14 +23,14 @@ pub struct IoError {
     /// The path that led to the error.
     pub path: PathBuf,
     /// The context in which the path was used.
-    pub context: FileSystemIOErrorContext,
+    pub context: IoErrorContext,
     /// The underlying UEFI error.
     pub uefi_error: crate::Error,
 }
 
 /// Enum that further specifies the context in that an [`Error`] occurred.
 #[derive(Debug, Clone, Display, PartialEq, Eq)]
-pub enum FileSystemIOErrorContext {
+pub enum IoErrorContext {
     /// Can't delete the directory.
     CantDeleteDirectory,
     /// Can't delete the file.

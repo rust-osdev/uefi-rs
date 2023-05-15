@@ -2,7 +2,7 @@
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use uefi::fs::{FileSystem, FileSystemIOErrorContext, IoError, PathBuf};
+use uefi::fs::{FileSystem, IoError, IoErrorContext, PathBuf};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::ScopedProtocol;
 use uefi::{cstr16, fs, Status};
@@ -28,7 +28,7 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), fs::Error> {
     let err = fs.copy(cstr16!("not_found"), cstr16!("abc"));
     let expected_err = fs::Error::Io(IoError {
         path: PathBuf::from(cstr16!("not_found")),
-        context: FileSystemIOErrorContext::OpenError,
+        context: IoErrorContext::OpenError,
         uefi_error: uefi::Error::new(Status::NOT_FOUND, ()),
     });
     assert_eq!(err, Err(expected_err));

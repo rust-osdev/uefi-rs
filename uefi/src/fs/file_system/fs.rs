@@ -85,7 +85,7 @@ impl<'a> FileSystem<'a> {
         file.get_boxed_info().map_err(|err| {
             Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::Metadata,
+                context: IoErrorContext::Metadata,
                 uefi_error: err,
             })
         })
@@ -100,7 +100,7 @@ impl<'a> FileSystem<'a> {
             .into_regular_file()
             .ok_or(Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::NotAFile,
+                context: IoErrorContext::NotAFile,
                 // We do not have a real UEFI error here as we have a logical
                 // problem.
                 uefi_error: Status::INVALID_PARAMETER.into(),
@@ -109,7 +109,7 @@ impl<'a> FileSystem<'a> {
         let info = file.get_boxed_info::<UefiFileInfo>().map_err(|err| {
             Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::Metadata,
+                context: IoErrorContext::Metadata,
                 uefi_error: err,
             })
         })?;
@@ -118,7 +118,7 @@ impl<'a> FileSystem<'a> {
         let read_bytes = file.read(vec.as_mut_slice()).map_err(|err| {
             Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::ReadFailure,
+                context: IoErrorContext::ReadFailure,
                 uefi_error: err.to_err_without_payload(),
             })
         })?;
@@ -139,7 +139,7 @@ impl<'a> FileSystem<'a> {
             .into_directory()
             .ok_or(Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::NotADirectory,
+                context: IoErrorContext::NotADirectory,
                 // We do not have a real UEFI error here as we have a logical
                 // problem.
                 uefi_error: Status::INVALID_PARAMETER.into(),
@@ -165,14 +165,14 @@ impl<'a> FileSystem<'a> {
             UefiFileType::Dir(dir) => dir.delete().map_err(|err| {
                 Error::Io(IoError {
                     path: path.to_path_buf(),
-                    context: FileSystemIOErrorContext::CantDeleteDirectory,
+                    context: IoErrorContext::CantDeleteDirectory,
                     uefi_error: err,
                 })
             }),
             UefiFileType::Regular(_) => {
                 Err(Error::Io(IoError {
                     path: path.to_path_buf(),
-                    context: FileSystemIOErrorContext::NotADirectory,
+                    context: IoErrorContext::NotADirectory,
                     // We do not have a real UEFI error here as we have a logical
                     // problem.
                     uefi_error: Status::INVALID_PARAMETER.into(),
@@ -223,13 +223,13 @@ impl<'a> FileSystem<'a> {
             UefiFileType::Regular(file) => file.delete().map_err(|err| {
                 Error::Io(IoError {
                     path: path.to_path_buf(),
-                    context: FileSystemIOErrorContext::CantDeleteFile,
+                    context: IoErrorContext::CantDeleteFile,
                     uefi_error: err,
                 })
             }),
             UefiFileType::Dir(_) => Err(Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::NotAFile,
+                context: IoErrorContext::NotAFile,
                 // We do not have a real UEFI error here as we have a logical
                 // problem.
                 uefi_error: Status::INVALID_PARAMETER.into(),
@@ -272,14 +272,14 @@ impl<'a> FileSystem<'a> {
         handle.write(content.as_ref()).map_err(|err| {
             Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::WriteFailure,
+                context: IoErrorContext::WriteFailure,
                 uefi_error: err.to_err_without_payload(),
             })
         })?;
         handle.flush().map_err(|err| {
             Error::Io(IoError {
                 path: path.to_path_buf(),
-                context: FileSystemIOErrorContext::FlushFailure,
+                context: IoErrorContext::FlushFailure,
                 uefi_error: err,
             })
         })?;
@@ -295,7 +295,7 @@ impl<'a> FileSystem<'a> {
                     path.push(SEPARATOR_STR);
                     path
                 },
-                context: FileSystemIOErrorContext::CantOpenVolume,
+                context: IoErrorContext::CantOpenVolume,
                 uefi_error: err,
             })
         })
@@ -327,7 +327,7 @@ impl<'a> FileSystem<'a> {
                 log::trace!("Can't open file {path}: {err:?}");
                 Error::Io(IoError {
                     path: path.to_path_buf(),
-                    context: FileSystemIOErrorContext::OpenError,
+                    context: IoErrorContext::OpenError,
                     uefi_error: err,
                 })
             })

@@ -8,10 +8,10 @@
 use super::Path;
 use crate::fs::CHARACTER_DENY_LIST;
 use crate::Char16;
-use derive_more::Display;
+use core::fmt::{self, Display, Formatter};
 
 /// Errors related to file paths.
-#[derive(Debug, Clone, Eq, PartialEq, Display)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum PathError {
     /// The path is empty / points to nothing.
     Empty,
@@ -20,6 +20,22 @@ pub enum PathError {
     EmptyComponent,
     /// There are illegal characters in the path.
     IllegalChar(Char16),
+}
+
+impl Display for PathError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Empty => write!(f, "path is empty"),
+            Self::EmptyComponent => write!(f, "path contains an empty component"),
+            Self::IllegalChar(c) => {
+                write!(
+                    f,
+                    "path contains an illegal character (value {})",
+                    u16::from(*c)
+                )
+            }
+        }
+    }
 }
 
 #[cfg(feature = "unstable")]

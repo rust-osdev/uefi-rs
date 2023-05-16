@@ -26,6 +26,21 @@ mod status;
 pub use status::Status;
 pub use uguid::{guid, Guid};
 
+/// One-byte character.
+///
+/// Most strings in UEFI use [`Char16`], but a few places use one-byte
+/// characters. Unless otherwise noted, these are encoded as 8-bit ASCII using
+/// the ISO-Latin-1 character set.
+pub type Char8 = u8;
+
+/// Two-byte character.
+///
+/// Unless otherwise noted, the encoding is UCS-2. The UCS-2 encoding was
+/// defined by Unicode 2.1 and ISO/IEC 10646 standards, but is no longer part of
+/// the modern Unicode standards. It is essentially UTF-16 without support for
+/// surrogate pairs.
+pub type Char16 = u16;
+
 /// Physical memory address. This is always a 64-bit value, regardless
 /// of target platform.
 pub type PhysicalAddress = u64;

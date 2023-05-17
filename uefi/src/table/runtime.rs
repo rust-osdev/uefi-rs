@@ -3,7 +3,6 @@
 use super::{Header, Revision};
 use crate::table::boot::MemoryDescriptor;
 use crate::{CStr16, Char16, Error, Guid, Result, Status, StatusExt};
-use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 use core::mem::MaybeUninit;
@@ -12,6 +11,7 @@ use core::{fmt, ptr};
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
 };
+pub use uefi_raw::time::Daylight;
 
 #[cfg(feature = "alloc")]
 use {
@@ -355,21 +355,9 @@ impl Debug for RuntimeServices {
 }
 
 /// Date and time representation.
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct Time {
-    year: u16,  // 1900 - 9999
-    month: u8,  // 1 - 12
-    day: u8,    // 1 - 31
-    hour: u8,   // 0 - 23
-    minute: u8, // 0 - 59
-    second: u8, // 0 - 59
-    _pad1: u8,
-    nanosecond: u32, // 0 - 999_999_999
-    time_zone: i16,  // -1440 to 1440, or 2047 if unspecified
-    daylight: Daylight,
-    _pad2: u8,
-}
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct Time(uefi_raw::time::Time);
 
 /// Input parameters for [`Time::new`].
 #[derive(Copy, Clone, Debug)]
@@ -404,42 +392,30 @@ pub struct TimeParams {
     pub daylight: Daylight,
 }
 
-bitflags! {
-    /// A bitmask containing daylight savings time information.
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct Daylight: u8 {
-        /// Time is affected by daylight savings time.
-        const ADJUST_DAYLIGHT = 0x01;
-        /// Time has been adjusted for daylight savings time.
-        const IN_DAYLIGHT = 0x02;
-    }
-}
-
 /// Error returned by [`Time`] methods if the input is outside the valid range.
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct TimeError;
 
 impl Time {
     /// Unspecified Timezone/local time.
-    const UNSPECIFIED_TIMEZONE: i16 = 0x07ff;
+    const UNSPECIFIED_TIMEZONE: i16 = uefi_raw::time::Time::UNSPECIFIED_TIMEZONE;
 
     /// Create a `Time` value. If a field is not in the valid range,
     /// [`TimeError`] is returned.
     pub fn new(params: TimeParams) -> core::result::Result<Self, TimeError> {
-        let time = Self {
+        let time = Self(uefi_raw::time::Time {
             year: params.year,
             month: params.month,
             day: params.day,
             hour: params.hour,
             minute: params.minute,
             second: params.second,
-            _pad1: 0,
+            pad1: 0,
             nanosecond: params.nanosecond,
             time_zone: params.time_zone.unwrap_or(Self::UNSPECIFIED_TIMEZONE),
             daylight: params.daylight,
-            _pad2: 0,
-        };
+            pad2: 0,
+        });
         if time.is_valid() {
             Ok(time)
         } else {
@@ -455,156 +431,100 @@ impl Time {
     /// [`File::set_info`]: uefi::proto::media::file::File::set_info
     #[must_use]
     pub const fn invalid() -> Self {
-        Self {
-            year: 0,
-            month: 0,
-            day: 0,
-            hour: 0,
-            minute: 0,
-            second: 0,
-            _pad1: 0,
-            nanosecond: 0,
-            time_zone: 0,
-            daylight: Daylight::empty(),
-            _pad2: 0,
-        }
+        Self(uefi_raw::time::Time::invalid())
     }
 
     /// True if all fields are within valid ranges, false otherwise.
     #[must_use]
     pub fn is_valid(&self) -> bool {
-        (1900..=9999).contains(&self.year)
-            && (1..=12).contains(&self.month)
-            && (1..=31).contains(&self.day)
-            && self.hour <= 23
-            && self.minute <= 59
-            && self.second <= 59
-            && self.nanosecond <= 999_999_999
-            && ((-1440..=1440).contains(&self.time_zone)
-                || self.time_zone == Self::UNSPECIFIED_TIMEZONE)
+        self.0.is_valid()
     }
 
     /// Query the year.
     #[must_use]
     pub const fn year(&self) -> u16 {
-        self.year
+        self.0.year
     }
 
     /// Query the month.
     #[must_use]
     pub const fn month(&self) -> u8 {
-        self.month
+        self.0.month
     }
 
     /// Query the day.
     #[must_use]
     pub const fn day(&self) -> u8 {
-        self.day
+        self.0.day
     }
 
     /// Query the hour.
     #[must_use]
     pub const fn hour(&self) -> u8 {
-        self.hour
+        self.0.hour
     }
 
     /// Query the minute.
     #[must_use]
     pub const fn minute(&self) -> u8 {
-        self.minute
+        self.0.minute
     }
 
     /// Query the second.
     #[must_use]
     pub const fn second(&self) -> u8 {
-        self.second
+        self.0.second
     }
 
     /// Query the nanosecond.
     #[must_use]
     pub const fn nanosecond(&self) -> u32 {
-        self.nanosecond
+        self.0.nanosecond
     }
 
     /// Query the time offset in minutes from UTC, or None if using local time.
     #[must_use]
     pub const fn time_zone(&self) -> Option<i16> {
-        if self.time_zone == 2047 {
+        if self.0.time_zone == 2047 {
             None
         } else {
-            Some(self.time_zone)
+            Some(self.0.time_zone)
         }
     }
 
     /// Query the daylight savings time information.
     #[must_use]
     pub const fn daylight(&self) -> Daylight {
-        self.daylight
+        self.0.daylight
     }
 }
 
 impl fmt::Debug for Time {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:04}-{:02}-{:02} ", self.year, self.month, self.day)?;
+        write!(
+            f,
+            "{:04}-{:02}-{:02} ",
+            self.0.year, self.0.month, self.0.day
+        )?;
         write!(
             f,
             "{:02}:{:02}:{:02}.{:09}",
-            self.hour, self.minute, self.second, self.nanosecond
+            self.0.hour, self.0.minute, self.0.second, self.0.nanosecond
         )?;
-        if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
+        if self.0.time_zone == Self::UNSPECIFIED_TIMEZONE {
             write!(f, ", Timezone=local")?;
         } else {
-            write!(f, ", Timezone={}", self.time_zone)?;
+            write!(f, ", Timezone={}", self.0.time_zone)?;
         }
-        write!(f, ", Daylight={:?}", self.daylight)
+        write!(f, ", Daylight={:?}", self.0.daylight)
     }
 }
 
 impl fmt::Display for Time {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{:04}-{:02}-{:02} ", self.year, self.month, self.day)?;
-        write!(
-            f,
-            "{:02}:{:02}:{:02}.{:09}",
-            self.hour, self.minute, self.second, self.nanosecond
-        )?;
-
-        if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
-            write!(f, " (local)")?;
-        } else {
-            let offset_in_hours = self.time_zone as f32 / 60.0;
-            let integer_part = offset_in_hours as i16;
-            // We can't use "offset_in_hours.fract()" because it is part of `std`.
-            let fraction_part = offset_in_hours - (integer_part as f32);
-            // most time zones
-            if fraction_part == 0.0 {
-                write!(f, "UTC+{offset_in_hours}")?;
-            }
-            // time zones with 30min offset (and perhaps other special time zones)
-            else {
-                write!(f, "UTC+{offset_in_hours:.1}")?;
-            }
-        }
-
-        Ok(())
+        write!(f, "{}", self.0)
     }
 }
-
-impl PartialEq for Time {
-    fn eq(&self, other: &Time) -> bool {
-        self.year == other.year
-            && self.month == other.month
-            && self.day == other.day
-            && self.hour == other.hour
-            && self.minute == other.minute
-            && self.second == other.second
-            && self.nanosecond == other.nanosecond
-            && self.time_zone == other.time_zone
-            && self.daylight == other.daylight
-    }
-}
-
-impl Eq for Time {}
 
 /// Unique key for a variable.
 #[cfg(feature = "alloc")]

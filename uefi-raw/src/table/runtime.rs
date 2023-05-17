@@ -1,7 +1,82 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use crate::{guid, Guid};
+use crate::capsule::CapsuleHeader;
+use crate::table::boot::MemoryDescriptor;
+use crate::table::Header;
+use crate::time::Time;
+use crate::{guid, Char16, Guid, PhysicalAddress, Status};
 use bitflags::bitflags;
+use core::ffi::c_void;
+
+/// Table of pointers to all the runtime services.
+///
+/// This table, and the function pointers it contains are valid even after the
+/// UEFI OS loader and OS have taken control of the platform.
+#[repr(C)]
+pub struct RuntimeServices {
+    pub header: Header,
+    pub get_time:
+        unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
+    pub set_time: unsafe extern "efiapi" fn(time: *const Time) -> Status,
+    pub get_wakeup_time:
+        unsafe extern "efiapi" fn(enabled: *mut u8, pending: *mut u8, time: *mut Time) -> Status,
+    pub set_wakeup_time: unsafe extern "efiapi" fn(enable: u8, time: *const Time) -> Status,
+    pub set_virtual_address_map: unsafe extern "efiapi" fn(
+        map_size: usize,
+        desc_size: usize,
+        desc_version: u32,
+        virtual_map: *mut MemoryDescriptor,
+    ) -> Status,
+    pub convert_pointer:
+        unsafe extern "efiapi" fn(debug_disposition: usize, address: *mut *const c_void) -> Status,
+    pub get_variable: unsafe extern "efiapi" fn(
+        variable_name: *const Char16,
+        vendor_guid: *const Guid,
+        attributes: *mut VariableAttributes,
+        data_size: *mut usize,
+        data: *mut u8,
+    ) -> Status,
+    pub get_next_variable_name: unsafe extern "efiapi" fn(
+        variable_name_size: *mut usize,
+        variable_name: *mut u16,
+        vendor_guid: *mut Guid,
+    ) -> Status,
+    pub set_variable: unsafe extern "efiapi" fn(
+        variable_name: *const Char16,
+        vendor_guid: *const Guid,
+        attributes: VariableAttributes,
+        data_size: usize,
+        data: *const u8,
+    ) -> Status,
+    pub get_next_high_monotonic_count: unsafe extern "efiapi" fn(high_count: *mut u32) -> Status,
+    pub reset_system: unsafe extern "efiapi" fn(
+        rt: ResetType,
+        status: Status,
+        data_size: usize,
+        data: *const u8,
+    ) -> !,
+
+    // UEFI 2.0 Capsule Services.
+    pub update_capsule: unsafe extern "efiapi" fn(
+        capsule_header_array: *const *const CapsuleHeader,
+        capsule_count: usize,
+        scatter_gather_list: PhysicalAddress,
+    ) -> Status,
+    pub query_capsule_capabilities: unsafe extern "efiapi" fn(
+        capsule_header_array: *const *const CapsuleHeader,
+        capsule_count: usize,
+        maximum_capsule_size: *mut usize,
+        reset_type: *mut ResetType,
+    ) -> Status,
+
+    // Miscellaneous UEFI 2.0 Service.
+    pub query_variable_info: unsafe extern "efiapi" fn(
+        attributes: VariableAttributes,
+        maximum_variable_storage_size: *mut u64,
+        remaining_variable_storage_size: *mut u64,
+        maximum_variable_size: *mut u64,
+    ) -> Status,
+}
 
 newtype_enum! {
     /// The type of system reset.

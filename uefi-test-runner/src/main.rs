@@ -181,7 +181,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
         // Shut down the system
         let rt = unsafe { st.runtime_services() };
         rt.reset(
-            uefi::table::runtime::ResetType::Shutdown,
+            uefi::table::runtime::ResetType::SHUTDOWN,
             Status::SUCCESS,
             None,
         );

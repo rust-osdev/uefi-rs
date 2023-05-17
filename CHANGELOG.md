@@ -5,6 +5,8 @@
 ### Changed
 
 - Renamed `FileSystemIOErrorContext` to `IoErrorContext`.
+- `ResetType` is now a newtype-enum instead of a Rust enum. Its members now have
+  upper-case names.
 
 ## uefi-macros - [Unreleased]
 

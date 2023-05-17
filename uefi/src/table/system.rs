@@ -217,7 +217,7 @@ impl SystemTable<Boot> {
         let boot_services = self.boot_services();
 
         // Reboot the device.
-        let reset = |status| -> ! { self.runtime_services().reset(ResetType::Cold, status, None) };
+        let reset = |status| -> ! { self.runtime_services().reset(ResetType::COLD, status, None) };
 
         // Get the size of the buffer to allocate. If that calculation
         // overflows treat it as an unrecoverable error.

@@ -441,9 +441,6 @@ fn build_esp_dir(opt: &QemuOpt) -> Result<PathBuf> {
     }
     fs_err::copy(built_file, boot_dir.join(output_file))?;
 
-    // Add a test file that is used in the media protocol tests.
-    fs_err::write(boot_dir.join("test_input.txt"), "test input data")?;
-
     Ok(esp_dir)
 }
 

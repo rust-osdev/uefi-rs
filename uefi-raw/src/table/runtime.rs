@@ -3,6 +3,28 @@
 use crate::{guid, Guid};
 use bitflags::bitflags;
 
+newtype_enum! {
+    /// The type of system reset.
+    pub enum ResetType: u32 => {
+        /// System-wide reset.
+        ///
+        /// This is analogous to power cycling the device.
+        COLD = 0,
+
+        /// System-wide re-initialization.
+        ///
+        /// If the system doesn't support a warm reset, this will trigger a cold
+        /// reset.
+        WARM = 1,
+
+        /// The system is powered off.
+        SHUTDOWN = 2,
+
+        /// A platform-specific reset type.
+        PLATFORM_SPECIFIC = 3,
+    }
+}
+
 /// Real time clock capabilities.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]

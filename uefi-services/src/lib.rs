@@ -225,7 +225,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
                 use uefi::table::runtime::ResetType;
                 st.runtime_services()
-                    .reset(ResetType::Shutdown, uefi::Status::ABORTED, None);
+                    .reset(ResetType::SHUTDOWN, uefi::Status::ABORTED, None);
             }
 
             // If we don't have any shutdown mechanism handy, the best we can do is loop

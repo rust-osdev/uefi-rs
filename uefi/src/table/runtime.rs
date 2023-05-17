@@ -9,7 +9,9 @@ use core::fmt::{Debug, Formatter};
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
 
-pub use uefi_raw::table::runtime::{TimeCapabilities, VariableAttributes, VariableVendor};
+pub use uefi_raw::table::runtime::{
+    ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
+};
 
 #[cfg(feature = "alloc")]
 use {
@@ -659,26 +661,4 @@ pub struct VariableStorageInfo {
 
     /// Maximum size of an individual variable of the specified type.
     pub maximum_variable_size: u64,
-}
-
-/// The type of system reset.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(u32)]
-pub enum ResetType {
-    /// Resets all the internal circuitry to its initial state.
-    ///
-    /// This is analogous to power cycling the device.
-    Cold = 0,
-    /// The processor is reset to its initial state.
-    Warm,
-    /// The components are powered off.
-    Shutdown,
-    /// A platform-specific reset type.
-    ///
-    /// The additional data must be a pointer to
-    /// a null-terminated string followed by an UUID.
-    PlatformSpecific,
-    // SAFETY: This enum is never exposed to the user, but only fed as input to
-    //         the firmware. Therefore, unexpected values can never come from
-    //         the firmware, and modeling this as a Rust enum seems safe.
 }

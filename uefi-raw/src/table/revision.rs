@@ -22,7 +22,7 @@ use core::fmt;
 /// Examples:
 ///
 /// ```
-/// use uefi::table::Revision;
+/// # use uefi_raw::table::Revision;
 /// assert_eq!(Revision::EFI_1_02.to_string(), "1.02");
 /// assert_eq!(Revision::EFI_1_10.to_string(), "1.10");
 /// assert_eq!(Revision::EFI_2_00.to_string(), "2.0");

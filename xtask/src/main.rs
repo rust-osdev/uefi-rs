@@ -180,7 +180,7 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
     };
     run_cmd(cargo.command()?)?;
 
-    let mut packages = vec![Package::Uefi];
+    let mut packages = vec![Package::UefiRaw, Package::Uefi];
     if !test_opt.skip_macro_tests {
         packages.push(Package::UefiMacros);
     }

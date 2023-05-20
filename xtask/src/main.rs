@@ -1,5 +1,6 @@
 mod arch;
 mod cargo;
+mod check_raw;
 mod device_path;
 mod disk;
 mod net;
@@ -210,6 +211,7 @@ fn main() -> Result<()> {
 
     match &opt.action {
         Action::Build(build_opt) => build(build_opt),
+        Action::CheckRaw(_) => check_raw::check_raw(),
         Action::Clippy(clippy_opt) => clippy(clippy_opt),
         Action::Doc(doc_opt) => doc(doc_opt),
         Action::GenCode(gen_opt) => device_path::gen_code(gen_opt),

@@ -17,6 +17,7 @@
 #[macro_use]
 mod enums;
 
+pub mod capsule;
 pub mod protocol;
 pub mod table;
 pub mod time;

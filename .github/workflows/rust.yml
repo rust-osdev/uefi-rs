@@ -121,6 +121,9 @@ jobs:
       - name: Verify generated code is up-to-date
         run: cargo xtask gen-code --check
 
+      - name: Run additional checks on the uefi-raw package
+        run: cargo xtask check-raw
+
   # Run the build with our current stable MSRV (specified in
   # ./msrv_toolchain.toml). This serves to check that we don't
   # accidentally start relying on a new feature without intending

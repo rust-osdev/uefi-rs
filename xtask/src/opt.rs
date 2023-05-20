@@ -66,6 +66,7 @@ pub struct Opt {
 #[derive(Debug, Subcommand)]
 pub enum Action {
     Build(BuildOpt),
+    CheckRaw(CheckRawOpt),
     Clippy(ClippyOpt),
     Doc(DocOpt),
     GenCode(GenCodeOpt),
@@ -88,6 +89,10 @@ pub struct BuildOpt {
     #[clap(long, action)]
     pub feature_permutations: bool,
 }
+
+/// Check various properties of the uefi-raw code.
+#[derive(Debug, Parser)]
+pub struct CheckRawOpt {}
 
 /// Run clippy on all the packages.
 #[derive(Debug, Parser)]

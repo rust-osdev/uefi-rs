@@ -64,9 +64,9 @@ impl Pointer {
 pub struct PointerMode {
     /// The pointer device's resolution on the X/Y/Z axis in counts/mm.
     /// If a value is 0, then the device does _not_ support that axis.
-    pub resolution: (u64, u64, u64),
+    pub resolution: [u64; 3],
     /// Whether the devices has a left button / right button.
-    pub has_button: (bool, bool),
+    pub has_button: [bool; 2],
 }
 
 /// The relative change in the pointer's state.
@@ -76,9 +76,9 @@ pub struct PointerState {
     /// The relative movement on the X/Y/Z axis.
     ///
     /// If `PointerMode` indicates an axis is not supported, it must be ignored.
-    pub relative_movement: (i32, i32, i32),
+    pub relative_movement: [i32; 3],
     /// Whether the left / right mouse button is currently pressed.
     ///
     /// If `PointerMode` indicates a button is not supported, it must be ignored.
-    pub button: (bool, bool),
+    pub button: [bool; 2],
 }

@@ -174,7 +174,8 @@ pub struct BootServices {
         device_path: &mut *const FfiDevicePath,
         out_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
-    install_configuration_table: usize,
+    install_configuration_table:
+        extern "efiapi" fn(guid_entry: Guid, table_ptr: *const c_void) -> Status,
 
     // Image services
     load_image: unsafe extern "efiapi" fn(
@@ -1139,6 +1140,34 @@ impl BootServices {
         assert_eq!((self.stall)(time), Status::SUCCESS);
     }
 
+    /// Adds, updates, or removes a configuration table entry
+    /// from the EFI System Table.
+    ///
+    /// # Safety
+    ///
+    /// This relies on `table_ptr` being allocated in the
+    /// pool of type [`uefi::table::boot::MemoryType::RUNTIME_SERVICES_DATA`]
+    /// according to the specification.
+    /// Other memory types such as
+    /// [`uefi::table::boot::MemoryType::ACPI_RECLAIM`]
+    /// can be considered.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.InstallConfigurationTable()` in the UEFI
+    /// Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    pub unsafe fn install_configuration_table(
+        &self,
+        guid_entry: Guid,
+        table_ptr: *const c_void,
+    ) -> Result {
+        (self.install_configuration_table)(guid_entry, table_ptr).to_result()
+    }
+
     /// Set the watchdog timer.
     ///
     /// UEFI will start a 5-minute countdown after an UEFI image is loaded.
@@ -1581,7 +1610,7 @@ impl Debug for BootServices {
                 &(self.locate_device_path as *const usize),
             )
             .field(
-                "install_configuration_table",
+                "install_configuration_table (fn ptr)",
                 &(self.install_configuration_table as *const usize),
             )
             .field("load_image (fn ptr)", &(self.load_image as *const usize))

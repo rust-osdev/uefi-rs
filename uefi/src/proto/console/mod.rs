@@ -7,3 +7,5 @@ pub mod gop;
 pub mod pointer;
 pub mod serial;
 pub mod text;
+#[cfg(feature = "draw_target")]
+pub mod draw_target;

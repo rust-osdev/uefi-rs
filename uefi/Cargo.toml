@@ -12,7 +12,7 @@ license = "MPL-2.0"
 rust-version = "1.68"
 
 [features]
-default = ["panic-on-logger-errors"]
+default = ["panic-on-logger-errors", "draw_target"]
 alloc = []
 global_allocator = []
 logger = []
@@ -20,11 +20,14 @@ logger = []
 # were observed on the VirtualBox UEFI implementation (see uefi-rs#121).
 # In those cases, this feature can be excluded by removing the default features.
 panic-on-logger-errors = []
+# DrawTarget for GOP protocol
+draw_target = ["embedded-graphics-core"]
 # Generic gate to code that uses unstable features of Rust. You usually need a nightly toolchain.
 unstable = []
 
 [dependencies]
 bitflags = "2.0.0"
+embedded-graphics-core = { version = "0.4.0", optional = true }
 log = { version = "0.4.5", default-features = false }
 ptr_meta = { version = "0.2.0", default-features = false }
 ucs2 = "0.3.2"

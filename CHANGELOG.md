@@ -2,6 +2,10 @@
 
 ## uefi - [Unreleased]
 
+### Added
+
+- Added `BootServices::install_configuration_table`.
+
 ### Changed
 
 - Renamed `FileSystemIOErrorContext` to `IoErrorContext`.

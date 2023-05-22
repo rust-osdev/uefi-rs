@@ -7,6 +7,8 @@
 - Renamed `FileSystemIOErrorContext` to `IoErrorContext`.
 - `ResetType` is now a newtype-enum instead of a Rust enum. Its members now have
   upper-case names.
+- `PointerMode` and `PointerState` now contain arrays rather than tuples, as
+  tuples are not FFI safe.
 
 ## uefi-macros - [Unreleased]
 

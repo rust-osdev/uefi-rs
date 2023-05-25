@@ -6,17 +6,18 @@
 , pkgs ? import sources.nixpkgs { }
 }:
 
-pkgs.mkShell rec {
+pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     # nix related stuff (such as dependency management)
     niv
     nixpkgs-fmt
 
-    rustup
+    # Integration test dependencies
+    swtpm
     qemu
-  ];
 
-  buildInputs = with pkgs; [
+    # Rust toolchain
+    rustup
   ];
 
   # Set ENV vars.

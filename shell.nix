@@ -12,8 +12,7 @@ pkgs.mkShell rec {
   ];
 
   # Set ENV vars.
-  # These are automatically the right files for the current CPU (if available).
-  # https://github.com/NixOS/nixpkgs/blob/nixos-22.11/pkgs/applications/virtualization/OVMF/default.nix#L80
-  OVMF_CODE="${pkgs.OVMF.firmware}";
-  OVMF_VARS="${pkgs.OVMF.variables}";
+  # OVMF_CODE="${pkgs.OVMF.firmware}";
+  # OVMF_VARS="${pkgs.OVMF.variables}";
+  # OVMF_SHELL="${pkgs.edk2-uefi-shell}";
 }

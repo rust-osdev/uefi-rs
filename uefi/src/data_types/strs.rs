@@ -211,10 +211,8 @@ impl CStr16 {
         Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
 
-    /// Creates a C string wrapper from a u16 slice
-    ///
-    /// Since not every u16 value is a valid UCS-2 code point, this function
-    /// must do a bit more validity checking than CStr::from_bytes_with_nul
+    /// Creates a `&CStr16` from a u16 slice, if the slice contains exactly
+    /// one terminating null-byte and all chars are valid UCS-2 chars.
     pub fn from_u16_with_nul(codes: &[u16]) -> Result<&Self, FromSliceWithNulError> {
         for (pos, &code) in codes.iter().enumerate() {
             match code.try_into() {
@@ -234,7 +232,7 @@ impl CStr16 {
         Err(FromSliceWithNulError::NotNulTerminated)
     }
 
-    /// Unsafely creates a C string wrapper from a u16 slice.
+    /// Unsafely creates a `&CStr16` from a u16 slice.
     ///
     /// # Safety
     ///
@@ -287,11 +285,13 @@ impl CStr16 {
         Self::from_u16_with_nul(&buf[..index + 1]).map_err(|err| match err {
             FromSliceWithNulError::InvalidChar(p) => FromStrWithBufError::InvalidChar(p),
             FromSliceWithNulError::InteriorNul(p) => FromStrWithBufError::InteriorNul(p),
-            FromSliceWithNulError::NotNulTerminated => unreachable!(),
+            FromSliceWithNulError::NotNulTerminated => {
+                unreachable!()
+            }
         })
     }
 
-    /// Create a [`CStr16`] from an [`UnalignedSlice`] using an aligned
+    /// Create a `&CStr16` from an [`UnalignedSlice`] using an aligned
     /// buffer for storage. The lifetime of the output is tied to `buf`,
     /// not `src`.
     pub fn from_unaligned_slice<'buf>(

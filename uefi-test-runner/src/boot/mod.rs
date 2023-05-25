@@ -91,10 +91,10 @@ fn test_load_image(bt: &BootServices) {
 
         log::debug!("load_image with FromBuffer strategy works");
     }
-    // Variant B: FromFilePath
+    // Variant B: FromDevicePath
     {
-        let load_source = LoadImageSource::FromFilePath {
-            file_path: image_device_path,
+        let load_source = LoadImageSource::FromDevicePath {
+            device_path: image_device_path,
             from_boot_manager: false,
         };
         let _ = bt

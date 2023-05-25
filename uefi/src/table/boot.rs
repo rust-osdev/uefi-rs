@@ -1026,8 +1026,8 @@ impl BootServices {
                 source_buffer = buffer.as_ptr();
                 source_size = buffer.len();
             }
-            LoadImageSource::FromFilePath {
-                file_path,
+            LoadImageSource::FromDevicePath {
+                device_path: file_path,
                 from_boot_manager,
             } => {
                 boot_policy = u8::from(from_boot_manager);
@@ -1697,11 +1697,21 @@ pub enum LoadImageSource<'a> {
     /// behavior depends on `from_boot_manager`. If `true`, attempt to
     /// load via the `LoadFile` protocol. If `false`, attempt to load
     /// via the `LoadFile2` protocol, then fall back to `LoadFile`.
-    FromFilePath {
-        /// Device path from which to load the image.
-        file_path: &'a DevicePath,
+    FromDevicePath {
+        /// The full device path from which to load the image.
+        ///
+        /// The provided path should be a full device path and not just the
+        /// file path portion of it. So for example, it must be (the binary
+        /// representation)
+        /// `PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)/\\EFI\\BOOT\\BOOTX64.EFI`
+        /// and not just `\\EFI\\BOOT\\BOOTX64.EFI`.
+        device_path: &'a DevicePath,
 
-        /// Whether the request originates from the boot manager.
+        /// If there is no instance of [`SimpleFileSystem`] protocol associated
+        /// with the given device path, then this function will attempt to use
+        /// `LoadFileProtocol` (`from_boot_manager` is `true`) or
+        /// `LoadFile2Protocol`, and then `LoadFileProtocol`
+        /// (`from_boot_manager` is `false`).
         from_boot_manager: bool,
     },
 }

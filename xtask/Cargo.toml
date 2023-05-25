@@ -11,6 +11,7 @@ fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std
 fs-err = "2.6.0"
 heck = "0.4.0"
 itertools = "0.10.5"
+lzma-rs = "0.3.0"
 mbrman = "0.5.1"
 nix = { version = "0.26.1", default-features = false, features = ["fs"] }
 os_info = { version = "3.6.0", default-features = false }
@@ -18,6 +19,9 @@ proc-macro2 = { version = "1.0.46", features = ["span-locations"] }
 quote = "1.0.21"
 regex = "1.8.1"
 serde_json = "1.0.73"
+sha2 = "0.10.6"
 syn = { version = "2.0.0", features = ["full"] }
+tar = "0.4.38"
 tempfile = "3.5.0"
 walkdir = "2.3.3"
+ureq = "2.6.2"

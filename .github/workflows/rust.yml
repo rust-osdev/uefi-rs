@@ -22,10 +22,10 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
 
-    - name: Install qemu and OVMF
+    - name: Install qemu
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-arm qemu-efi-aarch64 -y
+        sudo apt-get install qemu-system-arm -y
 
     - name: Run VM tests
       run: cargo xtask run --target aarch64 --headless --ci
@@ -40,10 +40,10 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
 
-    - name: Install qemu and OVMF
+    - name: Install qemu
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86 ovmf swtpm -y
+        sudo apt-get install qemu-system-x86 swtpm -y
 
     - name: Run VM tests
       run: cargo xtask run --target x86_64 --headless --ci --tpm=v1
@@ -58,10 +58,10 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
 
-    - name: Install qemu and OVMF
+    - name: Install qemu
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86 ovmf-ia32 swtpm -y
+        sudo apt-get install qemu-system-x86 swtpm -y
 
     - name: Run VM tests
       run: cargo xtask run --target ia32 --headless --ci --tpm=v2
@@ -168,10 +168,10 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
-    - name: Install qemu and OVMF
+    - name: Install qemu
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86 ovmf -y
+        sudo apt-get install qemu-system-x86 -y
 
     - name: Enable nightly toolchain
       run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml

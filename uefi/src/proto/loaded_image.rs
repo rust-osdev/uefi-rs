@@ -56,10 +56,15 @@ impl LoadedImage {
         self.device_handle
     }
 
-    /// Get a reference to the `file_path`.
+    /// Get a reference to the `file_path` portion of the DeviceHandle that the
+    /// EFI image was loaded from.
     ///
-    /// Return `None` if the pointer to the file path portion specific to
-    /// DeviceHandle that the EFI Image was loaded from is null.
+    /// For a full device path, consider using the [`LoadedImageDevicePath`]
+    /// protocol.
+    ///
+    /// Returns `None` if `file_path` is null.
+    ///
+    /// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
     #[must_use]
     pub fn file_path(&self) -> Option<&DevicePath> {
         if self.file_path.is_null() {

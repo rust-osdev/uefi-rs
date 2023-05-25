@@ -8,6 +8,7 @@
 - `DevicePathNode::data`
 
 ### Changed
+- Renamed `LoadImageSource::FromFilePath` to `LoadImageSource::FromDevicePath`
 
 ### Removed
 
@@ -44,7 +45,6 @@
   `BUFFER_TOO_SMALL` error can only occur when reading a directory, not a file.
 - `RegularFile::read` now reads in 1 MiB chunks to avoid a bug in some
   firmware. This fix also applies to `fs::FileSystem::read`.
-
 ## uefi-services - 0.19.0 (2023-06-01)
 
 ### Changed

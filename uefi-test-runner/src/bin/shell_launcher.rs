@@ -57,8 +57,8 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     let shell_image_handle = boot_services
         .load_image(
             image,
-            LoadImageSource::FromFilePath {
-                file_path: shell_image_path,
+            LoadImageSource::FromDevicePath {
+                device_path: shell_image_path,
                 from_boot_manager: false,
             },
         )

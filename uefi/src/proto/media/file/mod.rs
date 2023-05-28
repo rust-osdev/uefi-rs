@@ -21,7 +21,10 @@ use {alloc::alloc::Global, core::alloc::Allocator};
 use {alloc::boxed::Box, uefi::mem::make_boxed};
 
 pub use self::dir::Directory;
-pub use self::info::{FileInfo, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel, FromUefi};
+pub use self::info::{
+    FileInfo, FileInfoCreationError, FileProtocolInfo, FileSystemInfo, FileSystemVolumeLabel,
+    FromUefi,
+};
 pub use self::regular::RegularFile;
 
 /// Common interface to `FileHandle`, `RegularFile`, and `Directory`.

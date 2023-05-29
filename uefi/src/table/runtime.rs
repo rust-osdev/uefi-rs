@@ -1,9 +1,8 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use super::{Header, Revision};
+use super::Revision;
 use crate::table::boot::MemoryDescriptor;
-use crate::{CStr16, Char16, Error, Guid, Result, Status, StatusExt};
-use core::ffi::c_void;
+use crate::{CStr16, Error, Guid, Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
@@ -32,68 +31,13 @@ use {
 ///
 /// [`SystemTable::runtime_services`]: crate::table::SystemTable::runtime_services
 #[repr(C)]
-pub struct RuntimeServices {
-    header: Header,
-    get_time:
-        unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
-    set_time: unsafe extern "efiapi" fn(time: &Time) -> Status,
-    get_wakeup_time:
-        unsafe extern "efiapi" fn(enabled: *mut u8, pending: *mut u8, time: *mut Time) -> Status,
-    set_wakeup_time: unsafe extern "efiapi" fn(enable: u8, time: *const Time) -> Status,
-    pub(crate) set_virtual_address_map: unsafe extern "efiapi" fn(
-        map_size: usize,
-        desc_size: usize,
-        desc_version: u32,
-        virtual_map: *mut MemoryDescriptor,
-    ) -> Status,
-    convert_pointer:
-        unsafe extern "efiapi" fn(debug_disposition: usize, address: *mut *const c_void) -> Status,
-    get_variable: unsafe extern "efiapi" fn(
-        variable_name: *const Char16,
-        vendor_guid: *const Guid,
-        attributes: *mut VariableAttributes,
-        data_size: *mut usize,
-        data: *mut u8,
-    ) -> Status,
-    get_next_variable_name: unsafe extern "efiapi" fn(
-        variable_name_size: *mut usize,
-        variable_name: *mut u16,
-        vendor_guid: *mut Guid,
-    ) -> Status,
-    set_variable: unsafe extern "efiapi" fn(
-        variable_name: *const Char16,
-        vendor_guid: *const Guid,
-        attributes: VariableAttributes,
-        data_size: usize,
-        data: *const u8,
-    ) -> Status,
-    get_next_high_monotonic_count: unsafe extern "efiapi" fn(high_count: *mut u32) -> Status,
-    reset: unsafe extern "efiapi" fn(
-        rt: ResetType,
-
-        status: Status,
-        data_size: usize,
-        data: *const u8,
-    ) -> !,
-
-    // UEFI 2.0 Capsule Services.
-    update_capsule: usize,
-    query_capsule_capabilities: usize,
-
-    // Miscellaneous UEFI 2.0 Service.
-    query_variable_info: unsafe extern "efiapi" fn(
-        attributes: VariableAttributes,
-        maximum_variable_storage_size: *mut u64,
-        remaining_variable_storage_size: *mut u64,
-        maximum_variable_size: *mut u64,
-    ) -> Status,
-}
+pub struct RuntimeServices(uefi_raw::table::runtime::RuntimeServices);
 
 impl RuntimeServices {
     /// Query the current time and date information
     pub fn get_time(&self) -> Result<Time> {
         let mut time = MaybeUninit::<Time>::uninit();
-        unsafe { (self.get_time)(time.as_mut_ptr(), ptr::null_mut()) }
+        unsafe { (self.0.get_time)(time.as_mut_ptr().cast(), ptr::null_mut()) }
             .to_result_with_val(|| unsafe { time.assume_init() })
     }
 
@@ -101,7 +45,7 @@ impl RuntimeServices {
     pub fn get_time_and_caps(&self) -> Result<(Time, TimeCapabilities)> {
         let mut time = MaybeUninit::<Time>::uninit();
         let mut caps = MaybeUninit::<TimeCapabilities>::uninit();
-        unsafe { (self.get_time)(time.as_mut_ptr(), caps.as_mut_ptr()) }
+        unsafe { (self.0.get_time)(time.as_mut_ptr().cast(), caps.as_mut_ptr()) }
             .to_result_with_val(|| unsafe { (time.assume_init(), caps.assume_init()) })
     }
 
@@ -115,7 +59,8 @@ impl RuntimeServices {
     /// Undefined behavior could happen if multiple tasks try to
     /// use this function at the same time without synchronisation.
     pub unsafe fn set_time(&mut self, time: &Time) -> Result {
-        (self.set_time)(time).to_result()
+        let time: *const Time = time;
+        (self.0.set_time)(time.cast()).to_result()
     }
 
     /// Get the size (in bytes) of a variable. This can be used to find out how
@@ -123,8 +68,8 @@ impl RuntimeServices {
     pub fn get_variable_size(&self, name: &CStr16, vendor: &VariableVendor) -> Result<usize> {
         let mut data_size = 0;
         let status = unsafe {
-            (self.get_variable)(
-                name.as_ptr(),
+            (self.0.get_variable)(
+                name.as_ptr().cast(),
                 &vendor.0,
                 ptr::null_mut(),
                 &mut data_size,
@@ -154,8 +99,8 @@ impl RuntimeServices {
         let mut attributes = VariableAttributes::empty();
         let mut data_size = buf.len();
         unsafe {
-            (self.get_variable)(
-                name.as_ptr(),
+            (self.0.get_variable)(
+                name.as_ptr().cast(),
                 &vendor.0,
                 &mut attributes,
                 &mut data_size,
@@ -178,8 +123,8 @@ impl RuntimeServices {
         let mut data = Vec::with_capacity(data_size);
 
         let status = unsafe {
-            (self.get_variable)(
-                name.as_ptr(),
+            (self.0.get_variable)(
+                name.as_ptr().cast(),
                 &vendor.0,
                 &mut attributes,
                 &mut data_size,
@@ -212,7 +157,7 @@ impl RuntimeServices {
         loop {
             let mut name_size_in_bytes = name.len() * mem::size_of::<u16>();
             status = unsafe {
-                (self.get_next_variable_name)(
+                (self.0.get_next_variable_name)(
                     &mut name_size_in_bytes,
                     name.as_mut_ptr(),
                     &mut vendor,
@@ -275,8 +220,8 @@ impl RuntimeServices {
         data: &[u8],
     ) -> Result {
         unsafe {
-            (self.set_variable)(
-                name.as_ptr(),
+            (self.0.set_variable)(
+                name.as_ptr().cast(),
                 &vendor.0,
                 attributes,
                 data.len(),
@@ -302,13 +247,13 @@ impl RuntimeServices {
         &self,
         attributes: VariableAttributes,
     ) -> Result<VariableStorageInfo> {
-        if self.header.revision < Revision::EFI_2_00 {
+        if self.0.header.revision < Revision::EFI_2_00 {
             return Err(Status::UNSUPPORTED.into());
         }
 
         let mut info = VariableStorageInfo::default();
         unsafe {
-            (self.query_variable_info)(
+            (self.0.query_variable_info)(
                 attributes,
                 &mut info.maximum_variable_storage_size,
                 &mut info.remaining_variable_storage_size,
@@ -331,7 +276,17 @@ impl RuntimeServices {
             None => (0, ptr::null()),
         };
 
-        unsafe { (self.reset)(rt, status, size, data) }
+        unsafe { (self.0.reset_system)(rt, status, size, data) }
+    }
+
+    pub(crate) unsafe fn set_virtual_address_map(
+        &self,
+        map_size: usize,
+        desc_size: usize,
+        desc_version: u32,
+        virtual_map: *mut MemoryDescriptor,
+    ) -> Status {
+        (self.0.set_virtual_address_map)(map_size, desc_size, desc_version, virtual_map)
     }
 }
 
@@ -342,14 +297,14 @@ impl super::Table for RuntimeServices {
 impl Debug for RuntimeServices {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("RuntimeServices")
-            .field("header", &self.header)
-            .field("get_time", &(self.get_time as *const u64))
-            .field("set_time", &(self.set_time as *const u64))
+            .field("header", &self.0.header)
+            .field("get_time", &(self.0.get_time as *const u64))
+            .field("set_time", &(self.0.set_time as *const u64))
             .field(
                 "set_virtual_address_map",
-                &(self.set_virtual_address_map as *const u64),
+                &(self.0.set_virtual_address_map as *const u64),
             )
-            .field("reset", &(self.reset as *const u64))
+            .field("reset", &(self.0.reset_system as *const u64))
             .finish()
     }
 }

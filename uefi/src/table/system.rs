@@ -318,20 +318,16 @@ impl SystemTable<Runtime> {
         let entry_size = core::mem::size_of::<MemoryDescriptor>();
         let entry_version = MemoryDescriptor::VERSION;
         let map_ptr = map.as_mut_ptr();
-        ((*(*self.table).runtime).set_virtual_address_map)(
-            map_size,
-            entry_size,
-            entry_version,
-            map_ptr,
-        )
-        .to_result_with_val(|| {
-            let new_table_ref =
-                &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
-            Self {
-                table: new_table_ref,
-                _marker: PhantomData,
-            }
-        })
+        (*(*self.table).runtime)
+            .set_virtual_address_map(map_size, entry_size, entry_version, map_ptr)
+            .to_result_with_val(|| {
+                let new_table_ref =
+                    &mut *(new_system_table_virtual_addr as usize as *mut SystemTableImpl);
+                Self {
+                    table: new_table_ref,
+                    _marker: PhantomData,
+                }
+            })
     }
 
     /// Return the address of the SystemTable that resides in a UEFI runtime services

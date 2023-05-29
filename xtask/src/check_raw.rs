@@ -196,7 +196,7 @@ fn is_efiapi(f: &TypeBareFn) -> bool {
 fn check_type(ty: &Type, src: &Path) -> Result<(), Error> {
     match ty {
         Type::BareFn(f) => check_fn_ptr(f, src),
-        Type::Path(_) => {
+        Type::Never(_) | Type::Path(_) => {
             // Allow.
             Ok(())
         }

@@ -149,6 +149,26 @@ impl LoadedImage {
         self.image_size = size;
     }
 
+    /// Set the callback handler to unload the image.
+    ///
+    /// Drivers that wish to support unloading have to register their unload handler
+    /// using this protocol. It is responsible for cleaning up any resources the
+    /// image is using before returning. Unloading a driver is done with
+    /// [`BootServices::unload_image`].
+    ///
+    /// # Safety
+    ///
+    /// Only the driver that this [`LoadedImage`] is attached to should register an
+    /// unload handler.
+    ///
+    /// [`BootServices::unload_image`]: crate::table::boot::BootServices
+    pub unsafe fn set_unload(
+        &mut self,
+        unload: extern "efiapi" fn(image_handle: Handle) -> Status,
+    ) {
+        self.unload = unload;
+    }
+
     /// Set the load options for the image. This can be used prior to
     /// calling `BootServices.start_image` to control the command line
     /// passed to the image.

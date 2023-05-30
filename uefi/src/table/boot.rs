@@ -5,7 +5,6 @@ use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::device_path::{DevicePath, FfiDevicePath};
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{Char16, Event, Guid, Handle, Result, Status, StatusExt};
-use bitflags::bitflags;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
@@ -21,7 +20,7 @@ use {
 };
 
 pub use uefi_raw::table::boot::{
-    InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
+    EventType, InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
 };
 
 // TODO: this similar to `SyncUnsafeCell`. Once that is stabilized we
@@ -2036,41 +2035,6 @@ impl<'guid> SearchType<'guid> {
     #[must_use]
     pub const fn from_proto<P: ProtocolPointer + ?Sized>() -> Self {
         SearchType::ByProtocol(&P::GUID)
-    }
-}
-
-bitflags! {
-    /// Flags describing the type of an UEFI event and its attributes.
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct EventType: u32 {
-        /// The event is a timer event and may be passed to `BootServices::set_timer()`
-        /// Note that timers only function during boot services time.
-        const TIMER = 0x8000_0000;
-
-        /// The event is allocated from runtime memory.
-        /// This must be done if the event is to be signaled after ExitBootServices.
-        const RUNTIME = 0x4000_0000;
-
-        /// Calling wait_for_event or check_event will enqueue the notification
-        /// function if the event is not already in the signaled state.
-        /// Mutually exclusive with `NOTIFY_SIGNAL`.
-        const NOTIFY_WAIT = 0x0000_0100;
-
-        /// The notification function will be enqueued when the event is signaled
-        /// Mutually exclusive with `NOTIFY_WAIT`.
-        const NOTIFY_SIGNAL = 0x0000_0200;
-
-        /// The event will be signaled at ExitBootServices time.
-        /// This event type should not be combined with any other.
-        /// Its notification function must follow some special rules:
-        /// - Cannot use memory allocation services, directly or indirectly
-        /// - Cannot depend on timer events, since those will be deactivated
-        const SIGNAL_EXIT_BOOT_SERVICES = 0x0000_0201;
-
-        /// The event will be notified when SetVirtualAddressMap is performed.
-        /// This event type should not be combined with any other.
-        const SIGNAL_VIRTUAL_ADDRESS_CHANGE = 0x6000_0202;
     }
 }
 

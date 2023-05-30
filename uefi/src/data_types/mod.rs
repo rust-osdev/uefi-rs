@@ -8,7 +8,7 @@ use core::ptr::NonNull;
 /// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
 ///
 /// If you need to have a nullable handle (for a custom UEFI FFI for example) use `Option<Handle>`.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Handle(NonNull<c_void>);
 

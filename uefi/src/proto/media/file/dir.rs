@@ -49,7 +49,7 @@ impl Directory {
         FileInfo::assert_aligned(buffer);
 
         // Read the directory entry into the aligned storage
-        self.0.read(buffer).map(|read_bytes| {
+        self.0.read_unchunked(buffer).map(|read_bytes| {
             // 0 read bytes signals that the last directory entry was read
             let last_directory_entry_read = read_bytes == 0;
             if last_directory_entry_read {

@@ -1,5 +1,5 @@
 use super::{File, FileHandle, FileInternal};
-use crate::{Result, Status, StatusExt};
+use crate::{Error, Result, Status, StatusExt};
 
 /// A `FileHandle` that is also a regular (data) file.
 ///
@@ -38,8 +38,25 @@ impl RegularFile {
     /// * [`uefi::Status::NO_MEDIA`]
     /// * [`uefi::Status::DEVICE_ERROR`]
     /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::BUFFER_TOO_SMALL`]
-    pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
+    ///
+    /// # Quirks
+    ///
+    /// Some UEFI implementations have a bug where large reads will incorrectly
+    /// return an error. This function avoids that bug by reading in chunks of
+    /// no more than 1 MiB. This is handled internally within the function;
+    /// callers can safely pass in a buffer of any size. See
+    /// <https://github.com/rust-osdev/uefi-rs/issues/825> for more information.
+    pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
+        let chunk_size = 1024 * 1024;
+
+        read_chunked(buffer, chunk_size, |buf, buf_size| unsafe {
+            (self.imp().read)(self.imp(), buf_size, buf)
+        })
+    }
+
+    /// Internal method for reading without chunking. This is used to implement
+    /// `Directory::read_entry`.
+    pub(super) fn read_unchunked(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
         let status =
             unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) };
@@ -128,5 +145,132 @@ impl File for RegularFile {
 
     fn is_directory(&self) -> Result<bool> {
         Ok(false)
+    }
+}
+
+/// Read data into `buffer` in chunks of `chunk_size`. Reading is done by
+/// calling `read`, which takes a pointer to a byte buffer and the buffer's
+/// size.
+///
+/// See [`RegularFile::read`] for details of why reading in chunks is needed.
+///
+/// This separate function exists for easier unit testing.
+fn read_chunked<F>(buffer: &mut [u8], chunk_size: usize, mut read: F) -> Result<usize>
+where
+    F: FnMut(*mut u8, &mut usize) -> Status,
+{
+    let mut remaining_size = buffer.len();
+    let mut total_read_size = 0;
+    let mut output_ptr = buffer.as_mut_ptr();
+
+    while remaining_size > 0 {
+        let requested_read_size = remaining_size.min(chunk_size);
+
+        let mut read_size = requested_read_size;
+        let status = read(output_ptr, &mut read_size);
+
+        if status.is_success() {
+            total_read_size += read_size;
+            remaining_size -= read_size;
+            output_ptr = unsafe { output_ptr.add(read_size) };
+
+            // Exit the loop if there's nothing left to read.
+            if read_size < requested_read_size {
+                break;
+            }
+        } else {
+            return Err(Error::new(status, ()));
+        }
+    }
+
+    Ok(total_read_size)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::rc::Rc;
+    use alloc::vec;
+    use alloc::vec::Vec;
+    use core::cell::RefCell;
+
+    #[derive(Default)]
+    struct TestFile {
+        // Use `Rc<RefCell>` so that we can modify via an immutable ref, makes
+        // the test simpler to implement.
+        data: Rc<RefCell<Vec<u8>>>,
+        offset: Rc<RefCell<usize>>,
+    }
+
+    impl TestFile {
+        fn read(&self, buffer: *mut u8, buffer_size: &mut usize) -> Status {
+            let mut offset = self.offset.borrow_mut();
+            let data = self.data.borrow();
+
+            let remaining_data_size = data.len() - *offset;
+            let size_to_read = remaining_data_size.min(*buffer_size);
+            unsafe { buffer.copy_from(data.as_ptr().add(*offset), size_to_read) };
+            *offset += size_to_read;
+            *buffer_size = size_to_read;
+            Status::SUCCESS
+        }
+
+        fn reset(&self) {
+            *self.data.borrow_mut() = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            *self.offset.borrow_mut() = 0;
+        }
+    }
+
+    /// Test reading a regular file.
+    #[test]
+    fn test_file_read_chunked() {
+        let file = TestFile::default();
+        let read = |buf, buf_size: &mut usize| file.read(buf, buf_size);
+
+        // Chunk size equal to the data size.
+        file.reset();
+        let mut buffer = [0; 10];
+        assert_eq!(read_chunked(&mut buffer, 10, read), Ok(10));
+        assert_eq!(buffer.as_slice(), *file.data.borrow());
+
+        // Chunk size smaller than the data size.
+        file.reset();
+        let mut buffer = [0; 10];
+        assert_eq!(read_chunked(&mut buffer, 2, read), Ok(10));
+        assert_eq!(buffer.as_slice(), *file.data.borrow());
+
+        // Chunk size bigger than the data size.
+        file.reset();
+        let mut buffer = [0; 10];
+        assert_eq!(read_chunked(&mut buffer, 20, read), Ok(10));
+        assert_eq!(buffer.as_slice(), *file.data.borrow());
+
+        // Buffer smaller than the full file.
+        file.reset();
+        let mut buffer = [0; 4];
+        assert_eq!(read_chunked(&mut buffer, 10, read), Ok(4));
+        assert_eq!(buffer.as_slice(), [1, 2, 3, 4]);
+
+        // Buffer bigger than the full file.
+        file.reset();
+        let mut buffer = [0; 20];
+        assert_eq!(read_chunked(&mut buffer, 10, read), Ok(10));
+        assert_eq!(
+            buffer,
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        // Empty buffer.
+        file.reset();
+        let mut buffer = [];
+        assert_eq!(read_chunked(&mut buffer, 10, read), Ok(0));
+        assert_eq!(buffer, []);
+
+        // Empty file.
+        file.reset();
+        file.data.borrow_mut().clear();
+        let mut buffer = [0; 10];
+        assert_eq!(read_chunked(&mut buffer, 10, read), Ok(0));
+        assert_eq!(buffer, [0; 10]);
     }
 }

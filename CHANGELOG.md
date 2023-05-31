@@ -13,6 +13,10 @@
   upper-case names.
 - `PointerMode` and `PointerState` now contain arrays rather than tuples, as
   tuples are not FFI safe.
+- `RegularFile::read` no longer returns `Option<usize>` in error data. A
+  `BUFFER_TOO_SMALL` error can only occur when reading a directory, not a file.
+- `RegularFile::read` now reads in 1 MiB chunks to avoid a bug in some
+  firmware. This fix also applies to `fs::FileSystem::read`.
 
 ## uefi-macros - [Unreleased]
 

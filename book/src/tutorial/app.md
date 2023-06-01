@@ -18,7 +18,7 @@ In `cargo.toml`, add a few dependencies:
 ```toml
 [dependencies]
 log = "0.4"
-uefi = "0.21"
+uefi = "0.22"
 uefi-services = "0.18"
 ```
 

@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.22.0 (2023-06-01)
+
 ### Added
 
 - Added `BootServices::install_configuration_table`.
@@ -18,9 +24,9 @@
 - `RegularFile::read` now reads in 1 MiB chunks to avoid a bug in some
   firmware. This fix also applies to `fs::FileSystem::read`.
 
-## uefi-macros - [Unreleased]
+## uefi-services - 0.19.0 (2023-06-01)
 
-## uefi-services - [Unreleased]
+- Internal updates for changes in `uefi`.
 
 ## uefi - 0.21.0 (2023-05-15)
 

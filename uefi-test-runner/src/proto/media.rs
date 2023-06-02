@@ -1,6 +1,7 @@
 use alloc::string::ToString;
 use core::cell::RefCell;
 use core::ptr::NonNull;
+use uefi::data_types::Align;
 use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
 use uefi::proto::media::disk::{DiskIo, DiskIo2, DiskIo2Token};
@@ -29,8 +30,12 @@ fn test_existing_dir(directory: &mut Directory) {
 
     let dir = RefCell::new(dir);
 
+    assert_eq!(FileInfo::alignment(), 8);
+    #[repr(align(8))]
+    struct Buf([u8; 200]);
+
     // Backing memory to read the file info data into.
-    let mut stack_buf = [0; 200];
+    let mut stack_buf = Buf([0; 200]);
 
     // The file names that the test read from the directory.
     let entry_names = RefCell::new(vec![]);
@@ -44,7 +49,7 @@ fn test_existing_dir(directory: &mut Directory) {
         let mut entry_names = entry_names.borrow_mut();
         loop {
             let entry = dir
-                .read_entry(&mut stack_buf)
+                .read_entry(&mut stack_buf.0)
                 .expect("failed to read directory");
             if let Some(entry) = entry {
                 entry_names.push(entry.file_name().to_string());

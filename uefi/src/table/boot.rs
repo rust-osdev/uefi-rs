@@ -174,7 +174,7 @@ pub struct BootServices {
         out_handle: &mut MaybeUninit<Handle>,
     ) -> Status,
     install_configuration_table:
-        extern "efiapi" fn(guid_entry: Guid, table_ptr: *const c_void) -> Status,
+        extern "efiapi" fn(guid_entry: &Guid, table_ptr: *const c_void) -> Status,
 
     // Image services
     load_image: unsafe extern "efiapi" fn(
@@ -1161,7 +1161,7 @@ impl BootServices {
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
     pub unsafe fn install_configuration_table(
         &self,
-        guid_entry: Guid,
+        guid_entry: &Guid,
         table_ptr: *const c_void,
     ) -> Result {
         (self.install_configuration_table)(guid_entry, table_ptr).to_result()

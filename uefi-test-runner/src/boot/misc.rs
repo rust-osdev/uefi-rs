@@ -2,10 +2,12 @@ use core::ffi::c_void;
 use core::ptr::{self, NonNull};
 
 use uefi::proto::unsafe_protocol;
-use uefi::table::boot::{BootServices, EventType, SearchType, TimerTrigger, Tpl};
-use uefi::{Event, Identify};
+use uefi::table::boot::{BootServices, EventType, MemoryType, SearchType, TimerTrigger, Tpl};
+use uefi::table::{Boot, SystemTable};
+use uefi::{guid, Event, Guid, Identify};
 
-pub fn test(bt: &BootServices) {
+pub fn test(st: &SystemTable<Boot>) {
+    let bt = st.boot_services();
     info!("Testing timer...");
     test_timer(bt);
     info!("Testing events...");
@@ -18,6 +20,7 @@ pub fn test(bt: &BootServices) {
     test_install_protocol_interface(bt);
     test_reinstall_protocol_interface(bt);
     test_uninstall_protocol_interface(bt);
+    test_install_configuration_table(st);
 }
 
 fn test_timer(bt: &BootServices) {
@@ -142,4 +145,29 @@ fn test_uninstall_protocol_interface(bt: &BootServices) {
         bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, ptr::null_mut())
             .expect("Failed to uninstall protocol interface");
     }
+}
+
+fn test_install_configuration_table(st: &SystemTable<Boot>) {
+    let config = st
+        .boot_services()
+        .allocate_pool(MemoryType::ACPI_RECLAIM, 1)
+        .expect("Failed to allocate config table");
+    unsafe { config.write(42) };
+
+    let count = st.config_table().len();
+    const ID: Guid = guid!("3bdb3089-5662-42df-840e-3922ed6467c9");
+
+    unsafe {
+        st.boot_services()
+            .install_configuration_table(&ID, config.cast())
+            .expect("Failed to install configuration table");
+    }
+
+    assert_eq!(count + 1, st.config_table().len());
+    let config_entry = st
+        .config_table()
+        .iter()
+        .find(|ct| ct.guid == ID)
+        .expect("Failed to find test config table");
+    assert_eq!(unsafe { *(config_entry.address as *const u8) }, 42);
 }

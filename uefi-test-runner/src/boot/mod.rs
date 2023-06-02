@@ -1,11 +1,13 @@
 use uefi::proto::console::text::Output;
 use uefi::table::boot::{BootServices, SearchType};
+use uefi::table::{Boot, SystemTable};
 use uefi::Identify;
 
-pub fn test(bt: &BootServices) {
+pub fn test(st: &SystemTable<Boot>) {
+    let bt = st.boot_services();
     info!("Testing boot services");
     memory::test(bt);
-    misc::test(bt);
+    misc::test(st);
     test_locate_handle_buffer(bt);
 }
 

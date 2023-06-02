@@ -49,7 +49,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     bt.get_image_file_system(image)
         .expect("Failed to retrieve boot file system");
 
-    boot::test(bt);
+    boot::test(&st);
 
     // Test all the supported protocols.
     proto::test(image, &mut st);

@@ -73,7 +73,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Install QEMU
-        run: choco install qemu
+        run: choco install qemu --version 2023.4.24
 
       - name: Checkout sources
         uses: actions/checkout@v3

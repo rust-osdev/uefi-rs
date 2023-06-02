@@ -1,4 +1,5 @@
-///! Facilities for dealing with UEFI operation results.
+//! Facilities for dealing with UEFI operation results.
+
 use core::fmt::Debug;
 
 /// The error type that we use, essentially a status code + optional additional data

@@ -68,7 +68,7 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
     {
         // Calculate the final size of the struct.
         let name_length_ucs2 = name.as_slice_with_nul().len();
-        let name_size = name_length_ucs2 * mem::size_of::<Char16>();
+        let name_size = mem::size_of_val(name.as_slice_with_nul());
         let info_size = Self::name_offset() + name_size;
         let info_size = Self::round_up_to_alignment(info_size);
 

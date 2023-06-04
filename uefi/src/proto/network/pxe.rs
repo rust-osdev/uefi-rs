@@ -680,7 +680,7 @@ impl DiscoverInfo {
         let required_size = core::mem::size_of::<bool>() * 4
             + core::mem::size_of::<IpAddress>()
             + core::mem::size_of::<u16>()
-            + core::mem::size_of::<Server>() * server_count;
+            + core::mem::size_of_val(srv_list);
 
         if buffer.len() < required_size {
             return Err(Status::BUFFER_TOO_SMALL.into());

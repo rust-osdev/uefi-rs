@@ -6,6 +6,18 @@
 
 ## uefi-services - [Unreleased]
 
+## uefi - 0.23.0 (2023-06-04)
+
+### Changed
+
+- Fixed function signature bug in `BootServices::install_configuration_table`.
+
+## uefi-services - 0.20.0 (2023-06-04)
+
+### Changed
+
+- Updated to latest version of `uefi`.
+
 ## uefi - 0.22.0 (2023-06-01)
 
 ### Added
@@ -25,6 +37,8 @@
   firmware. This fix also applies to `fs::FileSystem::read`.
 
 ## uefi-services - 0.19.0 (2023-06-01)
+
+### Changed
 
 - Internal updates for changes in `uefi`.
 
@@ -104,6 +118,8 @@
 - The `entry` macro now works correctly with docstrings.
 
 ## uefi-services - 0.18.0 (2023-05-15)
+
+### Changed
 
 - Internal updates for changes in `uefi`.
 

@@ -11,7 +11,7 @@ use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use core::{ptr, slice};
+use core::{panic, ptr, slice};
 #[cfg(feature = "alloc")]
 use {
     crate::fs::FileSystem,
@@ -1311,6 +1311,13 @@ impl BootServices {
     /// [`open_protocol`]: BootServices::open_protocol
     /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
     ///
+    /// # Panics
+    ///
+    /// Panics if the protocol instance is `null`. Use [`test_protocol`] to
+    /// test for the existence of a marker protocol.
+    ///
+    /// [`test_protocol`]: BootServices::test_protocol
+    ///
     /// # Errors
     ///
     /// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
@@ -1334,6 +1341,10 @@ impl BootServices {
             attributes as u32,
         )
         .to_result_with_val(|| {
+            if interface.is_null() {
+                panic!("attempted to open a null interface");
+            }
+
             let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
 
             ScopedProtocol {

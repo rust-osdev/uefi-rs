@@ -110,7 +110,7 @@ fn test_install_protocol_interface(bt: &BootServices) {
     info!("Installing TestProtocol");
 
     let _ = unsafe {
-        bt.install_protocol_interface(None, &TestProtocol::GUID, ptr::null_mut())
+        bt.install_protocol_interface(None, ptr::null_mut() as *mut TestProtocol)
             .expect("Failed to install protocol interface")
     };
 
@@ -128,9 +128,8 @@ fn test_reinstall_protocol_interface(bt: &BootServices) {
     unsafe {
         let _ = bt.reinstall_protocol_interface(
             handle,
-            &TestProtocol::GUID,
-            ptr::null_mut(),
-            ptr::null_mut(),
+            ptr::null_mut() as *mut TestProtocol,
+            ptr::null_mut() as *mut TestProtocol,
         );
     }
 }
@@ -142,7 +141,7 @@ fn test_uninstall_protocol_interface(bt: &BootServices) {
         .expect("Failed to find protocol to uninstall")[0];
 
     unsafe {
-        bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, ptr::null_mut())
+        bt.uninstall_protocol_interface(handle, ptr::null_mut() as *mut TestProtocol)
             .expect("Failed to uninstall protocol interface");
     }
 }

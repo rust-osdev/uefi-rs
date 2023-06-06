@@ -734,7 +734,10 @@ impl BootServices {
     ///
     /// # Safety
     ///
-    /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+    /// The caller is responsible for ensuring that the protocol instance is valid until uninstalled.
+    ///
+    /// It is valid for `interface` to be null. The caller must ensure to only do so for protocols
+    /// that are intened to be used as markers.
     ///
     /// # Errors
     ///
@@ -743,17 +746,16 @@ impl BootServices {
     ///
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub unsafe fn install_protocol_interface(
+    pub unsafe fn install_protocol_interface<P: Protocol>(
         &self,
         mut handle: Option<Handle>,
-        protocol: &Guid,
-        interface: *mut c_void,
+        interface: *mut P,
     ) -> Result<Handle> {
         ((self.install_protocol_interface)(
             &mut handle,
-            protocol,
+            &P::GUID,
             InterfaceType::NATIVE_INTERFACE,
-            interface,
+            interface.cast(),
         ))
         // this `unwrapped_unchecked` is safe, `handle` is guaranteed to be Some() if this call is
         // successful
@@ -770,7 +772,10 @@ impl BootServices {
     /// # Safety
     ///
     /// The caller is responsible for ensuring that there are no references to the `old_interface` that is being
-    /// removed.
+    /// removed and that the new instance is valid until uninstalled.
+    ///
+    /// It is valid for `new_interface` to be null. The caller must ensure to only do so for protocols
+    /// that are intened to be used as markers.
     ///
     /// # Errors
     ///
@@ -779,15 +784,19 @@ impl BootServices {
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub unsafe fn reinstall_protocol_interface(
+    pub unsafe fn reinstall_protocol_interface<P: Protocol>(
         &self,
         handle: Handle,
-        protocol: &Guid,
-        old_interface: *mut c_void,
-        new_interface: *mut c_void,
+        old_interface: *mut P,
+        new_interface: *mut P,
     ) -> Result<()> {
-        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface)
-            .to_result()
+        (self.reinstall_protocol_interface)(
+            handle,
+            &P::GUID,
+            old_interface.cast(),
+            new_interface.cast(),
+        )
+        .to_result()
     }
 
     /// Removes a protocol interface from a device handle.
@@ -799,8 +808,6 @@ impl BootServices {
     /// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
     /// to device protocols.
     ///
-    /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
-    ///
     /// # Errors
     ///
     /// See section `EFI_BOOT_SERVICES.UninstallProtocolInterface()` in the UEFI Specification for
@@ -809,13 +816,12 @@ impl BootServices {
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub unsafe fn uninstall_protocol_interface(
+    pub unsafe fn uninstall_protocol_interface<P: Protocol>(
         &self,
         handle: Handle,
-        protocol: &Guid,
-        interface: *mut c_void,
+        interface: *mut P,
     ) -> Result<()> {
-        (self.uninstall_protocol_interface)(handle, protocol, interface).to_result()
+        (self.uninstall_protocol_interface)(handle, &P::GUID, interface.cast()).to_result()
     }
 
     /// Registers `event` to be signalled whenever a protocol interface is registered for

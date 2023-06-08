@@ -2,6 +2,15 @@
 
 ## uefi - [Unreleased]
 
+### Added
+- `DevicePath::to_boxed`, `DevicePath::to_owned`, and `DevicePath::as_bytes`
+- `DevicePathInstance::to_boxed`, `DevicePathInstance::to_owned`, and `DevicePathInstance::as_bytes`
+- `DevicePathNode::data`
+
+### Changed
+
+### Removed
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

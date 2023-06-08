@@ -1,7 +1,6 @@
 use crate::fs::{PathBuf, PathError};
 use alloc::string::FromUtf8Error;
-use core::fmt::Debug;
-use core::fmt::{self, Display, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 
 /// All errors that can happen when working with the [`FileSystem`].
 ///

@@ -80,6 +80,8 @@ mod device_path_gen;
 pub use device_path_gen::{
     acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
 };
+#[cfg(feature = "alloc")]
+use {alloc::borrow::ToOwned, alloc::boxed::Box};
 
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
@@ -176,6 +178,12 @@ impl DevicePathNode {
         self.full_type() == (DeviceType::END, DeviceSubType::END_ENTIRE)
     }
 
+    /// Returns the payload data of this node.
+    #[must_use]
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
     /// Convert from a generic [`DevicePathNode`] reference to an enum
     /// of more specific node types.
     pub fn as_enum(&self) -> Result<DevicePathNodeEnum, NodeConversionError> {
@@ -226,6 +234,21 @@ impl DevicePathInstance {
             stop_condition: StopCondition::AnyEndNode,
         }
     }
+
+    /// Returns a slice of the underlying bytes.
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8] {
+        &self.data
+    }
+
+    /// Returns a boxed copy of that value.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn to_boxed(&self) -> Box<Self> {
+        let data = self.data.to_owned();
+        let data = data.into_boxed_slice();
+        unsafe { mem::transmute(data) }
+    }
 }
 
 impl Debug for DevicePathInstance {
@@ -242,10 +265,23 @@ impl PartialEq for DevicePathInstance {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl ToOwned for DevicePathInstance {
+    type Owned = Box<DevicePathInstance>;
+
+    fn to_owned(&self) -> Self::Owned {
+        self.to_boxed()
+    }
+}
+
 /// Device path protocol.
 ///
-/// A device path contains one or more device path instances made of up
-/// variable-length nodes. It ends with an [`END_ENTIRE`] node.
+/// Can be used on any device handle to obtain generic path/location information
+/// concerning the physical device or logical device. If the handle does not
+/// logically map to a physical device, the handle may not necessarily support
+/// the device path protocol. The device path describes the location of the
+/// device the handle is for. The size of the Device Path can be determined from
+/// the structures that make up the Device Path.
 ///
 /// See the [module-level documentation] for more details.
 ///
@@ -326,6 +362,21 @@ impl DevicePath {
             stop_condition: StopCondition::EndEntireNode,
         }
     }
+
+    /// Returns a slice of the underlying bytes.
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8] {
+        &self.data
+    }
+
+    /// Returns a boxed copy of that value.
+    #[cfg(feature = "alloc")]
+    #[must_use]
+    pub fn to_boxed(&self) -> Box<Self> {
+        let data = self.data.to_owned();
+        let data = data.into_boxed_slice();
+        unsafe { mem::transmute(data) }
+    }
 }
 
 impl Debug for DevicePath {
@@ -339,6 +390,15 @@ impl Debug for DevicePath {
 impl PartialEq for DevicePath {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl ToOwned for DevicePath {
+    type Owned = Box<DevicePath>;
+
+    fn to_owned(&self) -> Self::Owned {
+        self.to_boxed()
     }
 }
 
@@ -644,6 +704,7 @@ impl Deref for LoadedImageDevicePath {
 mod tests {
     use super::*;
     use alloc::vec::Vec;
+    use core::mem::{size_of, size_of_val};
 
     /// Create a node to `path` from raw data.
     fn add_node(path: &mut Vec<u8>, device_type: u8, sub_type: u8, node_data: &[u8]) {
@@ -747,5 +808,21 @@ mod tests {
 
         // Only two instances.
         assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_to_owned() {
+        // Relevant assertion to verify the transmute is fine.
+        assert_eq!(size_of::<&DevicePath>(), size_of::<&[u8]>());
+
+        let raw_data = create_raw_device_path();
+        let dp = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
+
+        // Relevant assertion to verify the transmute is fine.
+        assert_eq!(size_of_val(dp), size_of_val(&dp.data));
+
+        let owned_dp = dp.to_owned();
+        let owned_dp_ref = &*owned_dp;
+        assert_eq!(owned_dp_ref, dp)
     }
 }

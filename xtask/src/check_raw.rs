@@ -16,8 +16,8 @@ use syn::spanned::Spanned;
 use syn::token::Comma;
 use syn::{
     parenthesized, Abi, Attribute, Field, Fields, FieldsNamed, FieldsUnnamed, File, Item,
-    ItemConst, ItemMacro, ItemStruct, ItemType, LitInt, ReturnType, Type, TypeBareFn, TypePtr,
-    Visibility,
+    ItemConst, ItemMacro, ItemStruct, ItemType, LitInt, ReturnType, Type, TypeArray, TypeBareFn,
+    TypePtr, Visibility,
 };
 use walkdir::WalkDir;
 
@@ -195,6 +195,7 @@ fn is_efiapi(f: &TypeBareFn) -> bool {
 /// Validate a type (used for fields, arguments, and return types).
 fn check_type(ty: &Type, src: &Path) -> Result<(), Error> {
     match ty {
+        Type::Array(TypeArray { elem, .. }) => check_type(elem, src),
         Type::BareFn(f) => check_fn_ptr(f, src),
         Type::Never(_) | Type::Path(_) => {
             // Allow.

@@ -49,8 +49,7 @@ For additional information, refer to the [UEFI specification][spec].
 
 ## MSRV
 
-The minimum supported Rust version is currently 1.68, which is the first Rust
-release that fully supports all necessary features on the stable channel.
+The minimum supported Rust version is currently 1.70.
 
 Our policy is to support at least the past two stable releases.
 

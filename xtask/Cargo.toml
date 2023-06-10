@@ -1,8 +1,9 @@
 [package]
 name = "xtask"
 version = "0.0.0"
-edition = "2021"
 publish = false
+
+edition.workspace = true
 
 [dependencies]
 anyhow = "1.0.51"

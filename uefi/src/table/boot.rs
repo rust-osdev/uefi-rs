@@ -122,7 +122,7 @@ pub struct BootServices {
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
-        out_event: *mut Event,
+        out_event: *mut Option<Event>,
     ) -> Status,
     set_timer: unsafe extern "efiapi" fn(event: Event, ty: u32, trigger_time: u64) -> Status,
     wait_for_event: unsafe extern "efiapi" fn(
@@ -159,7 +159,7 @@ pub struct BootServices {
     register_protocol_notify: extern "efiapi" fn(
         protocol: &Guid,
         event: Event,
-        registration: *mut ProtocolSearchKey,
+        registration: *mut Option<ProtocolSearchKey>,
     ) -> Status,
     locate_handle: unsafe extern "efiapi" fn(
         search_ty: i32,
@@ -171,7 +171,7 @@ pub struct BootServices {
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
         device_path: &mut *const FfiDevicePath,
-        out_handle: &mut MaybeUninit<Handle>,
+        out_handle: &mut Option<Handle>,
     ) -> Status,
     install_configuration_table:
         extern "efiapi" fn(guid_entry: &Guid, table_ptr: *const c_void) -> Status,
@@ -183,7 +183,7 @@ pub struct BootServices {
         device_path: *const FfiDevicePath,
         source_buffer: *const u8,
         source_size: usize,
-        image_handle: &mut MaybeUninit<Handle>,
+        image_handle: &mut Option<Handle>,
     ) -> Status,
     start_image: unsafe extern "efiapi" fn(
         image_handle: Handle,
@@ -276,7 +276,7 @@ pub struct BootServices {
         notify_fn: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
         event_group: Option<NonNull<Guid>>,
-        out_event: *mut Event,
+        out_event: *mut Option<Event>,
     ) -> Status,
 }
 
@@ -519,18 +519,14 @@ impl BootServices {
         notify_fn: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
     ) -> Result<Event> {
-        // Prepare storage for the output Event
-        let mut event = MaybeUninit::<Event>::uninit();
+        let mut event = None;
 
         // Now we're ready to call UEFI
-        (self.create_event)(
-            event_ty,
-            notify_tpl,
-            notify_fn,
-            notify_ctx,
-            event.as_mut_ptr(),
-        )
-        .to_result_with_val(|| event.assume_init())
+        (self.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event)
+            .to_result_with_val(
+                // OK to unwrap: event is non-null for Status::SUCCESS.
+                || event.unwrap(),
+            )
     }
 
     /// Creates a new `Event` of type `event_type`. The event's notification function, context,
@@ -584,7 +580,7 @@ impl BootServices {
             return Err(Status::UNSUPPORTED.into());
         }
 
-        let mut event = MaybeUninit::<Event>::uninit();
+        let mut event = None;
 
         (self.create_event_ex)(
             event_type,
@@ -592,9 +588,12 @@ impl BootServices {
             notify_fn,
             notify_ctx,
             event_group,
-            event.as_mut_ptr(),
+            &mut event,
         )
-        .to_result_with_val(|| event.assume_init())
+        .to_result_with_val(
+            // OK to unwrap: event is non-null for Status::SUCCESS.
+            || event.unwrap(),
+        )
     }
 
     /// Sets the trigger for `EventType::TIMER` event.
@@ -649,18 +648,17 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
-        let mut index = MaybeUninit::<usize>::uninit();
-        unsafe { (self.wait_for_event)(number_of_events, events, index.as_mut_ptr()) }
-            .to_result_with(
-                || unsafe { index.assume_init() },
-                |s| {
-                    if s == Status::INVALID_PARAMETER {
-                        unsafe { Some(index.assume_init()) }
-                    } else {
-                        None
-                    }
-                },
-            )
+        let mut index = 0;
+        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }.to_result_with(
+            || index,
+            |s| {
+                if s == Status::INVALID_PARAMETER {
+                    Some(index)
+                } else {
+                    None
+                }
+            },
+        )
     }
 
     /// Place 'event' in the signaled stated. If 'event' is already in the signaled state,
@@ -839,14 +837,15 @@ impl BootServices {
         protocol: &Guid,
         event: Event,
     ) -> Result<(Event, SearchType)> {
-        let mut key: MaybeUninit<ProtocolSearchKey> = MaybeUninit::uninit();
+        let mut key = None;
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
-        unsafe { (self.register_protocol_notify)(protocol, event.unsafe_clone(), key.as_mut_ptr()) }
+        unsafe { (self.register_protocol_notify)(protocol, event.unsafe_clone(), &mut key) }
             // Safety: as long as this call is successful, `key` will be valid.
             .to_result_with_val(|| unsafe {
                 (
                     event.unsafe_clone(),
-                    SearchType::ByRegisterNotify(key.assume_init()),
+                    // OK to unwrap: key is non-null for Status::SUCCESS.
+                    SearchType::ByRegisterNotify(key.unwrap()),
                 )
             })
     }
@@ -918,13 +917,14 @@ impl BootServices {
         &self,
         device_path: &mut &DevicePath,
     ) -> Result<Handle> {
-        let mut handle = MaybeUninit::uninit();
+        let mut handle = None;
         let mut device_path_ptr = device_path.as_ffi_ptr();
         unsafe {
             (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
                 .to_result_with_val(|| {
                     *device_path = DevicePath::from_ffi_ptr(device_path_ptr);
-                    handle.assume_init()
+                    // OK to unwrap: handle is non-null for Status::SUCCESS.
+                    handle.unwrap()
                 })
         }
     }
@@ -1037,7 +1037,7 @@ impl BootServices {
             }
         };
 
-        let mut image_handle = MaybeUninit::uninit();
+        let mut image_handle = None;
         unsafe {
             (self.load_image)(
                 boot_policy,
@@ -1047,7 +1047,10 @@ impl BootServices {
                 source_size,
                 &mut image_handle,
             )
-            .to_result_with_val(|| image_handle.assume_init())
+            .to_result_with_val(
+                // OK to unwrap: image handle is non-null for Status::SUCCESS.
+                || image_handle.unwrap(),
+            )
         }
     }
 

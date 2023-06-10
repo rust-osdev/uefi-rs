@@ -11,13 +11,14 @@ mod qemu;
 mod tpm;
 mod util;
 
-use crate::opt::TestOpt;
+use crate::opt::{FmtOpt, TestOpt};
 use anyhow::Result;
 use arch::UefiArch;
 use cargo::{Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
 use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt, TpmVersion};
+use std::process::Command;
 use util::run_cmd;
 
 fn build_feature_permutations(opt: &BuildOpt) -> Result<()> {
@@ -206,6 +207,98 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
     run_cmd(cargo.command()?)
 }
 
+/// Formats the project: nix, rust, and yml.
+fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
+    // fmt rust
+    {
+        eprintln!("Formatting: rust");
+        let mut command = Command::new("cargo");
+        command.arg("fmt");
+        if fmt_opt.check {
+            command.arg("--check");
+        }
+        command
+            .arg("--all")
+            .arg("--")
+            .arg("--config")
+            .arg("imports_granularity=Module");
+
+        match run_cmd(command) {
+            Ok(_) => {
+                eprintln!("✅ rust files format")
+            }
+            Err(e) => {
+                if fmt_opt.check {
+                    eprintln!("❌ rust files to not pass check");
+                } else {
+                    eprintln!("❌ rust formatter failed: {e:#?}");
+                }
+            }
+        }
+    }
+
+    // fmt yml
+    if has_cmd("yamlfmt") {
+        eprintln!("Formatting: yml");
+        let mut command = Command::new("yamlfmt");
+        if fmt_opt.check {
+            command.arg("-lint");
+        }
+        command.arg(".");
+
+        match run_cmd(command) {
+            Ok(_) => {
+                eprintln!("✅ yml files format")
+            }
+            Err(e) => {
+                if fmt_opt.check {
+                    eprintln!("❌ yml files to not pass check");
+                } else {
+                    eprintln!("❌ yml formatter failed: {e:#?}");
+                }
+            }
+        }
+    } else {
+        eprintln!("Formatting: yml - SKIPPED");
+    }
+
+    // fmt nix
+    if has_cmd("nixpkgs-fmt") {
+        eprintln!("Formatting: nix");
+        let mut command = Command::new("nixpkgs-fmt");
+        if fmt_opt.check {
+            command.arg("--check");
+        }
+        command.arg(".");
+
+        match run_cmd(command) {
+            Ok(_) => {
+                eprintln!("✅ nix files format")
+            }
+            Err(e) => {
+                if fmt_opt.check {
+                    eprintln!("❌ nix files to not pass check");
+                } else {
+                    eprintln!("❌ nix formatter failed: {e:#?}");
+                }
+            }
+        }
+    } else {
+        eprintln!("Formatting: nix - SKIPPED");
+    }
+
+    Ok(())
+}
+
+fn has_cmd(target_cmd: &str) -> bool {
+    #[cfg(target_os = "windows")]
+    let mut cmd = Command::new("where");
+    #[cfg(target_family = "unix")]
+    let mut cmd = Command::new("which");
+    cmd.arg(target_cmd);
+    run_cmd(cmd).is_ok()
+}
+
 fn main() -> Result<()> {
     let opt = Opt::parse();
 
@@ -218,5 +311,6 @@ fn main() -> Result<()> {
         Action::Miri(_) => run_miri(),
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(test_opt) => run_host_tests(test_opt),
+        Action::Fmt(fmt_opt) => run_fmt_project(fmt_opt),
     }
 }

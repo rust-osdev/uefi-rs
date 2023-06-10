@@ -73,6 +73,7 @@ pub enum Action {
     Miri(MiriOpt),
     Run(QemuOpt),
     Test(TestOpt),
+    Fmt(FmtOpt),
 }
 
 /// Build all the uefi packages.
@@ -192,4 +193,12 @@ pub struct TestOpt {
     /// Skip the uefi-macros tests.
     #[clap(long, action)]
     pub skip_macro_tests: bool,
+}
+
+/// Run formatting on the repo.
+#[derive(Debug, Parser)]
+pub struct FmtOpt {
+    /// Just check but do not write files.
+    #[clap(long, action)]
+    pub check: bool,
 }

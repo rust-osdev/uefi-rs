@@ -12,6 +12,7 @@ use core::ffi::c_void;
 ///
 /// This table, and the function pointers it contains are valid even after the
 /// UEFI OS loader and OS have taken control of the platform.
+#[derive(Debug)]
 #[repr(C)]
 pub struct RuntimeServices {
     pub header: Header,

@@ -10,6 +10,7 @@
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![deny(missing_debug_implementations)]
 #![deny(clippy::all)]
 #![deny(clippy::ptr_as_ptr, unused)]
 #![deny(clippy::must_use_candidate)]

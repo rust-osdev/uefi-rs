@@ -33,6 +33,7 @@ newtype_enum! {
 }
 
 /// Rng protocol.
+#[derive(Debug)]
 #[repr(C)]
 pub struct RngProtocol {
     pub get_info: unsafe extern "efiapi" fn(

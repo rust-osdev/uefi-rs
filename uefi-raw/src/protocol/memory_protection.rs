@@ -1,6 +1,7 @@
 use crate::table::boot::MemoryAttribute;
 use crate::{guid, Guid, PhysicalAddress, Status};
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct MemoryAttributeProtocol {
     pub get_memory_attributes: unsafe extern "efiapi" fn(

@@ -1,5 +1,6 @@
 use crate::{guid, Guid, Handle, Status};
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct ComponentName2Protocol {
     pub get_driver_name: unsafe extern "efiapi" fn(

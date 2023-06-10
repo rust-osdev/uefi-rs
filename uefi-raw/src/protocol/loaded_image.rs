@@ -4,7 +4,7 @@ use crate::table::system::SystemTable;
 use crate::{guid, Guid, Handle, Status};
 use core::ffi::c_void;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct LoadedImageProtocol {
     pub revision: u32,

@@ -10,7 +10,6 @@ use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
-use core::fmt::{Debug, Formatter};
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
@@ -89,6 +88,7 @@ pub const PAGE_SIZE: usize = 4096;
 ///
 /// [`Output`]: crate::proto::console::text::Output
 /// [`open_protocol`]: BootServices::open_protocol
+#[derive(Debug)]
 #[repr(transparent)]
 pub struct BootServices(uefi_raw::table::boot::BootServices);
 
@@ -1388,139 +1388,6 @@ impl BootServices {
 
 impl super::Table for BootServices {
     const SIGNATURE: u64 = 0x5652_4553_544f_4f42;
-}
-
-impl Debug for BootServices {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        #[allow(deprecated)]
-        f.debug_struct("BootServices")
-            .field("header", &self.0.header)
-            .field("raise_tpl (fn ptr)", &(self.0.raise_tpl as *const usize))
-            .field(
-                "restore_tpl (fn ptr)",
-                &(self.0.restore_tpl as *const usize),
-            )
-            .field(
-                "allocate_pages (fn ptr)",
-                &(self.0.allocate_pages as *const usize),
-            )
-            .field("free_pages (fn ptr)", &(self.0.free_pages as *const usize))
-            .field(
-                "get_memory_map (fn ptr)",
-                &(self.0.get_memory_map as *const usize),
-            )
-            .field(
-                "allocate_pool (fn ptr)",
-                &(self.0.allocate_pool as *const usize),
-            )
-            .field("free_pool (fn ptr)", &(self.0.free_pool as *const usize))
-            .field(
-                "create_event (fn ptr)",
-                &(self.0.create_event as *const usize),
-            )
-            .field("set_timer (fn ptr)", &(self.0.set_timer as *const usize))
-            .field(
-                "wait_for_event (fn ptr)",
-                &(self.0.wait_for_event as *const usize),
-            )
-            .field("signal_event", &(self.0.signal_event as *const usize))
-            .field("close_event", &(self.0.close_event as *const usize))
-            .field("check_event", &(self.0.check_event as *const usize))
-            .field(
-                "install_protocol_interface",
-                &(self.0.install_protocol_interface as *const usize),
-            )
-            .field(
-                "reinstall_protocol_interface",
-                &(self.0.reinstall_protocol_interface as *const usize),
-            )
-            .field(
-                "uninstall_protocol_interface",
-                &(self.0.uninstall_protocol_interface as *const usize),
-            )
-            .field(
-                "handle_protocol (fn ptr)",
-                &(self.0.handle_protocol as *const usize),
-            )
-            .field(
-                "register_protocol_notify",
-                &(self.0.register_protocol_notify as *const usize),
-            )
-            .field(
-                "locate_handle (fn ptr)",
-                &(self.0.locate_handle as *const usize),
-            )
-            .field(
-                "locate_device_path (fn ptr)",
-                &(self.0.locate_device_path as *const usize),
-            )
-            .field(
-                "install_configuration_table (fn ptr)",
-                &(self.0.install_configuration_table as *const usize),
-            )
-            .field("load_image (fn ptr)", &(self.0.load_image as *const usize))
-            .field(
-                "start_image (fn ptr)",
-                &(self.0.start_image as *const usize),
-            )
-            .field("exit", &(self.0.exit as *const usize))
-            .field(
-                "unload_image (fn ptr)",
-                &(self.0.unload_image as *const usize),
-            )
-            .field(
-                "exit_boot_services (fn ptr)",
-                &(self.0.exit_boot_services as *const usize),
-            )
-            .field(
-                "get_next_monotonic_count",
-                &(self.0.get_next_monotonic_count as *const usize),
-            )
-            .field("stall (fn ptr)", &(self.0.stall as *const usize))
-            .field(
-                "set_watchdog_timer (fn ptr)",
-                &(self.0.set_watchdog_timer as *const usize),
-            )
-            .field(
-                "connect_controller",
-                &(self.0.connect_controller as *const usize),
-            )
-            .field(
-                "disconnect_controller",
-                &(self.0.disconnect_controller as *const usize),
-            )
-            .field("open_protocol", &(self.0.open_protocol as *const usize))
-            .field("close_protocol", &(self.0.close_protocol as *const usize))
-            .field(
-                "open_protocol_information",
-                &(self.0.open_protocol_information as *const usize),
-            )
-            .field(
-                "protocols_per_handle",
-                &(self.0.protocols_per_handle as *const usize),
-            )
-            .field(
-                "locate_handle_buffer",
-                &(self.0.locate_handle_buffer as *const usize),
-            )
-            .field(
-                "locate_protocol (fn ptr)",
-                &(self.0.locate_protocol as *const usize),
-            )
-            .field(
-                "install_multiple_protocol_interfaces",
-                &(self.0.install_multiple_protocol_interfaces as *const usize),
-            )
-            .field(
-                "uninstall_multiple_protocol_interfaces",
-                &(self.0.uninstall_multiple_protocol_interfaces as *const usize),
-            )
-            .field("calculate_crc32", &(self.0.calculate_crc32 as *const usize))
-            .field("copy_mem (fn ptr)", &(self.0.copy_mem as *const usize))
-            .field("set_mem (fn ptr)", &(self.0.set_mem as *const usize))
-            .field("create_event_ex", &(self.0.create_event_ex as *const usize))
-            .finish()
-    }
 }
 
 /// Used as a parameter of [`BootServices::load_image`] to provide the

@@ -1,7 +1,6 @@
 use crate::proto::unsafe_protocol;
 use crate::{CStr16, Result, ResultExt, Status, StatusExt};
 use core::fmt;
-use core::fmt::{Debug, Formatter};
 use uefi_raw::protocol::console::{SimpleTextOutputMode, SimpleTextOutputProtocol};
 
 /// Interface for text-based output devices.
@@ -21,6 +20,7 @@ use uefi_raw::protocol::console::{SimpleTextOutputMode, SimpleTextOutputProtocol
 /// [`SystemTable::stdout`]: crate::table::SystemTable::stdout
 /// [`SystemTable::stderr`]: crate::table::SystemTable::stderr
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleTextOutputProtocol::GUID)]
 pub struct Output(SimpleTextOutputProtocol);
@@ -214,38 +214,6 @@ impl fmt::Write for Output {
 
         // Flush the remainder of the buffer
         flush_buffer(&mut buf, &mut i)
-    }
-}
-
-impl Debug for Output {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Output")
-            .field("reset (fn ptr)", &(self.0.reset as *const u64))
-            .field(
-                "output_string (fn ptr)",
-                &(self.0.output_string as *const u64),
-            )
-            .field("test_string (fn ptr)", &(self.0.test_string as *const u64))
-            .field("query_mode (fn ptr)", &(self.0.query_mode as *const u64))
-            .field("set_mode (fn ptr)", &(self.0.set_mode as *const u64))
-            .field(
-                "set_attribute (fn ptr)",
-                &(self.0.set_attribute as *const u64),
-            )
-            .field(
-                "clear_screen (fn ptr)",
-                &(self.0.clear_screen as *const u64),
-            )
-            .field(
-                "set_cursor_position (fn ptr)",
-                &(self.0.set_cursor_position as *const u64),
-            )
-            .field(
-                "enable_cursor (fn ptr)",
-                &(self.0.enable_cursor as *const u64),
-            )
-            .field("data", &self.0.mode)
-            .finish()
     }
 }
 

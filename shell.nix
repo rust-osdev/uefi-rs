@@ -18,6 +18,10 @@ pkgs.mkShell {
 
     # Rust toolchain
     rustup
+
+    # Other
+    yamlfmt
+    which # used by "cargo xtask fmt"
   ];
 
   # Set ENV vars.

@@ -34,7 +34,7 @@ pub fn command_to_string(cmd: &Command) -> String {
 /// Print a `Command` and run it, then check that it completes
 /// successfully.
 pub fn run_cmd(mut cmd: Command) -> Result<()> {
-    println!("{}", command_to_string(&cmd));
+    println!("run_cmd: '{}'", command_to_string(&cmd));
 
     let status = cmd.status()?;
     if status.success() {

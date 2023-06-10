@@ -1,9 +1,7 @@
 name: Developer Productivity
-
 on:
   push:
   pull_request:
-
 jobs:
   # Job to run change detection
   changes:
@@ -21,7 +19,6 @@ jobs:
             nix-src:
               - 'nix/**'
               - 'shell.nix'
-
   # This is a convenience test to verify that the toolchain provided by
   # shell.nix is valid and can build + run the integration test.
   #
@@ -32,21 +29,21 @@ jobs:
     if: ${{ needs.changes.outputs.nix-src == 'true' }}
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v3
-    - uses: Swatinem/rust-cache@v2
-    - uses: cachix/install-nix-action@v20
-      with:
-        # This channel is only required to invoke "nix-shell".
-        # Everything inside that nix-shell will use a pinned version of nixpkgs.
-        nix_path: nixpkgs=channel:nixos-23.05
-    # Dedicated step to separate all the
-    # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
-    # messages from the actual build output. This job takes ~60secs.
-    - name: Prepare Nix Store
-      run: nix-shell --pure --run "cargo --version"
-    - name: Run VM tests
-      run: |
-        COMMAND="cargo +stable xtask run --target x86_64 --headless --ci --tpm=v1"
-        echo "Executing in nix shell now: $COMMAND"
-        nix-shell --pure --run "$COMMAND"
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
+      - uses: cachix/install-nix-action@v20
+        with:
+          # This channel is only required to invoke "nix-shell".
+          # Everything inside that nix-shell will use a pinned version of nixpkgs.
+          nix_path: nixpkgs=channel:nixos-23.05
+      # Dedicated step to separate all the
+      # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
+      # messages from the actual build output. This job takes ~60secs.
+      - name: Prepare Nix Store
+        run: nix-shell --pure --run "cargo --version"
+      - name: Run VM tests
+        run: |
+          COMMAND="cargo +stable xtask run --target x86_64 --headless --ci --tpm=v1"
+          echo "Executing in nix shell now: $COMMAND"
+          nix-shell --pure --run "$COMMAND"

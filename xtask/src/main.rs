@@ -225,11 +225,11 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
 
         match run_cmd(command) {
             Ok(_) => {
-                eprintln!("✅ rust files format")
+                eprintln!("✅ rust files formatted")
             }
             Err(e) => {
                 if fmt_opt.check {
-                    eprintln!("❌ rust files to not pass check");
+                    eprintln!("❌ rust files do not pass check");
                 } else {
                     eprintln!("❌ rust formatter failed: {e:#?}");
                 }
@@ -244,15 +244,16 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
         if fmt_opt.check {
             command.arg("-lint");
         }
-        command.arg(".");
+        // We only have yml files here.
+        command.arg(".github");
 
         match run_cmd(command) {
             Ok(_) => {
-                eprintln!("✅ yml files format")
+                eprintln!("✅ yml files formatted")
             }
             Err(e) => {
                 if fmt_opt.check {
-                    eprintln!("❌ yml files to not pass check");
+                    eprintln!("❌ yml files do not pass check");
                 } else {
                     eprintln!("❌ yml formatter failed: {e:#?}");
                 }
@@ -269,15 +270,16 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
         if fmt_opt.check {
             command.arg("--check");
         }
-        command.arg(".");
+        command.arg("nix");
+        command.arg("shell.nix");
 
         match run_cmd(command) {
             Ok(_) => {
-                eprintln!("✅ nix files format")
+                eprintln!("✅ nix files formatted")
             }
             Err(e) => {
                 if fmt_opt.check {
-                    eprintln!("❌ nix files to not pass check");
+                    eprintln!("❌ nix files do not pass check");
                 } else {
                     eprintln!("❌ nix formatter failed: {e:#?}");
                 }

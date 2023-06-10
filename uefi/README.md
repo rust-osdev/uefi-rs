@@ -52,7 +52,7 @@ For additional information, refer to the [UEFI specification][spec].
 The minimum supported Rust version is currently 1.68, which is the first Rust
 release that fully supports all necessary features on the stable channel.
 
-In the future, our policy will be to support at least the past two stable releases.
+Our policy is to support at least the past two stable releases.
 
 ## License
 

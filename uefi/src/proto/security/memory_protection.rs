@@ -9,6 +9,7 @@ use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
 ///
 /// Corresponds to the C type `EFI_MEMORY_ATTRIBUTE_PROTOCOL`.
 #[repr(transparent)]
+#[derive(Debug)]
 #[unsafe_protocol(MemoryAttributeProtocol::GUID)]
 pub struct MemoryProtection(MemoryAttributeProtocol);
 

@@ -93,6 +93,7 @@ pub struct CpuPhysicalLocation {
 }
 
 /// Protocol that provides services needed for multi-processor management.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("3fdda605-a76e-4f46-ad29-12f4531b3d08")]
 pub struct MpServices {

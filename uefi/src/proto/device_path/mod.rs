@@ -754,7 +754,7 @@ pub enum NodeConversionError {
 /// [`load_image`]: crate::table::boot::BootServices::load_image
 #[repr(transparent)]
 #[unsafe_protocol("bc62157e-3e33-4fec-9920-2d3b36d750df")]
-#[derive(Pointee)]
+#[derive(Debug, Pointee)]
 pub struct LoadedImageDevicePath(DevicePath);
 
 impl ProtocolPointer for LoadedImageDevicePath {

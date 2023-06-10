@@ -12,6 +12,7 @@ use uefi_raw::protocol::disk::{DiskIo2Protocol, DiskIoProtocol};
 /// protocol to a more general offset-length protocol. Firmware is
 /// responsible for adding this protocol to any block I/O interface that
 /// appears in the system that does not already have a disk I/O protocol.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(DiskIoProtocol::GUID)]
 pub struct DiskIo(DiskIoProtocol);
@@ -87,6 +88,7 @@ pub struct DiskIo2Token {
 ///
 /// This protocol provides an extension to the disk I/O protocol to enable
 /// non-blocking / asynchronous byte-oriented disk operation.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(DiskIo2Protocol::GUID)]
 pub struct DiskIo2(DiskIo2Protocol);

@@ -4,6 +4,7 @@ use core::mem::MaybeUninit;
 use uefi_raw::protocol::console::{InputKey, SimpleTextInputProtocol};
 
 /// Interface for text-based input devices.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleTextInputProtocol::GUID)]
 pub struct Input(SimpleTextInputProtocol);

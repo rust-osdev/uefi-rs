@@ -220,6 +220,7 @@ newtype_enum! {
 }
 
 /// Protocol for accessing partition information.
+#[allow(missing_debug_implementations)]
 #[repr(C)]
 #[repr(packed)]
 #[unsafe_protocol("8cf2f62c-bc9b-4821-808d-ec9ec421a1a0")]

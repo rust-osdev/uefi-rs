@@ -27,6 +27,7 @@ use uefi_raw::protocol::driver::ComponentName2Protocol;
 /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
 #[deprecated = "deprecated in UEFI 2.1; use ComponentName2 where possible"]
 #[unsafe_protocol(ComponentName2Protocol::DEPRECATED_COMPONENT_NAME_GUID)]
+#[derive(Debug)]
 #[repr(transparent)]
 pub struct ComponentName1(
     // The layout of the protocol is the same as ComponentName2, only the format
@@ -97,6 +98,7 @@ impl ComponentName1 {
 /// [ISO 639-2]: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
 #[unsafe_protocol(ComponentName2Protocol::GUID)]
+#[derive(Debug)]
 #[repr(transparent)]
 pub struct ComponentName2(ComponentName2Protocol);
 

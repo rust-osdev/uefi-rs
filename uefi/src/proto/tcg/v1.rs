@@ -325,6 +325,7 @@ impl<'a> Iterator for EventLogIter<'a> {
 /// Protocol for interacting with TPM 1.1 and 1.2 devices.
 ///
 /// The corresponding C type is `EFI_TCG_PROTOCOL`.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("f541796d-a62e-4954-a775-9584f61b9cdd")]
 pub struct Tcg {

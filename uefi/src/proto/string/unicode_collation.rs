@@ -11,6 +11,7 @@ use core::fmt::{self, Display, Formatter};
 /// The Unicode Collation Protocol.
 ///
 /// Used to perform case-insensitive comparisons of strings.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("a4c751fc-23ae-4c3e-92e9-4964cf63f349")]
 pub struct UnicodeCollation {

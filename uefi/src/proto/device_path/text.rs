@@ -80,6 +80,7 @@ impl Drop for PoolString<'_> {
 ///
 /// This protocol provides common utility functions for converting device
 /// nodes and device paths to a text representation.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("8b843e20-8132-4852-90cc-551a4e4a7f1c")]
 pub struct DevicePathToText {
@@ -147,6 +148,7 @@ impl DevicePathToText {
 ///
 /// This protocol provides common utilities for converting text to
 /// device paths and device nodes.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("05c99a21-c70f-4ad2-8a5f-35df3343f51e")]
 pub struct DevicePathFromText {

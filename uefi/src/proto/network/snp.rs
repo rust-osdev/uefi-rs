@@ -17,6 +17,7 @@ use core::ptr::NonNull;
 use uefi_macros::unsafe_protocol;
 
 /// The Simple Network Protocol
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("a19832b9-ac25-11d3-9a2d-0090273fc14d")]
 pub struct SimpleNetwork {

@@ -17,6 +17,7 @@ use crate::{CStr8, Char8, Result, Status, StatusExt};
 use super::{IpAddress, MacAddress};
 
 /// PXE Base Code protocol
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("03c4e603-ac28-11d3-9a2d-0090273fc14d")]
 #[allow(clippy::type_complexity)]

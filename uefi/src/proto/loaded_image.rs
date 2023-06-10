@@ -11,6 +11,7 @@ use core::{mem, slice};
 use uefi_raw::protocol::loaded_image::LoadedImageProtocol;
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(LoadedImageProtocol::GUID)]
 pub struct LoadedImage(LoadedImageProtocol);

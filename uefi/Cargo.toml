@@ -1,15 +1,16 @@
 [package]
 name = "uefi"
 version = "0.23.0"
-authors = ["The Rust OSDev team"]
 readme = "README.md"
-edition = "2021"
 description = "Safe and easy-to-use wrapper for building UEFI apps."
-repository = "https://github.com/rust-osdev/uefi-rs"
-keywords = ["uefi", "efi"]
-categories = ["embedded", "no-std", "api-bindings"]
-license = "MPL-2.0"
-rust-version = "1.68"
+
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
 
 [features]
 default = ["panic-on-logger-errors"]

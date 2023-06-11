@@ -9,6 +9,7 @@
 - Added `Event::from_ptr`, `Event::as_ptr`, and `Handle::as_ptr`.
 - Added `ScopedProtocol::get` and `ScopedProtocol::get_mut` to access
   potentially-null interfaces without panicking.
+- `DevicePath::to_string` and `DevicePathNode::to_string`
 
 ### Changed
 - Renamed `LoadImageSource::FromFilePath` to `LoadImageSource::FromDevicePath`

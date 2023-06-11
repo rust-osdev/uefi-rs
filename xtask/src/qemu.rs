@@ -598,6 +598,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         None
     };
 
+    // Print the actual used QEMU command for running the test.
     println!("{}", command_to_string(&cmd));
 
     cmd.stdin(Stdio::piped());

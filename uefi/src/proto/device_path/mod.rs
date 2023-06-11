@@ -80,15 +80,21 @@ mod device_path_gen;
 pub use device_path_gen::{
     acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
 };
-#[cfg(feature = "alloc")]
-use {alloc::borrow::ToOwned, alloc::boxed::Box};
 
-use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
-use core::fmt::{self, Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 use core::mem;
 use core::ops::Deref;
 use ptr_meta::Pointee;
+use uefi::table::boot::ScopedProtocol;
+#[cfg(feature = "alloc")]
+use {alloc::borrow::ToOwned, alloc::boxed::Box, uefi::CString16};
+
+use crate::prelude::BootServices;
+use crate::proto::device_path::text::{AllowShortcuts, DevicePathToText, DisplayOnly};
+use crate::proto::{unsafe_protocol, ProtocolPointer};
+use crate::table::boot::{OpenProtocolAttributes, OpenProtocolParams, SearchType};
+use crate::Identify;
 
 opaque_type! {
     /// Opaque type that should be used to represent a pointer to a
@@ -113,7 +119,23 @@ pub struct DevicePathHeader {
 /// A single node within a [`DevicePath`].
 ///
 /// Each node starts with a [`DevicePathHeader`]. The rest of the data
-/// in the node depends on the type of node.
+/// in the node depends on the type of node. You can "cast" a node to a specific
+/// one like this:
+/// ```no_run
+/// use uefi::proto::device_path::DevicePath;
+/// use uefi::proto::device_path::media::FilePath;
+///
+/// let image_device_path: &DevicePath = unsafe { DevicePath::from_ffi_ptr(0x1337 as *const _) };
+/// let file_path = image_device_path
+///         .node_iter()
+///         .find_map(|node| {
+///             let node: &FilePath = node.try_into().ok()?;
+///             let path = node.path_name().to_cstring16().ok()?;
+///             Some(path.to_string().to_uppercase())
+///         });
+/// ```
+/// More types are available in [`uefi::proto::device_path`]. Builder types
+/// can be found in [`uefi::proto::device_path::build`]
 ///
 /// See the [module-level documentation] for more details.
 ///
@@ -188,6 +210,31 @@ impl DevicePathNode {
     /// of more specific node types.
     pub fn as_enum(&self) -> Result<DevicePathNodeEnum, NodeConversionError> {
         DevicePathNodeEnum::try_from(self)
+    }
+
+    /// Transforms the device path node to its string representation using the
+    /// [`DevicePathToText`] protocol.
+    ///
+    /// The resulting string is only None, if there was not enough memory.
+    #[cfg(feature = "alloc")]
+    pub fn to_string(
+        &self,
+        bs: &BootServices,
+        display_only: DisplayOnly,
+        allow_shortcuts: AllowShortcuts,
+    ) -> Result<Option<CString16>, DevicePathToTextError> {
+        let to_text_protocol = open_text_protocol(bs)?;
+
+        let cstring16 = to_text_protocol
+            .convert_device_node_to_text(bs, self, display_only, allow_shortcuts)
+            .ok()
+            .map(|pool_string| {
+                let cstr16 = &*pool_string;
+                // Another allocation; pool string is dropped. This overhead
+                // is negligible. CString16 is more convenient to use.
+                CString16::from(cstr16)
+            });
+        Ok(cstring16)
     }
 }
 
@@ -376,6 +423,31 @@ impl DevicePath {
         let data = self.data.to_owned();
         let data = data.into_boxed_slice();
         unsafe { mem::transmute(data) }
+    }
+
+    /// Transforms the device path to its string representation using the
+    /// [`DevicePathToText`] protocol.
+    ///
+    /// The resulting string is only None, if there was not enough memory.
+    #[cfg(feature = "alloc")]
+    pub fn to_string(
+        &self,
+        bs: &BootServices,
+        display_only: DisplayOnly,
+        allow_shortcuts: AllowShortcuts,
+    ) -> Result<Option<CString16>, DevicePathToTextError> {
+        let to_text_protocol = open_text_protocol(bs)?;
+
+        let cstring16 = to_text_protocol
+            .convert_device_path_to_text(bs, self, display_only, allow_shortcuts)
+            .ok()
+            .map(|pool_string| {
+                let cstr16 = &*pool_string;
+                // Another allocation; pool string is dropped. This overhead
+                // is negligible. CString16 is more convenient to use.
+                CString16::from(cstr16)
+            });
+        Ok(cstring16)
     }
 }
 
@@ -698,6 +770,63 @@ impl Deref for LoadedImageDevicePath {
     fn deref(&self) -> &DevicePath {
         &self.0
     }
+}
+
+/// Errors that may happen when a device path is transformed to a string
+/// representation using:
+/// - [`DevicePath::to_string`]
+/// - [`DevicePathNode::to_string`]
+#[derive(Debug)]
+pub enum DevicePathToTextError {
+    /// Can't locate a handle buffer with handles associated with the
+    /// [`DevicePathToText`] protocol.
+    CantLocateHandleBuffer(crate::Error),
+    /// There is no handle supporting the [`DevicePathToText`] protocol.
+    NoHandle,
+    /// The handle supporting the [`DevicePathToText`] protocol exists but it
+    /// could not be opened.
+    CantOpenProtocol(crate::Error),
+}
+
+impl Display for DevicePathToTextError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for DevicePathToTextError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            DevicePathToTextError::CantLocateHandleBuffer(e) => Some(e),
+            DevicePathToTextError::CantOpenProtocol(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+/// Helper function to open the [`DevicePathToText`] protocol using the boot
+/// services.
+fn open_text_protocol(
+    bs: &BootServices,
+) -> Result<ScopedProtocol<DevicePathToText>, DevicePathToTextError> {
+    let &handle = bs
+        .locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))
+        .map_err(DevicePathToTextError::CantLocateHandleBuffer)?
+        .first()
+        .ok_or(DevicePathToTextError::NoHandle)?;
+
+    unsafe {
+        bs.open_protocol::<DevicePathToText>(
+            OpenProtocolParams {
+                handle,
+                agent: bs.image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+    }
+    .map_err(DevicePathToTextError::CantOpenProtocol)
 }
 
 #[cfg(test)]

@@ -12,6 +12,8 @@ jobs:
     outputs:
       nix-src: ${{ steps.filter.outputs.nix-src }}
     steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
       - uses: dorny/paths-filter@v2
         id: filter
         with:

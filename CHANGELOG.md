@@ -6,6 +6,7 @@
 - `DevicePath::to_boxed`, `DevicePath::to_owned`, and `DevicePath::as_bytes`
 - `DevicePathInstance::to_boxed`, `DevicePathInstance::to_owned`, and `DevicePathInstance::as_bytes`
 - `DevicePathNode::data`
+- Added `Event::from_ptr`, `Event::as_ptr`, and `Handle::as_ptr`.
 
 ### Changed
 - Renamed `LoadImageSource::FromFilePath` to `LoadImageSource::FromDevicePath`

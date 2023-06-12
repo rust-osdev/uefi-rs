@@ -36,6 +36,12 @@ impl Handle {
         // shorthand for "|ptr| Self(ptr)"
         NonNull::new(ptr).map(Self)
     }
+
+    /// Get the underlying raw pointer.
+    #[must_use]
+    pub fn as_ptr(&self) -> *mut c_void {
+        self.0.as_ptr()
+    }
 }
 
 /// Handle to an event structure, guaranteed to be non-null.
@@ -55,6 +61,21 @@ impl Event {
     #[must_use]
     pub const unsafe fn unsafe_clone(&self) -> Self {
         Self(self.0)
+    }
+
+    /// Create an `Event` from a raw pointer.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the pointer is valid.
+    pub unsafe fn from_ptr(ptr: *mut c_void) -> Option<Self> {
+        NonNull::new(ptr).map(Self)
+    }
+
+    /// Get the underlying raw pointer.
+    #[must_use]
+    pub fn as_ptr(&self) -> *mut c_void {
+        self.0.as_ptr()
     }
 }
 

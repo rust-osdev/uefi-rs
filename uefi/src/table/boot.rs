@@ -98,13 +98,13 @@ pub struct BootServices {
     restore_tpl: unsafe extern "efiapi" fn(old_tpl: Tpl),
 
     // Memory allocation functions
-    allocate_pages: extern "efiapi" fn(
+    allocate_pages: unsafe extern "efiapi" fn(
         alloc_ty: u32,
         mem_ty: MemoryType,
         count: usize,
         addr: &mut PhysicalAddress,
     ) -> Status,
-    free_pages: extern "efiapi" fn(addr: PhysicalAddress, pages: usize) -> Status,
+    free_pages: unsafe extern "efiapi" fn(addr: PhysicalAddress, pages: usize) -> Status,
     get_memory_map: unsafe extern "efiapi" fn(
         size: &mut usize,
         map: *mut MemoryDescriptor,
@@ -112,9 +112,12 @@ pub struct BootServices {
         desc_size: &mut usize,
         desc_version: &mut u32,
     ) -> Status,
-    allocate_pool:
-        extern "efiapi" fn(pool_type: MemoryType, size: usize, buffer: &mut *mut u8) -> Status,
-    free_pool: extern "efiapi" fn(buffer: *mut u8) -> Status,
+    allocate_pool: unsafe extern "efiapi" fn(
+        pool_type: MemoryType,
+        size: usize,
+        buffer: &mut *mut u8,
+    ) -> Status,
+    free_pool: unsafe extern "efiapi" fn(buffer: *mut u8) -> Status,
 
     // Event & timer functions
     create_event: unsafe extern "efiapi" fn(
@@ -130,7 +133,7 @@ pub struct BootServices {
         events: *mut Event,
         out_index: *mut usize,
     ) -> Status,
-    signal_event: extern "efiapi" fn(event: Event) -> Status,
+    signal_event: unsafe extern "efiapi" fn(event: Event) -> Status,
     close_event: unsafe extern "efiapi" fn(event: Event) -> Status,
     check_event: unsafe extern "efiapi" fn(event: Event) -> Status,
 
@@ -153,10 +156,13 @@ pub struct BootServices {
         interface: *mut c_void,
     ) -> Status,
     #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
-    handle_protocol:
-        extern "efiapi" fn(handle: Handle, proto: &Guid, out_proto: &mut *mut c_void) -> Status,
+    handle_protocol: unsafe extern "efiapi" fn(
+        handle: Handle,
+        proto: &Guid,
+        out_proto: &mut *mut c_void,
+    ) -> Status,
     _reserved: usize,
-    register_protocol_notify: extern "efiapi" fn(
+    register_protocol_notify: unsafe extern "efiapi" fn(
         protocol: &Guid,
         event: Event,
         registration: *mut Option<ProtocolSearchKey>,
@@ -174,7 +180,7 @@ pub struct BootServices {
         out_handle: &mut Option<Handle>,
     ) -> Status,
     install_configuration_table:
-        extern "efiapi" fn(guid_entry: &Guid, table_ptr: *const c_void) -> Status,
+        unsafe extern "efiapi" fn(guid_entry: &Guid, table_ptr: *const c_void) -> Status,
 
     // Image services
     load_image: unsafe extern "efiapi" fn(
@@ -190,19 +196,19 @@ pub struct BootServices {
         exit_data_size: *mut usize,
         exit_data: &mut *mut Char16,
     ) -> Status,
-    exit: extern "efiapi" fn(
+    exit: unsafe extern "efiapi" fn(
         image_handle: Handle,
         exit_status: Status,
         exit_data_size: usize,
         exit_data: *mut Char16,
     ) -> !,
-    unload_image: extern "efiapi" fn(image_handle: Handle) -> Status,
+    unload_image: unsafe extern "efiapi" fn(image_handle: Handle) -> Status,
     exit_boot_services:
         unsafe extern "efiapi" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
-    stall: extern "efiapi" fn(microseconds: usize) -> Status,
+    stall: unsafe extern "efiapi" fn(microseconds: usize) -> Status,
     set_watchdog_timer: unsafe extern "efiapi" fn(
         timeout: usize,
         watchdog_code: u64,
@@ -224,7 +230,7 @@ pub struct BootServices {
     ) -> Status,
 
     // Protocol open / close services
-    open_protocol: extern "efiapi" fn(
+    open_protocol: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: &Guid,
         interface: &mut *mut c_void,
@@ -232,7 +238,7 @@ pub struct BootServices {
         controller_handle: Option<Handle>,
         attributes: u32,
     ) -> Status,
-    close_protocol: extern "efiapi" fn(
+    close_protocol: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: &Guid,
         agent_handle: Handle,
@@ -254,7 +260,7 @@ pub struct BootServices {
         buf: &mut *mut Handle,
     ) -> Status,
     #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
-    locate_protocol: extern "efiapi" fn(
+    locate_protocol: unsafe extern "efiapi" fn(
         proto: &Guid,
         registration: *mut c_void,
         out_proto: &mut *mut c_void,
@@ -367,7 +373,7 @@ impl BootServices {
             AllocateType::MaxAddress(addr) => (1, addr),
             AllocateType::Address(addr) => (2, addr),
         };
-        (self.allocate_pages)(ty, mem_ty, count, &mut addr).to_result_with_val(|| addr)
+        unsafe { (self.allocate_pages)(ty, mem_ty, count, &mut addr) }.to_result_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
@@ -379,7 +385,7 @@ impl BootServices {
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
-        (self.free_pages)(addr, count).to_result()
+        unsafe { (self.free_pages)(addr, count) }.to_result()
     }
 
     /// Returns struct which contains the size of a single memory descriptor
@@ -476,7 +482,7 @@ impl BootServices {
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        (self.allocate_pool)(mem_ty, size, &mut buffer).to_result_with_val(|| buffer)
+        unsafe { (self.allocate_pool)(mem_ty, size, &mut buffer) }.to_result_with_val(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
@@ -486,8 +492,9 @@ impl BootServices {
     /// See section `EFI_BOOT_SERVICES.FreePool()` in the UEFI Specification for more details.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn free_pool(&self, addr: *mut u8) -> Result {
-        (self.free_pool)(addr).to_result()
+        unsafe { (self.free_pool)(addr) }.to_result()
     }
 
     /// Creates an event
@@ -1068,7 +1075,7 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn unload_image(&self, image_handle: Handle) -> Result {
-        (self.unload_image)(image_handle).to_result()
+        unsafe { (self.unload_image)(image_handle) }.to_result()
     }
 
     /// Transfer control to a loaded image's entry point.
@@ -1139,7 +1146,7 @@ impl BootServices {
     ///
     /// The time is in microseconds.
     pub fn stall(&self, time: usize) {
-        assert_eq!((self.stall)(time), Status::SUCCESS);
+        assert_eq!(unsafe { (self.stall)(time) }, Status::SUCCESS);
     }
 
     /// Adds, updates, or removes a configuration table entry
@@ -1389,14 +1396,16 @@ impl BootServices {
     ) -> Result<()> {
         const TEST_PROTOCOL: u32 = 0x04;
         let mut interface = ptr::null_mut();
-        (self.open_protocol)(
-            params.handle,
-            &P::GUID,
-            &mut interface,
-            params.agent,
-            params.controller,
-            TEST_PROTOCOL,
-        )
+        unsafe {
+            (self.open_protocol)(
+                params.handle,
+                &P::GUID,
+                &mut interface,
+                params.agent,
+                params.controller,
+                TEST_PROTOCOL,
+            )
+        }
         .to_result_with_val(|| ())
     }
 
@@ -1818,12 +1827,14 @@ pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
 
 impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
     fn drop(&mut self) {
-        let status = (self.boot_services.close_protocol)(
-            self.open_params.handle,
-            &P::GUID,
-            self.open_params.agent,
-            self.open_params.controller,
-        );
+        let status = unsafe {
+            (self.boot_services.close_protocol)(
+                self.open_params.handle,
+                &P::GUID,
+                self.open_params.agent,
+                self.open_params.controller,
+            )
+        };
         // All of the error cases for close_protocol boil down to
         // calling it with a different set of parameters than what was
         // passed to open_protocol. The public API prevents such errors,

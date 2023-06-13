@@ -56,10 +56,12 @@ where
     P: Protocol,
 {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        assert!(!ptr.is_null());
         ptr.cast::<Self>()
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        assert!(!ptr.is_null());
         ptr.cast::<Self>()
     }
 }

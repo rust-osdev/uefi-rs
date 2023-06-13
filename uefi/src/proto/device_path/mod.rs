@@ -296,10 +296,12 @@ pub struct DevicePath {
 
 impl ProtocolPointer for DevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        assert!(!ptr.is_null());
         ptr_meta::from_raw_parts(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        assert!(!ptr.is_null());
         ptr_meta::from_raw_parts_mut(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
     }
 }
@@ -684,10 +686,12 @@ pub struct LoadedImageDevicePath(DevicePath);
 
 impl ProtocolPointer for LoadedImageDevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        assert!(!ptr.is_null());
         ptr_meta::from_raw_parts(ptr.cast(), DevicePath::size_in_bytes_from_ptr(ptr))
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        assert!(!ptr.is_null());
         ptr_meta::from_raw_parts_mut(ptr.cast(), DevicePath::size_in_bytes_from_ptr(ptr))
     }
 }

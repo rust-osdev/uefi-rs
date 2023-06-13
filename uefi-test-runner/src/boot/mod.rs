@@ -3,6 +3,7 @@ use uefi::proto::console::text::Output;
 use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::table::boot::{BootServices, LoadImageSource, SearchType};
+use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 use uefi::table::{Boot, SystemTable};
 use uefi::{CString16, Identify};
 
@@ -85,11 +86,24 @@ fn test_load_image(bt: &BootServices) {
             buffer: image_data.as_slice(),
             file_path: None,
         };
-        let _ = bt
+        let loaded_image = bt
             .load_image(bt.image_handle(), load_source)
             .expect("should load image");
 
         log::debug!("load_image with FromBuffer strategy works");
+
+        unsafe {
+            let _ = bt
+                .open_protocol::<LoadedImageDevicePath>(
+                    OpenProtocolParams {
+                        handle: loaded_image,
+                        agent: bt.image_handle(),
+                        controller: None,
+                    },
+                    OpenProtocolAttributes::GetProtocol,
+                )
+                .expect("should open LoadedImageDevicePath protocol");
+        }
     }
     // Variant B: FromDevicePath
     {

@@ -43,54 +43,8 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
 /// size is always 4 KiB.
 pub const PAGE_SIZE: usize = 4096;
 
-/// Contains pointers to all of the boot services.
-///
-/// # Accessing `BootServices`
-///
-/// A reference to `BootServices` can only be accessed by calling [`SystemTable::boot_services`].
-///
-/// [`SystemTable::boot_services`]: crate::table::SystemTable::boot_services
-///
-/// # Accessing protocols
-///
-/// Protocols can be opened using several methods of `BootServices`. Most
-/// commonly, [`open_protocol_exclusive`] should be used. This ensures that
-/// nothing else can use the protocol until it is closed, and returns a
-/// [`ScopedProtocol`] that takes care of closing the protocol when it is
-/// dropped.
-///
-/// Other methods for opening protocols:
-///
-/// * [`open_protocol`]
-/// * [`get_image_file_system`]
-///
-/// For protocol definitions, see the [`proto`] module.
-///
-/// [`proto`]: crate::proto
-/// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
-/// [`open_protocol`]: BootServices::open_protocol
-/// [`get_image_file_system`]: BootServices::get_image_file_system
-///
-/// ## Use of [`UnsafeCell`] for protocol references
-///
-/// Some protocols require mutable access to themselves. For example,
-/// most of the methods of the [`Output`] protocol take `&mut self`,
-/// because the internal function pointers specified by UEFI for that
-/// protocol take a mutable `*This` pointer. We don't want to directly
-/// return a mutable reference to a protocol though because the lifetime
-/// of the protocol is tied to `BootServices`. (That lifetime improves
-/// safety by ensuring protocols aren't accessed after exiting boot
-/// services.) If methods like [`open_protocol`] protocol took a mutable
-/// reference to `BootServices` and returned a mutable reference to a
-/// protocol it would prevent all other access to `BootServices` until
-/// the protocol reference was dropped. To work around this, the
-/// protocol reference is wrapped in an [`UnsafeCell`]. Callers can then
-/// get a mutable reference to the protocol if needed.
-///
-/// [`Output`]: crate::proto::console::text::Output
-/// [`open_protocol`]: BootServices::open_protocol
 #[repr(C)]
-pub struct BootServices {
+struct BootServicesInternal {
     header: Header,
 
     // Task Priority services
@@ -286,6 +240,55 @@ pub struct BootServices {
     ) -> Status,
 }
 
+/// Contains pointers to all of the boot services.
+///
+/// # Accessing `BootServices`
+///
+/// A reference to `BootServices` can only be accessed by calling [`SystemTable::boot_services`].
+///
+/// [`SystemTable::boot_services`]: crate::table::SystemTable::boot_services
+///
+/// # Accessing protocols
+///
+/// Protocols can be opened using several methods of `BootServices`. Most
+/// commonly, [`open_protocol_exclusive`] should be used. This ensures that
+/// nothing else can use the protocol until it is closed, and returns a
+/// [`ScopedProtocol`] that takes care of closing the protocol when it is
+/// dropped.
+///
+/// Other methods for opening protocols:
+///
+/// * [`open_protocol`]
+/// * [`get_image_file_system`]
+///
+/// For protocol definitions, see the [`proto`] module.
+///
+/// [`proto`]: crate::proto
+/// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+/// [`open_protocol`]: BootServices::open_protocol
+/// [`get_image_file_system`]: BootServices::get_image_file_system
+///
+/// ## Use of [`UnsafeCell`] for protocol references
+///
+/// Some protocols require mutable access to themselves. For example,
+/// most of the methods of the [`Output`] protocol take `&mut self`,
+/// because the internal function pointers specified by UEFI for that
+/// protocol take a mutable `*This` pointer. We don't want to directly
+/// return a mutable reference to a protocol though because the lifetime
+/// of the protocol is tied to `BootServices`. (That lifetime improves
+/// safety by ensuring protocols aren't accessed after exiting boot
+/// services.) If methods like [`open_protocol`] protocol took a mutable
+/// reference to `BootServices` and returned a mutable reference to a
+/// protocol it would prevent all other access to `BootServices` until
+/// the protocol reference was dropped. To work around this, the
+/// protocol reference is wrapped in an [`UnsafeCell`]. Callers can then
+/// get a mutable reference to the protocol if needed.
+///
+/// [`Output`]: crate::proto::console::text::Output
+/// [`open_protocol`]: BootServices::open_protocol
+#[repr(transparent)]
+pub struct BootServices(BootServicesInternal);
+
 impl BootServices {
     /// Get the [`Handle`] of the currently-executing image.
     pub fn image_handle(&self) -> Handle {
@@ -345,7 +348,7 @@ impl BootServices {
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard<'_> {
         TplGuard {
             boot_services: self,
-            old_tpl: (self.raise_tpl)(tpl),
+            old_tpl: (self.0.raise_tpl)(tpl),
         }
     }
 
@@ -373,7 +376,7 @@ impl BootServices {
             AllocateType::MaxAddress(addr) => (1, addr),
             AllocateType::Address(addr) => (2, addr),
         };
-        unsafe { (self.allocate_pages)(ty, mem_ty, count, &mut addr) }.to_result_with_val(|| addr)
+        unsafe { (self.0.allocate_pages)(ty, mem_ty, count, &mut addr) }.to_result_with_val(|| addr)
     }
 
     /// Frees memory pages allocated by UEFI.
@@ -385,7 +388,7 @@ impl BootServices {
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
-        unsafe { (self.free_pages)(addr, count) }.to_result()
+        unsafe { (self.0.free_pages)(addr, count) }.to_result()
     }
 
     /// Returns struct which contains the size of a single memory descriptor
@@ -402,7 +405,7 @@ impl BootServices {
         let mut entry_version = 0;
 
         let status = unsafe {
-            (self.get_memory_map)(
+            (self.0.get_memory_map)(
                 &mut map_size,
                 ptr::null_mut(),
                 &mut map_key,
@@ -452,7 +455,7 @@ impl BootServices {
         );
 
         unsafe {
-            (self.get_memory_map)(
+            (self.0.get_memory_map)(
                 &mut map_size,
                 map_buffer,
                 &mut map_key,
@@ -482,7 +485,7 @@ impl BootServices {
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
         let mut buffer = ptr::null_mut();
-        unsafe { (self.allocate_pool)(mem_ty, size, &mut buffer) }.to_result_with_val(|| buffer)
+        unsafe { (self.0.allocate_pool)(mem_ty, size, &mut buffer) }.to_result_with_val(|| buffer)
     }
 
     /// Frees memory allocated from a pool.
@@ -494,7 +497,7 @@ impl BootServices {
     /// * [`uefi::Status::INVALID_PARAMETER`]
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn free_pool(&self, addr: *mut u8) -> Result {
-        unsafe { (self.free_pool)(addr) }.to_result()
+        unsafe { (self.0.free_pool)(addr) }.to_result()
     }
 
     /// Creates an event
@@ -529,7 +532,7 @@ impl BootServices {
         let mut event = None;
 
         // Now we're ready to call UEFI
-        (self.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event)
+        (self.0.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event)
             .to_result_with_val(
                 // OK to unwrap: event is non-null for Status::SUCCESS.
                 || event.unwrap(),
@@ -583,13 +586,13 @@ impl BootServices {
         notify_ctx: Option<NonNull<c_void>>,
         event_group: Option<NonNull<Guid>>,
     ) -> Result<Event> {
-        if self.header.revision < Revision::EFI_2_00 {
+        if self.0.header.revision < Revision::EFI_2_00 {
             return Err(Status::UNSUPPORTED.into());
         }
 
         let mut event = None;
 
-        (self.create_event_ex)(
+        (self.0.create_event_ex)(
             event_type,
             notify_tpl,
             notify_fn,
@@ -616,7 +619,7 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.set_timer)(event.unsafe_clone(), ty, time) }.to_result()
+        unsafe { (self.0.set_timer)(event.unsafe_clone(), ty, time) }.to_result()
     }
 
     /// Stops execution until an event is signaled.
@@ -656,7 +659,7 @@ impl BootServices {
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
         let (number_of_events, events) = (events.len(), events.as_mut_ptr());
         let mut index = 0;
-        unsafe { (self.wait_for_event)(number_of_events, events, &mut index) }.to_result_with(
+        unsafe { (self.0.wait_for_event)(number_of_events, events, &mut index) }.to_result_with(
             || index,
             |s| {
                 if s == Status::INVALID_PARAMETER {
@@ -689,7 +692,7 @@ impl BootServices {
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
         // and not keeping the clone around.
-        unsafe { (self.signal_event)(event.unsafe_clone()).to_result() }
+        unsafe { (self.0.signal_event)(event.unsafe_clone()).to_result() }
     }
 
     /// Removes `event` from any event group to which it belongs and closes it. If `event` was
@@ -706,7 +709,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn close_event(&self, event: Event) -> Result {
-        unsafe { (self.close_event)(event).to_result() }
+        unsafe { (self.0.close_event)(event).to_result() }
     }
 
     /// Checks to see if an event is signaled, without blocking execution to wait for it.
@@ -723,7 +726,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn check_event(&self, event: Event) -> Result<bool> {
-        let status = unsafe { (self.check_event)(event) };
+        let status = unsafe { (self.0.check_event)(event) };
         match status {
             Status::SUCCESS => Ok(true),
             Status::NOT_READY => Ok(false),
@@ -754,7 +757,7 @@ impl BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Result<Handle> {
-        ((self.install_protocol_interface)(
+        ((self.0.install_protocol_interface)(
             &mut handle,
             protocol,
             InterfaceType::NATIVE_INTERFACE,
@@ -791,7 +794,7 @@ impl BootServices {
         old_interface: *mut c_void,
         new_interface: *mut c_void,
     ) -> Result<()> {
-        (self.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface)
+        (self.0.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface)
             .to_result()
     }
 
@@ -820,7 +823,7 @@ impl BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Result<()> {
-        (self.uninstall_protocol_interface)(handle, protocol, interface).to_result()
+        (self.0.uninstall_protocol_interface)(handle, protocol, interface).to_result()
     }
 
     /// Registers `event` to be signalled whenever a protocol interface is registered for
@@ -846,7 +849,7 @@ impl BootServices {
     ) -> Result<(Event, SearchType)> {
         let mut key = None;
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
-        unsafe { (self.register_protocol_notify)(protocol, event.unsafe_clone(), &mut key) }
+        unsafe { (self.0.register_protocol_notify)(protocol, event.unsafe_clone(), &mut key) }
             // Safety: as long as this call is successful, `key` will be valid.
             .to_result_with_val(|| unsafe {
                 (
@@ -892,7 +895,7 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, Some(guid), None),
         };
 
-        let status = unsafe { (self.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
+        let status = unsafe { (self.0.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
 
         // Must convert the returned size (in bytes) to length (number of elements).
         let buffer_len = buffer_size / handle_size;
@@ -927,7 +930,7 @@ impl BootServices {
         let mut handle = None;
         let mut device_path_ptr = device_path.as_ffi_ptr();
         unsafe {
-            (self.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
+            (self.0.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
                 .to_result_with_val(|| {
                     *device_path = DevicePath::from_ffi_ptr(device_path_ptr);
                     // OK to unwrap: handle is non-null for Status::SUCCESS.
@@ -1046,7 +1049,7 @@ impl BootServices {
 
         let mut image_handle = None;
         unsafe {
-            (self.load_image)(
+            (self.0.load_image)(
                 boot_policy,
                 parent_image_handle,
                 device_path,
@@ -1075,7 +1078,7 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn unload_image(&self, image_handle: Handle) -> Result {
-        unsafe { (self.unload_image)(image_handle) }.to_result()
+        unsafe { (self.0.unload_image)(image_handle) }.to_result()
     }
 
     /// Transfer control to a loaded image's entry point.
@@ -1095,7 +1098,7 @@ impl BootServices {
             // TODO: implement returning exit data to the caller.
             let mut exit_data_size: usize = 0;
             let mut exit_data: *mut Char16 = ptr::null_mut();
-            (self.start_image)(image_handle, &mut exit_data_size, &mut exit_data).to_result()
+            (self.0.start_image)(image_handle, &mut exit_data_size, &mut exit_data).to_result()
         }
     }
 
@@ -1115,7 +1118,7 @@ impl BootServices {
         exit_data_size: usize,
         exit_data: *mut Char16,
     ) -> ! {
-        (self.exit)(image_handle, exit_status, exit_data_size, exit_data)
+        (self.0.exit)(image_handle, exit_status, exit_data_size, exit_data)
     }
 
     /// Exits the UEFI boot services
@@ -1139,14 +1142,14 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        (self.exit_boot_services)(image, mmap_key).to_result()
+        (self.0.exit_boot_services)(image, mmap_key).to_result()
     }
 
     /// Stalls the processor for an amount of time.
     ///
     /// The time is in microseconds.
     pub fn stall(&self, time: usize) {
-        assert_eq!(unsafe { (self.stall)(time) }, Status::SUCCESS);
+        assert_eq!(unsafe { (self.0.stall)(time) }, Status::SUCCESS);
     }
 
     /// Adds, updates, or removes a configuration table entry
@@ -1174,7 +1177,7 @@ impl BootServices {
         guid_entry: &Guid,
         table_ptr: *const c_void,
     ) -> Result {
-        (self.install_configuration_table)(guid_entry, table_ptr).to_result()
+        (self.0.install_configuration_table)(guid_entry, table_ptr).to_result()
     }
 
     /// Set the watchdog timer.
@@ -1224,7 +1227,7 @@ impl BootServices {
             })
             .unwrap_or((0, ptr::null_mut()));
 
-        unsafe { (self.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.to_result()
+        unsafe { (self.0.set_watchdog_timer)(timeout, watchdog_code, data_len, data) }.to_result()
     }
 
     /// Connect one or more drivers to a controller.
@@ -1248,7 +1251,7 @@ impl BootServices {
         recursive: bool,
     ) -> Result {
         unsafe {
-            (self.connect_controller)(
+            (self.0.connect_controller)(
                 controller,
                 driver_image,
                 remaining_device_path
@@ -1277,7 +1280,7 @@ impl BootServices {
         driver_image: Option<Handle>,
         child: Option<Handle>,
     ) -> Result {
-        unsafe { (self.disconnect_controller)(controller, driver_image, child) }
+        unsafe { (self.0.disconnect_controller)(controller, driver_image, child) }
             .to_result_with_err(|_| ())
     }
 
@@ -1329,7 +1332,7 @@ impl BootServices {
         attributes: OpenProtocolAttributes,
     ) -> Result<ScopedProtocol<P>> {
         let mut interface = ptr::null_mut();
-        (self.open_protocol)(
+        (self.0.open_protocol)(
             params.handle,
             &P::GUID,
             &mut interface,
@@ -1400,7 +1403,7 @@ impl BootServices {
         const TEST_PROTOCOL: u32 = 0x04;
         let mut interface = ptr::null_mut();
         unsafe {
-            (self.open_protocol)(
+            (self.0.open_protocol)(
                 params.handle,
                 &P::GUID,
                 &mut interface,
@@ -1425,7 +1428,8 @@ impl BootServices {
         let mut protocols = ptr::null_mut();
         let mut count = 0;
 
-        let mut status = unsafe { (self.protocols_per_handle)(handle, &mut protocols, &mut count) };
+        let mut status =
+            unsafe { (self.0.protocols_per_handle)(handle, &mut protocols, &mut count) };
 
         if !status.is_error() {
             // Ensure that protocols isn't null, and that none of the GUIDs
@@ -1468,7 +1472,7 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, Some(guid), None),
         };
 
-        unsafe { (self.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
+        unsafe { (self.0.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
             .to_result_with_val(|| HandleBuffer {
                 boot_services: self,
                 count: num_handles,
@@ -1483,7 +1487,7 @@ impl BootServices {
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
     pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
-        (self.copy_mem)(dest, src, size);
+        (self.0.copy_mem)(dest, src, size);
     }
 
     /// Sets a buffer to a certain value.
@@ -1493,7 +1497,7 @@ impl BootServices {
     /// This function is unsafe as it can be used to violate most safety
     /// invariants of the Rust type system.
     pub unsafe fn set_mem(&self, buffer: *mut u8, size: usize, value: u8) {
-        (self.set_mem)(buffer, size, value);
+        (self.0.set_mem)(buffer, size, value);
     }
 }
 
@@ -1566,125 +1570,131 @@ impl Debug for BootServices {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         #[allow(deprecated)]
         f.debug_struct("BootServices")
-            .field("header", &self.header)
-            .field("raise_tpl (fn ptr)", &(self.raise_tpl as *const usize))
-            .field("restore_tpl (fn ptr)", &(self.restore_tpl as *const usize))
+            .field("header", &self.0.header)
+            .field("raise_tpl (fn ptr)", &(self.0.raise_tpl as *const usize))
+            .field(
+                "restore_tpl (fn ptr)",
+                &(self.0.restore_tpl as *const usize),
+            )
             .field(
                 "allocate_pages (fn ptr)",
-                &(self.allocate_pages as *const usize),
+                &(self.0.allocate_pages as *const usize),
             )
-            .field("free_pages (fn ptr)", &(self.free_pages as *const usize))
+            .field("free_pages (fn ptr)", &(self.0.free_pages as *const usize))
             .field(
                 "get_memory_map (fn ptr)",
-                &(self.get_memory_map as *const usize),
+                &(self.0.get_memory_map as *const usize),
             )
             .field(
                 "allocate_pool (fn ptr)",
-                &(self.allocate_pool as *const usize),
+                &(self.0.allocate_pool as *const usize),
             )
-            .field("free_pool (fn ptr)", &(self.free_pool as *const usize))
+            .field("free_pool (fn ptr)", &(self.0.free_pool as *const usize))
             .field(
                 "create_event (fn ptr)",
-                &(self.create_event as *const usize),
+                &(self.0.create_event as *const usize),
             )
-            .field("set_timer (fn ptr)", &(self.set_timer as *const usize))
+            .field("set_timer (fn ptr)", &(self.0.set_timer as *const usize))
             .field(
                 "wait_for_event (fn ptr)",
-                &(self.wait_for_event as *const usize),
+                &(self.0.wait_for_event as *const usize),
             )
-            .field("signal_event", &(self.signal_event as *const usize))
-            .field("close_event", &(self.close_event as *const usize))
-            .field("check_event", &(self.check_event as *const usize))
+            .field("signal_event", &(self.0.signal_event as *const usize))
+            .field("close_event", &(self.0.close_event as *const usize))
+            .field("check_event", &(self.0.check_event as *const usize))
             .field(
                 "install_protocol_interface",
-                &(self.install_protocol_interface as *const usize),
+                &(self.0.install_protocol_interface as *const usize),
             )
             .field(
                 "reinstall_protocol_interface",
-                &(self.reinstall_protocol_interface as *const usize),
+                &(self.0.reinstall_protocol_interface as *const usize),
             )
             .field(
                 "uninstall_protocol_interface",
-                &(self.uninstall_protocol_interface as *const usize),
+                &(self.0.uninstall_protocol_interface as *const usize),
             )
             .field(
                 "handle_protocol (fn ptr)",
-                &(self.handle_protocol as *const usize),
+                &(self.0.handle_protocol as *const usize),
             )
             .field(
                 "register_protocol_notify",
-                &(self.register_protocol_notify as *const usize),
+                &(self.0.register_protocol_notify as *const usize),
             )
             .field(
                 "locate_handle (fn ptr)",
-                &(self.locate_handle as *const usize),
+                &(self.0.locate_handle as *const usize),
             )
             .field(
                 "locate_device_path (fn ptr)",
-                &(self.locate_device_path as *const usize),
+                &(self.0.locate_device_path as *const usize),
             )
             .field(
                 "install_configuration_table (fn ptr)",
-                &(self.install_configuration_table as *const usize),
+                &(self.0.install_configuration_table as *const usize),
             )
-            .field("load_image (fn ptr)", &(self.load_image as *const usize))
-            .field("start_image (fn ptr)", &(self.start_image as *const usize))
-            .field("exit", &(self.exit as *const usize))
+            .field("load_image (fn ptr)", &(self.0.load_image as *const usize))
+            .field(
+                "start_image (fn ptr)",
+                &(self.0.start_image as *const usize),
+            )
+            .field("exit", &(self.0.exit as *const usize))
             .field(
                 "unload_image (fn ptr)",
-                &(self.unload_image as *const usize),
+                &(self.0.unload_image as *const usize),
             )
             .field(
                 "exit_boot_services (fn ptr)",
-                &(self.exit_boot_services as *const usize),
+                &(self.0.exit_boot_services as *const usize),
             )
             .field(
                 "get_next_monotonic_count",
-                &(self.get_next_monotonic_count as *const usize),
+                &(self.0.get_next_monotonic_count as *const usize),
             )
-            .field("stall (fn ptr)", &(self.stall as *const usize))
+            .field("stall (fn ptr)", &(self.0.stall as *const usize))
             .field(
                 "set_watchdog_timer (fn ptr)",
-                &(self.set_watchdog_timer as *const usize),
+                &(self.0.set_watchdog_timer as *const usize),
             )
             .field(
                 "connect_controller",
-                &(self.connect_controller as *const usize),
+                &(self.0.connect_controller as *const usize),
             )
             .field(
                 "disconnect_controller",
-                &(self.disconnect_controller as *const usize),
+                &(self.0.disconnect_controller as *const usize),
             )
-            .field("open_protocol", &(self.open_protocol as *const usize))
-            .field("close_protocol", &(self.close_protocol as *const usize))
+            .field("open_protocol", &(self.0.open_protocol as *const usize))
+            .field("close_protocol", &(self.0.close_protocol as *const usize))
             .field(
                 "open_protocol_information",
-                &(self.open_protocol_information as *const usize),
+                &(self.0.open_protocol_information as *const usize),
             )
             .field(
                 "protocols_per_handle",
-                &(self.protocols_per_handle as *const usize),
+                &(self.0.protocols_per_handle as *const usize),
             )
             .field(
                 "locate_handle_buffer",
-                &(self.locate_handle_buffer as *const usize),
+                &(self.0.locate_handle_buffer as *const usize),
             )
             .field(
                 "locate_protocol (fn ptr)",
-                &(self.locate_protocol as *const usize),
+                &(self.0.locate_protocol as *const usize),
             )
             .field(
                 "install_multiple_protocol_interfaces",
-                &(self.install_multiple_protocol_interfaces as *const usize),
+                &(self.0.install_multiple_protocol_interfaces as *const usize),
             )
             .field(
                 "uninstall_multiple_protocol_interfaces",
-                &(self.uninstall_multiple_protocol_interfaces as *const usize),
+                &(self.0.uninstall_multiple_protocol_interfaces as *const usize),
             )
-            .field("calculate_crc32", &(self.calculate_crc32 as *const usize))
-            .field("copy_mem (fn ptr)", &(self.copy_mem as *const usize))
-            .field("set_mem (fn ptr)", &(self.set_mem as *const usize))
-            .field("create_event_ex", &(self.create_event_ex as *const usize))
+            .field("calculate_crc32", &(self.0.calculate_crc32 as *const usize))
+            .field("copy_mem (fn ptr)", &(self.0.copy_mem as *const usize))
+            .field("set_mem (fn ptr)", &(self.0.set_mem as *const usize))
+            .field("create_event_ex", &(self.0.create_event_ex as *const usize))
             .finish()
     }
 }
@@ -1743,7 +1753,7 @@ pub struct TplGuard<'boot> {
 impl Drop for TplGuard<'_> {
     fn drop(&mut self) {
         unsafe {
-            (self.boot_services.restore_tpl)(self.old_tpl);
+            (self.boot_services.0.restore_tpl)(self.old_tpl);
         }
     }
 }
@@ -1842,7 +1852,7 @@ pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
 impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
     fn drop(&mut self) {
         let status = unsafe {
-            (self.boot_services.close_protocol)(
+            (self.boot_services.0.close_protocol)(
                 self.open_params.handle,
                 &P::GUID,
                 self.open_params.agent,

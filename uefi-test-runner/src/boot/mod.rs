@@ -85,11 +85,18 @@ fn test_load_image(bt: &BootServices) {
             buffer: image_data.as_slice(),
             file_path: None,
         };
-        let _ = bt
+        let loaded_image = bt
             .load_image(bt.image_handle(), load_source)
             .expect("should load image");
 
         log::debug!("load_image with FromBuffer strategy works");
+
+        // Check that the `LoadedImageDevicePath` protocol can be opened and
+        // that the interface data is `None`.
+        let loaded_image_device_path = bt
+            .open_protocol_exclusive::<LoadedImageDevicePath>(loaded_image)
+            .expect("should open LoadedImageDevicePath protocol");
+        assert!(loaded_image_device_path.get().is_none());
     }
     // Variant B: FromDevicePath
     {

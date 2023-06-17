@@ -1338,10 +1338,13 @@ impl BootServices {
             attributes as u32,
         )
         .to_result_with_val(|| {
-            let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
+            let interface = (!interface.is_null()).then(|| {
+                let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
+                &*interface
+            });
 
             ScopedProtocol {
-                interface: &*interface,
+                interface,
                 open_params: params,
                 boot_services: self,
             }
@@ -1814,12 +1817,23 @@ pub struct OpenProtocolParams {
 /// An open protocol interface. Automatically closes the protocol
 /// interface on drop.
 ///
+/// Most protocols have interface data associated with them. `ScopedProtocol`
+/// implements [`Deref`] and [`DerefMut`] to access this data. A few protocols
+/// (such as [`DevicePath`] and [`LoadedImageDevicePath`]) may be installed with
+/// null interface data, in which case [`Deref`] and [`DerefMut`] will
+/// panic. The [`get`] and [`get_mut`] methods may be used to access the
+/// optional interface data without panicking.
+///
 /// See also the [`BootServices`] documentation for details of how to open a
 /// protocol and why [`UnsafeCell`] is used.
+///
+/// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
+/// [`get`]: ScopedProtocol::get
+/// [`get_mut`]: ScopedProtocol::get_mut
 #[derive(Debug)]
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
-    interface: &'a UnsafeCell<P>,
+    interface: Option<&'a UnsafeCell<P>>,
 
     open_params: OpenProtocolParams,
     boot_services: &'a BootServices,
@@ -1847,14 +1861,32 @@ impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
 impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {
     type Target = P;
 
+    #[track_caller]
     fn deref(&self) -> &Self::Target {
-        unsafe { &*self.interface.get() }
+        unsafe { &*self.interface.unwrap().get() }
     }
 }
 
 impl<'a, P: Protocol + ?Sized> DerefMut for ScopedProtocol<'a, P> {
+    #[track_caller]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut *self.interface.get() }
+        unsafe { &mut *self.interface.unwrap().get() }
+    }
+}
+
+impl<'a, P: Protocol + ?Sized> ScopedProtocol<'a, P> {
+    /// Get the protocol interface data, or `None` if the open protocol's
+    /// interface is null.
+    #[must_use]
+    pub fn get(&self) -> Option<&P> {
+        self.interface.map(|p| unsafe { &*p.get() })
+    }
+
+    /// Get the protocol interface data, or `None` if the open protocol's
+    /// interface is null.
+    #[must_use]
+    pub fn get_mut(&self) -> Option<&mut P> {
+        self.interface.map(|p| unsafe { &mut *p.get() })
     }
 }
 

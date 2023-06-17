@@ -7,9 +7,13 @@
 - `DevicePathInstance::to_boxed`, `DevicePathInstance::to_owned`, and `DevicePathInstance::as_bytes`
 - `DevicePathNode::data`
 - Added `Event::from_ptr`, `Event::as_ptr`, and `Handle::as_ptr`.
+- Added `ScopedProtocol::get` and `ScopedProtocol::get_mut` to access
+  potentially-null interfaces without panicking.
 
 ### Changed
 - Renamed `LoadImageSource::FromFilePath` to `LoadImageSource::FromDevicePath`
+- The `Deref` and `DerefMut` impls for `ScopedProtocol` will now panic if the
+  interface pointer is null.
 
 ### Removed
 

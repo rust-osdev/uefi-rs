@@ -62,7 +62,7 @@ struct BootServicesInternal {
     get_memory_map: unsafe extern "efiapi" fn(
         size: &mut usize,
         map: *mut MemoryDescriptor,
-        key: &mut MemoryMapKey,
+        key: &mut usize,
         desc_size: &mut usize,
         desc_version: &mut u32,
     ) -> Status,
@@ -157,8 +157,7 @@ struct BootServicesInternal {
         exit_data: *mut Char16,
     ) -> !,
     unload_image: unsafe extern "efiapi" fn(image_handle: Handle) -> Status,
-    exit_boot_services:
-        unsafe extern "efiapi" fn(image_handle: Handle, map_key: MemoryMapKey) -> Status,
+    exit_boot_services: unsafe extern "efiapi" fn(image_handle: Handle, map_key: usize) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
@@ -408,7 +407,7 @@ impl BootServices {
             (self.0.get_memory_map)(
                 &mut map_size,
                 ptr::null_mut(),
-                &mut map_key,
+                &mut map_key.0,
                 &mut entry_size,
                 &mut entry_version,
             )
@@ -458,7 +457,7 @@ impl BootServices {
             (self.0.get_memory_map)(
                 &mut map_size,
                 map_buffer,
-                &mut map_key,
+                &mut map_key.0,
                 &mut entry_size,
                 &mut entry_version,
             )
@@ -1142,7 +1141,7 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        (self.0.exit_boot_services)(image, mmap_key).to_result()
+        (self.0.exit_boot_services)(image, mmap_key.0).to_result()
     }
 
     /// Stalls the processor for an amount of time.

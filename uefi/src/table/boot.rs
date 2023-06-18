@@ -100,19 +100,19 @@ struct BootServicesInternal {
         interface: *mut c_void,
     ) -> Status,
     reinstall_protocol_interface: unsafe extern "efiapi" fn(
-        handle: Handle,
+        handle: uefi_raw::Handle,
         protocol: &Guid,
         old_interface: *mut c_void,
         new_interface: *mut c_void,
     ) -> Status,
     uninstall_protocol_interface: unsafe extern "efiapi" fn(
-        handle: Handle,
+        handle: uefi_raw::Handle,
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Status,
     #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
     handle_protocol: unsafe extern "efiapi" fn(
-        handle: Handle,
+        handle: uefi_raw::Handle,
         proto: &Guid,
         out_proto: &mut *mut c_void,
     ) -> Status,
@@ -140,25 +140,26 @@ struct BootServicesInternal {
     // Image services
     load_image: unsafe extern "efiapi" fn(
         boot_policy: u8,
-        parent_image_handle: Handle,
+        parent_image_handle: uefi_raw::Handle,
         device_path: *const uefi_raw::protocol::device_path::DevicePathProtocol,
         source_buffer: *const u8,
         source_size: usize,
         image_handle: &mut Option<Handle>,
     ) -> Status,
     start_image: unsafe extern "efiapi" fn(
-        image_handle: Handle,
+        image_handle: uefi_raw::Handle,
         exit_data_size: *mut usize,
         exit_data: &mut *mut Char16,
     ) -> Status,
     exit: unsafe extern "efiapi" fn(
-        image_handle: Handle,
+        image_handle: uefi_raw::Handle,
         exit_status: Status,
         exit_data_size: usize,
         exit_data: *mut Char16,
     ) -> !,
-    unload_image: unsafe extern "efiapi" fn(image_handle: Handle) -> Status,
-    exit_boot_services: unsafe extern "efiapi" fn(image_handle: Handle, map_key: usize) -> Status,
+    unload_image: unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> Status,
+    exit_boot_services:
+        unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle, map_key: usize) -> Status,
 
     // Misc services
     get_next_monotonic_count: usize,
@@ -172,37 +173,37 @@ struct BootServicesInternal {
 
     // Driver support services
     connect_controller: unsafe extern "efiapi" fn(
-        controller: Handle,
+        controller: uefi_raw::Handle,
         driver_image: Option<Handle>,
         remaining_device_path: *const uefi_raw::protocol::device_path::DevicePathProtocol,
         recursive: bool,
     ) -> Status,
     disconnect_controller: unsafe extern "efiapi" fn(
-        controller: Handle,
+        controller: uefi_raw::Handle,
         driver_image: Option<Handle>,
         child: Option<Handle>,
     ) -> Status,
 
     // Protocol open / close services
     open_protocol: unsafe extern "efiapi" fn(
-        handle: Handle,
+        handle: uefi_raw::Handle,
         protocol: &Guid,
         interface: &mut *mut c_void,
-        agent_handle: Handle,
+        agent_handle: uefi_raw::Handle,
         controller_handle: Option<Handle>,
         attributes: u32,
     ) -> Status,
     close_protocol: unsafe extern "efiapi" fn(
-        handle: Handle,
+        handle: uefi_raw::Handle,
         protocol: &Guid,
-        agent_handle: Handle,
+        agent_handle: uefi_raw::Handle,
         controller_handle: Option<Handle>,
     ) -> Status,
     open_protocol_information: usize,
 
     // Library services
     protocols_per_handle: unsafe extern "efiapi" fn(
-        handle: Handle,
+        handle: uefi_raw::Handle,
         protocol_buffer: *mut *mut *const Guid,
         protocol_buffer_count: *mut usize,
     ) -> Status,
@@ -796,8 +797,13 @@ impl BootServices {
         old_interface: *mut c_void,
         new_interface: *mut c_void,
     ) -> Result<()> {
-        (self.0.reinstall_protocol_interface)(handle, protocol, old_interface, new_interface)
-            .to_result()
+        (self.0.reinstall_protocol_interface)(
+            handle.as_ptr(),
+            protocol,
+            old_interface,
+            new_interface,
+        )
+        .to_result()
     }
 
     /// Removes a protocol interface from a device handle.
@@ -825,7 +831,7 @@ impl BootServices {
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Result<()> {
-        (self.0.uninstall_protocol_interface)(handle, protocol, interface).to_result()
+        (self.0.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
     }
 
     /// Registers `event` to be signalled whenever a protocol interface is registered for
@@ -1054,7 +1060,7 @@ impl BootServices {
         unsafe {
             (self.0.load_image)(
                 boot_policy,
-                parent_image_handle,
+                parent_image_handle.as_ptr(),
                 device_path.cast(),
                 source_buffer,
                 source_size,
@@ -1081,7 +1087,7 @@ impl BootServices {
     /// * [`uefi::Status::UNSUPPORTED`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn unload_image(&self, image_handle: Handle) -> Result {
-        unsafe { (self.0.unload_image)(image_handle) }.to_result()
+        unsafe { (self.0.unload_image)(image_handle.as_ptr()) }.to_result()
     }
 
     /// Transfer control to a loaded image's entry point.
@@ -1101,7 +1107,8 @@ impl BootServices {
             // TODO: implement returning exit data to the caller.
             let mut exit_data_size: usize = 0;
             let mut exit_data: *mut Char16 = ptr::null_mut();
-            (self.0.start_image)(image_handle, &mut exit_data_size, &mut exit_data).to_result()
+            (self.0.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data)
+                .to_result()
         }
     }
 
@@ -1121,7 +1128,12 @@ impl BootServices {
         exit_data_size: usize,
         exit_data: *mut Char16,
     ) -> ! {
-        (self.0.exit)(image_handle, exit_status, exit_data_size, exit_data)
+        (self.0.exit)(
+            image_handle.as_ptr(),
+            exit_status,
+            exit_data_size,
+            exit_data,
+        )
     }
 
     /// Exits the UEFI boot services
@@ -1145,7 +1157,7 @@ impl BootServices {
         image: Handle,
         mmap_key: MemoryMapKey,
     ) -> Result {
-        (self.0.exit_boot_services)(image, mmap_key.0).to_result()
+        (self.0.exit_boot_services)(image.as_ptr(), mmap_key.0).to_result()
     }
 
     /// Stalls the processor for an amount of time.
@@ -1255,7 +1267,7 @@ impl BootServices {
     ) -> Result {
         unsafe {
             (self.0.connect_controller)(
-                controller,
+                controller.as_ptr(),
                 driver_image,
                 remaining_device_path
                     .map(|dp| dp.as_ffi_ptr())
@@ -1284,7 +1296,7 @@ impl BootServices {
         driver_image: Option<Handle>,
         child: Option<Handle>,
     ) -> Result {
-        unsafe { (self.0.disconnect_controller)(controller, driver_image, child) }
+        unsafe { (self.0.disconnect_controller)(controller.as_ptr(), driver_image, child) }
             .to_result_with_err(|_| ())
     }
 
@@ -1337,10 +1349,10 @@ impl BootServices {
     ) -> Result<ScopedProtocol<P>> {
         let mut interface = ptr::null_mut();
         (self.0.open_protocol)(
-            params.handle,
+            params.handle.as_ptr(),
             &P::GUID,
             &mut interface,
-            params.agent,
+            params.agent.as_ptr(),
             params.controller,
             attributes as u32,
         )
@@ -1408,10 +1420,10 @@ impl BootServices {
         let mut interface = ptr::null_mut();
         unsafe {
             (self.0.open_protocol)(
-                params.handle,
+                params.handle.as_ptr(),
                 &P::GUID,
                 &mut interface,
-                params.agent,
+                params.agent.as_ptr(),
                 params.controller,
                 TEST_PROTOCOL,
             )
@@ -1433,7 +1445,7 @@ impl BootServices {
         let mut count = 0;
 
         let mut status =
-            unsafe { (self.0.protocols_per_handle)(handle, &mut protocols, &mut count) };
+            unsafe { (self.0.protocols_per_handle)(handle.as_ptr(), &mut protocols, &mut count) };
 
         if !status.is_error() {
             // Ensure that protocols isn't null, and that none of the GUIDs
@@ -1857,9 +1869,9 @@ impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
     fn drop(&mut self) {
         let status = unsafe {
             (self.boot_services.0.close_protocol)(
-                self.open_params.handle,
+                self.open_params.handle.as_ptr(),
                 &P::GUID,
-                self.open_params.agent,
+                self.open_params.agent.as_ptr(),
                 self.open_params.controller,
             )
         };

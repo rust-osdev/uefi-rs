@@ -77,8 +77,8 @@ struct BootServicesInternal {
     create_event: unsafe extern "efiapi" fn(
         ty: EventType,
         notify_tpl: Tpl,
-        notify_func: Option<EventNotifyFn>,
-        notify_ctx: Option<NonNull<c_void>>,
+        notify_func: Option<uefi_raw::table::boot::EventNotifyFn>,
+        notify_ctx: *mut c_void,
         out_event: *mut uefi_raw::Event,
     ) -> Status,
     set_timer:
@@ -234,11 +234,16 @@ struct BootServicesInternal {
     create_event_ex: unsafe extern "efiapi" fn(
         ty: EventType,
         notify_tpl: Tpl,
-        notify_fn: Option<EventNotifyFn>,
-        notify_ctx: Option<NonNull<c_void>>,
-        event_group: Option<NonNull<Guid>>,
+        notify_fn: Option<uefi_raw::table::boot::EventNotifyFn>,
+        notify_ctx: *mut c_void,
+        event_group: *mut Guid,
         out_event: *mut uefi_raw::Event,
     ) -> Status,
+}
+
+/// Get the raw pointer from `opt`, defaulting to `null_mut`.
+fn opt_nonnull_to_ptr<T>(opt: Option<NonNull<T>>) -> *mut T {
+    opt.map(NonNull::as_ptr).unwrap_or(ptr::null_mut())
 }
 
 /// Contains pointers to all of the boot services.
@@ -532,6 +537,12 @@ impl BootServices {
     ) -> Result<Event> {
         let mut event = ptr::null_mut();
 
+        // Safety: the argument types of the function pointers are defined
+        // differently, but are compatible and can be safely transmuted.
+        let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+
+        let notify_ctx = opt_nonnull_to_ptr(notify_ctx);
+
         // Now we're ready to call UEFI
         (self.0.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event)
             .to_result_with_val(
@@ -593,12 +604,16 @@ impl BootServices {
 
         let mut event = ptr::null_mut();
 
+        // Safety: the argument types of the function pointers are defined
+        // differently, but are compatible and can be safely transmuted.
+        let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+
         (self.0.create_event_ex)(
             event_type,
             notify_tpl,
             notify_fn,
-            notify_ctx,
-            event_group,
+            opt_nonnull_to_ptr(notify_ctx),
+            opt_nonnull_to_ptr(event_group),
             &mut event,
         )
         .to_result_with_val(

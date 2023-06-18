@@ -79,17 +79,18 @@ struct BootServicesInternal {
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
-        out_event: *mut Option<Event>,
+        out_event: *mut uefi_raw::Event,
     ) -> Status,
-    set_timer: unsafe extern "efiapi" fn(event: Event, ty: u32, trigger_time: u64) -> Status,
+    set_timer:
+        unsafe extern "efiapi" fn(event: uefi_raw::Event, ty: u32, trigger_time: u64) -> Status,
     wait_for_event: unsafe extern "efiapi" fn(
         number_of_events: usize,
-        events: *mut Event,
+        events: *mut uefi_raw::Event,
         out_index: *mut usize,
     ) -> Status,
-    signal_event: unsafe extern "efiapi" fn(event: Event) -> Status,
-    close_event: unsafe extern "efiapi" fn(event: Event) -> Status,
-    check_event: unsafe extern "efiapi" fn(event: Event) -> Status,
+    signal_event: unsafe extern "efiapi" fn(event: uefi_raw::Event) -> Status,
+    close_event: unsafe extern "efiapi" fn(event: uefi_raw::Event) -> Status,
+    check_event: unsafe extern "efiapi" fn(event: uefi_raw::Event) -> Status,
 
     // Protocol handlers
     install_protocol_interface: unsafe extern "efiapi" fn(
@@ -118,7 +119,7 @@ struct BootServicesInternal {
     _reserved: usize,
     register_protocol_notify: unsafe extern "efiapi" fn(
         protocol: &Guid,
-        event: Event,
+        event: uefi_raw::Event,
         registration: *mut Option<ProtocolSearchKey>,
     ) -> Status,
     locate_handle: unsafe extern "efiapi" fn(
@@ -235,7 +236,7 @@ struct BootServicesInternal {
         notify_fn: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
         event_group: Option<NonNull<Guid>>,
-        out_event: *mut Option<Event>,
+        out_event: *mut uefi_raw::Event,
     ) -> Status,
 }
 
@@ -528,13 +529,13 @@ impl BootServices {
         notify_fn: Option<EventNotifyFn>,
         notify_ctx: Option<NonNull<c_void>>,
     ) -> Result<Event> {
-        let mut event = None;
+        let mut event = ptr::null_mut();
 
         // Now we're ready to call UEFI
         (self.0.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event)
             .to_result_with_val(
                 // OK to unwrap: event is non-null for Status::SUCCESS.
-                || event.unwrap(),
+                || Event::from_ptr(event).unwrap(),
             )
     }
 
@@ -589,7 +590,7 @@ impl BootServices {
             return Err(Status::UNSUPPORTED.into());
         }
 
-        let mut event = None;
+        let mut event = ptr::null_mut();
 
         (self.0.create_event_ex)(
             event_type,
@@ -601,7 +602,7 @@ impl BootServices {
         )
         .to_result_with_val(
             // OK to unwrap: event is non-null for Status::SUCCESS.
-            || event.unwrap(),
+            || Event::from_ptr(event).unwrap(),
         )
     }
 
@@ -618,7 +619,7 @@ impl BootServices {
             TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
             TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
         };
-        unsafe { (self.0.set_timer)(event.unsafe_clone(), ty, time) }.to_result()
+        unsafe { (self.0.set_timer)(event.as_ptr(), ty, time) }.to_result()
     }
 
     /// Stops execution until an event is signaled.
@@ -656,7 +657,9 @@ impl BootServices {
     /// * [`uefi::Status::INVALID_PARAMETER`]
     /// * [`uefi::Status::UNSUPPORTED`]
     pub fn wait_for_event(&self, events: &mut [Event]) -> Result<usize, Option<usize>> {
-        let (number_of_events, events) = (events.len(), events.as_mut_ptr());
+        let number_of_events = events.len();
+        let events: *mut uefi_raw::Event = events.as_mut_ptr().cast();
+
         let mut index = 0;
         unsafe { (self.0.wait_for_event)(number_of_events, events, &mut index) }.to_result_with(
             || index,
@@ -691,7 +694,7 @@ impl BootServices {
     pub fn signal_event(&self, event: &Event) -> Result {
         // Safety: cloning this event should be safe, as we're directly passing it to firmware
         // and not keeping the clone around.
-        unsafe { (self.0.signal_event)(event.unsafe_clone()).to_result() }
+        unsafe { (self.0.signal_event)(event.as_ptr()).to_result() }
     }
 
     /// Removes `event` from any event group to which it belongs and closes it. If `event` was
@@ -708,7 +711,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn close_event(&self, event: Event) -> Result {
-        unsafe { (self.0.close_event)(event).to_result() }
+        unsafe { (self.0.close_event)(event.as_ptr()).to_result() }
     }
 
     /// Checks to see if an event is signaled, without blocking execution to wait for it.
@@ -725,7 +728,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub fn check_event(&self, event: Event) -> Result<bool> {
-        let status = unsafe { (self.0.check_event)(event) };
+        let status = unsafe { (self.0.check_event)(event.as_ptr()) };
         match status {
             Status::SUCCESS => Ok(true),
             Status::NOT_READY => Ok(false),
@@ -848,7 +851,7 @@ impl BootServices {
     ) -> Result<(Event, SearchType)> {
         let mut key = None;
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
-        unsafe { (self.0.register_protocol_notify)(protocol, event.unsafe_clone(), &mut key) }
+        unsafe { (self.0.register_protocol_notify)(protocol, event.as_ptr(), &mut key) }
             // Safety: as long as this call is successful, `key` will be valid.
             .to_result_with_val(|| unsafe {
                 (

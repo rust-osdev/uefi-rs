@@ -149,13 +149,13 @@ struct BootServicesInternal {
     start_image: unsafe extern "efiapi" fn(
         image_handle: uefi_raw::Handle,
         exit_data_size: *mut usize,
-        exit_data: &mut *mut Char16,
+        exit_data: &mut *mut u16,
     ) -> Status,
     exit: unsafe extern "efiapi" fn(
         image_handle: uefi_raw::Handle,
         exit_status: Status,
         exit_data_size: usize,
-        exit_data: *mut Char16,
+        exit_data: *mut u16,
     ) -> !,
     unload_image: unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> Status,
     exit_boot_services:
@@ -1125,7 +1125,7 @@ impl BootServices {
         unsafe {
             // TODO: implement returning exit data to the caller.
             let mut exit_data_size: usize = 0;
-            let mut exit_data: *mut Char16 = ptr::null_mut();
+            let mut exit_data: *mut u16 = ptr::null_mut();
             (self.0.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data)
                 .to_result()
         }
@@ -1151,7 +1151,7 @@ impl BootServices {
             image_handle.as_ptr(),
             exit_status,
             exit_data_size,
-            exit_data,
+            exit_data.cast(),
         )
     }
 

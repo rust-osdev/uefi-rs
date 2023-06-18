@@ -2,7 +2,7 @@
 
 use super::{Header, Revision};
 use crate::data_types::{Align, PhysicalAddress};
-use crate::proto::device_path::{DevicePath, FfiDevicePath};
+use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{Char16, Event, Guid, Handle, Result, Status, StatusExt};
 use core::cell::UnsafeCell;
@@ -130,7 +130,7 @@ struct BootServicesInternal {
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
-        device_path: &mut *const FfiDevicePath,
+        device_path: *mut *const uefi_raw::protocol::device_path::DevicePathProtocol,
         out_handle: &mut Option<Handle>,
     ) -> Status,
     install_configuration_table:
@@ -140,7 +140,7 @@ struct BootServicesInternal {
     load_image: unsafe extern "efiapi" fn(
         boot_policy: u8,
         parent_image_handle: Handle,
-        device_path: *const FfiDevicePath,
+        device_path: *const uefi_raw::protocol::device_path::DevicePathProtocol,
         source_buffer: *const u8,
         source_size: usize,
         image_handle: &mut Option<Handle>,
@@ -173,7 +173,7 @@ struct BootServicesInternal {
     connect_controller: unsafe extern "efiapi" fn(
         controller: Handle,
         driver_image: Option<Handle>,
-        remaining_device_path: *const FfiDevicePath,
+        remaining_device_path: *const uefi_raw::protocol::device_path::DevicePathProtocol,
         recursive: bool,
     ) -> Status,
     disconnect_controller: unsafe extern "efiapi" fn(
@@ -927,11 +927,12 @@ impl BootServices {
         device_path: &mut &DevicePath,
     ) -> Result<Handle> {
         let mut handle = None;
-        let mut device_path_ptr = device_path.as_ffi_ptr();
+        let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
+            device_path.as_ffi_ptr().cast();
         unsafe {
             (self.0.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
                 .to_result_with_val(|| {
-                    *device_path = DevicePath::from_ffi_ptr(device_path_ptr);
+                    *device_path = DevicePath::from_ffi_ptr(device_path_ptr.cast());
                     // OK to unwrap: handle is non-null for Status::SUCCESS.
                     handle.unwrap()
                 })
@@ -1051,7 +1052,7 @@ impl BootServices {
             (self.0.load_image)(
                 boot_policy,
                 parent_image_handle,
-                device_path,
+                device_path.cast(),
                 source_buffer,
                 source_size,
                 &mut image_handle,
@@ -1255,7 +1256,8 @@ impl BootServices {
                 driver_image,
                 remaining_device_path
                     .map(|dp| dp.as_ffi_ptr())
-                    .unwrap_or(ptr::null()),
+                    .unwrap_or(ptr::null())
+                    .cast(),
                 recursive,
             )
         }

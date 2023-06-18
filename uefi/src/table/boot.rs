@@ -94,7 +94,7 @@ struct BootServicesInternal {
 
     // Protocol handlers
     install_protocol_interface: unsafe extern "efiapi" fn(
-        handle: &mut Option<Handle>,
+        handle: *mut uefi_raw::Handle,
         guid: &Guid,
         interface_type: InterfaceType,
         interface: *mut c_void,
@@ -127,12 +127,12 @@ struct BootServicesInternal {
         proto: Option<&Guid>,
         key: Option<ProtocolSearchKey>,
         buf_sz: &mut usize,
-        buf: *mut MaybeUninit<Handle>,
+        buf: *mut uefi_raw::Handle,
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
         proto: &Guid,
         device_path: *mut *const uefi_raw::protocol::device_path::DevicePathProtocol,
-        out_handle: &mut Option<Handle>,
+        out_handle: *mut uefi_raw::Handle,
     ) -> Status,
     install_configuration_table:
         unsafe extern "efiapi" fn(guid_entry: &Guid, table_ptr: *const c_void) -> Status,
@@ -144,7 +144,7 @@ struct BootServicesInternal {
         device_path: *const uefi_raw::protocol::device_path::DevicePathProtocol,
         source_buffer: *const u8,
         source_size: usize,
-        image_handle: &mut Option<Handle>,
+        image_handle: *mut uefi_raw::Handle,
     ) -> Status,
     start_image: unsafe extern "efiapi" fn(
         image_handle: uefi_raw::Handle,
@@ -174,14 +174,14 @@ struct BootServicesInternal {
     // Driver support services
     connect_controller: unsafe extern "efiapi" fn(
         controller: uefi_raw::Handle,
-        driver_image: Option<Handle>,
+        driver_image: uefi_raw::Handle,
         remaining_device_path: *const uefi_raw::protocol::device_path::DevicePathProtocol,
         recursive: bool,
     ) -> Status,
     disconnect_controller: unsafe extern "efiapi" fn(
         controller: uefi_raw::Handle,
-        driver_image: Option<Handle>,
-        child: Option<Handle>,
+        driver_image: uefi_raw::Handle,
+        child: uefi_raw::Handle,
     ) -> Status,
 
     // Protocol open / close services
@@ -190,14 +190,14 @@ struct BootServicesInternal {
         protocol: &Guid,
         interface: &mut *mut c_void,
         agent_handle: uefi_raw::Handle,
-        controller_handle: Option<Handle>,
+        controller_handle: uefi_raw::Handle,
         attributes: u32,
     ) -> Status,
     close_protocol: unsafe extern "efiapi" fn(
         handle: uefi_raw::Handle,
         protocol: &Guid,
         agent_handle: uefi_raw::Handle,
-        controller_handle: Option<Handle>,
+        controller_handle: uefi_raw::Handle,
     ) -> Status,
     open_protocol_information: usize,
 
@@ -212,7 +212,7 @@ struct BootServicesInternal {
         proto: Option<&Guid>,
         key: Option<ProtocolSearchKey>,
         no_handles: &mut usize,
-        buf: &mut *mut Handle,
+        buf: *mut *mut uefi_raw::Handle,
     ) -> Status,
     #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
     locate_protocol: unsafe extern "efiapi" fn(
@@ -756,19 +756,18 @@ impl BootServices {
     /// * [`uefi::Status::INVALID_PARAMETER`]
     pub unsafe fn install_protocol_interface(
         &self,
-        mut handle: Option<Handle>,
+        handle: Option<Handle>,
         protocol: &Guid,
         interface: *mut c_void,
     ) -> Result<Handle> {
+        let mut handle = Handle::opt_to_ptr(handle);
         ((self.0.install_protocol_interface)(
             &mut handle,
             protocol,
             InterfaceType::NATIVE_INTERFACE,
             interface,
         ))
-        // this `unwrapped_unchecked` is safe, `handle` is guaranteed to be Some() if this call is
-        // successful
-        .to_result_with_val(|| handle.unwrap_unchecked())
+        .to_result_with_val(|| Handle::from_ptr(handle).unwrap())
     }
 
     /// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
@@ -903,7 +902,8 @@ impl BootServices {
             SearchType::ByProtocol(guid) => (2, Some(guid), None),
         };
 
-        let status = unsafe { (self.0.locate_handle)(ty, guid, key, &mut buffer_size, buffer) };
+        let status =
+            unsafe { (self.0.locate_handle)(ty, guid, key, &mut buffer_size, buffer.cast()) };
 
         // Must convert the returned size (in bytes) to length (number of elements).
         let buffer_len = buffer_size / handle_size;
@@ -935,7 +935,7 @@ impl BootServices {
         &self,
         device_path: &mut &DevicePath,
     ) -> Result<Handle> {
-        let mut handle = None;
+        let mut handle = ptr::null_mut();
         let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
             device_path.as_ffi_ptr().cast();
         unsafe {
@@ -943,7 +943,7 @@ impl BootServices {
                 .to_result_with_val(|| {
                     *device_path = DevicePath::from_ffi_ptr(device_path_ptr.cast());
                     // OK to unwrap: handle is non-null for Status::SUCCESS.
-                    handle.unwrap()
+                    Handle::from_ptr(handle).unwrap()
                 })
         }
     }
@@ -1056,7 +1056,7 @@ impl BootServices {
             }
         };
 
-        let mut image_handle = None;
+        let mut image_handle = ptr::null_mut();
         unsafe {
             (self.0.load_image)(
                 boot_policy,
@@ -1068,7 +1068,7 @@ impl BootServices {
             )
             .to_result_with_val(
                 // OK to unwrap: image handle is non-null for Status::SUCCESS.
-                || image_handle.unwrap(),
+                || Handle::from_ptr(image_handle).unwrap(),
             )
         }
     }
@@ -1268,7 +1268,7 @@ impl BootServices {
         unsafe {
             (self.0.connect_controller)(
                 controller.as_ptr(),
-                driver_image,
+                Handle::opt_to_ptr(driver_image),
                 remaining_device_path
                     .map(|dp| dp.as_ffi_ptr())
                     .unwrap_or(ptr::null())
@@ -1296,8 +1296,14 @@ impl BootServices {
         driver_image: Option<Handle>,
         child: Option<Handle>,
     ) -> Result {
-        unsafe { (self.0.disconnect_controller)(controller.as_ptr(), driver_image, child) }
-            .to_result_with_err(|_| ())
+        unsafe {
+            (self.0.disconnect_controller)(
+                controller.as_ptr(),
+                Handle::opt_to_ptr(driver_image),
+                Handle::opt_to_ptr(child),
+            )
+        }
+        .to_result_with_err(|_| ())
     }
 
     /// Open a protocol interface for a handle.
@@ -1353,7 +1359,7 @@ impl BootServices {
             &P::GUID,
             &mut interface,
             params.agent.as_ptr(),
-            params.controller,
+            Handle::opt_to_ptr(params.controller),
             attributes as u32,
         )
         .to_result_with_val(|| {
@@ -1424,7 +1430,7 @@ impl BootServices {
                 &P::GUID,
                 &mut interface,
                 params.agent.as_ptr(),
-                params.controller,
+                Handle::opt_to_ptr(params.controller),
                 TEST_PROTOCOL,
             )
         }
@@ -1479,7 +1485,7 @@ impl BootServices {
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
     pub fn locate_handle_buffer(&self, search_ty: SearchType) -> Result<HandleBuffer> {
         let mut num_handles: usize = 0;
-        let mut buffer: *mut Handle = ptr::null_mut();
+        let mut buffer: *mut uefi_raw::Handle = ptr::null_mut();
 
         // Obtain the needed data from the parameters.
         let (ty, guid, key) = match search_ty {
@@ -1492,7 +1498,7 @@ impl BootServices {
             .to_result_with_val(|| HandleBuffer {
                 boot_services: self,
                 count: num_handles,
-                buffer,
+                buffer: buffer.cast(),
             })
     }
 
@@ -1872,7 +1878,7 @@ impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
                 self.open_params.handle.as_ptr(),
                 &P::GUID,
                 self.open_params.agent.as_ptr(),
-                self.open_params.controller,
+                Handle::opt_to_ptr(self.open_params.controller),
             )
         };
         // All of the error cases for close_protocol boil down to

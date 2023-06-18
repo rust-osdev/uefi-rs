@@ -3,7 +3,7 @@
 //! This module defines the basic data types that are used throughout uefi-rs
 
 use core::ffi::c_void;
-use core::ptr::NonNull;
+use core::ptr::{self, NonNull};
 
 /// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
 ///
@@ -41,6 +41,10 @@ impl Handle {
     #[must_use]
     pub fn as_ptr(&self) -> *mut c_void {
         self.0.as_ptr()
+    }
+
+    pub(crate) fn opt_to_ptr(handle: Option<Self>) -> *mut c_void {
+        handle.map(|h| h.0.as_ptr()).unwrap_or(ptr::null_mut())
     }
 }
 

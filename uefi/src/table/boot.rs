@@ -120,13 +120,13 @@ struct BootServicesInternal {
     register_protocol_notify: unsafe extern "efiapi" fn(
         protocol: &Guid,
         event: uefi_raw::Event,
-        registration: *mut Option<ProtocolSearchKey>,
+        registration: *mut *const c_void,
     ) -> Status,
     locate_handle: unsafe extern "efiapi" fn(
         search_ty: i32,
-        proto: Option<&Guid>,
-        key: Option<ProtocolSearchKey>,
-        buf_sz: &mut usize,
+        proto: *const Guid,
+        key: *const c_void,
+        buf_sz: *mut usize,
         buf: *mut uefi_raw::Handle,
     ) -> Status,
     locate_device_path: unsafe extern "efiapi" fn(
@@ -209,9 +209,9 @@ struct BootServicesInternal {
     ) -> Status,
     locate_handle_buffer: unsafe extern "efiapi" fn(
         search_ty: i32,
-        proto: Option<&Guid>,
-        key: Option<ProtocolSearchKey>,
-        no_handles: &mut usize,
+        proto: *const Guid,
+        key: *const c_void,
+        no_handles: *mut usize,
         buf: *mut *mut uefi_raw::Handle,
     ) -> Status,
     #[deprecated = "open_protocol and open_protocol_exclusive are better alternatives and available since EFI 1.10 (2002)"]
@@ -869,7 +869,7 @@ impl BootServices {
         protocol: &Guid,
         event: Event,
     ) -> Result<(Event, SearchType)> {
-        let mut key = None;
+        let mut key = ptr::null();
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
         unsafe { (self.0.register_protocol_notify)(protocol, event.as_ptr(), &mut key) }
             // Safety: as long as this call is successful, `key` will be valid.
@@ -877,7 +877,9 @@ impl BootServices {
                 (
                     event.unsafe_clone(),
                     // OK to unwrap: key is non-null for Status::SUCCESS.
-                    SearchType::ByRegisterNotify(key.unwrap()),
+                    SearchType::ByRegisterNotify(ProtocolSearchKey(
+                        NonNull::new(key.cast_mut()).unwrap(),
+                    )),
                 )
             })
     }
@@ -912,9 +914,11 @@ impl BootServices {
 
         // Obtain the needed data from the parameters.
         let (ty, guid, key) = match search_ty {
-            SearchType::AllHandles => (0, None, None),
-            SearchType::ByRegisterNotify(registration) => (1, None, Some(registration)),
-            SearchType::ByProtocol(guid) => (2, Some(guid), None),
+            SearchType::AllHandles => (0, ptr::null(), ptr::null()),
+            SearchType::ByRegisterNotify(registration) => {
+                (1, ptr::null(), registration.0.as_ptr().cast_const())
+            }
+            SearchType::ByProtocol(guid) => (2, guid as *const Guid, ptr::null()),
         };
 
         let status =
@@ -1504,9 +1508,11 @@ impl BootServices {
 
         // Obtain the needed data from the parameters.
         let (ty, guid, key) = match search_ty {
-            SearchType::AllHandles => (0, None, None),
-            SearchType::ByRegisterNotify(registration) => (1, None, Some(registration)),
-            SearchType::ByProtocol(guid) => (2, Some(guid), None),
+            SearchType::AllHandles => (0, ptr::null(), ptr::null()),
+            SearchType::ByRegisterNotify(registration) => {
+                (1, ptr::null(), registration.0.as_ptr().cast_const())
+            }
+            SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null()),
         };
 
         unsafe { (self.0.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }

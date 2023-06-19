@@ -2177,13 +2177,7 @@ mod tests {
         // Doesn't matter what type it is.
         const TY: MemoryType = MemoryType::RESERVED;
 
-        const BASE: MemoryDescriptor = MemoryDescriptor {
-            ty: TY,
-            phys_start: 0,
-            virt_start: 0,
-            page_count: 0,
-            att: MemoryAttribute::empty(),
-        };
+        const BASE: MemoryDescriptor = MemoryDescriptor::new(TY, 0, 0, 0, MemoryAttribute::empty());
 
         let mut buffer = [
             MemoryDescriptor {

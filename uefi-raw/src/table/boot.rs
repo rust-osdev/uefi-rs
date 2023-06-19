@@ -304,6 +304,8 @@ bitflags! {
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
+    /// Padding. Zero.
+    pub _padding: u32,
     /// Starting physical address.
     pub phys_start: PhysicalAddress,
     /// Starting virtual address.
@@ -317,12 +319,37 @@ pub struct MemoryDescriptor {
 impl MemoryDescriptor {
     /// Memory descriptor version number.
     pub const VERSION: u32 = 1;
+
+    /// Constructor for a memory descriptor.
+    pub const fn new(
+        ty: MemoryType,
+        phys_start: PhysicalAddress,
+        virt_start: VirtualAddress,
+        page_count: u64,
+        att: MemoryAttribute,
+    ) -> Self {
+        Self {
+            ty,
+            _padding: 0,
+            phys_start,
+            virt_start,
+            page_count,
+            att,
+        }
+    }
+
+    /// The size in bytes of the memory region.
+    pub fn size(&self) -> u64 {
+        // Spec says this is number of 4KiB pages.
+        self.page_count * 4096
+    }
 }
 
 impl Default for MemoryDescriptor {
     fn default() -> MemoryDescriptor {
         MemoryDescriptor {
             ty: MemoryType::RESERVED,
+            _padding: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,

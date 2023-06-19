@@ -30,7 +30,7 @@ use core::fmt;
 /// assert_eq!(Revision::EFI_2_31.to_string(), "2.3.1");
 /// assert_eq!(Revision::EFI_2_100.to_string(), "2.10");
 /// ```
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct Revision(pub u32);
 

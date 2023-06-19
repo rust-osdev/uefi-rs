@@ -4,6 +4,7 @@ mod header;
 mod revision;
 
 pub mod boot;
+pub mod configuration;
 pub mod runtime;
 
 pub use header::Header;

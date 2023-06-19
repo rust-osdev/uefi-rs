@@ -256,7 +256,7 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
 /// Validate a struct.
 fn check_struct(item: &ItemStruct, src: &Path) -> Result<(), Error> {
     if !is_pub(&item.vis) {
-        return Err(Error::new(ErrorKind::MissingPub, src, &item.vis));
+        return Err(Error::new(ErrorKind::MissingPub, src, &item.struct_token));
     }
 
     let attrs = parse_attrs(&item.attrs, src)?;

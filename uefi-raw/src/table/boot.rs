@@ -124,7 +124,7 @@ pub struct BootServices {
         unsafe extern "efiapi" fn(image_handle: Handle, map_key: usize) -> Status,
 
     // Misc services
-    pub get_next_monotonic_count: usize,
+    pub get_next_monotonic_count: unsafe extern "efiapi" fn(count: *mut u64) -> Status,
     pub stall: unsafe extern "efiapi" fn(microseconds: usize) -> Status,
     pub set_watchdog_timer: unsafe extern "efiapi" fn(
         timeout: usize,
@@ -161,7 +161,12 @@ pub struct BootServices {
         agent_handle: Handle,
         controller_handle: Handle,
     ) -> Status,
-    pub open_protocol_information: usize,
+    pub open_protocol_information: unsafe extern "efiapi" fn(
+        handle: Handle,
+        protocol: *const Guid,
+        entry_buffer: *mut *const OpenProtocolInformationEntry,
+        entry_count: *mut usize,
+    ) -> Status,
 
     // Library services
     pub protocols_per_handle: unsafe extern "efiapi" fn(
@@ -181,11 +186,16 @@ pub struct BootServices {
         registration: *mut c_void,
         out_proto: *mut *mut c_void,
     ) -> Status,
+
+    // These two function pointers require the `c_variadic` feature, which is
+    // not yet available in stable Rust:
+    // https://github.com/rust-lang/rust/issues/44930
     pub install_multiple_protocol_interfaces: usize,
     pub uninstall_multiple_protocol_interfaces: usize,
 
     // CRC services
-    pub calculate_crc32: usize,
+    pub calculate_crc32:
+        unsafe extern "efiapi" fn(data: *const c_void, data_size: usize, crc32: *mut u32) -> Status,
 
     // Misc services
     pub copy_mem: unsafe extern "efiapi" fn(dest: *mut u8, src: *const u8, len: usize),
@@ -385,6 +395,14 @@ impl MemoryType {
         assert!(value >= 0x80000000);
         MemoryType(value)
     }
+}
+
+#[repr(C)]
+pub struct OpenProtocolInformationEntry {
+    pub agent_handle: Handle,
+    pub controller_handle: Handle,
+    pub attributes: u32,
+    pub open_count: u32,
 }
 
 newtype_enum! {

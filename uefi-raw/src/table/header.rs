@@ -1,7 +1,7 @@
 use super::Revision;
 
 /// The common header that all UEFI tables begin with.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct Header {
     /// Unique identifier for this table.

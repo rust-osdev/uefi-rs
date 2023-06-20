@@ -8,7 +8,7 @@ use bitflags::bitflags;
 
 /// Descriptor that defines a scatter-gather list for passing a set of capsules
 /// to the firmware.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct CapsuleBlockDescriptor {
     /// Size in bytes of the data block. If zero, the block is treated as a
@@ -30,7 +30,7 @@ bitflags! {
     /// Capsule update flags.
     ///
     /// The meaning of bits `0..=15` are defined by the capsule GUID.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[repr(transparent)]
     pub struct CapsuleFlags: u32 {
         /// The meaning of this bit depends on the capsule GUID.
@@ -104,7 +104,7 @@ bitflags! {
 }
 
 /// Common header at the start of a capsule.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct CapsuleHeader {
     /// GUID that defines the type of data in the capsule.

@@ -214,8 +214,8 @@ pub struct BootServices {
 
 bitflags! {
     /// Flags describing the type of an UEFI event and its attributes.
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct EventType: u32 {
         /// The event is a timer event and may be passed to `BootServices::set_timer()`
         /// Note that timers only function during boot services time.
@@ -260,7 +260,7 @@ pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c
 bitflags! {
     /// Flags describing the capabilities of a memory range.
     #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct MemoryAttribute: u64 {
         /// Supports marking as uncacheable.
         const UNCACHEABLE = 0x1;
@@ -309,7 +309,7 @@ bitflags! {
 }
 
 /// A structure describing a region of memory.
-#[derive(Debug, Copy, Clone)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
@@ -348,6 +348,7 @@ newtype_enum! {
 /// in the 0x70000000..0xFFFFFFFF range. Therefore, we don't know the full set
 /// of memory types at compile time, and it is _not_ safe to model this C enum
 /// as a Rust enum.
+#[derive(PartialOrd, Ord, Hash)]
 pub enum MemoryType: u32 => {
     /// This enum variant is not used.
     RESERVED                =  0,

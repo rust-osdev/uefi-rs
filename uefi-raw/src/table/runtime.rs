@@ -101,7 +101,7 @@ newtype_enum! {
 }
 
 /// Real time clock capabilities.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct TimeCapabilities {
     /// Reporting resolution of the clock in counts per second. 1 for a normal
@@ -119,7 +119,7 @@ pub struct TimeCapabilities {
 bitflags! {
     /// Flags describing the attributes of a variable.
     #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct VariableAttributes: u32 {
         /// Variable is maintained across a power cycle.
         const NON_VOLATILE = 0x01;

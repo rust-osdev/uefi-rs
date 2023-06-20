@@ -77,7 +77,14 @@ impl<View: SystemTableView> SystemTable<View> {
     #[allow(clippy::missing_const_for_fn)] // Required until we bump the MSRV.
     #[must_use]
     pub fn config_table(&self) -> &[cfg::ConfigTableEntry] {
-        unsafe { slice::from_raw_parts((*self.table).cfg_table, (*self.table).nr_cfg) }
+        unsafe {
+            let table = &*self.table;
+            table
+                .cfg_table
+                .as_ref()
+                .map(|ptr| slice::from_raw_parts(ptr, table.nr_cfg))
+                .unwrap_or(&[])
+        }
     }
 
     /// Creates a new `SystemTable<View>` from a raw address. The address might

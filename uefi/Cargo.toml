@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.23.0"
+version = "0.24.0"
 readme = "README.md"
 description = "Safe and easy-to-use wrapper for building UEFI apps."
 

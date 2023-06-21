@@ -840,7 +840,7 @@ dependencies = [
  "ptr_meta",
  "ucs2",
  "uefi-macros",
- "uefi-raw 0.2.0",
+ "uefi-raw",
  "uguid",
 ]
 
@@ -853,17 +853,6 @@ dependencies = [
  "syn 2.0.15",
  "trybuild",
  "uefi",
-]
-
-[[package]]
-name = "uefi-raw"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d73e08d8e944b7c7e90a7c8a53213bdd71ceb7b414ee664f522c1cc579888c25"
-dependencies = [
- "bitflags 2.3.1",
- "ptr_meta",
- "uguid",
 ]
 
 [[package]]

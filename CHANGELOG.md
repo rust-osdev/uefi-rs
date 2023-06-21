@@ -2,6 +2,12 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.24.0 (2023-06-20)
+
 ### Added
 - `DevicePath::to_boxed`, `DevicePath::to_owned`, and `DevicePath::as_bytes`
 - `DevicePathInstance::to_boxed`, `DevicePathInstance::to_owned`, and `DevicePathInstance::as_bytes`
@@ -16,11 +22,11 @@
 - The `Deref` and `DerefMut` impls for `ScopedProtocol` will now panic if the
   interface pointer is null.
 
-### Removed
+## uefi-services - 0.21.0 (2023-06-20)
 
-## uefi-macros - [Unreleased]
+### Changed
 
-## uefi-services - [Unreleased]
+- Updated to latest version of `uefi`.
 
 ## uefi - 0.23.0 (2023-06-04)
 

@@ -2,6 +2,7 @@
 
 ## Added
 - Added `TimestampProtocol`.
+- Added `DevicePathToTextProtocol` and `DevicePathFromTextProtocol`.
 
 # uefi-raw - 0.5.1 (2024-03-17)
 

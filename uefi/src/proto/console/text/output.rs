@@ -2,6 +2,7 @@ use crate::proto::unsafe_protocol;
 use crate::{CStr16, Char16, Result, ResultExt, Status, StatusExt};
 use core::fmt;
 use core::fmt::{Debug, Formatter};
+use uefi_raw::protocol::console::SimpleTextOutputMode;
 
 /// Interface for text-based output devices.
 ///
@@ -37,7 +38,7 @@ pub struct Output {
     clear_screen: extern "efiapi" fn(this: &mut Output) -> Status,
     set_cursor_position: extern "efiapi" fn(this: &mut Output, column: usize, row: usize) -> Status,
     enable_cursor: extern "efiapi" fn(this: &mut Output, visible: bool) -> Status,
-    data: *const OutputData,
+    data: *const SimpleTextOutputMode,
 }
 
 impl Output {
@@ -173,7 +174,7 @@ impl Output {
 
     /// Get a reference to `OutputData`. The lifetime of the reference is tied
     /// to `self`.
-    const fn data(&self) -> &OutputData {
+    const fn data(&self) -> &SimpleTextOutputMode {
         unsafe { &*self.data }
     }
 }
@@ -313,25 +314,6 @@ impl<'out> Iterator for OutputModeIter<'out> {
             None
         }
     }
-}
-
-/// Additional data of the output device.
-#[derive(Debug)]
-#[repr(C)]
-struct OutputData {
-    /// The number of modes supported by the device.
-    max_mode: i32,
-    /// The current output mode.
-    /// Negative index -1 is used to notify that no valid mode is configured
-    mode: i32,
-    /// The current character output attribute.
-    attribute: i32,
-    /// The cursor’s column.
-    cursor_column: i32,
-    /// The cursor’s row.
-    cursor_row: i32,
-    /// Whether the cursor is currently visible or not.
-    cursor_visible: bool,
 }
 
 /// Colors for the UEFI console.

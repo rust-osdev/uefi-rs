@@ -1,16 +1,12 @@
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
-use uefi_raw::protocol::console::InputKey;
+use uefi_raw::protocol::console::{InputKey, SimpleTextInputProtocol};
 
 /// Interface for text-based input devices.
-#[repr(C)]
-#[unsafe_protocol("387477c1-69c7-11d2-8e39-00a0c969723b")]
-pub struct Input {
-    reset: unsafe extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: unsafe extern "efiapi" fn(this: &mut Input, key: *mut InputKey) -> Status,
-    wait_for_key: Option<Event>,
-}
+#[repr(transparent)]
+#[unsafe_protocol(SimpleTextInputProtocol::GUID)]
+pub struct Input(SimpleTextInputProtocol);
 
 impl Input {
     /// Resets the input device hardware.
@@ -22,7 +18,7 @@ impl Input {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        unsafe { (self.reset)(self, extended_verification) }.to_result()
+        unsafe { (self.0.reset)(&mut self.0, extended_verification) }.to_result()
     }
 
     /// Reads the next keystroke from the input device, if any.
@@ -48,7 +44,7 @@ impl Input {
     /// fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Result {
     ///     loop {
     ///         // Pause until a keyboard event occurs.
-    ///         let mut events = unsafe { [input.wait_for_key_event().as_ref().unwrap().unsafe_clone()] };
+    ///         let mut events = unsafe { [input.wait_for_key_event().unwrap()] };
     ///         boot_services
     ///             .wait_for_event(&mut events)
     ///             .discard_errdata()?;
@@ -76,7 +72,7 @@ impl Input {
     pub fn read_key(&mut self) -> Result<Option<Key>> {
         let mut key = MaybeUninit::<InputKey>::uninit();
 
-        match unsafe { (self.read_key_stroke)(self, key.as_mut_ptr()) } {
+        match unsafe { (self.0.read_key_stroke)(&mut self.0, key.as_mut_ptr()) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
@@ -85,8 +81,8 @@ impl Input {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for a key to be available
     #[must_use]
-    pub const fn wait_for_key_event(&self) -> &Option<Event> {
-        &self.wait_for_key
+    pub fn wait_for_key_event(&self) -> Option<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_key) }
     }
 }
 

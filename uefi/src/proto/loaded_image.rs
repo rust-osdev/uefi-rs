@@ -1,40 +1,19 @@
 //! `LoadedImage` protocol.
 
 use crate::data_types::FromSliceWithNulError;
-use crate::proto::device_path::{DevicePath, FfiDevicePath};
+use crate::proto::device_path::DevicePath;
 use crate::proto::unsafe_protocol;
 use crate::table::boot::MemoryType;
 use crate::util::usize_from_u32;
 use crate::{CStr16, Handle, Status};
 use core::ffi::c_void;
 use core::{mem, slice};
+use uefi_raw::protocol::loaded_image::LoadedImageProtocol;
 
 /// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
-#[repr(C)]
-#[unsafe_protocol("5b1b31a1-9562-11d2-8e3f-00a0c969723b")]
-pub struct LoadedImage {
-    revision: u32,
-    parent_handle: Handle,
-    system_table: *const c_void,
-
-    // Source location of the image
-    device_handle: Option<Handle>,
-    file_path: *const FfiDevicePath,
-    _reserved: *const c_void,
-
-    // Image load options
-    load_options_size: u32,
-    load_options: *const u8,
-
-    // Location where image was loaded
-    image_base: *const c_void,
-    image_size: u64,
-    image_code_type: MemoryType,
-    image_data_type: MemoryType,
-    /// This is a callback that a loaded image can use to do cleanup. It is called by the
-    /// `UnloadImage` boot service.
-    unload: extern "efiapi" fn(image_handle: Handle) -> Status,
-}
+#[repr(transparent)]
+#[unsafe_protocol(LoadedImageProtocol::GUID)]
+pub struct LoadedImage(LoadedImageProtocol);
 
 /// Errors that can be raised during parsing of the load options.
 #[derive(Debug)]
@@ -52,8 +31,8 @@ pub enum LoadOptionsError {
 impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
     #[must_use]
-    pub const fn device(&self) -> Option<Handle> {
-        self.device_handle
+    pub fn device(&self) -> Option<Handle> {
+        unsafe { Handle::from_ptr(self.0.device_handle) }
     }
 
     /// Get a reference to the `file_path` portion of the DeviceHandle that the
@@ -67,10 +46,10 @@ impl LoadedImage {
     /// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
     #[must_use]
     pub fn file_path(&self) -> Option<&DevicePath> {
-        if self.file_path.is_null() {
+        if self.0.file_path.is_null() {
             None
         } else {
-            unsafe { Some(DevicePath::from_ffi_ptr(self.file_path)) }
+            unsafe { Some(DevicePath::from_ffi_ptr(self.0.file_path.cast())) }
         }
     }
 
@@ -83,18 +62,18 @@ impl LoadedImage {
     /// [`&CStr16`]: `CStr16`
     /// [`load_options_as_bytes`]: `Self::load_options_as_bytes`
     pub fn load_options_as_cstr16(&self) -> Result<&CStr16, LoadOptionsError> {
-        let load_options_size = usize_from_u32(self.load_options_size);
+        let load_options_size = usize_from_u32(self.0.load_options_size);
 
-        if self.load_options.is_null() {
+        if self.0.load_options.is_null() {
             Err(LoadOptionsError::NotSet)
         } else if (load_options_size % mem::size_of::<u16>() != 0)
-            || (((self.load_options as usize) % mem::align_of::<u16>()) != 0)
+            || (((self.0.load_options as usize) % mem::align_of::<u16>()) != 0)
         {
             Err(LoadOptionsError::NotAligned)
         } else {
             let s = unsafe {
                 slice::from_raw_parts(
-                    self.load_options.cast::<u16>(),
+                    self.0.load_options.cast::<u16>(),
                     load_options_size / mem::size_of::<u16>(),
                 )
             };
@@ -114,13 +93,13 @@ impl LoadedImage {
     /// [`load_options_as_cstr16`]: `Self::load_options_as_cstr16`
     #[must_use]
     pub fn load_options_as_bytes(&self) -> Option<&[u8]> {
-        if self.load_options.is_null() {
+        if self.0.load_options.is_null() {
             None
         } else {
             unsafe {
                 Some(slice::from_raw_parts(
-                    self.load_options,
-                    usize_from_u32(self.load_options_size),
+                    self.0.load_options.cast(),
+                    usize_from_u32(self.0.load_options_size),
                 ))
             }
         }
@@ -150,8 +129,8 @@ impl LoadedImage {
     ///
     /// [shim]: https://github.com/rhboot/shim/blob/4d64389c6c941d21548b06423b8131c872e3c3c7/pe.c#L1143
     pub unsafe fn set_image(&mut self, data: *const c_void, size: u64) {
-        self.image_base = data;
-        self.image_size = size;
+        self.0.image_base = data;
+        self.0.image_size = size;
     }
 
     /// Set the callback handler to unload the image.
@@ -171,7 +150,9 @@ impl LoadedImage {
         &mut self,
         unload: extern "efiapi" fn(image_handle: Handle) -> Status,
     ) {
-        self.unload = unload;
+        type RawFn = unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status;
+        let unload: RawFn = mem::transmute(unload);
+        self.0.unload = Some(unload);
     }
 
     /// Set the load options for the image. This can be used prior to
@@ -186,14 +167,14 @@ impl LoadedImage {
     /// load options data is not owned by `LoadedImage`. The caller
     /// must ensure that the memory lives long enough.
     pub unsafe fn set_load_options(&mut self, options: *const u8, size: u32) {
-        self.load_options = options;
-        self.load_options_size = size;
+        self.0.load_options = options.cast();
+        self.0.load_options_size = size;
     }
 
     /// Returns the base address and the size in bytes of the loaded image.
     #[must_use]
     pub const fn info(&self) -> (*const c_void, u64) {
-        (self.image_base, self.image_size)
+        (self.0.image_base, self.0.image_size)
     }
 
     /// Get the memory type of the image's code sections.
@@ -204,7 +185,7 @@ impl LoadedImage {
     ///  - `MemoryType::RUNTIME_SERVICES_CODE` for UEFI runtime drivers
     #[must_use]
     pub fn code_type(&self) -> MemoryType {
-        self.image_code_type
+        self.0.image_code_type
     }
 
     /// Get the memory type of the image's data sections.
@@ -215,6 +196,6 @@ impl LoadedImage {
     ///  - `MemoryType::RUNTIME_SERVICES_DATA` for UEFI runtime drivers
     #[must_use]
     pub fn data_type(&self) -> MemoryType {
-        self.image_data_type
+        self.0.image_data_type
     }
 }

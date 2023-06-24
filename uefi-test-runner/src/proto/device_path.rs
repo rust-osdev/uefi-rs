@@ -1,4 +1,4 @@
-use alloc::string::{String, ToString};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use uefi::prelude::*;
 use uefi::proto::device_path::text::*;
@@ -93,16 +93,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             "HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)",
             "\\efi\\boot\\test_runner.efi",
         ];
-        let expected_device_path_str =
-            expected_device_path_str_components
-                .iter()
-                .fold(String::new(), |mut acc, next| {
-                    if !acc.is_empty() {
-                        acc.push('/');
-                    }
-                    acc.push_str(next);
-                    acc
-                });
+        let expected_device_path_str = expected_device_path_str_components.join("/");
 
         assert_eq!(
             path_components.as_slice(),

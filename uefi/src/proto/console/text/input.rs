@@ -9,7 +9,7 @@ use uefi_raw::protocol::console::InputKey;
 pub struct Input {
     reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
     read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut InputKey) -> Status,
-    wait_for_key: Event,
+    wait_for_key: Option<Event>,
 }
 
 impl Input {
@@ -48,7 +48,7 @@ impl Input {
     /// fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Result {
     ///     loop {
     ///         // Pause until a keyboard event occurs.
-    ///         let mut events = unsafe { [input.wait_for_key_event().unsafe_clone()] };
+    ///         let mut events = unsafe { [input.wait_for_key_event().as_ref().unwrap().unsafe_clone()] };
     ///         boot_services
     ///             .wait_for_event(&mut events)
     ///             .discard_errdata()?;
@@ -85,7 +85,7 @@ impl Input {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for a key to be available
     #[must_use]
-    pub const fn wait_for_key_event(&self) -> &Event {
+    pub const fn wait_for_key_event(&self) -> &Option<Event> {
         &self.wait_for_key
     }
 }

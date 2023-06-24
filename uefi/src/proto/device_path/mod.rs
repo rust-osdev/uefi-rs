@@ -81,20 +81,23 @@ pub use device_path_gen::{
     acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
 };
 
+use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::mem;
 use core::ops::Deref;
 use ptr_meta::Pointee;
-use uefi::table::boot::ScopedProtocol;
-#[cfg(feature = "alloc")]
-use {alloc::borrow::ToOwned, alloc::boxed::Box, uefi::CString16};
 
-use crate::prelude::BootServices;
-use crate::proto::device_path::text::{AllowShortcuts, DevicePathToText, DisplayOnly};
-use crate::proto::{unsafe_protocol, ProtocolPointer};
-use crate::table::boot::{OpenProtocolAttributes, OpenProtocolParams, SearchType};
-use crate::Identify;
+#[cfg(feature = "alloc")]
+use {
+    crate::proto::device_path::text::{AllowShortcuts, DevicePathToText, DisplayOnly},
+    crate::table::boot::{
+        BootServices, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, SearchType,
+    },
+    crate::{CString16, Identify},
+    alloc::borrow::ToOwned,
+    alloc::boxed::Box,
+};
 
 opaque_type! {
     /// Opaque type that should be used to represent a pointer to a
@@ -807,6 +810,7 @@ impl core::error::Error for DevicePathToTextError {
 
 /// Helper function to open the [`DevicePathToText`] protocol using the boot
 /// services.
+#[cfg(feature = "alloc")]
 fn open_text_protocol(
     bs: &BootServices,
 ) -> Result<ScopedProtocol<DevicePathToText>, DevicePathToTextError> {

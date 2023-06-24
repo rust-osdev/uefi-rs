@@ -1,8 +1,8 @@
 use crate::proto::unsafe_protocol;
-use crate::{CStr16, Char16, Result, ResultExt, Status, StatusExt};
+use crate::{CStr16, Result, ResultExt, Status, StatusExt};
 use core::fmt;
 use core::fmt::{Debug, Formatter};
-use uefi_raw::protocol::console::SimpleTextOutputMode;
+use uefi_raw::protocol::console::{SimpleTextOutputMode, SimpleTextOutputProtocol};
 
 /// Interface for text-based output devices.
 ///
@@ -21,31 +21,14 @@ use uefi_raw::protocol::console::SimpleTextOutputMode;
 /// [`SystemTable::stdout`]: crate::table::SystemTable::stdout
 /// [`SystemTable::stderr`]: crate::table::SystemTable::stderr
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
-#[repr(C)]
-#[unsafe_protocol("387477c2-69c7-11d2-8e39-00a0c969723b")]
-pub struct Output {
-    reset: unsafe extern "efiapi" fn(this: &Output, extended: bool) -> Status,
-    output_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
-    test_string: unsafe extern "efiapi" fn(this: &Output, string: *const Char16) -> Status,
-    query_mode: unsafe extern "efiapi" fn(
-        this: &Output,
-        mode: usize,
-        columns: &mut usize,
-        rows: &mut usize,
-    ) -> Status,
-    set_mode: unsafe extern "efiapi" fn(this: &mut Output, mode: usize) -> Status,
-    set_attribute: unsafe extern "efiapi" fn(this: &mut Output, attribute: usize) -> Status,
-    clear_screen: unsafe extern "efiapi" fn(this: &mut Output) -> Status,
-    set_cursor_position:
-        unsafe extern "efiapi" fn(this: &mut Output, column: usize, row: usize) -> Status,
-    enable_cursor: unsafe extern "efiapi" fn(this: &mut Output, visible: bool) -> Status,
-    data: *const SimpleTextOutputMode,
-}
+#[repr(transparent)]
+#[unsafe_protocol(SimpleTextOutputProtocol::GUID)]
+pub struct Output(SimpleTextOutputProtocol);
 
 impl Output {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
-        unsafe { (self.reset)(self, extended) }.to_result()
+        unsafe { (self.0.reset)(&mut self.0, extended) }.to_result()
     }
 
     /// Clears the output screen.
@@ -53,12 +36,12 @@ impl Output {
     /// The background is set to the current background color.
     /// The cursor is moved to (0, 0).
     pub fn clear(&mut self) -> Result {
-        unsafe { (self.clear_screen)(self) }.to_result()
+        unsafe { (self.0.clear_screen)(&mut self.0) }.to_result()
     }
 
     /// Writes a string to the output device.
     pub fn output_string(&mut self, string: &CStr16) -> Result {
-        unsafe { (self.output_string)(self, string.as_ptr()) }.to_result()
+        unsafe { (self.0.output_string)(&mut self.0, string.as_ptr().cast()) }.to_result()
     }
 
     /// Writes a string to the output device. If the string contains
@@ -79,7 +62,7 @@ impl Output {
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
-        match unsafe { (self.test_string)(self, string.as_ptr()) } {
+        match unsafe { (self.0.test_string)(&mut self.0, string.as_ptr().cast()) } {
             Status::UNSUPPORTED => Ok(false),
             other => other.to_result_with_val(|| true),
         }
@@ -108,7 +91,8 @@ impl Output {
     /// alternative to this method.
     fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
-        unsafe { (self.query_mode)(self, index, &mut columns, &mut rows) }
+        let this: *const _ = &self.0;
+        unsafe { (self.0.query_mode)(this.cast_mut(), index, &mut columns, &mut rows) }
             .to_result_with_val(|| (columns, rows))
     }
 
@@ -127,7 +111,7 @@ impl Output {
 
     /// Sets a mode as current.
     pub fn set_mode(&mut self, mode: OutputMode) -> Result {
-        unsafe { (self.set_mode)(self, mode.index) }.to_result()
+        unsafe { (self.0.set_mode)(&mut self.0, mode.index) }.to_result()
     }
 
     /// Returns whether the cursor is currently shown or not.
@@ -141,7 +125,7 @@ impl Output {
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result {
-        unsafe { (self.enable_cursor)(self, visible) }.to_result()
+        unsafe { (self.0.enable_cursor)(&mut self.0, visible) }.to_result()
     }
 
     /// Returns the column and row of the cursor.
@@ -156,7 +140,7 @@ impl Output {
     ///
     /// This function will fail if the cursor's new position would exceed the screen's bounds.
     pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result {
-        unsafe { (self.set_cursor_position)(self, column, row) }.to_result()
+        unsafe { (self.0.set_cursor_position)(&mut self.0, column, row) }.to_result()
     }
 
     /// Sets the text and background colors for the console.
@@ -170,13 +154,15 @@ impl Output {
         assert!(bgc < 8, "An invalid background color was requested");
 
         let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
-        unsafe { (self.set_attribute)(self, attr) }.to_result()
+        unsafe { (self.0.set_attribute)(&mut self.0, attr) }.to_result()
     }
 
     /// Get a reference to `OutputData`. The lifetime of the reference is tied
     /// to `self`.
     const fn data(&self) -> &SimpleTextOutputMode {
-        unsafe { &*self.data }
+        // Can't dereference mut pointers in a const function, so cast to const.
+        let mode = self.0.mode.cast_const();
+        unsafe { &*mode }
     }
 }
 
@@ -234,28 +220,31 @@ impl fmt::Write for Output {
 impl Debug for Output {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Output")
-            .field("reset (fn ptr)", &(self.reset as *const u64))
+            .field("reset (fn ptr)", &(self.0.reset as *const u64))
             .field(
                 "output_string (fn ptr)",
-                &(self.output_string as *const u64),
+                &(self.0.output_string as *const u64),
             )
-            .field("test_string (fn ptr)", &(self.test_string as *const u64))
-            .field("query_mode (fn ptr)", &(self.query_mode as *const u64))
-            .field("set_mode (fn ptr)", &(self.set_mode as *const u64))
+            .field("test_string (fn ptr)", &(self.0.test_string as *const u64))
+            .field("query_mode (fn ptr)", &(self.0.query_mode as *const u64))
+            .field("set_mode (fn ptr)", &(self.0.set_mode as *const u64))
             .field(
                 "set_attribute (fn ptr)",
-                &(self.set_attribute as *const u64),
+                &(self.0.set_attribute as *const u64),
             )
-            .field("clear_screen (fn ptr)", &(self.clear_screen as *const u64))
+            .field(
+                "clear_screen (fn ptr)",
+                &(self.0.clear_screen as *const u64),
+            )
             .field(
                 "set_cursor_position (fn ptr)",
-                &(self.set_cursor_position as *const u64),
+                &(self.0.set_cursor_position as *const u64),
             )
             .field(
                 "enable_cursor (fn ptr)",
-                &(self.enable_cursor as *const u64),
+                &(self.0.enable_cursor as *const u64),
             )
-            .field("data", &self.data)
+            .field("data", &self.0.mode)
             .finish()
     }
 }

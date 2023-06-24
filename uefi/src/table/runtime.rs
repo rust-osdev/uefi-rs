@@ -2,7 +2,7 @@
 
 use super::Revision;
 use crate::table::boot::MemoryDescriptor;
-use crate::{CStr16, Error, Guid, Result, Status, StatusExt};
+use crate::{CStr16, Error, Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::mem::MaybeUninit;
 use core::{fmt, ptr};
@@ -15,6 +15,7 @@ pub use uefi_raw::time::Daylight;
 #[cfg(feature = "alloc")]
 use {
     crate::data_types::FromSliceWithNulError,
+    crate::Guid,
     alloc::boxed::Box,
     alloc::{vec, vec::Vec},
     core::mem,

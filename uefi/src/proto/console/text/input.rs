@@ -1,13 +1,14 @@
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
+use uefi_raw::protocol::console::InputKey;
 
 /// Interface for text-based input devices.
 #[repr(C)]
 #[unsafe_protocol("387477c1-69c7-11d2-8e39-00a0c969723b")]
 pub struct Input {
     reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut RawKey) -> Status,
+    read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut InputKey) -> Status,
     wait_for_key: Event,
 }
 
@@ -73,7 +74,7 @@ impl Input {
     /// }
     /// ```
     pub fn read_key(&mut self) -> Result<Option<Key>> {
-        let mut key = MaybeUninit::<RawKey>::uninit();
+        let mut key = MaybeUninit::<InputKey>::uninit();
 
         match (self.read_key_stroke)(self, key.as_mut_ptr()) {
             Status::NOT_READY => Ok(None),
@@ -99,26 +100,14 @@ pub enum Key {
     Special(ScanCode),
 }
 
-impl From<RawKey> for Key {
-    fn from(k: RawKey) -> Key {
-        if k.scan_code == ScanCode::NULL {
-            Key::Printable(k.unicode_char)
+impl From<InputKey> for Key {
+    fn from(k: InputKey) -> Key {
+        if k.scan_code == ScanCode::NULL.0 {
+            Key::Printable(Char16::try_from(k.unicode_char).unwrap())
         } else {
-            Key::Special(k.scan_code)
+            Key::Special(ScanCode(k.scan_code))
         }
     }
-}
-
-/// A key read from the console (UEFI version)
-#[repr(C)]
-#[derive(Debug)]
-pub struct RawKey {
-    /// The key's scan code.
-    /// or 0 if printable
-    pub scan_code: ScanCode,
-    /// Associated Unicode character,
-    /// or 0 if not printable.
-    pub unicode_char: Char16,
 }
 
 newtype_enum! {

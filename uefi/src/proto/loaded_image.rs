@@ -18,7 +18,7 @@ pub struct LoadedImage {
     system_table: *const c_void,
 
     // Source location of the image
-    device_handle: Handle,
+    device_handle: Option<Handle>,
     file_path: *const FfiDevicePath,
     _reserved: *const c_void,
 
@@ -52,7 +52,7 @@ pub enum LoadOptionsError {
 impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
     #[must_use]
-    pub const fn device(&self) -> Handle {
+    pub const fn device(&self) -> Option<Handle> {
         self.device_handle
     }
 

@@ -16,7 +16,7 @@ pub fn test(image: Handle, bt: &BootServices) {
             .expect("Failed to open LoadedImage protocol");
 
         let device_path = bt
-            .open_protocol_exclusive::<DevicePath>(loaded_image.device())
+            .open_protocol_exclusive::<DevicePath>(loaded_image.device().unwrap())
             .expect("Failed to open DevicePath protocol");
 
         let device_path_to_text = bt

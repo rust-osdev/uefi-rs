@@ -4,6 +4,7 @@
 
 ### Changed
 - `Input::wait_for_key_event` now returns an `Option<Event>`, and is no longer `const`.
+- `LoadedImage::device` now returns an `Option<Handle>`.
 
 ## uefi-macros - [Unreleased]
 

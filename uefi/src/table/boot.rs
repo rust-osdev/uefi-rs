@@ -4,7 +4,7 @@ use super::Revision;
 use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
-use crate::{Char16, Event, Guid, Handle, Result, Status, StatusExt};
+use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
@@ -1398,7 +1398,10 @@ impl BootServices {
     pub fn get_image_file_system(&self, image_handle: Handle) -> Result<FileSystem> {
         let loaded_image = self.open_protocol_exclusive::<LoadedImage>(image_handle)?;
 
-        let device_path = self.open_protocol_exclusive::<DevicePath>(loaded_image.device())?;
+        let device_handle = loaded_image
+            .device()
+            .ok_or(Error::new(Status::UNSUPPORTED, ()))?;
+        let device_path = self.open_protocol_exclusive::<DevicePath>(device_handle)?;
 
         let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
 

@@ -7,8 +7,8 @@ use uefi_raw::protocol::console::InputKey;
 #[repr(C)]
 #[unsafe_protocol("387477c1-69c7-11d2-8e39-00a0c969723b")]
 pub struct Input {
-    reset: extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
-    read_key_stroke: extern "efiapi" fn(this: &mut Input, key: *mut InputKey) -> Status,
+    reset: unsafe extern "efiapi" fn(this: &mut Input, extended: bool) -> Status,
+    read_key_stroke: unsafe extern "efiapi" fn(this: &mut Input, key: *mut InputKey) -> Status,
     wait_for_key: Option<Event>,
 }
 
@@ -22,7 +22,7 @@ impl Input {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).to_result()
+        unsafe { (self.reset)(self, extended_verification) }.to_result()
     }
 
     /// Reads the next keystroke from the input device, if any.
@@ -76,7 +76,7 @@ impl Input {
     pub fn read_key(&mut self) -> Result<Option<Key>> {
         let mut key = MaybeUninit::<InputKey>::uninit();
 
-        match (self.read_key_stroke)(self, key.as_mut_ptr()) {
+        match unsafe { (self.read_key_stroke)(self, key.as_mut_ptr()) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }

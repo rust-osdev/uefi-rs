@@ -2,6 +2,9 @@
 
 ## uefi - [Unreleased]
 
+### Changed
+- `Input::wait_for_key_event` now returns an `Option<Event>`, and is no longer `const`.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

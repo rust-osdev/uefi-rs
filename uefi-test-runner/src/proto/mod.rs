@@ -29,6 +29,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
         target_arch = "aarch64"
     ))]
     shim::test(bt);
+    shell::test(bt);
     tcg::test(bt);
 }
 
@@ -69,6 +70,7 @@ mod rng;
     target_arch = "arm",
     target_arch = "aarch64"
 ))]
+mod shell;
 mod shim;
 mod string;
 mod tcg;

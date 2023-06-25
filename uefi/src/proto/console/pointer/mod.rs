@@ -2,16 +2,12 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Event, Result, Status, StatusExt};
+use uefi_raw::protocol::console::SimplePointerProtocol;
 
 /// Provides information about a pointer device.
-#[repr(C)]
-#[unsafe_protocol("31878c87-0b75-11d5-9a4f-0090273fc14d")]
-pub struct Pointer {
-    reset: unsafe extern "efiapi" fn(this: &mut Pointer, ext_verif: bool) -> Status,
-    get_state: unsafe extern "efiapi" fn(this: &Pointer, state: *mut PointerState) -> Status,
-    wait_for_input: Option<Event>,
-    mode: *const PointerMode,
-}
+#[repr(transparent)]
+#[unsafe_protocol(SimplePointerProtocol::GUID)]
+pub struct Pointer(SimplePointerProtocol);
 
 impl Pointer {
     /// Resets the pointer device hardware.
@@ -23,7 +19,7 @@ impl Pointer {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        unsafe { (self.reset)(self, extended_verification) }.to_result()
+        unsafe { (self.0.reset)(&mut self.0, extended_verification) }.to_result()
     }
 
     /// Retrieves the pointer device's current state, if a state change occurred
@@ -36,8 +32,9 @@ impl Pointer {
     /// - `DeviceError` if there was an issue with the pointer device.
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
         let mut pointer_state = PointerState::default();
+        let pointer_state_ptr: *mut _ = &mut pointer_state;
 
-        match unsafe { (self.get_state)(self, &mut pointer_state) } {
+        match unsafe { (self.0.get_state)(&mut self.0, pointer_state_ptr.cast()) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(pointer_state)),
         }
@@ -46,14 +43,14 @@ impl Pointer {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for input from the pointer device
     #[must_use]
-    pub const fn wait_for_input_event(&self) -> &Option<Event> {
-        &self.wait_for_input
+    pub fn wait_for_input_event(&self) -> Option<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_input) }
     }
 
     /// Returns a reference to the pointer device information.
     #[must_use]
     pub const fn mode(&self) -> &PointerMode {
-        unsafe { &*self.mode }
+        unsafe { &*self.0.mode.cast() }
     }
 }
 

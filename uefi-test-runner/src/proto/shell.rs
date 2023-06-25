@@ -18,7 +18,7 @@ pub fn test(bt: &BootServices) {
 
     // get file tree
     let mut str_buf = [0u16; 12];
-    let str_str = CStr16::from_str_with_buf(r"Z:\*", &mut str_buf).unwrap();
+    let str_str = CStr16::from_str_with_buf(r"fs0:\*", &mut str_buf).unwrap();
     let res = shell.find_files(str_str);
     let list = res.unwrap();
     let list = list.unwrap();

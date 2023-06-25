@@ -59,7 +59,7 @@ impl Pointer {
 }
 
 /// Information about this pointer device.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct PointerMode {
     /// The pointer device's resolution on the X/Y/Z axis in counts/mm.
@@ -70,7 +70,7 @@ pub struct PointerMode {
 }
 
 /// The relative change in the pointer's state.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct PointerState {
     /// The relative movement on the X/Y/Z axis.

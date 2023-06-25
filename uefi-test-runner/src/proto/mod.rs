@@ -42,6 +42,7 @@ pub fn test() {
         target_arch = "aarch64"
     ))]
     shim::test();
+    shell::test();
     tcg::test();
 }
 
@@ -96,6 +97,7 @@ mod shell_params;
     target_arch = "arm",
     target_arch = "aarch64"
 ))]
+mod shell;
 mod shim;
 mod string;
 mod tcg;

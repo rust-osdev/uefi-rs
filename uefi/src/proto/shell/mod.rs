@@ -175,7 +175,11 @@ impl Shell {
     /// TODO
     pub fn find_files(&self, file_pattern: &CStr16) -> Result<Option<FileList>> {
         let mut out_list: MaybeUninit<*mut ShellFileInfo> = MaybeUninit::uninit();
-        (self.find_files)(file_pattern, out_list.as_mut_ptr()).to_result_with_val(|| {
+        let mut out_ptr = out_list.as_mut_ptr();
+        if out_ptr.is_null() {
+            panic!("outptr null");
+        }
+        (self.find_files)(file_pattern, out_ptr).to_result_with_val(|| {
             // safety: if we're here, out_list is valid, but maybe null
             let out_list = unsafe { out_list.assume_init() };
             if out_list.is_null() {

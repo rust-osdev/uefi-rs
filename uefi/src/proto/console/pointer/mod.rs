@@ -2,7 +2,6 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Event, Result, Status, StatusExt};
-use core::mem::MaybeUninit;
 
 /// Provides information about a pointer device.
 #[repr(C)]
@@ -36,11 +35,11 @@ impl Pointer {
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
-        let mut pointer_state = MaybeUninit::<PointerState>::uninit();
+        let mut pointer_state = PointerState::default();
 
-        match unsafe { (self.get_state)(self, pointer_state.as_mut_ptr()) } {
+        match unsafe { (self.get_state)(self, &mut pointer_state) } {
             Status::NOT_READY => Ok(None),
-            other => other.to_result_with_val(|| unsafe { Some(pointer_state.assume_init()) }),
+            other => other.to_result_with_val(|| Some(pointer_state)),
         }
     }
 

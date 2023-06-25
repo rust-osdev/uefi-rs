@@ -9,7 +9,7 @@ use crate::{Event, Result, Status, StatusExt};
 pub struct Pointer {
     reset: unsafe extern "efiapi" fn(this: &mut Pointer, ext_verif: bool) -> Status,
     get_state: unsafe extern "efiapi" fn(this: &Pointer, state: *mut PointerState) -> Status,
-    wait_for_input: Event,
+    wait_for_input: Option<Event>,
     mode: *const PointerMode,
 }
 
@@ -46,7 +46,7 @@ impl Pointer {
     /// Event to be used with `BootServices::wait_for_event()` in order to wait
     /// for input from the pointer device
     #[must_use]
-    pub const fn wait_for_input_event(&self) -> &Event {
+    pub const fn wait_for_input_event(&self) -> &Option<Event> {
         &self.wait_for_input
     }
 

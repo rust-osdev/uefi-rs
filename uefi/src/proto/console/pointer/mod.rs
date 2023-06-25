@@ -8,8 +8,8 @@ use core::mem::MaybeUninit;
 #[repr(C)]
 #[unsafe_protocol("31878c87-0b75-11d5-9a4f-0090273fc14d")]
 pub struct Pointer {
-    reset: extern "efiapi" fn(this: &mut Pointer, ext_verif: bool) -> Status,
-    get_state: extern "efiapi" fn(this: &Pointer, state: *mut PointerState) -> Status,
+    reset: unsafe extern "efiapi" fn(this: &mut Pointer, ext_verif: bool) -> Status,
+    get_state: unsafe extern "efiapi" fn(this: &Pointer, state: *mut PointerState) -> Status,
     wait_for_input: Event,
     mode: *const PointerMode,
 }
@@ -24,7 +24,7 @@ impl Pointer {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).to_result()
+        unsafe { (self.reset)(self, extended_verification) }.to_result()
     }
 
     /// Retrieves the pointer device's current state, if a state change occurred
@@ -38,7 +38,7 @@ impl Pointer {
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
         let mut pointer_state = MaybeUninit::<PointerState>::uninit();
 
-        match (self.get_state)(self, pointer_state.as_mut_ptr()) {
+        match unsafe { (self.get_state)(self, pointer_state.as_mut_ptr()) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| unsafe { Some(pointer_state.assume_init()) }),
         }

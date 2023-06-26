@@ -52,3 +52,41 @@ pub struct SimpleTextOutputProtocol {
 impl SimpleTextOutputProtocol {
     pub const GUID: Guid = guid!("387477c2-69c7-11d2-8e39-00a0c969723b");
 }
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(C)]
+pub struct SimplePointerMode {
+    pub resolution_x: u64,
+    pub resolution_y: u64,
+    pub resolution_z: u64,
+    pub left_button: u8,
+    pub right_button: u8,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(C)]
+pub struct SimplePointerState {
+    pub relative_movement_x: i32,
+    pub relative_movement_y: i32,
+    pub relative_movement_z: i32,
+    pub left_button: u8,
+    pub right_button: u8,
+}
+
+#[repr(C)]
+pub struct SimplePointerProtocol {
+    pub reset: unsafe extern "efiapi" fn(
+        this: *mut SimplePointerProtocol,
+        extended_verification: bool,
+    ) -> Status,
+    pub get_state: unsafe extern "efiapi" fn(
+        this: *mut SimplePointerProtocol,
+        state: *mut SimplePointerState,
+    ) -> Status,
+    pub wait_for_input: Event,
+    pub mode: *const SimplePointerMode,
+}
+
+impl SimplePointerProtocol {
+    pub const GUID: Guid = guid!("31878c87-0b75-11d5-9a4f-0090273fc14d");
+}

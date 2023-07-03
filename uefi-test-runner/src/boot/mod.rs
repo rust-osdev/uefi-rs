@@ -1,4 +1,5 @@
 use alloc::string::ToString;
+use uefi::fs::FileSystem;
 use uefi::proto::console::text::Output;
 use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
@@ -76,11 +77,13 @@ fn test_load_image(bt: &BootServices) {
 
     // Variant A: FromBuffer
     {
-        let mut fs = bt
+        let fs = bt
             .get_image_file_system(bt.image_handle())
             .expect("should open file system");
         let path = CString16::try_from(image_device_path_file_path.as_str()).unwrap();
-        let image_data = fs.read(&*path).expect("should read file content");
+        let image_data = FileSystem::new(fs)
+            .read(&*path)
+            .expect("should read file content");
         let load_source = LoadImageSource::FromBuffer {
             buffer: image_data.as_slice(),
             file_path: None,

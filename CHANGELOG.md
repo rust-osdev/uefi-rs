@@ -5,6 +5,8 @@
 ### Changed
 - `Input::wait_for_key_event` now returns an `Option<Event>`, and is no longer `const`.
 - `LoadedImage::device` now returns an `Option<Handle>` and is no longer `const`.
+- `BootServices::get_image_file_system` now returns
+  `ScopedProtocol<SimpleFileSystem>` instead of `fs::FileSystem`.
 
 ## uefi-macros - [Unreleased]
 

@@ -3,6 +3,8 @@
 use super::Revision;
 use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::device_path::DevicePath;
+use crate::proto::loaded_image::LoadedImage;
+use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::cell::UnsafeCell;
@@ -12,12 +14,9 @@ use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::{ptr, slice};
+
 #[cfg(feature = "alloc")]
-use {
-    crate::fs::FileSystem,
-    crate::proto::{loaded_image::LoadedImage, media::fs::SimpleFileSystem},
-    ::alloc::vec::Vec,
-};
+use alloc::vec::Vec;
 
 pub use uefi_raw::table::boot::{
     EventType, InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
@@ -1344,6 +1343,38 @@ impl BootServices {
     pub unsafe fn set_mem(&self, buffer: *mut u8, size: usize, value: u8) {
         (self.0.set_mem)(buffer, size, value);
     }
+
+    /// Retrieves a [`SimpleFileSystem`] protocol associated with the device the given
+    /// image was loaded from.
+    ///
+    /// # Errors
+    ///
+    /// This function can return errors from [`open_protocol_exclusive`] and
+    /// [`locate_device_path`]. See those functions for more details.
+    ///
+    /// [`open_protocol_exclusive`]: Self::open_protocol_exclusive
+    /// [`locate_device_path`]: Self::locate_device_path
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    pub fn get_image_file_system(
+        &self,
+        image_handle: Handle,
+    ) -> Result<ScopedProtocol<SimpleFileSystem>> {
+        let loaded_image = self.open_protocol_exclusive::<LoadedImage>(image_handle)?;
+
+        let device_handle = loaded_image
+            .device()
+            .ok_or(Error::new(Status::UNSUPPORTED, ()))?;
+        let device_path = self.open_protocol_exclusive::<DevicePath>(device_handle)?;
+
+        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
+
+        self.open_protocol_exclusive(device_handle)
+    }
 }
 
 #[cfg(feature = "alloc")]
@@ -1376,37 +1407,6 @@ impl BootServices {
 
         // Emit output, with warnings
         Ok(handles)
-    }
-
-    /// Retrieves a [`FileSystem`] protocol associated with the device the given
-    /// image was loaded from.
-    ///
-    /// # Errors
-    ///
-    /// This function can return errors from [`open_protocol_exclusive`] and
-    /// [`locate_device_path`]. See those functions for more details.
-    ///
-    /// [`open_protocol_exclusive`]: Self::open_protocol_exclusive
-    /// [`locate_device_path`]: Self::locate_device_path
-    /// [`FileSystem`]: uefi::fs::FileSystem
-    ///
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    /// * [`uefi::Status::UNSUPPORTED`]
-    /// * [`uefi::Status::ACCESS_DENIED`]
-    /// * [`uefi::Status::ALREADY_STARTED`]
-    /// * [`uefi::Status::NOT_FOUND`]
-    pub fn get_image_file_system(&self, image_handle: Handle) -> Result<FileSystem> {
-        let loaded_image = self.open_protocol_exclusive::<LoadedImage>(image_handle)?;
-
-        let device_handle = loaded_image
-            .device()
-            .ok_or(Error::new(Status::UNSUPPORTED, ()))?;
-        let device_path = self.open_protocol_exclusive::<DevicePath>(device_handle)?;
-
-        let device_handle = self.locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
-
-        let protocol = self.open_protocol_exclusive(device_handle)?;
-        Ok(FileSystem::new(protocol))
     }
 }
 

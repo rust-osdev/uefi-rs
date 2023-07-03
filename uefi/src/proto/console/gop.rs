@@ -56,7 +56,7 @@ use crate::{Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
-use uefi_raw::protocol::console::GraphicsOutputModeInformation;
+use uefi_raw::protocol::console::{GraphicsOutputModeInformation, GraphicsOutputProtocolMode};
 
 pub use uefi_raw::protocol::console::PixelBitmask;
 
@@ -87,7 +87,7 @@ pub struct GraphicsOutput {
         height: usize,
         stride: usize,
     ) -> Status,
-    mode: *const ModeData,
+    mode: *const GraphicsOutputProtocolMode,
 }
 
 impl GraphicsOutput {
@@ -298,17 +298,17 @@ impl GraphicsOutput {
     /// Returns the frame buffer information for the current mode.
     #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
-        *self.mode().info()
+        unsafe { *self.mode().info.cast_const().cast::<ModeInfo>() }
     }
 
     /// Access the frame buffer directly
     pub fn frame_buffer(&mut self) -> FrameBuffer {
         assert!(
-            self.mode().info().pixel_format() != PixelFormat::BltOnly,
+            self.current_mode_info().pixel_format() != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
-        let base = self.mode().fb_address as *mut u8;
-        let size = self.mode().fb_size;
+        let base = self.mode().frame_buffer_base as *mut u8;
+        let size = self.mode().frame_buffer_size;
 
         FrameBuffer {
             base,
@@ -317,30 +317,8 @@ impl GraphicsOutput {
         }
     }
 
-    const fn mode(&self) -> &ModeData {
+    const fn mode(&self) -> &GraphicsOutputProtocolMode {
         unsafe { &*self.mode }
-    }
-}
-
-#[repr(C)]
-struct ModeData {
-    // Number of modes which the GOP supports.
-    max_mode: u32,
-    // Current mode.
-    mode: u32,
-    // Information about the current mode.
-    info: *const ModeInfo,
-    // Size of the above structure.
-    info_sz: usize,
-    // Physical address of the frame buffer.
-    fb_address: u64,
-    // Size in bytes. Equal to (pixel size) * height * stride.
-    fb_size: usize,
-}
-
-impl ModeData {
-    const fn info(&self) -> &ModeInfo {
-        unsafe { &*self.info }
     }
 }
 

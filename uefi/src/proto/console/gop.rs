@@ -56,7 +56,9 @@ use crate::{Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
-use uefi_raw::protocol::console::{GraphicsOutputModeInformation, GraphicsOutputProtocolMode};
+use uefi_raw::protocol::console::{
+    GraphicsOutputBltOperation, GraphicsOutputModeInformation, GraphicsOutputProtocolMode,
+};
 
 pub use uefi_raw::protocol::console::PixelBitmask;
 
@@ -78,7 +80,7 @@ pub struct GraphicsOutput {
     blt: unsafe extern "efiapi" fn(
         this: &mut GraphicsOutput,
         buffer: *mut BltPixel,
-        op: u32,
+        op: GraphicsOutputBltOperation,
         source_x: usize,
         source_y: usize,
         dest_x: usize,
@@ -143,7 +145,7 @@ impl GraphicsOutput {
                     (self.blt)(
                         self,
                         &color as *const _ as *mut _,
-                        0,
+                        GraphicsOutputBltOperation::BLT_VIDEO_FILL,
                         0,
                         0,
                         dest_x,
@@ -166,7 +168,7 @@ impl GraphicsOutput {
                         BltRegion::Full => (self.blt)(
                             self,
                             buffer.as_mut_ptr(),
-                            1,
+                            GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER,
                             src_x,
                             src_y,
                             0,
@@ -182,7 +184,7 @@ impl GraphicsOutput {
                         } => (self.blt)(
                             self,
                             buffer.as_mut_ptr(),
-                            1,
+                            GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER,
                             src_x,
                             src_y,
                             dest_x,
@@ -206,7 +208,7 @@ impl GraphicsOutput {
                         BltRegion::Full => (self.blt)(
                             self,
                             buffer.as_ptr() as *mut _,
-                            2,
+                            GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             0,
                             0,
                             dest_x,
@@ -222,7 +224,7 @@ impl GraphicsOutput {
                         } => (self.blt)(
                             self,
                             buffer.as_ptr() as *mut _,
-                            2,
+                            GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             src_x,
                             src_y,
                             dest_x,
@@ -244,7 +246,7 @@ impl GraphicsOutput {
                     (self.blt)(
                         self,
                         ptr::null_mut(),
-                        3,
+                        GraphicsOutputBltOperation::BLT_VIDEO_TO_VIDEO,
                         src_x,
                         src_y,
                         dest_x,

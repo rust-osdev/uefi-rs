@@ -52,12 +52,13 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{Result, Status, StatusExt};
+use crate::{Result, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
 use uefi_raw::protocol::console::{
-    GraphicsOutputBltOperation, GraphicsOutputModeInformation, GraphicsOutputProtocolMode,
+    GraphicsOutputBltOperation, GraphicsOutputModeInformation, GraphicsOutputProtocol,
+    GraphicsOutputProtocolMode,
 };
 
 pub use uefi_raw::protocol::console::PixelBitmask;
@@ -66,31 +67,9 @@ pub use uefi_raw::protocol::console::PixelBitmask;
 ///
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
-#[repr(C)]
-#[unsafe_protocol("9042a9de-23dc-4a38-96fb-7aded080516a")]
-pub struct GraphicsOutput {
-    query_mode: unsafe extern "efiapi" fn(
-        &GraphicsOutput,
-        mode: u32,
-        info_sz: &mut usize,
-        &mut *const ModeInfo,
-    ) -> Status,
-    set_mode: unsafe extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
-    // Clippy correctly complains that this is too complicated, but we can't change the spec.
-    blt: unsafe extern "efiapi" fn(
-        this: &mut GraphicsOutput,
-        buffer: *mut BltPixel,
-        op: GraphicsOutputBltOperation,
-        source_x: usize,
-        source_y: usize,
-        dest_x: usize,
-        dest_y: usize,
-        width: usize,
-        height: usize,
-        stride: usize,
-    ) -> Status,
-    mode: *const GraphicsOutputProtocolMode,
-}
+#[repr(transparent)]
+#[unsafe_protocol(GraphicsOutputProtocol::GUID)]
+pub struct GraphicsOutput(GraphicsOutputProtocol);
 
 impl GraphicsOutput {
     /// Returns information for an available graphics mode that the graphics
@@ -99,13 +78,13 @@ impl GraphicsOutput {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        unsafe { (self.query_mode)(self, index, &mut info_sz, &mut info) }.to_result_with_val(
+        unsafe { (self.0.query_mode)(&self.0, index, &mut info_sz, &mut info) }.to_result_with_val(
             || {
                 let info = unsafe { *info };
                 Mode {
                     index,
                     info_sz,
-                    info,
+                    info: ModeInfo(info),
                 }
             },
         )
@@ -126,7 +105,7 @@ impl GraphicsOutput {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
-        unsafe { (self.set_mode)(self, mode.index) }.to_result()
+        unsafe { (self.0.set_mode)(&mut self.0, mode.index) }.to_result()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
@@ -142,8 +121,8 @@ impl GraphicsOutput {
                     dims: (width, height),
                 } => {
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                    (self.blt)(
-                        self,
+                    (self.0.blt)(
+                        &mut self.0,
                         &color as *const _ as *mut _,
                         GraphicsOutputBltOperation::BLT_VIDEO_FILL,
                         0,
@@ -165,9 +144,9 @@ impl GraphicsOutput {
                     self.check_framebuffer_region((src_x, src_y), (width, height));
                     self.check_blt_buffer_region(dest_region, (width, height), buffer.len());
                     match dest_region {
-                        BltRegion::Full => (self.blt)(
-                            self,
-                            buffer.as_mut_ptr(),
+                        BltRegion::Full => (self.0.blt)(
+                            &mut self.0,
+                            buffer.as_mut_ptr().cast(),
                             GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER,
                             src_x,
                             src_y,
@@ -181,9 +160,9 @@ impl GraphicsOutput {
                         BltRegion::SubRectangle {
                             coords: (dest_x, dest_y),
                             px_stride,
-                        } => (self.blt)(
-                            self,
-                            buffer.as_mut_ptr(),
+                        } => (self.0.blt)(
+                            &mut self.0,
+                            buffer.as_mut_ptr().cast(),
                             GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER,
                             src_x,
                             src_y,
@@ -205,8 +184,8 @@ impl GraphicsOutput {
                     self.check_blt_buffer_region(src_region, (width, height), buffer.len());
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
                     match src_region {
-                        BltRegion::Full => (self.blt)(
-                            self,
+                        BltRegion::Full => (self.0.blt)(
+                            &mut self.0,
                             buffer.as_ptr() as *mut _,
                             GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             0,
@@ -221,8 +200,8 @@ impl GraphicsOutput {
                         BltRegion::SubRectangle {
                             coords: (src_x, src_y),
                             px_stride,
-                        } => (self.blt)(
-                            self,
+                        } => (self.0.blt)(
+                            &mut self.0,
                             buffer.as_ptr() as *mut _,
                             GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             src_x,
@@ -243,8 +222,8 @@ impl GraphicsOutput {
                 } => {
                     self.check_framebuffer_region((src_x, src_y), (width, height));
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                    (self.blt)(
-                        self,
+                    (self.0.blt)(
+                        &mut self.0,
                         ptr::null_mut(),
                         GraphicsOutputBltOperation::BLT_VIDEO_TO_VIDEO,
                         src_x,
@@ -320,7 +299,7 @@ impl GraphicsOutput {
     }
 
     const fn mode(&self) -> &GraphicsOutputProtocolMode {
-        unsafe { &*self.mode }
+        unsafe { &*self.0.mode.cast_const() }
     }
 }
 

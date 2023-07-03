@@ -57,6 +57,8 @@ use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
 
+pub use uefi_raw::protocol::console::PixelBitmask;
+
 /// Provides access to the video hardware's frame buffer.
 ///
 /// The GOP can be used to set the properties of the frame buffer,
@@ -360,20 +362,6 @@ pub enum PixelFormat {
     //         valid enum values are guaranteed to be smaller. Since that is the
     //         case, adding a new enum variant would be a breaking change, so it
     //         is safe to model this C enum as a Rust enum.
-}
-
-/// Bitmask used to indicate which bits of a pixel represent a given color.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct PixelBitmask {
-    /// The bits indicating the red channel.
-    pub red: u32,
-    /// The bits indicating the green channel.
-    pub green: u32,
-    /// The bits indicating the blue channel.
-    pub blue: u32,
-    /// The reserved bits, which are ignored by the video hardware.
-    pub reserved: u32,
 }
 
 /// Represents a graphics mode compatible with a given graphics device.

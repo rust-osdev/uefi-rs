@@ -64,13 +64,13 @@ use core::{mem, ptr};
 #[repr(C)]
 #[unsafe_protocol("9042a9de-23dc-4a38-96fb-7aded080516a")]
 pub struct GraphicsOutput {
-    query_mode: extern "efiapi" fn(
+    query_mode: unsafe extern "efiapi" fn(
         &GraphicsOutput,
         mode: u32,
         info_sz: &mut usize,
         &mut *const ModeInfo,
     ) -> Status,
-    set_mode: extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
+    set_mode: unsafe extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
     // Clippy correctly complains that this is too complicated, but we can't change the spec.
     blt: unsafe extern "efiapi" fn(
         this: &mut GraphicsOutput,
@@ -94,14 +94,16 @@ impl GraphicsOutput {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).to_result_with_val(|| {
-            let info = unsafe { *info };
-            Mode {
-                index,
-                info_sz,
-                info,
-            }
-        })
+        unsafe { (self.query_mode)(self, index, &mut info_sz, &mut info) }.to_result_with_val(
+            || {
+                let info = unsafe { *info };
+                Mode {
+                    index,
+                    info_sz,
+                    info,
+                }
+            },
+        )
     }
 
     /// Returns information about all available graphics modes.
@@ -119,7 +121,7 @@ impl GraphicsOutput {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
-        (self.set_mode)(self, mode.index).to_result()
+        unsafe { (self.set_mode)(self, mode.index) }.to_result()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.

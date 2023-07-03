@@ -56,6 +56,7 @@ use crate::{Result, Status, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
+use uefi_raw::protocol::console::GraphicsOutputModeInformation;
 
 pub use uefi_raw::protocol::console::PixelBitmask;
 
@@ -303,7 +304,7 @@ impl GraphicsOutput {
     /// Access the frame buffer directly
     pub fn frame_buffer(&mut self) -> FrameBuffer {
         assert!(
-            self.mode().info().format != PixelFormat::BltOnly,
+            self.mode().info().pixel_format() != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
         let base = self.mode().fb_address as *mut u8;
@@ -390,16 +391,8 @@ impl Mode {
 
 /// Information about a graphics output mode.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct ModeInfo {
-    // The only known version, associated with the current spec, is 0.
-    version: u32,
-    hor_res: u32,
-    ver_res: u32,
-    format: PixelFormat,
-    mask: PixelBitmask,
-    stride: u32,
-}
+#[repr(transparent)]
+pub struct ModeInfo(GraphicsOutputModeInformation);
 
 impl ModeInfo {
     /// Returns the (horizontal, vertical) resolution.
@@ -407,20 +400,29 @@ impl ModeInfo {
     /// On desktop monitors, this usually means (width, height).
     #[must_use]
     pub const fn resolution(&self) -> (usize, usize) {
-        (usize_from_u32(self.hor_res), usize_from_u32(self.ver_res))
+        (
+            usize_from_u32(self.0.horizontal_resolution),
+            usize_from_u32(self.0.vertical_resolution),
+        )
     }
 
     /// Returns the format of the frame buffer.
     #[must_use]
     pub const fn pixel_format(&self) -> PixelFormat {
-        self.format
+        match self.0.pixel_format.0 {
+            0 => PixelFormat::Rgb,
+            1 => PixelFormat::Bgr,
+            2 => PixelFormat::Bitmask,
+            3 => PixelFormat::BltOnly,
+            _ => panic!("invalid pixel format"),
+        }
     }
 
     /// Returns the bitmask of the custom pixel format, if available.
     #[must_use]
     pub const fn pixel_bitmask(&self) -> Option<PixelBitmask> {
-        match self.format {
-            PixelFormat::Bitmask => Some(self.mask),
+        match self.pixel_format() {
+            PixelFormat::Bitmask => Some(self.0.pixel_information),
             _ => None,
         }
     }
@@ -431,7 +433,7 @@ impl ModeInfo {
     /// instead the stride might be bigger for better alignment.
     #[must_use]
     pub const fn stride(&self) -> usize {
-        usize_from_u32(self.stride)
+        usize_from_u32(self.0.pixels_per_scan_line)
     }
 }
 

@@ -348,7 +348,6 @@ newtype_enum! {
 /// in the 0x70000000..0xFFFFFFFF range. Therefore, we don't know the full set
 /// of memory types at compile time, and it is _not_ safe to model this C enum
 /// as a Rust enum.
-#[derive(PartialOrd, Ord, Hash)]
 pub enum MemoryType: u32 => {
     /// This enum variant is not used.
     RESERVED                =  0,

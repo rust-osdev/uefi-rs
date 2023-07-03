@@ -18,8 +18,8 @@
 ///
 /// This macro implements Debug for you, the way you would expect it to work on
 /// Rust enums (printing the variant name instead of its integer value). It also
-/// derives Clone, Copy, Eq and PartialEq, since that always makes sense for
-/// C-style enums and is used by the implementation. If you want anything else
+/// derives Clone, Copy, Eq, PartialEq, Ord, PartialOrd, and Hash, since that
+/// always makes sense for C-style enums. If you want anything else
 /// to be derived, you can ask for it by adding extra derives as shown in the
 /// example below.
 ///
@@ -32,7 +32,7 @@
 /// ```
 /// # use uefi_raw::newtype_enum;
 /// newtype_enum! {
-/// #[derive(Ord, PartialOrd)]
+/// #[derive(Default)]
 /// pub enum UnixBool: i32 => #[allow(missing_docs)] {
 ///     FALSE          =  0,
 ///     TRUE           =  1,
@@ -53,7 +53,7 @@ macro_rules! newtype_enum {
     ) => {
         $(#[$type_attrs])*
         #[repr(transparent)]
-        #[derive(Clone, Copy, Eq, PartialEq)]
+        #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
         $visibility struct $type(pub $base_integer);
 
         $(#[$impl_attrs])*

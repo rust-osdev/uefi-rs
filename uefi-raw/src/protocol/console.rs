@@ -1,4 +1,5 @@
-use crate::{guid, Char16, Event, Guid, Status};
+use crate::{guid, Char16, Event, Guid, PhysicalAddress, Status};
+use core::ptr;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(C)]
@@ -89,4 +90,115 @@ pub struct SimplePointerProtocol {
 
 impl SimplePointerProtocol {
     pub const GUID: Guid = guid!("31878c87-0b75-11d5-9a4f-0090273fc14d");
+}
+
+#[repr(C)]
+pub struct GraphicsOutputProtocol {
+    pub query_mode: unsafe extern "efiapi" fn(
+        *const Self,
+        mode_number: u32,
+        size_of_info: *mut usize,
+        info: *mut *const GraphicsOutputModeInformation,
+    ) -> Status,
+    pub set_mode: unsafe extern "efiapi" fn(*mut Self, mode_number: u32) -> Status,
+    pub blt: unsafe extern "efiapi" fn(
+        *mut Self,
+        blt_buffer: *mut GraphicsOutputBltPixel,
+        blt_operation: GraphicsOutputBltOperation,
+        source_x: usize,
+        source_y: usize,
+        destination_x: usize,
+        destination_y: usize,
+        width: usize,
+        height: usize,
+        delta: usize,
+    ) -> Status,
+    pub mode: *mut GraphicsOutputProtocolMode,
+}
+
+impl GraphicsOutputProtocol {
+    pub const GUID: Guid = guid!("9042a9de-23dc-4a38-96fb-7aded080516a");
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(C)]
+pub struct GraphicsOutputProtocolMode {
+    pub max_mode: u32,
+    pub mode: u32,
+    pub info: *mut GraphicsOutputModeInformation,
+    pub size_of_info: usize,
+    pub frame_buffer_base: PhysicalAddress,
+    pub frame_buffer_size: usize,
+}
+
+impl Default for GraphicsOutputProtocolMode {
+    fn default() -> Self {
+        Self {
+            max_mode: 0,
+            mode: 0,
+            info: ptr::null_mut(),
+            size_of_info: 0,
+            frame_buffer_base: 0,
+            frame_buffer_size: 0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(C)]
+pub struct GraphicsOutputModeInformation {
+    pub version: u32,
+    pub horizontal_resolution: u32,
+    pub vertical_resolution: u32,
+    pub pixel_format: GraphicsPixelFormat,
+    pub pixel_information: PixelBitmask,
+    pub pixels_per_scan_line: u32,
+}
+
+/// Bitmask used to indicate which bits of a pixel represent a given color.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(C)]
+pub struct PixelBitmask {
+    /// The bits indicating the red channel.
+    pub red: u32,
+
+    /// The bits indicating the green channel.
+    pub green: u32,
+
+    /// The bits indicating the blue channel.
+    pub blue: u32,
+
+    /// The reserved bits, which are ignored by the video hardware.
+    pub reserved: u32,
+}
+
+newtype_enum! {
+    #[derive(Default)]
+    pub enum GraphicsPixelFormat: u32 => {
+        PIXEL_RED_GREEN_BLUE_RESERVED_8_BIT_PER_COLOR = 0,
+        PIXEL_BLUE_GREEN_RED_RESERVED_8_BIT_PER_COLOR = 1,
+        PIXEL_BIT_MASK = 2,
+        PIXEL_BLT_ONLY = 3,
+        PIXEL_FORMAT_MAX = 4,
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(C)]
+pub struct GraphicsOutputBltPixel {
+    pub blue: u8,
+    pub green: u8,
+    pub red: u8,
+    pub reserved: u8,
+}
+
+newtype_enum! {
+    #[derive(Default)]
+    pub enum GraphicsOutputBltOperation: u32 => {
+        BLT_VIDEO_FILL = 0,
+        BLT_VIDEO_TO_BLT_BUFFER = 1,
+        BLT_BUFFER_TO_VIDEO = 2,
+        BLT_VIDEO_TO_VIDEO = 3,
+        GRAPHICS_OUTPUT_BLT_OPERATION_MAX = 4,
+    }
 }

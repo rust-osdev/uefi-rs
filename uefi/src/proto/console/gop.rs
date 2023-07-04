@@ -52,40 +52,24 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{Result, Status, StatusExt};
+use crate::{Result, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr};
+use uefi_raw::protocol::console::{
+    GraphicsOutputBltOperation, GraphicsOutputModeInformation, GraphicsOutputProtocol,
+    GraphicsOutputProtocolMode,
+};
+
+pub use uefi_raw::protocol::console::PixelBitmask;
 
 /// Provides access to the video hardware's frame buffer.
 ///
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
-#[repr(C)]
-#[unsafe_protocol("9042a9de-23dc-4a38-96fb-7aded080516a")]
-pub struct GraphicsOutput {
-    query_mode: extern "efiapi" fn(
-        &GraphicsOutput,
-        mode: u32,
-        info_sz: &mut usize,
-        &mut *const ModeInfo,
-    ) -> Status,
-    set_mode: extern "efiapi" fn(&mut GraphicsOutput, mode: u32) -> Status,
-    // Clippy correctly complains that this is too complicated, but we can't change the spec.
-    blt: unsafe extern "efiapi" fn(
-        this: &mut GraphicsOutput,
-        buffer: *mut BltPixel,
-        op: u32,
-        source_x: usize,
-        source_y: usize,
-        dest_x: usize,
-        dest_y: usize,
-        width: usize,
-        height: usize,
-        stride: usize,
-    ) -> Status,
-    mode: *const ModeData,
-}
+#[repr(transparent)]
+#[unsafe_protocol(GraphicsOutputProtocol::GUID)]
+pub struct GraphicsOutput(GraphicsOutputProtocol);
 
 impl GraphicsOutput {
     /// Returns information for an available graphics mode that the graphics
@@ -94,14 +78,16 @@ impl GraphicsOutput {
         let mut info_sz = 0;
         let mut info = ptr::null();
 
-        (self.query_mode)(self, index, &mut info_sz, &mut info).to_result_with_val(|| {
-            let info = unsafe { *info };
-            Mode {
-                index,
-                info_sz,
-                info,
-            }
-        })
+        unsafe { (self.0.query_mode)(&self.0, index, &mut info_sz, &mut info) }.to_result_with_val(
+            || {
+                let info = unsafe { *info };
+                Mode {
+                    index,
+                    info_sz,
+                    info: ModeInfo(info),
+                }
+            },
+        )
     }
 
     /// Returns information about all available graphics modes.
@@ -119,7 +105,7 @@ impl GraphicsOutput {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
-        (self.set_mode)(self, mode.index).to_result()
+        unsafe { (self.0.set_mode)(&mut self.0, mode.index) }.to_result()
     }
 
     /// Performs a blt (block transfer) operation on the frame buffer.
@@ -135,10 +121,10 @@ impl GraphicsOutput {
                     dims: (width, height),
                 } => {
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                    (self.blt)(
-                        self,
+                    (self.0.blt)(
+                        &mut self.0,
                         &color as *const _ as *mut _,
-                        0,
+                        GraphicsOutputBltOperation::BLT_VIDEO_FILL,
                         0,
                         0,
                         dest_x,
@@ -158,10 +144,10 @@ impl GraphicsOutput {
                     self.check_framebuffer_region((src_x, src_y), (width, height));
                     self.check_blt_buffer_region(dest_region, (width, height), buffer.len());
                     match dest_region {
-                        BltRegion::Full => (self.blt)(
-                            self,
-                            buffer.as_mut_ptr(),
-                            1,
+                        BltRegion::Full => (self.0.blt)(
+                            &mut self.0,
+                            buffer.as_mut_ptr().cast(),
+                            GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER,
                             src_x,
                             src_y,
                             0,
@@ -174,10 +160,10 @@ impl GraphicsOutput {
                         BltRegion::SubRectangle {
                             coords: (dest_x, dest_y),
                             px_stride,
-                        } => (self.blt)(
-                            self,
-                            buffer.as_mut_ptr(),
-                            1,
+                        } => (self.0.blt)(
+                            &mut self.0,
+                            buffer.as_mut_ptr().cast(),
+                            GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER,
                             src_x,
                             src_y,
                             dest_x,
@@ -198,10 +184,10 @@ impl GraphicsOutput {
                     self.check_blt_buffer_region(src_region, (width, height), buffer.len());
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
                     match src_region {
-                        BltRegion::Full => (self.blt)(
-                            self,
+                        BltRegion::Full => (self.0.blt)(
+                            &mut self.0,
                             buffer.as_ptr() as *mut _,
-                            2,
+                            GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             0,
                             0,
                             dest_x,
@@ -214,10 +200,10 @@ impl GraphicsOutput {
                         BltRegion::SubRectangle {
                             coords: (src_x, src_y),
                             px_stride,
-                        } => (self.blt)(
-                            self,
+                        } => (self.0.blt)(
+                            &mut self.0,
                             buffer.as_ptr() as *mut _,
-                            2,
+                            GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             src_x,
                             src_y,
                             dest_x,
@@ -236,10 +222,10 @@ impl GraphicsOutput {
                 } => {
                     self.check_framebuffer_region((src_x, src_y), (width, height));
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
-                    (self.blt)(
-                        self,
+                    (self.0.blt)(
+                        &mut self.0,
                         ptr::null_mut(),
-                        3,
+                        GraphicsOutputBltOperation::BLT_VIDEO_TO_VIDEO,
                         src_x,
                         src_y,
                         dest_x,
@@ -293,17 +279,17 @@ impl GraphicsOutput {
     /// Returns the frame buffer information for the current mode.
     #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
-        *self.mode().info()
+        unsafe { *self.mode().info.cast_const().cast::<ModeInfo>() }
     }
 
     /// Access the frame buffer directly
     pub fn frame_buffer(&mut self) -> FrameBuffer {
         assert!(
-            self.mode().info().format != PixelFormat::BltOnly,
+            self.current_mode_info().pixel_format() != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"
         );
-        let base = self.mode().fb_address as *mut u8;
-        let size = self.mode().fb_size;
+        let base = self.mode().frame_buffer_base as *mut u8;
+        let size = self.mode().frame_buffer_size;
 
         FrameBuffer {
             base,
@@ -312,30 +298,8 @@ impl GraphicsOutput {
         }
     }
 
-    const fn mode(&self) -> &ModeData {
-        unsafe { &*self.mode }
-    }
-}
-
-#[repr(C)]
-struct ModeData {
-    // Number of modes which the GOP supports.
-    max_mode: u32,
-    // Current mode.
-    mode: u32,
-    // Information about the current mode.
-    info: *const ModeInfo,
-    // Size of the above structure.
-    info_sz: usize,
-    // Physical address of the frame buffer.
-    fb_address: u64,
-    // Size in bytes. Equal to (pixel size) * height * stride.
-    fb_size: usize,
-}
-
-impl ModeData {
-    const fn info(&self) -> &ModeInfo {
-        unsafe { &*self.info }
+    const fn mode(&self) -> &GraphicsOutputProtocolMode {
+        unsafe { &*self.0.mode.cast_const() }
     }
 }
 
@@ -358,20 +322,6 @@ pub enum PixelFormat {
     //         valid enum values are guaranteed to be smaller. Since that is the
     //         case, adding a new enum variant would be a breaking change, so it
     //         is safe to model this C enum as a Rust enum.
-}
-
-/// Bitmask used to indicate which bits of a pixel represent a given color.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct PixelBitmask {
-    /// The bits indicating the red channel.
-    pub red: u32,
-    /// The bits indicating the green channel.
-    pub green: u32,
-    /// The bits indicating the blue channel.
-    pub blue: u32,
-    /// The reserved bits, which are ignored by the video hardware.
-    pub reserved: u32,
 }
 
 /// Represents a graphics mode compatible with a given graphics device.
@@ -400,16 +350,8 @@ impl Mode {
 
 /// Information about a graphics output mode.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct ModeInfo {
-    // The only known version, associated with the current spec, is 0.
-    version: u32,
-    hor_res: u32,
-    ver_res: u32,
-    format: PixelFormat,
-    mask: PixelBitmask,
-    stride: u32,
-}
+#[repr(transparent)]
+pub struct ModeInfo(GraphicsOutputModeInformation);
 
 impl ModeInfo {
     /// Returns the (horizontal, vertical) resolution.
@@ -417,20 +359,29 @@ impl ModeInfo {
     /// On desktop monitors, this usually means (width, height).
     #[must_use]
     pub const fn resolution(&self) -> (usize, usize) {
-        (usize_from_u32(self.hor_res), usize_from_u32(self.ver_res))
+        (
+            usize_from_u32(self.0.horizontal_resolution),
+            usize_from_u32(self.0.vertical_resolution),
+        )
     }
 
     /// Returns the format of the frame buffer.
     #[must_use]
     pub const fn pixel_format(&self) -> PixelFormat {
-        self.format
+        match self.0.pixel_format.0 {
+            0 => PixelFormat::Rgb,
+            1 => PixelFormat::Bgr,
+            2 => PixelFormat::Bitmask,
+            3 => PixelFormat::BltOnly,
+            _ => panic!("invalid pixel format"),
+        }
     }
 
     /// Returns the bitmask of the custom pixel format, if available.
     #[must_use]
     pub const fn pixel_bitmask(&self) -> Option<PixelBitmask> {
-        match self.format {
-            PixelFormat::Bitmask => Some(self.mask),
+        match self.pixel_format() {
+            PixelFormat::Bitmask => Some(self.0.pixel_information),
             _ => None,
         }
     }
@@ -441,7 +392,7 @@ impl ModeInfo {
     /// instead the stride might be bigger for better alignment.
     #[must_use]
     pub const fn stride(&self) -> usize {
-        usize_from_u32(self.stride)
+        usize_from_u32(self.0.pixels_per_scan_line)
     }
 }
 

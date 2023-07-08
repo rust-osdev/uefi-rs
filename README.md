@@ -53,6 +53,7 @@ important UEFI concepts.
 Reference documentation can be found on docs.rs:
 - [docs.rs/uefi](https://docs.rs/uefi)
 - [docs.rs/uefi-macros](https://docs.rs/uefi-macros)
+- [docs.rs/uefi-raw](https://docs.rs/uefi-raw)
 - [docs.rs/uefi-services](https://docs.rs/uefi-services)
 
 For additional information, refer to the [UEFI specification][spec].

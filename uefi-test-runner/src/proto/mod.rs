@@ -23,7 +23,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     string::test(bt);
 
     #[cfg(any(
-        target_arch = "i386",
+        target_arch = "x86",
         target_arch = "x86_64",
         target_arch = "arm",
         target_arch = "aarch64"
@@ -64,7 +64,7 @@ mod network;
 mod pi;
 mod rng;
 #[cfg(any(
-    target_arch = "i386",
+    target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
     target_arch = "aarch64"

@@ -8,6 +8,7 @@
 - `LoadedImage::device` now returns an `Option<Handle>` and is no longer `const`.
 - `BootServices::get_image_file_system` now returns
   `ScopedProtocol<SimpleFileSystem>` instead of `fs::FileSystem`.
+- `uefi::proto::shim` is now available on 32-bit x86 targets.
 
 ## uefi-macros - [Unreleased]
 

@@ -10,6 +10,7 @@
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
 use crate::{Guid, Identify};
+#[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 use core::ffi::c_void;
 use core::marker::PhantomData;

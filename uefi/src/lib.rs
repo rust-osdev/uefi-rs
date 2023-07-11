@@ -86,6 +86,7 @@
 #![deny(missing_debug_implementations)]
 
 #[cfg(feature = "alloc")]
+#[macro_use]
 extern crate alloc;
 
 // allow referring to self as ::uefi for macros to work universally (from this crate and from others)

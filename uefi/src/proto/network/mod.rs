@@ -2,6 +2,8 @@
 //!
 //! These protocols can be used to interact with network resources.
 
+#[cfg(feature = "alloc")]
+pub mod dhcp4;
 pub mod pxe;
 pub mod snp;
 

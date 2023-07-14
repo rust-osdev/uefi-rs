@@ -32,7 +32,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
         Self {
             data,
             len,
-            _phantom_lifetime: PhantomData::default(),
+            _phantom_lifetime: PhantomData,
         }
     }
 

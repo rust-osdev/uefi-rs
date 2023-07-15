@@ -6,6 +6,7 @@ use crate::proto::device_path::DevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
+use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -41,11 +42,6 @@ static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
 /// Note that this is not necessarily the processor's page size. The UEFI page
 /// size is always 4 KiB.
 pub const PAGE_SIZE: usize = 4096;
-
-/// Get the raw pointer from `opt`, defaulting to `null_mut`.
-fn opt_nonnull_to_ptr<T>(opt: Option<NonNull<T>>) -> *mut T {
-    opt.map(NonNull::as_ptr).unwrap_or(ptr::null_mut())
-}
 
 /// Contains pointers to all of the boot services.
 ///

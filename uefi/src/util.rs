@@ -1,4 +1,5 @@
 use core::mem;
+use core::ptr::{self, NonNull};
 
 /// Copy the bytes of `val` to `ptr`, then advance pointer to just after the
 /// newly-copied bytes.
@@ -22,6 +23,11 @@ pub const fn usize_from_u32(val: u32) -> usize {
     } else {
         val as usize
     }
+}
+
+/// Get the raw pointer from `opt`, defaulting to `null_mut`.
+pub fn opt_nonnull_to_ptr<T>(opt: Option<NonNull<T>>) -> *mut T {
+    opt.map(NonNull::as_ptr).unwrap_or(ptr::null_mut())
 }
 
 #[cfg(test)]

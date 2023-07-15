@@ -14,14 +14,14 @@ use core::ptr::NonNull;
 #[unsafe_protocol("ce345171-ba0b-11d2-8e4f-00a0c969723b")]
 pub struct DiskIo {
     revision: u64,
-    read_disk: extern "efiapi" fn(
+    read_disk: unsafe extern "efiapi" fn(
         this: &DiskIo,
         media_id: u32,
         offset: u64,
         len: usize,
         buffer: *mut u8,
     ) -> Status,
-    write_disk: extern "efiapi" fn(
+    write_disk: unsafe extern "efiapi" fn(
         this: &mut DiskIo,
         media_id: u32,
         offset: u64,
@@ -46,7 +46,8 @@ impl DiskIo {
     /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
     /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
     pub fn read_disk(&self, media_id: u32, offset: u64, buffer: &mut [u8]) -> Result {
-        (self.read_disk)(self, media_id, offset, buffer.len(), buffer.as_mut_ptr()).to_result()
+        unsafe { (self.read_disk)(self, media_id, offset, buffer.len(), buffer.as_mut_ptr()) }
+            .to_result()
     }
 
     /// Writes bytes to the disk device.
@@ -65,7 +66,8 @@ impl DiskIo {
     /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
     /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
     pub fn write_disk(&mut self, media_id: u32, offset: u64, buffer: &[u8]) -> Result {
-        (self.write_disk)(self, media_id, offset, buffer.len(), buffer.as_ptr()).to_result()
+        unsafe { (self.write_disk)(self, media_id, offset, buffer.len(), buffer.as_ptr()) }
+            .to_result()
     }
 }
 
@@ -87,8 +89,8 @@ pub struct DiskIo2Token {
 #[unsafe_protocol("151c8eae-7f2c-472c-9e54-9828194f6a88")]
 pub struct DiskIo2 {
     revision: u64,
-    cancel: extern "efiapi" fn(this: &mut DiskIo2) -> Status,
-    read_disk_ex: extern "efiapi" fn(
+    cancel: unsafe extern "efiapi" fn(this: &mut DiskIo2) -> Status,
+    read_disk_ex: unsafe extern "efiapi" fn(
         this: &DiskIo2,
         media_id: u32,
         offset: u64,
@@ -96,7 +98,7 @@ pub struct DiskIo2 {
         len: usize,
         buffer: *mut u8,
     ) -> Status,
-    write_disk_ex: extern "efiapi" fn(
+    write_disk_ex: unsafe extern "efiapi" fn(
         this: &mut DiskIo2,
         media_id: u32,
         offset: u64,
@@ -104,8 +106,10 @@ pub struct DiskIo2 {
         len: usize,
         buffer: *const u8,
     ) -> Status,
-    flush_disk_ex:
-        extern "efiapi" fn(this: &mut DiskIo2, token: Option<NonNull<DiskIo2Token>>) -> Status,
+    flush_disk_ex: unsafe extern "efiapi" fn(
+        this: &mut DiskIo2,
+        token: Option<NonNull<DiskIo2Token>>,
+    ) -> Status,
 }
 
 impl DiskIo2 {
@@ -115,7 +119,7 @@ impl DiskIo2 {
     /// * `uefi::status::DEVICE_ERROR`  The device reported an error while performing
     ///                                 the cancel operation.
     pub fn cancel(&mut self) -> Result {
-        (self.cancel)(self).to_result()
+        unsafe { (self.cancel)(self) }.to_result()
     }
 
     /// Reads bytes from the disk device.
@@ -202,6 +206,6 @@ impl DiskIo2 {
     ///                                     the flush operation.
     /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
     pub fn flush_disk(&mut self, token: Option<NonNull<DiskIo2Token>>) -> Result {
-        (self.flush_disk_ex)(self, token).to_result()
+        unsafe { (self.flush_disk_ex)(self, token) }.to_result()
     }
 }

@@ -20,8 +20,8 @@ pub struct Serial {
     // Revision of this protocol, only 1.0 is currently defined.
     // Future versions will be backwards compatible.
     revision: u32,
-    reset: extern "efiapi" fn(&mut Serial) -> Status,
-    set_attributes: extern "efiapi" fn(
+    reset: unsafe extern "efiapi" fn(&mut Serial) -> Status,
+    set_attributes: unsafe extern "efiapi" fn(
         &Serial,
         baud_rate: u64,
         receive_fifo_depth: u32,
@@ -30,8 +30,8 @@ pub struct Serial {
         data_bits: u8,
         stop_bits_type: StopBits,
     ) -> Status,
-    set_control_bits: extern "efiapi" fn(&mut Serial, ControlBits) -> Status,
-    get_control_bits: extern "efiapi" fn(&Serial, &mut ControlBits) -> Status,
+    set_control_bits: unsafe extern "efiapi" fn(&mut Serial, ControlBits) -> Status,
+    get_control_bits: unsafe extern "efiapi" fn(&Serial, &mut ControlBits) -> Status,
     write: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *const u8) -> Status,
     read: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *mut u8) -> Status,
     io_mode: *const IoMode,
@@ -40,7 +40,7 @@ pub struct Serial {
 impl Serial {
     /// Reset the device.
     pub fn reset(&mut self) -> Result {
-        (self.reset)(self).to_result()
+        unsafe { (self.reset)(self) }.to_result()
     }
 
     /// Returns the current I/O mode.
@@ -63,22 +63,24 @@ impl Serial {
     ///   the device's minimum, an error will be returned;
     ///   this value will be rounded down to the nearest value supported by the device;
     pub fn set_attributes(&mut self, mode: &IoMode) -> Result {
-        (self.set_attributes)(
-            self,
-            mode.baud_rate,
-            mode.receive_fifo_depth,
-            mode.timeout,
-            mode.parity,
-            mode.data_bits as u8,
-            mode.stop_bits,
-        )
+        unsafe {
+            (self.set_attributes)(
+                self,
+                mode.baud_rate,
+                mode.receive_fifo_depth,
+                mode.timeout,
+                mode.parity,
+                mode.data_bits as u8,
+                mode.stop_bits,
+            )
+        }
         .to_result()
     }
 
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
-        (self.get_control_bits)(self, &mut bits).to_result_with_val(|| bits)
+        unsafe { (self.get_control_bits)(self, &mut bits) }.to_result_with_val(|| bits)
     }
 
     /// Sets the device's new control bits.
@@ -86,7 +88,7 @@ impl Serial {
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
-        (self.set_control_bits)(self, bits).to_result()
+        unsafe { (self.set_control_bits)(self, bits) }.to_result()
     }
 
     /// Reads data from this device.

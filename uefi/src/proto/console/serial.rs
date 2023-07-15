@@ -4,6 +4,7 @@ use crate::proto::unsafe_protocol;
 use crate::{Result, Status, StatusExt};
 use core::fmt::Write;
 
+pub use uefi_raw::protocol::console::serial::SerialIoMode as IoMode;
 pub use uefi_raw::protocol::console::serial::{ControlBits, Parity, StopBits};
 
 /// Provides access to a serial I/O device.
@@ -119,35 +120,4 @@ impl Write for Serial {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         self.write(s.as_bytes()).map_err(|_| core::fmt::Error)
     }
-}
-
-/// Structure representing the device's current parameters.
-///
-/// The default values for all UART-like devices is:
-/// - 115,200 baud
-/// - 1 byte receive FIFO
-/// - 1'000'000 microsecond timeout
-/// - no parity
-/// - 8 data bits
-/// - 1 stop bit
-///
-/// The software is responsible for flow control.
-#[derive(Debug, Copy, Clone)]
-#[repr(C)]
-pub struct IoMode {
-    /// Bitmask of the control bits that this device supports.
-    pub control_mask: ControlBits,
-    /// If applicable, the number of microseconds to wait before assuming an
-    /// operation timed out.
-    pub timeout: u32,
-    /// Device's baud rate, or 0 if unknown.
-    pub baud_rate: u64,
-    /// Size in character's of the device's buffer.
-    pub receive_fifo_depth: u32,
-    /// Number of data bits in each character.
-    pub data_bits: u32,
-    /// If applicable, the parity that is computed or checked for each character.
-    pub parity: Parity,
-    /// If applicable, the number of stop bits per character.
-    pub stop_bits: StopBits,
 }

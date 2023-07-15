@@ -1,3 +1,4 @@
+use crate::{guid, Guid, Status};
 use bitflags::bitflags;
 
 bitflags! {
@@ -72,6 +73,32 @@ pub struct SerialIoMode {
     pub parity: Parity,
     /// If applicable, the number of stop bits per character.
     pub stop_bits: StopBits,
+}
+
+#[repr(C)]
+pub struct SerialIoProtocol {
+    pub revision: u32,
+    pub reset: unsafe extern "efiapi" fn(*mut Self) -> Status,
+    pub set_attributes: unsafe extern "efiapi" fn(
+        *const Self,
+        baud_rate: u64,
+        receive_fifo_depth: u32,
+        timeout: u32,
+        parity: Parity,
+        data_bits: u8,
+        stop_bits_type: StopBits,
+    ) -> Status,
+    pub set_control_bits: unsafe extern "efiapi" fn(*mut Self, ControlBits) -> Status,
+    pub get_control_bits: unsafe extern "efiapi" fn(*const Self, *mut ControlBits) -> Status,
+    pub write: unsafe extern "efiapi" fn(*mut Self, *mut usize, *const u8) -> Status,
+    pub read: unsafe extern "efiapi" fn(*mut Self, *mut usize, *mut u8) -> Status,
+    pub mode: *const SerialIoMode,
+}
+
+impl SerialIoProtocol {
+    pub const GUID: Guid = guid!("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd");
+    pub const REVISION: u32 = 0x00010000;
+    pub const REVISION1P1: u32 = 0x00010001;
 }
 
 newtype_enum! {

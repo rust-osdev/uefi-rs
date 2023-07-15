@@ -1,3 +1,5 @@
+pub mod serial;
+
 use crate::{guid, Char16, Event, Guid, PhysicalAddress, Status};
 use core::ptr;
 

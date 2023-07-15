@@ -1,8 +1,9 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status, StatusExt};
+use crate::{Result, StatusExt};
 use core::fmt::Write;
+use uefi_raw::protocol::console::serial::SerialIoProtocol;
 
 pub use uefi_raw::protocol::console::serial::SerialIoMode as IoMode;
 pub use uefi_raw::protocol::console::serial::{ControlBits, Parity, StopBits};
@@ -14,39 +15,20 @@ pub use uefi_raw::protocol::console::serial::{ControlBits, Parity, StopBits};
 ///
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
-#[repr(C)]
-#[unsafe_protocol("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd")]
-pub struct Serial {
-    // Revision of this protocol, only 1.0 is currently defined.
-    // Future versions will be backwards compatible.
-    revision: u32,
-    reset: unsafe extern "efiapi" fn(&mut Serial) -> Status,
-    set_attributes: unsafe extern "efiapi" fn(
-        &Serial,
-        baud_rate: u64,
-        receive_fifo_depth: u32,
-        timeout: u32,
-        parity: Parity,
-        data_bits: u8,
-        stop_bits_type: StopBits,
-    ) -> Status,
-    set_control_bits: unsafe extern "efiapi" fn(&mut Serial, ControlBits) -> Status,
-    get_control_bits: unsafe extern "efiapi" fn(&Serial, &mut ControlBits) -> Status,
-    write: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *const u8) -> Status,
-    read: unsafe extern "efiapi" fn(&mut Serial, &mut usize, *mut u8) -> Status,
-    io_mode: *const IoMode,
-}
+#[repr(transparent)]
+#[unsafe_protocol(SerialIoProtocol::GUID)]
+pub struct Serial(SerialIoProtocol);
 
 impl Serial {
     /// Reset the device.
     pub fn reset(&mut self) -> Result {
-        unsafe { (self.reset)(self) }.to_result()
+        unsafe { (self.0.reset)(&mut self.0) }.to_result()
     }
 
     /// Returns the current I/O mode.
     #[must_use]
     pub const fn io_mode(&self) -> &IoMode {
-        unsafe { &*self.io_mode }
+        unsafe { &*self.0.mode }
     }
 
     /// Sets the device's new attributes.
@@ -64,8 +46,8 @@ impl Serial {
     ///   this value will be rounded down to the nearest value supported by the device;
     pub fn set_attributes(&mut self, mode: &IoMode) -> Result {
         unsafe {
-            (self.set_attributes)(
-                self,
+            (self.0.set_attributes)(
+                &mut self.0,
                 mode.baud_rate,
                 mode.receive_fifo_depth,
                 mode.timeout,
@@ -80,7 +62,7 @@ impl Serial {
     /// Retrieve the device's current control bits.
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
-        unsafe { (self.get_control_bits)(self, &mut bits) }.to_result_with_val(|| bits)
+        unsafe { (self.0.get_control_bits)(&self.0, &mut bits) }.to_result_with_val(|| bits)
     }
 
     /// Sets the device's new control bits.
@@ -88,7 +70,7 @@ impl Serial {
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
-        unsafe { (self.set_control_bits)(self, bits) }.to_result()
+        unsafe { (self.0.set_control_bits)(&mut self.0, bits) }.to_result()
     }
 
     /// Reads data from this device.
@@ -98,7 +80,7 @@ impl Serial {
     /// bytes were actually read from the device.
     pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.read)(self, &mut buffer_size, data.as_mut_ptr()) }.to_result_with(
+        unsafe { (self.0.read)(&mut self.0, &mut buffer_size, data.as_mut_ptr()) }.to_result_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
@@ -111,7 +93,7 @@ impl Serial {
     /// were actually written to the device.
     pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.write)(self, &mut buffer_size, data.as_ptr()) }.to_result_with(
+        unsafe { (self.0.write)(&mut self.0, &mut buffer_size, data.as_ptr()) }.to_result_with(
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )

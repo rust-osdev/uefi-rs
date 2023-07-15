@@ -9,6 +9,8 @@
 - `BootServices::get_image_file_system` now returns
   `ScopedProtocol<SimpleFileSystem>` instead of `fs::FileSystem`.
 - `uefi::proto::shim` is now available on 32-bit x86 targets.
+- `Parity` and `StopBits` are now a newtype-enums instead of Rust enums. Their
+  members now have upper-case names.
 
 ## uefi-macros - [Unreleased]
 

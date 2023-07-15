@@ -4,7 +4,7 @@ use crate::proto::unsafe_protocol;
 use crate::{Result, Status, StatusExt};
 use core::fmt::Write;
 
-pub use uefi_raw::protocol::console::serial::ControlBits;
+pub use uefi_raw::protocol::console::serial::{ControlBits, Parity, StopBits};
 
 /// Provides access to a serial I/O device.
 ///
@@ -150,42 +150,4 @@ pub struct IoMode {
     pub parity: Parity,
     /// If applicable, the number of stop bits per character.
     pub stop_bits: StopBits,
-}
-
-/// The parity of the device.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(u32)]
-pub enum Parity {
-    /// Device default
-    Default = 0,
-    /// No parity
-    None,
-    /// Even parity
-    Even,
-    /// Odd parity
-    Odd,
-    /// Mark parity
-    Mark,
-    /// Space parity
-    Space,
-    // SAFETY: The serial protocol is very old, and new parity modes are very
-    //         unlikely to be added at this point in time. Therefore, modeling
-    //         this C enum as a Rust enum seems safe.
-}
-
-/// Number of stop bits per character.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(u32)]
-pub enum StopBits {
-    /// Device default
-    Default = 0,
-    /// 1 stop bit
-    One,
-    /// 1.5 stop bits
-    OneFive,
-    /// 2 stop bits
-    Two,
-    // SAFETY: The serial protocol is very old, and new stop bit modes are very
-    //         unlikely to be added at this point in time. Therefore, modeling
-    //         this C enum as a Rust enum seems safe.
 }

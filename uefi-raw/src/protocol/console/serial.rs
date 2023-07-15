@@ -42,3 +42,35 @@ bitflags! {
             | ControlBits::HARDWARE_FLOW_CONTROL_ENABLE.bits();
     }
 }
+
+newtype_enum! {
+    /// The parity of the device.
+    pub enum Parity: u32 => {
+        /// Device default
+        DEFAULT = 0,
+        /// No parity
+        NONE = 1,
+        /// Even parity
+        EVEN = 2,
+        /// Odd parity
+        ODD = 3,
+        /// Mark parity
+        MARK = 4,
+        /// Space parity
+        SPACE = 5,
+    }
+}
+
+newtype_enum! {
+    /// Number of stop bits per character.
+    pub enum StopBits: u32 => {
+        /// Device default
+        DEFAULT = 0,
+        /// 1 stop bit
+        ONE = 1,
+        /// 1.5 stop bits
+        ONE_FIVE = 2,
+        /// 2 stop bits
+        TWO = 3,
+    }
+}

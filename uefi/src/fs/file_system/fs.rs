@@ -27,10 +27,22 @@ impl<'a> FileSystem<'a> {
         Self(proto)
     }
 
-    /// Tests if the underlying file exists. If this returns `Ok`, the file
-    /// exists.
-    pub fn try_exists(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
-        self.metadata(path).map(|_| ())
+    /// Returns `Ok(true)` if the path points at an existing file.
+    ///
+    /// If the file does not exist, `Ok(false)` is returned. If it cannot be
+    /// determined whether the file exists or not, an error is returned.
+    pub fn try_exists(&mut self, path: impl AsRef<Path>) -> FileSystemResult<bool> {
+        match self.open(path.as_ref(), UefiFileMode::Read, false) {
+            Ok(_) => Ok(true),
+            Err(Error::Io(err)) => {
+                if err.uefi_error.status() == Status::NOT_FOUND {
+                    Ok(false)
+                } else {
+                    Err(Error::Io(err))
+                }
+            }
+            Err(err) => Err(err),
+        }
     }
 
     /// Copies the contents of one file to another. Creates the destination file
@@ -69,7 +81,7 @@ impl<'a> FileSystem<'a> {
         dirs_to_create.reverse();
 
         for parent in dirs_to_create {
-            if self.try_exists(&parent).is_err() {
+            if !self.try_exists(&parent)? {
                 self.create_dir(parent)?;
             }
         }
@@ -260,7 +272,7 @@ impl<'a> FileSystem<'a> {
 
         // since there is no .truncate() in UEFI, we delete the file first it it
         // exists.
-        if self.try_exists(path).is_ok() {
+        if self.try_exists(path)? {
             self.remove_file(path)?;
         }
 

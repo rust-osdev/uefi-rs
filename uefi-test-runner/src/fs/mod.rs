@@ -62,8 +62,7 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), fs::Error> {
     // test remove dir all
     fs.remove_dir_all(cstr16!("foo_dir\\1"))?;
     // file should not be available after remove all
-    let err = fs.try_exists(cstr16!("foo_dir\\1"));
-    assert!(err.is_err());
+    assert!(!fs.try_exists(cstr16!("foo_dir\\1"))?);
 
     Ok(())
 }

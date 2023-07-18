@@ -12,6 +12,7 @@
 - `Parity` and `StopBits` are now a newtype-enums instead of Rust enums. Their
   members now have upper-case names.
 - `FileSystem::try_exists` now returns `FileSystemResult<bool>`.
+- `FileSystem::copy` is now more efficient for large files.
 
 ## uefi-macros - [Unreleased]
 

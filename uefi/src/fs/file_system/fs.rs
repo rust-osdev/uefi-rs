@@ -52,8 +52,93 @@ impl<'a> FileSystem<'a> {
         src_path: impl AsRef<Path>,
         dest_path: impl AsRef<Path>,
     ) -> FileSystemResult<()> {
-        let read = self.read(src_path)?;
-        self.write(dest_path, read)
+        let src_path = src_path.as_ref();
+        let dest_path = dest_path.as_ref();
+
+        // Open the source file for reading.
+        let mut src = self
+            .open(src_path, UefiFileMode::Read, false)?
+            .into_regular_file()
+            .ok_or(Error::Io(IoError {
+                path: src_path.to_path_buf(),
+                context: IoErrorContext::NotAFile,
+                uefi_error: Status::INVALID_PARAMETER.into(),
+            }))?;
+
+        // Get the source file's size in bytes.
+        let src_size = {
+            let src_info = src.get_boxed_info::<UefiFileInfo>().map_err(|err| {
+                Error::Io(IoError {
+                    path: src_path.to_path_buf(),
+                    context: IoErrorContext::Metadata,
+                    uefi_error: err,
+                })
+            })?;
+            src_info.file_size()
+        };
+
+        // Try to delete the destination file in case it already exists. Allow
+        // this to fail, since it might not exist. Or it might exist, but be a
+        // directory, in which case the error will be caught when trying to
+        // create the file.
+        let _ = self.remove_file(dest_path);
+
+        // Create and open the destination file.
+        let mut dest = self
+            .open(dest_path, UefiFileMode::CreateReadWrite, false)?
+            .into_regular_file()
+            .ok_or(Error::Io(IoError {
+                path: dest_path.to_path_buf(),
+                context: IoErrorContext::OpenError,
+                uefi_error: Status::INVALID_PARAMETER.into(),
+            }))?;
+
+        // 1 MiB copy buffer.
+        let mut chunk = vec![0; 1024 * 1024];
+
+        // Read chunks from the source file and write to the destination file.
+        let mut remaining_size = src_size;
+        while remaining_size > 0 {
+            // Read one chunk.
+            let num_bytes_read = src.read(&mut chunk).map_err(|err| {
+                Error::Io(IoError {
+                    path: src_path.to_path_buf(),
+                    context: IoErrorContext::ReadFailure,
+                    uefi_error: err.to_err_without_payload(),
+                })
+            })?;
+
+            // If the read returned no bytes, but `remaining_size > 0`, return
+            // an error.
+            if num_bytes_read == 0 {
+                return Err(Error::Io(IoError {
+                    path: src_path.to_path_buf(),
+                    context: IoErrorContext::ReadFailure,
+                    uefi_error: Status::ABORTED.into(),
+                }));
+            }
+
+            // Copy the bytes read out to the destination file.
+            dest.write(&chunk[..num_bytes_read]).map_err(|err| {
+                Error::Io(IoError {
+                    path: dest_path.to_path_buf(),
+                    context: IoErrorContext::WriteFailure,
+                    uefi_error: err.to_err_without_payload(),
+                })
+            })?;
+
+            remaining_size -= u64::try_from(num_bytes_read).unwrap();
+        }
+
+        dest.flush().map_err(|err| {
+            Error::Io(IoError {
+                path: dest_path.to_path_buf(),
+                context: IoErrorContext::FlushFailure,
+                uefi_error: err,
+            })
+        })?;
+
+        Ok(())
     }
 
     /// Creates a new, empty directory at the provided path

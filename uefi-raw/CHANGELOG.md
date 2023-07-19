@@ -2,8 +2,8 @@
 
 ## Added
 - Added `Ipv4Address`, `Ipv6Address`, and `MacAddress` types.
-- Added `ServiceBindingProtocol`, `Dhcp4Protocol`, `Ip4Config2Protocol`, and
-  related types.
+- Added `ServiceBindingProtocol`, `Dhcp4Protocol`, `HttpProtocol`,
+  `Ip4Config2Protocol`, and related types.
 
 # uefi-raw - 0.5.0 (2023-11-12)
 

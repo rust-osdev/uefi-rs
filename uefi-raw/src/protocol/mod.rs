@@ -6,7 +6,9 @@
 
 pub mod console;
 pub mod device_path;
+pub mod dhcp4;
 pub mod disk;
+pub mod http;
 pub mod ip4_config2;
 pub mod loaded_image;
 pub mod rng;

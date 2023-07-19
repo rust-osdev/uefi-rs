@@ -4,11 +4,12 @@
 
 #[cfg(feature = "alloc")]
 pub mod dhcp4;
-pub mod pxe;
-pub mod snp;
-
+#[cfg(feature = "alloc")]
+pub mod http;
 #[cfg(feature = "alloc")]
 pub mod ip4_config2;
+pub mod pxe;
+pub mod snp;
 
 /// Represents an IPv4/v6 address.
 ///

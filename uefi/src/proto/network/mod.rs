@@ -7,6 +7,9 @@ pub mod dhcp4;
 pub mod pxe;
 pub mod snp;
 
+#[cfg(feature = "alloc")]
+pub mod ip4_config2;
+
 /// Represents an IPv4/v6 address.
 ///
 /// Corresponds to the `EFI_IP_ADDRESS` type in the C API.

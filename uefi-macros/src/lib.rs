@@ -248,6 +248,64 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     result.into()
 }
 
+/// TODO
+#[proc_macro_attribute]
+pub fn main(args: TokenStream, input: TokenStream) -> TokenStream {
+    let mut errors = TokenStream2::new();
+
+    if !args.is_empty() {
+        errors.append_all(err!(
+            TokenStream2::from(args),
+            "Entry attribute accepts no arguments"
+        ));
+    }
+
+    let f = parse_macro_input!(input as ItemFn);
+
+    if let Some(ref abi) = f.sig.abi {
+        errors.append_all(err!(abi, "Entry method must have no ABI modifier"));
+    }
+    if let Some(asyncness) = f.sig.asyncness {
+        errors.append_all(err!(asyncness, "Entry method should not be async"));
+    }
+    if let Some(constness) = f.sig.constness {
+        errors.append_all(err!(constness, "Entry method should not be const"));
+    }
+    if !f.sig.generics.params.is_empty() {
+        errors.append_all(err!(
+            f.sig.generics.params,
+            "Entry method should not be generic"
+        ));
+    }
+
+    // TODO: validate no fn args, validate return type
+
+    // show most errors at once instead of one by one
+    if !errors.is_empty() {
+        return errors.into();
+    }
+
+    let fn_ident = &f.sig.ident;
+    let result = quote! {
+        #f
+
+        // TODO: non-conflicting name?
+        #[export_name = "efi_main"]
+        fn efi_main(image: ::uefi::Handle, system_table: *mut ::core::ffi::c_void) -> ::uefi::Status {
+            unsafe {
+                ::uefi::boot::set_image_handle(image);
+                ::uefi::system::set_system_table(system_table.cast());
+                match #fn_ident() {
+                    Ok(()) => Status::SUCCESS,
+                    Err(err) => err.status(),
+                }
+            }
+        }
+
+    };
+    result.into()
+}
+
 /// Builds a `CStr8` literal at compile time from a string literal.
 ///
 /// This will throw a compile error if an invalid character is in the passed string.

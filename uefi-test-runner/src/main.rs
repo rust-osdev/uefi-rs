@@ -10,7 +10,7 @@ use alloc::string::ToString;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi::table::boot::MemoryType;
-use uefi::Result;
+use uefi::{system, Result};
 use uefi_services::{print, println};
 
 mod boot;
@@ -18,14 +18,14 @@ mod fs;
 mod proto;
 mod runtime;
 
-#[entry]
-fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
+#[uefi::main]
+fn main() -> Result {
     // Initialize utilities (logging, memory allocation...)
-    uefi_services::init(&mut st).expect("Failed to initialize utilities");
+    uefi_services::init_v2().expect("Failed to initialize utilities");
 
     // unit tests here
 
-    let firmware_vendor = st.firmware_vendor();
+    let firmware_vendor = system::firmware_vendor();
     info!("Firmware Vendor: {}", firmware_vendor);
     assert_eq!(firmware_vendor.to_string(), "EDK II");
 
@@ -38,22 +38,26 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     );
 
     // Reset the console before running all the other tests.
-    st.stdout().reset(false).expect("Failed to reset stdout");
+    system::with_stdout(|stdout| {
+        stdout
+            .unwrap()
+            .reset(false)
+            .expect("Failed to reset stdout")
+    });
 
     // Ensure the tests are run on a version of UEFI we support.
-    check_revision(st.uefi_revision());
-
-    // Test all the boot services.
-    let bt = st.boot_services();
+    check_revision(system::uefi_revision());
 
     // Try retrieving a handle to the file system the image was booted from.
-    bt.get_image_file_system(image)
+    uefi::boot::get_image_file_system(uefi::boot::image_handle())
         .expect("Failed to retrieve boot file system");
 
-    boot::test(&st);
+    boot::test();
+
+    let mut st = system::system_table_boot();
 
     // Test all the supported protocols.
-    proto::test(image, &mut st);
+    proto::test(st.boot_services().image_handle(), &mut st);
 
     // TODO: runtime services work before boot services are exited, but we'd
     // probably want to test them after exit_boot_services. However,
@@ -61,7 +65,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     runtime::test(st.runtime_services());
 
-    shutdown(st);
+    shutdown(system::system_table_boot());
 }
 
 fn check_revision(rev: uefi::table::Revision) {

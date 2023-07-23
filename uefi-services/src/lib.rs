@@ -44,7 +44,7 @@ use cfg_if::cfg_if;
 use uefi::prelude::*;
 use uefi::table::boot::{EventType, Tpl};
 use uefi::table::{Boot, SystemTable};
-use uefi::{Event, Result};
+use uefi::{system, Event, Result};
 
 /// Reference to the system table.
 ///
@@ -80,6 +80,12 @@ fn system_table_opt() -> Option<SystemTable<Boot>> {
 #[must_use]
 pub fn system_table() -> SystemTable<Boot> {
     system_table_opt().expect("The system table handle is not available")
+}
+
+/// TODO
+pub fn init_v2() -> Result<Option<Event>> {
+    let mut st = system::system_table_boot();
+    init(&mut st)
 }
 
 /// Initialize the UEFI utility library.

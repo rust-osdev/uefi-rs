@@ -25,7 +25,7 @@ pub use uefi_raw::table::boot::{
 
 /// Global image handle. This is only set by `BootServices::set_image_handle`,
 /// and it is only read by `BootServices::image_handle`.
-static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
+pub(crate) static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// Size in bytes of a UEFI page.
 ///
@@ -1602,7 +1602,7 @@ impl Align for MemoryDescriptor {
 /// If the memory map changes, this value is no longer valid.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
-pub struct MemoryMapKey(usize);
+pub struct MemoryMapKey(pub(crate) usize);
 
 /// A structure containing the size of a memory descriptor and the size of the
 /// memory map.
@@ -1624,10 +1624,10 @@ pub struct MemoryMapSize {
 /// map, you manually have to call [`MemoryMap::sort`] first.
 #[derive(Debug)]
 pub struct MemoryMap<'buf> {
-    key: MemoryMapKey,
-    buf: &'buf mut [u8],
-    entry_size: usize,
-    len: usize,
+    pub(crate) key: MemoryMapKey,
+    pub(crate) buf: &'buf mut [u8],
+    pub(crate) entry_size: usize,
+    pub(crate) len: usize,
 }
 
 impl<'buf> MemoryMap<'buf> {
@@ -1824,7 +1824,8 @@ impl<'guid> SearchType<'guid> {
 }
 
 /// Raw event notification function
-type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
+pub(crate) type EventNotifyFn =
+    unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
 /// Timer events manipulation.
 #[derive(Debug)]
@@ -1923,7 +1924,7 @@ impl<'a> HandleBuffer<'a> {
 /// with [`BootServices::locate_handle`] via [`SearchType::ByRegisterNotify`].
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-pub struct ProtocolSearchKey(NonNull<c_void>);
+pub struct ProtocolSearchKey(pub(crate) NonNull<c_void>);
 
 #[cfg(test)]
 mod tests {

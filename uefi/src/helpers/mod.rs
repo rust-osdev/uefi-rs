@@ -19,8 +19,7 @@
 //! [println_macro]: uefi::println!
 
 use crate::prelude::{Boot, SystemTable};
-use crate::Result;
-use crate::StatusExt;
+use crate::{system, Result, StatusExt};
 use core::ffi::c_void;
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
@@ -100,6 +99,12 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// TODO
+pub fn init_v2() -> Result<()> {
+    let mut st = system::system_table_boot();
+    init(&mut st)
 }
 
 pub(crate) fn exit() {

@@ -1,5 +1,5 @@
 name: QA
-on: [push, pull_request]
+on: [merge_group, push, pull_request]
 jobs:
   spellcheck:
     name: Spellcheck

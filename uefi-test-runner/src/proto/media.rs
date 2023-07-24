@@ -127,7 +127,7 @@ fn test_existing_file(directory: &mut Directory) {
     let mut info_buffer = vec![0; 128];
     let info = file.get_info::<FileInfo>(&mut info_buffer).unwrap();
     assert_eq!(info.file_size(), 15);
-    assert_eq!(info.physical_size(), 512);
+    assert_eq!(info.physical_size(), 1024);
     let tp = TimeParams {
         year: 2000,
         month: 1,
@@ -355,7 +355,7 @@ fn test_partition_info(bt: &BootServices, disk_handle: Handle) {
 
     assert_eq!(mbr.boot_indicator, 0);
     assert_eq!({ mbr.starting_lba }, 1);
-    assert_eq!({ mbr.size_in_lba }, 1233);
+    assert_eq!({ mbr.size_in_lba }, 20479);
     assert_eq!({ mbr.starting_chs }, [0, 0, 0]);
     assert_eq!(mbr.ending_chs, [0, 0, 0]);
     assert_eq!(mbr.os_type, MbrOsType(6));
@@ -412,9 +412,9 @@ pub fn test(bt: &BootServices) {
             .unwrap();
 
         assert!(!fs_info.read_only());
-        assert_eq!(fs_info.volume_size(), 512 * 1192);
-        assert_eq!(fs_info.free_space(), 512 * 1190);
-        assert_eq!(fs_info.block_size(), 512);
+        assert_eq!(fs_info.volume_size(), 1024 * 10183);
+        assert_eq!(fs_info.free_space(), 1024 * 10181);
+        assert_eq!(fs_info.block_size(), 1024);
         assert_eq!(fs_info.volume_label().to_string(), "MbrTestDisk");
 
         // Check that `get_boxed_info` returns the same info.

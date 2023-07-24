@@ -14,10 +14,11 @@ fn get_partition_byte_range(mbr: &MBR) -> Range<usize> {
 }
 
 pub fn create_mbr_test_disk(path: &Path) -> Result<()> {
-    let num_sectors = 1234;
+    // 10 MiB.
+    let size_in_bytes = 10 * 1024 * 1024;
 
     let partition_byte_range;
-    let mut disk = vec![0; num_sectors * SECTOR_SIZE];
+    let mut disk = vec![0; size_in_bytes];
     {
         let mut cur = std::io::Cursor::new(&mut disk);
 
@@ -104,8 +105,8 @@ fn init_fat_test_partition(disk: &mut [u8], partition_byte_range: Range<usize>) 
     let stats = fs.stats()?;
     // Assert these specific numbers here since they are checked by the
     // test-runner too.
-    assert_eq!(stats.total_clusters(), 1192);
-    assert_eq!(stats.free_clusters(), 1190);
+    assert_eq!(stats.total_clusters(), 10183);
+    assert_eq!(stats.free_clusters(), 10181);
 
     Ok(())
 }

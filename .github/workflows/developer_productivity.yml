@@ -32,7 +32,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - uses: cachix/install-nix-action@v20
+      - uses: cachix/install-nix-action@v22
         with:
           # This channel is only required to invoke "nix-shell".
           # Everything inside that nix-shell will use a pinned version of nixpkgs.

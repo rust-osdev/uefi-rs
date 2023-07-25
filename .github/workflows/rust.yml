@@ -1,5 +1,6 @@
 name: Rust
 on:
+  merge_group:
   push:
     branches:
       - main

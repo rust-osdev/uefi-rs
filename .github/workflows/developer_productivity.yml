@@ -1,5 +1,6 @@
 name: Developer Productivity
 on:
+  merge_group:
   push:
   pull_request:
 jobs:

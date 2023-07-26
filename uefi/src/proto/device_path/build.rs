@@ -9,6 +9,7 @@ pub use crate::proto::device_path::device_path_gen::build::*;
 
 use crate::polyfill::{maybe_uninit_slice_as_mut_ptr, maybe_uninit_slice_assume_init_ref};
 use crate::proto::device_path::{DevicePath, DevicePathNode};
+use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
 
 #[cfg(feature = "alloc")]
@@ -173,6 +174,23 @@ pub enum BuildError {
     /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
     UnexpectedEndEntire,
 }
+
+impl Display for BuildError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::BufferTooSmall => "a node was too big to fit in remaining buffer space",
+                Self::NodeTooBig => "a node was too big",
+                Self::UnexpectedEndEntire => "unexpected END_ENTIRE",
+            }
+        )
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for BuildError {}
 
 /// Trait for types that can be used to build a node via
 /// [`DevicePathBuilder::push`].

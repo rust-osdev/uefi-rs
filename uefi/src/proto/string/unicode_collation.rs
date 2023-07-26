@@ -6,6 +6,7 @@
 use crate::data_types::{CStr16, CStr8, Char16, Char8};
 use crate::proto::unsafe_protocol;
 use core::cmp::Ordering;
+use core::fmt::{self, Display, Formatter};
 
 /// The Unicode Collation Protocol.
 ///
@@ -159,3 +160,19 @@ pub enum StrConversionError {
     /// The buffer given is too small to hold the string.
     BufferTooSmall,
 }
+
+impl Display for StrConversionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::ConversionFailed => "conversion failed",
+                Self::BufferTooSmall => "buffer too small",
+            }
+        )
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for StrConversionError {}

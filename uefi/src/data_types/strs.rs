@@ -3,10 +3,11 @@ use super::UnalignedSlice;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
 use core::ffi::CStr;
+use core::fmt::{self, Display, Formatter};
 use core::iter::Iterator;
 use core::mem::MaybeUninit;
 use core::result::Result;
-use core::{fmt, slice};
+use core::slice;
 
 #[cfg(feature = "alloc")]
 use super::CString16;
@@ -23,6 +24,19 @@ pub enum FromSliceWithNulError {
     /// The slice was not null-terminated
     NotNulTerminated,
 }
+
+impl Display for FromSliceWithNulError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
+            Self::InteriorNul(usize) => write!(f, "interior null character at index {}", usize),
+            Self::NotNulTerminated => write!(f, "not null-terminated"),
+        }
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for FromSliceWithNulError {}
 
 /// Error returned by [`CStr16::from_unaligned_slice`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -41,6 +55,20 @@ pub enum UnalignedCStr16Error {
     BufferTooSmall,
 }
 
+impl Display for UnalignedCStr16Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
+            Self::InteriorNul(usize) => write!(f, "interior null character at index {}", usize),
+            Self::NotNulTerminated => write!(f, "not null-terminated"),
+            Self::BufferTooSmall => write!(f, "buffer too small"),
+        }
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for UnalignedCStr16Error {}
+
 /// Error returned by [`CStr16::from_str_with_buf`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FromStrWithBufError {
@@ -54,6 +82,19 @@ pub enum FromStrWithBufError {
     /// trailing null character
     BufferTooSmall,
 }
+
+impl Display for FromStrWithBufError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
+            Self::InteriorNul(usize) => write!(f, "interior null character at index {}", usize),
+            Self::BufferTooSmall => write!(f, "buffer too small"),
+        }
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for FromStrWithBufError {}
 
 /// A null-terminated Latin-1 string.
 ///

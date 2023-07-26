@@ -7,7 +7,8 @@ use alloc::borrow::{Borrow, ToOwned};
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::{fmt, ops};
+use core::fmt::{self, Display, Formatter};
+use core::ops;
 
 /// Error returned by [`CString16::try_from::<&str>`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -18,8 +19,8 @@ pub enum FromStrError {
     InteriorNul,
 }
 
-impl fmt::Display for FromStrError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for FromStrError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "UCS-2 Conversion Error: {}",

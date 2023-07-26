@@ -7,7 +7,7 @@
 use crate::proto::unsafe_protocol;
 use crate::table::boot::{BootServices, ScopedProtocol};
 use crate::{CStr16, Error, Handle, Result, Status, StatusExt};
-use core::fmt::{Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 use core::{ptr, slice};
 use uefi_raw::protocol::driver::ComponentName2Protocol;
 
@@ -237,6 +237,17 @@ pub enum LanguageError {
         index: usize,
     },
 }
+
+impl Display for LanguageError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Ascii { index } => write!(f, "invalid character at index: {}", index),
+        }
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for LanguageError {}
 
 #[derive(Debug, PartialEq)]
 enum LanguageIterKind {

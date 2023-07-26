@@ -1,7 +1,7 @@
 //! PXE Base Code protocol.
 
 use core::ffi::c_void;
-use core::fmt::{Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::ptr::{null, null_mut};
@@ -1240,6 +1240,15 @@ pub struct IcmpError {
     pub data: [u8; 494],
 }
 
+impl Display for IcmpError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for IcmpError {}
+
 /// Corresponds to the anonymous union inside
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
 #[repr(C)]
@@ -1278,6 +1287,15 @@ pub struct TftpError {
     pub error_string: [u8; 127],
 }
 
+impl Display for TftpError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for TftpError {}
+
 /// Returned by [`BaseCode::tftp_read_dir`].
 #[allow(missing_docs)]
 #[derive(Debug)]
@@ -1311,3 +1329,12 @@ pub struct MtftpFileInfo<'a> {
 /// [`BaseCode::tftp_read_dir`] or [`BaseCode::mtftp_read_dir`].
 #[derive(Clone, Copy, Debug)]
 pub struct ReadDirParseError;
+
+impl Display for ReadDirParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for ReadDirParseError {}

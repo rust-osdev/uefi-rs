@@ -13,6 +13,8 @@
   members now have upper-case names.
 - `FileSystem::try_exists` now returns `FileSystemResult<bool>`.
 - `FileSystem::copy` is now more efficient for large files.
+- `MpService::startup_all_aps` and `MpService::startup_this_ap` now accept an
+    optional `event` parameter to allow non-blocking operation.
 
 ## uefi-macros - [Unreleased]
 

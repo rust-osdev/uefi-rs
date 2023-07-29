@@ -1320,26 +1320,6 @@ impl BootServices {
             })
     }
 
-    /// Copies memory from source to destination. The buffers can overlap.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe as it can be used to violate most safety
-    /// invariants of the Rust type system.
-    pub unsafe fn memmove(&self, dest: *mut u8, src: *const u8, size: usize) {
-        (self.0.copy_mem)(dest, src, size);
-    }
-
-    /// Sets a buffer to a certain value.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe as it can be used to violate most safety
-    /// invariants of the Rust type system.
-    pub unsafe fn set_mem(&self, buffer: *mut u8, size: usize, value: u8) {
-        (self.0.set_mem)(buffer, size, value);
-    }
-
     /// Retrieves a [`SimpleFileSystem`] protocol associated with the device the given
     /// image was loaded from.
     ///

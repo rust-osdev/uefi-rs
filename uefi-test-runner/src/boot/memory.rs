@@ -8,7 +8,6 @@ pub fn test(bt: &BootServices) {
     allocate_pages(bt);
     vec_alloc();
     alloc_alignment();
-    memmove(bt);
 
     memory_map(bt);
 }
@@ -55,28 +54,6 @@ fn alloc_alignment() {
 
     let value = vec![Block([1; 0x100])];
     assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
-}
-
-// Test that the `memmove` / `set_mem` functions work.
-fn memmove(bt: &BootServices) {
-    info!("Testing the `memmove` / `set_mem` functions");
-
-    let src = [1, 2, 3, 4];
-    let mut dest = [0u8; 4];
-
-    // Fill the buffer with a value
-    unsafe {
-        bt.set_mem(dest.as_mut_ptr(), dest.len(), 1);
-    }
-
-    assert_eq!(dest, [1; 4], "Failed to set memory");
-
-    // Copy other values on it
-    unsafe {
-        bt.memmove(dest.as_mut_ptr(), src.as_ptr(), dest.len());
-    }
-
-    assert_eq!(dest, src, "Failed to copy memory");
 }
 
 fn memory_map(bt: &BootServices) {

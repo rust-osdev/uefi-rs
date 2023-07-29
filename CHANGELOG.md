@@ -14,6 +14,10 @@
 - `FileSystem::try_exists` now returns `FileSystemResult<bool>`.
 - `FileSystem::copy` is now more efficient for large files.
 
+### Removed
+- `BootServices::memmove` and `BootServices::set_mem` have been removed, use
+  standard functions like `core::ptr::copy` and `core::ptr::write_bytes` instead.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-services - [Unreleased]

@@ -755,6 +755,7 @@ impl BootServices {
         let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
             device_path.as_ffi_ptr().cast();
         unsafe {
+            // TODO: Should this use the Service Binding GUID for applicable protocols?
             (self.0.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle)
                 .to_result_with_val(|| {
                     *device_path = DevicePath::from_ffi_ptr(device_path_ptr.cast());
@@ -801,7 +802,8 @@ impl BootServices {
     /// Returns [`NOT_FOUND`] if no handles support the requested protocol.
     pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<Handle> {
         // Delegate to a non-generic function to potentially reduce code size.
-        self.get_handle_for_protocol_impl(&P::GUID)
+        let guid = &P::SERVICE_BINDING.unwrap_or(P::GUID);
+        self.get_handle_for_protocol_impl(guid)
     }
 
     fn get_handle_for_protocol_impl(&self, guid: &Guid) -> Result<Handle> {
@@ -1169,9 +1171,36 @@ impl BootServices {
         params: OpenProtocolParams,
         attributes: OpenProtocolAttributes,
     ) -> Result<ScopedProtocol<P>> {
+        let mut service_binding_interface = None;
+        let mut child_handle = None;
+        if let Some(service_binding_guid) = P::SERVICE_BINDING {
+            let mut interface = ptr::null_mut();
+            (self.0.open_protocol)(
+                params.handle.as_ptr(),
+                &service_binding_guid,
+                &mut interface,
+                params.agent.as_ptr(),
+                Handle::opt_to_ptr(params.controller),
+                attributes as u32,
+            )
+            .to_result()?;
+
+            service_binding_interface = (!interface.is_null()).then(|| {
+                let interface = interface.cast::<uefi_raw::protocol::ServiceBinding>()
+                    as *const UnsafeCell<uefi_raw::protocol::ServiceBinding>;
+                &*interface
+            });
+
+            let service_binding = service_binding_interface.unwrap().get();
+            let mut handle = ptr::null_mut() as uefi_raw::Handle;
+            ((*service_binding).create_child)(service_binding, &mut handle).to_result()?;
+            child_handle = Some(Handle::from_ptr(handle).unwrap());
+        }
+
         let mut interface = ptr::null_mut();
+        let handle = child_handle.unwrap_or(params.handle);
         (self.0.open_protocol)(
-            params.handle.as_ptr(),
+            handle.as_ptr(),
             &P::GUID,
             &mut interface,
             params.agent.as_ptr(),
@@ -1186,6 +1215,8 @@ impl BootServices {
 
             ScopedProtocol {
                 interface,
+                service_binding_interface,
+                child_handle,
                 open_params: params,
                 boot_services: self,
             }
@@ -1243,6 +1274,7 @@ impl BootServices {
         unsafe {
             (self.0.open_protocol)(
                 params.handle.as_ptr(),
+                // TODO: Should this use the Service Binding GUID for applicable protocols?
                 &P::GUID,
                 &mut interface,
                 params.agent.as_ptr(),
@@ -1599,7 +1631,7 @@ impl Drop for TplGuard<'_> {
 
 /// Attributes for [`BootServices::open_protocol`].
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum OpenProtocolAttributes {
     /// Used by drivers to get a protocol interface for a handle. The
     /// driver will not be informed if the interface is uninstalled or
@@ -1669,27 +1701,65 @@ pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
     interface: Option<&'a UnsafeCell<P>>,
 
+    /// When applicable, hold the service binding protocol and child handle
+    /// created by it.
+    service_binding_interface: Option<&'a UnsafeCell<uefi_raw::protocol::ServiceBinding>>,
+    child_handle: Option<Handle>,
+
+    /// Params used to open the outer protocol, which is the service binding
+    /// protocol when applicable.
     open_params: OpenProtocolParams,
+
+    /// Boot services to avoid using globals
     boot_services: &'a BootServices,
 }
 
 impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
     fn drop(&mut self) {
-        let status = unsafe {
-            (self.boot_services.0.close_protocol)(
-                self.open_params.handle.as_ptr(),
-                &P::GUID,
-                self.open_params.agent.as_ptr(),
-                Handle::opt_to_ptr(self.open_params.controller),
-            )
-        };
-        // All of the error cases for close_protocol boil down to
-        // calling it with a different set of parameters than what was
-        // passed to open_protocol. The public API prevents such errors,
-        // and the error can't be propagated out of drop anyway, so just
-        // assert success.
-        assert_eq!(status, Status::SUCCESS);
+        // If the protocol uses service binding, then close the protocol on
+        // the child handle and destroy the child handle, then close the
+        // service binding protocol.
+        if let Some(handle) = self.child_handle {
+            let child_open_params = OpenProtocolParams {
+                handle,
+                ..self.open_params
+            };
+            close_protocol(&P::GUID, &child_open_params, self.boot_services);
+
+            let service_binding = self.service_binding_interface.unwrap().get();
+            let status =
+                unsafe { ((*service_binding).destroy_child)(service_binding, handle.as_ptr()) };
+            assert_eq!(status, Status::SUCCESS);
+
+            close_protocol(
+                &P::SERVICE_BINDING.unwrap(),
+                &self.open_params,
+                self.boot_services,
+            );
+
+            return;
+        }
+
+        // When not using service binding protocols, simply close the protocol.
+        close_protocol(&P::GUID, &self.open_params, self.boot_services);
     }
+}
+
+fn close_protocol(guid: &Guid, open_params: &OpenProtocolParams, boot_services: &BootServices) {
+    let status = unsafe {
+        (boot_services.0.close_protocol)(
+            open_params.handle.as_ptr(),
+            guid,
+            open_params.agent.as_ptr(),
+            Handle::opt_to_ptr(open_params.controller),
+        )
+    };
+    // All of the error cases for close_protocol boil down to
+    // calling it with a different set of parameters than what was
+    // passed to open_protocol. The public API prevents such errors,
+    // and the error can't be propagated out of drop anyway, so just
+    // assert success.
+    assert_eq!(status, Status::SUCCESS);
 }
 
 impl<'a, P: Protocol + ?Sized> Deref for ScopedProtocol<'a, P> {

@@ -9,7 +9,7 @@
 //!
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
-use crate::Identify;
+use crate::{Guid, Identify};
 use core::ffi::c_void;
 
 /// Common trait implemented by all standard UEFI protocols.
@@ -28,7 +28,10 @@ use core::ffi::c_void;
 ///
 /// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
 /// ```
-pub trait Protocol: Identify {}
+pub trait Protocol: Identify {
+    /// Optional GUID for Service Binding Protocol, when applicable.
+    const SERVICE_BINDING: Option<Guid> = None;
+}
 
 /// Trait for creating a protocol pointer from a [`c_void`] pointer.
 ///

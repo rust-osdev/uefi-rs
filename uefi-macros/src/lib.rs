@@ -6,25 +6,28 @@ use proc_macro::TokenStream;
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, quote_spanned, TokenStreamExt};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, Error, Expr, ExprLit, ExprPath, FnArg, Ident, ItemFn,
+    parse_macro_input, parse_quote, token, Expr, ExprLit, ExprPath, FnArg, Ident, ItemFn,
     ItemStruct, Lit, LitStr, Pat, Visibility,
 };
 
 macro_rules! err {
     ($span:expr, $message:expr $(,)?) => {
-        Error::new($span.span(), $message).to_compile_error()
+        syn::Error::new($span.span(), $message).to_compile_error()
     };
     ($span:expr, $message:expr, $($args:expr),*) => {
-        Error::new($span.span(), format!($message, $($args),*)).to_compile_error()
+        syn::Error::new($span.span(), format!($message, $($args),*)).to_compile_error()
     };
 }
 
 /// Attribute macro for marking structs as UEFI protocols.
 ///
-/// The macro takes one argument, either a GUID string or the path to a `Guid`
-/// constant.
+/// The macro takes one or two arguments, each either a GUID string
+/// or the path to a `Guid` constant. The first argument is always the
+/// GUID of the protocol, while the optional second argument is the
+/// GUID of the service binding protocol, when applicable.
 ///
 /// The macro can only be applied to a struct. It implements the
 /// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
@@ -49,8 +52,17 @@ macro_rules! err {
 /// #[unsafe_protocol(PROTO_GUID)]
 /// struct ExampleProtocol2 {}
 ///
+/// const SERVICE_GUID: Guid = guid!("12345678-9abc-def0-1234-56789abcdef1");
+/// #[unsafe_protocol(PROTO_GUID, SERVICE_GUID)]
+/// struct ExampleProtocol3 {}
+///
 /// assert_eq!(ExampleProtocol1::GUID, PROTO_GUID);
 /// assert_eq!(ExampleProtocol2::GUID, PROTO_GUID);
+/// assert_eq!(ExampleProtocol3::GUID, PROTO_GUID);
+///
+/// assert_eq!(ExampleProtocol1::SERVICE_BINDING, None);
+/// assert_eq!(ExampleProtocol2::SERVICE_BINDING, None);
+/// assert_eq!(ExampleProtocol3::SERVICE_BINDING, Some(SERVICE_GUID));
 /// ```
 ///
 /// [`Identify`]: https://docs.rs/uefi/latest/uefi/trait.Identify.html
@@ -58,21 +70,24 @@ macro_rules! err {
 /// [send-and-sync]: https://doc.rust-lang.org/nomicon/send-and-sync.html
 #[proc_macro_attribute]
 pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
-    let expr = parse_macro_input!(args as Expr);
+    let args2 = args.clone();
+    let args2 = parse_macro_input!(args2 as TokenStream2);
 
-    let guid_val = match expr {
-        Expr::Lit(ExprLit {
-            lit: Lit::Str(lit), ..
-        }) => {
-            quote!(::uefi::guid!(#lit))
-        }
-        Expr::Path(ExprPath { path, .. }) => quote!(#path),
-        _ => {
-            return err!(
-                expr,
-                "macro input must be either a string literal or path to a constant"
-            )
-            .into()
+    let guid_exprs =
+        parse_macro_input!(args with Punctuated::<Expr, token::Comma>::parse_terminated);
+    if guid_exprs.len() < 1 || guid_exprs.len() > 2 {
+        return syn::Error::new_spanned(args2, "macro input must contain 1 or 2 GUIDs")
+            .to_compile_error()
+            .into();
+    }
+
+    let mut guids = guid_exprs.into_iter();
+    let proto_guid = guid_from_expr(guids.next().unwrap());
+    let service_binding_guid = match guids.next() {
+        None => quote!(None),
+        Some(expr) => {
+            let guid = guid_from_expr(expr);
+            quote!(Some(#guid))
         }
     };
 
@@ -91,12 +106,32 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
         #item_struct
 
         unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {
-            const GUID: ::uefi::Guid = #guid_val;
+            const GUID: ::uefi::Guid = #proto_guid;
         }
 
-        impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {}
+        impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {
+            const SERVICE_BINDING: Option<::uefi::Guid> = #service_binding_guid;
+        }
     }
     .into()
+}
+
+fn guid_from_expr(expr: Expr) -> TokenStream2 {
+    match expr {
+        Expr::Lit(ExprLit {
+            lit: Lit::Str(lit), ..
+        }) => {
+            quote!(::uefi::guid!(#lit))
+        }
+        Expr::Path(ExprPath { path, .. }) => quote!(#path),
+        _ => {
+            return err!(
+                expr,
+                "macro input must be either a string literal or path to a constant"
+            )
+            .into()
+        }
+    }
 }
 
 /// Get the name of a function's argument at `arg_index`.

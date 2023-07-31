@@ -84,7 +84,7 @@ fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
     // Ensure that APs start up
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
-    mps.startup_all_aps(false, proc_increment_atomic, counter_ptr, None)
+    mps.startup_all_aps(false, proc_increment_atomic, counter_ptr, None, None)
         .unwrap();
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
 
@@ -94,6 +94,7 @@ fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
         false,
         proc_wait_100ms,
         bt_ptr,
+        None,
         Some(Duration::from_millis(50)),
     );
     assert_eq!(ret.map_err(|err| err.status()), Err(Status::TIMEOUT));
@@ -104,7 +105,7 @@ fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
     for i in 1..NUM_CPUS {
-        mps.startup_this_ap(i, proc_increment_atomic, counter_ptr, None)
+        mps.startup_this_ap(i, proc_increment_atomic, counter_ptr, None, None)
             .unwrap();
     }
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
@@ -112,7 +113,13 @@ fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
     // Make sure that timeout works for each AP
     let bt_ptr: *mut c_void = bt as *const _ as *mut _;
     for i in 1..NUM_CPUS {
-        let ret = mps.startup_this_ap(i, proc_wait_100ms, bt_ptr, Some(Duration::from_millis(50)));
+        let ret = mps.startup_this_ap(
+            i,
+            proc_wait_100ms,
+            bt_ptr,
+            None,
+            Some(Duration::from_millis(50)),
+        );
         assert_eq!(ret.map_err(|err| err.status()), Err(Status::TIMEOUT));
     }
 }

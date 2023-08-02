@@ -10,7 +10,9 @@
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
 use crate::{Guid, Identify};
+use alloc::boxed::Box;
 use core::ffi::c_void;
+use core::marker::PhantomData;
 
 /// Common trait implemented by all standard UEFI protocols.
 ///
@@ -31,6 +33,68 @@ use core::ffi::c_void;
 pub trait Protocol: Identify {
     /// Optional GUID for Service Binding Protocol, when applicable.
     const SERVICE_BINDING: Option<Guid> = None;
+
+    /// Raw FFI protocol interface.
+    type Raw: RawProtocol;
+}
+
+/// Trait for raw protocol interfaces to wrap themselves in a struct that can
+/// have its own state.
+pub trait RawProtocol {
+    /// When wrapping the protocol with another (non-transparent repr) struct,
+    /// this function can be implemented to initialize the struct and turn it
+    /// back into a raw pointer. This is usually implemented with a call to
+    /// [`Box::into_raw`].
+    ///
+    /// Note that the null pointer case must be handled.
+    fn wrap(ptr: *mut c_void) -> *mut c_void;
+
+    /// Callback used in the drop function for [`ScopedProtocol`] to cleanup any
+    /// memory other than the wrapped protocol (from FFI). This is usually implemented
+    /// with a call to [`Box::from_raw`].
+    fn drop_wrapper(ptr: *mut c_void);
+}
+
+/// NoWrapper does not mutate or track the protocol pointer from FFI in any way.
+#[derive(Debug)]
+pub struct NoWrapper {}
+
+impl RawProtocol for NoWrapper {
+    fn wrap(ptr: *mut c_void) -> *mut c_void {
+        ptr
+    }
+
+    fn drop_wrapper(_ptr: *mut c_void) {}
+}
+
+/// Helper struct to implement [`RawProtocol`].
+#[derive(Debug)]
+pub struct StructWrapper<Inner, Wrapper> {
+    inner_type: PhantomData<Inner>,
+    wrapper_type: PhantomData<Wrapper>,
+}
+
+impl<Inner, Wrapper> RawProtocol for StructWrapper<Inner, Wrapper>
+where
+    Wrapper: From<*mut Inner>,
+{
+    fn wrap(ptr: *mut c_void) -> *mut c_void {
+        if ptr.is_null() {
+            return ptr;
+        }
+
+        let raw: *mut Inner = ptr.cast();
+        let wrapped: Wrapper = raw.into();
+        Box::into_raw(Box::new(wrapped)) as *mut c_void
+    }
+
+    fn drop_wrapper(ptr: *mut c_void) {
+        if ptr.is_null() {
+            return;
+        }
+
+        unsafe { drop(Box::from_raw(ptr as *mut Wrapper)) }
+    }
 }
 
 /// Trait for creating a protocol pointer from a [`c_void`] pointer.

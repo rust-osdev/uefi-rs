@@ -6,11 +6,11 @@ use proc_macro::TokenStream;
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, quote_spanned, TokenStreamExt};
-use syn::punctuated::Punctuated;
+use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::{
     parse_macro_input, parse_quote, token, Expr, ExprLit, ExprPath, FnArg, Ident, ItemFn,
-    ItemStruct, Lit, LitStr, Pat, Visibility,
+    ItemStruct, Lit, LitStr, Pat, Type, TypePath, Visibility,
 };
 
 macro_rules! err {
@@ -24,10 +24,12 @@ macro_rules! err {
 
 /// Attribute macro for marking structs as UEFI protocols.
 ///
-/// The macro takes one or two arguments, each either a GUID string
+/// The macro takes one, two, or 3 arguments. The first two are GUIDs
 /// or the path to a `Guid` constant. The first argument is always the
 /// GUID of the protocol, while the optional second argument is the
 /// GUID of the service binding protocol, when applicable.
+///
+/// The third argument is a struct
 ///
 /// The macro can only be applied to a struct. It implements the
 /// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
@@ -70,31 +72,28 @@ macro_rules! err {
 /// [send-and-sync]: https://doc.rust-lang.org/nomicon/send-and-sync.html
 #[proc_macro_attribute]
 pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args2 = args.clone();
-    let args2 = parse_macro_input!(args2 as TokenStream2);
+    let args = parse_macro_input!(args as ProtocolArgs);
+    let item_struct = parse_macro_input!(input as ItemStruct);
+    let ident = &item_struct.ident;
+    let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
 
-    let guid_exprs =
-        parse_macro_input!(args with Punctuated::<Expr, token::Comma>::parse_terminated);
-    if guid_exprs.len() < 1 || guid_exprs.len() > 2 {
-        return syn::Error::new_spanned(args2, "macro input must contain 1 or 2 GUIDs")
-            .to_compile_error()
-            .into();
-    }
-
-    let mut guids = guid_exprs.into_iter();
-    let proto_guid = guid_from_expr(guids.next().unwrap());
-    let service_binding_guid = match guids.next() {
+    let proto_guid = guid_from_expr(args.protocol_guid);
+    let service_binding_guid = match args.service_binding_guid {
         None => quote!(None),
         Some(expr) => {
             let guid = guid_from_expr(expr);
             quote!(Some(#guid))
         }
     };
-
-    let item_struct = parse_macro_input!(input as ItemStruct);
-
-    let ident = &item_struct.ident;
-    let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
+    let wrapper_type = match args.wrapper_type {
+        None => quote!(::uefi::proto::NoWrapper),
+        Some(Type::Path(TypePath { path, .. })) => {
+            let wrapper_ident = &item_struct.ident;
+            let wrapper_generics = &item_struct.generics;
+            quote!(::uefi::proto::StructWrapper<#path, #wrapper_ident #wrapper_generics>)
+        }
+        Some(typ) => return err!(typ, "wrapper type must be a path").into(),
+    };
 
     quote! {
         // Disable this lint for now. It doesn't account for the fact that
@@ -111,9 +110,68 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
 
         impl #impl_generics ::uefi::proto::Protocol for #ident #ty_generics #where_clause {
             const SERVICE_BINDING: Option<::uefi::Guid> = #service_binding_guid;
+            type Raw = #wrapper_type;
         }
     }
     .into()
+}
+
+struct ProtocolArgs {
+    protocol_guid: Expr,
+    service_binding_guid: Option<Expr>,
+    wrapper_type: Option<Type>,
+}
+
+impl Parse for ProtocolArgs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        // Always parse a GUID
+        let protocol_guid = input.parse::<Expr>()?;
+        let mut args = Self {
+            protocol_guid,
+            service_binding_guid: None,
+            wrapper_type: None,
+        };
+
+        // Next is always a comma
+        if !input.is_empty() {
+            let _ = input.parse::<token::Comma>()?;
+        }
+
+        // Next can be a GUID or a comma
+        let lookahead = input.lookahead1();
+
+        // ... so parse a GUID if not a comma
+        if !input.is_empty() && !lookahead.peek(token::Comma) {
+            let service_binding_guid = input.parse::<Expr>()?;
+            args.service_binding_guid = Some(service_binding_guid);
+        }
+
+        // ... and then parse a comma unless at the end
+        if !input.is_empty() {
+            let _ = input.parse::<token::Comma>()?;
+        }
+
+        // Next can be a type or a (trailing) comma
+        let lookahead = input.lookahead1();
+
+        // ... so parse a Type if not a comma
+        if !input.is_empty() && !lookahead.peek(token::Comma) {
+            let wrapper_type = input.parse::<Type>()?;
+            args.wrapper_type = Some(wrapper_type);
+        }
+
+        // ... and then parse a (trailing) comma unless at the end
+        if !input.is_empty() {
+            let _ = input.parse::<token::Comma>()?;
+        }
+
+        // Error if this is not the end
+        if !input.is_empty() {
+            return Err(input.error("up to 3 comma-separated args are supported"));
+        }
+
+        Ok(args)
+    }
 }
 
 fn guid_from_expr(expr: Expr) -> TokenStream2 {

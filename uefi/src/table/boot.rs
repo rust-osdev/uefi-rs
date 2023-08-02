@@ -5,7 +5,7 @@ use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::device_path::DevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
-use crate::proto::{Protocol, ProtocolPointer};
+use crate::proto::{Protocol, ProtocolPointer, RawProtocol};
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::cell::UnsafeCell;
@@ -1209,7 +1209,8 @@ impl BootServices {
         )
         .to_result_with_val(|| {
             let interface = (!interface.is_null()).then(|| {
-                let interface = P::mut_ptr_from_ffi(interface) as *const UnsafeCell<P>;
+                let interface =
+                    P::mut_ptr_from_ffi(P::Raw::wrap(interface)) as *const UnsafeCell<P>;
                 &*interface
             });
 
@@ -1716,6 +1717,11 @@ pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
 
 impl<'a, P: Protocol + ?Sized> Drop for ScopedProtocol<'a, P> {
     fn drop(&mut self) {
+        // Drop any memory allocated to the protocol wrapper struct.
+        self.interface.map(|interface| {
+            P::Raw::drop_wrapper(interface.get() as *mut P as *mut c_void);
+        });
+
         // If the protocol uses service binding, then close the protocol on
         // the child handle and destroy the child handle, then close the
         // service binding protocol.

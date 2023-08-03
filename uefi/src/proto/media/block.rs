@@ -1,40 +1,20 @@
 //! Block I/O protocols.
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status, StatusExt};
+use crate::{Result, StatusExt};
 
 pub use uefi_raw::protocol::block::Lba;
 
 /// The Block I/O protocol.
-#[repr(C)]
-#[unsafe_protocol("964e5b21-6459-11d2-8e39-00a0c969723b")]
-pub struct BlockIO {
-    revision: u64,
-    media: *const BlockIOMedia,
-
-    reset: extern "efiapi" fn(this: &BlockIO, extended_verification: bool) -> Status,
-    read_blocks: extern "efiapi" fn(
-        this: &BlockIO,
-        media_id: u32,
-        lba: Lba,
-        buffer_size: usize,
-        buffer: *mut u8,
-    ) -> Status,
-    write_blocks: extern "efiapi" fn(
-        this: &BlockIO,
-        media_id: u32,
-        lba: Lba,
-        buffer_size: usize,
-        buffer: *const u8,
-    ) -> Status,
-    flush_blocks: extern "efiapi" fn(this: &BlockIO) -> Status,
-}
+#[repr(transparent)]
+#[unsafe_protocol(uefi_raw::protocol::block::BlockIo::GUID)]
+pub struct BlockIO(uefi_raw::protocol::block::BlockIo);
 
 impl BlockIO {
     /// Pointer for block IO media.
     #[must_use]
     pub const fn media(&self) -> &BlockIOMedia {
-        unsafe { &*self.media }
+        unsafe { &*self.0.media.cast::<BlockIOMedia>() }
     }
 
     /// Resets the block device hardware.
@@ -46,7 +26,7 @@ impl BlockIO {
     /// # Errors
     /// * `uefi::Status::DEVICE_ERROR`  The block device is not functioning correctly and could not be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        (self.reset)(self, extended_verification).to_result()
+        unsafe { (self.0.reset)(&mut self.0, extended_verification) }.to_result()
     }
 
     /// Read the requested number of blocks from the device.
@@ -67,7 +47,16 @@ impl BlockIO {
     ///     proper alignment.
     pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
         let buffer_size = buffer.len();
-        (self.read_blocks)(self, media_id, lba, buffer_size, buffer.as_mut_ptr()).to_result()
+        unsafe {
+            (self.0.read_blocks)(
+                &self.0,
+                media_id,
+                lba,
+                buffer_size,
+                buffer.as_mut_ptr().cast(),
+            )
+        }
+        .to_result()
     }
 
     /// Writes the requested number of blocks to the device.
@@ -89,7 +78,16 @@ impl BlockIO {
     ///     on proper alignment.
     pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
         let buffer_size = buffer.len();
-        (self.write_blocks)(self, media_id, lba, buffer_size, buffer.as_ptr()).to_result()
+        unsafe {
+            (self.0.write_blocks)(
+                &mut self.0,
+                media_id,
+                lba,
+                buffer_size,
+                buffer.as_ptr().cast(),
+            )
+        }
+        .to_result()
     }
 
     /// Flushes all modified data to a physical block device.
@@ -98,7 +96,7 @@ impl BlockIO {
     /// * `uefi::Status::DEVICE_ERROR`          The device reported an error while attempting to write data.
     /// * `uefi::Status::NO_MEDIA`              There is no media in the device.
     pub fn flush_blocks(&mut self) -> Result {
-        (self.flush_blocks)(self).to_result()
+        unsafe { (self.0.flush_blocks)(&mut self.0) }.to_result()
     }
 }
 

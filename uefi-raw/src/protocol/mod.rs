@@ -12,6 +12,7 @@ pub mod http;
 pub mod ip4_config2;
 pub mod loaded_image;
 pub mod rng;
+pub mod tls_config;
 
 use crate::{Handle, Status};
 

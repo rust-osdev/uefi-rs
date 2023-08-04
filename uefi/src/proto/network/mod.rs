@@ -10,6 +10,8 @@ pub mod http;
 pub mod ip4_config2;
 pub mod pxe;
 pub mod snp;
+#[cfg(feature = "alloc")]
+pub mod tls_config;
 
 /// Represents an IPv4/v6 address.
 ///

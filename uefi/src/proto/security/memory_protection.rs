@@ -1,36 +1,16 @@
 use crate::data_types::PhysicalAddress;
 use crate::proto::unsafe_protocol;
 use crate::table::boot::MemoryAttribute;
-use crate::{Result, Status, StatusExt};
+use crate::{Result, StatusExt};
 use core::ops::Range;
+use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
 
 /// Protocol for getting and setting memory protection attributes.
 ///
 /// Corresponds to the C type `EFI_MEMORY_ATTRIBUTE_PROTOCOL`.
-#[repr(C)]
-#[unsafe_protocol("f4560cf6-40ec-4b4a-a192-bf1d57d0b189")]
-pub struct MemoryProtection {
-    get_memory_attributes: unsafe extern "efiapi" fn(
-        this: *const Self,
-        base_address: PhysicalAddress,
-        length: u64,
-        attributes: *mut MemoryAttribute,
-    ) -> Status,
-
-    set_memory_attributes: unsafe extern "efiapi" fn(
-        this: *const Self,
-        base_address: PhysicalAddress,
-        length: u64,
-        attributes: MemoryAttribute,
-    ) -> Status,
-
-    clear_memory_attributes: unsafe extern "efiapi" fn(
-        this: *const Self,
-        base_address: PhysicalAddress,
-        length: u64,
-        attributes: MemoryAttribute,
-    ) -> Status,
-}
+#[repr(transparent)]
+#[unsafe_protocol(MemoryAttributeProtocol::GUID)]
+pub struct MemoryProtection(MemoryAttributeProtocol);
 
 impl MemoryProtection {
     /// Get the attributes of a memory region.
@@ -47,6 +27,7 @@ impl MemoryProtection {
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
+    /// [`Status::NO_MAPPING`]: crate::Status::NO_MAPPING
     /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
     pub fn get_memory_attributes(
         &self,
@@ -55,7 +36,7 @@ impl MemoryProtection {
         let mut attributes = MemoryAttribute::empty();
         let (base_address, length) = range_to_base_and_len(byte_region);
         unsafe {
-            (self.get_memory_attributes)(self, base_address, length, &mut attributes)
+            (self.0.get_memory_attributes)(&self.0, base_address, length, &mut attributes)
                 .to_result_with_val(|| attributes)
         }
     }
@@ -78,7 +59,9 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
-        unsafe { (self.set_memory_attributes)(self, base_address, length, attributes).to_result() }
+        unsafe {
+            (self.0.set_memory_attributes)(&self.0, base_address, length, attributes).to_result()
+        }
     }
 
     /// Clear the attributes of a memory region.
@@ -100,7 +83,7 @@ impl MemoryProtection {
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
         unsafe {
-            (self.clear_memory_attributes)(self, base_address, length, attributes).to_result()
+            (self.0.clear_memory_attributes)(&self.0, base_address, length, attributes).to_result()
         }
     }
 }

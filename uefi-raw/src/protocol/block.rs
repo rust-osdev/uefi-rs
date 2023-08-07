@@ -27,7 +27,7 @@ pub struct BlockIoMedia {
 }
 
 #[repr(C)]
-pub struct BlockIo {
+pub struct BlockIoProtocol {
     pub revision: u64,
     pub media: *const BlockIoMedia,
     pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: bool) -> Status,
@@ -48,6 +48,6 @@ pub struct BlockIo {
     pub flush_blocks: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
 }
 
-impl BlockIo {
+impl BlockIoProtocol {
     pub const GUID: Guid = guid!("964e5b21-6459-11d2-8e39-00a0c969723b");
 }

@@ -3,12 +3,12 @@
 use crate::proto::unsafe_protocol;
 use crate::{Result, StatusExt};
 
-pub use uefi_raw::protocol::block::Lba;
+pub use uefi_raw::protocol::block::{BlockIoProtocol, Lba};
 
 /// The Block I/O protocol.
 #[repr(transparent)]
-#[unsafe_protocol(uefi_raw::protocol::block::BlockIo::GUID)]
-pub struct BlockIO(uefi_raw::protocol::block::BlockIo);
+#[unsafe_protocol(BlockIoProtocol::GUID)]
+pub struct BlockIO(BlockIoProtocol);
 
 impl BlockIO {
     /// Pointer for block IO media.

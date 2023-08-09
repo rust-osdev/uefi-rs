@@ -22,7 +22,7 @@ impl ComponentName2Protocol {
 
     /// GUID of the original `EFI_COMPONENT_NAME_PROTOCOL`. This protocol was
     /// deprecated in UEFI 2.1 in favor of the new
-    /// `EFI_COMPONENT_NAME2_PROTOCOL`. The The two protocols are identical
+    /// `EFI_COMPONENT_NAME2_PROTOCOL`. The two protocols are identical
     /// except the encoding of supported languages changed from ISO 639-2 to RFC
     /// 4646.
     pub const DEPRECATED_COMPONENT_NAME_GUID: Guid = guid!("107a772c-d5e1-11d4-9a46-0090273fc14d");

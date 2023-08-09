@@ -8,6 +8,7 @@ pub mod block;
 pub mod console;
 pub mod device_path;
 pub mod disk;
+pub mod driver;
 pub mod loaded_image;
 pub mod memory_protection;
 pub mod rng;

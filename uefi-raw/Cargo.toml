@@ -13,8 +13,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-bitflags = "2.0.0"
-ptr_meta = { version = "0.2.0", default-features = false }
+bitflags.workspace = true
+ptr_meta.workspace = true
 uguid = "2.0.0"
 
 [package.metadata.docs.rs]

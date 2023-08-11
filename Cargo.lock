@@ -73,9 +73,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.3.1"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6776fc96284a0bb647b615056fc496d1fe1644a7ab01829818a6d91cae888b84"
+checksum = "b4682ae6287fcf752ecaabbfcc7b6f9b72aa33933dc23a554d853aea8eea8635"
 
 [[package]]
 name = "bitvec"
@@ -847,7 +847,7 @@ dependencies = [
 name = "uefi"
 version = "0.24.0"
 dependencies = [
- "bitflags 2.3.1",
+ "bitflags 2.4.0",
  "log",
  "ptr_meta",
  "ucs2",
@@ -871,7 +871,7 @@ dependencies = [
 name = "uefi-raw"
 version = "0.3.0"
 dependencies = [
- "bitflags 2.3.1",
+ "bitflags 2.4.0",
  "ptr_meta",
  "uguid",
 ]

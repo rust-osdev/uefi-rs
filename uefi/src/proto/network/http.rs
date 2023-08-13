@@ -95,9 +95,12 @@ impl Http<'_> {
         };
 
         // Create HTTP token
-        let event = unsafe {
-            bt.create_event(EventType::empty(), Tpl::CALLBACK, None, None)
-                .map_err(|e| Error::new(e.status(), "creating request event".to_owned()))?
+        let request_event = ScopedEvent {
+            bt,
+            event: unsafe {
+                bt.create_event(EventType::empty(), Tpl::CALLBACK, None, None)
+                    .map_err(|e| Error::new(e.status(), "creating request event".to_owned()))?
+            },
         };
         let message = Message {
             data,
@@ -107,7 +110,7 @@ impl Http<'_> {
             body,
         };
         let token = Token {
-            event: event.as_ptr(),
+            event: request_event.as_ptr(),
             status: Status::SUCCESS,
             message: &message as *const Message as *mut Message,
         };
@@ -119,14 +122,17 @@ impl Http<'_> {
         };
 
         // Poll every 100ms
-        let poll_interval = unsafe {
-            bt.create_event(EventType::TIMER, Tpl::APPLICATION, None, None)
-                .map_err(|e| {
-                    Error::new(
-                        e.status(),
-                        "creating request poll interval event".to_owned(),
-                    )
-                })?
+        let poll_interval = ScopedEvent {
+            bt,
+            event: unsafe {
+                bt.create_event(EventType::TIMER, Tpl::APPLICATION, None, None)
+                    .map_err(|e| {
+                        Error::new(
+                            e.status(),
+                            "creating request poll interval event".to_owned(),
+                        )
+                    })?
+            },
         };
         bt.set_timer(&poll_interval, TimerTrigger::Periodic(100_000_000 /* ns */))
             .map_err(|e| {
@@ -135,13 +141,11 @@ impl Http<'_> {
                     "setting request poll interval timer on event".to_owned(),
                 )
             })?;
-        let mut request_or_poll = [event, unsafe {
-            Event::from_ptr(poll_interval.as_ptr()).unwrap()
-        }];
+        let mut request_or_poll =
+            unsafe { [request_event.unsafe_clone(), poll_interval.unsafe_clone()] };
         loop {
             match bt.wait_for_event(&mut request_or_poll) {
                 Ok(0) => {
-                    let _ = bt.close_event(poll_interval);
                     return Ok(());
                 }
                 Ok(_) => {
@@ -149,7 +153,6 @@ impl Http<'_> {
                     continue;
                 }
                 Err(e) => {
-                    let _ = bt.close_event(poll_interval);
                     return Err(Error::new(
                         e.status(),
                         "waiting for HTTP request event signal".to_owned(),
@@ -170,9 +173,14 @@ impl Http<'_> {
         bt: &BootServices,
         buf: &mut [u8],
     ) -> Result<(usize, Code, Vec<(String, String)>), String> {
-        let event = unsafe {
-            bt.create_event(EventType::empty(), Tpl::CALLBACK, None, None)
-                .map_err(|e| Error::new(e.status(), "failed to create response event".to_owned()))?
+        let response_event = ScopedEvent {
+            bt,
+            event: unsafe {
+                bt.create_event(EventType::empty(), Tpl::CALLBACK, None, None)
+                    .map_err(|e| {
+                        Error::new(e.status(), "failed to create response event".to_owned())
+                    })?
+            },
         };
 
         let mut message = Message {
@@ -192,7 +200,7 @@ impl Http<'_> {
             (self.proto.response)(
                 &mut self.proto,
                 &mut Token {
-                    event: event.as_ptr(),
+                    event: response_event.as_ptr(),
                     status: Status::SUCCESS,
                     message: &mut message,
                 },
@@ -200,14 +208,17 @@ impl Http<'_> {
             .to_result_with_err(|_| "sending response token".to_owned())?;
         }
         // Poll every 100ms
-        let poll_interval = unsafe {
-            bt.create_event(EventType::TIMER, Tpl::APPLICATION, None, None)
-                .map_err(|e| {
-                    Error::new(
-                        e.status(),
-                        "creating response poll interval event".to_owned(),
-                    )
-                })?
+        let poll_interval = ScopedEvent {
+            bt,
+            event: unsafe {
+                bt.create_event(EventType::TIMER, Tpl::APPLICATION, None, None)
+                    .map_err(|e| {
+                        Error::new(
+                            e.status(),
+                            "creating response poll interval event".to_owned(),
+                        )
+                    })?
+            },
         };
         bt.set_timer(&poll_interval, TimerTrigger::Periodic(100_000_000 /* ns */))
             .map_err(|e| {
@@ -216,13 +227,11 @@ impl Http<'_> {
                     "setting response poll interval timer on event".to_owned(),
                 )
             })?;
-        let mut response_or_poll = [event, unsafe {
-            Event::from_ptr(poll_interval.as_ptr()).unwrap()
-        }];
+        let mut response_or_poll =
+            unsafe { [response_event.unsafe_clone(), poll_interval.unsafe_clone()] };
         loop {
             match bt.wait_for_event(&mut response_or_poll) {
                 Ok(0) => {
-                    let _ = bt.close_event(poll_interval);
                     break;
                 }
                 Ok(_) => {
@@ -230,7 +239,6 @@ impl Http<'_> {
                     continue;
                 }
                 Err(e) => {
-                    let _ = bt.close_event(poll_interval);
                     return Err(Error::new(
                         e.status(),
                         "waiting for HTTP response event signal".to_owned(),
@@ -324,6 +332,40 @@ impl Drop for Headers {
                 drop(CString::from_raw(header.field_name as *mut i8));
                 drop(CString::from_raw(header.field_value as *mut i8));
             }
+        }
+    }
+}
+
+struct ScopedEvent<'a> {
+    bt: &'a BootServices,
+    event: Event,
+}
+
+impl ScopedEvent<'_> {
+    #[allow(unused)]
+    unsafe fn unsafe_inner(&self) -> Event {
+        self.unsafe_clone()
+    }
+}
+
+impl core::ops::Deref for ScopedEvent<'_> {
+    type Target = Event;
+
+    fn deref(&self) -> &Self::Target {
+        &self.event
+    }
+}
+
+impl core::ops::DerefMut for ScopedEvent<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.event
+    }
+}
+
+impl Drop for ScopedEvent<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = self.bt.close_event(self.unsafe_clone());
         }
     }
 }

@@ -78,11 +78,11 @@ pub fn system_table() -> NonNull<SystemTable<Boot>> {
 ///
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
-pub fn init(st: &mut SystemTable<Boot>) -> Result {
+pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
     unsafe {
         // Avoid double initialization.
         if SYSTEM_TABLE.is_some() {
-            return Status::SUCCESS.to_result();
+            return Status::SUCCESS.to_result_with_val(|| None);
         }
 
         // Setup the system table singleton
@@ -104,7 +104,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result {
                 Some(exit_boot_services),
                 None,
             )
-            .map(|_| ())
+            .map(Some)
     }
 }
 

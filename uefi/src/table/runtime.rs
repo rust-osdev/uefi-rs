@@ -3,9 +3,9 @@
 use super::Revision;
 use crate::table::boot::MemoryDescriptor;
 use crate::{CStr16, Error, Result, Status, StatusExt};
-use core::fmt::{Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 use core::mem::MaybeUninit;
-use core::{fmt, ptr};
+use core::ptr;
 
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
@@ -351,6 +351,15 @@ pub struct TimeParams {
 /// Error returned by [`Time`] methods if the input is outside the valid range.
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct TimeError;
+
+impl Display for TimeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for TimeError {}
 
 impl Time {
     /// Unspecified Timezone/local time.

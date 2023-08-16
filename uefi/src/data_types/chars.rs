@@ -3,11 +3,20 @@
 //! UEFI uses both Latin-1 and UCS-2 character encoding, this module implements
 //! support for the associated character types.
 
-use core::fmt;
+use core::fmt::{self, Display, Formatter};
 
 /// Character conversion error
 #[derive(Clone, Copy, Debug)]
 pub struct CharConversionError;
+
+impl Display for CharConversionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for CharConversionError {}
 
 /// A Latin-1 character
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]

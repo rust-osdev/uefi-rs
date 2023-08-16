@@ -3,6 +3,7 @@ use crate::data_types::Align;
 use crate::table::runtime::Time;
 use crate::{guid, CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
+use core::fmt::{self, Display, Formatter};
 use core::{mem, ptr};
 use ptr_meta::Pointee;
 
@@ -123,6 +124,21 @@ pub enum FileInfoCreationError {
     /// a misaligned buffer will cause a decrease of usable storage capacity.
     InsufficientStorage(usize),
 }
+
+impl Display for FileInfoCreationError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InsufficientStorage(bytes) => write!(
+                f,
+                "provided buffer was too small. need at least {} bytes",
+                bytes
+            ),
+        }
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for FileInfoCreationError {}
 
 /// Generic file information
 ///

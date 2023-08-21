@@ -6,16 +6,38 @@ extern crate log;
 #[macro_use]
 extern crate alloc;
 
-use alloc::string::ToString;
-use uefi::prelude::*;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use uefi::proto::console::serial::Serial;
 use uefi::Result;
+use uefi::{prelude::*, proto::shell_params::ShellParameters};
 use uefi_services::{print, println};
 
 mod boot;
 mod fs;
 mod proto;
 mod runtime;
+
+fn test_subshell(image: Handle, bt: &BootServices) -> Result<bool> {
+    let shell_params = unsafe {
+        bt
+            //.open_protocol_exclusive::<ShellParameters>(image).unwrap();
+            .open_protocol::<ShellParameters>(
+                uefi::table::boot::OpenProtocolParams {
+                    handle: image,
+                    agent: bt.image_handle(),
+                    controller: None,
+                },
+                uefi::table::boot::OpenProtocolAttributes::GetProtocol,
+            )
+            .unwrap()
+    };
+
+    println!("Subshell argc={}", shell_params.argc);
+    let args: Vec<String> = shell_params.get_args().collect();
+    println!("Args:         {:?}", args);
+    Ok(shell_params.argc > 1)
+}
 
 #[entry]
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
@@ -44,6 +66,17 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     // Test all the boot services.
     let bt = st.boot_services();
+
+    // If ShellParametes protocol present and run with arguments,
+    // we're running from a subshell started by a test. Thus run the
+    // ShellParams test.
+    if let Ok(true) = test_subshell(image, bt) {
+        println!("Running subshell tests");
+        proto::shell_params::test_subshell(image, bt);
+        shutdown(st);
+    } else {
+        println!("Couldn't find shell params");
+    }
 
     // Try retrieving a handle to the file system the image was booted from.
     bt.get_image_file_system(image)

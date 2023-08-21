@@ -16,6 +16,7 @@
 - `MpService::startup_all_aps` and `MpService::startup_this_ap` now accept an
     optional `event` parameter to allow non-blocking operation.
 - Added `core::error::Error` implementations to all error types.
+- Added the `ShellParams` protocol
 
 ### Removed
 - `BootServices::memmove` and `BootServices::set_mem` have been removed, use

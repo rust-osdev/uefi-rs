@@ -38,6 +38,7 @@ fn allocate_pages(bt: &BootServices) {
 fn vec_alloc() {
     info!("Allocating a vector through the `alloc` crate");
 
+    #[allow(clippy::useless_vec)]
     let mut values = vec![-5, 16, 23, 4, 0];
 
     values.sort_unstable();

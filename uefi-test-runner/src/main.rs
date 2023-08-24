@@ -9,6 +9,7 @@ extern crate alloc;
 use alloc::string::ToString;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
+use uefi::table::boot::MemoryType;
 use uefi::Result;
 use uefi_services::{print, println};
 
@@ -163,7 +164,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     send_request_to_host(st.boot_services(), HostRequest::TestsComplete);
 
     // Exit boot services as a proof that it works :)
-    let (st, _iter) = st.exit_boot_services();
+    let (st, _iter) = st.exit_boot_services(MemoryType::LOADER_DATA);
 
     #[cfg(target_arch = "x86_64")]
     {

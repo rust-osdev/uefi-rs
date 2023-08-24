@@ -31,6 +31,7 @@ use {
 /// A reference to `RuntimeServices` can only be accessed by calling [`SystemTable::runtime_services`].
 ///
 /// [`SystemTable::runtime_services`]: crate::table::SystemTable::runtime_services
+#[derive(Debug)]
 #[repr(C)]
 pub struct RuntimeServices(uefi_raw::table::runtime::RuntimeServices);
 
@@ -295,21 +296,6 @@ impl super::Table for RuntimeServices {
     const SIGNATURE: u64 = 0x5652_4553_544e_5552;
 }
 
-impl Debug for RuntimeServices {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RuntimeServices")
-            .field("header", &self.0.header)
-            .field("get_time", &(self.0.get_time as *const u64))
-            .field("set_time", &(self.0.set_time as *const u64))
-            .field(
-                "set_virtual_address_map",
-                &(self.0.set_virtual_address_map as *const u64),
-            )
-            .field("reset", &(self.0.reset_system as *const u64))
-            .finish()
-    }
-}
-
 /// Date and time representation.
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
@@ -464,8 +450,8 @@ impl Time {
     }
 }
 
-impl fmt::Debug for Time {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Debug for Time {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
             "{:04}-{:02}-{:02} ",
@@ -485,7 +471,7 @@ impl fmt::Debug for Time {
     }
 }
 
-impl fmt::Display for Time {
+impl Display for Time {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -509,8 +495,8 @@ impl VariableKey {
 }
 
 #[cfg(feature = "alloc")]
-impl fmt::Display for VariableKey {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for VariableKey {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "VariableKey {{ name: ")?;
 
         match self.name() {

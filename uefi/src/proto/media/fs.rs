@@ -19,6 +19,7 @@ use core::ptr;
 ///
 /// [`BootServices::get_image_file_system`]: crate::table::boot::BootServices::get_image_file_system
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("964e5b22-6459-11d2-8e39-00a0c969723b")]
 pub struct SimpleFileSystem {

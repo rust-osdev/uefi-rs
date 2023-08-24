@@ -67,6 +67,7 @@ pub use uefi_raw::protocol::console::PixelBitmask;
 ///
 /// The GOP can be used to set the properties of the frame buffer,
 /// and also allows the app to access the in-memory buffer.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(GraphicsOutputProtocol::GUID)]
 pub struct GraphicsOutput(GraphicsOutputProtocol);

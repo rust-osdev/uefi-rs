@@ -29,6 +29,7 @@ mod exception;
 /// one for any given instruction set.
 ///
 /// NOTE: OVMF only implements this protocol interface for the virtual EBC processor
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
 pub struct DebugSupport {
@@ -174,6 +175,7 @@ pub enum ProcessorArch: u32 => {
 
 /// The debug port protocol abstracts the underlying debug port
 /// hardware, whether it is a regular Serial port or something else.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("eba4e8d2-3858-41ec-a281-2647ba9660d0")]
 pub struct DebugPort {

@@ -1,6 +1,7 @@
 use crate::{guid, Event, Guid, Status};
 use core::ffi::c_void;
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct DiskIoProtocol {
     pub revision: u64,
@@ -32,6 +33,7 @@ pub struct DiskIo2Token {
     pub transaction_status: Status,
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct DiskIo2Protocol {
     pub revision: u64,

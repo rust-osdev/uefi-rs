@@ -82,12 +82,6 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item_struct.generics.split_for_impl();
 
     quote! {
-        // Disable this lint for now. It doesn't account for the fact that
-        // currently it doesn't work to `derive(Debug)` on structs that have
-        // `extern "efiapi" fn` fields, which most protocol structs have. The
-        // derive _does_ work in current nightly (1.70.0) though, so hopefully
-        // in a couple Rust releases we can drop this.
-        #[allow(missing_debug_implementations)]
         #item_struct
 
         unsafe impl #impl_generics ::uefi::Identify for #ident #ty_generics #where_clause {

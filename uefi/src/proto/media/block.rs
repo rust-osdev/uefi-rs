@@ -6,6 +6,7 @@ use crate::{Result, StatusExt};
 pub use uefi_raw::protocol::block::{BlockIoProtocol, Lba};
 
 /// The Block I/O protocol.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(BlockIoProtocol::GUID)]
 pub struct BlockIO(BlockIoProtocol);

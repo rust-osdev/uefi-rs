@@ -3,6 +3,7 @@
 ## uefi - [Unreleased]
 
 ### Changed
+- MSRV bumped to 1.70.
 - `Input::wait_for_key_event` now returns an `Option<Event>`, and is no longer `const`.
 - `Protocol::wait_for_input_event` now returns an `Option<Event>`, and is no longer `const`.
 - `LoadedImage::device` now returns an `Option<Handle>` and is no longer `const`.

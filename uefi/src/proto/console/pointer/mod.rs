@@ -5,6 +5,7 @@ use crate::{Event, Result, Status, StatusExt};
 use uefi_raw::protocol::console::SimplePointerProtocol;
 
 /// Provides information about a pointer device.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimplePointerProtocol::GUID)]
 pub struct Pointer(SimplePointerProtocol);

@@ -17,7 +17,7 @@ edition = "2021"
 keywords = ["uefi", "efi"]
 license = "MPL-2.0"
 repository = "https://github.com/rust-osdev/uefi-rs"
-rust-version = "1.68"
+rust-version = "1.70"
 
 [workspace.dependencies]
 bitflags = "2.0.0"

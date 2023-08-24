@@ -1,5 +1,4 @@
 use core::ffi::c_void;
-use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::slice;
@@ -45,6 +44,7 @@ impl SystemTableView for Runtime {}
 /// table will be destroyed (which conveniently invalidates all references to
 /// UEFI boot services in the eye of the Rust borrow checker) and a runtime view
 /// will be provided to replace it.
+#[derive(Debug)]
 #[repr(transparent)]
 pub struct SystemTable<View: SystemTableView> {
     table: *const uefi_raw::table::system::SystemTable,
@@ -278,12 +278,6 @@ impl SystemTable<Boot> {
             table: self.table,
             _marker: PhantomData,
         }
-    }
-}
-
-impl Debug for SystemTable<Boot> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        unsafe { &*self.table }.fmt(f)
     }
 }
 

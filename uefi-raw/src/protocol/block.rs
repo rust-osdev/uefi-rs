@@ -26,6 +26,7 @@ pub struct BlockIoMedia {
     pub optimal_transfer_length_granularity: u32,
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct BlockIoProtocol {
     pub revision: u64,

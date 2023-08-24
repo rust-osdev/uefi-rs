@@ -15,6 +15,7 @@ pub use uefi_raw::protocol::console::serial::{ControlBits, Parity, StopBits};
 ///
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
+#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SerialIoProtocol::GUID)]
 pub struct Serial(SerialIoProtocol);

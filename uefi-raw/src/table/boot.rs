@@ -7,6 +7,7 @@ use bitflags::bitflags;
 use core::ffi::c_void;
 
 /// Table of pointers to all the boot services.
+#[derive(Debug)]
 #[repr(C)]
 pub struct BootServices {
     pub header: Header,
@@ -397,6 +398,7 @@ impl MemoryType {
     }
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct OpenProtocolInformationEntry {
     pub agent_handle: Handle,

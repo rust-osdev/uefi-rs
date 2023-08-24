@@ -75,6 +75,7 @@ pub struct SerialIoMode {
     pub stop_bits: StopBits,
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct SerialIoProtocol {
     pub revision: u32,

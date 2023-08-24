@@ -10,6 +10,7 @@ pub struct InputKey {
     pub unicode_char: Char16,
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct SimpleTextInputProtocol {
     pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: bool) -> Status,
@@ -32,6 +33,7 @@ pub struct SimpleTextOutputMode {
     pub cursor_visible: bool,
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct SimpleTextOutputProtocol {
     pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended: bool) -> Status,
@@ -76,6 +78,7 @@ pub struct SimplePointerState {
     pub right_button: u8,
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct SimplePointerProtocol {
     pub reset: unsafe extern "efiapi" fn(
@@ -94,6 +97,7 @@ impl SimplePointerProtocol {
     pub const GUID: Guid = guid!("31878c87-0b75-11d5-9a4f-0090273fc14d");
 }
 
+#[derive(Debug)]
 #[repr(C)]
 pub struct GraphicsOutputProtocol {
     pub query_mode: unsafe extern "efiapi" fn(

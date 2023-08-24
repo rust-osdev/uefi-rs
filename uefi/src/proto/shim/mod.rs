@@ -65,6 +65,7 @@ macro_rules! shim_function {
 /// application may itself be a bootloader that needs to validate
 /// another EFI application before running it, and the shim lock
 /// protocol exists to support that.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("605dab50-e046-4300-abb6-3dd810dd8b23")]
 pub struct ShimLock {

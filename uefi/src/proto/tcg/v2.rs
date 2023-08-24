@@ -563,6 +563,7 @@ impl<'a> Iterator for EventLogIter<'a> {
 /// devices, but most firmware only uses it for TPM 2.0.
 ///
 /// The corresponding C type is `EFI_TCG2_PROTOCOL`.
+#[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("607f766c-7455-42be-930b-e4d76db2720f")]
 pub struct Tcg {

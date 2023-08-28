@@ -194,8 +194,8 @@ impl SystemTable<Boot> {
     /// restricted `SystemTable<Runtime>` view as an output.
     ///
     /// The memory map at the time of exiting boot services is also
-    /// returned. The map is backed by a [`MemoryType::LOADER_DATA`]
-    /// allocation. Since the boot services function to free that memory is no
+    /// returned. The map is backed by a allocation with given `memory_type`.
+    /// Since the boot services function to free that memory is no
     /// longer available after calling `exit_boot_services`, the allocation is
     /// live until the program ends. The lifetime of the memory map is therefore
     /// `'static`.
@@ -221,7 +221,10 @@ impl SystemTable<Boot> {
     /// [`Logger::disable`]: crate::logger::Logger::disable
     /// [`uefi_services::init`]: https://docs.rs/uefi-services/latest/uefi_services/fn.init.html
     #[must_use]
-    pub fn exit_boot_services(self) -> (SystemTable<Runtime>, MemoryMap<'static>) {
+    pub fn exit_boot_services(
+        self,
+        memory_type: MemoryType,
+    ) -> (SystemTable<Runtime>, MemoryMap<'static>) {
         let boot_services = self.boot_services();
 
         // Reboot the device.
@@ -236,7 +239,7 @@ impl SystemTable<Boot> {
 
         // Allocate a byte slice to hold the memory map. If the
         // allocation fails treat it as an unrecoverable error.
-        let buf: *mut u8 = match boot_services.allocate_pool(MemoryType::LOADER_DATA, buf_size) {
+        let buf: *mut u8 = match boot_services.allocate_pool(memory_type, buf_size) {
             Ok(buf) => buf,
             Err(err) => reset(err.status()),
         };

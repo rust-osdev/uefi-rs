@@ -17,6 +17,8 @@
 - `MpService::startup_all_aps` and `MpService::startup_this_ap` now accept an
     optional `event` parameter to allow non-blocking operation.
 - Added `core::error::Error` implementations to all error types.
+- `SystemTable::exit_boot_services` now takes one param `memory_type` to ensure
+  the memory type of memory map.
 
 ### Removed
 - `BootServices::memmove` and `BootServices::set_mem` have been removed, use

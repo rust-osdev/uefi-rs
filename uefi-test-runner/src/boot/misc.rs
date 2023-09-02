@@ -1,8 +1,12 @@
 use core::ffi::c_void;
 use core::ptr::{self, NonNull};
 
+use core::mem;
 use uefi::proto::unsafe_protocol;
-use uefi::table::boot::{BootServices, EventType, MemoryType, SearchType, TimerTrigger, Tpl};
+use uefi::table::boot::{
+    BootServices, EventType, MemoryType, OpenProtocolAttributes, OpenProtocolParams, SearchType,
+    TimerTrigger, Tpl,
+};
 use uefi::table::{Boot, SystemTable};
 use uefi::{guid, Event, Guid, Identify};
 
@@ -84,7 +88,9 @@ fn test_watchdog(bt: &BootServices) {
 
 /// Dummy protocol for tests
 #[unsafe_protocol("1a972918-3f69-4b5d-8cb4-cece2309c7f5")]
-struct TestProtocol {}
+struct TestProtocol {
+    data: u32,
+}
 
 unsafe extern "efiapi" fn _test_notify(_event: Event, _context: Option<NonNull<c_void>>) {
     info!("Protocol was (re)installed and this function notified.")
@@ -109,8 +115,17 @@ fn test_register_protocol_notify(bt: &BootServices) {
 fn test_install_protocol_interface(bt: &BootServices) {
     info!("Installing TestProtocol");
 
+    let alloc: *mut TestProtocol = bt
+        .allocate_pool(
+            MemoryType::BOOT_SERVICES_DATA,
+            mem::size_of::<TestProtocol>(),
+        )
+        .unwrap()
+        .cast();
+    unsafe { alloc.write(TestProtocol { data: 123 }) };
+
     let _ = unsafe {
-        bt.install_protocol_interface(None, &TestProtocol::GUID, ptr::null_mut())
+        bt.install_protocol_interface(None, &TestProtocol::GUID, alloc.cast())
             .expect("Failed to install protocol interface")
     };
 
@@ -137,13 +152,34 @@ fn test_reinstall_protocol_interface(bt: &BootServices) {
 
 fn test_uninstall_protocol_interface(bt: &BootServices) {
     info!("Uninstalling TestProtocol");
+
     let handle = bt
         .locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
         .expect("Failed to find protocol to uninstall")[0];
 
     unsafe {
-        bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, ptr::null_mut())
+        // Uninstalling a protocol interface requires knowing the interface
+        // pointer. Open the protocol to get that pointer, making sure to drop
+        // the `ScopedProtocol` _before_ uninstalling the protocol interface.
+        let interface_ptr: *mut TestProtocol = {
+            let mut sp = bt
+                .open_protocol::<TestProtocol>(
+                    OpenProtocolParams {
+                        handle,
+                        agent: bt.image_handle(),
+                        controller: None,
+                    },
+                    OpenProtocolAttributes::GetProtocol,
+                )
+                .unwrap();
+            assert_eq!(sp.data, 123);
+            &mut *sp
+        };
+
+        bt.uninstall_protocol_interface(handle, &TestProtocol::GUID, interface_ptr.cast())
             .expect("Failed to uninstall protocol interface");
+
+        bt.free_pool(interface_ptr.cast()).unwrap();
     }
 }
 

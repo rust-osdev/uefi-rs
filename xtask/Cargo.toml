@@ -24,5 +24,5 @@ sha2 = "0.10.6"
 syn = { version = "2.0.0", features = ["full"] }
 tar = "0.4.38"
 tempfile = "3.6.0"
-walkdir = "2.3.3"
+walkdir = "2.4.0"
 ureq = "2.7.0"

@@ -69,7 +69,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     let mut shell_loaded_image = boot_services
         .open_protocol_exclusive::<LoadedImage>(shell_image_handle)
         .expect("failed to open LoadedImage protocol");
-    let load_options = cstr16!(r"shell.efi test_runner.efi");
+    let load_options = cstr16!(r"shell.efi test_runner.efi arg1 arg2");
     unsafe {
         shell_loaded_image.set_load_options(
             load_options.as_ptr().cast(),

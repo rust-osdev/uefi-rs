@@ -20,6 +20,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     network::test(bt);
     pi::test(bt);
     rng::test(bt);
+    shell_params::test(bt);
     string::test(bt);
 
     #[cfg(any(
@@ -63,6 +64,7 @@ mod media;
 mod network;
 mod pi;
 mod rng;
+mod shell_params;
 #[cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",

@@ -10,3 +10,4 @@ pub mod block;
 pub mod disk;
 pub mod fs;
 pub mod partition;
+pub mod load_file;

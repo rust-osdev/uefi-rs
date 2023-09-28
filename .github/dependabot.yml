@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: cargo
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
     open-pull-requests-limit: 10
     ignore:
       - dependency-name: "*"
@@ -11,5 +11,5 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
     open-pull-requests-limit: 10

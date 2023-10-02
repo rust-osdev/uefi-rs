@@ -25,4 +25,4 @@ syn = { version = "2.0.0", features = ["full"] }
 tar = "0.4.38"
 tempfile = "3.6.0"
 walkdir = "2.4.0"
-ureq = "2.7.0"
+ureq = "2.8.0"

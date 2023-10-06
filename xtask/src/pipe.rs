@@ -93,6 +93,7 @@ fn windows_open_pipe(path: &Path) -> Result<File> {
         match OpenOptions::new().read(true).write(true).open(path) {
             Ok(file) => return Ok(file),
             Err(err) => {
+                #[allow(clippy::needless_return_with_question_mark)]
                 if attempt >= max_attempts {
                     return Err(err)?;
                 } else {

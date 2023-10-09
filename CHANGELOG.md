@@ -2,6 +2,14 @@
 
 ## uefi - [Unreleased]
 
+## uefi-macros - [Unreleased]
+
+## uefi-raw - [Unreleased]
+
+## uefi-services - [Unreleased]
+
+## uefi - 0.25.0 (2023-10-09)
+
 ### Changed
 - MSRV bumped to 1.70.
 - `Input::wait_for_key_event` now returns an `Option<Event>`, and is no longer `const`.

@@ -30,7 +30,7 @@ log.workspace = true
 ptr_meta.workspace = true
 ucs2 = "0.3.2"
 uefi-macros = "0.12.0"
-uefi-raw = "0.3.0"
+uefi-raw = "0.4.0"
 uguid.workspace = true
 
 [package.metadata.docs.rs]

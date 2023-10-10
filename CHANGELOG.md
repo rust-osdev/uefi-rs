@@ -8,7 +8,7 @@
 
 ## uefi-services - [Unreleased]
 
-## uefi - 0.25.0 (2023-10-09)
+## uefi - 0.25.0 (2023-10-10)
 
 ### Changed
 - MSRV bumped to 1.70.

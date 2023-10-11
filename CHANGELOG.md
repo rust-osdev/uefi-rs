@@ -33,9 +33,11 @@
 - `BootServices::memmove` and `BootServices::set_mem` have been removed, use
   standard functions like `core::ptr::copy` and `core::ptr::write_bytes` instead.
 
-## uefi-macros - [Unreleased]
+## uefi-services - 0.22.0 (2023-10-11)
 
-## uefi-services - [Unreleased]
+### Changed
+
+- Updated to latest version of `uefi`.
 
 ## uefi - 0.24.0 (2023-06-20)
 

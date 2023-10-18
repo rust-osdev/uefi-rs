@@ -2,6 +2,9 @@
 
 ## uefi - [Unreleased]
 
+### Added
+- Implemented `Index`, `IndexMut`, `get`, and `get_mut` on `MemoryMap`.
+
 ### Changed
 - We fixed a memory leak in `GraphicsOutput::query_mode`. As a consequence, we
   had to add `&BootServices` as additional parameter.

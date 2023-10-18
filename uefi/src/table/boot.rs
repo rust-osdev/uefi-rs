@@ -1625,7 +1625,10 @@ pub struct MemoryMapSize {
     pub map_size: usize,
 }
 
-/// An iterator of [`MemoryDescriptor`] that is always associated with the
+/// An accessory to the memory map that can be either iterated or
+/// indexed like an array.
+///
+/// A [`MemoryMap`] is always associated with the
 /// unique [`MemoryMapKey`] contained in the struct.
 ///
 /// To iterate over the entries, call [`MemoryMap::entries`]. To get a sorted
@@ -1720,11 +1723,59 @@ impl<'buf> MemoryMap<'buf> {
     #[must_use]
     pub fn entries(&self) -> MemoryMapIter {
         MemoryMapIter {
-            buffer: self.buf,
-            entry_size: self.entry_size,
+            memory_map: self,
             index: 0,
-            len: self.len,
         }
+    }
+
+    /// Returns a reference to the [`MemoryDescriptor`] at `index` or `None` if out of bounds.
+    #[must_use]
+    pub fn get(&self, index: usize) -> Option<&'buf MemoryDescriptor> {
+        if index >= self.len {
+            return None;
+        }
+
+        let desc = unsafe {
+            &*self
+                .buf
+                .as_ptr()
+                .add(self.entry_size * index)
+                .cast::<MemoryDescriptor>()
+        };
+
+        Some(desc)
+    }
+
+    /// Returns a mut reference to the [`MemoryDescriptor`] at `index` or `None` if out of bounds.
+    #[must_use]
+    pub fn get_mut(&mut self, index: usize) -> Option<&'buf mut MemoryDescriptor> {
+        if index >= self.len {
+            return None;
+        }
+
+        let desc = unsafe {
+            &mut *self
+                .buf
+                .as_mut_ptr()
+                .add(self.entry_size * index)
+                .cast::<MemoryDescriptor>()
+        };
+
+        Some(desc)
+    }
+}
+
+impl core::ops::Index<usize> for MemoryMap<'_> {
+    type Output = MemoryDescriptor;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.get(index).unwrap()
+    }
+}
+
+impl core::ops::IndexMut<usize> for MemoryMap<'_> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.get_mut(index).unwrap()
     }
 }
 
@@ -1732,43 +1783,31 @@ impl<'buf> MemoryMap<'buf> {
 /// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
 pub struct MemoryMapIter<'buf> {
-    buffer: &'buf [u8],
-    entry_size: usize,
+    memory_map: &'buf MemoryMap<'buf>,
     index: usize,
-    len: usize,
 }
 
 impl<'buf> Iterator for MemoryMapIter<'buf> {
     type Item = &'buf MemoryDescriptor;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let sz = self.len - self.index;
+        let sz = self.memory_map.len - self.index;
 
         (sz, Some(sz))
     }
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index < self.len {
-            let descriptor = unsafe {
-                &*self
-                    .buffer
-                    .as_ptr()
-                    .add(self.entry_size * self.index)
-                    .cast::<MemoryDescriptor>()
-            };
+        let desc = self.memory_map.get(self.index)?;
 
-            self.index += 1;
+        self.index += 1;
 
-            Some(descriptor)
-        } else {
-            None
-        }
+        Some(desc)
     }
 }
 
 impl ExactSizeIterator for MemoryMapIter<'_> {
     fn len(&self) -> usize {
-        self.len
+        self.memory_map.len
     }
 }
 
@@ -1905,6 +1944,23 @@ mod tests {
 
     use super::{MemoryDescriptor, MemoryMapIter};
 
+    fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMap {
+        let desc_count = buffer.len();
+
+        let byte_buffer = {
+            let size = desc_count * size_of::<MemoryDescriptor>();
+            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size) }
+        };
+
+        MemoryMap {
+            // Key doesn't matter
+            key: MemoryMapKey(0),
+            len: desc_count,
+            buf: byte_buffer,
+            entry_size: size_of::<MemoryDescriptor>(),
+        }
+    }
+
     #[test]
     fn mem_map_sorting() {
         // Doesn't matter what type it is.
@@ -1934,26 +1990,59 @@ mod tests {
             },
         ];
 
-        let desc_count = buffer.len();
-
-        let byte_buffer = {
-            let size = desc_count * size_of::<MemoryDescriptor>();
-            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size) }
-        };
-
-        let mut mem_map = MemoryMap {
-            // Key doesn't matter
-            key: MemoryMapKey(0),
-            len: desc_count,
-            buf: byte_buffer,
-            entry_size: size_of::<MemoryDescriptor>(),
-        };
+        let mut mem_map = buffer_to_map(&mut buffer);
 
         mem_map.sort();
 
         if !is_sorted(&mem_map.entries()) {
             panic!("mem_map is not sorted: {}", mem_map);
         }
+    }
+
+    #[test]
+    fn mem_map_get() {
+        // Doesn't matter what type it is.
+        const TY: MemoryType = MemoryType::RESERVED;
+
+        const BASE: MemoryDescriptor = MemoryDescriptor {
+            ty: TY,
+            phys_start: 0,
+            virt_start: 0,
+            page_count: 0,
+            att: MemoryAttribute::empty(),
+        };
+
+        const BUFFER: [MemoryDescriptor; 4] = [
+            MemoryDescriptor {
+                phys_start: 2000,
+                ..BASE
+            },
+            MemoryDescriptor {
+                phys_start: 3000,
+                ..BASE
+            },
+            BASE,
+            MemoryDescriptor {
+                phys_start: 1000,
+                ..BASE
+            },
+        ];
+
+        let mut buffer = BUFFER;
+
+        let mut mem_map = buffer_to_map(&mut buffer);
+
+        for index in 0..3 {
+            assert_eq!(mem_map.get(index), BUFFER.get(index))
+        }
+
+        let mut_desc = mem_map.get_mut(2).unwrap();
+
+        mut_desc.phys_start = 300;
+
+        let desc = mem_map.get(2).unwrap();
+
+        assert_ne!(*desc, BUFFER[2]);
     }
 
     // Added for debug purposes on test failure

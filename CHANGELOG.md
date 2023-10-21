@@ -2,6 +2,10 @@
 
 ## uefi - [Unreleased]
 
+### Changed
+- We fixed a memory leak in `GraphicsOutput::query_mode`. As a consequence, we
+  had to add `&BootServices` as additional parameter.
+
 ## uefi-macros - [Unreleased]
 
 ## uefi-raw - [Unreleased]

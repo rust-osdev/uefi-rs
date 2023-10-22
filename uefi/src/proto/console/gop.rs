@@ -50,6 +50,7 @@
 //! You will have to implement your own double buffering if you want to
 //! avoid tearing with animations.
 
+use crate::prelude::BootServices;
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
 use crate::{Result, StatusExt};
@@ -75,27 +76,37 @@ pub struct GraphicsOutput(GraphicsOutputProtocol);
 impl GraphicsOutput {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
-    pub fn query_mode(&self, index: u32) -> Result<Mode> {
+    pub fn query_mode(&self, index: u32, bs: &BootServices) -> Result<Mode> {
         let mut info_sz = 0;
-        let mut info = ptr::null();
+        let mut info_heap_ptr = ptr::null();
+        // query_mode allocates a buffer and stores the heap ptr in the provided
+        // variable. In this buffer, the queried data can be found.
+        unsafe { (self.0.query_mode)(&self.0, index, &mut info_sz, &mut info_heap_ptr) }
+            .to_result_with_val(|| {
+                // Transform to owned info on the stack.
+                let info = unsafe { *info_heap_ptr };
 
-        unsafe { (self.0.query_mode)(&self.0, index, &mut info_sz, &mut info) }.to_result_with_val(
-            || {
-                let info = unsafe { *info };
+                let info_heap_ptr = info_heap_ptr.cast::<u8>().cast_mut();
+
+                // User has no benefit from propagating this error. If this
+                // fails, it is an error of the UEFI implementation.
+                bs.free_pool(info_heap_ptr)
+                    .expect("buffer should be deallocatable");
+
                 Mode {
                     index,
                     info_sz,
                     info: ModeInfo(info),
                 }
-            },
-        )
+            })
     }
 
     /// Returns information about all available graphics modes.
     #[must_use]
-    pub fn modes(&self) -> ModeIter {
+    pub fn modes<'a>(&'a self, bs: &'a BootServices) -> ModeIter {
         ModeIter {
             gop: self,
+            bs,
             current: 0,
             max: self.mode().max_mode,
         }
@@ -400,6 +411,7 @@ impl ModeInfo {
 /// Iterator for [`Mode`]s of the [`GraphicsOutput`] protocol.
 pub struct ModeIter<'gop> {
     gop: &'gop GraphicsOutput,
+    bs: &'gop BootServices,
     current: u32,
     max: u32,
 }
@@ -410,7 +422,7 @@ impl<'gop> Iterator for ModeIter<'gop> {
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.current;
         if index < self.max {
-            let m = self.gop.query_mode(index);
+            let m = self.gop.query_mode(index, self.bs);
             self.current += 1;
 
             m.ok().or_else(|| self.next())

@@ -22,7 +22,7 @@ pub unsafe fn test(image: Handle, bt: &BootServices) {
         )
         .expect("failed to open Graphics Output Protocol");
 
-    set_graphics_mode(gop);
+    set_graphics_mode(gop, bt);
     fill_color(gop);
     draw_fb(gop);
 
@@ -33,10 +33,10 @@ pub unsafe fn test(image: Handle, bt: &BootServices) {
 }
 
 // Set a larger graphics mode.
-fn set_graphics_mode(gop: &mut GraphicsOutput) {
+fn set_graphics_mode(gop: &mut GraphicsOutput, bs: &BootServices) {
     // We know for sure QEMU has a 1024x768 mode.
     let mode = gop
-        .modes()
+        .modes(bs)
         .find(|mode| {
             let info = mode.info();
             info.resolution() == (1024, 768)

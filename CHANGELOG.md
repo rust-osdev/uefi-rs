@@ -8,6 +8,8 @@
 ### Changed
 - We fixed a memory leak in `GraphicsOutput::query_mode`. As a consequence, we
   had to add `&BootServices` as additional parameter.
+- `BootServices::free_pages` and `BootServices::free_pool` are now `unsafe` to
+  call, since it is possible to trigger UB by freeing memory that is still in use.
 
 ## uefi-macros - [Unreleased]
 

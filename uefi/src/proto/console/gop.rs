@@ -90,8 +90,7 @@ impl GraphicsOutput {
 
                 // User has no benefit from propagating this error. If this
                 // fails, it is an error of the UEFI implementation.
-                bs.free_pool(info_heap_ptr)
-                    .expect("buffer should be deallocatable");
+                unsafe { bs.free_pool(info_heap_ptr) }.expect("buffer should be deallocatable");
 
                 Mode {
                     index,

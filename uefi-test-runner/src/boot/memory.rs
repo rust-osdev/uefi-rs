@@ -31,7 +31,7 @@ fn allocate_pages(bt: &BootServices) {
     buf[4095] = 0x23;
 
     // Clean up to avoid memory leaks.
-    bt.free_pages(pgs, 1).unwrap();
+    unsafe { bt.free_pages(pgs, 1) }.unwrap();
 }
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.

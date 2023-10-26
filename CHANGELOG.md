@@ -15,6 +15,10 @@
 
 ## uefi-services - [Unreleased]
 
+### Changed
+- `uefi_services::system_table` now returns `SystemTable<Boot>` directly, rather
+  than wrapped in a `NonNull` pointer.
+
 ## uefi - 0.25.0 (2023-10-10)
 
 ### Changed

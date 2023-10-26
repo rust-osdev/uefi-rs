@@ -65,12 +65,12 @@ static mut LOGGER: Option<uefi::logger::Logger> = None;
 ///
 /// The returned pointer is only valid until boot services are exited.
 #[must_use]
-pub fn system_table() -> NonNull<SystemTable<Boot>> {
+pub fn system_table() -> SystemTable<Boot> {
     unsafe {
         let table_ref = SYSTEM_TABLE
             .as_ref()
             .expect("The system table handle is not available");
-        NonNull::new(table_ref as *const _ as *mut _).unwrap()
+        table_ref.unsafe_clone()
     }
 }
 

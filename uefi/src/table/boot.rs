@@ -184,13 +184,18 @@ impl BootServices {
 
     /// Frees memory pages allocated by UEFI.
     ///
+    /// # Safety
+    ///
+    /// The caller must ensure that no references into the allocation remain,
+    /// and that the memory at the allocation is not used after it is freed.
+    ///
     /// # Errors
     ///
     /// See section `EFI_BOOT_SERVICES.FreePages()` in the UEFI Specification for more details.
     ///
     /// * [`uefi::Status::NOT_FOUND`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
+    pub unsafe fn free_pages(&self, addr: PhysicalAddress, count: usize) -> Result {
         unsafe { (self.0.free_pages)(addr, count) }.to_result()
     }
 
@@ -293,13 +298,17 @@ impl BootServices {
 
     /// Frees memory allocated from a pool.
     ///
+    /// # Safety
+    ///
+    /// The caller must ensure that no references into the allocation remain,
+    /// and that the memory at the allocation is not used after it is freed.
+    ///
     /// # Errors
     ///
     /// See section `EFI_BOOT_SERVICES.FreePool()` in the UEFI Specification for more details.
     ///
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    pub fn free_pool(&self, addr: *mut u8) -> Result {
+    pub unsafe fn free_pool(&self, addr: *mut u8) -> Result {
         unsafe { (self.0.free_pool)(addr) }.to_result()
     }
 
@@ -1867,7 +1876,7 @@ pub struct ProtocolsPerHandle<'a> {
 impl<'a> Drop for ProtocolsPerHandle<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self.boot_services.free_pool(self.protocols.cast::<u8>());
+        let _ = unsafe { self.boot_services.free_pool(self.protocols.cast::<u8>()) };
     }
 }
 
@@ -1906,7 +1915,7 @@ pub struct HandleBuffer<'a> {
 impl<'a> Drop for HandleBuffer<'a> {
     fn drop(&mut self) {
         // Ignore the result, we can't do anything about an error here.
-        let _ = self.boot_services.free_pool(self.buffer.cast::<u8>());
+        let _ = unsafe { self.boot_services.free_pool(self.buffer.cast::<u8>()) };
     }
 }
 

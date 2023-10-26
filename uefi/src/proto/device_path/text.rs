@@ -70,9 +70,7 @@ impl<'a> Deref for PoolString<'a> {
 impl Drop for PoolString<'_> {
     fn drop(&mut self) {
         let addr = self.text as *mut u8;
-        self.boot_services
-            .free_pool(addr)
-            .expect("Failed to free pool [{addr:#?}]");
+        unsafe { self.boot_services.free_pool(addr) }.expect("Failed to free pool [{addr:#?}]");
     }
 }
 

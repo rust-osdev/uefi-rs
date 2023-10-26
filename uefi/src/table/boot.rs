@@ -13,6 +13,7 @@ use core::ffi::c_void;
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
+use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{ptr, slice};
 
 #[cfg(feature = "alloc")]
@@ -22,19 +23,9 @@ pub use uefi_raw::table::boot::{
     EventType, InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
 };
 
-// TODO: this similar to `SyncUnsafeCell`. Once that is stabilized we
-// can use it instead.
-struct GlobalImageHandle {
-    handle: UnsafeCell<Option<Handle>>,
-}
-
-// Safety: reads and writes are managed via `set_image_handle` and
-// `BootServices::image_handle`.
-unsafe impl Sync for GlobalImageHandle {}
-
-static IMAGE_HANDLE: GlobalImageHandle = GlobalImageHandle {
-    handle: UnsafeCell::new(None),
-};
+/// Global image handle. This is only set by `BootServices::set_image_handle`,
+/// and it is only read by `BootServices::image_handle`.
+static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// Size in bytes of a UEFI page.
 ///
@@ -95,22 +86,10 @@ pub struct BootServices(uefi_raw::table::boot::BootServices);
 impl BootServices {
     /// Get the [`Handle`] of the currently-executing image.
     pub fn image_handle(&self) -> Handle {
-        // Safety:
-        //
-        // `IMAGE_HANDLE` is only set by `set_image_handle`, see that
-        // documentation for more details.
-        //
-        // Additionally, `image_handle` takes a `&self` which ensures it
-        // can only be called while boot services are active. (After
-        // exiting boot services, the image handle should not be
-        // considered valid.)
-        unsafe {
-            IMAGE_HANDLE
-                .handle
-                .get()
-                .read()
-                .expect("set_image_handle has not been called")
-        }
+        let ptr = IMAGE_HANDLE.load(Ordering::Acquire);
+        // Safety: the image handle must be valid. We know it is, because it was
+        // set by `set_image_handle`, which has that same safety requirement.
+        unsafe { Handle::from_ptr(ptr) }.expect("set_image_handle has not been called")
     }
 
     /// Update the global image [`Handle`].
@@ -123,14 +102,15 @@ impl BootServices {
     ///
     /// # Safety
     ///
-    /// This function should only be called as described above. The
+    /// This function should only be called as described above,
+    /// and the `image_handle` must be a valid image [`Handle`]. Then
     /// safety guarantees of [`BootServices::open_protocol_exclusive`]
     /// rely on the global image handle being correct.
     pub unsafe fn set_image_handle(&self, image_handle: Handle) {
         // As with `image_handle`, `&self` isn't actually used, but it
         // enforces that this function is only called while boot
         // services are active.
-        IMAGE_HANDLE.handle.get().write(Some(image_handle));
+        IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
     }
 
     /// Raises a task's priority level and returns its previous level.

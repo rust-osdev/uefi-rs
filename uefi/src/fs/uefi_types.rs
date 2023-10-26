@@ -5,6 +5,6 @@
 pub use crate::proto::media::file::{
     Directory as UefiDirectoryHandle, File as UefiFileTrait, FileAttribute as UefiFileAttribute,
     FileHandle as UefiFileHandle, FileInfo as UefiFileInfo, FileMode as UefiFileMode,
-    FileType as UefiFileType, RegularFile as UefiRegularFileHandle,
+    FileType as UefiFileType,
 };
 pub use crate::proto::media::fs::SimpleFileSystem as SimpleFileSystemProtocol;

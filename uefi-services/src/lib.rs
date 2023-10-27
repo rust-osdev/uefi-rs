@@ -36,7 +36,8 @@ extern crate uefi;
 
 use core::ffi::c_void;
 use core::fmt::Write;
-use core::ptr::NonNull;
+use core::ptr::{self, NonNull};
+use core::sync::atomic::{AtomicPtr, Ordering};
 
 use cfg_if::cfg_if;
 
@@ -50,7 +51,7 @@ use uefi::{Event, Result};
 /// This table is only fully safe to use until UEFI boot services have been exited.
 /// After that, some fields and methods are unsafe to use, see the documentation of
 /// UEFI's ExitBootServices entry point for more details.
-static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
+static SYSTEM_TABLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// Global logger object
 #[cfg(feature = "logger")]
@@ -58,7 +59,14 @@ static mut LOGGER: Option<uefi::logger::Logger> = None;
 
 #[must_use]
 fn system_table_opt() -> Option<SystemTable<Boot>> {
-    unsafe { SYSTEM_TABLE.as_ref().map(|table| table.unsafe_clone()) }
+    let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
+    // Safety: the `SYSTEM_TABLE` pointer either be null or a valid system
+    // table.
+    //
+    // Null is the initial value, as well as the value set when exiting boot
+    // services. Otherwise, the value is set by the call to `init`, which
+    // requires a valid system table reference as input.
+    unsafe { SystemTable::from_ptr(ptr) }
 }
 
 /// Obtains a pointer to the system table.
@@ -84,10 +92,10 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
         return Status::SUCCESS.to_result_with_val(|| None);
     }
 
-    unsafe {
-        // Setup the system table singleton
-        SYSTEM_TABLE = Some(st.unsafe_clone());
+    // Setup the system table singleton
+    SYSTEM_TABLE.store(st.as_ptr().cast_mut(), Ordering::Release);
 
+    unsafe {
         // Setup logging and memory allocation
 
         #[cfg(feature = "logger")]
@@ -180,7 +188,7 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
     //        check that the callback does get called.
     //
     // info!("Shutting down the UEFI utility library");
-    SYSTEM_TABLE = None;
+    SYSTEM_TABLE.store(ptr::null_mut(), Ordering::Release);
 
     #[cfg(feature = "logger")]
     if let Some(ref mut logger) = LOGGER {

@@ -14,6 +14,8 @@
 - `Logger` no longer requires exterior mutability. `Logger::new` is now `const`,
   takes no arguments, and creates the logger in a disabled state. Call
   `Logger::set_output` to enable it.
+- `uefi::allocator::init` now takes a `&mut SystemTable<Boot>` instead of
+  `&BootServices`.
 
 ## uefi-macros - [Unreleased]
 

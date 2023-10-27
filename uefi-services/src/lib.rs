@@ -101,10 +101,10 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
         #[cfg(feature = "logger")]
         init_logger(st);
 
-        let boot_services = st.boot_services();
-        uefi::allocator::init(boot_services);
+        uefi::allocator::init(st);
 
         // Schedule these tools to be disabled on exit from UEFI boot services
+        let boot_services = st.boot_services();
         boot_services
             .create_event(
                 EventType::SIGNAL_EXIT_BOOT_SERVICES,

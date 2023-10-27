@@ -12,20 +12,22 @@
 //! Failure to do so will turn subsequent allocation into undefined behaviour.
 
 use core::alloc::{GlobalAlloc, Layout};
-use core::ptr::{self, NonNull};
-use core::sync::atomic::{AtomicU32, Ordering};
+use core::ffi::c_void;
+use core::ptr;
+use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
 
 use crate::proto::loaded_image::LoadedImage;
 use crate::table::boot::{BootServices, MemoryType};
+use crate::table::{Boot, SystemTable};
 
-/// Reference to the boot services table, used to call the pool memory allocation functions.
+/// Reference to the system table, used to call the boot services pool memory
+/// allocation functions.
 ///
-/// The inner pointer is only safe to dereference if UEFI boot services have not been
+/// The pointer is only safe to dereference if UEFI boot services have not been
 /// exited by the host application yet.
-static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
+static SYSTEM_TABLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// The memory type used for pool memory allocations.
-/// TODO: Use OnceCell when stablilized.
 static MEMORY_TYPE: AtomicU32 = AtomicU32::new(MemoryType::LOADER_DATA.0);
 
 /// Initializes the allocator.
@@ -34,9 +36,10 @@ static MEMORY_TYPE: AtomicU32 = AtomicU32::new(MemoryType::LOADER_DATA.0);
 ///
 /// This function is unsafe because you _must_ make sure that exit_boot_services
 /// will be called when UEFI boot services will be exited.
-pub unsafe fn init(boot_services: &BootServices) {
-    BOOT_SERVICES = NonNull::new(boot_services as *const _ as *mut _);
+pub unsafe fn init(system_table: &mut SystemTable<Boot>) {
+    SYSTEM_TABLE.store(system_table.as_ptr().cast_mut(), Ordering::Release);
 
+    let boot_services = system_table.boot_services();
     if let Ok(loaded_image) =
         boot_services.open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
     {
@@ -45,17 +48,18 @@ pub unsafe fn init(boot_services: &BootServices) {
 }
 
 /// Access the boot services
-fn boot_services() -> NonNull<BootServices> {
-    unsafe { BOOT_SERVICES.expect("Boot services are unavailable or have been exited") }
+fn boot_services() -> *const BootServices {
+    let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
+    let system_table =
+        unsafe { SystemTable::from_ptr(ptr) }.expect("The system table handle is not available");
+    system_table.boot_services()
 }
 
 /// Notify the allocator library that boot services are not safe to call anymore
 ///
 /// You must arrange for this function to be called on exit from UEFI boot services
 pub fn exit_boot_services() {
-    unsafe {
-        BOOT_SERVICES = None;
-    }
+    SYSTEM_TABLE.store(ptr::null_mut(), Ordering::Release);
 }
 
 /// Allocator which uses the UEFI pool allocation functions.
@@ -73,19 +77,19 @@ unsafe impl GlobalAlloc for Allocator {
         let align = layout.align();
         let memory_type = MemoryType(MEMORY_TYPE.load(Ordering::Acquire));
 
+        let boot_services = &*boot_services();
+
         if align > 8 {
             // The requested alignment is greater than 8, but `allocate_pool` is
             // only guaranteed to provide eight-byte alignment. Allocate extra
             // space so that we can return an appropriately-aligned pointer
             // within the allocation.
-            let full_alloc_ptr = if let Ok(ptr) = boot_services()
-                .as_ref()
-                .allocate_pool(memory_type, size + align)
-            {
-                ptr
-            } else {
-                return ptr::null_mut();
-            };
+            let full_alloc_ptr =
+                if let Ok(ptr) = boot_services.allocate_pool(memory_type, size + align) {
+                    ptr
+                } else {
+                    return ptr::null_mut();
+                };
 
             // Calculate the offset needed to get an aligned pointer within the
             // full allocation. If that offset is zero, increase it to `align`
@@ -110,8 +114,7 @@ unsafe impl GlobalAlloc for Allocator {
             // The requested alignment is less than or equal to eight, and
             // `allocate_pool` always provides eight-byte alignment, so we can
             // use `allocate_pool` directly.
-            boot_services()
-                .as_ref()
+            boot_services
                 .allocate_pool(memory_type, size)
                 .unwrap_or(ptr::null_mut())
         }
@@ -124,7 +127,7 @@ unsafe impl GlobalAlloc for Allocator {
             // before the aligned allocation in `alloc`.
             ptr = (ptr as *const *mut u8).sub(1).read();
         }
-        boot_services().as_ref().free_pool(ptr).unwrap();
+        (*boot_services()).free_pool(ptr).unwrap();
     }
 }
 

@@ -15,7 +15,8 @@
 use crate::proto::console::text::Output;
 
 use core::fmt::{self, Write};
-use core::ptr::NonNull;
+use core::ptr;
+use core::sync::atomic::{AtomicPtr, Ordering};
 
 /// Logging implementation which writes to a UEFI output stream.
 ///
@@ -24,39 +25,63 @@ use core::ptr::NonNull;
 /// undefined behaviour from inadvertent logging.
 #[derive(Debug)]
 pub struct Logger {
-    writer: Option<NonNull<Output>>,
+    writer: AtomicPtr<Output>,
 }
 
 impl Logger {
     /// Creates a new logger.
     ///
-    /// You must arrange for the `disable` method to be called or for this logger
-    /// to be otherwise discarded before boot services are exited.
+    /// The logger is initially disabled. Call [`set_output`] to enable it.
     ///
-    /// # Safety
-    ///
-    /// Undefined behaviour may occur if this logger is still active after the
-    /// application has exited the boot services stage.
-    pub unsafe fn new(output: &mut Output) -> Self {
+    /// [`set_output`]: Self::set_output
+    #[must_use]
+    pub const fn new() -> Self {
         Logger {
-            writer: NonNull::new(output as *const _ as *mut _),
+            writer: AtomicPtr::new(ptr::null_mut()),
         }
     }
 
-    /// Disable the logger
-    pub fn disable(&mut self) {
-        self.writer = None;
+    /// Get the output pointer (may be null).
+    #[must_use]
+    fn output(&self) -> *mut Output {
+        self.writer.load(Ordering::Acquire)
+    }
+
+    /// Set the [`Output`] to which the logger will write.
+    ///
+    /// If a null pointer is passed for `output`, this method is equivalent to
+    /// calling [`disable`].
+    ///
+    /// # Safety
+    ///
+    /// The `output` pointer must either be null or point to a valid [`Output`]
+    /// object. That object must remain valid until the logger is either
+    /// disabled, or `set_output` is called with a different `output`.
+    ///
+    /// You must arrange for the [`disable`] method to be called or for this
+    /// logger to be otherwise discarded before boot services are exited.
+    ///
+    /// [`disable`]: Self::disable
+    pub unsafe fn set_output(&self, output: *mut Output) {
+        self.writer.store(output, Ordering::Release);
+    }
+
+    /// Disable the logger.
+    pub fn disable(&self) {
+        unsafe { self.set_output(ptr::null_mut()) }
     }
 }
 
 impl log::Log for Logger {
     fn enabled(&self, _metadata: &log::Metadata) -> bool {
-        self.writer.is_some()
+        !self.output().is_null()
     }
 
     fn log(&self, record: &log::Record) {
-        if let Some(mut ptr) = self.writer {
-            let writer = unsafe { ptr.as_mut() };
+        let output = self.output();
+
+        if !output.is_null() {
+            let writer = unsafe { &mut *output };
             let result = DecoratedLog::write(
                 writer,
                 record.level(),

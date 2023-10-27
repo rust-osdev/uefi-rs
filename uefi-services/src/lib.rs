@@ -165,7 +165,10 @@ unsafe fn init_logger(st: &mut SystemTable<Boot>) {
 
     // Construct the logger.
     let logger = {
-        LOGGER = Some(uefi::logger::Logger::new(stdout));
+        let logger = uefi::logger::Logger::new();
+        logger.set_output(stdout);
+
+        LOGGER = Some(logger);
         LOGGER.as_ref().unwrap()
     };
 

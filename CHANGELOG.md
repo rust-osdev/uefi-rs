@@ -10,6 +10,9 @@
   had to add `&BootServices` as additional parameter.
 - `BootServices::free_pages` and `BootServices::free_pool` are now `unsafe` to
   call, since it is possible to trigger UB by freeing memory that is still in use.
+- `Logger` no longer requires exterior mutability. `Logger::new` is now `const`,
+  takes no arguments, and creates the logger in a disabled state. Call
+  `Logger::set_output` to enable it.
 
 ## uefi-macros - [Unreleased]
 

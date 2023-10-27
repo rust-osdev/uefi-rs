@@ -113,6 +113,12 @@ impl<View: SystemTableView> SystemTable<View> {
             _marker: PhantomData,
         })
     }
+
+    /// Get the underlying raw pointer.
+    #[must_use]
+    pub fn as_ptr(&self) -> *const c_void {
+        self.table.cast()
+    }
 }
 
 // These parts of the UEFI System Table interface may only be used until boot

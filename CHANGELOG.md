@@ -4,6 +4,7 @@
 
 ### Added
 - Implemented `Index`, `IndexMut`, `get`, and `get_mut` on `MemoryMap`.
+- Added `SystemTable::as_ptr`.
 
 ### Changed
 - We fixed a memory leak in `GraphicsOutput::query_mode`. As a consequence, we

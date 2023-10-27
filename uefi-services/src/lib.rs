@@ -56,6 +56,11 @@ static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 #[cfg(feature = "logger")]
 static mut LOGGER: Option<uefi::logger::Logger> = None;
 
+#[must_use]
+fn system_table_opt() -> Option<SystemTable<Boot>> {
+    unsafe { SYSTEM_TABLE.as_ref().map(|table| table.unsafe_clone()) }
+}
+
 /// Obtains a pointer to the system table.
 ///
 /// This is meant to be used by higher-level libraries,
@@ -66,12 +71,7 @@ static mut LOGGER: Option<uefi::logger::Logger> = None;
 /// The returned pointer is only valid until boot services are exited.
 #[must_use]
 pub fn system_table() -> SystemTable<Boot> {
-    unsafe {
-        let table_ref = SYSTEM_TABLE
-            .as_ref()
-            .expect("The system table handle is not available");
-        table_ref.unsafe_clone()
-    }
+    system_table_opt().expect("The system table handle is not available")
 }
 
 /// Initialize the UEFI utility library.
@@ -79,12 +79,12 @@ pub fn system_table() -> SystemTable<Boot> {
 /// This must be called as early as possible,
 /// before trying to use logging or memory allocation capabilities.
 pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
-    unsafe {
+    if system_table_opt().is_some() {
         // Avoid double initialization.
-        if SYSTEM_TABLE.is_some() {
-            return Status::SUCCESS.to_result_with_val(|| None);
-        }
+        return Status::SUCCESS.to_result_with_val(|| None);
+    }
 
+    unsafe {
         // Setup the system table singleton
         SYSTEM_TABLE = Some(st.unsafe_clone());
 
@@ -111,15 +111,10 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
 // Internal function for print macros.
 #[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
-    unsafe {
-        let st = SYSTEM_TABLE
-            .as_mut()
-            .expect("The system table handle is not available");
-
-        st.stdout()
-            .write_fmt(args)
-            .expect("Failed to write to stdout");
-    }
+    system_table()
+        .stdout()
+        .write_fmt(args)
+        .expect("Failed to write to stdout");
 }
 
 /// Prints to the standard output.
@@ -201,7 +196,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     println!("[PANIC]: {}", info);
 
     // Give the user some time to read the message
-    if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
+    if let Some(st) = system_table_opt() {
         st.boot_services().stall(10_000_000);
     } else {
         let mut dummy = 0u64;
@@ -222,7 +217,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             qemu_exit_handle.exit_failure();
         } else {
             // If the system table is available, use UEFI's standard shutdown mechanism
-            if let Some(st) = unsafe { SYSTEM_TABLE.as_ref() } {
+            if let Some(st) = system_table_opt() {
                 use uefi::table::runtime::ResetType;
                 st.runtime_services()
                     .reset(ResetType::SHUTDOWN, uefi::Status::ABORTED, None);

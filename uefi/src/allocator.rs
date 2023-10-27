@@ -13,6 +13,7 @@
 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
+use core::sync::atomic::{AtomicU32, Ordering};
 
 use crate::proto::loaded_image::LoadedImage;
 use crate::table::boot::{BootServices, MemoryType};
@@ -25,7 +26,7 @@ static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
 
 /// The memory type used for pool memory allocations.
 /// TODO: Use OnceCell when stablilized.
-static mut MEMORY_TYPE: MemoryType = MemoryType::LOADER_DATA;
+static MEMORY_TYPE: AtomicU32 = AtomicU32::new(MemoryType::LOADER_DATA.0);
 
 /// Initializes the allocator.
 ///
@@ -39,7 +40,7 @@ pub unsafe fn init(boot_services: &BootServices) {
     if let Ok(loaded_image) =
         boot_services.open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
     {
-        MEMORY_TYPE = loaded_image.data_type()
+        MEMORY_TYPE.store(loaded_image.data_type().0, Ordering::Release);
     }
 }
 
@@ -70,6 +71,7 @@ unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let size = layout.size();
         let align = layout.align();
+        let memory_type = MemoryType(MEMORY_TYPE.load(Ordering::Acquire));
 
         if align > 8 {
             // The requested alignment is greater than 8, but `allocate_pool` is
@@ -78,7 +80,7 @@ unsafe impl GlobalAlloc for Allocator {
             // within the allocation.
             let full_alloc_ptr = if let Ok(ptr) = boot_services()
                 .as_ref()
-                .allocate_pool(MEMORY_TYPE, size + align)
+                .allocate_pool(memory_type, size + align)
             {
                 ptr
             } else {
@@ -110,7 +112,7 @@ unsafe impl GlobalAlloc for Allocator {
             // use `allocate_pool` directly.
             boot_services()
                 .as_ref()
-                .allocate_pool(MEMORY_TYPE, size)
+                .allocate_pool(memory_type, size)
                 .unwrap_or(ptr::null_mut())
         }
     }

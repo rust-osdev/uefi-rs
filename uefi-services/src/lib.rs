@@ -54,7 +54,7 @@ static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
 
 /// Global logger object
 #[cfg(feature = "logger")]
-static mut LOGGER: Option<uefi::logger::Logger> = None;
+static LOGGER: uefi::logger::Logger = uefi::logger::Logger::new();
 
 /// Obtains a pointer to the system table.
 ///
@@ -161,19 +161,11 @@ macro_rules! println {
 /// disable() on exit from UEFI boot services.
 #[cfg(feature = "logger")]
 unsafe fn init_logger(st: &mut SystemTable<Boot>) {
-    let stdout = st.stdout();
-
-    // Construct the logger.
-    let logger = {
-        let logger = uefi::logger::Logger::new();
-        logger.set_output(stdout);
-
-        LOGGER = Some(logger);
-        LOGGER.as_ref().unwrap()
-    };
+    // Connect the logger to stdout.
+    LOGGER.set_output(st.stdout());
 
     // Set the logger.
-    log::set_logger(logger).unwrap(); // Can only fail if already initialized.
+    log::set_logger(&LOGGER).unwrap(); // Can only fail if already initialized.
 
     // Set logger max level to level specified by log features
     log::set_max_level(log::STATIC_MAX_LEVEL);
@@ -191,9 +183,7 @@ unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_v
     SYSTEM_TABLE = None;
 
     #[cfg(feature = "logger")]
-    if let Some(ref mut logger) = LOGGER {
-        logger.disable();
-    }
+    LOGGER.disable();
 
     uefi::allocator::exit_boot_services();
 }

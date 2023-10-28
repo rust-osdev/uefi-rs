@@ -114,6 +114,7 @@ pub mod prelude;
 
 pub mod allocator;
 
+pub mod boot;
 pub mod system;
 
 #[cfg(feature = "logger")]

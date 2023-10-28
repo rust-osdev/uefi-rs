@@ -12,15 +12,15 @@
 //! Others, called "Runtime Services", may still be used after that point, but require
 //! a specific CPU configuration which any operating system is unlikely to preserve.
 
-use core::{
-    ptr::{self, NonNull},
-    slice,
-    sync::atomic::{AtomicBool, AtomicPtr, Ordering},
-};
+use core::ptr::{self, NonNull};
+use core::slice;
+use core::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 
 use uefi_raw::table::Revision;
 
-use crate::{proto::console::text, table::cfg, CStr16, Char16};
+use crate::proto::console::text;
+use crate::table::cfg;
+use crate::{CStr16, Char16};
 
 static SYSTEM_TABLE: AtomicPtr<uefi_raw::table::system::SystemTable> =
     AtomicPtr::new(ptr::null_mut());
@@ -42,17 +42,20 @@ pub(crate) fn system_table() -> NonNull<uefi_raw::table::system::SystemTable> {
 }
 
 /// Return the firmware vendor string.
+#[must_use]
 pub fn firmware_vendor() -> &'static CStr16 {
     unsafe { CStr16::from_ptr(system_table().as_ref().firmware_vendor.cast::<Char16>()) }
 }
 
 /// Return the firmware version.
+#[must_use]
 pub fn firmware_revision() -> u32 {
     unsafe { system_table().as_ref().firmware_revision }
 }
 
 /// Returns the revision of this table, which is defined to be
 /// the revision of the UEFI specification implemented by the firmware.
+#[must_use]
 pub fn uefi_revision() -> Revision {
     unsafe { system_table().as_ref().header.revision }
 }
@@ -170,4 +173,11 @@ where
     LOCK.store(false, Ordering::Relaxed);
 
     result
+}
+
+/// Return the address of the SystemTable that resides in a UEFI runtime services
+/// memory region.
+#[must_use]
+pub fn get_current_system_table_addr() -> u64 {
+    SYSTEM_TABLE.load(Ordering::Relaxed) as u64
 }

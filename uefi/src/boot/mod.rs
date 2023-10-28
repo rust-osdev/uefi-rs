@@ -1,30 +1,45 @@
-use core::{
-    cell::UnsafeCell,
-    ffi::c_void,
-    mem,
-    ops::{Deref, DerefMut},
-    ptr::{self, NonNull},
-    slice,
-    sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering},
-};
+//! UEFI services available during boot.
+//!
+//! There are two ways to call all boot services except [`exit_boot_services`].
+//! - Utilize a [`BootHandle`], which can be acquired by calling [`acquire_boot_handle`]
+//!     or cloning an existing [`BootHandle`].
+//! - Utilize a function, which are all avialable through this module.
 
-use uefi_raw::{
-    table::boot::{EventNotifyFn, EventType, MemoryType, Tpl},
-    PhysicalAddress, Status,
-};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+use core::cell::UnsafeCell;
+use core::ffi::c_void;
+use core::mem::{self, MaybeUninit};
+use core::ops::{Deref, DerefMut};
+use core::ptr::{self, NonNull};
+use core::slice;
+use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering};
+
+use uefi_raw::table::boot::{EventNotifyFn, EventType, MemoryType, Tpl};
+use uefi_raw::{PhysicalAddress, Status};
 use uguid::Guid;
 
-use crate::{
-    proto::Protocol,
-    system::system_table,
-    table::boot::{AllocateType, MemoryMap, MemoryMapSize, OpenProtocolParams, TimerTrigger},
-    Event, Handle, Result,
+use crate::proto::device_path::DevicePath;
+use crate::proto::media::fs::SimpleFileSystem;
+use crate::proto::{Protocol, ProtocolPointer};
+use crate::system::system_table;
+use crate::table::boot::{
+    AllocateType, LoadImageSource, MemoryMap, MemoryMapSize, OpenProtocolAttributes,
+    OpenProtocolParams, SearchType, TimerTrigger,
 };
+use crate::{Char16, Event, Handle, Result};
 
 use self::raw::{
-    allocate_pages_raw, allocate_pool_raw, close_event_raw, create_event_ex_raw, create_event_raw,
-    free_pages_raw, free_pool_raw, memory_map_raw, memory_map_size_raw, raise_tpl_raw,
-    set_timer_raw, signal_event_raw, wait_for_event_raw,
+    allocate_pages_raw, allocate_pool_raw, check_event_raw, close_event_raw,
+    connect_controller_raw, create_event_ex_raw, create_event_raw, disconnect_controller_raw,
+    exit_raw, free_pages_raw, free_pool_raw, get_handle_for_protocol_raw,
+    get_image_file_system_raw, install_configuration_table_raw, install_protocol_interface_raw,
+    load_image_raw, locate_device_path_raw, locate_handle_buffer_raw, locate_handle_raw,
+    memory_map_raw, memory_map_size_raw, open_protocol_exclusive_raw, open_protocol_raw,
+    protocols_per_handle_raw, raise_tpl_raw, register_protocol_notify_raw,
+    reinstall_protocol_interface_raw, set_timer_raw, set_watchdog_timer_raw, signal_event_raw,
+    stall_raw, start_image_raw, test_protocol_raw, uninstall_protocol_interface_raw,
+    unload_image_raw, wait_for_event_raw,
 };
 
 mod raw;
@@ -73,7 +88,7 @@ pub fn acquire_boot_handle() -> BootHandle {
 /// # Safety
 ///
 /// This function should be only called as described above, and the `image_handle`
-/// must be a valid image [`Handle`]. Then the safety guarentees of
+/// must be a valid image [`Handle`]. Then the safety guarantees of
 /// [`open_protocol_exclusive`] will be correct.
 pub unsafe fn set_image_handle(image_handle: Handle) {
     IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Relaxed)
@@ -118,6 +133,7 @@ impl BootHandle {
     /// Raising a task's priority level can affect other running tasks and
     /// critical processes run by UEFI. The highest priority level is the
     /// most dangerous, since it disables interrupts.
+    #[must_use]
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard {
         raise_tpl_raw(MaybeBootRef::Ref(self), tpl)
     }
@@ -399,13 +415,584 @@ impl BootHandle {
     pub fn close_event(&self, event: Event) -> Result {
         close_event_raw(self, event)
     }
+
+    /// Checks to see if an event is signaled, without blocking execution to wait for it.
+    ///
+    /// The returned value will be `true` if the event is in the signaled state,
+    /// otherwise `false` is returned.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.CheckEvent()` in the UEFI Specification for more details.
+    ///
+    /// Note: Instead of returning the `EFI_NOT_READY` error, as listed in the UEFI
+    /// Specification, this function will return `false`.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub fn check_event(&self, event: Event) -> Result<bool> {
+        check_event_raw(self, event)
+    }
+
+    /// Installs a protocol interface on a device handle. If the inner `Option` in `handle` is `None`,
+    /// one will be created and added to the list of handles in the system and then returned.
+    ///
+    /// When a protocol interface is installed, firmware will call all functions that have registered
+    /// to wait for that interface to be installed.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.InstallProtocolInterface()` in the UEFI Specification for
+    /// more details.
+    ///
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub unsafe fn install_protocol_interface(
+        &self,
+        handle: Option<Handle>,
+        protocol: &Guid,
+        interface: *mut c_void,
+    ) -> Result<Handle> {
+        install_protocol_interface_raw(self, handle, protocol, interface)
+    }
+
+    /// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
+    /// These interfaces may be the same, in which case the registered protocol notifies occur for the handle
+    /// without replacing the interface.
+    ///
+    /// As with `install_protocol_interface`, any process that has registered to wait for the installation of
+    /// the interface is notified.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring that there are no references to the `old_interface` that is being
+    /// removed.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.ReinstallProtocolInterface()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub unsafe fn reinstall_protocol_interface(
+        &self,
+        handle: Handle,
+        protocol: &Guid,
+        old_interface: *mut c_void,
+        new_interface: *mut c_void,
+    ) -> Result<()> {
+        reinstall_protocol_interface_raw(self, handle, protocol, old_interface, new_interface)
+    }
+
+    /// Removes a protocol interface from a device handle.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for ensuring that there are no references to a protocol interface
+    /// that has been removed. Some protocols may not be able to be removed as there is no information
+    /// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
+    /// to device protocols.
+    ///
+    /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.UninstallProtocolInterface()` in the UEFI Specification for
+    /// more details.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub unsafe fn uninstall_protocol_interface(
+        &self,
+        handle: Handle,
+        protocol: &Guid,
+        interface: *mut c_void,
+    ) -> Result<()> {
+        uninstall_protocol_interface_raw(self, handle, protocol, interface)
+    }
+
+    /// Registers `event` to be signalled whenever a protocol interface is registered for
+    /// `protocol` by `install_protocol_interface()` or `reinstall_protocol_interface()`.
+    ///
+    /// Once `event` has been signalled, `BootServices::locate_handle()` can be used to identify
+    /// the newly (re)installed handles that support `protocol`. The returned `SearchKey` on success
+    /// corresponds to the `search_key` parameter in `locate_handle()`.
+    ///
+    /// Events can be unregistered from protocol interface notification by calling `close_event()`.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.RegisterProtocolNotify()` in the UEFI Specification for
+    /// more details.
+    ///
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub fn register_protocol_notify<'guid>(
+        &self,
+        protocol: &'guid Guid,
+        event: Event,
+    ) -> Result<(Event, SearchType<'guid>)> {
+        register_protocol_notify_raw(self, protocol, event)
+    }
+
+    /// Enumerates all handles installed on the system which match a certain query.
+    ///
+    /// You should first call this function with `None` for the output buffer,
+    /// in order to retrieve the length of the buffer you need to allocate.
+    ///
+    /// The next call will fill the buffer with the requested data.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.LocateHandle()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::BUFFER_TOO_SMALL`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub fn locate_handle(
+        &self,
+        search_ty: SearchType,
+        output: Option<&mut [MaybeUninit<Handle>]>,
+    ) -> Result<usize> {
+        locate_handle_raw(self, search_ty, output)
+    }
+
+    /// Locates the handle to a device on the device path that supports the specified protocol.
+    ///
+    /// The `device_path` is updated to point at the remaining part of the [`DevicePath`] after
+    /// the part that matched the protocol. For example, it can be used with a device path
+    /// that contains a file path to strip off the file system portion of the device path,
+    /// leaving the file path and handle to the file system driver needed to access the file.
+    ///
+    /// If the first node of `device_path` matches the
+    /// protocol, the `device_path` is advanced to the device path terminator node. If `device_path`
+    /// is a multi-instance device path, the function will operate on the first instance.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.LocateDevicePath()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
+        &self,
+        device_path: &mut &DevicePath,
+    ) -> Result<Handle> {
+        locate_device_path_raw::<P>(self, device_path)
+    }
+
+    /// Find an arbitrary handle that supports a particular
+    /// [`Protocol`]. Returns [`NOT_FOUND`] if no handles support the
+    /// protocol.
+    ///
+    /// This method is a convenient wrapper around
+    /// [`BootServices::locate_handle_buffer`] for getting just one
+    /// handle. This is useful when you don't care which handle the
+    /// protocol is opened on. For example, [`DevicePathToText`] isn't
+    /// tied to a particular device, so only a single handle is expected
+    /// to exist.
+    ///
+    /// [`NOT_FOUND`]: Status::NOT_FOUND
+    /// [`DevicePathToText`]: uefi::proto::device_path::text::DevicePathToText
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use uefi::proto::device_path::text::DevicePathToText;
+    /// use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+    /// use uefi::Handle;
+    /// # use uefi::Result;
+    ///
+    /// # fn get_fake_val<T>() -> T { todo!() }
+    /// # fn test() -> Result {
+    /// # let boot_services: &BootServices = get_fake_val();
+    /// # let image_handle: Handle = get_fake_val();
+    /// let handle = boot_services.get_handle_for_protocol::<DevicePathToText>()?;
+    /// let device_path_to_text = boot_services.open_protocol_exclusive::<DevicePathToText>(handle)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns [`NOT_FOUND`] if no handles support the requested protocol.
+    pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>(&self) -> Result<Handle> {
+        get_handle_for_protocol_raw::<P>(self)
+    }
+
+    /// Load an EFI image into memory and return a [`Handle`] to the image.
+    ///
+    /// There are two ways to load the image: by copying raw image data
+    /// from a source buffer, or by loading the image via the
+    /// [`SimpleFileSystem`] protocol. See [`LoadImageSource`] for more
+    /// details of the `source` parameter.
+    ///
+    /// The `parent_image_handle` is used to initialize the
+    /// `parent_handle` field of the [`LoadedImage`] protocol for the
+    /// image.
+    ///
+    /// If the image is successfully loaded, a [`Handle`] supporting the
+    /// [`LoadedImage`] and [`LoadedImageDevicePath`] protocols is
+    /// returned. The image can be started with [`start_image`] or
+    /// unloaded with [`unload_image`].
+    ///
+    /// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
+    /// [`start_image`]: BootServices::start_image
+    /// [`unload_image`]: BootServices::unload_image
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.LoadImage()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::LOAD_ERROR`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::SECURITY_VIOLATION`]
+    pub fn load_image(
+        &self,
+        parent_image_handle: Handle,
+        source: LoadImageSource,
+    ) -> uefi::Result<Handle> {
+        load_image_raw(self, parent_image_handle, source)
+    }
+
+    /// Unload an EFI image.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.UnloadImage()` in the UEFI Specification for more details.
+    ///
+    /// As this function can return an error code from the unloaded image, any error type
+    /// can be returned by this function.
+    ///
+    /// The following error codes can also be returned while unloading an image:
+    ///
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub fn unload_image(&self, image_handle: Handle) -> Result {
+        unload_image_raw(self, image_handle)
+    }
+
+    /// Transfer control to a loaded image's entry point.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.StartImage()` in the UEFI Specification for more details.
+    ///
+    /// As this function can return an error code from the started image, any error type
+    /// can be returned by this function.
+    ///
+    /// The following error code can also be returned while starting an image:
+    ///
+    /// * [`uefi::Status::UNSUPPORTED`]
+    pub fn start_image(&self, image_handle: Handle) -> Result {
+        start_image_raw(self, image_handle)
+    }
+
+    /// Exits the UEFI application and returns control to the UEFI component
+    /// that started the UEFI application.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it is up to the caller to ensure that
+    /// all resources allocated by the application is freed before invoking
+    /// exit and returning control to the UEFI component that started the UEFI
+    /// application.
+    pub unsafe fn exit(
+        &self,
+        image_handle: Handle,
+        exit_status: Status,
+        exit_data_size: usize,
+        exit_data: *mut Char16,
+    ) -> ! {
+        exit_raw(self, image_handle, exit_status, exit_data_size, exit_data)
+    }
+
+    /// Stalls the processor for an amount of time.
+    ///
+    /// The time is in microseconds.
+    pub fn stall(&self, time: usize) {
+        stall_raw(self, time)
+    }
+
+    /// Adds, updates, or removes a configuration table entry
+    /// from the EFI System Table.
+    ///
+    /// # Safety
+    ///
+    /// This relies on `table_ptr` being allocated in the
+    /// pool of type [`uefi::table::boot::MemoryType::RUNTIME_SERVICES_DATA`]
+    /// according to the specification.
+    /// Other memory types such as
+    /// [`uefi::table::boot::MemoryType::ACPI_RECLAIM`]
+    /// can be considered.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.InstallConfigurationTable()` in the UEFI
+    /// Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    pub unsafe fn install_configuration_table(
+        &self,
+        guid_entry: &Guid,
+        table_ptr: *const c_void,
+    ) -> Result {
+        install_configuration_table_raw(self, guid_entry, table_ptr)
+    }
+
+    /// Set the watchdog timer.
+    ///
+    /// UEFI will start a 5-minute countdown after an UEFI image is loaded.
+    /// The image must either successfully load an OS and call `ExitBootServices`
+    /// in that time, or disable the watchdog.
+    ///
+    /// Otherwise, the firmware will log the event using the provided numeric
+    /// code and data, then reset the system.
+    ///
+    /// This function allows you to change the watchdog timer's timeout to a
+    /// certain amount of seconds or to disable the watchdog entirely. It also
+    /// allows you to change what will be logged when the timer expires.
+    ///
+    /// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
+    /// firmware use. Higher values can be used freely by applications.
+    ///
+    /// If provided, the watchdog data must be a null-terminated string
+    /// optionally followed by other binary data.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.SetWatchdogTimer()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    pub fn set_watchdog_timer(
+        &self,
+        timeout: usize,
+        watchdog_code: u64,
+        data: Option<&mut [u16]>,
+    ) -> Result {
+        set_watchdog_timer_raw(self, timeout, watchdog_code, data)
+    }
+
+    /// Connect one or more drivers to a controller.
+    ///
+    /// Usually one disconnects and then reconnects certain drivers
+    /// to make them rescan some state that changed, e.g. reconnecting
+    /// a `BlockIO` handle after your app changed the partitions somehow.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.ConnectController()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::SECURITY_VIOLATION`]
+    pub fn connect_controller(
+        &self,
+        controller: Handle,
+        driver_image: Option<Handle>,
+        remaining_device_path: Option<&DevicePath>,
+        recursive: bool,
+    ) -> Result {
+        connect_controller_raw(
+            self,
+            controller,
+            driver_image,
+            remaining_device_path,
+            recursive,
+        )
+    }
+
+    /// Disconnect one or more drivers from a controller.
+    ///
+    /// See [`connect_controller`][Self::connect_controller].
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.DisconnectController()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    /// * [`uefi::Status::DEVICE_ERROR`]
+    pub fn disconnect_controller(
+        &self,
+        controller: Handle,
+        driver_image: Option<Handle>,
+        child: Option<Handle>,
+    ) -> Result {
+        disconnect_controller_raw(self, controller, driver_image, child)
+    }
+
+    /// Open a protocol interface for a handle.
+    ///
+    /// See also [`open_protocol_exclusive`], which provides a safe
+    /// subset of this functionality.
+    ///
+    /// This function attempts to get the protocol implementation of a
+    /// handle, based on the protocol GUID. It is recommended that all
+    /// new drivers and applications use [`open_protocol_exclusive`] or
+    /// [`open_protocol`].
+    ///
+    /// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for
+    /// details of the input parameters.
+    ///
+    /// If successful, a [`ScopedProtocol`] is returned that will
+    /// automatically close the protocol interface when dropped.
+    ///
+    /// UEFI protocols are neither thread-safe nor reentrant, but the firmware
+    /// provides no mechanism to protect against concurrent usage. Such
+    /// protections must be implemented by user-level code, for example via a
+    /// global `HashSet`.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because it can be used to open a
+    /// protocol in ways that don't get tracked by the UEFI
+    /// implementation. This could allow the protocol to be removed from
+    /// a handle, or for the handle to be deleted entirely, while a
+    /// reference to the protocol is still active. The caller is
+    /// responsible for ensuring that the handle and protocol remain
+    /// valid until the `ScopedProtocol` is dropped.
+    ///
+    /// [`open_protocol`]: BootServices::open_protocol
+    /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
+        &self,
+        params: OpenProtocolParams,
+        attributes: OpenProtocolAttributes,
+    ) -> Result<ScopedProtocol<P>> {
+        open_protocol_raw(MaybeBootRef::Ref(self), params, attributes)
+    }
+
+    /// Open a protocol interface for a handle in exclusive mode.
+    ///
+    /// If successful, a [`ScopedProtocol`] is returned that will
+    /// automatically close the protocol interface when dropped.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
+        &self,
+        handle: Handle,
+    ) -> Result<ScopedProtocol<P>> {
+        open_protocol_exclusive_raw(MaybeBootRef::Ref(self), handle)
+    }
+
+    /// Test whether a handle supports a protocol.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    pub fn test_protocol<P: ProtocolPointer + ?Sized>(
+        &self,
+        params: OpenProtocolParams,
+    ) -> Result<()> {
+        test_protocol_raw::<P>(self, params)
+    }
+
+    /// Get the list of protocol interface [`Guids`][Guid] that are installed
+    /// on a [`Handle`].
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.ProtocolsPerHandle()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    pub fn protocols_per_handle(&self, handle: Handle) -> Result<ProtocolsPerHandle> {
+        protocols_per_handle_raw(MaybeBootRef::Ref(self), handle)
+    }
+
+    /// Returns an array of handles that support the requested protocol in a buffer allocated from
+    /// pool.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.LocateHandleBuffer()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    /// * [`uefi::Status::OUT_OF_RESOURCES`]
+    pub fn locate_handle_buffer(&self, search_ty: SearchType) -> Result<HandleBuffer> {
+        locate_handle_buffer_raw(MaybeBootRef::Ref(self), search_ty)
+    }
+
+    /// Retrieves a [`SimpleFileSystem`] protocol associated with the device the given
+    /// image was loaded from.
+    ///
+    /// # Errors
+    ///
+    /// This function can return errors from [`open_protocol_exclusive`] and
+    /// [`locate_device_path`]. See those functions for more details.
+    ///
+    /// [`open_protocol_exclusive`]: Self::open_protocol_exclusive
+    /// [`locate_device_path`]: Self::locate_device_path
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    /// * [`uefi::Status::UNSUPPORTED`]
+    /// * [`uefi::Status::ACCESS_DENIED`]
+    /// * [`uefi::Status::ALREADY_STARTED`]
+    /// * [`uefi::Status::NOT_FOUND`]
+    pub fn get_image_file_system(
+        &self,
+        image_handle: Handle,
+    ) -> Result<ScopedProtocol<SimpleFileSystem>> {
+        get_image_file_system_raw(MaybeBootRef::Ref(self), image_handle)
+    }
+
+    #[cfg(feature = "alloc")]
+    /// Returns all the handles implementing a certain protocol.
+    ///
+    /// # Errors
+    ///
+    /// All errors come from calls to [`locate_handle`].
+    ///
+    /// [`locate_handle`]: Self::locate_handle
+    pub fn find_handles<P: ProtocolPointer + ?Sized>(&self) -> Result<Vec<Handle>> {
+        use self::raw::find_handles_raw;
+
+        find_handles_raw::<P>(self)
+    }
 }
 
 impl Clone for BootHandle {
     fn clone(&self) -> Self {
         let count = BOOT_HANDLE_COUNT.fetch_add(1, Ordering::Relaxed);
 
-        if count > usize::MAX {
+        if count > usize::MAX / 2 {
             BOOT_HANDLE_COUNT.fetch_sub(1, Ordering::Relaxed);
             panic!("boot handle reference counter grew too large");
         }
@@ -437,6 +1024,7 @@ impl Drop for BootHandle {
 /// Raising a task's priority level can affect other running tasks and
 /// critical processes run by UEFI. The highest priority level is the
 /// most dangerous, since it disables interrupts.
+#[must_use]
 pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard<'static> {
     let boot_handle = acquire_boot_handle();
 
@@ -517,7 +1105,7 @@ pub fn memory_map_size() -> MemoryMapSize {
 ///
 /// * [`uefi::Status::BUFFER_TOO_SMALL`]
 /// * [`uefi::Status::INVALID_PARAMETER`]
-pub fn memory_map<'buf>(buffer: &'buf mut [u8]) -> Result<MemoryMap<'buf>> {
+pub fn memory_map(buffer: &mut [u8]) -> Result<MemoryMap> {
     let boot_handle = acquire_boot_handle();
 
     memory_map_raw(&boot_handle, buffer)
@@ -742,6 +1330,599 @@ pub fn close_event(event: Event) -> Result {
     close_event_raw(&boot_handle, event)
 }
 
+/// Checks to see if an event is signaled, without blocking execution to wait for it.
+///
+/// The returned value will be `true` if the event is in the signaled state,
+/// otherwise `false` is returned.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.CheckEvent()` in the UEFI Specification for more details.
+///
+/// Note: Instead of returning the `EFI_NOT_READY` error, as listed in the UEFI
+/// Specification, this function will return `false`.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub fn check_event(event: Event) -> Result<bool> {
+    let boot_handle = acquire_boot_handle();
+
+    check_event_raw(&boot_handle, event)
+}
+
+/// Installs a protocol interface on a device handle. If the inner `Option` in `handle` is `None`,
+/// one will be created and added to the list of handles in the system and then returned.
+///
+/// When a protocol interface is installed, firmware will call all functions that have registered
+/// to wait for that interface to be installed.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.InstallProtocolInterface()` in the UEFI Specification for
+/// more details.
+///
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub unsafe fn install_protocol_interface(
+    handle: Option<Handle>,
+    protocol: &Guid,
+    interface: *mut c_void,
+) -> Result<Handle> {
+    let boot_handle = acquire_boot_handle();
+
+    install_protocol_interface_raw(&boot_handle, handle, protocol, interface)
+}
+
+/// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
+/// These interfaces may be the same, in which case the registered protocol notifies occur for the handle
+/// without replacing the interface.
+///
+/// As with `install_protocol_interface`, any process that has registered to wait for the installation of
+/// the interface is notified.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to the `old_interface` that is being
+/// removed.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.ReinstallProtocolInterface()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub unsafe fn reinstall_protocol_interface(
+    handle: Handle,
+    protocol: &Guid,
+    old_interface: *mut c_void,
+    new_interface: *mut c_void,
+) -> Result<()> {
+    let boot_handle = acquire_boot_handle();
+
+    reinstall_protocol_interface_raw(&boot_handle, handle, protocol, old_interface, new_interface)
+}
+
+/// Removes a protocol interface from a device handle.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to a protocol interface
+/// that has been removed. Some protocols may not be able to be removed as there is no information
+/// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
+/// to device protocols.
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.UninstallProtocolInterface()` in the UEFI Specification for
+/// more details.
+///
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub unsafe fn uninstall_protocol_interface(
+    handle: Handle,
+    protocol: &Guid,
+    interface: *mut c_void,
+) -> Result<()> {
+    let boot_handle = acquire_boot_handle();
+
+    uninstall_protocol_interface_raw(&boot_handle, handle, protocol, interface)
+}
+
+/// Registers `event` to be signalled whenever a protocol interface is registered for
+/// `protocol` by `install_protocol_interface()` or `reinstall_protocol_interface()`.
+///
+/// Once `event` has been signalled, `BootServices::locate_handle()` can be used to identify
+/// the newly (re)installed handles that support `protocol`. The returned `SearchKey` on success
+/// corresponds to the `search_key` parameter in `locate_handle()`.
+///
+/// Events can be unregistered from protocol interface notification by calling `close_event()`.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.RegisterProtocolNotify()` in the UEFI Specification for
+/// more details.
+///
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub fn register_protocol_notify(protocol: &Guid, event: Event) -> Result<(Event, SearchType)> {
+    let boot_handle = acquire_boot_handle();
+
+    register_protocol_notify_raw(&boot_handle, protocol, event)
+}
+
+/// Enumerates all handles installed on the system which match a certain query.
+///
+/// You should first call this function with `None` for the output buffer,
+/// in order to retrieve the length of the buffer you need to allocate.
+///
+/// The next call will fill the buffer with the requested data.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.LocateHandle()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::BUFFER_TOO_SMALL`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub fn locate_handle(
+    search_ty: SearchType,
+    output: Option<&mut [MaybeUninit<Handle>]>,
+) -> Result<usize> {
+    let boot_handle = acquire_boot_handle();
+
+    locate_handle_raw(&boot_handle, search_ty, output)
+}
+
+/// Locates the handle to a device on the device path that supports the specified protocol.
+///
+/// The `device_path` is updated to point at the remaining part of the [`DevicePath`] after
+/// the part that matched the protocol. For example, it can be used with a device path
+/// that contains a file path to strip off the file system portion of the device path,
+/// leaving the file path and handle to the file system driver needed to access the file.
+///
+/// If the first node of `device_path` matches the
+/// protocol, the `device_path` is advanced to the device path terminator node. If `device_path`
+/// is a multi-instance device path, the function will operate on the first instance.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.LocateDevicePath()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
+    device_path: &mut &DevicePath,
+) -> Result<Handle> {
+    let boot_handle = acquire_boot_handle();
+
+    locate_device_path_raw::<P>(&boot_handle, device_path)
+}
+
+/// Find an arbitrary handle that supports a particular
+/// [`Protocol`]. Returns [`NOT_FOUND`] if no handles support the
+/// protocol.
+///
+/// This method is a convenient wrapper around
+/// [`BootServices::locate_handle_buffer`] for getting just one
+/// handle. This is useful when you don't care which handle the
+/// protocol is opened on. For example, [`DevicePathToText`] isn't
+/// tied to a particular device, so only a single handle is expected
+/// to exist.
+///
+/// [`NOT_FOUND`]: Status::NOT_FOUND
+/// [`DevicePathToText`]: uefi::proto::device_path::text::DevicePathToText
+///
+/// # Example
+///
+/// ```
+/// use uefi::proto::device_path::text::DevicePathToText;
+/// use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+/// use uefi::Handle;
+/// # use uefi::Result;
+///
+/// # fn get_fake_val<T>() -> T { todo!() }
+/// # fn test() -> Result {
+/// # let boot_services: &BootServices = get_fake_val();
+/// # let image_handle: Handle = get_fake_val();
+/// let handle = boot_services.get_handle_for_protocol::<DevicePathToText>()?;
+/// let device_path_to_text = boot_services.open_protocol_exclusive::<DevicePathToText>(handle)?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Errors
+///
+/// Returns [`NOT_FOUND`] if no handles support the requested protocol.
+pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> {
+    let boot_handle = acquire_boot_handle();
+
+    get_handle_for_protocol_raw::<P>(&boot_handle)
+}
+
+/// Load an EFI image into memory and return a [`Handle`] to the image.
+///
+/// There are two ways to load the image: by copying raw image data
+/// from a source buffer, or by loading the image via the
+/// [`SimpleFileSystem`] protocol. See [`LoadImageSource`] for more
+/// details of the `source` parameter.
+///
+/// The `parent_image_handle` is used to initialize the
+/// `parent_handle` field of the [`LoadedImage`] protocol for the
+/// image.
+///
+/// If the image is successfully loaded, a [`Handle`] supporting the
+/// [`LoadedImage`] and [`LoadedImageDevicePath`] protocols is
+/// returned. The image can be started with [`start_image`] or
+/// unloaded with [`unload_image`].
+///
+/// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
+/// [`start_image`]: BootServices::start_image
+/// [`unload_image`]: BootServices::unload_image
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.LoadImage()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+/// * [`uefi::Status::LOAD_ERROR`]
+/// * [`uefi::Status::DEVICE_ERROR`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::SECURITY_VIOLATION`]
+pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> uefi::Result<Handle> {
+    let boot_handle = acquire_boot_handle();
+
+    load_image_raw(&boot_handle, parent_image_handle, source)
+}
+
+/// Unload an EFI image.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.UnloadImage()` in the UEFI Specification for more details.
+///
+/// As this function can return an error code from the unloaded image, any error type
+/// can be returned by this function.
+///
+/// The following error codes can also be returned while unloading an image:
+///
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::INVALID_PARAMETER`]
+pub fn unload_image(image_handle: Handle) -> Result {
+    let boot_handle = acquire_boot_handle();
+
+    unload_image_raw(&boot_handle, image_handle)
+}
+
+/// Transfer control to a loaded image's entry point.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.StartImage()` in the UEFI Specification for more details.
+///
+/// As this function can return an error code from the started image, any error type
+/// can be returned by this function.
+///
+/// The following error code can also be returned while starting an image:
+///
+/// * [`uefi::Status::UNSUPPORTED`]
+pub fn start_image(image_handle: Handle) -> Result {
+    let boot_handle = acquire_boot_handle();
+
+    start_image_raw(&boot_handle, image_handle)
+}
+
+/// Exits the UEFI application and returns control to the UEFI component
+/// that started the UEFI application.
+///
+/// # Safety
+///
+/// This function is unsafe because it is up to the caller to ensure that
+/// all resources allocated by the application is freed before invoking
+/// exit and returning control to the UEFI component that started the UEFI
+/// application.
+pub unsafe fn exit(
+    image_handle: Handle,
+    exit_status: Status,
+    exit_data_size: usize,
+    exit_data: *mut Char16,
+) -> ! {
+    let boot_handle = acquire_boot_handle();
+
+    exit_raw(
+        &boot_handle,
+        image_handle,
+        exit_status,
+        exit_data_size,
+        exit_data,
+    )
+}
+
+/// Stalls the processor for an amount of time.
+///
+/// The time is in microseconds.
+pub fn stall(time: usize) {
+    let boot_handle = acquire_boot_handle();
+
+    stall_raw(&boot_handle, time)
+}
+
+/// Adds, updates, or removes a configuration table entry
+/// from the EFI System Table.
+///
+/// # Safety
+///
+/// This relies on `table_ptr` being allocated in the
+/// pool of type [`uefi::table::boot::MemoryType::RUNTIME_SERVICES_DATA`]
+/// according to the specification.
+/// Other memory types such as
+/// [`uefi::table::boot::MemoryType::ACPI_RECLAIM`]
+/// can be considered.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.InstallConfigurationTable()` in the UEFI
+/// Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+pub unsafe fn install_configuration_table(guid_entry: &Guid, table_ptr: *const c_void) -> Result {
+    let boot_handle = acquire_boot_handle();
+
+    install_configuration_table_raw(&boot_handle, guid_entry, table_ptr)
+}
+
+/// Set the watchdog timer.
+///
+/// UEFI will start a 5-minute countdown after an UEFI image is loaded.
+/// The image must either successfully load an OS and call `ExitBootServices`
+/// in that time, or disable the watchdog.
+///
+/// Otherwise, the firmware will log the event using the provided numeric
+/// code and data, then reset the system.
+///
+/// This function allows you to change the watchdog timer's timeout to a
+/// certain amount of seconds or to disable the watchdog entirely. It also
+/// allows you to change what will be logged when the timer expires.
+///
+/// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
+/// firmware use. Higher values can be used freely by applications.
+///
+/// If provided, the watchdog data must be a null-terminated string
+/// optionally followed by other binary data.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.SetWatchdogTimer()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::DEVICE_ERROR`]
+pub fn set_watchdog_timer(timeout: usize, watchdog_code: u64, data: Option<&mut [u16]>) -> Result {
+    let boot_handle = acquire_boot_handle();
+
+    set_watchdog_timer_raw(&boot_handle, timeout, watchdog_code, data)
+}
+
+/// Connect one or more drivers to a controller.
+///
+/// Usually one disconnects and then reconnects certain drivers
+/// to make them rescan some state that changed, e.g. reconnecting
+/// a `BlockIO` handle after your app changed the partitions somehow.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.ConnectController()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::SECURITY_VIOLATION`]
+pub fn connect_controller(
+    controller: Handle,
+    driver_image: Option<Handle>,
+    remaining_device_path: Option<&DevicePath>,
+    recursive: bool,
+) -> Result {
+    let boot_handle = acquire_boot_handle();
+
+    connect_controller_raw(
+        &boot_handle,
+        controller,
+        driver_image,
+        remaining_device_path,
+        recursive,
+    )
+}
+
+/// Disconnect one or more drivers from a controller.
+///
+/// See [`connect_controller`][Self::connect_controller].
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.DisconnectController()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+/// * [`uefi::Status::DEVICE_ERROR`]
+pub fn disconnect_controller(
+    controller: Handle,
+    driver_image: Option<Handle>,
+    child: Option<Handle>,
+) -> Result {
+    let boot_handle = acquire_boot_handle();
+
+    disconnect_controller_raw(&boot_handle, controller, driver_image, child)
+}
+
+/// Open a protocol interface for a handle.
+///
+/// See also [`open_protocol_exclusive`], which provides a safe
+/// subset of this functionality.
+///
+/// This function attempts to get the protocol implementation of a
+/// handle, based on the protocol GUID. It is recommended that all
+/// new drivers and applications use [`open_protocol_exclusive`] or
+/// [`open_protocol`].
+///
+/// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for
+/// details of the input parameters.
+///
+/// If successful, a [`ScopedProtocol`] is returned that will
+/// automatically close the protocol interface when dropped.
+///
+/// UEFI protocols are neither thread-safe nor reentrant, but the firmware
+/// provides no mechanism to protect against concurrent usage. Such
+/// protections must be implemented by user-level code, for example via a
+/// global `HashSet`.
+///
+/// # Safety
+///
+/// This function is unsafe because it can be used to open a
+/// protocol in ways that don't get tracked by the UEFI
+/// implementation. This could allow the protocol to be removed from
+/// a handle, or for the handle to be deleted entirely, while a
+/// reference to the protocol is still active. The caller is
+/// responsible for ensuring that the handle and protocol remain
+/// valid until the `ScopedProtocol` is dropped.
+///
+/// [`open_protocol`]: BootServices::open_protocol
+/// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::ALREADY_STARTED`]
+pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
+    params: OpenProtocolParams,
+    attributes: OpenProtocolAttributes,
+) -> Result<ScopedProtocol<'static, P>> {
+    let boot_handle = acquire_boot_handle();
+
+    open_protocol_raw(MaybeBootRef::Value(boot_handle), params, attributes)
+}
+
+/// Open a protocol interface for a handle in exclusive mode.
+///
+/// If successful, a [`ScopedProtocol`] is returned that will
+/// automatically close the protocol interface when dropped.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::ALREADY_STARTED`]
+pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+) -> Result<ScopedProtocol<'static, P>> {
+    let boot_handle = acquire_boot_handle();
+
+    open_protocol_exclusive_raw(MaybeBootRef::Value(boot_handle), handle)
+}
+
+/// Test whether a handle supports a protocol.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.OpenProtocol()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::ALREADY_STARTED`]
+pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) -> Result<()> {
+    let boot_handle = acquire_boot_handle();
+
+    test_protocol_raw::<P>(&boot_handle, params)
+}
+
+/// Get the list of protocol interface [`Guids`][Guid] that are installed
+/// on a [`Handle`].
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.ProtocolsPerHandle()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle<'static>> {
+    let boot_handle = acquire_boot_handle();
+
+    protocols_per_handle_raw(MaybeBootRef::Value(boot_handle), handle)
+}
+
+/// Returns an array of handles that support the requested protocol in a buffer allocated from
+/// pool.
+///
+/// # Errors
+///
+/// See section `EFI_BOOT_SERVICES.LocateHandleBuffer()` in the UEFI Specification for more details.
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::NOT_FOUND`]
+/// * [`uefi::Status::OUT_OF_RESOURCES`]
+pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
+    let boot_handle = acquire_boot_handle();
+
+    locate_handle_buffer_raw(MaybeBootRef::Value(boot_handle), search_ty)
+}
+
+/// Retrieves a [`SimpleFileSystem`] protocol associated with the device the given
+/// image was loaded from.
+///
+/// # Errors
+///
+/// This function can return errors from [`open_protocol_exclusive`] and
+/// [`locate_device_path`]. See those functions for more details.
+///
+/// [`open_protocol_exclusive`]: Self::open_protocol_exclusive
+/// [`locate_device_path`]: Self::locate_device_path
+///
+/// * [`uefi::Status::INVALID_PARAMETER`]
+/// * [`uefi::Status::UNSUPPORTED`]
+/// * [`uefi::Status::ACCESS_DENIED`]
+/// * [`uefi::Status::ALREADY_STARTED`]
+/// * [`uefi::Status::NOT_FOUND`]
+pub fn get_image_file_system(
+    image_handle: Handle,
+) -> Result<ScopedProtocol<'static, SimpleFileSystem>> {
+    let boot_handle = acquire_boot_handle();
+
+    get_image_file_system_raw(MaybeBootRef::Value(boot_handle), image_handle)
+}
+
+#[cfg(feature = "alloc")]
+/// Returns all the handles implementing a certain protocol.
+///
+/// # Errors
+///
+/// All errors come from calls to [`locate_handle`].
+///
+/// [`locate_handle`]: Self::locate_handle
+pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
+    use self::raw::find_handles_raw;
+    let boot_handle = acquire_boot_handle();
+
+    find_handles_raw::<P>(&boot_handle)
+}
+
 /// RAII guard for task priority level changes
 ///
 /// Will automatically restore the former task priority level when dropped.
@@ -753,6 +1934,7 @@ pub struct TplGuard<'boot> {
 
 impl<'boot> TplGuard<'boot> {
     /// Converts potentially scoped [`TplGuard`] into a `'static` [`TplGuard`].
+    #[must_use]
     pub fn make_static(self) -> TplGuard<'static> {
         let old_tpl = self.old_tpl;
 
@@ -821,6 +2003,7 @@ impl<'a, P: Protocol + ?Sized> ScopedProtocol<'a, P> {
     }
 
     /// Converts potentially scoped [`ScopedProtocol`] into a `'static` [`ScopedProtocol`].
+    #[must_use]
     pub fn make_static(self) -> ScopedProtocol<'static, P> {
         let interface = self.interface;
         let open_params = self.open_params;
@@ -915,6 +2098,7 @@ impl<'a> ProtocolsPerHandle<'a> {
     }
 
     /// Converts potentially scoped [`ProtocolsPerHandle`] into a `'static` [`ProtocolsPerHandle`].
+    #[must_use]
     pub fn make_static(self) -> ProtocolsPerHandle<'static> {
         let protocols = self.protocols;
         let count = self.count;
@@ -973,6 +2157,7 @@ impl<'a> HandleBuffer<'a> {
     }
 
     /// Converts potentially scoped [`HandleBuffer`] into a `'static` [`HandleBuffer`].
+    #[must_use]
     pub fn make_static(self) -> HandleBuffer<'static> {
         let count = self.count;
         let buffer = self.buffer;

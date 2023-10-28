@@ -1,36 +1,30 @@
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
-use core::{
-    cell::UnsafeCell,
-    ffi::c_void,
-    mem::{self, MaybeUninit},
-    ops::Deref,
-    ptr::{self, NonNull},
-    slice,
-};
+use core::cell::UnsafeCell;
+use core::ffi::c_void;
+use core::mem::{self, MaybeUninit};
+use core::ops::Deref;
+use core::ptr::{self, NonNull};
+use core::slice;
 
-use uefi_raw::{
-    table::{
-        boot::{EventNotifyFn, EventType, InterfaceType, MemoryDescriptor, MemoryType, Tpl},
-        Revision,
-    },
-    PhysicalAddress, Status,
+use uefi_raw::table::boot::{
+    EventNotifyFn, EventType, InterfaceType, MemoryDescriptor, MemoryType, Tpl,
 };
+use uefi_raw::table::Revision;
+use uefi_raw::{PhysicalAddress, Status};
 use uguid::Guid;
 
-use crate::{
-    data_types::Align,
-    proto::{
-        device_path::DevicePath, loaded_image::LoadedImage, media::fs::SimpleFileSystem,
-        ProtocolPointer,
-    },
-    table::boot::{
-        AllocateType, LoadImageSource, MemoryMap, MemoryMapKey, MemoryMapSize,
-        OpenProtocolAttributes, OpenProtocolParams, SearchType, TimerTrigger,
-    },
-    util::opt_nonnull_to_ptr,
-    Char16, Error, Event, Handle, Result, StatusExt,
+use crate::data_types::Align;
+use crate::proto::device_path::DevicePath;
+use crate::proto::loaded_image::LoadedImage;
+use crate::proto::media::fs::SimpleFileSystem;
+use crate::proto::ProtocolPointer;
+use crate::table::boot::{
+    AllocateType, LoadImageSource, MemoryMap, MemoryMapKey, MemoryMapSize, OpenProtocolAttributes,
+    OpenProtocolParams, ProtocolSearchKey, SearchType, TimerTrigger,
 };
+use crate::util::opt_nonnull_to_ptr;
+use crate::{Char16, Error, Event, Handle, Result, StatusExt};
 
 use super::{
     image_handle, BootHandle, HandleBuffer, MaybeBootRef, ProtocolsPerHandle, ScopedProtocol,
@@ -156,10 +150,6 @@ pub(super) unsafe fn create_event_raw(
 ) -> Result<Event> {
     let mut event = ptr::null_mut();
 
-    // Safety: the argument types of the function pointers are defined
-    // differently, but are compatible and can be safely transmuted.
-    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
-
     let notify_ctx = opt_nonnull_to_ptr(notify_ctx);
 
     // Now we're ready to call UEFI
@@ -183,10 +173,6 @@ pub(super) unsafe fn create_event_ex_raw(
     }
 
     let mut event = ptr::null_mut();
-
-    // Safety: the argument types of the function pointers are defined
-    // differently, but are compatible and can be safely transmuted.
-    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
 
     (boot_handle.0.as_ref().create_event_ex)(
         event_type,
@@ -295,6 +281,26 @@ pub(super) unsafe fn uninstall_protocol_interface_raw(
 ) -> Result<()> {
     (boot_handle.0.as_ref().uninstall_protocol_interface)(handle.as_ptr(), protocol, interface)
         .to_result()
+}
+
+pub fn register_protocol_notify_raw<'guid>(
+    boot_handle: &BootHandle,
+    protocol: &'guid Guid,
+    event: Event,
+) -> Result<(Event, SearchType<'guid>)> {
+    let mut key = ptr::null();
+    // Safety: we clone `event` a couple times, but there will be only one left once we return.
+    unsafe { (boot_handle.0.as_ref().register_protocol_notify)(protocol, event.as_ptr(), &mut key) }
+        // Safety: as long as this call is successful, `key` will be valid.
+        .to_result_with_val(|| unsafe {
+            (
+                event.unsafe_clone(),
+                // OK to unwrap: key is non-null for Status::SUCCESS.
+                SearchType::ByRegisterNotify(ProtocolSearchKey(
+                    NonNull::new(key.cast_mut()).unwrap(),
+                )),
+            )
+        })
 }
 
 pub(super) fn locate_handle_raw(
@@ -595,7 +601,7 @@ pub(super) fn test_protocol_raw<P: ProtocolPointer + ?Sized>(
     .to_result_with_val(|| ())
 }
 
-pub(super) fn protocols_per_handle(
+pub(super) fn protocols_per_handle_raw(
     boot_handle: MaybeBootRef,
     handle: Handle,
 ) -> Result<ProtocolsPerHandle> {

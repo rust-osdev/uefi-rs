@@ -61,18 +61,18 @@ pub struct BootServices {
         handle: *mut Handle,
         guid: *const Guid,
         interface_type: InterfaceType,
-        interface: *mut c_void,
+        interface: *const c_void,
     ) -> Status,
     pub reinstall_protocol_interface: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: *const Guid,
-        old_interface: *mut c_void,
-        new_interface: *mut c_void,
+        old_interface: *const c_void,
+        new_interface: *const c_void,
     ) -> Status,
     pub uninstall_protocol_interface: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: *const Guid,
-        interface: *mut c_void,
+        interface: *const c_void,
     ) -> Status,
     pub handle_protocol: unsafe extern "efiapi" fn(
         handle: Handle,

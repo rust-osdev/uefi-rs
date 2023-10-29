@@ -16,10 +16,15 @@
   `Logger::set_output` to enable it.
 - `uefi::allocator::init` now takes a `&mut SystemTable<Boot>` instead of
   `&BootServices`.
+- `BootServices::{install,reinstall,uninstall}_protocol_interface` now take
+  `const` interface pointers.
 
 ## uefi-macros - [Unreleased]
 
 ## uefi-raw - [Unreleased]
+
+### Changed
+- `{install,reinstall,uninstall}_protocol_interface` now take `const` interface pointers.
 
 ## uefi-services - [Unreleased]
 

@@ -559,7 +559,7 @@ impl BootServices {
         &self,
         handle: Option<Handle>,
         protocol: &Guid,
-        interface: *mut c_void,
+        interface: *const c_void,
     ) -> Result<Handle> {
         let mut handle = Handle::opt_to_ptr(handle);
         ((self.0.install_protocol_interface)(
@@ -594,8 +594,8 @@ impl BootServices {
         &self,
         handle: Handle,
         protocol: &Guid,
-        old_interface: *mut c_void,
-        new_interface: *mut c_void,
+        old_interface: *const c_void,
+        new_interface: *const c_void,
     ) -> Result<()> {
         (self.0.reinstall_protocol_interface)(
             handle.as_ptr(),
@@ -629,7 +629,7 @@ impl BootServices {
         &self,
         handle: Handle,
         protocol: &Guid,
-        interface: *mut c_void,
+        interface: *const c_void,
     ) -> Result<()> {
         (self.0.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
     }

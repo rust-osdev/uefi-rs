@@ -1488,7 +1488,7 @@ pub enum OpenProtocolAttributes {
 }
 
 /// Parameters passed to [`BootServices::open_protocol`].
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct OpenProtocolParams {
     /// The handle for the protocol to open.
     pub handle: Handle,
@@ -1602,7 +1602,7 @@ impl Align for MemoryDescriptor {
 /// If the memory map changes, this value is no longer valid.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
-pub struct MemoryMapKey(usize);
+pub struct MemoryMapKey(pub(crate) usize);
 
 /// A structure containing the size of a memory descriptor and the size of the
 /// memory map.
@@ -1624,10 +1624,10 @@ pub struct MemoryMapSize {
 /// map, you manually have to call [`MemoryMap::sort`] first.
 #[derive(Debug)]
 pub struct MemoryMap<'buf> {
-    key: MemoryMapKey,
-    buf: &'buf mut [u8],
-    entry_size: usize,
-    len: usize,
+    pub(crate) key: MemoryMapKey,
+    pub(crate) buf: &'buf mut [u8],
+    pub(crate) entry_size: usize,
+    pub(crate) len: usize,
 }
 
 impl<'buf> MemoryMap<'buf> {
@@ -1923,7 +1923,7 @@ impl<'a> HandleBuffer<'a> {
 /// with [`BootServices::locate_handle`] via [`SearchType::ByRegisterNotify`].
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-pub struct ProtocolSearchKey(NonNull<c_void>);
+pub struct ProtocolSearchKey(pub(crate) NonNull<c_void>);
 
 #[cfg(test)]
 mod tests {

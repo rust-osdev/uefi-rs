@@ -209,6 +209,17 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         );
     }
 
+    if let Some(ref system_table_ident) = system_table_ident {
+        f.block.stmts.insert(
+            0,
+            parse_quote! {
+                unsafe {
+                    #system_table_ident.set_global_system_table();
+                }
+            },
+        );
+    }
+
     let fn_ident = &f.sig.ident;
     // Get an iterator of the function inputs types. This is needed instead of
     // directly using `sig.inputs` because patterns you can use in fn items like

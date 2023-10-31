@@ -3,7 +3,9 @@ use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::slice;
 
+use crate::boot::acquire_boot_handle;
 use crate::proto::console::text;
+use crate::system::set_system_table;
 use crate::{CStr16, Result, Status, StatusExt};
 
 use super::boot::{BootServices, MemoryDescriptor, MemoryMap, MemoryType};
@@ -53,6 +55,11 @@ pub struct SystemTable<View: SystemTableView> {
 
 // These parts of the UEFI System Table interface will always be available
 impl<View: SystemTableView> SystemTable<View> {
+    #[doc(hidden)]
+    pub fn set_global_system_table(&self) {
+        unsafe { set_system_table(self.table as *mut uefi_raw::table::system::SystemTable) }
+    }
+
     /// Return the firmware vendor string
     #[must_use]
     pub fn firmware_vendor(&self) -> &CStr16 {
@@ -184,7 +191,7 @@ impl SystemTable<Boot> {
         // what boot services functions can be called. In UEFI 2.8 and earlier,
         // only `get_memory_map` and `exit_boot_services` are allowed. Starting
         // in UEFI 2.9 other memory allocation functions may also be called.
-        boot_services
+        acquire_boot_handle()
             .exit_boot_services(boot_services.image_handle(), memory_map.key())
             .map(move |()| memory_map)
     }

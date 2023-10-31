@@ -33,6 +33,11 @@ pub unsafe fn set_system_table(system_table: *mut uefi_raw::table::system::Syste
     SYSTEM_TABLE.store(system_table, Ordering::Relaxed);
 }
 
+/// Returns `true` when we have access to a system table.
+pub fn has_system_table() -> bool {
+    !SYSTEM_TABLE.load(Ordering::Relaxed).is_null()
+}
+
 pub(crate) fn system_table_maybe_null() -> *mut uefi_raw::table::system::SystemTable {
     SYSTEM_TABLE.load(Ordering::Relaxed)
 }
@@ -61,10 +66,9 @@ pub fn uefi_revision() -> Revision {
 }
 
 /// Run the provided function on the configuration table array.
-pub fn with_config_table<F, R>(f: F) -> R
-where
-    F: Fn(&[cfg::ConfigTableEntry]) -> R,
-{
+pub fn with_config_table<R>(
+    f: impl for<'config> FnOnce(&'config [cfg::ConfigTableEntry]) -> R,
+) -> R {
     let system_table = unsafe { system_table().as_ref() };
 
     let ptr = system_table
@@ -83,10 +87,7 @@ where
 }
 
 /// Run the provided function on stdin.
-pub fn with_stdin<F, R>(f: F) -> R
-where
-    F: Fn(Option<&mut text::Input>) -> R,
-{
+pub fn with_stdin<R>(f: impl for<'config> FnOnce(Option<&'config mut text::Input>) -> R) -> R {
     static LOCK: AtomicBool = AtomicBool::new(false);
 
     while LOCK
@@ -114,10 +115,7 @@ where
 }
 
 /// Run the provided function on stdout.
-pub fn with_stdout<F, R>(f: F) -> R
-where
-    F: Fn(Option<&mut text::Output>) -> R,
-{
+pub fn with_stdout<R>(f: impl for<'config> FnOnce(Option<&'config mut text::Output>) -> R) -> R {
     static LOCK: AtomicBool = AtomicBool::new(false);
 
     while LOCK
@@ -145,10 +143,7 @@ where
 }
 
 /// Run the provided function on stderr.
-pub fn with_stderr<F, R>(f: F) -> R
-where
-    F: Fn(Option<&mut text::Output>) -> R,
-{
+pub fn with_stderr<F, R>(f: impl for<'config> FnOnce(Option<&'config mut text::Output>) -> R) -> R {
     static LOCK: AtomicBool = AtomicBool::new(false);
 
     while LOCK

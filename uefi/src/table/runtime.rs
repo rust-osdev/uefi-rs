@@ -481,7 +481,7 @@ impl Display for Time {
 #[cfg(feature = "alloc")]
 #[derive(Debug)]
 pub struct VariableKey {
-    name: Vec<u16>,
+    pub(crate) name: Vec<u16>,
     /// Unique identifier for the vendor.
     pub vendor: VariableVendor,
 }

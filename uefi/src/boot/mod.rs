@@ -15,7 +15,7 @@ use core::ptr::{self, NonNull};
 use core::slice;
 use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering};
 
-use uefi_raw::table::boot::{EventNotifyFn, EventType, MemoryType, Tpl};
+use uefi_raw::table::boot::{EventType, MemoryType, Tpl};
 use uefi_raw::{PhysicalAddress, Status};
 use uguid::Guid;
 
@@ -24,15 +24,15 @@ use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::system::system_table;
 use crate::table::boot::{
-    AllocateType, LoadImageSource, MemoryMap, MemoryMapSize, OpenProtocolAttributes,
-    OpenProtocolParams, SearchType, TimerTrigger,
+    AllocateType, EventNotifyFn, LoadImageSource, MemoryMap, MemoryMapKey, MemoryMapSize,
+    OpenProtocolAttributes, OpenProtocolParams, SearchType, TimerTrigger,
 };
 use crate::{Char16, Event, Handle, Result};
 
 use self::raw::{
     allocate_pages_raw, allocate_pool_raw, check_event_raw, close_event_raw,
     connect_controller_raw, create_event_ex_raw, create_event_raw, disconnect_controller_raw,
-    exit_raw, free_pages_raw, free_pool_raw, get_handle_for_protocol_raw,
+    exit_boot_services_raw, exit_raw, free_pages_raw, free_pool_raw, get_handle_for_protocol_raw,
     get_image_file_system_raw, install_configuration_table_raw, install_protocol_interface_raw,
     load_image_raw, locate_device_path_raw, locate_handle_buffer_raw, locate_handle_raw,
     memory_map_raw, memory_map_size_raw, open_protocol_exclusive_raw, open_protocol_raw,
@@ -66,7 +66,13 @@ pub(crate) fn boot_services() -> NonNull<uefi_raw::table::boot::BootServices> {
     NonNull::new(boot_services_maybe_null()).expect("boot services are not active")
 }
 
+/// Returns whether boot services have exited yet.
+pub fn exited_boot_services() -> bool {
+    EXITING_BOOT.load(Ordering::Relaxed)
+}
+
 /// Returns a boot handle.
+#[track_caller]
 pub fn acquire_boot_handle() -> BootHandle {
     BOOT_HANDLE_COUNT.fetch_add(1, Ordering::Relaxed);
 
@@ -76,6 +82,11 @@ pub fn acquire_boot_handle() -> BootHandle {
     }
 
     BootHandle(boot_services())
+}
+
+/// Returns the number of [`BootHandle`]s currently existing.
+pub fn check_count() -> usize {
+    BOOT_HANDLE_COUNT.load(Ordering::Relaxed)
 }
 
 /// Updates the global image [`Handle`].
@@ -109,16 +120,36 @@ pub fn image_handle() -> Handle {
 ///
 /// # Accessing `BootServices`
 ///
-/// A [`BootHandle`] can only be obtained by calling [`acquire_boot_handle`].
-///
-/// # Accessing Protocols
-///
-/// Protocols can be opened using several methods of
+/// A [`BootHandle`] can only be obtained by calling [`acquire_boot_handle`]
+/// or cloning an existing [`BootHandle`].
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct BootHandle(NonNull<uefi_raw::table::boot::BootServices>);
 
 impl BootHandle {
+    /// Get the [`Handle`] of the currently-executing image.
+    pub fn image_handle(&self) -> Handle {
+        image_handle()
+    }
+
+    /// Update the global image [`Handle`].
+    ///
+    /// This is called automatically in the `main` entry point as part
+    /// of [`uefi_macros::entry`]. It should not be called at any other
+    /// point in time, unless the executable does not use
+    /// [`uefi_macros::entry`], in which case it should be called once
+    /// before calling other `BootServices` functions.
+    ///
+    /// # Safety
+    ///
+    /// This function should only be called as described above,
+    /// and the `image_handle` must be a valid image [`Handle`]. Then
+    /// safety guarantees of [`BootServices::open_protocol_exclusive`]
+    /// rely on the global image handle being correct.
+    pub unsafe fn set_image_handle(&self, image_handle: Handle) {
+        set_image_handle(image_handle)
+    }
+
     /// Raises a task's priority level and returns its previous level.
     ///
     /// The effect of calling [`raise_tpl`] with a [`Tpl`] that is below the current
@@ -136,6 +167,36 @@ impl BootHandle {
     #[must_use]
     pub unsafe fn raise_tpl(&self, tpl: Tpl) -> TplGuard {
         raise_tpl_raw(MaybeBootRef::Ref(self), tpl)
+    }
+
+    /// Exits the UEFI boot services
+    ///
+    /// This unsafe method is meant to be an implementation detail of the safe
+    /// `SystemTable<Boot>::exit_boot_services()` method, which is why it is not
+    /// public.
+    ///
+    /// Everything that is explained in the documentation of the high-level
+    /// `SystemTable<Boot>` method is also true here, except that this function
+    /// is one-shot (no automatic retry) and does not prevent you from shooting
+    /// yourself in the foot by calling invalid boot services after a failure.
+    ///
+    /// # Errors
+    ///
+    /// See section `EFI_BOOT_SERVICES.ExitBootServices()` in the UEFI Specification for more details.
+    ///
+    /// * [`uefi::Status::INVALID_PARAMETER`]
+    pub(crate) unsafe fn exit_boot_services(self, image: Handle, mmap_key: MemoryMapKey) -> Result {
+        EXITING_BOOT.store(true, Ordering::Relaxed);
+
+        self.stall(100_000);
+
+        assert_eq!(
+            BOOT_HANDLE_COUNT.load(Ordering::Relaxed),
+            1,
+            "this must be the only boot handle remaining"
+        );
+
+        exit_boot_services_raw(&self, image, mmap_key)
     }
 
     /// Allocates memory pages from the system.
@@ -1003,10 +1064,8 @@ impl Clone for BootHandle {
 
 impl Drop for BootHandle {
     fn drop(&mut self) {
-        assert!(
-            BOOT_HANDLE_COUNT.fetch_sub(1, Ordering::Relaxed) > 0,
-            "corrupted boot handle counter"
-        );
+        let count = BOOT_HANDLE_COUNT.fetch_sub(1, Ordering::Relaxed);
+        assert!(count > 0, "corrupted boot handle counter");
     }
 }
 
@@ -1650,6 +1709,7 @@ pub unsafe fn exit(
 /// Stalls the processor for an amount of time.
 ///
 /// The time is in microseconds.
+#[track_caller]
 pub fn stall(time: usize) {
     let boot_handle = acquire_boot_handle();
 

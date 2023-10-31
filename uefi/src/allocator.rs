@@ -2,60 +2,30 @@
 //!
 //! If the `global_allocator` feature is enabled, the [`Allocator`] will be used
 //! as the global Rust allocator.
-//!
-//! # Usage
-//!
-//! Call the `init` function with a reference to the boot services table.
-//! Failure to do so before calling a memory allocating function will panic.
-//!
-//! Call the `exit_boot_services` function before exiting UEFI boot services.
-//! Failure to do so will turn subsequent allocation into undefined behaviour.
 
 use core::alloc::{GlobalAlloc, Layout};
-use core::ptr::{self, NonNull};
+use core::ptr;
 
+use crate::boot::{allocate_pool, free_pool, image_handle, open_protocol_exclusive};
 use crate::proto::loaded_image::LoadedImage;
 use crate::table::boot::{BootServices, MemoryType};
-
-/// Reference to the boot services table, used to call the pool memory allocation functions.
-///
-/// The inner pointer is only safe to dereference if UEFI boot services have not been
-/// exited by the host application yet.
-static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
 
 /// The memory type used for pool memory allocations.
 /// TODO: Use OnceCell when stablilized.
 static mut MEMORY_TYPE: MemoryType = MemoryType::LOADER_DATA;
 
 /// Initializes the allocator.
-///
-/// # Safety
-///
-/// This function is unsafe because you _must_ make sure that exit_boot_services
-/// will be called when UEFI boot services will be exited.
-pub unsafe fn init(boot_services: &BootServices) {
-    BOOT_SERVICES = NonNull::new(boot_services as *const _ as *mut _);
-
-    if let Ok(loaded_image) =
-        boot_services.open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
-    {
-        MEMORY_TYPE = loaded_image.data_type()
+pub fn init(_boot_services: &BootServices) {
+    if let Ok(loaded_image) = open_protocol_exclusive::<LoadedImage>(image_handle()) {
+        unsafe { MEMORY_TYPE = loaded_image.data_type() }
     }
-}
-
-/// Access the boot services
-fn boot_services() -> NonNull<BootServices> {
-    unsafe { BOOT_SERVICES.expect("Boot services are unavailable or have been exited") }
 }
 
 /// Notify the allocator library that boot services are not safe to call anymore
 ///
-/// You must arrange for this function to be called on exit from UEFI boot services
-pub fn exit_boot_services() {
-    unsafe {
-        BOOT_SERVICES = None;
-    }
-}
+/// No longer needs to be called.
+#[deprecated]
+pub fn exit_boot_services() {}
 
 /// Allocator which uses the UEFI pool allocation functions.
 ///
@@ -64,7 +34,7 @@ pub fn exit_boot_services() {
 pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
-    /// Allocate memory using [`BootServices::allocate_pool`]. The allocation is
+    /// Allocate memory using [`allocate_pool`]. The allocation is
     /// of type [`MemoryType::LOADER_DATA`] for UEFI applications, [`MemoryType::BOOT_SERVICES_DATA`]
     /// for UEFI boot drivers and [`MemoryType::RUNTIME_SERVICES_DATA`] for UEFI runtime drivers.
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -76,10 +46,7 @@ unsafe impl GlobalAlloc for Allocator {
             // only guaranteed to provide eight-byte alignment. Allocate extra
             // space so that we can return an appropriately-aligned pointer
             // within the allocation.
-            let full_alloc_ptr = if let Ok(ptr) = boot_services()
-                .as_ref()
-                .allocate_pool(MEMORY_TYPE, size + align)
-            {
+            let full_alloc_ptr = if let Ok(ptr) = allocate_pool(MEMORY_TYPE, size + align) {
                 ptr
             } else {
                 return ptr::null_mut();
@@ -108,21 +75,18 @@ unsafe impl GlobalAlloc for Allocator {
             // The requested alignment is less than or equal to eight, and
             // `allocate_pool` always provides eight-byte alignment, so we can
             // use `allocate_pool` directly.
-            boot_services()
-                .as_ref()
-                .allocate_pool(MEMORY_TYPE, size)
-                .unwrap_or(ptr::null_mut())
+            allocate_pool(MEMORY_TYPE, size).unwrap_or(ptr::null_mut())
         }
     }
 
-    /// Deallocate memory using [`BootServices::free_pool`].
+    /// Deallocate memory using [`free_pool`].
     unsafe fn dealloc(&self, mut ptr: *mut u8, layout: Layout) {
         if layout.align() > 8 {
             // Retrieve the pointer to the full allocation that was packed right
             // before the aligned allocation in `alloc`.
             ptr = (ptr as *const *mut u8).sub(1).read();
         }
-        boot_services().as_ref().free_pool(ptr).unwrap();
+        free_pool(ptr).unwrap();
     }
 }
 

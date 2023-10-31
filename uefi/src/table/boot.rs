@@ -1,6 +1,7 @@
 //! UEFI services available during boot.
 
 use super::Revision;
+use crate::boot::{image_handle, set_image_handle};
 use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::device_path::DevicePath;
 use crate::proto::loaded_image::LoadedImage;
@@ -13,7 +14,6 @@ use core::ffi::c_void;
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{ptr, slice};
 
 #[cfg(feature = "alloc")]
@@ -22,10 +22,6 @@ use alloc::vec::Vec;
 pub use uefi_raw::table::boot::{
     EventType, InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
 };
-
-/// Global image handle. This is only set by `BootServices::set_image_handle`,
-/// and it is only read by `BootServices::image_handle`.
-static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// Size in bytes of a UEFI page.
 ///
@@ -86,10 +82,7 @@ pub struct BootServices(uefi_raw::table::boot::BootServices);
 impl BootServices {
     /// Get the [`Handle`] of the currently-executing image.
     pub fn image_handle(&self) -> Handle {
-        let ptr = IMAGE_HANDLE.load(Ordering::Acquire);
-        // Safety: the image handle must be valid. We know it is, because it was
-        // set by `set_image_handle`, which has that same safety requirement.
-        unsafe { Handle::from_ptr(ptr) }.expect("set_image_handle has not been called")
+        image_handle()
     }
 
     /// Update the global image [`Handle`].
@@ -107,10 +100,7 @@ impl BootServices {
     /// safety guarantees of [`BootServices::open_protocol_exclusive`]
     /// rely on the global image handle being correct.
     pub unsafe fn set_image_handle(&self, image_handle: Handle) {
-        // As with `image_handle`, `&self` isn't actually used, but it
-        // enforces that this function is only called while boot
-        // services are active.
-        IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
+        set_image_handle(image_handle)
     }
 
     /// Raises a task's priority level and returns its previous level.
@@ -939,30 +929,6 @@ impl BootServices {
             exit_data_size,
             exit_data.cast(),
         )
-    }
-
-    /// Exits the UEFI boot services
-    ///
-    /// This unsafe method is meant to be an implementation detail of the safe
-    /// `SystemTable<Boot>::exit_boot_services()` method, which is why it is not
-    /// public.
-    ///
-    /// Everything that is explained in the documentation of the high-level
-    /// `SystemTable<Boot>` method is also true here, except that this function
-    /// is one-shot (no automatic retry) and does not prevent you from shooting
-    /// yourself in the foot by calling invalid boot services after a failure.
-    ///
-    /// # Errors
-    ///
-    /// See section `EFI_BOOT_SERVICES.ExitBootServices()` in the UEFI Specification for more details.
-    ///
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub(super) unsafe fn exit_boot_services(
-        &self,
-        image: Handle,
-        mmap_key: MemoryMapKey,
-    ) -> Result {
-        (self.0.exit_boot_services)(image.as_ptr(), mmap_key.0).to_result()
     }
 
     /// Stalls the processor for an amount of time.
@@ -1824,7 +1790,8 @@ impl<'guid> SearchType<'guid> {
 }
 
 /// Raw event notification function
-type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
+pub(crate) type EventNotifyFn =
+    unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
 /// Timer events manipulation.
 #[derive(Debug)]

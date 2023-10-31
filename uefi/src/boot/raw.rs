@@ -7,9 +7,7 @@ use core::ops::Deref;
 use core::ptr::{self, NonNull};
 use core::slice;
 
-use uefi_raw::table::boot::{
-    EventNotifyFn, EventType, InterfaceType, MemoryDescriptor, MemoryType, Tpl,
-};
+use uefi_raw::table::boot::{EventType, InterfaceType, MemoryDescriptor, MemoryType, Tpl};
 use uefi_raw::table::Revision;
 use uefi_raw::{PhysicalAddress, Status};
 use uguid::Guid;
@@ -20,8 +18,8 @@ use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::ProtocolPointer;
 use crate::table::boot::{
-    AllocateType, LoadImageSource, MemoryMap, MemoryMapKey, MemoryMapSize, OpenProtocolAttributes,
-    OpenProtocolParams, ProtocolSearchKey, SearchType, TimerTrigger,
+    AllocateType, EventNotifyFn, LoadImageSource, MemoryMap, MemoryMapKey, MemoryMapSize,
+    OpenProtocolAttributes, OpenProtocolParams, ProtocolSearchKey, SearchType, TimerTrigger,
 };
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Handle, Result, StatusExt};
@@ -152,6 +150,10 @@ pub(super) unsafe fn create_event_raw(
 
     let notify_ctx = opt_nonnull_to_ptr(notify_ctx);
 
+    // Safety: the argument types of the function pointers are defined
+    // differently, but are compatible and can be safely transmuted.
+    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+
     // Now we're ready to call UEFI
     (boot_handle.0.as_ref().create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event)
         .to_result_with_val(
@@ -173,6 +175,10 @@ pub(super) unsafe fn create_event_ex_raw(
     }
 
     let mut event = ptr::null_mut();
+
+    // Safety: the argument types of the function pointers are defined
+    // differently, but are compatible and can be safely transmuted.
+    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
 
     (boot_handle.0.as_ref().create_event_ex)(
         event_type,

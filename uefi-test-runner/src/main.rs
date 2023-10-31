@@ -59,6 +59,8 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // probably want to test them after exit_boot_services. However,
     // exit_boot_services is currently called during shutdown.
 
+    log::info!("Boot handle count: {}", uefi::boot::check_count());
+
     runtime::test(st.runtime_services());
 
     shutdown(st);

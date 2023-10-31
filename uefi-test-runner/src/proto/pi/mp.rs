@@ -27,9 +27,16 @@ pub fn test(bt: &BootServices) {
     test_get_number_of_processors(mp_support);
     test_get_processor_info(mp_support);
     test_startup_all_aps(mp_support, bt);
+    log::info!("After startup all: {}", uefi::boot::check_count());
     test_startup_this_ap(mp_support, bt);
+    log::info!("After startup this: {}", uefi::boot::check_count());
     test_enable_disable_ap(mp_support);
+    log::info!("Enable/Disable: {}", uefi::boot::check_count());
     test_switch_bsp_and_who_am_i(mp_support);
+    log::info!(
+        "Boot Services Processor & who am i: {}",
+        uefi::boot::check_count()
+    );
 }
 
 fn test_get_number_of_processors(mps: &MpServices) {
@@ -87,6 +94,8 @@ fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
     mps.startup_all_aps(false, proc_increment_atomic, counter_ptr, None, None)
         .unwrap();
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
+
+    log::info!("After proc_increment atomic: {}", uefi::boot::check_count());
 
     // Make sure that timeout works
     let bt_ptr: *mut c_void = bt as *const _ as *mut _;

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    "schedule:weekly"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
+  "rangeStrategy": "replace",
+  {
+    "packageRules": [
+      {
+        "matchPackageNames": ["crate-ci/typos"],
+        "automerge": true
+      }
+    ]
+  }
+}

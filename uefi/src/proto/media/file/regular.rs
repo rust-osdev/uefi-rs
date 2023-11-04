@@ -50,7 +50,7 @@ impl RegularFile {
         let chunk_size = 1024 * 1024;
 
         read_chunked(buffer, chunk_size, |buf, buf_size| unsafe {
-            (self.imp().read)(self.imp(), buf_size, buf)
+            (self.imp().read)(self.imp(), buf_size, buf.cast())
         })
     }
 
@@ -59,7 +59,7 @@ impl RegularFile {
     pub(super) fn read_unchunked(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
         let status =
-            unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr()) };
+            unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr().cast()) };
 
         status.to_result_with(
             || buffer_size,
@@ -97,7 +97,7 @@ impl RegularFile {
     /// * [`uefi::Status::VOLUME_FULL`]
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
-        unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr()) }
+        unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr().cast()) }
             .to_result_with_err(|_| buffer_size)
     }
 
@@ -110,7 +110,7 @@ impl RegularFile {
     /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
-        (self.imp().get_position)(self.imp(), &mut pos).to_result_with_val(|| pos)
+        unsafe { (self.imp().get_position)(self.imp(), &mut pos) }.to_result_with_val(|| pos)
     }
 
     /// Sets the file's current position
@@ -129,7 +129,7 @@ impl RegularFile {
     ///
     /// * [`uefi::Status::DEVICE_ERROR`]
     pub fn set_position(&mut self, position: u64) -> Result {
-        (self.imp().set_position)(self.imp(), position).to_result()
+        unsafe { (self.imp().set_position)(self.imp(), position) }.to_result()
     }
 }
 

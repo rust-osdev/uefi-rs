@@ -11,7 +11,6 @@ mod info;
 mod regular;
 
 use crate::{CStr16, Char16, Guid, Result, Status, StatusExt};
-use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::Debug;
 use core::{mem, ptr};
@@ -26,6 +25,7 @@ pub use self::info::{
     FromUefi,
 };
 pub use self::regular::RegularFile;
+pub use uefi_raw::protocol::file_system::FileAttribute;
 
 /// Common interface to `FileHandle`, `RegularFile`, and `Directory`.
 ///
@@ -393,26 +393,6 @@ pub enum FileMode {
 
     /// The file can be read, written, and will be created if it does not exist
     CreateReadWrite = (1 << 63) | 2 | 1,
-}
-
-bitflags! {
-    /// Attributes describing the properties of a file on the file system.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct FileAttribute: u64 {
-        /// File can only be opened in [`FileMode::READ`] mode.
-        const READ_ONLY = 1;
-        /// Hidden file, not normally visible to the user.
-        const HIDDEN = 1 << 1;
-        /// System file, indicates this file is an internal operating system file.
-        const SYSTEM = 1 << 2;
-        /// This file is a directory.
-        const DIRECTORY = 1 << 4;
-        /// This file is compressed.
-        const ARCHIVE = 1 << 5;
-        /// Mask combining all the valid attributes.
-        const VALID_ATTR = 0x37;
-    }
 }
 
 #[cfg(test)]

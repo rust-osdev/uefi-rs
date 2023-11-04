@@ -1,7 +1,57 @@
 pub mod serial;
 
 use crate::{guid, Char16, Event, Guid, PhysicalAddress, Status};
+use bitflags::bitflags;
 use core::ptr;
+
+bitflags! {
+    /// Absolute pointer device attributes.
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct AbsolutePointerModeAttributes: u32 {
+        /// If set, this device supports an alternate button input.
+        const SUPPORTS_ALT_ACTIVE = 1;
+
+        /// If set, this device returns pressure data in
+        /// [`AbsolutePointerStatus::current_z`].
+        const SUPPORTS_PRESSURE_AS_Z = 2;
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(C)]
+pub struct AbsolutePointerMode {
+    pub absolute_min_x: u64,
+    pub absolute_min_y: u64,
+    pub absolute_min_z: u64,
+    pub absolute_max_x: u64,
+    pub absolute_max_y: u64,
+    pub absolute_max_z: u64,
+    pub attributes: AbsolutePointerModeAttributes,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(C)]
+pub struct AbsolutePointerState {
+    pub current_x: u64,
+    pub current_y: u64,
+    pub current_z: u64,
+    pub active_buttons: u32,
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct AbsolutePointerProtocol {
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: u8) -> Status,
+    pub get_state:
+        unsafe extern "efiapi" fn(this: *const Self, state: *mut AbsolutePointerState) -> Status,
+    pub wait_for_input: Event,
+    pub mode: *mut AbsolutePointerMode,
+}
+
+impl AbsolutePointerProtocol {
+    pub const GUID: Guid = guid!("8d59d32b-c655-4ae9-9b15-f25904992a43");
+}
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(C)]

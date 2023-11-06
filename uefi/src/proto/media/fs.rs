@@ -1,9 +1,10 @@
 //! File system support protocols.
 
-use super::file::{Directory, FileHandle, FileImpl};
+use super::file::{Directory, FileHandle};
 use crate::proto::unsafe_protocol;
-use crate::{Result, Status, StatusExt};
+use crate::{Result, StatusExt};
 use core::ptr;
+use uefi_raw::protocol::file_system::SimpleFileSystemProtocol;
 
 /// Allows access to a FAT-12/16/32 file system.
 ///
@@ -20,13 +21,9 @@ use core::ptr;
 /// [`BootServices::get_image_file_system`]: crate::table::boot::BootServices::get_image_file_system
 /// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 #[derive(Debug)]
-#[repr(C)]
-#[unsafe_protocol("964e5b22-6459-11d2-8e39-00a0c969723b")]
-pub struct SimpleFileSystem {
-    revision: u64,
-    open_volume:
-        extern "efiapi" fn(this: &mut SimpleFileSystem, root: &mut *mut FileImpl) -> Status,
-}
+#[repr(transparent)]
+#[unsafe_protocol(SimpleFileSystemProtocol::GUID)]
+pub struct SimpleFileSystem(SimpleFileSystemProtocol);
 
 impl SimpleFileSystem {
     /// Open the root directory on a volume.
@@ -49,7 +46,7 @@ impl SimpleFileSystem {
     /// * [`uefi::Status::MEDIA_CHANGED`]
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
-        (self.open_volume)(self, &mut ptr)
-            .to_result_with_val(|| unsafe { Directory::new(FileHandle::new(ptr)) })
+        unsafe { (self.0.open_volume)(&mut self.0, &mut ptr) }
+            .to_result_with_val(|| unsafe { Directory::new(FileHandle::new(ptr.cast())) })
     }
 }

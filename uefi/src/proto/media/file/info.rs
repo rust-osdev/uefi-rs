@@ -1,7 +1,7 @@
 use super::FileAttribute;
 use crate::data_types::Align;
 use crate::table::runtime::Time;
-use crate::{guid, CStr16, Char16, Guid, Identify};
+use crate::{CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
 use core::fmt::{self, Display, Formatter};
 use core::{mem, ptr};
@@ -266,7 +266,7 @@ impl Align for FileInfo {
 }
 
 unsafe impl Identify for FileInfo {
-    const GUID: Guid = guid!("09576e92-6d3f-11d2-8e39-00a0c969723b");
+    const GUID: Guid = uefi_raw::protocol::file_system::FileInfo::ID;
 }
 
 impl InfoInternal for FileInfo {
@@ -361,7 +361,7 @@ impl Align for FileSystemInfo {
 }
 
 unsafe impl Identify for FileSystemInfo {
-    const GUID: Guid = guid!("09576e93-6d3f-11d2-8e39-00a0c969723b");
+    const GUID: Guid = uefi_raw::protocol::file_system::FileSystemInfo::ID;
 }
 
 impl InfoInternal for FileSystemInfo {
@@ -412,7 +412,7 @@ impl Align for FileSystemVolumeLabel {
 }
 
 unsafe impl Identify for FileSystemVolumeLabel {
-    const GUID: Guid = guid!("db47d7d3-fe81-11d3-9a35-0090273fc14d");
+    const GUID: Guid = uefi_raw::protocol::file_system::FileSystemVolumeLabel::ID;
 }
 
 impl InfoInternal for FileSystemVolumeLabel {

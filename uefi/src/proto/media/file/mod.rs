@@ -10,11 +10,11 @@ mod dir;
 mod info;
 mod regular;
 
-use crate::{CStr16, Char16, Guid, Result, Status, StatusExt};
-use bitflags::bitflags;
+use crate::{CStr16, Result, Status, StatusExt};
 use core::ffi::c_void;
 use core::fmt::Debug;
 use core::{mem, ptr};
+use uefi_raw::protocol::file_system::FileProtocolV1;
 #[cfg(all(feature = "unstable", feature = "alloc"))]
 use {alloc::alloc::Global, core::alloc::Allocator};
 #[cfg(feature = "alloc")]
@@ -26,6 +26,7 @@ pub use self::info::{
     FromUefi,
 };
 pub use self::regular::RegularFile;
+pub use uefi_raw::protocol::file_system::FileAttribute;
 
 /// Common interface to `FileHandle`, `RegularFile`, and `Directory`.
 ///
@@ -74,8 +75,8 @@ pub trait File: Sized {
             (self.imp().open)(
                 self.imp(),
                 &mut ptr,
-                filename.as_ptr(),
-                open_mode,
+                filename.as_ptr().cast(),
+                uefi_raw::protocol::file_system::FileMode::from_bits_truncate(open_mode as u64),
                 attributes,
             )
         }
@@ -93,7 +94,7 @@ pub trait File: Sized {
     ///
     /// * [`uefi::Status::WARN_DELETE_FAILURE`]
     fn delete(mut self) -> Result {
-        let result = (self.imp().delete)(self.imp()).to_result();
+        let result = unsafe { (self.imp().delete)(self.imp()) }.to_result();
         mem::forget(self);
         result
     }
@@ -128,7 +129,7 @@ pub trait File: Sized {
                 self.imp(),
                 &Info::GUID,
                 &mut buffer_size,
-                buffer.as_mut_ptr(),
+                buffer.as_mut_ptr().cast(),
             )
         }
         .to_result_with(
@@ -184,7 +185,7 @@ pub trait File: Sized {
     /// * [`uefi::Status::ACCESS_DENIED`]
     /// * [`uefi::Status::VOLUME_FULL`]
     fn flush(&mut self) -> Result {
-        (self.imp().flush)(self.imp()).to_result()
+        unsafe { (self.imp().flush)(self.imp()) }.to_result()
     }
 
     /// Read the dynamically allocated info for a file.
@@ -224,7 +225,7 @@ pub trait File: Sized {
 
 // Internal File helper methods to access the function pointer table.
 trait FileInternal: File {
-    fn imp(&mut self) -> &mut FileImpl {
+    fn imp(&mut self) -> &mut FileProtocolV1 {
         unsafe { &mut *self.handle().0 }
     }
 }
@@ -240,10 +241,10 @@ impl<T: File> FileInternal for T {}
 /// Dropping this structure will result in the file handle being closed.
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct FileHandle(*mut FileImpl);
+pub struct FileHandle(*mut FileProtocolV1);
 
 impl FileHandle {
-    pub(super) const unsafe fn new(ptr: *mut FileImpl) -> Self {
+    pub(super) const unsafe fn new(ptr: *mut FileProtocolV1) -> Self {
         Self(ptr)
     }
 
@@ -296,7 +297,7 @@ impl File for FileHandle {
         // - get_position fails with EFI_UNSUPPORTED on directories
         // - result is an error if the underlying file was already closed or deleted.
         let mut pos = 0;
-        match (this.get_position)(this, &mut pos) {
+        match unsafe { (this.get_position)(this, &mut pos) } {
             Status::SUCCESS => Ok(true),
             Status::UNSUPPORTED => Ok(false),
             s => Err(s.into()),
@@ -310,63 +311,10 @@ impl File for FileHandle {
 
 impl Drop for FileHandle {
     fn drop(&mut self) {
-        let result: Result = (self.imp().close)(self.imp()).to_result();
+        let result: Result = unsafe { (self.imp().close)(self.imp()) }.to_result();
         // The spec says this always succeeds.
         result.expect("Failed to close file");
     }
-}
-
-/// The function pointer table for the File protocol.
-#[repr(C)]
-pub(super) struct FileImpl {
-    revision: u64,
-    open: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        new_handle: &mut *mut FileImpl,
-        filename: *const Char16,
-        open_mode: FileMode,
-        attributes: FileAttribute,
-    ) -> Status,
-    close: extern "efiapi" fn(this: &mut FileImpl) -> Status,
-    delete: extern "efiapi" fn(this: &mut FileImpl) -> Status,
-    /// # Read from Regular Files
-    /// If `self` is not a directory, the function reads the requested number of bytes from the file
-    /// at the file’s current position and returns them in `buffer`. If the read goes beyond the end
-    /// of the file, the read length is truncated to the end of the file. The file’s current
-    /// position is increased by the number of bytes returned.
-    ///
-    /// # Read from Directory
-    /// If `self` is a directory, the function reads the directory entry at the file’s current
-    /// position and returns the entry in `buffer`. If the `buffer` is not large enough to hold the
-    /// current directory entry, then `EFI_BUFFER_TOO_SMALL` is returned and the current file
-    /// position is not updated. `buffer_size` is set to be the size of the buffer needed to read
-    /// the entry. On success, the current position is updated to the next directory entry. If there
-    /// are no more directory entries, the read returns a zero-length buffer.
-    read: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        buffer_size: &mut usize,
-        buffer: *mut u8,
-    ) -> Status,
-    write: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        buffer_size: &mut usize,
-        buffer: *const u8,
-    ) -> Status,
-    get_position: extern "efiapi" fn(this: &mut FileImpl, position: &mut u64) -> Status,
-    set_position: extern "efiapi" fn(this: &mut FileImpl, position: u64) -> Status,
-    get_info: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        information_type: &Guid,
-        buffer_size: &mut usize,
-        buffer: *mut u8,
-    ) -> Status,
-    set_info: unsafe extern "efiapi" fn(
-        this: &mut FileImpl,
-        information_type: &Guid,
-        buffer_size: usize,
-        buffer: *const c_void,
-    ) -> Status,
-    flush: extern "efiapi" fn(this: &mut FileImpl) -> Status,
 }
 
 /// Disambiguate the file type. Returned by `File::into_type()`.
@@ -395,40 +343,21 @@ pub enum FileMode {
     CreateReadWrite = (1 << 63) | 2 | 1,
 }
 
-bitflags! {
-    /// Attributes describing the properties of a file on the file system.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct FileAttribute: u64 {
-        /// File can only be opened in [`FileMode::READ`] mode.
-        const READ_ONLY = 1;
-        /// Hidden file, not normally visible to the user.
-        const HIDDEN = 1 << 1;
-        /// System file, indicates this file is an internal operating system file.
-        const SYSTEM = 1 << 2;
-        /// This file is a directory.
-        const DIRECTORY = 1 << 4;
-        /// This file is compressed.
-        const ARCHIVE = 1 << 5;
-        /// Mask combining all the valid attributes.
-        const VALID_ATTR = 0x37;
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::table::runtime::Time;
-    use crate::{CString16, Identify};
+    use crate::{CString16, Guid, Identify};
     use ::alloc::vec;
+    use uefi_raw::protocol::file_system::FileProtocolRevision;
 
     // Test `get_boxed_info` by setting up a fake file, which is mostly
     // just function pointers. Most of the functions can be empty, only
     // get_info is actually implemented to return useful data.
     #[test]
     fn test_get_boxed_info() {
-        let mut file_impl = FileImpl {
-            revision: 0,
+        let mut file_impl = FileProtocolV1 {
+            revision: FileProtocolRevision::REVISION_1,
             open: stub_open,
             close: stub_close,
             delete: stub_delete,
@@ -448,13 +377,13 @@ mod tests {
         assert_eq!(info.file_name(), CString16::try_from("test_file").unwrap());
     }
 
-    extern "efiapi" fn stub_get_info(
-        _this: &mut FileImpl,
-        information_type: &Guid,
-        buffer_size: &mut usize,
-        buffer: *mut u8,
+    unsafe extern "efiapi" fn stub_get_info(
+        _this: *mut FileProtocolV1,
+        information_type: *const Guid,
+        buffer_size: *mut usize,
+        buffer: *mut c_void,
     ) -> Status {
-        assert_eq!(*information_type, FileInfo::GUID);
+        assert_eq!(unsafe { *information_type }, FileInfo::GUID);
 
         // Use a temporary buffer to get some file info, then copy that
         // data to the output buffer.
@@ -487,57 +416,60 @@ mod tests {
     }
 
     extern "efiapi" fn stub_open(
-        _this: &mut FileImpl,
-        _new_handle: &mut *mut FileImpl,
-        _filename: *const Char16,
-        _open_mode: FileMode,
+        _this: *mut FileProtocolV1,
+        _new_handle: *mut *mut FileProtocolV1,
+        _filename: *const uefi_raw::Char16,
+        _open_mode: uefi_raw::protocol::file_system::FileMode,
         _attributes: FileAttribute,
     ) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_close(_this: &mut FileImpl) -> Status {
+    extern "efiapi" fn stub_close(_this: *mut FileProtocolV1) -> Status {
         Status::SUCCESS
     }
 
-    extern "efiapi" fn stub_delete(_this: &mut FileImpl) -> Status {
+    extern "efiapi" fn stub_delete(_this: *mut FileProtocolV1) -> Status {
         Status::UNSUPPORTED
     }
 
     extern "efiapi" fn stub_read(
-        _this: &mut FileImpl,
-        _buffer_size: &mut usize,
-        _buffer: *mut u8,
+        _this: *mut FileProtocolV1,
+        _buffer_size: *mut usize,
+        _buffer: *mut c_void,
     ) -> Status {
         Status::UNSUPPORTED
     }
 
     extern "efiapi" fn stub_write(
-        _this: &mut FileImpl,
-        _buffer_size: &mut usize,
-        _buffer: *const u8,
+        _this: *mut FileProtocolV1,
+        _buffer_size: *mut usize,
+        _buffer: *const c_void,
     ) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_get_position(_this: &mut FileImpl, _position: &mut u64) -> Status {
+    extern "efiapi" fn stub_get_position(
+        _this: *const FileProtocolV1,
+        _position: *mut u64,
+    ) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_set_position(_this: &mut FileImpl, _position: u64) -> Status {
+    extern "efiapi" fn stub_set_position(_this: *mut FileProtocolV1, _position: u64) -> Status {
         Status::UNSUPPORTED
     }
 
     extern "efiapi" fn stub_set_info(
-        _this: &mut FileImpl,
-        _information_type: &Guid,
+        _this: *mut FileProtocolV1,
+        _information_type: *const Guid,
         _buffer_size: usize,
         _buffer: *const c_void,
     ) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_flush(_this: &mut FileImpl) -> Status {
+    extern "efiapi" fn stub_flush(_this: *mut FileProtocolV1) -> Status {
         Status::UNSUPPORTED
     }
 }

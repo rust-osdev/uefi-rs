@@ -83,6 +83,12 @@ impl Char16 {
     pub const unsafe fn from_u16_unchecked(val: u16) -> Self {
         Self(val)
     }
+
+    /// Checks if the value is within the ASCII range.
+    #[must_use]
+    pub const fn is_ascii(&self) -> bool {
+        self.0 <= 127
+    }
 }
 
 impl TryFrom<char> for Char16 {

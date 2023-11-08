@@ -404,7 +404,7 @@ impl<'a> FileSystem<'a> {
     /// May create a file if [`UefiFileMode::CreateReadWrite`] is set. May
     /// create a directory if [`UefiFileMode::CreateReadWrite`] and `create_dir`
     /// is set. The parameter `create_dir` is ignored otherwise.
-    fn open(
+    pub fn open(
         &mut self,
         path: &Path,
         mode: UefiFileMode,

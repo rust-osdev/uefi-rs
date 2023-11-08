@@ -1,4 +1,4 @@
-use super::chars::{Char16, Char8, NUL_16, NUL_8};
+use super::chars::{Char16, Char8, NUL_16, NUL_8, SliceLikeChar16};
 use super::UnalignedSlice;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
@@ -413,6 +413,12 @@ impl CStr16 {
     #[must_use]
     pub const fn num_bytes(&self) -> usize {
         self.0.len() * 2
+    }
+
+    /// Checks if all characters in this string are within the ASCII range.
+    #[must_use]
+    pub fn is_ascii(&self) -> bool {
+        self.0.is_ascii()
     }
 
     /// Writes each [`Char16`] as a [`char`] (4 bytes long in Rust language) into the buffer.

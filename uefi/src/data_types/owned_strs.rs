@@ -1,4 +1,4 @@
-use super::chars::{Char16, NUL_16};
+use super::chars::{Char16, NUL_16, SliceLikeChar16};
 use super::strs::{CStr16, FromSliceWithNulError};
 use crate::data_types::strs::EqStrUntilNul;
 use crate::data_types::UnalignedSlice;
@@ -108,6 +108,12 @@ impl CString16 {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.num_chars() == 0
+    }
+
+    /// Checks if all characters in this string are within the ASCII range.
+    #[must_use]
+    pub fn is_ascii(&self) -> bool {
+        self.0.is_ascii()
     }
 }
 

@@ -5,6 +5,8 @@
 
 use core::fmt::{self, Display, Formatter};
 
+use alloc::vec::Vec;
+
 /// Character conversion error
 #[derive(Clone, Copy, Debug)]
 pub struct CharConversionError;
@@ -82,6 +84,30 @@ impl Char16 {
     #[must_use]
     pub const unsafe fn from_u16_unchecked(val: u16) -> Self {
         Self(val)
+    }
+
+    /// Checks if the value is within the ASCII range.
+    #[must_use]
+    pub const fn is_ascii(&self) -> bool {
+        self.0 <= 127
+    }
+}
+
+/// Provides various functions on slice-like container (e.g. Vec) of Char16.
+pub trait SliceLikeChar16 {
+    /// Checks if all char16 in this slice are within the ASCII range.
+    fn is_ascii(&self) -> bool;
+}
+
+impl SliceLikeChar16 for [Char16] {
+    fn is_ascii(&self) -> bool {
+        self.iter().all(|c| c.is_ascii())
+    }
+}
+
+impl SliceLikeChar16 for Vec<Char16> {
+    fn is_ascii(&self) -> bool {
+        self.iter().all(|c| c.is_ascii())
     }
 }
 

@@ -1,12 +1,10 @@
-# Changelog
+# uefi - [Unreleased]
 
-## uefi - [Unreleased]
-
-### Added
+## Added
 - Implemented `Index`, `IndexMut`, `get`, and `get_mut` on `MemoryMap`.
 - Added `SystemTable::as_ptr`.
 
-### Changed
+## Changed
 - We fixed a memory leak in `GraphicsOutput::query_mode`. As a consequence, we
   had to add `&BootServices` as additional parameter.
 - `BootServices::free_pages` and `BootServices::free_pool` are now `unsafe` to
@@ -19,9 +17,9 @@
 - `BootServices::{install,reinstall,uninstall}_protocol_interface` now take
   `const` interface pointers.
 
-## uefi - 0.25.0 (2023-10-10)
+# uefi - 0.25.0 (2023-10-10)
 
-### Changed
+## Changed
 - MSRV bumped to 1.70.
 - `Input::wait_for_key_event` now returns an `Option<Event>`, and is no longer `const`.
 - `Protocol::wait_for_input_event` now returns an `Option<Event>`, and is no longer `const`.
@@ -40,13 +38,13 @@
   the memory type of memory map.
 - Added the `ShellParams` protocol
 
-### Removed
+## Removed
 - `BootServices::memmove` and `BootServices::set_mem` have been removed, use
   standard functions like `core::ptr::copy` and `core::ptr::write_bytes` instead.
 
-## uefi - 0.24.0 (2023-06-20)
+# uefi - 0.24.0 (2023-06-20)
 
-### Added
+## Added
 - `DevicePath::to_boxed`, `DevicePath::to_owned`, and `DevicePath::as_bytes`
 - `DevicePathInstance::to_boxed`, `DevicePathInstance::to_owned`, and `DevicePathInstance::as_bytes`
 - `DevicePathNode::data`
@@ -55,25 +53,22 @@
   potentially-null interfaces without panicking.
 - `DevicePath::to_string` and `DevicePathNode::to_string`
 
-### Changed
+## Changed
 - Renamed `LoadImageSource::FromFilePath` to `LoadImageSource::FromDevicePath`
 - The `Deref` and `DerefMut` impls for `ScopedProtocol` will now panic if the
   interface pointer is null.
 
-## uefi - 0.23.0 (2023-06-04)
+# uefi - 0.23.0 (2023-06-04)
 
-### Changed
-
+## Changed
 - Fixed function signature bug in `BootServices::install_configuration_table`.
 
-## uefi - 0.22.0 (2023-06-01)
+# uefi - 0.22.0 (2023-06-01)
 
-### Added
-
+## Added
 - Added `BootServices::install_configuration_table`.
 
-### Changed
-
+## Changed
 - Renamed `FileSystemIOErrorContext` to `IoErrorContext`.
 - `ResetType` is now a newtype-enum instead of a Rust enum. Its members now have
   upper-case names.
@@ -84,10 +79,9 @@
 - `RegularFile::read` now reads in 1 MiB chunks to avoid a bug in some
   firmware. This fix also applies to `fs::FileSystem::read`.
 
-## uefi - 0.21.0 (2023-05-15)
+# uefi - 0.21.0 (2023-05-15)
 
-### Added
-
+## Added
 - There is a new `fs` module that provides a high-level API for file-system
   access. The API is close to the `std::fs` module. The module also provides a
   `Path` and a `PathBuf` abstraction that is similar to the ones from
@@ -117,8 +111,7 @@
   - `MemoryType::BOOT_SERVICES_DATA` for UEFI boot drivers
   - `MemoryType::RUNTIME_SERVICES_DATA` for UEFI runtime drivers
 
-### Changed
-
+## Changed
 - The `global_allocator` module has been renamed to `allocator`, and is now
   available regardless of whether the `global_allocator` feature is enabled. The
   `global_allocator` feature now only controls whether `allocator::Allocator` is
@@ -147,13 +140,12 @@
   - `GptPartitionAttributes` now has 16 additional `TYPE_SPECIFIC_BIT_<N>`
     constants.
 
-## uefi - 0.20.0 (2023-03-19)
+# uefi - 0.20.0 (2023-03-19)
 
 As of this release, the UEFI crates work on the stable channel. This requires
 Rust 1.68 or higher.
 
-### Added
-
+## Added
 - Added the `ComponentName1` and `ComponentName2` protocols. The `ComponentName`
   wrapper will automatically select `ComponentName2` if available, and fall back
   to `ComponentName1` otherwise.
@@ -164,8 +156,7 @@ Rust 1.68 or higher.
   is no sensible way of presenting a useful Debug representation, such as for
   Unions.
 
-### Changed
-
+## Changed
 - `SystemTable::exit_boot_services` now takes no parameters and handles
   the memory map allocation itself. Errors are now treated as
   unrecoverable and will cause the system to reset.
@@ -186,14 +177,12 @@ Rust 1.68 or higher.
     available since EFI 1.10 (2002).
   - `ScopedProtocol::interface` is not public anymore. Use the `Deref` trait.
 
-## uefi - 0.19.1 (2023-02-04)
+# uefi - 0.19.1 (2023-02-04)
 
-### Added
-
+## Added
 - Added `table::boot::PAGE_SIZE` constant.
 
-### Changed
-
+## Changed
 - Fixed several protocol functions so that they work with unsized protocols
   (like `DevicePath`): `BootServices::locate_device_path`,
   `BootServices::get_handle_for_protocol`, `BootServices::test_protocol`,
@@ -201,10 +190,9 @@ Rust 1.68 or higher.
 - Fixed a warning printed when using `uefi` as a dependency: "the following
   packages contain code that will be rejected by a future version".
 
-## uefi - 0.19.0 (2023-01-16)
+# uefi - 0.19.0 (2023-01-16)
 
-### Added
-
+## Added
 - Implementations for the trait `EqStrUntilNul` now allow `?Sized` inputs. This means that
   you can write `some_cstr16.eq_str_until_nul("test")` instead of
   `some_cstr16.eq_str_until_nul(&"test")` now.
@@ -217,8 +205,7 @@ Rust 1.68 or higher.
   integration with error-handling crates. (requires the **unstable** feature)
 - Added partial support for the TCG protocols for TPM devices under `uefi::proto::tcg`.
 
-### Changed
-
+## Changed
 - `UnalignedSlice` now implements `Clone`, and the `Debug` impl now
   prints the elements instead of the internal fields.
 - The unstable `negative_impls` feature is no longer required to use this library.
@@ -235,10 +222,9 @@ Rust 1.68 or higher.
 - Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
   fields of this struct are public.
 
-## uefi - 0.18.0 (2022-11-15)
+# uefi - 0.18.0 (2022-11-15)
 
-### Added
-
+## Added
 - Added `PhysicalAddress` and `VirtualAddress` type aliases.
 - Added `Guid::from_bytes` and `Guid::to_bytes`.
 - Added `UnalignedSlice` for representing a reference to an unaligned
@@ -257,8 +243,7 @@ Rust 1.68 or higher.
 - Added `BootServices::register_protocol_notify`.
 - Added `SearchType::ByRegisterNotify`and `ProtocolSearchKey`.
 
-### Changed
-
+## Changed
 - Renamed crate feature `alloc` to `global_allocator`.
 - Renamed crate feature `exts` to `alloc`.
 - Fixed the definition of `AllocateType` so that `MaxAddress` and
@@ -277,8 +262,7 @@ Rust 1.68 or higher.
 - `CStr16::from_u16_with_nul_unchecked` and `cstr16!` are now allowed in
   `const` contexts.
 
-### Removed
-
+## Removed
 - Removed `UnalignedCStr16`; use `UnalignedSlice` instead. An
   `UnalignedSlice<u16>` can be converted to a string with `to_cstr16` or
   `to_cstring16`.
@@ -290,11 +274,9 @@ Rust 1.68 or higher.
   `proto::device_path::acpi::Acpi` and
   `proto::device_path::media::HardDrive` instead.  `
 
-## uefi - 0.17.0 (2022-09-09)
+# uefi - 0.17.0 (2022-09-09)
 
-
-### Added
-
+## Added
 - Added `Deref` and `DerefMut` trait implementations to `ScopedProtocol`.
   This eliminates the need to explicitly access the `interface` field,
   which is now marked as deprecated.
@@ -321,8 +303,7 @@ Rust 1.68 or higher.
 - The `File` trait now knows the methods `is_regular_file` and `is_directory`.
   Developers profit from this on the struct `FileHandle`, for example.
 
-### Changed
-
+## Changed
 - Marked `BootServices::handle_protocol` as `unsafe`. (This method is
   also deprecated -- use `open_protocol_exclusive` or `open_protocol` instead.)
 - Deprecated `BootServices::locate_protocol` and marked it `unsafe`. Use
@@ -333,8 +314,7 @@ Rust 1.68 or higher.
   additive. It is now a default feature.
 - Corrected the name of `BlockIOMedia::is_media_preset` to `is_media_present`.
 
-### Removed
-
+## Removed
 - Removed the `exts::allocate_buffer` function. This function could
   cause undefined behavior when called with a `Layout` with an alignment
   other than 1. A safe alternative is to use
@@ -345,14 +325,12 @@ Rust 1.68 or higher.
   can be replaced by calling `status.into()`, or `Result::from(status)`
   in cases where the compiler needs a type hint.
 
-## uefi - 0.16.1
+# uefi - 0.16.1
 
-### Added
-
+## Added
 - Added EFI revision constants to `Revision`.
 
-### Fixed
-
+## Fixed
 - The table `Header` struct's `Debug` impl now prints the correct signature.
 - The `BootServices::create_event_ex` and
   `RuntimeServices::query_variable_info` methods now check the table
@@ -361,17 +339,15 @@ Rust 1.68 or higher.
 - Fixed an incorrect pointer cast in the `Rng` protocol that could cause
   undefined behavior.
 
-### Changed
-
+## Changed
 - Relaxed the version requirements for the `bitflags` and `log`
   dependencies to allow earlier patch versions.
 - Enabled `doc_auto_cfg` on docs.rs to show badges on items that are
   gated behind a feature.
 
-## uefi - 0.16.0 (2022-05-16)
+# uefi - 0.16.0 (2022-05-16)
 
-### Added
-
+## Added
 - Added `FileHandle::into_directory` and `FileHandle::into_regular_file`.
 - Added `TimeParams`, `Time::invalid`, and `Time::is_invalid`.
 - Added `RuntimeServices::query_variable_info` and `VariableStorageInfo`.
@@ -385,8 +361,7 @@ Rust 1.68 or higher.
 - Included `cstr8` and `cstr16` macros from `uefi-macros` in the prelude.
 - Added `DevicePathInstance`, `DevicePathNode`, and `FfiDevicePath`.
 
-### Changed
-
+## Changed
 - `Time::new` now takes a single `TimeParams` argument so that date and
   time fields can be explicitly named at the call site.
 - The file info types now derive `PartialEq` and `Eq`.
@@ -396,14 +371,13 @@ Rust 1.68 or higher.
   instances and nodes, respectively.
 - The methods of `Revision` are now `const`.
 
-### Fixed
+## Fixed
 
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
 
-## uefi - 0.15.2 (2022-03-15)
+# uefi - 0.15.2 (2022-03-15)
 
-### Added
-
+## Added
 - Added `PartialEq` impls for `CStr16 == CStr16`, `&CStr16 == CString`,
   and `CString == &CStr16`.
 - Added `Display` impl for `CString16`.
@@ -425,8 +399,7 @@ Rust 1.68 or higher.
 - Added `Output::output_string_lossy`.
 - Added `ResultExt::handle_warning`.
 
-### Changed
-
+## Changed
 - Updated to the 2021 edition.
 - `File::open` now takes the filename as `&CStr16` instead of `&str`,
   avoiding an implicit string conversion.
@@ -445,8 +418,7 @@ Rust 1.68 or higher.
   `Completion`, so the type behaves more like a regular Rust `Result`
   type.
 
-### Removed
-
+## Removed
 - Removed `CStr16::as_string` method. Use
   [`ToString`](https://doc.rust-lang.org/alloc/string/trait.ToString.html)
   instead.
@@ -469,8 +441,7 @@ Rust 1.68 or higher.
   `log_warning` method has also been removed, use the new
   `ResultExt::handle_warning` method instead.
 
-### Fixed
-
+## Fixed
 - Fixed compilation with Rust 1.60 by no longer enabling the
   `vec_spare_capacity` feature, which has been stabilized.
 - Fixed the header size calculated by `FileInfo::new` and

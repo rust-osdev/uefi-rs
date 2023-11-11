@@ -100,12 +100,15 @@ pub mod data_types;
 #[cfg(feature = "alloc")]
 pub use self::data_types::CString16;
 pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
-pub use uefi_macros::{cstr16, cstr8, entry};
+pub use uefi_macros::{cstr16, cstr8, entry, main};
 pub use uguid::guid;
 
 mod result;
 pub use self::result::{Error, Result, ResultExt, Status, StatusExt};
 
+pub mod boot;
+pub mod runtime;
+pub mod system;
 pub mod table;
 
 pub mod proto;

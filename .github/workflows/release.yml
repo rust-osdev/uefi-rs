@@ -1,0 +1,16 @@
+# This workflow runs when commits are pushed to main or a branch starting with
+# "version-". It checks if any packages require a new release, and if so,
+# creates the crates.io release and git tag.
+name: Release
+on:
+  push:
+    branches:
+      - main
+      - version-*
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo xtask auto-release

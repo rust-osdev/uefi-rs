@@ -44,6 +44,19 @@ pub fn run_cmd(mut cmd: Command) -> Result<()> {
     }
 }
 
+/// Print a `Command` and run it, then check that it completes
+/// successfully. Return the command's stdout.
+pub fn get_cmd_stdout(mut cmd: Command) -> Result<Vec<u8>> {
+    println!("run_cmd: '{}'", command_to_string(&cmd));
+
+    let output = cmd.output()?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        bail!("command failed: {}", output.status);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

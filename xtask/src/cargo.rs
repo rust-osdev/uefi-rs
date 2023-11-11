@@ -29,12 +29,12 @@ impl Package {
         }
     }
 
-    /// All published packages.
+    /// All published packages, in the order that publishing should occur.
     pub fn published() -> Vec<Package> {
         vec![
-            Self::Uefi,
-            Self::UefiMacros,
             Self::UefiRaw,
+            Self::UefiMacros,
+            Self::Uefi,
             Self::UefiServices,
         ]
     }

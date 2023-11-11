@@ -74,6 +74,7 @@ pub enum Action {
     Run(QemuOpt),
     Test(TestOpt),
     Fmt(FmtOpt),
+    AutoRelease(AutoReleaseOpt),
 }
 
 /// Build all the uefi packages.
@@ -202,3 +203,9 @@ pub struct FmtOpt {
     #[clap(long, action)]
     pub check: bool,
 }
+
+/// Run the auto-release process.
+///
+/// This is run by the `release` workflow.
+#[derive(Debug, Parser)]
+pub struct AutoReleaseOpt {}

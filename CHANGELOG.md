@@ -19,8 +19,6 @@
 - `BootServices::{install,reinstall,uninstall}_protocol_interface` now take
   `const` interface pointers.
 
-## uefi-macros - [Unreleased]
-
 ## uefi - 0.25.0 (2023-10-10)
 
 ### Changed
@@ -149,18 +147,6 @@
   - `GptPartitionAttributes` now has 16 additional `TYPE_SPECIFIC_BIT_<N>`
     constants.
 
-## uefi-macros - 0.12.0 (2023-05-15)
-
-- The `unsafe_protocol` macro no longer makes protocols `!Send` and
-  `!Sync`. Protocols can only be used while boot services are active, and that's
-  already a single-threaded environment, so these negative traits do not have
-  any effect.
-- The `unsafe_protocol` macro now accepts the path of a `Guid` constant in
-  addition to a string literal.
-- The `cstr8` and the `cstr16` macros now both accept `(nothing)` and `""`
-  (empty inputs) to create valid empty strings. They include the null-byte.
-- The `entry` macro now works correctly with docstrings.
-
 ## uefi - 0.20.0 (2023-03-19)
 
 As of this release, the UEFI crates work on the stable channel. This requires
@@ -199,12 +185,6 @@ Rust 1.68 or higher.
     and `BootServices::open_protocol_exclusive` are better variants and
     available since EFI 1.10 (2002).
   - `ScopedProtocol::interface` is not public anymore. Use the `Deref` trait.
-
-## uefi-macros - 0.11.0 (2023-03-19)
-
-### Changed
-
-- Errors produced by the `entry` macro have been improved.
 
 ## uefi - 0.19.1 (2023-02-04)
 
@@ -254,20 +234,6 @@ Rust 1.68 or higher.
   `MaybeUninit<u8>` slice of appropriate length.
 - Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
   fields of this struct are public.
-
-## uefi-macros - 0.10.0 (2023-01-16)
-
-### Added
-
-- Added the `unsafe_protocol` macro to provide a slightly nicer way to
-  implement protocols.
-
-### Removed
-
-- The `unsafe_guid` attribute macro and `Protocol` derive macro have
-  been removed. For implementing protocols, use the `unsafe_protocol`
-  macro instead. For any other implementations of the `Identify` trait,
-  implement it directly.
 
 ## uefi - 0.18.0 (2022-11-15)
 
@@ -324,14 +290,6 @@ Rust 1.68 or higher.
   `proto::device_path::acpi::Acpi` and
   `proto::device_path::media::HardDrive` instead.  `
 
-## uefi-macros - 0.9.0 (2022-11-15)
-
-### Added
-
-- Added a `guid!` macro. This is similar to `Guid::from_values`, but
-  takes a more convenient string argument like the `unsafe_guid!`
-  attribute macro.
-
 ## uefi - 0.17.0 (2022-09-09)
 
 
@@ -387,15 +345,6 @@ Rust 1.68 or higher.
   can be replaced by calling `status.into()`, or `Result::from(status)`
   in cases where the compiler needs a type hint.
 
-## uefi-macros - 0.8.0 (2022-09-09)
-
-### Changed
-
-- The `#[entry]` macro now calls `BootServices::set_image_handle` to set
-  the global image handle. Due to this change, the two arguments to main
-  must both be named (e.g. `image: Handle` and `_image: Handle` are both
-  OK, but not `_: Handle`).
-
 ## uefi - 0.16.1
 
 ### Added
@@ -418,13 +367,6 @@ Rust 1.68 or higher.
   dependencies to allow earlier patch versions.
 - Enabled `doc_auto_cfg` on docs.rs to show badges on items that are
   gated behind a feature.
-
-## uefi-macros - 0.7.1 (2022-08-26)
-
-### Changed
-
-- Relaxed the version requirements for the `proc-macro2`, `quote`, and
-  `sync` dependencies to allow earlier patch versions.
 
 ## uefi - 0.16.0 (2022-05-16)
 
@@ -457,13 +399,6 @@ Rust 1.68 or higher.
 ### Fixed
 
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
-
-## uefi-macros - 0.7.0 (2022-05-16)
-
-### Added
-
-- Added `cstr8` and `cstr16` macros for creating `CStr8`/`CStr16` string literals
-  at compile time.
 
 ## uefi - 0.15.2 (2022-03-15)
 
@@ -545,9 +480,3 @@ Rust 1.68 or higher.
   truncated and could result in out-of-bounds reads.
 - Fixed size check for file info types so that alignment padding is
   taken into account. This fixes potential out-of-bounds writes.
-
-## uefi-macros - 0.6.1 (2022-03-15)
-
-### Changed
-
-- Updated to the 2021 edition.

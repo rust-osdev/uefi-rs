@@ -33,9 +33,6 @@ a new major version of that crate will have to be published, then a new version 
 `uefi` (major if the previous bump caused changes in the public API of this crate as well),
 then possibly a new version of `uefi-services`.
 
-Furthermore, `uefi-macros` has the `uefi` crate as a `dev-dependency`,
-and that will have to be updated in tandem with the major versions of the core crate.
-
 ### Updating the dependent crates
 
 Remember that if a new major version of a crate gets released, when bumping the version

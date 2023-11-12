@@ -7,7 +7,9 @@ edition.workspace = true
 
 [dependencies]
 anyhow = "1.0.51"
+cargo_metadata = "0.18.1"
 clap = { version = "4.4.0", default-features = false, features = ["derive", "help", "usage", "std"] }
+crates-index = "2.3.0"
 fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std"] }
 fs-err = "2.6.0"
 heck = "0.4.0"
@@ -24,5 +26,5 @@ sha2 = "0.10.6"
 syn = { version = "2.0.0", features = ["full"] }
 tar = "0.4.38"
 tempfile = "3.6.0"
+ureq = { version = "2.8.0", features = ["http-interop"] }
 walkdir = "2.4.0"
-ureq = "2.8.0"

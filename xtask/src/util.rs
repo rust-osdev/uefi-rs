@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use std::process::Command;
 
 /// Format a `Command` as a `String.
@@ -41,6 +41,19 @@ pub fn run_cmd(mut cmd: Command) -> Result<()> {
         Ok(())
     } else {
         bail!("command failed: {}", status);
+    }
+}
+
+/// Print a `Command` and run it, then check that it completes
+/// successfully. Return the command's stdout as a `String`.
+pub fn run_cmd_get_stdout(mut cmd: Command) -> Result<String> {
+    println!("run_cmd: '{}'", command_to_string(&cmd));
+
+    let output = cmd.output()?;
+    if output.status.success() {
+        String::from_utf8(output.stdout).context("command output is not utf-8")
+    } else {
+        bail!("command failed: {}", output.status);
     }
 }
 

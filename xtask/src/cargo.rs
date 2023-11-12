@@ -16,7 +16,8 @@ pub enum Package {
 }
 
 impl Package {
-    fn as_str(self) -> &'static str {
+    /// Get package name.
+    pub fn name(self) -> &'static str {
         match self {
             Self::Uefi => "uefi",
             Self::UefiApp => "uefi_app",
@@ -28,12 +29,12 @@ impl Package {
         }
     }
 
-    /// All published packages.
+    /// All published packages, in the order that publishing should occur.
     pub fn published() -> Vec<Package> {
         vec![
-            Self::Uefi,
-            Self::UefiMacros,
             Self::UefiRaw,
+            Self::UefiMacros,
+            Self::Uefi,
             Self::UefiServices,
         ]
     }
@@ -304,7 +305,7 @@ impl Cargo {
             bail!("packages cannot be empty");
         }
         for package in &self.packages {
-            cmd.args(["--package", package.as_str()]);
+            cmd.args(["--package", package.name()]);
         }
 
         if !self.features.is_empty() {

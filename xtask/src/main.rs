@@ -8,6 +8,7 @@ mod opt;
 mod pipe;
 mod platform;
 mod qemu;
+mod release;
 mod tpm;
 mod util;
 
@@ -314,5 +315,6 @@ fn main() -> Result<()> {
         Action::Run(qemu_opt) => run_vm_tests(qemu_opt),
         Action::Test(test_opt) => run_host_tests(test_opt),
         Action::Fmt(fmt_opt) => run_fmt_project(fmt_opt),
+        Action::AutoRelease(_) => release::auto_release(),
     }
 }

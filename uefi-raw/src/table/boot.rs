@@ -188,11 +188,28 @@ pub struct BootServices {
         out_proto: *mut *mut c_void,
     ) -> Status,
 
-    // These two function pointers require the `c_variadic` feature, which is
-    // not yet available in stable Rust:
-    // https://github.com/rust-lang/rust/issues/44930
-    pub install_multiple_protocol_interfaces: usize,
-    pub uninstall_multiple_protocol_interfaces: usize,
+    /// Warning: this function pointer is declared as `extern "C"` rather than
+    /// `extern "efiapi". That means it will work correctly when called from a
+    /// UEFI target (`*-unknown-uefi`), but will not work when called from a
+    /// target with a different calling convention such as
+    /// `x86_64-unknown-linux-gnu`.
+    ///
+    /// Support for C-variadics with `efiapi` requires the unstable
+    /// [`extended_varargs_abi_support`](https://github.com/rust-lang/rust/issues/100189)
+    /// feature.
+    pub install_multiple_protocol_interfaces:
+        unsafe extern "C" fn(handle: *mut Handle, ...) -> Status,
+
+    /// Warning: this function pointer is declared as `extern "C"` rather than
+    /// `extern "efiapi". That means it will work correctly when called from a
+    /// UEFI target (`*-unknown-uefi`), but will not work when called from a
+    /// target with a different calling convention such as
+    /// `x86_64-unknown-linux-gnu`.
+    ///
+    /// Support for C-variadics with `efiapi` requires the unstable
+    /// [`extended_varargs_abi_support`](https://github.com/rust-lang/rust/issues/100189)
+    /// feature.
+    pub uninstall_multiple_protocol_interfaces: unsafe extern "C" fn(handle: Handle, ...) -> Status,
 
     // CRC services
     pub calculate_crc32:

@@ -208,8 +208,8 @@ fn check_type(ty: &Type, src: &Path) -> Result<(), Error> {
 
 /// Validate a function pointer.
 fn check_fn_ptr(f: &TypeBareFn, src: &Path) -> Result<(), Error> {
-    // Require `extern efiapi`.
-    if !is_efiapi(f) {
+    // Require `extern efiapi`, except for c-variadics.
+    if !is_efiapi(f) && f.variadic.is_none() {
         return Err(Error::new(ErrorKind::ForbiddenAbi, src, f));
     }
 
@@ -428,6 +428,15 @@ mod tests {
         assert!(check_fn_ptr(
             &parse_quote! {
                 unsafe extern "efiapi" fn()
+            },
+            src(),
+        )
+        .is_ok());
+
+        // Valid fn ptr with c-variadics.
+        assert!(check_fn_ptr(
+            &parse_quote! {
+                unsafe extern "C" fn(usize, ...)
             },
             src(),
         )

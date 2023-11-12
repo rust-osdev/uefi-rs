@@ -13,13 +13,10 @@ cargo new my-uefi-app
 cd my-uefi-app
 ```
 
-In `cargo.toml`, add a few dependencies:
+Add a few dependencies:
 
-```toml
-[dependencies]
-log = "0.4"
-uefi = "0.26"
-uefi-services = "0.23"
+```sh
+cargo add log uefi uefi-services
 ```
 
 Replace the contents of `src/main.rs` with this:

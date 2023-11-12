@@ -46,8 +46,7 @@ you will also have to update the corresponding `Cargo.toml` of `uefi` to be:
 uefi-macros = "0.6.0"
 ```
 
-The dependencies in `template/Cargo.toml` and `book/src/tutorial/app.md` should
-also be updated to the new version.
+The dependencies in `template/Cargo.toml` should also be updated to the new version.
 
 [cargo-semver]: https://doc.rust-lang.org/cargo/reference/semver.html
 [semver]: https://semver.org/

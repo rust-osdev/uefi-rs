@@ -1,5 +1,10 @@
 # uefi-macros - [Unreleased]
 
+# uefi-macros - 0.13.0 (2023-11-12)
+
+## Changed
+- The dev-dependency on `uefi` is now path-only.
+
 # uefi-macros - 0.12.0 (2023-05-15)
 
 ## Changed

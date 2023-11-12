@@ -1,6 +1,6 @@
 [package]
 name = "uefi-macros"
-version = "0.12.0"
+version = "0.13.0"
 readme = "README.md"
 description = "Procedural macros for the `uefi` crate."
 

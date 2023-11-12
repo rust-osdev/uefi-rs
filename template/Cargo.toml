@@ -5,5 +5,5 @@ edition = "2021"
 publish = false
 
 [dependencies]
-uefi = { version = "0.25.0", features = ["alloc"] }
-uefi-services = "0.22.0"
+uefi = { version = "0.26.0", features = ["alloc"] }
+uefi-services = "0.23.0"

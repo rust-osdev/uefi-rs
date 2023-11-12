@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.25.0"
+version = "0.26.0"
 readme = "README.md"
 description = "Safe and easy-to-use wrapper for building UEFI apps."
 
@@ -29,8 +29,8 @@ bitflags.workspace = true
 log.workspace = true
 ptr_meta.workspace = true
 ucs2 = "0.3.2"
-uefi-macros = "0.12.0"
-uefi-raw = "0.4.0"
+uefi-macros = "0.13.0"
+uefi-raw = "0.5.0"
 uguid.workspace = true
 
 [package.metadata.docs.rs]

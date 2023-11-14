@@ -2,10 +2,11 @@
 # "cargo xtask run|test|clippy". It uses rustup rather than a pinned rust
 # toolchain.
 
-{ sources ? import ./nix/sources.nix { }
-, pkgs ? import sources.nixpkgs { }
-}:
-
+let
+  sources = import ./nix/sources.nix;
+  pkgs = import ./nix/nixpkgs.nix;
+  rustToolchain = pkgs.callPackage ./nix/rust-toolchain.nix {};
+in
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     # nix related stuff (such as dependency management)
@@ -17,7 +18,7 @@ pkgs.mkShell {
     qemu
 
     # Rust toolchain
-    rustup
+    rustToolchain
 
     # Other
     yamlfmt

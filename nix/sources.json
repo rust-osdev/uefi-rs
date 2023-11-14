@@ -5,10 +5,10 @@
         "homepage": null,
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6b0edc9c690c1d8a729f055e0d73439045cfda55",
-        "sha256": "1fdsnmkcz1h5wffjci29af4jrd68pzdvrhbs083niwqfd6ssm633",
+        "rev": "da4024d0ead5d7820f6bd15147d3fe2a0c0cec73",
+        "sha256": "1y12a4hgxx2lixrcbyhycwxvrrfik1lxjnwkprar0r6173rwy9ax",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/6b0edc9c690c1d8a729f055e0d73439045cfda55.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/da4024d0ead5d7820f6bd15147d3fe2a0c0cec73.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "rust-overlay": {

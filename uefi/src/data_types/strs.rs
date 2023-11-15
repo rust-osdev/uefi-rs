@@ -415,6 +415,12 @@ impl CStr16 {
         self.0.len() * 2
     }
 
+    /// Checks if all characters in this string are within the ASCII range.
+    #[must_use]
+    pub fn is_ascii(&self) -> bool {
+        self.0.iter().all(|c| c.is_ascii())
+    }
+
     /// Writes each [`Char16`] as a [`char`] (4 bytes long in Rust language) into the buffer.
     /// It is up to the implementer of [`core::fmt::Write`] to convert the char to a string
     /// with proper encoding/charset. For example, in the case of [`alloc::string::String`]

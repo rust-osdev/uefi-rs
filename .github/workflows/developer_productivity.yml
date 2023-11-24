@@ -25,7 +25,7 @@ jobs:
   #
   # It only runs if the "nix-src" output of the "changes" job is true.
   nix_shell_toolchain:
-    name: "Nix toolchain: cargo xtask run works"
+    name: "Nix toolchain: `cargo xtask run` works"
     needs: changes
     if: ${{ needs.changes.outputs.nix-src == 'true' }}
     runs-on: ubuntu-latest
@@ -45,6 +45,6 @@ jobs:
         run: nix-shell --pure --run "cargo --version"
       - name: Run VM tests
         run: |
-          COMMAND="cargo +stable xtask run --target x86_64 --headless --ci --tpm=v1"
-          echo "Executing in nix shell now: $COMMAND"
+          COMMAND="cargo xtask run --target x86_64 --headless --ci --tpm=v1"
+          echo "Executing in nix shell: $COMMAND"
           nix-shell --pure --run "$COMMAND"

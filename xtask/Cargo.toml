@@ -13,7 +13,7 @@ crates-index = "2.3.0"
 fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std"] }
 fs-err = "2.6.0"
 heck = "0.4.0"
-itertools = "0.11.0"
+itertools = "0.12.0"
 lzma-rs = "0.3.0"
 mbrman = "0.5.1"
 nix = { version = "0.27.1", default-features = false, features = ["fs"] }

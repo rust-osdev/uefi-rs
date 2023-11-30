@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Added
+- Implemented `PartialEq<char>` for `Char8` and `Char16`.
+
 # uefi - 0.26.0 (2023-11-12)
 
 ## Added

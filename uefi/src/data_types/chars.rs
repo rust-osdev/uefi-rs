@@ -66,6 +66,12 @@ impl fmt::Display for Char8 {
     }
 }
 
+impl PartialEq<char> for Char8 {
+    fn eq(&self, other: &char) -> bool {
+        u32::from(self.0) == u32::from(*other)
+    }
+}
+
 /// Latin-1 version of the NUL character
 pub const NUL_8: Char8 = Char8(0);
 
@@ -150,5 +156,24 @@ impl fmt::Display for Char16 {
     }
 }
 
+impl PartialEq<char> for Char16 {
+    fn eq(&self, other: &char) -> bool {
+        u32::from(self.0) == u32::from(*other)
+    }
+}
+
 /// UCS-2 version of the NUL character
 pub const NUL_16: Char16 = unsafe { Char16::from_u16_unchecked(0) };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test that `Char8` and `Char16` can be directly compared with `char`.
+    #[test]
+    fn test_char_eq() {
+        let primitive_char: char = 'A';
+        assert_eq!(Char8(0x41), primitive_char);
+        assert_eq!(Char16(0x41), primitive_char);
+    }
+}

@@ -284,6 +284,40 @@ impl CStr16 {
         &*(codes as *const [u16] as *const Self)
     }
 
+    /// Creates a `&CStr16` from a [`Char16`] slice, if the slice is
+    /// null-terminated and has no interior null characters.
+    pub fn from_char16_with_nul(chars: &[Char16]) -> Result<&Self, FromSliceWithNulError> {
+        // Fail early if the input is empty.
+        if chars.is_empty() {
+            return Err(FromSliceWithNulError::NotNulTerminated);
+        }
+
+        // Find the index of the first null char.
+        if let Some(null_index) = chars.iter().position(|c| *c == NUL_16) {
+            // Verify the null character is at the end.
+            if null_index == chars.len() - 1 {
+                // Safety: the input is null-terminated and has no interior nulls.
+                Ok(unsafe { Self::from_char16_with_nul_unchecked(chars) })
+            } else {
+                Err(FromSliceWithNulError::InteriorNul(null_index))
+            }
+        } else {
+            Err(FromSliceWithNulError::NotNulTerminated)
+        }
+    }
+
+    /// Unsafely creates a `&CStr16` from a `Char16` slice.
+    ///
+    /// # Safety
+    ///
+    /// It's the callers responsibility to ensure chars is null-terminated and
+    /// has no interior null characters.
+    #[must_use]
+    pub const unsafe fn from_char16_with_nul_unchecked(chars: &[Char16]) -> &Self {
+        let ptr: *const [Char16] = chars;
+        &*(ptr as *const Self)
+    }
+
     /// Convert a [`&str`] to a `&CStr16`, backed by a buffer.
     ///
     /// The input string must contain only characters representable with
@@ -613,6 +647,45 @@ mod tests {
     fn test_cstr16_num_bytes() {
         let s = CStr16::from_u16_with_nul(&[65, 66, 67, 0]).unwrap();
         assert_eq!(s.num_bytes(), 8);
+    }
+
+    #[test]
+    fn test_cstr16_from_char16_with_nul() {
+        // Invalid: empty input.
+        assert_eq!(
+            CStr16::from_char16_with_nul(&[]),
+            Err(FromSliceWithNulError::NotNulTerminated)
+        );
+
+        // Invalid: interior null.
+        assert_eq!(
+            CStr16::from_char16_with_nul(&[
+                Char16::try_from('a').unwrap(),
+                NUL_16,
+                Char16::try_from('b').unwrap(),
+                NUL_16
+            ]),
+            Err(FromSliceWithNulError::InteriorNul(1))
+        );
+
+        // Invalid: no trailing null.
+        assert_eq!(
+            CStr16::from_char16_with_nul(&[
+                Char16::try_from('a').unwrap(),
+                Char16::try_from('b').unwrap(),
+            ]),
+            Err(FromSliceWithNulError::NotNulTerminated)
+        );
+
+        // Valid.
+        assert_eq!(
+            CStr16::from_char16_with_nul(&[
+                Char16::try_from('a').unwrap(),
+                Char16::try_from('b').unwrap(),
+                NUL_16,
+            ]),
+            Ok(cstr16!("ab"))
+        );
     }
 
     #[test]

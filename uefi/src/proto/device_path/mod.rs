@@ -217,27 +217,24 @@ impl DevicePathNode {
 
     /// Transforms the device path node to its string representation using the
     /// [`DevicePathToText`] protocol.
-    ///
-    /// The resulting string is only None, if there was not enough memory.
     #[cfg(feature = "alloc")]
     pub fn to_string(
         &self,
         bs: &BootServices,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Result<Option<CString16>, DevicePathToTextError> {
+    ) -> Result<CString16, DevicePathToTextError> {
         let to_text_protocol = open_text_protocol(bs)?;
 
-        let cstring16 = to_text_protocol
+        to_text_protocol
             .convert_device_node_to_text(bs, self, display_only, allow_shortcuts)
-            .ok()
             .map(|pool_string| {
                 let cstr16 = &*pool_string;
                 // Another allocation; pool string is dropped. This overhead
                 // is negligible. CString16 is more convenient to use.
                 CString16::from(cstr16)
-            });
-        Ok(cstring16)
+            })
+            .map_err(|_| DevicePathToTextError::OutOfMemory)
     }
 }
 
@@ -430,27 +427,24 @@ impl DevicePath {
 
     /// Transforms the device path to its string representation using the
     /// [`DevicePathToText`] protocol.
-    ///
-    /// The resulting string is only None, if there was not enough memory.
     #[cfg(feature = "alloc")]
     pub fn to_string(
         &self,
         bs: &BootServices,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Result<Option<CString16>, DevicePathToTextError> {
+    ) -> Result<CString16, DevicePathToTextError> {
         let to_text_protocol = open_text_protocol(bs)?;
 
-        let cstring16 = to_text_protocol
+        to_text_protocol
             .convert_device_path_to_text(bs, self, display_only, allow_shortcuts)
-            .ok()
             .map(|pool_string| {
                 let cstr16 = &*pool_string;
                 // Another allocation; pool string is dropped. This overhead
                 // is negligible. CString16 is more convenient to use.
                 CString16::from(cstr16)
-            });
-        Ok(cstring16)
+            })
+            .map_err(|_| DevicePathToTextError::OutOfMemory)
     }
 }
 
@@ -789,6 +783,8 @@ pub enum DevicePathToTextError {
     /// The handle supporting the [`DevicePathToText`] protocol exists but it
     /// could not be opened.
     CantOpenProtocol(crate::Error),
+    /// Failed to allocate pool memory.
+    OutOfMemory,
 }
 
 impl Display for DevicePathToTextError {

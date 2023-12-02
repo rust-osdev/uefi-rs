@@ -4,6 +4,10 @@
 - Implemented `PartialEq<char>` for `Char8` and `Char16`.
 - Added `CStr16::from_char16_with_nul` and `Char16::from_char16_with_nul_unchecked`.
 
+## Changed
+- `DevicePath::to_string` and `DevicePathNode::to_string` now return
+  out-of-memory errors as part of the error type rather than with an `Option`.
+
 # uefi - 0.26.0 (2023-11-12)
 
 ## Added

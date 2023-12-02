@@ -77,7 +77,7 @@ pub fn test(image: Handle, bt: &BootServices) {
         let path_components = device_path
             .node_iter()
             .map(|node| node.to_string(bt, DisplayOnly(false), AllowShortcuts(false)))
-            .map(|str| str.unwrap().unwrap().to_string())
+            .map(|str| str.unwrap().to_string())
             .collect::<Vec<_>>();
 
         let expected_device_path_str_components = &[
@@ -103,7 +103,6 @@ pub fn test(image: Handle, bt: &BootServices) {
         // Test that to_string works for device_paths
         let path = device_path
             .to_string(bt, DisplayOnly(false), AllowShortcuts(false))
-            .unwrap()
             .unwrap()
             .to_string();
 

@@ -10,7 +10,6 @@ use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::ops::Deref;
-use log::debug;
 
 /// Return type for public [`FileSystem`] operations.
 pub type FileSystemResult<T> = Result<T, Error>;
@@ -156,7 +155,6 @@ impl<'a> FileSystem<'a> {
         // Collect all relevant sub paths in a vector.
         let mut dirs_to_create = vec![path.to_path_buf()];
         while let Some(parent) = dirs_to_create.last().unwrap().parent() {
-            debug!("parent={parent}");
             dirs_to_create.push(parent)
         }
         // Now reverse, so that we have something like this:
@@ -421,7 +419,6 @@ impl<'a> FileSystem<'a> {
         self.open_root()?
             .open(path.to_cstr16(), mode, attr)
             .map_err(|err| {
-                log::trace!("Can't open file {path}: {err:?}");
                 Error::Io(IoError {
                     path: path.to_path_buf(),
                     context: IoErrorContext::OpenError,

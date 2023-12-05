@@ -57,3 +57,18 @@ pub type PhysicalAddress = u64;
 /// Virtual memory address. This is always a 64-bit value, regardless
 /// of target platform.
 pub type VirtualAddress = u64;
+
+/// An IPv4 internet protocol address.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
+pub struct Ipv4Address(pub [u8; 4]);
+
+/// An IPv6 internet protocol address.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
+pub struct Ipv6Address(pub [u8; 16]);
+
+/// A Media Access Control (MAC) address.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
+pub struct MacAddress(pub [u8; 32]);

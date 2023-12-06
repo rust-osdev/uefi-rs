@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+## Added
+- Added `Ipv4Address`, `Ipv6Address`, and `MacAddress` types.
+
 # uefi-raw - 0.5.0 (2023-11-12)
 
 ## Added

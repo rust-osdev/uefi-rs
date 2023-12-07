@@ -12,5 +12,6 @@ pub mod driver;
 pub mod file_system;
 pub mod loaded_image;
 pub mod memory_protection;
+pub mod network;
 pub mod rng;
 pub mod shell_params;

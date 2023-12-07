@@ -28,3 +28,11 @@ impl ComponentName2Protocol {
     /// 4646.
     pub const DEPRECATED_COMPONENT_NAME_GUID: Guid = guid!("107a772c-d5e1-11d4-9a46-0090273fc14d");
 }
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct ServiceBindingProtocol {
+    pub create_child:
+        unsafe extern "efiapi" fn(this: *mut Self, child_handle: *mut Handle) -> Status,
+    pub destroy_child: unsafe extern "efiapi" fn(this: *mut Self, child_handle: Handle) -> Status,
+}

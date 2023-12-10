@@ -1,0 +1,1362 @@
+run_cmd: 'cargo build --target x86_64-unknown-uefi --package uefi-test-runner --features uefi-test-runner/debug_support,uefi-test-runner/pxe,uefi-test-runner/multi_processor --bins --examples'
+qemu-system-x86_64 -nodefaults -device virtio-rng-pci -boot menu=on,splash-time=0 -machine q35 -smp 4 -m 256M -vga std --enable-kvm -device isa-debug-exit,iobase=0xf4,iosize=0x04 -drive if=pflash,format=raw,readonly=on,file=target/ovmf/x86_64/code.fd -drive if=pflash,format=raw,readonly=off,file=/tmp/.tmpd4UNQx/ovmf_vars -drive format=raw,file=fat:rw:target/x86_64-unknown-uefi/debug/esp -drive format=raw,file=/tmp/.tmpd4UNQx/test_disk.fat.img -serial pipe:/tmp/.tmpd4UNQx/serial -qmp pipe:/tmp/.tmpd4UNQx/qemu-monitor -nic user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file
+BdsDxe: loading Boot0001 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+BdsDxe: starting Boot0001 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+[ INFO]: uefi-test-runner/src/bin/shell_launcher.rs@080: launching the shell app
+UEFI Interactive Shell v2.2
+EDK II
+UEFI v2.70 (EDK II, 0x00010000)
+Mapping table
+      FS0: Alias(s):HD0a65535a1:;BLK1:
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)
+      FS1: Alias(s):HD0b65535a1:;BLK3:
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x1,0xFFFF,0x0)/HD(1,MBR,0xFFFFFFFF,0x1,0x4FFF)
+     BLK0: Alias(s):
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+     BLK2: Alias(s):
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x1,0xFFFF,0x0)
+[ INFO]: uefi-test-runner/src/main.rs@029: Firmware Vendor: EDK II
+Testing print! macro with formatting: 0b10011011 Testing println! macro with formatting: 0b10011011
+[ INFO]: uefi-test-runner/src/main.rs@072: UEFI 2.7
+[ INFO]: uefi-test-runner/src/boot/mod.rs@015: Testing boot services
+[ INFO]: uefi-test-runner/src/boot/memory.rs@006: Testing memory functions
+[ INFO]: uefi-test-runner/src/boot/memory.rs@016: Allocating some pages of memory
+[ INFO]: uefi-test-runner/src/boot/memory.rs@039: Allocating a vector through the `alloc` crate
+[ INFO]: uefi-test-runner/src/boot/memory.rs@051: Allocating a structure with alignment to 0x100
+[ INFO]: uefi-test-runner/src/boot/memory.rs@061: Testing memory map functions
+[ INFO]: uefi-test-runner/src/boot/misc.rs@011: Testing timer...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@013: Testing events...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@038: Inside the event callback
+[ INFO]: uefi-test-runner/src/boot/misc.rs@051: Inside the event callback with context
+[ INFO]: uefi-test-runner/src/boot/misc.rs@016: Testing watchdog...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@018: Testing protocol handler services...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@110: Installing TestProtocol
+[ INFO]: uefi-test-runner/src/boot/misc.rs@090: Protocol was (re)installed and this function notified.
+[ INFO]: uefi-test-runner/src/boot/misc.rs@123: Reinstalling TestProtocol
+[ INFO]: uefi-test-runner/src/boot/misc.rs@090: Protocol was (re)installed and this function notified.
+[ INFO]: uefi-test-runner/src/boot/misc.rs@139: Uninstalling TestProtocol
+[ INFO]: uefi-test-runner/src/boot/mod.rs@023: Testing the `locate_handle_buffer` function
+[ INFO]: uefi-test-runner/src/boot/mod.rs@054: Testing the `load_image` function
+[DEBUG]: uefi-test-runner/src/boot/mod.rs@095: load_image with FromBuffer strategy works
+[DEBUG]: uefi-test-runner/src/boot/mod.rs@114: load_image with FromFilePath strategy works
+[ INFO]: uefi-test-runner/src/proto/mod.rs@007: Testing various protocols
+[ INFO]: uefi-test-runner/src/proto/console/mod.rs@004: Testing console protocols
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@005: Running text output protocol test
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@029: UEFI standard output current mode: Some(OutputMode { index: 0, dims: (80, 25) })
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@061: # uefi-rs test runner
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@065: Cursor visibility control unavailable
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@014: - Text mode #0: 25 rows by 80 columns
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@014: - Text mode #1: 31 rows by 100 columns
+[ INFO]: uefi-test-runner/src/proto/console/serial.rs@050: Running serial protocol test
+[ INFO]: uefi-test-runner/src/proto/console/gop.rs@007: Running graphics output protocol test
+[ INFO]: uefi-test-runner/src/proto/console/pointer.rs@005: Running pointer protocol test
+[ INFO]: uefi-test-runner/src/proto/console/pointer.rs@024: Pointer state has not changed since the last query
+[ INFO]: uefi-test-runner/src/proto/mod.rs@052: Image handle has 3 protocols
+[ INFO]: uefi-test-runner/src/proto/debug.rs@074: Running UEFI debug connection protocol test
+[ INFO]: uefi-test-runner/src/proto/debug.rs@088: - Architecture: EBC
+[ INFO]: uefi-test-runner/src/proto/debug.rs@089: - Maximum Processor Index: 0
+[ INFO]: uefi-test-runner/src/proto/debug.rs@096: Registering periodic callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@100: Deregistering periodic callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@105: Deregistering exception callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@109: Registering exception callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@159: Invalidating instruction cache
+[ INFO]: uefi-test-runner/src/proto/debug.rs@012: Running UEFI debug port protocol test
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@010: Running device path protocol test
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=ACPI, subtype=DeviceSubType(1), length=12
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: PciRoot(0x0)
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=HARDWARE, subtype=DeviceSubType(1), length=6
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: Pci(0x1F,0x2)
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=MESSAGING, subtype=DeviceSubType(18), length=10
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: Sata(0x0,0xFFFF,0x0)
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=MEDIA, subtype=DeviceSubType(1), length=42
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)
+[ INFO]: uefi-test-runner/src/proto/driver.rs@142: Running component name test
+[ INFO]: uefi-test-runner/src/proto/loaded_image.rs@006: Running loaded image protocol test
+[ INFO]: uefi-test-runner/src/proto/loaded_image.rs@013: LoadedImage options: Some([116, 0, 101, 0, 115, 0, 116, 0, 95, 0, 114, 0, 117, 0, 110, 0, 110, 0, 101, 0, 114, 0, 46, 0, 101, 0, 102, 0, 105, 0, 32, 0, 97, 0, 114, 0, 103, 0, 49, 0, 32, 0, 97, 0, 114, 0, 103, 0, 50, 0, 0, 0])
+[ INFO]: uefi-test-runner/src/proto/loaded_image.rs@016: LoadedImage image address: 0xdd7a000, image size: 733184 bytes
+[ INFO]: uefi-test-runner/src/proto/media.rs@020: Testing existing directory
+[ INFO]: uefi-test-runner/src/proto/media.rs@109: Testing existing file
+[ INFO]: uefi-test-runner/src/proto/media.rs@123: Successfully read test_dir\test_input.txt
+[ INFO]: uefi-test-runner/src/proto/media.rs@181: Testing file creation
+[ INFO]: uefi-test-runner/src/proto/media.rs@203: Testing directory creation
+[ INFO]: uefi-test-runner/src/proto/media.rs@354: MBR partition: MbrPartitionRecord { boot_indicator: 0, starting_chs: [0, 0, 0], os_type: MbrOsType(6), ending_chs: [0, 0, 0], starting_lba: 1, size_in_lba: 20479 }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\foo: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file \foo_dir\foo_cpy: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\foo_cpy2: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\foo_cpy: Error { status: NOT_FOUND, data: () }
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4\5\6
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4\5
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3\4: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3\4\5: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3\4\5\6: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3\4\5\6\7: Error { status: NOT_FOUND, data: () }
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4\5\6\7
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4\5\6
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4\5
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3\4
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2\3
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1\2
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir\1
+[DEBUG]: uefi/src/fs/file_system/fs.rs@159: parent=foo_dir
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3\4\5\6\7\8: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1\2\3\4\5\6\7\8\foobar: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file foo_dir\1: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file file1: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file src: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file file1: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file file2: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file file2: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file file1: Error { status: NOT_FOUND, data: () }
+[TRACE]: uefi/src/fs/file_system/fs.rs@424: Can't open file file2: Error { status: NOT_FOUND, data: () }
+[ INFO]: uefi-test-runner/src/proto/media.rs@267: Testing raw disk I/O
+[ INFO]: uefi-test-runner/src/proto/media.rs@286: Raw disk I/O succeeded
+[ INFO]: uefi-test-runner/src/proto/media.rs@300: Testing raw disk I/O 2
+[ INFO]: uefi-test-runner/src/proto/media.rs@341: Raw disk I/O 2 succeeded
+[ INFO]: uefi-test-runner/src/proto/network/mod.rs@004: Testing Network protocols
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@012: Testing The PXE base code protocol
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@020: Starting PXE Base Code
+
+>>Start PXE over IPv4
+  Station IP address is 192.168.17.15
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@037: Getting remote file size
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@043: Reading remote file
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@057: Writing UDP packet to example service
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@075: Reading UDP packet from example service
+[ INFO]: uefi-test-runner/src/proto/network/pxe.rs@111: Stopping PXE Base Code
+[ INFO]: uefi-test-runner/src/proto/network/snp.rs@007: Testing the simple network protocol
+[ INFO]: uefi-test-runner/src/proto/network/snp.rs@091: Waiting for the transmit
+[ INFO]: uefi-test-runner/src/proto/network/snp.rs@101: Waiting for the reception
+[ INFO]: uefi-test-runner/src/proto/network/snp.rs@118: Stats: NetworkStats { rx_total_frames: 1, rx_good_frames: 1, rx_undersize_frames: 0, rx_oversize_frames: 0, rx_dropped_frames: 0, rx_unicast_frames: 0, rx_broadcast_frames: 0, rx_multicast_frames: 0, rx_crc_error_frames: 0, rx_total_bytes: 0, tx_total_frames: 1, tx_good_frames: 1, tx_undersize_frames: 0, tx_oversize_frames: 0, tx_dropped_frames: 0, tx_unicast_frames: 0, tx_broadcast_frames: 0, tx_multicast_frames: 0, tx_crc_error_frames: 0, tx_total_bytes: 0, collisions: 0, unsupported_protocol: 0, rx_duplicated_frames: 0, rx_decrypt_error_frames: 0, tx_error_frames: 0, tx_retry_frames: 0 }
+[ INFO]: uefi-test-runner/src/proto/pi/mod.rs@004: Testing Platform Initialization protocols
+[ INFO]: uefi-test-runner/src/proto/pi/mp.rs@019: Running UEFI multi-processor services protocol test
+[ INFO]: uefi-test-runner/src/proto/pi/mp.rs@098: After proc_increment atomic: 0
+[ INFO]: uefi-test-runner/src/proto/pi/mp.rs@030: After startup all: 3
+[ INFO]: uefi-test-runner/src/proto/pi/mp.rs@032: After startup this: 6
+[ INFO]: uefi-test-runner/src/proto/pi/mp.rs@034: Enable/Disable: 6
+[ INFO]: uefi-test-runner/src/proto/pi/mp.rs@036: Boot Services Processor & who am i: 6
+[ INFO]: uefi-test-runner/src/proto/rng.rs@005: Running rng protocol test
+[ INFO]: uefi-test-runner/src/proto/rng.rs@016: Supported rng algorithms : [ALGORITHM_RAW]
+[ INFO]: uefi-test-runner/src/proto/rng.rs@023: Random buffer : [149, 11, 0, 24]
+[ INFO]: uefi-test-runner/src/proto/shell_params.rs@008: Running loaded image protocol test
+[ INFO]: uefi-test-runner/src/proto/string/mod.rs@004: Testing String protocols
+[ INFO]: uefi-test-runner/src/proto/string/unicode_collation.rs@007: Testing the Unicode Collation protocol
+[ INFO]: uefi-test-runner/src/proto/shim.rs@005: Running shim lock protocol test
+[ INFO]: uefi-test-runner/src/proto/shim.rs@019: Shim lock protocol is not supported
+[ INFO]: uefi-test-runner/src/main.rs@062: Boot handle count: 6
+[ INFO]: uefi-test-runner/src/runtime/mod.rs@004: Testing runtime services
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@014: Testing set_variable
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@018: Testing get_variable_size
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@024: Testing get_variable
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@032: Testing get_variable_boxed
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@039: Testing variable_keys
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@041: Found 56 variables
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@045: First variable: VariableKey { name: "OsIndicationsSupported", vendor: GLOBAL_VARIABLE }
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@048: Testing delete_variable()
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@060: Storage for non-volatile boot-services variables: VariableStorageInfo { maximum_variable_storage_size: 262044, remaining_variable_storage_size: 250480, maximum_variable_size: 33732 }
+[ INFO]: uefi-test-runner/src/runtime/vars.rs@067: Storage for volatile runtime variables: VariableStorageInfo { maximum_variable_storage_size: 262116, remaining_variable_storage_size: 257308, maximum_variable_size: 33732 }
+[ INFO]: uefi-test-runner/src/main.rs@161: Testing complete, shutting down...
+[PANIC]: panicked at uefi/src/boot/mod.rs:192:9:
+assertion `left == right` failed: this must be the only boot handle remaining
+  left: 7
+ right: 1
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active or are exiting
+[PANIC]: panicked at uefi/src/table/boot.rs:938:9:
+boot services are not active BdsDxe: loading Boot0001 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+BdsDxe: starting Boot0001 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+[ INFO]: uefi-test-runner/src/bin/shell_launcher.rs@080: launching the shell app
+UEFI Interactive Shell v2.2
+EDK II
+UEFI v2.70 (EDK II, 0x00010000)
+Mapping table
+      FS0: Alias(s):HD0a65535a1:;BLK1:
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)
+      FS1: Alias(s):HD0b65535a1:;BLK3:
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x1,0xFFFF,0x0)/HD(1,MBR,0xFFFFFFFF,0x1,0x4FFF)
+     BLK0: Alias(s):
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)
+     BLK2: Alias(s):
+          PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x1,0xFFFF,0x0)
+[ INFO]: uefi-test-runner/src/main.rs@029: Firmware Vendor: EDK II
+Testing print! macro with formatting: 0b10011011 Testing println! macro with formatting: 0b10011011
+[ INFO]: uefi-test-runner/src/main.rs@072: UEFI 2.7
+[ INFO]: uefi-test-runner/src/boot/mod.rs@015: Testing boot services
+[ INFO]: uefi-test-runner/src/boot/memory.rs@006: Testing memory functions
+[ INFO]: uefi-test-runner/src/boot/memory.rs@016: Allocating some pages of memory
+[ INFO]: uefi-test-runner/src/boot/memory.rs@039: Allocating a vector through the `alloc` crate
+[ INFO]: uefi-test-runner/src/boot/memory.rs@051: Allocating a structure with alignment to 0x100
+[ INFO]: uefi-test-runner/src/boot/memory.rs@061: Testing memory map functions
+[ INFO]: uefi-test-runner/src/boot/misc.rs@011: Testing timer...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@013: Testing events...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@038: Inside the event callback
+[ INFO]: uefi-test-runner/src/boot/misc.rs@051: Inside the event callback with context
+[ INFO]: uefi-test-runner/src/boot/misc.rs@016: Testing watchdog...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@018: Testing protocol handler services...
+[ INFO]: uefi-test-runner/src/boot/misc.rs@110: Installing TestProtocol
+[ INFO]: uefi-test-runner/src/boot/misc.rs@090: Protocol was (re)installed and this function notified.
+[ INFO]: uefi-test-runner/src/boot/misc.rs@123: Reinstalling TestProtocol
+[ INFO]: uefi-test-runner/src/boot/misc.rs@090: Protocol was (re)installed and this function notified.
+[ INFO]: uefi-test-runner/src/boot/misc.rs@139: Uninstalling TestProtocol
+[ INFO]: uefi-test-runner/src/boot/mod.rs@023: Testing the `locate_handle_buffer` function
+[ INFO]: uefi-test-runner/src/boot/mod.rs@054: Testing the `load_image` function
+[DEBUG]: uefi-test-runner/src/boot/mod.rs@095: load_image with FromBuffer strategy works
+[DEBUG]: uefi-test-runner/src/boot/mod.rs@114: load_image with FromFilePath strategy works
+[ INFO]: uefi-test-runner/src/proto/mod.rs@007: Testing various protocols
+[ INFO]: uefi-test-runner/src/proto/console/mod.rs@004: Testing console protocols
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@005: Running text output protocol test
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@029: UEFI standard output current mode: Some(OutputMode { index: 0, dims: (80, 25) })
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@061: # uefi-rs test runner
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@065: Cursor visibility control unavailable
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@014: - Text mode #0: 25 rows by 80 columns
+[ INFO]: uefi-test-runner/src/proto/console/stdout.rs@014: - Text mode #1: 31 rows by 100 columns
+[ INFO]: uefi-test-runner/src/proto/console/serial.rs@050: Running serial protocol test
+[ INFO]: uefi-test-runner/src/proto/console/gop.rs@007: Running graphics output protocol test
+[ INFO]: uefi-test-runner/src/proto/console/pointer.rs@005: Running pointer protocol test
+[ INFO]: uefi-test-runner/src/proto/console/pointer.rs@024: Pointer state has not changed since the last query
+[ INFO]: uefi-test-runner/src/proto/mod.rs@052: Image handle has 3 protocols
+[ INFO]: uefi-test-runner/src/proto/debug.rs@074: Running UEFI debug connection protocol test
+[ INFO]: uefi-test-runner/src/proto/debug.rs@088: - Architecture: EBC
+[ INFO]: uefi-test-runner/src/proto/debug.rs@089: - Maximum Processor Index: 0
+[ INFO]: uefi-test-runner/src/proto/debug.rs@096: Registering periodic callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@100: Deregistering periodic callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@105: Deregistering exception callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@109: Registering exception callback
+[ INFO]: uefi-test-runner/src/proto/debug.rs@159: Invalidating instruction cache
+[ INFO]: uefi-test-runner/src/proto/debug.rs@012: Running UEFI debug port protocol test
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@010: Running device path protocol test
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=ACPI, subtype=DeviceSubType(1), length=12
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: PciRoot(0x0)
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=HARDWARE, subtype=DeviceSubType(1), length=6
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: Pci(0x1F,0x2)
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=MESSAGING, subtype=DeviceSubType(18), length=10
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: Sata(0x0,0xFFFF,0x0)
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@037: path: type=MEDIA, subtype=DeviceSubType(1), length=42
+[ INFO]: uefi-test-runner/src/proto/device_path.rs@048: path name: HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)
+[ INFO]: uefi-test-runner/src/proto/driver.rs@142: Running component name test
+[ INFO]: uefi-test-runner/src/proto/loaded_image.rs@006: Running loaded image protocol test
+[ INFO]: uefi-test-runner/src/proto/loaded_image.rs@013: LoadedImage options: Some([116, 0, 101, 0, 115, 0, 116, 0, 95, 0, 114, 0, 117, 0, 110, 0, 110, 0, 101, 0, 114, 0, 46, 0, 101, 0, 102, 0, 105, 0, 32, 0, 97, 0, 114, 0, 103, 0, 49, 0, 32, 0, 97, 0, 114, 0, 103, 0, 50, 0, 0, 0])
+[ INFO]: uefi-test-runner/src/proto/loaded_image.rs@016: LoadedImage image address: 0xdd7a000, image size: 733184 bytes
+[PANIC]: panicked at uefi-test-runner/src/proto/media.rs:416:9:
+assertion `left == right` failed
+  left: 10420224
+ right: 10425344

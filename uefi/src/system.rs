@@ -143,7 +143,7 @@ pub fn with_stdout<R>(f: impl for<'config> FnOnce(Option<&'config mut text::Outp
 }
 
 /// Run the provided function on stderr.
-pub fn with_stderr<F, R>(f: impl for<'config> FnOnce(Option<&'config mut text::Output>) -> R) -> R {
+pub fn with_stderr<R>(f: impl for<'config> FnOnce(Option<&'config mut text::Output>) -> R) -> R {
     static LOCK: AtomicBool = AtomicBool::new(false);
 
     while LOCK

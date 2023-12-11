@@ -8,7 +8,7 @@
     "enabled": true,
     "automerge": true
   },
-  "rangeStrategy": "replace",
+  "rangeStrategy": "update-lockfile",
   "packageRules": [
     {
       "matchPackageNames": ["crate-ci/typos"],

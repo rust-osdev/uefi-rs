@@ -21,10 +21,10 @@ use ureq::Agent;
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
 /// Name of the ovmf-prebuilt release tag.
-const OVMF_PREBUILT_TAG: &str = "edk2-stable202211-r1";
+const OVMF_PREBUILT_TAG: &str = "edk2-stable202311-r2";
 
 /// SHA-256 hash of the release tarball.
-const OVMF_PREBUILT_HASH: &str = "b085cfe18fd674bf70a31af1dc3e991bcd25cb882981c6d3523d81260f1e0d12";
+const OVMF_PREBUILT_HASH: &str = "4a7d01b7dc6b0fdbf3a0e17dacd364b772fb5b712aaf64ecf328273584185ca0";
 
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";
@@ -45,7 +45,7 @@ fn download_url(url: &str) -> Result<Vec<u8>> {
         .build();
 
     // Limit the size of the download.
-    let max_size_in_bytes = 4 * 1024 * 1024;
+    let max_size_in_bytes = 5 * 1024 * 1024;
 
     // Download the file.
     println!("downloading {url}");
@@ -479,6 +479,18 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // we are skipping right past it, otherwise `splash-time` is ignored in
     // favor of a hardcoded default timeout.
     cmd.args(["-boot", "menu=on,splash-time=0"]);
+
+    // Enable workaround for a bug in old versions of QEMU (including the
+    // version installed on Github Actions runners). This allows us to use
+    // modern releases of edk2 (anything newer than edk2-stable202211) without
+    // requiring QEMU 8+. See also https://github.com/tianocore/edk2/pull/3935.
+    //
+    // Enabling this on versions of QEMU that don't require the fix does not
+    // cause a problem, so do it unconditionally.
+    cmd.args([
+        "-fw_cfg",
+        "name=opt/org.tianocore/X-Cpuhp-Bugcheck-Override,string=yes",
+    ]);
 
     match arch {
         UefiArch::AArch64 => {

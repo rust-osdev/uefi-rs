@@ -7,8 +7,11 @@ extern crate log;
 extern crate alloc;
 
 use alloc::string::ToString;
+use alloc::vec::Vec;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
+use uefi::proto::device_path::build::{self, DevicePathBuilder};
+use uefi::proto::device_path::messaging::Vendor;
 use uefi::table::boot::MemoryType;
 use uefi::Result;
 use uefi_services::{print, println};
@@ -112,6 +115,33 @@ fn send_request_helper(serial: &mut Serial, request: HostRequest) -> Result {
     }
 }
 
+/// Reconnect the serial device to the output console.
+///
+/// This must be called after opening the serial protocol in exclusive mode, as
+/// that breaks the connection to the console, which in turn prevents logs from
+/// getting to the host.
+fn reconnect_serial_to_console(boot_services: &BootServices, serial_handle: Handle) {
+    let mut storage = Vec::new();
+    // Create a device path that specifies the terminal type.
+    let terminal_guid = if cfg!(target_arch = "aarch64") {
+        Vendor::VT_100
+    } else {
+        Vendor::VT_UTF8
+    };
+    let terminal_device_path = DevicePathBuilder::with_vec(&mut storage)
+        .push(&build::messaging::Vendor {
+            vendor_guid: terminal_guid,
+            vendor_defined_data: &[],
+        })
+        .unwrap()
+        .finalize()
+        .unwrap();
+
+    boot_services
+        .connect_controller(serial_handle, None, Some(terminal_device_path), true)
+        .expect("failed to reconnect serial to console");
+}
+
 /// Send the `request` string to the host via the `serial` device, then
 /// wait up to 10 seconds to receive a reply. Returns an error if the
 /// reply is not `"OK\n"`.
@@ -145,7 +175,7 @@ fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     // device, which was broken when we opened the protocol in exclusive
     // mode above.
     drop(serial);
-    let _ = bt.connect_controller(serial_handle, None, None, true);
+    reconnect_serial_to_console(bt, serial_handle);
 
     if let Err(err) = res {
         panic!("request failed: \"{request:?}\": {:?}", err.status());

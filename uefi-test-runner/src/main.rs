@@ -186,12 +186,17 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     // Get our text output back.
     st.stdout().reset(false).unwrap();
 
-    info!("Testing complete, shutting down...");
-
     // Tell the host that tests are done. We are about to exit boot
     // services, so we can't easily communicate with the host any later
     // than this.
     send_request_to_host(st.boot_services(), HostRequest::TestsComplete);
+
+    // Send a special log to the host so that we can verify that logging works
+    // up until exiting boot services. See `reconnect_serial_to_console` for the
+    // type of regression this prevents.
+    info!("LOGGING_STILL_WORKING_RIGHT_BEFORE_EBS");
+
+    info!("Testing complete, shutting down...");
 
     // Exit boot services as a proof that it works :)
     let (st, _iter) = st.exit_boot_services(MemoryType::LOADER_DATA);

@@ -311,6 +311,7 @@ impl Io {
 
 fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Result<()> {
     let mut tests_complete = false;
+    let mut logging_still_working_right_before_ebs = false;
 
     // This regex is used to detect and strip ANSI escape codes. These
     // escapes are added by the console output protocol when writing to
@@ -371,6 +372,11 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
             tests_complete = true;
 
             reply_ok()?;
+        } else if line.ends_with("LOGGING_STILL_WORKING_RIGHT_BEFORE_EBS") {
+            // The app sends this right before calling
+            // `exit_boot_services`. This serves as a test that we didn't break
+            // logging by opening the serial device in exclusive mode.
+            logging_still_working_right_before_ebs = true;
         } else {
             println!("{line}");
         }
@@ -378,6 +384,10 @@ fn process_qemu_io(mut monitor_io: Io, mut serial_io: Io, tmp_dir: &Path) -> Res
 
     if !tests_complete {
         bail!("tests did not complete successfully");
+    }
+
+    if !logging_still_working_right_before_ebs {
+        bail!("logging stopped working sometime before exiting boot services");
     }
 
     Ok(())

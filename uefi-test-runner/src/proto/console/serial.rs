@@ -1,3 +1,4 @@
+use crate::reconnect_serial_to_console;
 use uefi::proto::console::serial::{ControlBits, Serial};
 use uefi::table::boot::BootServices;
 use uefi::{Result, ResultExt, Status};
@@ -66,7 +67,7 @@ pub unsafe fn test(bt: &BootServices) {
     // device, which was broken when we opened the protocol in exclusive
     // mode above.
     drop(serial);
-    let _ = bt.connect_controller(handle, None, None, true);
+    reconnect_serial_to_console(bt, handle);
 
     if let Err(err) = res {
         panic!("serial test failed: {:?}", err.status());

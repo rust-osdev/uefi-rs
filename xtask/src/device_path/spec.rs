@@ -686,6 +686,20 @@ mod messaging {
         vendor_defined_data: [u8],
     }
 
+    impl Vendor {
+        /// PC-ANSI terminal GUID.
+        pub const PC_ANSI: Guid = guid!("e0c14753-f9be-11d2-9a0c-0090273fc14d");
+
+        /// VT-100 terminal GUID.
+        pub const VT_100: Guid = guid!("dfa66065-b419-11d3-9a2d-0090273fc14d");
+
+        /// VT-100+ terminal GUID.
+        pub const VT_100_PLUS: Guid = guid!("7baec70b-57e0-4c76-8e87-2f9e28088343");
+
+        /// VT-UTF8 terminal GUID.
+        pub const VT_UTF8: Guid = guid!("ad15a0d6-8bec-4acf-a073-d01de77e2d88");
+    }
+
     // The spec defines a couple specific messaging-vendor types here,
     // one for UART and one for SAS. These are sort of subclasses of
     // `messaging::Vendor` so they don't quite fit the usual pattern of

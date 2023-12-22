@@ -26,6 +26,7 @@ pub mod time;
 mod status;
 
 use core::ffi::c_void;
+use core::fmt::{self, Debug, Formatter};
 pub use status::Status;
 pub use uguid::{guid, Guid};
 
@@ -67,6 +68,60 @@ pub struct Ipv4Address(pub [u8; 4]);
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Ipv6Address(pub [u8; 16]);
+
+/// An IPv4 or IPv6 internet protocol address.
+///
+/// Corresponds to the `EFI_IP_ADDRESS` type in the UEFI specification. This
+/// type is defined in the same way as edk2 for compatibility with C code. Note
+/// that this is an untagged union, so there's no way to tell which type of
+/// address an `IpAddress` value contains without additional context.
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub union IpAddress {
+    /// This member serves to align the whole type to a 4 bytes as required by
+    /// the spec. Note that this is slightly different from `repr(align(4))`,
+    /// which would prevent placing this type in a packed structure.
+    pub addr: [u32; 4],
+
+    /// An IPv4 internet protocol address.
+    pub v4: Ipv4Address,
+
+    /// An IPv6 internet protocol address.
+    pub v6: Ipv6Address,
+}
+
+impl IpAddress {
+    /// Construct a new IPv4 address.
+    #[must_use]
+    pub const fn new_v4(ip_addr: [u8; 4]) -> Self {
+        Self {
+            v4: Ipv4Address(ip_addr),
+        }
+    }
+
+    /// Construct a new IPv6 address.
+    #[must_use]
+    pub const fn new_v6(ip_addr: [u8; 16]) -> Self {
+        Self {
+            v6: Ipv6Address(ip_addr),
+        }
+    }
+}
+
+impl Debug for IpAddress {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        // The type is an untagged union, so we don't know whether it contains
+        // an IPv4 or IPv6 address. It's also not safe to just print the whole
+        // 16 bytes, since they might not all be initialized.
+        f.debug_struct("IpAddress").finish()
+    }
+}
+
+impl Default for IpAddress {
+    fn default() -> Self {
+        Self { addr: [0u32; 4] }
+    }
+}
 
 /// A Media Access Control (MAC) address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]

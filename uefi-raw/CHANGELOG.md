@@ -1,7 +1,7 @@
 # uefi-raw - [Unreleased]
 
 ## Added
-- Added `Ipv4Address`, `Ipv6Address`, and `MacAddress` types.
+- Added `IpAddress`, `Ipv4Address`, `Ipv6Address`, and `MacAddress` types.
 - Added `ServiceBindingProtocol`, `Dhcp4Protocol`, `HttpProtocol`,
   `Ip4Config2Protocol`, `TlsConfigurationProtocol`, and related types.
 

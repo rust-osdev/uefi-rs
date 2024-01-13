@@ -9,6 +9,7 @@
 - [How-to](how_to/introduction.md)
   - [Using Protocols](how_to/protocols.md)
   - [Drawing to the Screen](how_to/drawing.md)
+  - [Building drivers](how_to/building_drivers.md)
 - [Concepts](concepts/introduction.md)
   - [Boot Stages](concepts/boot_stages.md)
   - [Tables](concepts/tables.md)

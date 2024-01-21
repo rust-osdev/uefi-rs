@@ -17,7 +17,7 @@ pub enum Package {
 
 impl Package {
     /// Get package name.
-    pub fn name(self) -> &'static str {
+    fn name(self) -> &'static str {
         match self {
             Self::Uefi => "uefi",
             Self::UefiApp => "uefi_app",

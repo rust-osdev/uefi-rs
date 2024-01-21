@@ -74,7 +74,6 @@ pub enum Action {
     Run(QemuOpt),
     Test(TestOpt),
     Fmt(FmtOpt),
-    AutoRelease(AutoReleaseOpt),
 }
 
 /// Build all the uefi packages.
@@ -203,10 +202,3 @@ pub struct FmtOpt {
     #[clap(long, action)]
     pub check: bool,
 }
-
-/// Run the auto-release process (should only be run by Github Action).
-///
-/// This is run by the `release.yml` workflow. It is not intended to be run
-/// locally, and will exit immediately if `GITHUB_SHA` is not set.
-#[derive(Debug, Parser)]
-pub struct AutoReleaseOpt {}

@@ -1631,6 +1631,21 @@ pub struct MemoryMap<'buf> {
 }
 
 impl<'buf> MemoryMap<'buf> {
+    /// Creates a [`MemoryMap`] from the given buffer and entry size.
+    ///
+    /// This allows parsing a memory map provided by a kernel after boot
+    /// services have already exited.
+    pub fn from_raw(buf: &'buf mut [u8], entry_size: usize) -> Self {
+        assert!(entry_size >= mem::size_of::<MemoryDescriptor>());
+        let len = buf.len() / entry_size;
+        MemoryMap {
+            key: MemoryMapKey(0),
+            buf,
+            entry_size,
+            len,
+        }
+    }
+
     #[must_use]
     /// Returns the unique [`MemoryMapKey`] associated with the memory map.
     pub fn key(&self) -> MemoryMapKey {
@@ -1941,13 +1956,7 @@ mod tests {
             unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size) }
         };
 
-        MemoryMap {
-            // Key doesn't matter
-            key: MemoryMapKey(0),
-            len: desc_count,
-            buf: byte_buffer,
-            entry_size: size_of::<MemoryDescriptor>(),
-        }
+        MemoryMap::from_raw(byte_buffer, size_of::<MemoryDescriptor>())
     }
 
     #[test]

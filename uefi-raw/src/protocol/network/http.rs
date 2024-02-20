@@ -1,8 +1,9 @@
 use crate::{guid, Char16, Char8, Event, Guid, Ipv4Address, Ipv6Address, Status};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
+use core::ptr;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[repr(C)]
 pub struct HttpConfigData {
     pub http_version: HttpVersion,
@@ -12,6 +13,7 @@ pub struct HttpConfigData {
 }
 
 newtype_enum! {
+    #[derive(Default)]
     pub enum HttpVersion: i32 => {
         HTTP_VERSION_10 = 0,
         HTTP_VERSION_11 = 1,
@@ -19,7 +21,7 @@ newtype_enum! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct HttpV4AccessPoint {
     pub use_default_addr: bool,
@@ -28,7 +30,7 @@ pub struct HttpV4AccessPoint {
     pub local_port: u16,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct HttpV6AccessPoint {
     pub local_address: Ipv6Address,
@@ -48,12 +50,30 @@ impl Debug for HttpAccessPoint {
     }
 }
 
+impl Default for HttpAccessPoint {
+    fn default() -> Self {
+        Self {
+            ipv4_node: ptr::null(),
+        }
+    }
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct HttpToken {
     pub event: Event,
     pub status: Status,
     pub message: *mut HttpMessage,
+}
+
+impl Default for HttpToken {
+    fn default() -> Self {
+        Self {
+            event: ptr::null_mut(),
+            status: Status::SUCCESS,
+            message: ptr::null_mut(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -66,6 +86,18 @@ pub struct HttpMessage {
     pub body: *mut c_void,
 }
 
+impl Default for HttpMessage {
+    fn default() -> Self {
+        Self {
+            data: HttpRequestOrResponse::default(),
+            header_count: 0,
+            header: ptr::null_mut(),
+            body_length: 0,
+            body: ptr::null_mut(),
+        }
+    }
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct HttpRequestData {
@@ -73,7 +105,17 @@ pub struct HttpRequestData {
     pub url: *const Char16,
 }
 
+impl Default for HttpRequestData {
+    fn default() -> Self {
+        Self {
+            method: HttpMethod::default(),
+            url: ptr::null(),
+        }
+    }
+}
+
 newtype_enum! {
+    #[derive(Default)]
     pub enum HttpMethod: i32 => {
         GET     = 0,
         POST    = 1,
@@ -88,7 +130,7 @@ newtype_enum! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[repr(C)]
 pub struct HttpResponseData {
     pub status_code: HttpStatusCode,
@@ -107,6 +149,14 @@ impl Debug for HttpRequestOrResponse {
     }
 }
 
+impl Default for HttpRequestOrResponse {
+    fn default() -> Self {
+        Self {
+            request: ptr::null(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct HttpHeader {
@@ -114,7 +164,17 @@ pub struct HttpHeader {
     pub field_value: *const Char8,
 }
 
+impl Default for HttpHeader {
+    fn default() -> Self {
+        Self {
+            field_name: ptr::null(),
+            field_value: ptr::null(),
+        }
+    }
+}
+
 newtype_enum! {
+    #[derive(Default)]
     pub enum HttpStatusCode: i32 => {
         STATUS_UNSUPPORTED = 0,
         STATUS_100_CONTINUE = 1,

@@ -50,7 +50,7 @@ impl core::error::Error for FromStrError {}
 /// let s = CString16::try_from("abc").unwrap();
 /// assert_eq!(s.to_string(), "abc");
 /// ```
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CString16(Vec<Char16>);
 
 impl CString16 {

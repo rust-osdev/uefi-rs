@@ -19,7 +19,7 @@ impl Display for CharConversionError {
 impl core::error::Error for CharConversionError {}
 
 /// A Latin-1 character
-#[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Char8(u8);
 
@@ -76,7 +76,7 @@ impl PartialEq<char> for Char8 {
 pub const NUL_8: Char8 = Char8(0);
 
 /// An UCS-2 code point
-#[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Char16(u16);
 

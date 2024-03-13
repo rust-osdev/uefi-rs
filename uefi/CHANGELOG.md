@@ -5,6 +5,7 @@
 - Added `CStr16::from_char16_with_nul` and `Char16::from_char16_with_nul_unchecked`.
 - Added terminal GUID constants to `device_path::messaging::Vendor`.
 - Added `MemoryMap::from_raw`.
+- Implemented `Hash` for all char and string types.
 
 ## Changed
 - `DevicePath::to_string` and `DevicePathNode::to_string` now return

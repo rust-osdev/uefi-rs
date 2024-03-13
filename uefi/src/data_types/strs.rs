@@ -109,7 +109,7 @@ impl core::error::Error for FromStrWithBufError {}
 /// For convenience, a [`CStr8`] is comparable with [`core::str`] and
 /// `alloc::string::String` from the standard library through the trait [`EqStrUntilNul`].
 #[repr(transparent)]
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CStr8([Char8]);
 
 impl CStr8 {
@@ -230,7 +230,7 @@ impl<'a> TryFrom<&'a CStr> for &'a CStr8 {
 ///
 /// For convenience, a [`CStr16`] is comparable with [`core::str`] and
 /// `alloc::string::String` from the standard library through the trait [`EqStrUntilNul`].
-#[derive(Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct CStr16([Char16]);
 

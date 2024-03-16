@@ -1,5 +1,9 @@
 # uefi-services - [Unreleased]
 
+## Changed
+- The implicit `qemu-exit` crate feature has been removed. (Note that this is
+  different from the `qemu` crate feature, which is unchanged.)
+
 # uefi-services - 0.23.0 (2023-11-12)
 
 ## Changed

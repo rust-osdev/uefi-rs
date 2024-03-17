@@ -1,5 +1,7 @@
 # uefi - [Unreleased]
 
+# uefi - 0.27.0 (2024-03-17)
+
 ## Added
 - Implemented `PartialEq<char>` for `Char8` and `Char16`.
 - Added `CStr16::from_char16_with_nul` and `Char16::from_char16_with_nul_unchecked`.

@@ -51,7 +51,10 @@ fn alloc_alignment() {
     info!("Allocating a structure with alignment to 0x100");
 
     #[repr(align(0x100))]
-    struct Block([u8; 0x100]);
+    struct Block(
+        // Ignore warning due to field not being read.
+        #[allow(dead_code)] [u8; 0x100],
+    );
 
     let value = vec![Block([1; 0x100])];
     assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");

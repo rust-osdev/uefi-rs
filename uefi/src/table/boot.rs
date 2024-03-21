@@ -1944,7 +1944,7 @@ pub struct ProtocolSearchKey(NonNull<c_void>);
 mod tests {
     use core::mem::size_of;
 
-    use crate::table::boot::{MemoryAttribute, MemoryMap, MemoryMapKey, MemoryType};
+    use crate::table::boot::{MemoryAttribute, MemoryMap, MemoryType};
 
     use super::{MemoryDescriptor, MemoryMapIter};
 

@@ -1,0 +1,20 @@
+[package]
+name = "uefi-test-runner"
+version = "0.2.0"
+authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+publish = false
+edition = "2021"
+
+[dependencies]
+uefi = { path = "..", features = ['exts'] }
+uefi-services = { path = "../uefi-services" }
+
+log = { version = "0.4.11", default-features = false }
+
+qemu-exit = "3.0.0"
+
+[features]
+# This feature should only be enabled in our CI, it disables some tests
+# which currently fail in that environment (see #103 for discussion).
+ci = []
+qemu = ["uefi-services/qemu"]

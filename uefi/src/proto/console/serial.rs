@@ -5,8 +5,9 @@ use crate::{Result, StatusExt};
 use core::fmt::Write;
 use uefi_raw::protocol::console::serial::SerialIoProtocol;
 
-pub use uefi_raw::protocol::console::serial::SerialIoMode as IoMode;
-pub use uefi_raw::protocol::console::serial::{ControlBits, Parity, StopBits};
+pub use uefi_raw::protocol::console::serial::{
+    ControlBits, Parity, SerialIoMode as IoMode, StopBits,
+};
 
 /// Provides access to a serial I/O device.
 ///

@@ -1,6 +1,5 @@
 use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::table::boot::BootServices;
 
 pub fn test(image: Handle, bt: &BootServices) {
     info!("Running loaded image protocol test");

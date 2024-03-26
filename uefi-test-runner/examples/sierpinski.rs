@@ -10,7 +10,6 @@ use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, BltRegion, GraphicsOutput};
 use uefi::proto::rng::Rng;
-use uefi::table::boot::BootServices;
 use uefi::Result;
 
 #[derive(Clone, Copy)]

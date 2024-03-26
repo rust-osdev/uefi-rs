@@ -4,9 +4,7 @@ use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
 use core::ffi::CStr;
 use core::fmt::{self, Display, Formatter};
-use core::iter::Iterator;
 use core::mem::MaybeUninit;
-use core::result::Result;
 use core::slice;
 
 #[cfg(feature = "alloc")]

@@ -6,7 +6,8 @@
 
 use log::error;
 // ANCHOR: use
-use uefi::{prelude::*, proto::shell_params::ShellParameters};
+use uefi::prelude::*;
+use uefi::proto::shell_params::ShellParameters;
 use uefi_services::println;
 
 extern crate alloc;

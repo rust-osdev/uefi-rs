@@ -11,8 +11,9 @@
 //! * dispatching user-provided function to APs
 //! * maintaining MP-related processor status
 
+use crate::data_types::Event;
 use crate::proto::unsafe_protocol;
-use crate::{data_types::Event, Result, Status, StatusExt};
+use crate::{Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ptr;

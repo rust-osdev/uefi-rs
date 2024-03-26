@@ -1,7 +1,7 @@
 use crate::{send_request_to_host, HostRequest};
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
-use uefi::table::boot::{BootServices, OpenProtocolAttributes, OpenProtocolParams};
+use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 
 pub unsafe fn test(image: Handle, bt: &BootServices) {
     info!("Running graphics output protocol test");

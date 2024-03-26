@@ -1,6 +1,6 @@
 use uefi::prelude::*;
 use uefi::proto::driver::{ComponentName, ComponentName2, LanguageError, LanguageIter};
-use uefi::table::boot::{BootServices, ScopedProtocol, SearchType};
+use uefi::table::boot::{ScopedProtocol, SearchType};
 use uefi::{CStr16, Result};
 
 #[allow(deprecated)]

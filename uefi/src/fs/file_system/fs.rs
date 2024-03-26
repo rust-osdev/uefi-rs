@@ -1,6 +1,6 @@
 //! Module for [`FileSystem`].
 
-use crate::fs::{Path, PathBuf, UefiDirectoryIter, SEPARATOR_STR, *};
+use crate::fs::*;
 use crate::table::boot::ScopedProtocol;
 use crate::Status;
 use alloc::boxed::Box;

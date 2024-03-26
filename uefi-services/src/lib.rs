@@ -41,10 +41,9 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 
 use cfg_if::cfg_if;
 
-use uefi::prelude::*;
 use uefi::table::boot::{EventType, Tpl};
 use uefi::table::{Boot, SystemTable};
-use uefi::{Event, Result};
+use uefi::{Event, Result, Status, StatusExt};
 
 /// Reference to the system table.
 ///

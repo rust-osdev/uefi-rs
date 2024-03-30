@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+## Added
+- Added `TimestampProtocol`.
+
 # uefi-raw - 0.5.1 (2024-03-17)
 
 ## Added

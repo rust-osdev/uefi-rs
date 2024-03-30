@@ -27,18 +27,16 @@ impl TryFrom<char> for Char8 {
     type Error = CharConversionError;
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
-        let code_point = value as u32;
-        if code_point <= 0xff {
-            Ok(Char8(code_point as u8))
-        } else {
-            Err(CharConversionError)
-        }
+        let code_point = u32::from(value);
+        u8::try_from(code_point)
+            .map(Char8)
+            .map_err(|_| CharConversionError)
     }
 }
 
 impl From<Char8> for char {
     fn from(char: Char8) -> char {
-        char.0 as char
+        char::from(char.0)
     }
 }
 
@@ -101,12 +99,10 @@ impl TryFrom<char> for Char16 {
     type Error = CharConversionError;
 
     fn try_from(value: char) -> Result<Self, Self::Error> {
-        let code_point = value as u32;
-        if code_point <= 0xffff {
-            Ok(Char16(code_point as u16))
-        } else {
-            Err(CharConversionError)
-        }
+        let code_point = u32::from(value);
+        u16::try_from(code_point)
+            .map(Char16)
+            .map_err(|_| CharConversionError)
     }
 }
 
@@ -168,6 +164,17 @@ pub const NUL_16: Char16 = unsafe { Char16::from_u16_unchecked(0) };
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_char8_from_char() {
+        assert_eq!(Char8::try_from('A').unwrap(), Char8(0x41));
+    }
+
+    #[test]
+    fn test_char16_from_char() {
+        assert_eq!(Char16::try_from('A').unwrap(), Char16(0x41));
+        assert_eq!(Char16::try_from('ꋃ').unwrap(), Char16(0xa2c3));
+    }
 
     /// Test that `Char8` and `Char16` can be directly compared with `char`.
     #[test]

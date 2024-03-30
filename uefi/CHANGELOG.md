@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Added
+- Added `Timestamp` protocol.
+
 # uefi - 0.27.0 (2024-03-17)
 
 ## Added

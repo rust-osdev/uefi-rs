@@ -72,6 +72,7 @@ pub mod device_path;
 pub mod driver;
 pub mod loaded_image;
 pub mod media;
+pub mod misc;
 pub mod network;
 pub mod pi;
 pub mod rng;

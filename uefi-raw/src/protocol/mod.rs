@@ -13,6 +13,7 @@ pub mod file_system;
 pub mod loaded_image;
 pub mod media;
 pub mod memory_protection;
+pub mod misc;
 pub mod network;
 pub mod rng;
 pub mod shell_params;

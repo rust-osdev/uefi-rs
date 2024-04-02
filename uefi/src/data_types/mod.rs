@@ -121,8 +121,7 @@ pub trait Align {
     /// is aligned. Returns `None` if no element of the buffer is
     /// aligned.
     fn align_buf(buf: &mut [u8]) -> Option<&mut [u8]> {
-        let addr = buf.as_ptr() as usize;
-        let offset = Self::offset_up_to_alignment(addr);
+        let offset = buf.as_ptr().align_offset(Self::alignment());
         buf.get_mut(offset..)
     }
 
@@ -130,7 +129,7 @@ pub trait Align {
     fn assert_aligned(storage: &mut [u8]) {
         if !storage.is_empty() {
             assert_eq!(
-                (storage.as_ptr() as usize) % Self::alignment(),
+                storage.as_ptr().align_offset(Self::alignment()),
                 0,
                 "The provided storage is not correctly aligned for this type"
             )

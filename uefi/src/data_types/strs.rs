@@ -504,7 +504,7 @@ impl From<&CStr16> for alloc::string::String {
             .iter()
             .copied()
             .map(u16::from)
-            .map(|int| int as u32)
+            .map(u32::from)
             .map(|int| char::from_u32(int).expect("Should be encodable as UTF-8"))
             .collect::<alloc::string::String>()
     }

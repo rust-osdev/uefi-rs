@@ -1,7 +1,6 @@
+use uefi::{Identify, proto};
 use uefi::prelude::*;
-
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::{proto, Identify};
 
 pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     info!("Testing various protocols");
@@ -22,12 +21,13 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     rng::test(bt);
     shell_params::test(bt);
     string::test(bt);
+    misc::test(image, bt);
 
     #[cfg(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "arm",
-        target_arch = "aarch64"
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "arm",
+    target_arch = "aarch64"
     ))]
     shim::test(bt);
     tcg::test(bt);
@@ -66,11 +66,12 @@ mod pi;
 mod rng;
 mod shell_params;
 #[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64",
-    target_arch = "arm",
-    target_arch = "aarch64"
+target_arch = "x86",
+target_arch = "x86_64",
+target_arch = "arm",
+target_arch = "aarch64"
 ))]
 mod shim;
 mod string;
 mod tcg;
+mod misc;

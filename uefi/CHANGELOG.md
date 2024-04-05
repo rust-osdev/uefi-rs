@@ -1,6 +1,9 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `ResetNotification` protocol.
+
+## Added
 - Added `Timestamp` protocol.
 
 # uefi - 0.27.0 (2024-03-17)

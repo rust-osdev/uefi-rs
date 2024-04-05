@@ -1,7 +1,7 @@
 # uefi-raw - [Unreleased]
 
 ## Added
-- Added `ResetNotification`.
+- Added `ResetNotificationProtocol`.
 
 ## Added
 - Added `TimestampProtocol`.

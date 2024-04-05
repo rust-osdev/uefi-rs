@@ -1,9 +1,11 @@
 //! Miscellaneous protocols.
 
-use uefi_raw::protocol::misc::{ResetNotificationProtocol, ResetSystemFn, TimestampProperties, TimestampProtocol};
+use uefi_raw::protocol::misc::{
+    ResetNotificationProtocol, ResetSystemFn, TimestampProperties, TimestampProtocol,
+};
 
-use crate::{Result, StatusExt};
 use crate::proto::unsafe_protocol;
+use crate::{Result, StatusExt};
 
 /// Protocol for retrieving a high-resolution timestamp counter.
 #[derive(Debug)]
@@ -65,20 +67,15 @@ impl ResetNotification {
     ///     }
     /// ```
     pub fn register_reset_notify(&mut self, reset_function: Option<ResetSystemFn>) -> Result {
-        unsafe {
-            (self.0.register_reset_notify)(&mut self.0, reset_function)
-        }.to_result()
+        unsafe { (self.0.register_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 
     /// Removes a reset notification function that has been previously registered with RegisterResetNotify().
     /// Tips: RegisterResetNotify() has named as `register_reset_notify()` in uefi-rs.
     pub fn unregister_reset_notify(&mut self, reset_function: Option<ResetSystemFn>) -> Result {
-        unsafe {
-            (self.0.unregister_reset_notify)(&mut self.0, reset_function)
-        }.to_result()
+        unsafe { (self.0.unregister_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 }
-
 
 // !TODO: make a safe FFI for raw function 'ResetSystemFn'
 // copy and edit from uefi-raw/src/table/runtime.rs:84 at commit@6093205c3eb27b2e78be4c003c04d46679bff420

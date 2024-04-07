@@ -39,6 +39,7 @@ use core::fmt::Write;
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 
+#[cfg(feature = "panic_handler")]
 use cfg_if::cfg_if;
 
 use uefi::table::boot::{EventType, Tpl};

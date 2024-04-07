@@ -2,6 +2,7 @@
 
 ## Added
 - Added `Timestamp` protocol.
+- Added `UnalignedSlice::as_ptr`.
 
 # uefi - 0.27.0 (2024-03-17)
 

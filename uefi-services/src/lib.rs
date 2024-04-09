@@ -198,7 +198,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
 
     // Give the user some time to read the message
     if let Some(st) = system_table_opt() {
-        st.boot_services().stall(10_000_000);
+        st.boot_services().stall(5_000_000);
     } else {
         let mut dummy = 0u64;
         // FIXME: May need different counter values in debug & release builds

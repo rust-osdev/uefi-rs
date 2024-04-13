@@ -14,9 +14,34 @@
 
 use crate::proto::console::text::Output;
 
+use crate::prelude::{Boot, SystemTable};
 use core::fmt::{self, Write};
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
+
+/// Global logger object
+#[cfg(feature = "logger")]
+static LOGGER: Logger = Logger::new();
+
+/// Set up logging
+///
+/// This is unsafe because you must arrange for the logger to be reset with
+/// disable() on exit from UEFI boot services.
+#[cfg(feature = "logger")]
+pub unsafe fn init(st: &mut SystemTable<Boot>) {
+    // Connect the logger to stdout.
+    LOGGER.set_output(st.stdout());
+
+    // Set the logger.
+    log::set_logger(&LOGGER).unwrap(); // Can only fail if already initialized.
+
+    // Set logger max level to level specified by log features
+    log::set_max_level(log::STATIC_MAX_LEVEL);
+}
+
+pub fn disable() {
+    LOGGER.disable();
+}
 
 /// Logging implementation which writes to a UEFI output stream.
 ///

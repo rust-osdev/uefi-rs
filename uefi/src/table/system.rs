@@ -225,7 +225,6 @@ impl SystemTable<Boot> {
     ///
     /// [`allocator::exit_boot_services`]: crate::allocator::exit_boot_services
     /// [`Logger::disable`]: crate::logger::Logger::disable
-    /// [`uefi_services::init`]: https://docs.rs/uefi-services/latest/uefi_services/fn.init.html
     #[must_use]
     pub fn exit_boot_services(
         self,

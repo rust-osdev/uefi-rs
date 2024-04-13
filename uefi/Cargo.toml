@@ -27,7 +27,7 @@ panic_handler = []
 # were observed on the VirtualBox UEFI implementation (see uefi-rs#121).
 # In those cases, this feature can be excluded by removing the default features.
 panic-on-logger-errors = []
-qemu = ["dep:qemu-exit"]
+qemu = ["dep:qemu-exit", "panic_handler"] # panic_handler: logical, not technical dependency
 
 [dependencies]
 bitflags.workspace = true

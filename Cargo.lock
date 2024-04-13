@@ -897,7 +897,6 @@ dependencies = [
  "log",
  "qemu-exit",
  "uefi",
- "uefi-services",
 ]
 
 [[package]]

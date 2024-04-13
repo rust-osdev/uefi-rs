@@ -1,5 +1,5 @@
-use crate::table::runtime;
 use crate::{guid, Guid, Status};
+use crate::table::runtime;
 
 #[derive(Debug)]
 #[repr(C)]
@@ -28,14 +28,10 @@ pub struct TimestampProperties {
 #[derive(Debug)]
 #[repr(C)]
 pub struct ResetNotificationProtocol {
-    pub register_reset_notify: unsafe extern "efiapi" fn(
-        this: *const Self,
-        reset_function: Option<ResetSystemFn>,
-    ) -> Status,
-    pub unregister_reset_notify: unsafe extern "efiapi" fn(
-        this: *const Self,
-        reset_function: Option<ResetSystemFn>,
-    ) -> Status,
+    pub register_reset_notify:
+        unsafe extern "efiapi" fn(this: *mut Self, reset_function: Option<ResetSystemFn>) -> Status,
+    pub unregister_reset_notify:
+        unsafe extern "efiapi" fn(this: *mut Self, reset_function: Option<ResetSystemFn>) -> Status,
 }
 
 impl ResetNotificationProtocol {
@@ -43,7 +39,7 @@ impl ResetNotificationProtocol {
 }
 
 /// Raw reset notification function, to be called if you register it when a RestSystem() is executed.
-// copy from uefi-raw/src/table/runtime.rs:53  at commit@6093205c3eb27b2e78be4c003c04d46679bff420
+// similar to uefi-raw/src/table/runtime.rs:53  at commit@6093205c3eb27b2e78be4c003c04d46679bff420
 pub type ResetSystemFn = unsafe extern "efiapi" fn(
     rt: runtime::ResetType,
     status: Status,

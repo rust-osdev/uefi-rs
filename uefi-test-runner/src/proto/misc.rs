@@ -1,5 +1,5 @@
 use uefi::prelude::*;
-use uefi::proto::misc::{ResetNotification, Timestamp};
+use uefi::proto::misc::ResetNotification;
 use uefi::table::runtime;
 
 ///
@@ -15,31 +15,7 @@ use uefi::table::runtime;
 /// [ INFO]: uefi-test-runner\src\proto\misc.rs@084: ResetNotification Protocol unregister efi_reset_fn test: Ok(())
 /// ```
 pub fn test(bt: &BootServices) {
-    test_timestamp(bt);
     test_reset_notification(bt);
-}
-
-pub fn test_timestamp(bt: &BootServices) {
-    info!("Running loaded Timestamp Protocol test");
-
-    let handle = bt.get_handle_for_protocol::<Timestamp>();
-
-    match handle {
-        Ok(handle) => {
-            let timestamp_proto = bt
-                .open_protocol_exclusive::<Timestamp>(handle)
-                .expect("Founded Timestamp Protocol but open failed");
-
-            let timestamp = timestamp_proto.get_timestamp();
-            info!("Timestamp Protocol's timestamp: {:?}", timestamp);
-
-            let properties = timestamp_proto.get_properties();
-            info!("Timestamp Protocol's properties: {:?}", properties);
-        }
-        Err(err) => {
-            warn!("Failed to found Timestamp Protocol: {:?}", err);
-        }
-    }
 }
 
 pub fn test_reset_notification(bt: &BootServices) {

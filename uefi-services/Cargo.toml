@@ -2,7 +2,7 @@
 name = "uefi-services"
 version = "0.24.0"
 readme = "README.md"
-description = "Higher-level utilities for the `uefi` crate."
+description = "Deprecated. Please migrate to `uefi::helpers`."
 
 authors.workspace = true
 categories.workspace = true
@@ -14,13 +14,10 @@ rust-version.workspace = true
 
 [dependencies]
 uefi = { version = "0.27.0", features = ["global_allocator"] }
-log.workspace = true
-cfg-if = "1.0.0"
-qemu-exit = { version = "3.0.1", optional = true }
 
 [features]
 default = ["panic_handler", "logger"]
 # Enable QEMU-specific functionality
-qemu = ["dep:qemu-exit"]
-panic_handler = []
+qemu = ["uefi/qemu"]
+panic_handler = [ "uefi/panic_handler" ]
 logger = ["uefi/logger"]

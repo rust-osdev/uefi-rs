@@ -114,9 +114,6 @@ pub mod prelude;
 
 pub mod allocator;
 
-#[cfg(feature = "logger")]
-pub mod logger;
-
 #[cfg(feature = "alloc")]
 pub mod fs;
 
@@ -126,7 +123,10 @@ pub(crate) mod mem;
 
 pub(crate) mod polyfill;
 
+pub mod helpers;
+
 mod util;
+
 
 #[cfg(test)]
 // Crates that create procedural macros can't unit test the macros they export.

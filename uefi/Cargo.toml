@@ -15,23 +15,30 @@ rust-version.workspace = true
 [features]
 default = ["panic-on-logger-errors"]
 alloc = []
-global_allocator = []
+
+# Generic gate to code that uses unstable features of Rust. You usually need a nightly toolchain.
+unstable = []
+
+# Helper features:
 logger = []
+global_allocator = []
+panic_handler = []
 # Ignore text output errors in logger as a workaround for firmware issues that
 # were observed on the VirtualBox UEFI implementation (see uefi-rs#121).
 # In those cases, this feature can be excluded by removing the default features.
 panic-on-logger-errors = []
-# Generic gate to code that uses unstable features of Rust. You usually need a nightly toolchain.
-unstable = []
+qemu = ["dep:qemu-exit"]
 
 [dependencies]
 bitflags.workspace = true
 log.workspace = true
 ptr_meta.workspace = true
+uguid.workspace = true
+cfg-if = "1.0.0"
 ucs2 = "0.3.2"
 uefi-macros = "0.13.0"
 uefi-raw = "0.5.1"
-uguid.workspace = true
+qemu-exit = { version = "3.0.2", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true

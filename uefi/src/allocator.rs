@@ -131,6 +131,4 @@ unsafe impl GlobalAlloc for Allocator {
     }
 }
 
-#[cfg(feature = "global_allocator")]
-#[global_allocator]
-static ALLOCATOR: Allocator = Allocator;
+

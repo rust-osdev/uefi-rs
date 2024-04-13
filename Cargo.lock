@@ -853,8 +853,10 @@ name = "uefi"
 version = "0.27.0"
 dependencies = [
  "bitflags 2.5.0",
+ "cfg-if",
  "log",
  "ptr_meta",
+ "qemu-exit",
  "ucs2",
  "uefi-macros",
  "uefi-raw",
@@ -885,9 +887,6 @@ dependencies = [
 name = "uefi-services"
 version = "0.24.0"
 dependencies = [
- "cfg-if",
- "log",
- "qemu-exit",
  "uefi",
 ]
 

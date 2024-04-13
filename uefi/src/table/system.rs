@@ -206,12 +206,10 @@ impl SystemTable<Boot> {
     /// live until the program ends. The lifetime of the memory map is therefore
     /// `'static`.
     ///
-    /// Once boot services are exited, the logger and allocator provided by
-    /// this crate can no longer be used. The logger should be disabled using
-    /// the [`Logger::disable`] method, and the allocator should be disabled by
-    /// calling [`allocator::exit_boot_services`]. Note that if the logger and
-    /// allocator were initialized with [`uefi_services::init`], they will be
-    /// disabled automatically when `exit_boot_services` is called.
+    /// Note that once the boot services are exited, associated loggers and
+    /// allocators can't use the boot services anymore. For the corresponding
+    /// abstractions provided by this crate, invoking this function will
+    /// automatically disable them.
     ///
     /// # Errors
     ///
@@ -222,14 +220,13 @@ impl SystemTable<Boot> {
     /// All errors are treated as unrecoverable because the system is
     /// now in an undefined state. Rather than returning control to the
     /// caller, the system will be reset.
-    ///
-    /// [`allocator::exit_boot_services`]: crate::allocator::exit_boot_services
-    /// [`Logger::disable`]: crate::logger::Logger::disable
     #[must_use]
     pub fn exit_boot_services(
         self,
         memory_type: MemoryType,
     ) -> (SystemTable<Runtime>, MemoryMap<'static>) {
+        crate::helpers::exit();
+
         let boot_services = self.boot_services();
 
         // Reboot the device.

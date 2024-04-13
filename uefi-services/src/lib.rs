@@ -10,7 +10,7 @@ pub use uefi::{print, println};
 /// Deprecated. Use [`uefi::helpers::init`] instead.
 #[deprecated = "WARNING: `uefi-services` is deprecated. Functionality was moved to `uefi::helpers::init`."]
 pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
-    uefi::helpers::init(st)
+    uefi::helpers::init(st).map(|_| None)
 }
 
 /// Deprecated. Use [`uefi::helpers::system_table`] instead.

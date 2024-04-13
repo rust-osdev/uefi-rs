@@ -16,16 +16,13 @@
 //! [println_macro]: uefi::println!
 
 use crate::prelude::{Boot, SystemTable};
-use crate::Event;
 use crate::Result;
 use crate::StatusExt;
 use core::ffi::c_void;
 use core::ptr;
-use core::ptr::NonNull;
 use core::sync::atomic::{AtomicPtr, Ordering};
 #[doc(hidden)]
 pub use println::_print;
-use uefi_raw::table::boot::{EventType, Tpl};
 use uefi_raw::Status;
 
 #[cfg(feature = "global_allocator")]
@@ -77,10 +74,10 @@ pub fn system_table() -> SystemTable<Boot> {
 ///
 /// **PLEASE NOTE** that these helpers are meant for the pre exit boot service
 /// epoch.
-pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
+pub fn init(st: &mut SystemTable<Boot>) -> Result<()> {
     if system_table_opt().is_some() {
         // Avoid double initialization.
-        return Status::SUCCESS.to_result_with_val(|| None);
+        return Status::SUCCESS.to_result_with_val(|| ());
     }
 
     // Setup the system table singleton
@@ -92,24 +89,14 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<Option<Event>> {
         #[cfg(feature = "logger")]
         logger::init(st);
 
+        #[cfg(feature = "global_allocator")]
         uefi::allocator::init(st);
-
-        // Schedule these tools to be disabled on exit from UEFI boot services
-        let boot_services = st.boot_services();
-        boot_services
-            .create_event(
-                EventType::SIGNAL_EXIT_BOOT_SERVICES,
-                Tpl::NOTIFY,
-                Some(exit_boot_services),
-                None,
-            )
-            .map(Some)
     }
+
+    Ok(())
 }
 
-/// Notify the utility library that boot services are not safe to call anymore
-/// As this is a callback, it must be `extern "efiapi"`.
-unsafe extern "efiapi" fn exit_boot_services(_e: Event, _ctx: Option<NonNull<c_void>>) {
+pub(crate) fn exit() {
     // DEBUG: The UEFI spec does not guarantee that this printout will work, as
     //        the services used by logging might already have been shut down.
     //        But it works on current OVMF, and can be used as a handy way to

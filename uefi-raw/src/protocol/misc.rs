@@ -1,5 +1,5 @@
-use crate::{guid, Guid, Status};
 use crate::table::runtime;
+use crate::{guid, Guid, Status};
 
 #[derive(Debug)]
 #[repr(C)]
@@ -39,7 +39,6 @@ impl ResetNotificationProtocol {
 }
 
 /// Raw reset notification function, to be called if you register it when a RestSystem() is executed.
-// similar to uefi-raw/src/table/runtime.rs:53  at commit@6093205c3eb27b2e78be4c003c04d46679bff420
 pub type ResetSystemFn = unsafe extern "efiapi" fn(
     rt: runtime::ResetType,
     status: Status,

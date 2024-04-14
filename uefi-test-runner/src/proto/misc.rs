@@ -2,18 +2,6 @@ use uefi::prelude::*;
 use uefi::proto::misc::ResetNotification;
 use uefi::table::runtime;
 
-///
-/// you may see those log, it's nothing just for your computer firmware does not support the new UEFI feature of Timestamp Protocol.
-///
-/// ```sh
-/// [ INFO]: uefi-test-runner\src\proto\misc.rs@020: Running loaded Timestamp Protocol test
-/// [ WARN]: uefi-test-runner\src\proto\misc.rs@037: Failed to found Timestamp Protocol: Error { status: NOT_FOUND, data: () }
-/// [ INFO]: uefi-test-runner\src\proto\misc.rs@043: Running loaded ResetNotification protocol test
-/// [ INFO]: uefi-test-runner\src\proto\misc.rs@053: ResetNotification Protocol register null test: Err(Error { status: INVALID_PARAMETER, data: () })
-/// [ INFO]: uefi-test-runner\src\proto\misc.rs@059: ResetNotification Protocol unregister null test: Err(Error { status: INVALID_PARAMETER, data: () })
-/// [ INFO]: uefi-test-runner\src\proto\misc.rs@078: ResetNotification Protocol register efi_reset_fn test: Ok(())
-/// [ INFO]: uefi-test-runner\src\proto\misc.rs@084: ResetNotification Protocol unregister efi_reset_fn test: Ok(())
-/// ```
 pub fn test(bt: &BootServices) {
     test_reset_notification(bt);
 }

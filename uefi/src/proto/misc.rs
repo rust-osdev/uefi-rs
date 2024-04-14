@@ -8,6 +8,9 @@ use crate::proto::unsafe_protocol;
 use crate::{Result, StatusExt};
 
 /// Protocol for retrieving a high-resolution timestamp counter.
+/// **Note:**
+/// If your UEFI firmware not support timestamp protocol which first added at UEFI spec 2.4 2013.
+/// you also could use `RDTSC` in rust, here is a demo [Slint-UI](https://github.com/slint-ui/slint/blob/2c0ba2bc0f151eba8d1fa17839fa2ac58832ca80/examples/uefi-demo/main.rs#L28-L62) who use uefi-rs.
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(TimestampProtocol::GUID)]
@@ -48,33 +51,32 @@ impl ResetNotification {
     /// use uefi_raw::table::runtime;
     ///
     ///
-    /// /* value efi_reset_fn is the type of ResetSystemFn, a function pointer*/
-    ///     unsafe extern "efiapi" fn efi_reset_fn(
-    ///             rt: runtime::ResetType,
-    ///             status: Status,
-    ///             data_size: usize,
-    ///             data: *const u8,
-    ///     ){
-    ///         info!("Inside the event callback");
-    ///         info!("do what you want");
-    ///     }
+    /// // value efi_reset_fn is the type of ResetSystemFn, a function pointer
+    /// unsafe extern "efiapi" fn efi_reset_fn(
+    ///         rt: runtime::ResetType,
+    ///         status: Status,
+    ///         data_size: usize,
+    ///         data: *const u8,
+    /// ){
+    ///     info!("Inside the event callback");
+    ///     info!("do what you want");
+    /// }
     ///
-    ///     pub fn test(image: Handle, bt: &BootServices) {
+    /// pub fn test(image: Handle, bt: &BootServices) {
     ///
-    ///         let mut rn = bt
-    ///             .open_protocol_exclusive::<ResetNotification>(image)
-    ///             .expect("Failed to open Timestamp protocol");
+    ///     let mut rn = bt
+    ///         .open_protocol_exclusive::<ResetNotification>(image)
+    ///         .expect("Failed to open Timestamp protocol");
     ///
-    ///         rn.register_reset_notify(Some(efi_reset_fn))
-    ///             .expect("Failed to register a reset notification function!");
-    ///     }
+    ///     rn.register_reset_notify(Some(efi_reset_fn))
+    ///         .expect("Failed to register a reset notification function!");
+    /// }
     /// ```
     pub fn register_reset_notify(&mut self, reset_function: Option<ResetSystemFn>) -> Result {
         unsafe { (self.0.register_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 
-    /// Removes a reset notification function that has been previously registered with RegisterResetNotify().
-    /// Tips: RegisterResetNotify() has named as `register_reset_notify()` in uefi-rs.
+    /// Remove a reset notification function that was previously registered with [`ResetNotification::register_reset_notify`].
     pub fn unregister_reset_notify(&mut self, reset_function: Option<ResetSystemFn>) -> Result {
         unsafe { (self.0.unregister_reset_notify)(&mut self.0, reset_function) }.to_result()
     }

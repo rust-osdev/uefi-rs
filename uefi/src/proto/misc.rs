@@ -68,16 +68,16 @@ impl ResetNotification {
     ///         .open_protocol_exclusive::<ResetNotification>(image)
     ///         .expect("Failed to open Timestamp protocol");
     ///
-    ///     rn.register_reset_notify(Some(efi_reset_fn))
+    ///     rn.register_reset_notify(efi_reset_fn)
     ///         .expect("Failed to register a reset notification function!");
     /// }
     /// ```
-    pub fn register_reset_notify(&mut self, reset_function: Option<ResetSystemFn>) -> Result {
+    pub fn register_reset_notify(&mut self, reset_function: ResetSystemFn) -> Result {
         unsafe { (self.0.register_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 
     /// Remove a reset notification function that was previously registered with [`ResetNotification::register_reset_notify`].
-    pub fn unregister_reset_notify(&mut self, reset_function: Option<ResetSystemFn>) -> Result {
+    pub fn unregister_reset_notify(&mut self, reset_function: ResetSystemFn) -> Result {
         unsafe { (self.0.unregister_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 }

@@ -3,37 +3,33 @@ use uefi::fs::FileSystem;
 use uefi::proto::console::text::Output;
 use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
-use uefi::table::boot::{BootServices, LoadImageSource, SearchType};
-use uefi::table::{Boot, SystemTable};
-use uefi::{CString16, Identify};
+use uefi::table::boot::{LoadImageSource, SearchType};
+use uefi::{boot, table, CString16, Identify};
 
 mod memory;
 mod misc;
 
-pub fn test(st: &SystemTable<Boot>) {
-    let bt = st.boot_services();
+pub fn test() {
     info!("Testing boot services");
-    memory::test(bt);
-    misc::test(st);
-    test_locate_handle_buffer(bt);
-    test_load_image(bt);
+    memory::test();
+    misc::test();
+    test_locate_handle_buffer();
+    test_load_image();
 }
 
-fn test_locate_handle_buffer(bt: &BootServices) {
+fn test_locate_handle_buffer() {
     info!("Testing the `locate_handle_buffer` function");
 
     {
         // search all handles
-        let handles = bt
-            .locate_handle_buffer(SearchType::AllHandles)
+        let handles = boot::locate_handle_buffer(SearchType::AllHandles)
             .expect("Failed to locate handle buffer");
         assert!(!handles.is_empty(), "Could not find any handles");
     }
 
     {
         // search by protocol
-        let handles = bt
-            .locate_handle_buffer(SearchType::ByProtocol(&Output::GUID))
+        let handles = boot::locate_handle_buffer(SearchType::ByProtocol(&Output::GUID))
             .expect("Failed to locate handle buffer");
         assert!(
             !handles.is_empty(),
@@ -47,7 +43,10 @@ fn test_locate_handle_buffer(bt: &BootServices) {
 ///
 /// It transitively tests the protocol [`LoadedImageDevicePath`] which is
 /// required as helper.
-fn test_load_image(bt: &BootServices) {
+fn test_load_image() {
+    let st = table::system_table_boot().unwrap();
+    let bt = st.boot_services();
+
     /// The path of the loaded image executing this integration test.
     const LOADED_IMAGE_PATH: &str = r"\EFI\BOOT\TEST_RUNNER.EFI";
 

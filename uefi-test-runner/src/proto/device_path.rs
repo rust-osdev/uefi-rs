@@ -1,5 +1,6 @@
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use uefi::boot;
 use uefi::prelude::*;
 use uefi::proto::device_path::text::*;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
@@ -68,9 +69,9 @@ pub fn test(bt: &BootServices) {
 
     // test 2/2: test high-level to-string api
     {
-        let loaded_image_device_path = bt
-            .open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
-            .expect("Failed to open LoadedImageDevicePath protocol");
+        let loaded_image_device_path =
+            boot::open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
+                .expect("Failed to open LoadedImageDevicePath protocol");
         let device_path: &DevicePath = &loaded_image_device_path;
 
         let path_components = device_path

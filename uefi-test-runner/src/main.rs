@@ -13,7 +13,7 @@ use uefi::proto::console::serial::Serial;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::messaging::Vendor;
 use uefi::table::boot::{MemoryMap, MemoryType};
-use uefi::{print, println, system, Result};
+use uefi::{print, println, system, table, Result};
 
 mod boot;
 mod fs;
@@ -21,13 +21,13 @@ mod proto;
 mod runtime;
 
 #[entry]
-fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
+fn efi_main() -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi::helpers::init().expect("Failed to initialize utilities");
 
     // unit tests here
 
-    let firmware_vendor = st.firmware_vendor();
+    let firmware_vendor = system::firmware_vendor();
     info!("Firmware Vendor: {}", firmware_vendor);
     assert_eq!(firmware_vendor.to_string(), "EDK II");
 
@@ -40,7 +40,9 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     );
 
     // Reset the console before running all the other tests.
-    st.stdout().reset(false).expect("Failed to reset stdout");
+    system::with_stdout(|stdout| stdout.reset(false).expect("Failed to reset stdout"));
+
+    let st = table::system_table_boot().unwrap();
 
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
@@ -48,14 +50,13 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Check the `uefi::system` module.
     check_system(&st);
 
-    // Test all the boot services.
-    let bt = st.boot_services();
-
     // Try retrieving a handle to the file system the image was booted from.
-    bt.get_image_file_system(image)
+    uefi::boot::get_image_file_system(uefi::boot::image_handle())
         .expect("Failed to retrieve boot file system");
 
-    boot::test(&st);
+    boot::test();
+
+    let mut st = table::system_table_boot().unwrap();
 
     // Test all the supported protocols.
     proto::test(&mut st);
@@ -66,7 +67,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     runtime::test(st.runtime_services());
 
-    shutdown(st);
+    shutdown(table::system_table_boot().unwrap());
 }
 
 fn check_revision(rev: uefi::table::Revision) {
@@ -143,7 +144,7 @@ fn send_request_helper(serial: &mut Serial, request: HostRequest) -> Result {
 /// This must be called after opening the serial protocol in exclusive mode, as
 /// that breaks the connection to the console, which in turn prevents logs from
 /// getting to the host.
-fn reconnect_serial_to_console(boot_services: &BootServices, serial_handle: Handle) {
+fn reconnect_serial_to_console(serial_handle: Handle) {
     let mut storage = Vec::new();
     // Create a device path that specifies the terminal type.
     let terminal_guid = if cfg!(target_arch = "aarch64") {
@@ -160,18 +161,16 @@ fn reconnect_serial_to_console(boot_services: &BootServices, serial_handle: Hand
         .finalize()
         .unwrap();
 
-    boot_services
-        .connect_controller(serial_handle, None, Some(terminal_device_path), true)
+    uefi::boot::connect_controller(serial_handle, None, Some(terminal_device_path), true)
         .expect("failed to reconnect serial to console");
 }
 
 /// Send the `request` string to the host via the `serial` device, then
 /// wait up to 10 seconds to receive a reply. Returns an error if the
 /// reply is not `"OK\n"`.
-fn send_request_to_host(bt: &BootServices, request: HostRequest) {
-    let serial_handle = bt
-        .get_handle_for_protocol::<Serial>()
-        .expect("Failed to get serial handle");
+fn send_request_to_host(request: HostRequest) {
+    let serial_handle =
+        uefi::boot::get_handle_for_protocol::<Serial>().expect("Failed to get serial handle");
 
     // Open the serial protocol in exclusive mode.
     //
@@ -184,8 +183,7 @@ fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     // end with `connect_controller`.
     //
     // [console splitter driver]: https://github.com/tianocore/edk2/blob/HEAD/MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitter.c
-    let mut serial = bt
-        .open_protocol_exclusive::<Serial>(serial_handle)
+    let mut serial = uefi::boot::open_protocol_exclusive::<Serial>(serial_handle)
         .expect("Could not open serial protocol");
 
     // Send the request, but don't check the result yet so that first
@@ -198,7 +196,7 @@ fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     // device, which was broken when we opened the protocol in exclusive
     // mode above.
     drop(serial);
-    reconnect_serial_to_console(bt, serial_handle);
+    reconnect_serial_to_console(serial_handle);
 
     if let Err(err) = res {
         panic!("request failed: \"{request:?}\": {:?}", err.status());
@@ -212,7 +210,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     // Tell the host that tests are done. We are about to exit boot
     // services, so we can't easily communicate with the host any later
     // than this.
-    send_request_to_host(st.boot_services(), HostRequest::TestsComplete);
+    send_request_to_host(HostRequest::TestsComplete);
 
     // Send a special log to the host so that we can verify that logging works
     // up until exiting boot services. See `reconnect_serial_to_console` for the
@@ -222,7 +220,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     info!("Testing complete, exiting boot services...");
 
     // Exit boot services as a proof that it works :)
-    let (st, mmap) = unsafe { st.exit_boot_services(MemoryType::LOADER_DATA) };
+    let mmap = unsafe { uefi::boot::exit_boot_services(MemoryType::LOADER_DATA) };
 
     info!("Memory Map:");
     for desc in mmap.entries() {
@@ -239,9 +237,6 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
 
     #[cfg(target_arch = "x86_64")]
     {
-        // Prevent unused variable warning.
-        let _ = st;
-
         use qemu_exit::QEMUExit;
         let custom_exit_success = 3;
         let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
@@ -251,8 +246,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     #[cfg(not(target_arch = "x86_64"))]
     {
         // Shut down the system
-        let rt = unsafe { st.runtime_services() };
-        rt.reset(
+        uefi::runtime::reset(
             uefi::table::runtime::ResetType::SHUTDOWN,
             Status::SUCCESS,
             None,

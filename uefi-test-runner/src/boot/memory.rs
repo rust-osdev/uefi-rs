@@ -1,25 +1,24 @@
-use uefi::table::boot::{AllocateType, BootServices, MemoryMap, MemoryMapMut, MemoryType};
+use uefi::boot;
+use uefi::table::boot::{AllocateType, MemoryMap, MemoryMapMut, MemoryType};
 
 use alloc::vec::Vec;
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing memory functions");
 
-    allocate_pages(bt);
+    allocate_pages();
     vec_alloc();
     alloc_alignment();
 
-    memory_map(bt);
+    memory_map();
 }
 
-fn allocate_pages(bt: &BootServices) {
+fn allocate_pages() {
     info!("Allocating some pages of memory");
 
     let ty = AllocateType::AnyPages;
     let mem_ty = MemoryType::LOADER_DATA;
-    let pgs = bt
-        .allocate_pages(ty, mem_ty, 1)
-        .expect("Failed to allocate a page of memory");
+    let pgs = boot::allocate_pages(ty, mem_ty, 1).expect("Failed to allocate a page of memory");
 
     assert_eq!(pgs % 4096, 0, "Page pointer is not page-aligned");
 
@@ -31,7 +30,7 @@ fn allocate_pages(bt: &BootServices) {
     buf[4095] = 0x23;
 
     // Clean up to avoid memory leaks.
-    unsafe { bt.free_pages(pgs, 1) }.unwrap();
+    unsafe { boot::free_pages(pgs, 1) }.unwrap();
 }
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.
@@ -60,15 +59,14 @@ fn alloc_alignment() {
     assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
 }
 
-fn memory_map(bt: &BootServices) {
+fn memory_map() {
     info!("Testing memory map functions");
 
     // Ensure that the memory map is freed after each iteration (on drop).
     // Otherwise, we will have an OOM.
     for _ in 0..200000 {
-        let mut memory_map = bt
-            .memory_map(MemoryType::LOADER_DATA)
-            .expect("Failed to retrieve UEFI memory map");
+        let mut memory_map =
+            boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to retrieve UEFI memory map");
 
         memory_map.sort();
 

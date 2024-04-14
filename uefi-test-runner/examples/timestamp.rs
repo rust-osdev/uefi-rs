@@ -27,6 +27,10 @@ fn main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     test_timestamp(boot_services);
     // ANCHOR_END: params
 
+    // ANCHOR: stall
+    boot_services.stall(10_000_000);
+    // ANCHOR_END: stall
+
     // ANCHOR: return
     Status::SUCCESS
 }

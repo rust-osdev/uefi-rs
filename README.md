@@ -23,9 +23,10 @@ This repository provides various crates:
 
 - `uefi-raw`: Raw Rust UEFI bindings for basic structures and functions.
 - `uefi`: High-level wrapper around various low-level UEFI APIs. \
-  Most probably, you want to use this crate.
-- `uefi-services`: Optional Rust convenience with a global allocator and a
-  `log`-based logger implementation.
+  Offers various optional features for typical Rust convenience, such as a
+  Logger and an Allocator. (_This is what you are usually looking for!_)
+- `uefi-macros`: Helper macros. Used by `uefi`.
+
 
 You can use the abstractions for example to:
 
@@ -44,6 +45,8 @@ our Rust library.
 
 ## User Documentation
 
+<!-- KEEP IN SYNC WITH uefi/README -->
+
 For a quick start, please check out [the UEFI application template](template).
 
 The [uefi-rs book] contains a tutorial, how-tos, and overviews of some important
@@ -53,7 +56,6 @@ UEFI concepts. Reference documentation for the various crates can be found on
 - [docs.rs/uefi](https://docs.rs/uefi)
 - [docs.rs/uefi-macros](https://docs.rs/uefi-macros)
 - [docs.rs/uefi-raw](https://docs.rs/uefi-raw)
-- [docs.rs/uefi-services](https://docs.rs/uefi-services)
 
 For additional information, refer to the [UEFI specification][spec].
 

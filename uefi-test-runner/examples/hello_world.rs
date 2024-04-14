@@ -14,7 +14,7 @@ use uefi::prelude::*;
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // ANCHOR_END: entry
     // ANCHOR: services
-    uefi_services::init(&mut system_table).unwrap();
+    uefi::helpers::init(&mut system_table).unwrap();
     // ANCHOR_END: services
     // ANCHOR: log
     info!("Hello world!");

@@ -7,8 +7,8 @@
 use log::error;
 // ANCHOR: use
 use uefi::prelude::*;
+use uefi::println;
 use uefi::proto::shell_params::ShellParameters;
-use uefi_services::println;
 
 extern crate alloc;
 use alloc::string::{String, ToString};
@@ -20,7 +20,7 @@ use alloc::vec::Vec;
 fn main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // ANCHOR_END: entry
     // ANCHOR: services
-    uefi_services::init(&mut system_table).unwrap();
+    uefi::helpers::init(&mut system_table).unwrap();
     let boot_services = system_table.boot_services();
     // ANCHOR_END: services
 

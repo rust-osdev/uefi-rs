@@ -65,6 +65,16 @@ pub type VirtualAddress = u64;
 #[repr(transparent)]
 pub struct Ipv4Address(pub [u8; 4]);
 
+impl Ipv4Address {
+    pub fn new(b1: u8, b2: u8, b3: u8, b4: u8) -> Self {
+        Self([b1, b2, b3, b4])
+    }
+
+    pub fn zero() -> Self {
+        Self([0, 0, 0, 0])
+    }
+}
+
 /// An IPv6 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]

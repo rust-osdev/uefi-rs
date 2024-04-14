@@ -3,6 +3,7 @@
 ## Added
 - Added `TimestampProtocol`.
 - Added `DevicePathToTextProtocol` and `DevicePathFromTextProtocol`.
+- Added minor utility methods to `Ipv4Address`: `new(u8, u8, u8, u8) -> Self` and `zero() -> Self`.
 
 # uefi-raw - 0.5.1 (2024-03-17)
 

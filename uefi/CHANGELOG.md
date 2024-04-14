@@ -4,6 +4,8 @@
 - Added `Timestamp` protocol.
 - Added `UnalignedSlice::as_ptr`.
 - Added common derives for `Event` and `Handle`.
+- Added `TCPv4Protocol` and implemented a client that can be used to 
+  connect, transmit, and receive data over TCP.
 
 # uefi - 0.27.0 (2024-03-17)
 

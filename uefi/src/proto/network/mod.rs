@@ -4,6 +4,7 @@
 
 pub mod pxe;
 pub mod snp;
+pub mod tcpv4;
 
 /// Represents an IPv4/v6 address.
 ///

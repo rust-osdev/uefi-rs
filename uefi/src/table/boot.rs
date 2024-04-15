@@ -1942,18 +1942,17 @@ pub struct ProtocolSearchKey(NonNull<c_void>);
 
 #[cfg(test)]
 mod tests {
-    use core::mem::size_of;
+    use core::mem::{size_of, size_of_val};
 
     use crate::table::boot::{MemoryAttribute, MemoryMap, MemoryType};
 
     use super::{MemoryDescriptor, MemoryMapIter};
 
     fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMap {
-        let desc_count = buffer.len();
-
         let byte_buffer = {
-            let size = desc_count * size_of::<MemoryDescriptor>();
-            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size) }
+            unsafe {
+                core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size_of_val(buffer))
+            }
         };
 
         MemoryMap::from_raw(byte_buffer, size_of::<MemoryDescriptor>())

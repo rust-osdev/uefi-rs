@@ -1,5 +1,5 @@
 //! A high-level file system API for UEFI applications close to the `std::fs`
-//! module from Rust's standard library. The main type by this module is
+//! module from Rust's standard library. The main export of this module is
 //! [`FileSystem`].
 //!
 //! # Difference to typical File System Abstractions
@@ -20,6 +20,25 @@
 //! files with plain linear paths to them. For more information, see
 //! [`Path`] and [`PathBuf`].
 //!
+//! ## Use `&str` as Path
+//! A `&str` known at compile time can be converted to a [`Path`] using the
+//! [`cstr16!`] macro. During runtime, you can create a path like this:
+//!
+//! ```no_run
+//! use uefi::CString16;
+//! use uefi::fs::{FileSystem, FileSystemResult};
+//! use uefi::prelude::BootServices;
+//! use uefi::proto::media::fs::SimpleFileSystem;
+//! use uefi::table::boot::ScopedProtocol;
+//!
+//! fn read_file(bs: BootServices, path: &str) -> FileSystemResult<Vec<u8>> {
+//!     let path: CString16 = CString16::try_from(path).unwrap();
+//!     let fs: ScopedProtocol<SimpleFileSystem> = bs.get_image_file_system(bs.image_handle()).unwrap();
+//!     let mut fs = FileSystem::new(fs);
+//!     fs.read(path.as_ref())
+//! }
+//! ```
+//!
 //! # API Hints
 //! There is no `File` abstraction as in the Rust `std` library. Instead, it is
 //! intended to work with the file system via dedicated functions, similar to
@@ -27,6 +46,8 @@
 //!
 //! There is no automatic synchronization of the file system for concurrent
 //! accesses. This is in the responsibility of the user.
+//!
+//! [`cstr16!`]: uefi_macros::cstr16
 
 mod dir_entry_iter;
 mod file_system;

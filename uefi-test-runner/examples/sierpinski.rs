@@ -125,7 +125,7 @@ fn draw_sierpinski(bt: &BootServices) -> Result {
 
 #[entry]
 fn main(_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
-    uefi_services::init(&mut system_table).unwrap();
+    uefi::helpers::init(&mut system_table).unwrap();
     let bt = system_table.boot_services();
     draw_sierpinski(bt).unwrap();
     Status::SUCCESS

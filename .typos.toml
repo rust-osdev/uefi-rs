@@ -2,12 +2,19 @@
 
 [files]
 extend-exclude = [
-    # "uefi/src/table/boot.rs"
+  # Generated sources
+  "uefi/src/proto/device_path/device_path_gen.rs"
+]
+
+[default]
+extend-ignore-identifiers-re = [
+  # uefi-raw/src/protocol/device_path.rs
+  "PnP"
 ]
 
 [default.extend-words]
-# FOOBAR = "FOOBAR"
+# ./uefi-test-runner/src/proto/device_path.rs:92:14
+HD = "HD"
 
 [default.extend-identifiers]
-# FOOBAR = "FOOBAR"
 

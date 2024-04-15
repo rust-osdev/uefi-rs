@@ -130,7 +130,3 @@ unsafe impl GlobalAlloc for Allocator {
         (*boot_services()).free_pool(ptr).unwrap();
     }
 }
-
-#[cfg(feature = "global_allocator")]
-#[global_allocator]
-static ALLOCATOR: Allocator = Allocator;

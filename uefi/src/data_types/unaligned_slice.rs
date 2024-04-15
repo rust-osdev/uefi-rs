@@ -42,6 +42,12 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
         self.len == 0
     }
 
+    /// Get the underlying pointer, which may be unaligned.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *const T {
+        self.data
+    }
+
     /// Returns the number of elements in the slice.
     #[must_use]
     pub const fn len(&self) -> usize {

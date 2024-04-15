@@ -14,7 +14,7 @@ use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::messaging::Vendor;
 use uefi::table::boot::MemoryType;
 use uefi::Result;
-use uefi_services::{print, println};
+use uefi::{print, println};
 
 mod boot;
 mod fs;
@@ -24,7 +24,7 @@ mod runtime;
 #[entry]
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
-    uefi_services::init(&mut st).expect("Failed to initialize utilities");
+    uefi::helpers::init(&mut st).expect("Failed to initialize utilities");
 
     // unit tests here
 

@@ -8,7 +8,7 @@ use core::ptr::{self, NonNull};
 /// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
 ///
 /// If you need to have a nullable handle (for a custom UEFI FFI for example) use `Option<Handle>`.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct Handle(NonNull<c_void>);
 
@@ -51,8 +51,8 @@ impl Handle {
 /// Handle to an event structure, guaranteed to be non-null.
 ///
 /// If you need to have a nullable event, use `Option<Event>`.
+#[derive(Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
 #[repr(transparent)]
-#[derive(Debug)]
 pub struct Event(NonNull<c_void>);
 
 impl Event {

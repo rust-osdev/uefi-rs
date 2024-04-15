@@ -17,6 +17,10 @@ pub type FileSystemResult<T> = Result<T, Error>;
 /// High-level file-system abstraction for UEFI volumes with an API that is
 /// close to `std::fs`. It acts as convenient accessor around the
 /// [`SimpleFileSystemProtocol`].
+///
+/// Please refer to the [module documentation] for more information.
+///
+/// [module documentation]: uefi::fs
 pub struct FileSystem<'a>(ScopedProtocol<'a, SimpleFileSystemProtocol>);
 
 impl<'a> FileSystem<'a> {

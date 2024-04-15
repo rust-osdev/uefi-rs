@@ -5,6 +5,13 @@
 
 ## Added
 - Added `Timestamp` protocol.
+- Added `UnalignedSlice::as_ptr`.
+- Added common derives for `Event` and `Handle`.
+- `uefi::helpers::init` with the functionality that used to be in
+  `uefi::services`. With that, new features were added:
+  - `global_allocator`
+  - `panic_handler`
+  - `qemu`
 
 # uefi - 0.27.0 (2024-03-17)
 

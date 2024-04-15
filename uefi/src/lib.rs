@@ -7,6 +7,12 @@
 //! Feel free to file bug reports and questions in our [issue tracker], and [PR
 //! contributions][contributing] are also welcome!
 //!
+//! # Interaction with uefi services
+//!
+//! With this crate you can write code for the pre- and post-exit boot services
+//! epochs. However, the `uefi` crate unfolds its true potential when
+//! interacting with UEFI boot services.
+//!
 //! # Crate organisation
 //!
 //! The top-level module contains some of the most used types and macros,
@@ -51,24 +57,26 @@
 //! - `logger`: Logging implementation for the standard [`log`] crate
 //!   that prints output to the UEFI console. No buffering is done; this
 //!   is not a high-performance logger.
+//! - `panic_handler`: Add a default panic handler that logs to `stdout`.
 //! - `panic-on-logger-errors` (enabled by default): Panic if a text
 //!   output error occurs in the logger.
 //! - `unstable`: Enable functionality that depends on [unstable
 //!   features] in the nightly compiler.
 //!   As example, in conjunction with the `alloc`-feature, this gate allows
 //!   the `allocator_api` on certain functions.
+//! - `qemu`: Enable some code paths to adapt their execution when executed
+//!   in QEMU, such as using the special `qemu-exit` device when the panic
+//!   handler is called.
 //!
-//! The `global_allocator` and `logger` features require special
-//! handling to perform initialization and tear-down. The
-//! [`uefi-services`] crate provides an `init` method that takes care of
-//! this.
+//! Some of these features, such as the `logger` or `panic_handler` features,
+//! only unfold their potential when you invoke `uefi::helpers::init` as soon
+//! as possible in your application.
 //!
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/
 //! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable
-//! [`uefi-services`]: https://crates.io/crates/uefi-services
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
@@ -114,9 +122,6 @@ pub mod prelude;
 
 pub mod allocator;
 
-#[cfg(feature = "logger")]
-pub mod logger;
-
 #[cfg(feature = "alloc")]
 pub mod fs;
 
@@ -125,6 +130,8 @@ pub mod fs;
 pub(crate) mod mem;
 
 pub(crate) mod polyfill;
+
+pub mod helpers;
 
 mod util;
 

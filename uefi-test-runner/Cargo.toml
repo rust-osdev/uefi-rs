@@ -6,8 +6,7 @@ publish = false
 edition = "2021"
 
 [dependencies]
-uefi = { path = "../uefi", features = ["alloc"] }
-uefi-services = { path = "../uefi-services" }
+uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu"] }
 
 log.workspace = true
 

@@ -83,13 +83,15 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<()> {
     // Setup the system table singleton
     SYSTEM_TABLE.store(st.as_ptr().cast_mut(), Ordering::Release);
 
+    // Setup logging and memory allocation
+
+    #[cfg(feature = "logger")]
     unsafe {
-        // Setup logging and memory allocation
-
-        #[cfg(feature = "logger")]
         logger::init(st);
+    }
 
-        #[cfg(feature = "global_allocator")]
+    #[cfg(feature = "global_allocator")]
+    unsafe {
         uefi::allocator::init(st);
     }
 

@@ -1949,8 +1949,6 @@ mod tests {
     use super::{MemoryDescriptor, MemoryMapIter};
 
     fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMap {
-        let desc_count = buffer.len();
-
         let byte_buffer = {
             unsafe {
                 core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size_of_val(buffer))

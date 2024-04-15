@@ -11,6 +11,8 @@ on:
       - version-*
   schedule:
     - cron: '0 0 * * 0-6'
+env:
+  RUSTFLAGS: -D warnings
 jobs:
   test_aarch64:
     name: Integration Test (AArch64)

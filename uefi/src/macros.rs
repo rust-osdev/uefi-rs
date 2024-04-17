@@ -78,3 +78,36 @@ macro_rules! cstr16 {
         unsafe { $crate::CStr16::from_u16_with_nul_unchecked(S) }
     }};
 }
+
+/// Set the entry point for a UEFI executable.
+///
+/// This macro takes one argument, the function to run when the executable is
+/// launched. That function must take no arguments and return a [`uefi::Result`].
+///
+/// # Example
+///
+/// ```
+/// uefi::set_main!(main);
+///
+/// fn main() -> uefi::Result {
+///     Ok(())
+/// }
+/// ```
+#[macro_export]
+macro_rules! set_main {
+    ($main:ident) => {
+        #[export_name = "efi_main"]
+        fn efi_main(
+            image: ::uefi::Handle,
+            system_table: *mut ::core::ffi::c_void,
+        ) -> ::uefi::Status {
+            unsafe { ::uefi::boot::set_image_handle(image) };
+            unsafe { ::uefi::system::set_system_table(system_table.cast()) };
+            let result = $main();
+            match result {
+                Ok(()) => ::uefi::Status::SUCCESS,
+                Err(err) => err.status(),
+            }
+        }
+    };
+}

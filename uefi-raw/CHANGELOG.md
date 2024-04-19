@@ -1,8 +1,12 @@
 # uefi-raw - [Unreleased]
 
+
+# uefi-raw - 0.5.2 (2024-04-19)
+
 ## Added
 - Added `TimestampProtocol`.
 - Added `DevicePathToTextProtocol` and `DevicePathFromTextProtocol`.
+
 
 # uefi-raw - 0.5.1 (2024-03-17)
 
@@ -12,6 +16,7 @@
   `Ip4Config2Protocol`, `TlsConfigurationProtocol`, and related types.
 - Added `LoadFileProtocol` and `LoadFile2Protocol`.
 - Added `firmware_storage` module.
+
 
 # uefi-raw - 0.5.0 (2023-11-12)
 

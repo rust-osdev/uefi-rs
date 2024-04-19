@@ -1,14 +1,18 @@
 # uefi - [Unreleased]
 
+
+# uefi - 0.28.0 (2024-04-19)
+
 ## Added
 - Added `Timestamp` protocol.
 - Added `UnalignedSlice::as_ptr`.
 - Added common derives for `Event` and `Handle`.
 - `uefi::helpers::init` with the functionality that used to be in
-  `uefi::services`. With that, new features were added:
-  - `global_allocator`
-  - `panic_handler`
-  - `qemu`
+`uefi::services`. With that, new features were added:
+- `global_allocator`
+- `panic_handler`
+- `qemu`
+
 
 # uefi - 0.27.0 (2024-03-17)
 
@@ -22,6 +26,7 @@
 ## Changed
 - `DevicePath::to_string` and `DevicePathNode::to_string` now return
   out-of-memory errors as part of the error type rather than with an `Option`.
+
 
 # uefi - 0.26.0 (2023-11-12)
 
@@ -41,6 +46,7 @@
   `&BootServices`.
 - `BootServices::{install,reinstall,uninstall}_protocol_interface` now take
   `const` interface pointers.
+
 
 # uefi - 0.25.0 (2023-10-10)
 
@@ -67,6 +73,7 @@
 - `BootServices::memmove` and `BootServices::set_mem` have been removed, use
   standard functions like `core::ptr::copy` and `core::ptr::write_bytes` instead.
 
+
 # uefi - 0.24.0 (2023-06-20)
 
 ## Added
@@ -83,10 +90,12 @@
 - The `Deref` and `DerefMut` impls for `ScopedProtocol` will now panic if the
   interface pointer is null.
 
+
 # uefi - 0.23.0 (2023-06-04)
 
 ## Changed
 - Fixed function signature bug in `BootServices::install_configuration_table`.
+
 
 # uefi - 0.22.0 (2023-06-01)
 
@@ -103,6 +112,7 @@
   `BUFFER_TOO_SMALL` error can only occur when reading a directory, not a file.
 - `RegularFile::read` now reads in 1 MiB chunks to avoid a bug in some
   firmware. This fix also applies to `fs::FileSystem::read`.
+
 
 # uefi - 0.21.0 (2023-05-15)
 
@@ -165,6 +175,7 @@
   - `GptPartitionAttributes` now has 16 additional `TYPE_SPECIFIC_BIT_<N>`
     constants.
 
+
 # uefi - 0.20.0 (2023-03-19)
 
 As of this release, the UEFI crates work on the stable channel. This requires
@@ -202,6 +213,7 @@ Rust 1.68 or higher.
     available since EFI 1.10 (2002).
   - `ScopedProtocol::interface` is not public anymore. Use the `Deref` trait.
 
+
 # uefi - 0.19.1 (2023-02-04)
 
 ## Added
@@ -214,6 +226,7 @@ Rust 1.68 or higher.
   `BootServices::find_handles`, and `SearchType::from_proto`.
 - Fixed a warning printed when using `uefi` as a dependency: "the following
   packages contain code that will be rejected by a future version".
+
 
 # uefi - 0.19.0 (2023-01-16)
 
@@ -246,6 +259,7 @@ Rust 1.68 or higher.
   `MaybeUninit<u8>` slice of appropriate length.
 - Redundant private field used for padding in `MemoryDescriptor` structure was removed. Now all
   fields of this struct are public.
+
 
 # uefi - 0.18.0 (2022-11-15)
 
@@ -299,6 +313,7 @@ Rust 1.68 or higher.
   `proto::device_path::acpi::Acpi` and
   `proto::device_path::media::HardDrive` instead.  `
 
+
 # uefi - 0.17.0 (2022-09-09)
 
 ## Added
@@ -350,6 +365,7 @@ Rust 1.68 or higher.
   can be replaced by calling `status.into()`, or `Result::from(status)`
   in cases where the compiler needs a type hint.
 
+
 # uefi - 0.16.1
 
 ## Added
@@ -369,6 +385,7 @@ Rust 1.68 or higher.
   dependencies to allow earlier patch versions.
 - Enabled `doc_auto_cfg` on docs.rs to show badges on items that are
   gated behind a feature.
+
 
 # uefi - 0.16.0 (2022-05-16)
 
@@ -399,6 +416,7 @@ Rust 1.68 or higher.
 ## Fixed
 
 - Fixed undefined behavior in `proto::media::file::File::get_boxed_info`.
+
 
 # uefi - 0.15.2 (2022-03-15)
 

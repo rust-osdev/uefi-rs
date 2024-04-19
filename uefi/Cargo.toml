@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.27.0"
+version = "0.28.0"
 readme = "README.md"
 description = "Safe and easy-to-use wrapper for building UEFI apps."
 
@@ -37,7 +37,7 @@ uguid.workspace = true
 cfg-if = "1.0.0"
 ucs2 = "0.3.2"
 uefi-macros = "0.13.0"
-uefi-raw = "0.5.1"
+uefi-raw = "0.5.2"
 qemu-exit = { version = "3.0.2", optional = true }
 
 [package.metadata.docs.rs]

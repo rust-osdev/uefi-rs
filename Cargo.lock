@@ -850,7 +850,7 @@ dependencies = [
 
 [[package]]
 name = "uefi"
-version = "0.27.0"
+version = "0.28.0"
 dependencies = [
  "bitflags 2.5.0",
  "cfg-if",
@@ -876,7 +876,7 @@ dependencies = [
 
 [[package]]
 name = "uefi-raw"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "bitflags 2.5.0",
  "ptr_meta",
@@ -885,7 +885,7 @@ dependencies = [
 
 [[package]]
 name = "uefi-services"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "uefi",
 ]

@@ -16,7 +16,7 @@ cd my-uefi-app
 Add a few dependencies:
 
 ```sh
-cargo add log uefi uefi-services
+cargo add log uefi
 ```
 
 Replace the contents of `src/main.rs` with this:

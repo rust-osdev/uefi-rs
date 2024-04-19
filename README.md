@@ -75,6 +75,7 @@ This project contains multiple sub-crates:
 
 - `uefi`: defines the standard UEFI tables / interfaces.
   The objective is to stay unopinionated and safely wrap most interfaces.
+  Additional opinionated features (such as a Logger) are feature-gated.
 
 - `uefi-macros`: procedural macros that are used to derive some traits
   in `uefi`.
@@ -82,9 +83,6 @@ This project contains multiple sub-crates:
 - `uefi-raw`: raw types that closely match the definitions in the UEFI
   Specification. Safe wrappers for these types are provided by the `uefi`
   crate. The raw types are suitable for implementing UEFI firmware.
-
-- `uefi-services`: provides a panic handler, and initializes
-  the `alloc` / `logger` features.
 
 - `uefi-test-runner`: a UEFI application that runs unit / integration tests.
 

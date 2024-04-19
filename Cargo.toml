@@ -5,7 +5,6 @@ members = [
     "uefi",
     "uefi-macros",
     "uefi-raw",
-    "uefi-services",
     "uefi-test-runner",
     "xtask",
 ]
@@ -29,7 +28,6 @@ uguid = "2.1.0"
 uefi = { path = "uefi" }
 uefi-macros = { path = "uefi-macros" }
 uefi-raw = { path = "uefi-raw" }
-uefi-services = { path = "uefi-services" }
 
 # Enable optimization for xtask itself, not for its dependencies. This speeds up
 # OVMF prebuilt decompression without much increase in compilation time.

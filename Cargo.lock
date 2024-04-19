@@ -884,13 +884,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "uefi-services"
-version = "0.25.0"
-dependencies = [
- "uefi",
-]
-
-[[package]]
 name = "uefi-test-runner"
 version = "0.2.0"
 dependencies = [

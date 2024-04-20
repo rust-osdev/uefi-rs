@@ -15,10 +15,12 @@ use core::ffi::c_void;
 use core::fmt::Debug;
 use core::{mem, ptr};
 use uefi_raw::protocol::file_system::FileProtocolV1;
+
 #[cfg(all(feature = "unstable", feature = "alloc"))]
 use {alloc::alloc::Global, core::alloc::Allocator};
+
 #[cfg(feature = "alloc")]
-use {alloc::boxed::Box, uefi::mem::make_boxed};
+use {crate::mem::make_boxed, alloc::boxed::Box};
 
 pub use self::dir::Directory;
 pub use self::info::{

@@ -26,7 +26,7 @@ pub use uefi_raw::table::boot::{
 
 /// Global image handle. This is only set by `BootServices::set_image_handle`,
 /// and it is only read by `BootServices::image_handle`.
-static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
+pub(crate) static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// Size in bytes of a UEFI page.
 ///
@@ -1636,7 +1636,7 @@ impl Align for MemoryDescriptor {
 /// If the memory map changes, this value is no longer valid.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
-pub struct MemoryMapKey(usize);
+pub struct MemoryMapKey(pub(crate) usize);
 
 /// The backing memory for the UEFI memory app on the UEFI heap, allocated using
 /// the UEFI boot services allocator. This occupied memory will also be
@@ -2064,10 +2064,10 @@ impl IndexMut<usize> for MemoryMapRefMut<'_> {
 #[derive(Debug)]
 pub struct MemoryMapOwned {
     /// Backing memory, properly initialized at this point.
-    buf: MemoryMapBackingMemory,
-    key: MemoryMapKey,
-    meta: MemoryMapMeta,
-    len: usize,
+    pub(crate) buf: MemoryMapBackingMemory,
+    pub(crate) key: MemoryMapKey,
+    pub(crate) meta: MemoryMapMeta,
+    pub(crate) len: usize,
 }
 
 impl MemoryMapOwned {
@@ -2210,7 +2210,8 @@ impl<'guid> SearchType<'guid> {
 }
 
 /// Raw event notification function
-type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
+pub(crate) type EventNotifyFn =
+    unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
 /// Timer events manipulation.
 #[derive(Debug)]
@@ -2309,7 +2310,7 @@ impl<'a> HandleBuffer<'a> {
 /// with [`BootServices::locate_handle`] via [`SearchType::ByRegisterNotify`].
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-pub struct ProtocolSearchKey(NonNull<c_void>);
+pub struct ProtocolSearchKey(pub(crate) NonNull<c_void>);
 
 #[cfg(test)]
 mod tests_mmap_artificial {

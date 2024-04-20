@@ -30,7 +30,7 @@ log.workspace = true
 ptr_meta.workspace = true
 uguid.workspace = true
 cfg-if = "1.0.0"
-ucs2 = "0.3.2"
+ucs2 = "0.3.3"
 uefi-macros = "0.13.0"
 uefi-raw = "0.5.2"
 qemu-exit = { version = "3.0.2", optional = true }

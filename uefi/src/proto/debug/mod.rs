@@ -15,8 +15,8 @@ use crate::proto::unsafe_protocol;
 use crate::{Result, Status, StatusExt};
 
 // re-export for ease of use
-pub use self::context::SystemContext;
-pub use self::exception::ExceptionType;
+pub use context::SystemContext;
+pub use exception::ExceptionType;
 
 mod context;
 mod exception;

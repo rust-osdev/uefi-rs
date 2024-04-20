@@ -4,11 +4,11 @@ use core::fmt::Debug;
 
 /// The error type that we use, essentially a status code + optional additional data
 mod error;
-pub use self::error::Error;
+pub use error::Error;
 
 /// Definition of UEFI's standard status codes
 mod status;
-pub use self::status::{Status, StatusExt};
+pub use status::{Status, StatusExt};
 
 /// Return type of most UEFI functions. Both success and error payloads are optional.
 ///

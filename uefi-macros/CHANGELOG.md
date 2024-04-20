@@ -1,5 +1,9 @@
 # uefi-macros - [Unreleased]
 
+## Removed
+- Removed the `cstr16` macro. Use the `cstr16` declarative macro exported by the
+  `uefi` crate instead.
+
 # uefi-macros - 0.13.0 (2023-11-12)
 
 ## Changed

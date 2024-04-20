@@ -1,3 +1,4 @@
+use crate::table::runtime;
 use crate::{guid, Guid, Status};
 
 #[derive(Debug)]
@@ -22,3 +23,25 @@ pub struct TimestampProperties {
     /// example, a 24-bit counter would have an end value of `0xff_ffff`.
     pub end_value: u64,
 }
+
+/// Properties of Reset Notification.
+#[derive(Debug)]
+#[repr(C)]
+pub struct ResetNotificationProtocol {
+    pub register_reset_notify:
+        unsafe extern "efiapi" fn(this: *mut Self, reset_function: ResetSystemFn) -> Status,
+    pub unregister_reset_notify:
+        unsafe extern "efiapi" fn(this: *mut Self, reset_function: ResetSystemFn) -> Status,
+}
+
+impl ResetNotificationProtocol {
+    pub const GUID: Guid = guid!("9da34ae0-eaf9-4bbf-8ec3-fd60226c44be");
+}
+
+/// Raw reset notification function, to be called if you register it when a ResetSystem() is executed.
+pub type ResetSystemFn = unsafe extern "efiapi" fn(
+    rt: runtime::ResetType,
+    status: Status,
+    data_size: usize,
+    data: *const u8,
+);

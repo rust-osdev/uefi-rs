@@ -1,5 +1,4 @@
 use uefi::prelude::*;
-
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::{proto, Identify};
 
@@ -22,6 +21,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     rng::test(bt);
     shell_params::test(bt);
     string::test(bt);
+    misc::test(bt);
 
     #[cfg(any(
         target_arch = "x86",
@@ -61,6 +61,7 @@ mod device_path;
 mod driver;
 mod loaded_image;
 mod media;
+mod misc;
 mod network;
 mod pi;
 mod rng;

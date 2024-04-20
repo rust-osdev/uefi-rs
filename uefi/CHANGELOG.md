@@ -4,6 +4,9 @@
 # uefi - 0.28.0 (2024-04-19)
 
 ## Added
+- Added `ResetNotification` protocol.
+
+## Added
 - Added `Timestamp` protocol.
 - Added `UnalignedSlice::as_ptr`.
 - Added common derives for `Event` and `Handle`.

@@ -4,6 +4,9 @@
 # uefi-raw - 0.5.2 (2024-04-19)
 
 ## Added
+- Added `ResetNotificationProtocol`.
+
+## Added
 - Added `TimestampProtocol`.
 - Added `DevicePathToTextProtocol` and `DevicePathFromTextProtocol`.
 

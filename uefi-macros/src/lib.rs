@@ -9,7 +9,7 @@ use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::spanned::Spanned;
 use syn::{
     parse_macro_input, parse_quote, Error, Expr, ExprLit, ExprPath, FnArg, Ident, ItemFn,
-    ItemStruct, Lit, LitStr, Pat, Visibility,
+    ItemStruct, Lit, Pat, Visibility,
 };
 
 macro_rules! err {
@@ -246,45 +246,4 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
 
     };
     result.into()
-}
-
-/// Builds a `CStr8` literal at compile time from a string literal.
-///
-/// This will throw a compile error if an invalid character is in the passed string.
-///
-/// # Example
-/// ```
-/// # use uefi_macros::cstr8;
-/// // Empty string
-/// assert_eq!(cstr8!().to_u16_slice_with_nul(), [0]);
-/// assert_eq!(cstr8!("").to_u16_slice_with_nul(), [0]);
-/// // Non-empty string
-/// assert_eq!(cstr8!("test").as_bytes(), [116, 101, 115, 116, 0]);
-/// ```
-#[proc_macro]
-pub fn cstr8(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    // Accept empty input.
-    if input.is_empty() {
-        return quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[0]) }).into();
-    }
-    let input: LitStr = parse_macro_input!(input);
-    let input = input.value();
-    // Accept "" input.
-    if input.is_empty() {
-        return quote!(unsafe { ::uefi::CStr16::from_u16_with_nul_unchecked(&[0]) }).into();
-    }
-
-    // Accept any non-empty string input.
-    match input
-        .chars()
-        .map(u8::try_from)
-        .collect::<Result<Vec<u8>, _>>()
-    {
-        Ok(c) => {
-            quote!(unsafe { ::uefi::CStr8::from_bytes_with_nul_unchecked(&[ #(#c),* , 0 ]) }).into()
-        }
-        Err(_) => syn::Error::new_spanned(input, "invalid character in string")
-            .into_compile_error()
-            .into(),
-    }
 }

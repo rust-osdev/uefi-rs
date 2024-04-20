@@ -139,7 +139,7 @@ mod util;
 // Crates that create procedural macros can't unit test the macros they export.
 // Therefore, we do some tests here.
 mod macro_tests {
-    use uefi_macros::{cstr16, cstr8};
+    use crate::{cstr16, cstr8};
 
     #[test]
     fn cstr8_macro_literal() {

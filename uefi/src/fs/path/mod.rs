@@ -21,7 +21,7 @@ pub use path::{Components, Path};
 pub use pathbuf::PathBuf;
 
 use crate::data_types::chars::NUL_16;
-use crate::{CStr16, Char16};
+use crate::{cstr16, CStr16, Char16};
 pub(super) use validation::validate_path;
 pub use validation::PathError;
 
@@ -29,7 +29,7 @@ pub use validation::PathError;
 pub const SEPARATOR: Char16 = unsafe { Char16::from_u16_unchecked('\\' as u16) };
 
 /// Stringified version of [`SEPARATOR`].
-pub const SEPARATOR_STR: &CStr16 = uefi_macros::cstr16!("\\");
+pub const SEPARATOR_STR: &CStr16 = cstr16!("\\");
 
 /// Deny list of characters for path components. UEFI supports FAT-like file
 /// systems. According to <https://en.wikipedia.org/wiki/Comparison_of_file_systems>,

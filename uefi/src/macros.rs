@@ -1,3 +1,47 @@
+/// Encode a string literal as a [`&CStr8`].
+///
+/// The encoding is done at compile time, so the result can be used in a
+/// `const` item.
+///
+/// An empty string containing just a null character can be created with either
+/// `cstr8!()` or `cstr8!("")`.
+///
+/// # Example
+///
+/// ```
+/// use uefi::{CStr8, cstr8};
+///
+/// const S: &CStr8 = cstr8!("abÿ");
+/// assert_eq!(S.as_bytes(), [97, 98, 255, 0]);
+///
+/// const EMPTY: &CStr8 = cstr8!();
+/// assert_eq!(EMPTY.as_bytes(), [0]);
+/// assert_eq!(cstr8!(""), EMPTY);
+/// ```
+///
+/// [`&CStr8`]: crate::CStr8
+#[macro_export]
+macro_rules! cstr8 {
+    () => {{
+        const S: &[u8] = &[0];
+        // SAFETY: `S` is a trivially correct Latin-1 C string.
+        unsafe { $crate::CStr8::from_bytes_with_nul_unchecked(S) }
+    }};
+    ($s:literal) => {{
+        // Use `const` values here to force errors to happen at compile
+        // time.
+
+        // Add one for the null char.
+        const NUM_CHARS: usize = $crate::data_types::str_num_latin1_chars($s) + 1;
+
+        const VAL: [u8; NUM_CHARS] = $crate::data_types::str_to_latin1($s);
+
+        // SAFETY: the `str_to_latin1` function always produces a valid Latin-1
+        // string with a trailing null character.
+        unsafe { $crate::CStr8::from_bytes_with_nul_unchecked(&VAL) }
+    }};
+}
+
 /// Encode a string literal as a [`&CStr16`].
 ///
 /// The encoding is done at compile time, so the result can be used in a

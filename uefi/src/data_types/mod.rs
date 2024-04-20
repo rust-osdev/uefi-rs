@@ -151,6 +151,10 @@ pub use strs::{
     CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16Error,
 };
 
+/// These functions are used in the implementation of the [`cstr8`] macro.
+#[doc(hidden)]
+pub use strs::{str_num_latin1_chars, str_to_latin1};
+
 #[cfg(feature = "alloc")]
 mod owned_strs;
 #[cfg(feature = "alloc")]

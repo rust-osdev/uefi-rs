@@ -113,7 +113,7 @@ pub mod data_types;
 #[cfg(feature = "alloc")]
 pub use data_types::CString16;
 pub use data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
-pub use uefi_macros::{cstr8, entry};
+pub use uefi_macros::entry;
 pub use uguid::guid;
 
 mod result;
@@ -140,17 +140,3 @@ pub mod helpers;
 
 mod macros;
 mod util;
-
-#[cfg(test)]
-// Crates that create procedural macros can't unit test the macros they export.
-// Therefore, we do some tests here.
-mod macro_tests {
-    use crate::cstr8;
-
-    #[test]
-    fn cstr8_macro_literal() {
-        let _empty1 = cstr8!();
-        let _empty2 = cstr8!("");
-        let _regular = cstr8!("foobar");
-    }
-}

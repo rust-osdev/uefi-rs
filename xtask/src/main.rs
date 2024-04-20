@@ -21,23 +21,22 @@ use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt, TpmVersion};
 use std::process::Command;
 use util::run_cmd;
 
+/// Builds various feature permutations that are valid for the `uefi` crate.
 fn build_feature_permutations(opt: &BuildOpt) -> Result<()> {
-    for package in [Package::Uefi, Package::UefiServices] {
-        let all_package_features = Feature::package_features(package);
-        for features in all_package_features.iter().powerset() {
-            let features = features.iter().map(|f| **f).collect();
+    let all_package_features = Feature::package_features(Package::Uefi);
+    for features in all_package_features.iter().powerset() {
+        let features = features.iter().map(|f| **f).collect();
 
-            let cargo = Cargo {
-                action: CargoAction::Build,
-                features,
-                packages: vec![package],
-                release: opt.build_mode.release,
-                target: Some(*opt.target),
-                warnings_as_errors: true,
-                target_types: TargetTypes::BinsExamplesLib,
-            };
-            run_cmd(cargo.command()?)?;
-        }
+        let cargo = Cargo {
+            action: CargoAction::Build,
+            features,
+            packages: vec![Package::Uefi],
+            release: opt.build_mode.release,
+            target: Some(*opt.target),
+            warnings_as_errors: true,
+            target_types: TargetTypes::BinsExamplesLib,
+        };
+        run_cmd(cargo.command()?)?;
     }
 
     Ok(())
@@ -195,8 +194,6 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
         // features is set to no as it is not possible as as soon a #[global_allocator] is
         // registered, the Rust runtime executing the tests uses it as well.
         features: Feature::more_code(*test_opt.unstable, false),
-        // Don't test uefi-services (or the packages that depend on it)
-        // as it has lang items that conflict with `std`.
         packages,
         release: false,
         // Use the host target so that tests can run without a VM.

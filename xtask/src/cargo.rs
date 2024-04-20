@@ -10,7 +10,6 @@ pub enum Package {
     UefiApp,
     UefiMacros,
     UefiRaw,
-    UefiServices,
     UefiTestRunner,
     Xtask,
 }
@@ -23,7 +22,6 @@ impl Package {
             Self::UefiApp => "uefi_app",
             Self::UefiMacros => "uefi-macros",
             Self::UefiRaw => "uefi-raw",
-            Self::UefiServices => "uefi-services",
             Self::UefiTestRunner => "uefi-test-runner",
             Self::Xtask => "xtask",
         }
@@ -31,12 +29,7 @@ impl Package {
 
     /// All published packages, in the order that publishing should occur.
     pub fn published() -> Vec<Package> {
-        vec![
-            Self::UefiRaw,
-            Self::UefiMacros,
-            Self::Uefi,
-            Self::UefiServices,
-        ]
+        vec![Self::UefiRaw, Self::UefiMacros, Self::Uefi]
     }
 
     /// All the packages except for xtask.
@@ -46,7 +39,6 @@ impl Package {
             Self::UefiApp,
             Self::UefiMacros,
             Self::UefiRaw,
-            Self::UefiServices,
             Self::UefiTestRunner,
         ]
     }
@@ -60,11 +52,8 @@ pub enum Feature {
     Logger,
     PanicOnLoggerErrors,
     Unstable,
-
-    // `uefi-services` features.
     PanicHandler,
     Qemu,
-    ServicesLogger,
 
     // `uefi-test-runner` features.
     DebugSupport,
@@ -83,10 +72,8 @@ impl Feature {
             Self::Logger => "logger",
             Self::PanicOnLoggerErrors => "panic-on-logger-errors",
             Self::Unstable => "unstable",
-
-            Self::PanicHandler => "uefi-services/panic_handler",
-            Self::Qemu => "uefi-services/qemu",
-            Self::ServicesLogger => "uefi-services/logger",
+            Self::PanicHandler => "panic_handler",
+            Self::Qemu => "qemu",
 
             Self::DebugSupport => "uefi-test-runner/debug_support",
             Self::MultiProcessor => "uefi-test-runner/multi_processor",
@@ -106,8 +93,9 @@ impl Feature {
                 Self::Logger,
                 Self::PanicOnLoggerErrors,
                 Self::Unstable,
+                Self::PanicHandler,
+                Self::Qemu,
             ],
-            Package::UefiServices => vec![Self::PanicHandler, Self::Qemu, Self::ServicesLogger],
             Package::UefiTestRunner => {
                 vec![
                     Self::DebugSupport,

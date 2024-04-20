@@ -11,7 +11,6 @@ repository to [crates.io](https://crates.io/).
   release is performed.
 - We want git tags like `uefi-raw-v0.4.0` or `uefi-v0.25.0` for every release.
 - We want our crate dependencies published in the right order (if necessary):
-  - `uefi-services` depends on `uefi`
   - `uefi` depends on `uefi-macros` and `uefi-raw`
 
 ## How: Ways to Publish

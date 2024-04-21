@@ -47,7 +47,7 @@
 //! There is no automatic synchronization of the file system for concurrent
 //! accesses. This is in the responsibility of the user.
 //!
-//! [`cstr16!`]: uefi_macros::cstr16
+//! [`cstr16!`]: crate::cstr16
 
 mod dir_entry_iter;
 mod file_system;

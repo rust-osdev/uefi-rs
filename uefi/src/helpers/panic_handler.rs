@@ -29,9 +29,9 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         } else {
             // If the system table is available, use UEFI's standard shutdown mechanism
             if let Some(st) = system_table_opt() {
-                use uefi::table::runtime::ResetType;
+                use crate::table::runtime::ResetType;
                 st.runtime_services()
-                    .reset(ResetType::SHUTDOWN, uefi::Status::ABORTED, None);
+                    .reset(ResetType::SHUTDOWN, crate::Status::ABORTED, None);
             }
 
             // If we don't have any shutdown mechanism handy, the best we can do is loop

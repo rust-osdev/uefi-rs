@@ -198,8 +198,8 @@ mod convenience_impls {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cstr16;
     use alloc::vec::Vec;
-    use uefi_macros::cstr16;
 
     #[test]
     fn from_cstr16() {

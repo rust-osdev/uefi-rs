@@ -1,9 +1,8 @@
 //! Module for directory iteration. See [`UefiDirectoryIter`].
 
 use super::*;
-use crate::{CStr16, Result};
+use crate::{cstr16, CStr16, Result};
 use alloc::boxed::Box;
-use uefi_macros::cstr16;
 
 /// Common skip dirs in UEFI/FAT-style file systems.
 pub const COMMON_SKIP_DIRS: &[&CStr16] = &[cstr16!("."), cstr16!("..")];

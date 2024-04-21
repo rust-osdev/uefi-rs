@@ -8,10 +8,10 @@ pub trait Table {
 }
 
 mod header;
-pub use self::header::Header;
+pub use header::Header;
 
 mod system;
-pub use self::system::{Boot, Runtime, SystemTable};
+pub use system::{Boot, Runtime, SystemTable};
 
 pub mod boot;
 pub mod runtime;

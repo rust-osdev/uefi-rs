@@ -138,23 +138,23 @@ pub trait Align {
 }
 
 mod guid;
-pub use self::guid::{Guid, Identify};
+pub use guid::{Guid, Identify};
 
 pub mod chars;
-pub use self::chars::{Char16, Char8};
+pub use chars::{Char16, Char8};
 
 #[macro_use]
 mod opaque;
 
 mod strs;
-pub use self::strs::{
+pub use strs::{
     CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16Error,
 };
 
 #[cfg(feature = "alloc")]
 mod owned_strs;
 #[cfg(feature = "alloc")]
-pub use self::owned_strs::{CString16, FromStrError};
+pub use owned_strs::{CString16, FromStrError};
 
 mod unaligned_slice;
 pub use unaligned_slice::UnalignedSlice;

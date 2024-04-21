@@ -67,8 +67,7 @@ pub fn validate_path<P: AsRef<Path>>(path: P) -> Result<(), PathError> {
 mod tests {
     use super::*;
     use crate::fs::PathBuf;
-    use crate::CString16;
-    use uefi_macros::cstr16;
+    use crate::{cstr16, CString16};
 
     #[test]
     fn test_validate_path() {

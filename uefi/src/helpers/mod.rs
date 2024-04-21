@@ -92,7 +92,7 @@ pub fn init(st: &mut SystemTable<Boot>) -> Result<()> {
 
     #[cfg(feature = "global_allocator")]
     unsafe {
-        uefi::allocator::init(st);
+        crate::allocator::init(st);
     }
 
     Ok(())
@@ -111,5 +111,5 @@ pub(crate) fn exit() {
     logger::disable();
 
     #[cfg(feature = "global_allocator")]
-    uefi::allocator::exit_boot_services();
+    crate::allocator::exit_boot_services();
 }

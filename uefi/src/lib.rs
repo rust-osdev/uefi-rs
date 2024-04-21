@@ -106,13 +106,13 @@ extern crate uefi_raw;
 #[macro_use]
 pub mod data_types;
 #[cfg(feature = "alloc")]
-pub use self::data_types::CString16;
-pub use self::data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
+pub use data_types::CString16;
+pub use data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
 pub use uefi_macros::{cstr16, cstr8, entry};
 pub use uguid::guid;
 
 mod result;
-pub use self::result::{Error, Result, ResultExt, Status, StatusExt};
+pub use result::{Error, Result, ResultExt, Status, StatusExt};
 
 pub mod table;
 
@@ -139,7 +139,7 @@ mod util;
 // Crates that create procedural macros can't unit test the macros they export.
 // Therefore, we do some tests here.
 mod macro_tests {
-    use uefi_macros::{cstr16, cstr8};
+    use crate::{cstr16, cstr8};
 
     #[test]
     fn cstr8_macro_literal() {

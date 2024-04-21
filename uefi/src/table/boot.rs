@@ -95,9 +95,9 @@ impl BootServices {
     /// Update the global image [`Handle`].
     ///
     /// This is called automatically in the `main` entry point as part
-    /// of [`uefi_macros::entry`]. It should not be called at any other
+    /// of [`uefi::entry`]. It should not be called at any other
     /// point in time, unless the executable does not use
-    /// [`uefi_macros::entry`], in which case it should be called once
+    /// [`uefi::entry`], in which case it should be called once
     /// before calling other `BootServices` functions.
     ///
     /// # Safety

@@ -100,6 +100,11 @@ extern crate alloc;
 // see https://github.com/rust-lang/rust/issues/54647
 extern crate self as uefi;
 
+/// Re-export ucs2_cstr so that it can be used in the implementation of the
+/// cstr16 macro. It is hidden since it's not intended to be used directly.
+#[doc(hidden)]
+pub use ucs2::ucs2_cstr;
+
 #[macro_use]
 extern crate uefi_raw;
 
@@ -108,7 +113,7 @@ pub mod data_types;
 #[cfg(feature = "alloc")]
 pub use data_types::CString16;
 pub use data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
-pub use uefi_macros::{cstr16, cstr8, entry};
+pub use uefi_macros::{cstr8, entry};
 pub use uguid::guid;
 
 mod result;
@@ -133,25 +138,19 @@ pub(crate) mod polyfill;
 
 pub mod helpers;
 
+mod macros;
 mod util;
 
 #[cfg(test)]
 // Crates that create procedural macros can't unit test the macros they export.
 // Therefore, we do some tests here.
 mod macro_tests {
-    use crate::{cstr16, cstr8};
+    use crate::cstr8;
 
     #[test]
     fn cstr8_macro_literal() {
         let _empty1 = cstr8!();
         let _empty2 = cstr8!("");
         let _regular = cstr8!("foobar");
-    }
-
-    #[test]
-    fn cstr16_macro_literal() {
-        let _empty1 = cstr16!();
-        let _empty2 = cstr16!("");
-        let _regular = cstr16!("foobar");
     }
 }

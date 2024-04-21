@@ -1,5 +1,9 @@
 # uefi - [Unreleased]
 
+## Removed
+- Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger
+  errors are now silently ignored.
+
 
 # uefi - 0.28.0 (2024-04-19)
 

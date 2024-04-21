@@ -107,30 +107,17 @@ impl log::Log for Logger {
 
         if !output.is_null() {
             let writer = unsafe { &mut *output };
-            let result = DecoratedLog::write(
+
+            // Ignore all errors. Since we're in the logger implementation we
+            // can't log the error. We also don't want to panic, since logging
+            // is generally not critical functionality.
+            let _ = DecoratedLog::write(
                 writer,
                 record.level(),
                 record.args(),
                 record.file().unwrap_or("<unknown file>"),
                 record.line().unwrap_or(0),
             );
-
-            // Some UEFI implementations, such as the one used by VirtualBox,
-            // may intermittently drop out some text from SimpleTextOutput and
-            // report an EFI_DEVICE_ERROR. This will be reported here as an
-            // `fmt::Error`, and given how the `log` crate is designed, our main
-            // choices when that happens are to ignore the error or panic.
-            //
-            // Ignoring errors is bad, especially when they represent loss of
-            // precious early-boot system diagnosis data, so we panic by
-            // default. But if you experience this problem and want your UEFI
-            // application to keep running when it happens, you can disable the
-            // `panic-on-logger-errors` cargo feature. If you do so, logging errors
-            // will be ignored by `uefi-rs` instead.
-            //
-            if cfg!(feature = "panic-on-logger-errors") {
-                result.unwrap()
-            }
         }
     }
 

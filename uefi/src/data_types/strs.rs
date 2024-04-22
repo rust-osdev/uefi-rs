@@ -221,6 +221,93 @@ impl<'a> TryFrom<&'a CStr> for &'a CStr8 {
     }
 }
 
+/// Get a Latin-1 character from a UTF-8 byte slice at the given offset.
+///
+/// Returns a pair containing the Latin-1 character and the number of bytes in
+/// the UTF-8 encoding of that character.
+///
+/// Panics if the string cannot be encoded in Latin-1.
+///
+/// # Safety
+///
+/// The input `bytes` must be valid UTF-8.
+const unsafe fn latin1_from_utf8_at_offset(bytes: &[u8], offset: usize) -> (u8, usize) {
+    if bytes[offset] & 0b1000_0000 == 0b0000_0000 {
+        (bytes[offset], 1)
+    } else if bytes[offset] & 0b1110_0000 == 0b1100_0000 {
+        let a = (bytes[offset] & 0b0001_1111) as u16;
+        let b = (bytes[offset + 1] & 0b0011_1111) as u16;
+        let ch = a << 6 | b;
+        if ch > 0xff {
+            panic!("input string cannot be encoded as Latin-1");
+        }
+        (ch as u8, 2)
+    } else {
+        // Latin-1 code points only go up to 0xff, so if the input contains any
+        // UTF-8 characters larger than two bytes it cannot be converted to
+        // Latin-1.
+        panic!("input string cannot be encoded as Latin-1");
+    }
+}
+
+/// Count the number of Latin-1 characters in a string.
+///
+/// Panics if the string cannot be encoded in Latin-1.
+///
+/// This is public but hidden; it is used in the `cstr8` macro.
+#[must_use]
+pub const fn str_num_latin1_chars(s: &str) -> usize {
+    let bytes = s.as_bytes();
+    let len = bytes.len();
+
+    let mut offset = 0;
+    let mut num_latin1_chars = 0;
+
+    while offset < len {
+        // SAFETY: `bytes` is valid UTF-8.
+        let (_, num_utf8_bytes) = unsafe { latin1_from_utf8_at_offset(bytes, offset) };
+        offset += num_utf8_bytes;
+        num_latin1_chars += 1;
+    }
+
+    num_latin1_chars
+}
+
+/// Convert a `str` into a null-terminated Latin-1 character array.
+///
+/// Panics if the string cannot be encoded in Latin-1.
+///
+/// This is public but hidden; it is used in the `cstr8` macro.
+#[must_use]
+pub const fn str_to_latin1<const N: usize>(s: &str) -> [u8; N] {
+    let bytes = s.as_bytes();
+    let len = bytes.len();
+
+    let mut output = [0; N];
+
+    let mut output_offset = 0;
+    let mut input_offset = 0;
+    while input_offset < len {
+        // SAFETY: `bytes` is valid UTF-8.
+        let (ch, num_utf8_bytes) = unsafe { latin1_from_utf8_at_offset(bytes, input_offset) };
+        if ch == 0 {
+            panic!("interior null character");
+        } else {
+            output[output_offset] = ch;
+            output_offset += 1;
+            input_offset += num_utf8_bytes;
+        }
+    }
+
+    // The output array must be one bigger than the converted string,
+    // to leave room for the trailing null character.
+    if output_offset + 1 != N {
+        panic!("incorrect array length");
+    }
+
+    output
+}
+
 /// An UCS-2 null-terminated string slice.
 ///
 /// This type is largely inspired by [`core::ffi::CStr`] with the exception that all characters are

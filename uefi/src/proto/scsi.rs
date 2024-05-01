@@ -1,6 +1,7 @@
 //! EFI SCSI I/O protocols.
 
-use core::ptr::null;
+
+use core::ptr::null_mut;
 
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 use uefi_raw::protocol::scsi;
@@ -10,6 +11,7 @@ use uefi_raw::protocol::scsi::{
 };
 
 use crate::{Event, Result, StatusExt};
+use crate::proto::unsafe_protocol;
 
 /// Protocol for who running in the EFI boot services environment such as code, typically drivers, able to access SCSI devices.
 #[derive(Debug)]
@@ -19,7 +21,6 @@ pub struct ScsiIo(ScsiIoProtocol);
 
 /// Represents a scsi device location which {target, lun}.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-#[repr(transparent)]
 pub struct ScsiDeviceLocation {
     /// Target ID
     pub target: *mut u8,
@@ -30,7 +31,7 @@ pub struct ScsiDeviceLocation {
 impl Default for ScsiDeviceLocation {
     fn default() -> Self {
         ScsiDeviceLocation {
-            target: null() as *mut u8,
+            target: null_mut(),
             lun: 0,
         }
     }
@@ -51,11 +52,11 @@ impl ScsiIo {
     }
     /// Resets the SCSI Bus that the SCSI Device is attached to.
     pub fn reset_bus(&mut self) -> Result {
-        unsafe { self.0.reset_bus(&mut self.0) }.to_result()
+        unsafe { (self.0.reset_bus)(&mut self.0) }.to_result()
     }
     /// Resets the SCSI Device that is specified by the device handle that the SCSI I/O Protocol is attached.
     pub fn reset_device(&mut self) -> Result {
-        unsafe { self.0.reset_bus(&mut self.0) }.to_result()
+        unsafe { (self.0.reset_device)(&mut self.0) }.to_result()
     }
 
     /// Sends a SCSI Request Packet to the SCSI Device for execution.
@@ -65,11 +66,14 @@ impl ScsiIo {
         packet: *mut ScsiIoScsiRequestPacket,
         event: Event,
     ) -> Result {
-        unsafe { self.0.execute_scsi_command(&self.0, packet, event) }.to_result()
+        unsafe { (self.0.execute_scsi_command)(&self.0, packet, event.as_ptr()) }.to_result()
     }
 
+    /// the value of ioAlign
     pub fn io_align(&self) -> Result<u32> {
-        unsafe { self.0.io_align }.to_result()
+        let mut io_align: u32 = 0;
+        unsafe { io_align = self.0.io_align }
+        Ok(io_align)
     }
 }
 
@@ -80,8 +84,11 @@ impl ScsiIo {
 pub struct ExtScsiPassThru(ExtScsiPassThruProtocol);
 
 impl ExtScsiPassThru {
+    /// the value of mode which is type ExtScsiPassThruMode.
     pub fn mode(&self) -> Result<ExtScsiPassThruMode> {
-        unsafe { self.0.mode }.to_result()
+        let mut mode = ExtScsiPassThruMode::default();
+        unsafe { mode = self.0.mode }
+        Ok(mode)
     }
     /// Sends a SCSI Request Packet to a SCSI device that is attached to the SCSI channel.
     pub fn pass_thru(

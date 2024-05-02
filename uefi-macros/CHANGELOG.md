@@ -1,5 +1,8 @@
 # uefi-macros - [Unreleased]
 
+## Changed
+- The `entry` macro now sets the global system table pointer with `uefi::set_system_table`.
+
 ## Removed
 - Removed the `cstr8` and `cstr16` macros. Use the declarative macros of the
   same names exported by the `uefi` crate as a replacement.

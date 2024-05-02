@@ -8,6 +8,9 @@
   works on x86. It is activated by default (only on x86) and can be deactivated
   by removing the `log-debugcon` cargo feature. The major benefit is that one
   can get log messages even after one exited the boot services.
+- Added `table::{set_system_table, system_table_boot, system_table_runtime}`.
+  This provides an initial API for global tables that do not require passing
+  around a reference.
 
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger

@@ -12,6 +12,10 @@
   This provides an initial API for global tables that do not require passing
   around a reference.
 
+## Changed
+- `SystemTable::exit_boot_services` is now `unsafe`. See that method's
+  documentation for details of obligations for callers.
+
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger
   errors are now silently ignored.

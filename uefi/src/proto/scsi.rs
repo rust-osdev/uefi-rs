@@ -1,6 +1,5 @@
 //! EFI SCSI I/O protocols.
 
-
 use core::ptr::null_mut;
 
 use uefi_raw::protocol::device_path::DevicePathProtocol;
@@ -10,9 +9,9 @@ use uefi_raw::protocol::scsi::{
     ScsiIoScsiRequestPacket,
 };
 
-use crate::{Event, Result, StatusExt};
 use crate::proto::device_path::DevicePath;
 use crate::proto::unsafe_protocol;
+use crate::{Event, Result, StatusExt};
 
 /// Protocol for who running in the EFI boot services environment such as code, typically drivers, able to access SCSI devices.
 #[derive(Debug)]
@@ -118,17 +117,15 @@ impl ExtScsiPassThru {
     }
 
     /// Used to allocate and build a device path node for a SCSI device on a SCSI channel.
-    pub fn build_device_path(
-        &mut self,
-        location: ScsiDeviceLocation,
-    ) -> Result<&DevicePath> {
+    pub fn build_device_path(&mut self, location: ScsiDeviceLocation) -> Result<&DevicePath> {
         let mut path = &mut DevicePathProtocol {
             major_type: 0,
             sub_type: 0,
             length: [0, 0],
         } as *mut DevicePathProtocol;
         unsafe {
-            let status = (self.0.build_device_path)(&mut self.0, location.target, location.lun, &mut path);
+            let status =
+                (self.0.build_device_path)(&mut self.0, location.target, location.lun, &mut path);
             if status.is_success() {
                 Ok(DevicePath::from_ffi_ptr(path.cast()))
             } else {
@@ -138,10 +135,7 @@ impl ExtScsiPassThru {
     }
 
     /// Used to translate a device path node to a Target ID and LUN.
-    pub fn get_target_lun(
-        &mut self,
-        device_path: &DevicePath,
-    ) -> Result<ScsiDeviceLocation> {
+    pub fn get_target_lun(&mut self, device_path: &DevicePath) -> Result<ScsiDeviceLocation> {
         let device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
             device_path.as_ffi_ptr().cast();
 

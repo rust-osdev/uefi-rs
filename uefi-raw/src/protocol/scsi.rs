@@ -2,8 +2,8 @@ use core::ffi::c_void;
 
 use bitflags::bitflags;
 
+use crate::{Event, guid, Guid, Status};
 use crate::protocol::device_path::DevicePathProtocol;
-use crate::{guid, Event, Guid, Status};
 
 bitflags! {
     /// DataDirection
@@ -159,7 +159,7 @@ pub struct ExtScsiPassThruProtocol {
     ) -> Status,
     pub get_target_lun: unsafe extern "efiapi" fn(
         this: *const Self,
-        device_path: *mut DevicePathProtocol,
+        device_path: *const DevicePathProtocol,
         target: *mut *mut u8,
         lun: *mut u64,
     ) -> Status,

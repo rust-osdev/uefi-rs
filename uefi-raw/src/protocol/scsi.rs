@@ -1,56 +1,58 @@
 use core::ffi::c_void;
 
-use bitflags::bitflags;
-
+use crate::{Event, guid, Guid, Status};
 use crate::protocol::device_path::DevicePathProtocol;
-use crate::{guid, Event, Guid, Status};
 
-bitflags! {
+/// TODO: use #define TARGET_MAX_BYTES 0x10, the limit of target.
+#[allow(unused)]
+const TARGET_MAX_BYTES: u32 = 0x10;
+
+
+newtype_enum! {
     /// DataDirection
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct DataDirection: u8 {
-        const EFI_SCSI_IO_DATA_DIRECTION_READ            = 0;
-        const EFI_SCSI_IO_DATA_DIRECTION_WRITE           = 1;
-        const EFI_SCSI_IO_DATA_DIRECTION_BIDIRECTIONAL   = 2;
+    #[derive(Default)]
+    pub enum DataDirection: u8 => {
+        READ            = 0,
+        WRITE           = 1,
+        BIDIRECTIONAL   = 2,
     }
 }
 
-bitflags! {
+newtype_enum! {
     /// HostAdapterStatus
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct HostAdapterStatus: u8 {
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_OK            =        0x00  ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_TIMEOUT_COMMAND       =0x09          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_TIMEOUT               =0x0b          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_MESSAGE_REJECT        =0x0d          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_BUS_RESET             =0x0e          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_PARITY_ERROR          =0x0f          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_REQUEST_SENSE_FAILED  =0x10          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_SELECTION_TIMEOUT     =0x11          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_DATA_OVERRUN_UNDERRUN =0x12          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_BUS_FREE              =0x13          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_PHASE_ERROR           =0x14          ;
-        const EFI_SCSI_IO_STATUS_HOST_ADAPTER_OTHER                 =0x7f          ;
+    #[derive(Default)]
+    pub enum HostAdapterStatus: u8 => {
 
+        /// EFI_SCSI_IO_STATUS_HOST_ADAPTER_OK
+       OK                    = 0x00,
+       TIMEOUT_COMMAND       = 0x09,
+       TIMEOUT               = 0x0b,
+       MESSAGE_REJECT        = 0x0d,
+       BUS_RESET             = 0x0e,
+       PARITY_ERROR          = 0x0f,
+       REQUEST_SENSE_FAILED  = 0x10,
+       SELECTION_TIMEOUT     = 0x11,
+       DATA_OVERRUN_UNDERRUN = 0x12,
+       BUS_FREE              = 0x13,
+       PHASE_ERROR           = 0x14,
+       OTHER                 = 0x7f,
     }
 }
 
-bitflags! {
+newtype_enum! {
     /// TargetStatus
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct TargetStatus: u8 {
-        const EFI_SCSI_IO_STATUS_TARGET_GOOD                         =0x00;
-        const EFI_SCSI_IO_STATUS_TARGET_CHECK_CONDITION              =0x02;
-        const EFI_SCSI_IO_STATUS_TARGET_CONDITION_MET                =0x04;
-        const EFI_SCSI_IO_STATUS_TARGET_BUSY                         =0x08;
-        const EFI_SCSI_IO_STATUS_TARGET_INTERMEDIATE                 =0x10;
-        const EFI_SCSI_IO_STATUS_TARGET_INTERMEDIATE_CONDITION_METn  =0x14;
-        const EFI_SCSI_IO_STATUS_TARGET_RESERVATION_CONFLICT         =0x18;
-        const EFI_SCSI_IO_STATUS_TARGET_COMMAND_TERMINATED           =0x22;
-        const EFI_SCSI_IO_STATUS_TARGET_QUEUE_FULL                   =0x28;
+    #[derive(Default)]
+    pub enum TargetStatus: u8 => {
+        /// EFI_SCSI_IO_STATUS_TARGET_GOOD
+        GOOD                         = 0x00,
+        CHECK_CONDITION              = 0x02,
+        CONDITION_MET                = 0x04,
+        BUSY                         = 0x08,
+        INTERMEDIATE                 = 0x10,
+        INTERMEDIATE_CONDITION_MET   = 0x14,
+        RESERVATION_CONFLICT         = 0x18,
+        COMMAND_TERMINATED           = 0x22,
+        QUEUE_FULL                   = 0x28,
     }
 }
 
@@ -103,41 +105,35 @@ pub struct ScsiIoScsiRequestPacket {
     pub sense_data_length: u8,
 }
 
-bitflags! {
+newtype_enum! {
     /// DeviceType
     /// Defined in the SCSI Primary Commands standard (e.g., SPC-4)
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct DeviceType: u8  {
-        const DISK               = 0x00; // Disk device
-        const TAPE              = 0x01; // Tape device
-        const PRINTER           = 0x02;// Printer
-        const PROCESSOR         = 0x03;// Processor
-        const WORM              = 0x04;// Write-once read-multiple
-        const CDROM             = 0x05;// CD or DVD device
-        const SCANNER           = 0x06;// Scanner device
-        const OPTICAL           = 0x07;// Optical memory device
-        const MEDIUMCHANGER     = 0x08;// Medium Changer device
-        const COMMUNICATION     = 0x09;// Communications device
+    #[derive(Default)]
+    pub enum DeviceType: u8  => {
+        DISK              = 0x00, // Disk device
+        TAPE              = 0x01, // Tape device
+        PRINTER           = 0x02,// Printer
+        PROCESSOR         = 0x03,// Processor
+        WORM              = 0x04,// Write-once read-multiple
+        CDROM             = 0x05,// CD or DVD device
+        SCANNER           = 0x06,// Scanner device
+        OPTICAL           = 0x07,// Optical memory device
+        MEDIUMCHANGER     = 0x08,// Medium Changer device
+        COMMUNICATION     = 0x09,// Communications device
 
 
-        const MFI_A               =   0x0A; // Obsolete
-        const MFI_B               =   0x0B; // Obsolete
-        const MFI_RAID            =   0x0C; // Storage array controller
+        MFI_A               =   0x0A, // Obsolete
+        MFI_B               =   0x0B, // Obsolete
+        MFI_RAID            =   0x0C, // Storage array controller
+        MFI_SES             =   0x0D, // Enclosure services device
+        MFI_RBC             =   0x0E, // Simplified direct-access
+        MFI_OCRW            =   0x0F, // Optical card reader/
+        MFI_BRIDGE          =   0x10, // Bridge Controller
+        MFI_OSD             =   0x11, // Object-based Storage
 
-        const MFI_SES             =   0x0D; // Enclosure services device
-        const MFI_RBC             =   0x0E; // Simplified direct-access
-
-
-        const MFI_OCRW            =   0x0F; // Optical card reader/
-
-        const MFI_BRIDGE          =   0x10; // Bridge Controller
-
-        const MFI_OSD             =   0x11; // Object-based Storage
-
-        const RESERVED_LOW    =   0x12; // Reserved (low)
-        const RESERVED_HIGH   =   0x1E; // Reserved (high)
-        const UNKNOWN         =   0x1F; // Unknown no device type
+        RESERVED_LOW    =   0x12, // Reserved (low)
+        RESERVED_HIGH   =   0x1E, // Reserved (high)
+        UNKNOWN         =   0x1F, // Unknown no device type
     }
 }
 
@@ -204,23 +200,21 @@ impl ExtScsiPassThruProtocol {
     pub const GUID: Guid = guid!("143b7632-b81b-4cb7-abd3-b625a5b9bffe");
 }
 
-bitflags! {
+newtype_enum! {
     /// Attributes
-    /// TODO: #define TARGET_MAX_BYTES 0x10
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct Attributes: u32 {
-        const EFI_EXT_SCSI_PASS_THRU_ATTRIBUTES_PHYSICAL     = 0x0001;
-        const EFI_EXT_SCSI_PASS_THRU_ATTRIBUTES_LOGICAL      = 0x0002;
-        const EFI_EXT_SCSI_PASS_THRU_ATTRIBUTES_NONBLOCKIO   = 0x0004;
+    #[derive(Default)]
+    pub enum PassThruAttributes: u32 => {
+        PHYSICAL     = 0x0001,
+        LOGICAL      = 0x0002,
+        NONBLOCKIO   = 0x0004,
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 #[repr(C)]
 pub struct ExtScsiPassThruMode {
     pub adapter_id: u32,
-    pub attributes: Attributes,
+    pub attributes: PassThruAttributes,
     pub io_align: u32,
 }
 
@@ -276,51 +270,48 @@ pub struct ExtScsiIoScsiRequestPacket {
     pub sense_data_length: u8,
 }
 
-bitflags! {
+newtype_enum! {
     /// Ext DataDirection
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct ExtDataDirection: u8 {
-        const EFI_EXT_SCSI_DATA_DIRECTION_READ            = 0;
-        const EFI_EXT_SCSI_DATA_DIRECTION_WRITE           = 1;
-        const EFI_EXT_SCSI_DATA_DIRECTION_BIDIRECTIONAL   = 2;
+    #[derive(Default)]
+    pub enum ExtDataDirection: u8 => {
+        READ            = 0,
+        WRITE           = 1,
+        BIDIRECTIONAL   = 2,
     }
 }
 
-bitflags! {
+newtype_enum! {
     /// Ext HostAdapterStatus
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct ExtHostAdapterStatus: u8 {
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_OK                    =0x00;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_TIMEOUT_COMMAND       =0x09;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_TIMEOUT               =0x0b;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_MESSAGE_REJECT        =0x0d;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_BUS_RESET             =0x0e;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_PARITY_ERROR          =0x0f;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_REQUEST_SENSE_FAILED  =0x10;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_SELECTION_TIMEOUT     =0x11;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_DATA_OVERRUN_UNDERRUN =0x12;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_BUS_FREE              =0x13;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_PHASE_ERROR           =0x14;
-        const EFI_EXT_SCSI_STATUS_HOST_ADAPTER_OTHER                 =0x7f;
+    #[derive(Default)]
+    pub enum ExtHostAdapterStatus: u8 => {
+        OK                    = 0x00,
+        TIMEOUT_COMMAND       = 0x09,
+        TIMEOUT               = 0x0b,
+        MESSAGE_REJECT        = 0x0d,
+        BUS_RESET             = 0x0e,
+        PARITY_ERROR          = 0x0f,
+        REQUEST_SENSE_FAILED  = 0x10,
+        SELECTION_TIMEOUT     = 0x11,
+        DATA_OVERRUN_UNDERRUN = 0x12,
+        BUS_FREE              = 0x13,
+        PHASE_ERROR           = 0x14,
+        OTHER                 = 0x7f,
     }
 }
 
-bitflags! {
+newtype_enum! {
     /// ExtTargetStatus
-    #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct ExtTargetStatus: u8 {
-        const EFI_EXT_SCSI_STATUS_TARGET_GOOD                        = 0x00;
-        const EFI_EXT_SCSI_STATUS_TARGET_CHECK_CONDITION             = 0x02;
-        const EFI_EXT_SCSI_STATUS_TARGET_CONDITION_MET               = 0x04;
-        const EFI_EXT_SCSI_STATUS_TARGET_BUSY                        = 0x08;
-        const EFI_EXT_SCSI_STATUS_TARGET_INTERMEDIATE                = 0x10;
-        const EFI_EXT_SCSI_STATUS_TARGET_INTERMEDIATE_CONDITION_MET  = 0x14;
-        const EFI_EXT_SCSI_STATUS_TARGET_RESERVATION_CONFLICT        = 0x18;
-        const EFI_EXT_SCSI_STATUS_TARGET_TASK_SET_FULL               = 0x28;
-        const EFI_EXT_SCSI_STATUS_TARGET_ACA_ACTIVE                  = 0x30;
-        const EFI_EXT_SCSI_STATUS_TARGET_TASK_ABORTED                = 0x40;
+    #[derive(Default)]
+    pub enum ExtTargetStatus: u8 => {
+        GOOD                        = 0x00,
+        CHECK_CONDITION             = 0x02,
+        CONDITION_MET               = 0x04,
+        BUSY                        = 0x08,
+        INTERMEDIATE                = 0x10,
+        INTERMEDIATE_CONDITION_MET  = 0x14,
+        RESERVATION_CONFLICT        = 0x18,
+        TASK_SET_FULL               = 0x28,
+        ACA_ACTIVE                  = 0x30,
+        TASK_ABORTED                = 0x40,
     }
 }

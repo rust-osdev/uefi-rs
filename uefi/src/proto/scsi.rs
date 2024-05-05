@@ -1,10 +1,13 @@
 //! EFI SCSI I/O protocols.
 
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::ptr;
 use core::ptr::null_mut;
 
-use uefi_raw::protocol::device_path::DevicePathProtocol;
+use log::info;
+
 use uefi_raw::protocol::scsi;
 use uefi_raw::protocol::scsi::{
     DataDirection, ExtDataDirection, ExtHostAdapterStatus, ExtScsiIoScsiRequestPacket,
@@ -12,9 +15,10 @@ use uefi_raw::protocol::scsi::{
     ScsiIoProtocol, ScsiIoScsiRequestPacket, TargetStatus,
 };
 
-use crate::{Event, Result, StatusExt};
+use crate::proto::device_path::build::{acpi, hardware, messaging, DevicePathBuilder};
 use crate::proto::device_path::DevicePath;
 use crate::proto::unsafe_protocol;
+use crate::{Event, Result, StatusExt};
 
 /// Protocol for who running in the EFI boot services environment such as code, typically drivers, able to access SCSI devices.
 #[derive(Debug)]
@@ -29,6 +33,13 @@ pub struct ScsiDeviceLocation {
     pub target: *mut u8,
     /// Logical Unit Number
     pub lun: u64,
+}
+
+impl ScsiDeviceLocation {
+    /// constructor for ScsiDeviceLocation {target, lun}
+    pub fn new(target: *mut u8, lun: u64) -> Self {
+        ScsiDeviceLocation { target, lun }
+    }
 }
 
 impl Default for ScsiDeviceLocation {
@@ -64,15 +75,25 @@ impl ScsiIo {
 
     /// Sends a SCSI Request Packet to the SCSI Device for execution.
     ///TODO:  ScsiIoScsiRequestPacket must to refactor
-    pub fn execute_scsi_command(&self, packet: &mut ScsiRequestPacket, event: Event) -> Result {
-        unsafe {
-            (self.0.execute_scsi_command)(
-                &self.0,
-                &mut (packet.convert_to_request_packet()),
-                event.as_ptr(),
-            )
-        }
-            .to_result()
+    pub fn execute_scsi_command(
+        &self,
+        packet: &mut ScsiRequestPacket,
+        event: Option<Event>,
+    ) -> Result<ScsiRequestPacket> {
+        info!("before: ffi_packet = {:?}", packet);
+        let in_packet = &mut (packet.convert_auto_request_packet());
+        info!("before: raw_packet = {:?}", in_packet);
+
+        let event_arg = match event {
+            Some(event) => event.as_ptr(),
+            None => ptr::null_mut(),
+        };
+
+        let status = unsafe { (self.0.execute_scsi_command)(&self.0, in_packet, event_arg) };
+        info!("after: raw_packet = {:?}", in_packet);
+        // TODO: print log with raw dat/len about `ScsiIoScsiRequestPacket`
+
+        status.to_result_with_val(|| packet.sync_from_request_packet(in_packet))
     }
 
     /// the value of ioAlign
@@ -90,22 +111,29 @@ pub struct ExtScsiPassThru(ExtScsiPassThruProtocol);
 impl ExtScsiPassThru {
     /// the value of mode which is type ExtScsiPassThruMode.
     pub fn mode(&self) -> Result<ExtScsiPassThruMode> {
-        Ok(self.0.mode)
+        unsafe { Ok(*self.0.mode) }
     }
     /// Sends a SCSI Request Packet to a SCSI device that is attached to the SCSI channel.
     pub fn pass_thru(
         &mut self,
         location: ScsiDeviceLocation,
         mut packet: ScsiExtRequestPacket,
-        event: Event,
+        event: Option<Event>,
     ) -> Result {
+        let raw_packet = &mut (packet.convert_auto_request_packet());
+        info!("raw_packet = {:?}", raw_packet);
+        let event_arg = match event {
+            Some(event) => event.as_ptr(),
+            None => ptr::null_mut(),
+        };
+
         unsafe {
             (self.0.pass_thru)(
                 &mut self.0,
                 location.target,
                 location.lun,
-                &mut (packet.convert_to_request_packet()),
-                event.as_ptr(),
+                raw_packet,
+                event_arg,
             )
         }
         .to_result()
@@ -119,21 +147,38 @@ impl ExtScsiPassThru {
     }
 
     /// Used to allocate and build a device path node for a SCSI device on a SCSI channel.
-    pub fn build_device_path(&mut self, location: ScsiDeviceLocation) -> Result<&DevicePath> {
-        let mut path = &mut DevicePathProtocol {
-            major_type: 0,
-            sub_type: 0,
-            length: [0, 0],
-        } as *mut DevicePathProtocol;
+    pub fn build_device_path(&mut self, location: ScsiDeviceLocation) -> Result<Box<DevicePath>> {
+        let mut v = Vec::new();
+        let path = DevicePathBuilder::with_vec(&mut v)
+            .push(&acpi::Acpi {
+                hid: 0x41d0_0a03,
+                uid: 0x0000_0000,
+            })
+            .unwrap()
+            .push(&hardware::Pci {
+                function: 0x00,
+                device: 0x19,
+            })
+            .unwrap()
+            .push(&messaging::Scsi {
+                target_id: 0,
+                logical_unit_number: 0,
+            })
+            .unwrap()
+            .finalize()
+            .expect("failed to build dev path");
+        let mut device_path_ptr: *mut uefi_raw::protocol::device_path::DevicePathProtocol =
+            unsafe { *path.as_ffi_ptr().cast() };
+        // let path_ptr = &mut path?;
         unsafe {
-            let status =
-                (self.0.build_device_path)(&mut self.0, location.target, location.lun, &mut path);
-            if status.is_success() {
-                Ok(DevicePath::from_ffi_ptr(path.cast()))
-            } else {
-                Err(status.into())
-            }
+            (self.0.build_device_path)(
+                &mut self.0,
+                location.target,
+                location.lun,
+                &mut device_path_ptr,
+            )
         }
+        .to_result_with_val(|| path.to_boxed())
     }
 
     /// Used to translate a device path node to a Target ID and LUN.
@@ -165,7 +210,8 @@ impl ExtScsiPassThru {
 
     /// Used to retrieve the list of legal Target IDs for SCSI devices on a SCSI channel.
     pub fn get_next_target(&mut self) -> Result<ScsiDeviceLocation> {
-        let mut location = ScsiDeviceLocation::default();
+        let mut id = 0;
+        let mut location = ScsiDeviceLocation::new(&mut id, 0);
         unsafe { (self.0.get_next_target)(&self.0, &mut location.target) }
             .to_result_with_val(|| location)
     }
@@ -193,6 +239,73 @@ pub struct ScsiExtRequestPacket {
 }
 
 impl ScsiExtRequestPacket {
+    /// auto convert FFI `ScsiExtRequestPacket` to raw UEFI SCSI request packet `EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET`
+    pub fn convert_zero_request_packet(&mut self) -> ExtScsiIoScsiRequestPacket {
+        let packet: ExtScsiIoScsiRequestPacket = ExtScsiIoScsiRequestPacket {
+            timeout: self.timeout,
+
+            in_data_buffer: null_mut(),
+            out_data_buffer: null_mut(),
+            sense_data: self.sense_data.as_mut_ptr() as *mut c_void,
+            cdb: self.cdb.as_mut_ptr() as *mut c_void,
+
+            in_transfer_length: 0,
+            out_transfer_length: 0,
+            sense_data_length: self.sense_data.len() as u8,
+            cdb_length: self.cdb.len() as u8,
+
+            data_direction: self.data_direction,
+            host_adapter_status: self.host_adapter_status,
+            target_status: self.target_status,
+        };
+        packet
+    }
+
+    /// convert auto
+    pub fn convert_auto_request_packet(&mut self) -> ExtScsiIoScsiRequestPacket {
+        ExtScsiIoScsiRequestPacket {
+            timeout: 0,
+
+            in_data_buffer: if (self.data_buffer.len() != 0) && !self.is_a_write_packet {
+                self.data_buffer.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+            out_data_buffer: if self.data_buffer.len() != 0 && self.is_a_write_packet {
+                self.data_buffer.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+
+            sense_data: if self.sense_data.len() != 0 {
+                self.sense_data.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+            cdb: if self.cdb.len() != 0 {
+                self.cdb.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+
+            in_transfer_length: if !self.is_a_write_packet {
+                self.data_buffer.len() as u32
+            } else {
+                0
+            },
+            out_transfer_length: if self.is_a_write_packet {
+                self.data_buffer.len() as u32
+            } else {
+                0
+            },
+            cdb_length: self.cdb.len() as u8,
+            sense_data_length: self.sense_data.len() as u8,
+
+            data_direction: Default::default(),
+            host_adapter_status: Default::default(),
+            target_status: Default::default(),
+        }
+    }
     /// convert FFI `ScsiExtRequestPacket` to raw UEFI SCSI request packet `EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET`
     pub fn convert_to_request_packet(&mut self) -> ExtScsiIoScsiRequestPacket {
         if self.is_a_write_packet {
@@ -248,24 +361,92 @@ impl ScsiExtRequestPacket {
 #[derive(Debug, Default, Clone)]
 pub struct ScsiRequestPacket {
     /// whether the request is written scsi
-    is_a_write_packet: bool,
+    pub is_a_write_packet: bool,
     /// timeout
     pub timeout: u64,
     /// data_buffer is `in_data_buffer` or `out_data_buffer`
     pub data_buffer: Vec<u8>,
     /// SCSI's cdb, refer to T10 SPC
     pub cdb: Vec<u8>,
-    /// SCSI's sense data, refer to T10 SPC
+    /// SCSI's sense data, refer to T10 SPC, scsi resp return it
     pub sense_data: Vec<u8>,
     /// uefi_raw::protocol::scsi::DataDirection
     pub data_direction: DataDirection,
-    /// uefi_raw::protocol::scsi::HostAdapterStatus
+    /// uefi_raw::protocol::scsi::HostAdapterStatus, scsi resp status
     pub host_adapter_status: HostAdapterStatus,
-    /// uefi_raw::protocol::scsi::TargetStatus
+    /// uefi_raw::protocol::scsi::TargetStatus, scsi resp status
     pub target_status: TargetStatus,
 }
 
 impl ScsiRequestPacket {
+    /// convert FFI `ScsiRequestPacket` to raw UEFI SCSI request packet `EFI_SCSI_IO_SCSI_REQUEST_PACKET`
+    pub fn convert_zero_request_packet(&mut self) -> ScsiIoScsiRequestPacket {
+        let packet: ScsiIoScsiRequestPacket = ScsiIoScsiRequestPacket {
+            timeout: self.timeout,
+
+            in_data_buffer: null_mut(),
+            out_data_buffer: null_mut(),
+            sense_data: null_mut(),
+            cdb: self.cdb.as_mut_ptr() as *mut c_void,
+
+            in_transfer_length: 0,
+            out_transfer_length: 0,
+            sense_data_length: 0,
+            cdb_length: self.cdb.len() as u8,
+
+            data_direction: self.data_direction,
+            host_adapter_status: self.host_adapter_status,
+            target_status: self.target_status,
+        };
+        packet
+    }
+    // auto convert
+    /// convert auto
+    pub fn convert_auto_request_packet(&mut self) -> ScsiIoScsiRequestPacket {
+        ScsiIoScsiRequestPacket {
+            timeout: 0,
+
+            in_data_buffer: if (self.data_buffer.len() != 0) && !self.is_a_write_packet {
+                self.data_buffer.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+            out_data_buffer: if self.data_buffer.len() != 0 && self.is_a_write_packet {
+                self.data_buffer.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+
+            sense_data: if self.sense_data.len() != 0 {
+                self.sense_data.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+            cdb: if self.cdb.len() != 0 {
+                self.cdb.as_mut_ptr().cast::<c_void>()
+            } else {
+                null_mut()
+            },
+
+            in_transfer_length: if !self.is_a_write_packet {
+                self.data_buffer.len() as u32
+            } else {
+                0
+            },
+            out_transfer_length: if self.is_a_write_packet {
+                self.data_buffer.len() as u32
+            } else {
+                0
+            },
+            cdb_length: self.cdb.len() as u8,
+            sense_data_length: self.sense_data.len() as u8,
+
+            data_direction: Default::default(),
+            host_adapter_status: Default::default(),
+            target_status: Default::default(),
+        }
+    }
+
     /// convert FFI `ScsiRequestPacket` to raw UEFI SCSI request packet `EFI_SCSI_IO_SCSI_REQUEST_PACKET`
     pub fn convert_to_request_packet(&mut self) -> ScsiIoScsiRequestPacket {
         if self.is_a_write_packet {
@@ -274,6 +455,47 @@ impl ScsiRequestPacket {
             self._convert_to_read_request_packet()
         }
     }
+
+    /// `ScsiRequestPacket` FFI sync from raw_packet `ScsiIoScsiRequestPacket` by ptr.
+    pub fn sync_from_request_packet(
+        &mut self,
+        raw_packet: &mut ScsiIoScsiRequestPacket,
+    ) -> ScsiRequestPacket {
+        unsafe {
+            self.timeout = raw_packet.timeout;
+            // c (void* data, int len) => rust Vec<u8>
+
+            self.cdb = Vec::from_raw_parts(
+                raw_packet.cdb as *mut u8,
+                raw_packet.cdb_length as usize,
+                isize::MAX as usize,
+            );
+            self.sense_data = Vec::from_raw_parts(
+                raw_packet.sense_data as *mut u8,
+                raw_packet.sense_data_length as usize,
+                isize::MAX as usize,
+            );
+            self.data_buffer = if self.is_a_write_packet {
+                Vec::from_raw_parts(
+                    raw_packet.in_data_buffer as *mut u8,
+                    raw_packet.in_transfer_length as usize,
+                    isize::MAX as usize,
+                )
+            } else {
+                Vec::from_raw_parts(
+                    raw_packet.out_data_buffer as *mut u8,
+                    raw_packet.out_transfer_length as usize,
+                    isize::MAX as usize,
+                )
+            };
+
+            self.data_direction = raw_packet.data_direction;
+            self.host_adapter_status = raw_packet.host_adapter_status;
+            self.target_status = raw_packet.target_status;
+        }
+        self.clone()
+    }
+
     fn _convert_to_read_request_packet(&mut self) -> ScsiIoScsiRequestPacket {
         let packet: ScsiIoScsiRequestPacket = ScsiIoScsiRequestPacket {
             timeout: self.timeout,

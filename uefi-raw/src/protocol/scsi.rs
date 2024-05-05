@@ -1,12 +1,11 @@
 use core::ffi::c_void;
 
-use crate::{Event, guid, Guid, Status};
 use crate::protocol::device_path::DevicePathProtocol;
+use crate::{guid, Event, Guid, Status};
 
 /// TODO: use #define TARGET_MAX_BYTES 0x10, the limit of target.
 #[allow(unused)]
 const TARGET_MAX_BYTES: u32 = 0x10;
-
 
 newtype_enum! {
     /// DataDirection
@@ -57,7 +56,7 @@ newtype_enum! {
 }
 
 /// EFI_SCSI_IO_SCSI_REQUEST_PACKET
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct ScsiIoScsiRequestPacket {
     /// Timeout: The timeout, in 100 ns units, to use for the execution of this SCSI Request Packet.
@@ -166,7 +165,7 @@ impl ScsiIoProtocol {
 #[derive(Debug)]
 #[repr(C)]
 pub struct ExtScsiPassThruProtocol {
-    pub mode: ExtScsiPassThruMode,
+    pub mode: *mut ExtScsiPassThruMode,
     pub pass_thru: unsafe extern "efiapi" fn(
         this: *const Self,
         target: *mut u8,

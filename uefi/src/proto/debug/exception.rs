@@ -140,7 +140,7 @@ impl ExceptionType {
     pub const MAX_AARCH64_EXCEPTION: ExceptionType = ExceptionType::EXCEPT_AARCH64_SERROR;
 }
 
-#[cfg(target_arch = "riscv")]
+#[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 impl ExceptionType {
     /// Instruction misaligned
     pub const EXCEPT_RISCV_INST_MISALIGNED: ExceptionType = ExceptionType(0);

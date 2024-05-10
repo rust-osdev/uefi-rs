@@ -99,6 +99,17 @@ newtype_enum! {
 
         /// A platform-specific reset type.
         PLATFORM_SPECIFIC = 3,
+
+        /// The reset type is undefined, signifying
+        /// an error has occurred when attempting to
+        /// query a reset type.
+        UNDEFINED = 4,
+    }
+}
+
+impl Default for ResetType {
+    fn default() -> Self {
+        ResetType::UNDEFINED
     }
 }
 

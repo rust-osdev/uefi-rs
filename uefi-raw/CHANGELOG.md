@@ -1,5 +1,7 @@
 # uefi-raw - [Unreleased]
 
+## Changed
+- `maximum_capsule_size` of `query_capsule_capabilities` now takes a *mut u64 instead of a *mut usize.
 
 # uefi-raw - 0.5.2 (2024-04-19)
 

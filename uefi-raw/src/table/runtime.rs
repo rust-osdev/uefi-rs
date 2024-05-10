@@ -66,7 +66,7 @@ pub struct RuntimeServices {
     pub query_capsule_capabilities: unsafe extern "efiapi" fn(
         capsule_header_array: *const *const CapsuleHeader,
         capsule_count: usize,
-        maximum_capsule_size: *mut usize,
+        maximum_capsule_size: *mut u64,
         reset_type: *mut ResetType,
     ) -> Status,
 

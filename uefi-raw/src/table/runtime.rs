@@ -80,6 +80,7 @@ pub struct RuntimeServices {
 }
 
 newtype_enum! {
+    #[derive(Default)]
     /// The type of system reset.
     pub enum ResetType: u32 => {
         /// System-wide reset.

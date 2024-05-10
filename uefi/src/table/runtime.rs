@@ -7,10 +7,12 @@ use core::fmt::{self, Debug, Display, Formatter};
 use core::mem::MaybeUninit;
 use core::ptr;
 
+pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleHeader};
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
 };
 pub use uefi_raw::time::Daylight;
+pub use uefi_raw::PhysicalAddress;
 
 #[cfg(feature = "alloc")]
 use {
@@ -289,6 +291,22 @@ impl RuntimeServices {
         virtual_map: *mut MemoryDescriptor,
     ) -> Status {
         (self.0.set_virtual_address_map)(map_size, desc_size, desc_version, virtual_map)
+    }
+
+    /// Passes capsules to the firmware. Capsules are most commonly used to update system firmware.
+    pub fn update_capsule(
+        &self,
+        capsule_header_array: &[&CapsuleHeader],
+        capsule_block_descriptors: &[CapsuleBlockDescriptor],
+    ) -> Result {
+        unsafe {
+            (self.0.update_capsule)(
+                capsule_header_array.as_ptr().cast(),
+                capsule_header_array.len(),
+                capsule_block_descriptors.as_ptr() as PhysicalAddress,
+            )
+            .to_result()
+        }
     }
 }
 

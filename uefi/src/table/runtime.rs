@@ -309,6 +309,25 @@ impl RuntimeServices {
             .to_result()
         }
     }
+
+    /// Tests whether a capsule or capsules can be updated via UpdateCapsule().
+    ///
+    /// See [`CapsuleInfo`] for details of the information returned.
+    pub fn query_capsule_capabilities(
+        &self,
+        capsule_header_array: &[&CapsuleHeader],
+    ) -> Result<CapsuleInfo> {
+        let mut info = CapsuleInfo::default();
+        unsafe {
+            (self.0.query_capsule_capabilities)(
+                capsule_header_array.as_ptr().cast(),
+                capsule_header_array.len(),
+                &mut info.maximum_capsule_size,
+                &mut info.efi_reset_type,
+            )
+            .to_result_with_val(|| info)
+        }
+    }
 }
 
 impl super::Table for RuntimeServices {
@@ -551,4 +570,18 @@ pub struct VariableStorageInfo {
 
     /// Maximum size of an individual variable of the specified type.
     pub maximum_variable_size: u64,
+}
+
+/// Information about UEFI variable storage space returned by
+/// [`RuntimeServices::query_capsule_capabilities`].
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct CapsuleInfo {
+    /// The maximum size in bytes that UpdateCapsule()
+    /// can support as input. Note that UpdateCasule takes
+    /// in an entire capsule as input, which is composed of
+    /// the CapsuleHeaders + CapsuleBlockDescriptors.
+    pub maximum_capsule_size: u64,
+
+    /// The type of reset required for the capsule update.
+    pub efi_reset_type: ResetType,
 }

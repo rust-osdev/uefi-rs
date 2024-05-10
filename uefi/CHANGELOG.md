@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Added
+- Added `RuntimeServices::update_capsule`.
+
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger
   errors are now silently ignored.

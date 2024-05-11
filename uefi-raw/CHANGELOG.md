@@ -1,5 +1,9 @@
 # uefi-raw - [Unreleased]
 
+## Added
+
+- Added `ScsiIoProtocol`.
+
 ## Changed
 - `maximum_capsule_size` of `query_capsule_capabilities` now takes a *mut u64 instead of a *mut usize.
 

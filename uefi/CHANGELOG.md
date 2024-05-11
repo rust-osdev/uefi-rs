@@ -1,6 +1,10 @@
 # uefi - [Unreleased]
 
 ## Added
+
+- Added `ScsiIo` Protocol.
+
+## Added
 - Added `RuntimeServices::update_capsule`.
 
 ## Removed

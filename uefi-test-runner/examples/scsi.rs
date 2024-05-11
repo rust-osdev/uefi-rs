@@ -7,16 +7,13 @@
 extern crate alloc;
 
 use alloc::vec;
-use alloc::vec::Vec;
+use core::mem;
 
 use log::info;
 
 // ANCHOR: use
 use uefi::prelude::*;
-use uefi::proto::scsi::{
-    ExtScsiPassThru, ScsiDeviceLocation, ScsiExtRequestPacket, ScsiIo,
-    ScsiRequestPacket,
-};
+use uefi::proto::scsi::{ScsiIo, ScsiRequestPacket};
 
 // ANCHOR_END: use
 
@@ -29,11 +26,10 @@ fn main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let boot_services = system_table.boot_services();
     // ANCHOR_END: services
 
-    // ANCHOR: params
-    /// all api OK, but memory panic when return, maybe the vec.
+    // ANCHOR: params, all api OK, but memory panic when return, maybe the vec.
     test_scsi_io(boot_services);
-    // test_ext_scsi_thru(boot_services);
-    // ANCHOR_END: params
+    // ANCHOR_END: params, panic at uefi/src/allocator.rs#L130  (*boot_services()).free_pool(ptr).unwrap();
+
 
     // ANCHOR: stall
     boot_services.stall(10_000_000);
@@ -73,29 +69,30 @@ pub fn test_scsi_io(bt: &BootServices) {
     info!("SCSI_IO Protocol reset dev test: {:?}", result);
 
     bt.stall(10_000);
-    // let mut data_buffer = vec![0; 40];
-    // let scsicmd = commands::TestUnitReady::new();
-    // scsicmd.push_to_buffer(&mut data_buffer).expect("TODO: panic message");
-    // info!("the data buf = {:?}", data_buffer);
 
-    let mut packet: ScsiRequestPacket = ScsiRequestPacket::default();
-    packet.is_a_write_packet = false;
-    packet.cdb = vec![0x00, 0, 0, 0, 0, 0x00];
-    packet.timeout = 0;
-    info!("packet: {:?}", packet);
-    let result = scsi_protocol.execute_scsi_command(&mut packet, None);
+    let mut packet_tur: ScsiRequestPacket = ScsiRequestPacket::default();
+    packet_tur.is_a_write_packet = false;
+    packet_tur.cdb = vec![0x00, 0, 0, 0, 0, 0x00];
+    packet_tur.timeout = 0;
+    info!("packet_tur: {:?}", packet_tur);
+    mem::forget(packet_tur.cdb.as_mut_ptr());
+    let result = scsi_protocol.execute_scsi_command(&mut packet_tur, None);
     info!("=================SCSI_IO Protocol exec scsi command [TestUnitReady] test: {:?}", result);
 
-    let mut packet: ScsiRequestPacket = ScsiRequestPacket::default();
-    packet.is_a_write_packet = false;
-    packet.cdb = vec![0x12, 0x01, 0x00, 0, 0, 0x00];
-    packet.data_buffer = vec![0; 96];
-    packet.sense_data = vec![0; 18];
-    packet.timeout = 0;
-    let result = scsi_protocol.execute_scsi_command(&mut packet, None);
+    let mut packet_icmd: ScsiRequestPacket = ScsiRequestPacket::default();
+    packet_icmd.is_a_write_packet = false;
+    packet_icmd.cdb = vec![0x12, 0x01, 0x00, 0, 0, 0x00];
+    packet_icmd.data_buffer = vec![0; 96];
+    packet_icmd.sense_data = vec![0; 18];
+    packet_icmd.timeout = 0;
+    mem::forget(packet_icmd.cdb.as_mut_ptr());
+    mem::forget(packet_icmd.data_buffer.as_mut_ptr());
+    mem::forget(packet_icmd.sense_data.as_mut_ptr());
+    let result = scsi_protocol.execute_scsi_command(&mut packet_icmd, None);
     info!("=================SCSI_IO Protocol exec scsi command [InquiryCommand] test: {:?}", result);
 
-    // now send Req is ok. but seem couldn't receive Resp.
+    // drop(packet)
+    // now send Req is ok. but it seems couldn't receive Resp.
 }
 
 /*
@@ -137,63 +134,3 @@ typedef struct {
   UINT8    Reserved_5_95[95 - 5 + 1];
 } EFI_SCSI_INQUIRY_DATA;
 */
-
-pub fn test_ext_scsi_thru(bt: &BootServices) {
-    info!("Running loaded Ext Scsi Thru protocol test");
-
-    let handle = bt
-        .get_handle_for_protocol::<ExtScsiPassThru>()
-        .expect("Failed to get handles for `ExtScsiThru` protocol");
-
-    let mut escsi_protocol = bt
-        .open_protocol_exclusive::<ExtScsiPassThru>(handle)
-        .expect("Founded ExtScsiThru Protocol but open failed");
-
-    // value efi_reset_fn is the type of ResetSystemFn, a function pointer
-
-    let result = escsi_protocol.mode();
-    info!("EXT_SCSI_THRU Protocol's mode: {:?}", result);
-
-    let mut targets: Vec<u8> = vec![0xFF; 10];
-    let target = ScsiDeviceLocation::new(&mut targets[0], 0);
-    let result = escsi_protocol.build_device_path(target);
-    info!("EXT_SCSI_THRU Protocol build_device_path: {:?}", result);
-
-    // let device_path = result.expect("couldn't got the dev path");
-    // // DevicePath has DevicePathFromText ffi
-    // let result = escsi_protocol.get_target_lun(&*device_path);
-    // info!("EXT_SCSI_THRU Protocol build_device_path: {:?}", result);
-
-    // let location = result.unwrap().clone();
-
-    let location = target;
-
-    let result = escsi_protocol.get_next_target();
-    info!("EXT_SCSI_THRU Protocol get_next_target: {:?}", result);
-
-    // let result = escsi_protocol.reset_target_lun(location.clone());
-    // info!("EXT_SCSI_THRU Protocol reset dev test: {:?}", result);
-
-    let result = escsi_protocol.reset_channel();
-    info!("EXT_SCSI_THRU Protocol reset bus test: {:?}", result);
-
-    bt.stall(10_000);
-
-    let mut ext_packet = ScsiExtRequestPacket::default();
-    ext_packet.is_a_write_packet = false;
-    ext_packet.cdb = vec![0x00, 0, 0, 0, 0, 0x00];
-    ext_packet.timeout = 0;
-    let result = escsi_protocol.pass_thru(location.clone(), ext_packet, None);
-    info!("=================EXT_SCSI_THRU Protocol exec scsi command [TestUnitReady] test: {:?}", result);
-
-    let mut ext_packet = ScsiExtRequestPacket::default();
-    ext_packet.is_a_write_packet = false;
-    ext_packet.cdb = vec![0x12, 0x01, 0x00, 0, 0, 0x00];
-    ext_packet.data_buffer = vec![0; 96];
-    ext_packet.sense_data = vec![0; 18];
-    ext_packet.timeout = 0;
-    let result = escsi_protocol.pass_thru(location.clone(), ext_packet, None);
-    info!("=================EXT_SCSI_THRU Protocol exec scsi command [InquiryCommand] test: {:?}", result);
-
-    // now send Req is ok. but seem couldn't receive Resp.
-}

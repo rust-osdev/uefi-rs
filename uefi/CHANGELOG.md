@@ -2,6 +2,7 @@
 
 ## Added
 - Added `RuntimeServices::update_capsule`.
+- Added `RuntimeServices::query_capsule_capabilities`.
 
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger

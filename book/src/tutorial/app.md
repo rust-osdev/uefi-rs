@@ -16,7 +16,15 @@ cd my-uefi-app
 Add a few dependencies:
 
 ```sh
-cargo add log uefi
+cargo add log
+cargo add uefi --features logger,panic_handler
+```
+
+to your `Cargo.toml`. The resulting `Cargo.toml` should look like that:
+```toml
+[dependencies]
+log = "0.4.21"
+uefi = { version = "0.28.0", features = [ "panic_handler", "logger" ] }
 ```
 
 Replace the contents of `src/main.rs` with this:

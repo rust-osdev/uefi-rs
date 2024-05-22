@@ -1617,21 +1617,35 @@ pub struct MemoryMapSize {
 /// An accessory to the memory map that can be either iterated or
 /// indexed like an array.
 ///
-/// A [`MemoryMap`] is always associated with the
-/// unique [`MemoryMapKey`] contained in the struct.
+/// A [`MemoryMap`] is always associated with the unique [`MemoryMapKey`]
+/// contained in the struct.
 ///
 /// To iterate over the entries, call [`MemoryMap::entries`]. To get a sorted
 /// map, you manually have to call [`MemoryMap::sort`] first.
+///
+/// ## UEFI pitfalls
+/// **Please note that when working with memory maps, the `entry_size` is
+/// usually larger than `size_of::<MemoryDescriptor` [[0]]. So to be safe,
+/// always use `entry_size` as step-size when interfacing with the memory map on
+/// a low level.
+///
+///
+///
+/// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
 #[derive(Debug)]
 pub struct MemoryMap<'buf> {
     key: MemoryMapKey,
     buf: &'buf mut [u8],
+    /// Usually bound to the size of a [`MemoryDescriptor`] but can indicate if
+    /// this field is ever extended by a new UEFI standard.
     entry_size: usize,
     len: usize,
 }
 
 impl<'buf> MemoryMap<'buf> {
     /// Creates a [`MemoryMap`] from the given buffer and entry size.
+    /// The entry size is usually bound to the size of a [`MemoryDescriptor`]
+    /// but can indicate if this field is ever extended by a new UEFI standard.
     ///
     /// This allows parsing a memory map provided by a kernel after boot
     /// services have already exited.
@@ -1722,8 +1736,14 @@ impl<'buf> MemoryMap<'buf> {
         elem.phys_start
     }
 
-    /// Returns an iterator over the contained memory map. To get a sorted map,
-    /// call [`MemoryMap::sort`] first.
+    /// Returns an [`MemoryMapIter`] emitting [`MemoryDescriptor`]s.
+    ///
+    /// To get a sorted map, call [`MemoryMap::sort`] first.
+    ///
+    /// # UEFI pitfalls
+    /// Currently, only the descriptor version specified in
+    /// [`MemoryDescriptor`] is supported. This is going to change if the UEFI
+    /// spec ever introduces a new memory descriptor version.
     #[must_use]
     pub fn entries(&self) -> MemoryMapIter {
         MemoryMapIter {

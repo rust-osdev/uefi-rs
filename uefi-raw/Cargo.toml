@@ -10,7 +10,9 @@ edition.workspace = true
 keywords.workspace = true
 license.workspace = true
 repository.workspace = true
-rust-version.workspace = true
+# uefi-raw is much less likely to need the latest bleeding-edge features.
+# Hence, it is okay to not use the workspace MSRV.
+rust-version = "1.70"
 
 [dependencies]
 bitflags.workspace = true

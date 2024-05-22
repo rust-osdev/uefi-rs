@@ -13,6 +13,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [features]
+default = [ "log-debugcon" ]
 alloc = []
 
 # Generic gate to code that uses unstable features of Rust. You usually need a nightly toolchain.
@@ -22,7 +23,14 @@ unstable = []
 logger = []
 global_allocator = []
 panic_handler = []
-qemu = ["dep:qemu-exit", "panic_handler"] # panic_handler: logical, not technical dependency
+# Some convenience when running inside QEMU.
+# - dependency log-debugcon: logical, not technical
+# - dependency panic_handler: logical, not technical 
+qemu = ["dep:qemu-exit", "panic_handler", "log-debugcon"]
+# Whether the internal logger from the helpers module should also log to
+# the debugcon device (QEMU) and debug-console (cloud-hypervisor). Only works
+# on x86.
+log-debugcon = []
 
 [dependencies]
 bitflags.workspace = true

@@ -12,9 +12,8 @@
 //! The last part also means that some Unicode characters might not be
 //! supported by the UEFI console. Don't expect emoji output support.
 
-use crate::proto::console::text::Output;
-
 use crate::prelude::{Boot, SystemTable};
+use crate::proto::console::text::Output;
 use core::fmt::{self, Write};
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
@@ -41,6 +40,31 @@ pub unsafe fn init(st: &mut SystemTable<Boot>) {
 
 pub fn disable() {
     LOGGER.disable();
+}
+
+/// Writer to the QEMU debugcon device and the debug-console of
+/// cloud-hypervisor.
+///
+/// More info: <https://phip1611.de/blog/how-to-use-qemus-debugcon-feature/>
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[derive(Copy, Clone, Debug)]
+struct DebugconWriter;
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+impl DebugconWriter {
+    const IO_PORT: u16 = 0xe9;
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+impl core::fmt::Write for DebugconWriter {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        for &byte in s.as_bytes() {
+            unsafe {
+                core::arch::asm!("outb %al, %dx", in("al") byte, in("dx") DebugconWriter::IO_PORT, options(att_syntax))
+            };
+        }
+        Ok(())
+    }
 }
 
 /// Logging implementation which writes to a UEFI output stream.
@@ -99,20 +123,35 @@ impl Logger {
 
 impl log::Log for Logger {
     fn enabled(&self, _metadata: &log::Metadata) -> bool {
-        !self.output().is_null()
+        // We decide in `log` already if something is printed. We do not
+        // need micro optimizations here.
+        true
     }
 
     fn log(&self, record: &log::Record) {
-        let output = self.output();
-
-        if !output.is_null() {
-            let writer = unsafe { &mut *output };
-
+        if let Some(writer) = unsafe { self.output().as_mut() } {
             // Ignore all errors. Since we're in the logger implementation we
             // can't log the error. We also don't want to panic, since logging
             // is generally not critical functionality.
             let _ = DecoratedLog::write(
                 writer,
+                record.level(),
+                record.args(),
+                record.file().unwrap_or("<unknown file>"),
+                record.line().unwrap_or(0),
+            );
+        }
+
+        #[cfg(all(
+            any(target_arch = "x86", target_arch = "x86_64"),
+            feature = "log-debugcon"
+        ))]
+        {
+            // Ignore all errors. Since we're in the logger implementation we
+            // can't log the error. We also don't want to panic, since logging
+            // is generally not critical functionality.
+            let _ = DecoratedLog::write(
+                &mut DebugconWriter,
                 record.level(),
                 record.args(),
                 record.file().unwrap_or("<unknown file>"),

@@ -3,6 +3,11 @@
 ## Added
 - Added `RuntimeServices::update_capsule`.
 - Added `RuntimeServices::query_capsule_capabilities`.
+- The logger from `uefi::helpers` now also logs to the [debugcon](https://phip1611.de/blog/how-to-use-qemus-debugcon-feature/)
+  device (QEMU) respectively the debug-console (cloud-hypervisor). This only
+  works on x86. It is activated by default (only on x86) and can be deactivated
+  by removing the `log-debugcon` cargo feature. The major benefit is that one
+  can get log messages even after one exited the boot services.
 
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger
@@ -13,8 +18,6 @@
 
 ## Added
 - Added `ResetNotification` protocol.
-
-## Added
 - Added `Timestamp` protocol.
 - Added `UnalignedSlice::as_ptr`.
 - Added common derives for `Event` and `Handle`.

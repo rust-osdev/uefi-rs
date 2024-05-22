@@ -326,12 +326,30 @@ bitflags! {
     }
 }
 
-/// A structure describing a region of memory.
+/// A structure describing a region of memory. This type corresponds to [version]
+/// of this struct in the UEFI spec and is always bound to a corresponding
+/// UEFI memory map.
+///
+/// # UEFI pitfalls
+/// As of May 2024:
+/// The memory descriptor struct might be extended in the future by a new UEFI
+/// spec revision, which will be reflected in another `version` of that
+/// descriptor. The version is reported when using `get_memory_map` of
+/// [`BootServices`].
+///
+/// Also note that you **must never** work with `size_of::<MemoryDescriptor>`
+/// but always with `desc_size`, which is reported when using  `get_memory_map`
+/// as well [[0]]. For example, although the actual size is of version 1
+/// descriptors is `40`, the reported `desc_size` is `48`.
+///
+/// [version]: MemoryDescriptor::VERSION
+/// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
+    // Implicit 32-bit padding.
     /// Starting physical address.
     pub phys_start: PhysicalAddress,
     /// Starting virtual address.

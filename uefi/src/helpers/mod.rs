@@ -4,7 +4,10 @@
 //!
 //! For now, this includes:
 //! - using [`uefi::allocator::Allocator`] as global allocator (feature `global_allocator`)
-//! - an implementation of  [`log::Log`] (feature `logger`)
+//! - an implementation of  [`log::Log`] (feature `logger`) which logs to
+//!   the stdout text protocol of UEFI (as long as boot services were not
+//!   excited) and to the [debugcon device](https://phip1611.de/blog/how-to-use-qemus-debugcon-feature/)
+//!   (only on x86)  (feature `log-debugcon`).
 //! - [`print!`][print_macro] and [`println!`][println_macro] macros defaulting
 //!   to the uefi boot service stdout stream
 //! - default panic handler (feature `panic_handler`)
@@ -73,7 +76,8 @@ pub fn system_table() -> SystemTable<Boot> {
 /// memory allocation capabilities.
 ///
 /// **PLEASE NOTE** that these helpers are meant for the pre exit boot service
-/// epoch.
+/// epoch. Limited functionality might work after exiting them, such as logging
+/// to the debugcon device.
 pub fn init(st: &mut SystemTable<Boot>) -> Result<()> {
     if system_table_opt().is_some() {
         // Avoid double initialization.

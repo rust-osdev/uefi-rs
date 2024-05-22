@@ -196,10 +196,23 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     // type of regression this prevents.
     info!("LOGGING_STILL_WORKING_RIGHT_BEFORE_EBS");
 
-    info!("Testing complete, shutting down...");
+    info!("Testing complete, exiting boot services...");
 
     // Exit boot services as a proof that it works :)
-    let (st, _iter) = st.exit_boot_services(MemoryType::LOADER_DATA);
+    let (st, mmap) = st.exit_boot_services(MemoryType::LOADER_DATA);
+
+    info!("Memory Map:");
+    for desc in mmap.entries() {
+        info!(
+            "start=0x{:016x} size=0x{:016x} type={:?}, attr={:?}",
+            desc.phys_start,
+            desc.page_count * 4096,
+            desc.ty,
+            desc.att
+        );
+    }
+
+    info!("Shutting down...");
 
     #[cfg(target_arch = "x86_64")]
     {

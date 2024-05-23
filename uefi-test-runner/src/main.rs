@@ -199,7 +199,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     info!("Testing complete, exiting boot services...");
 
     // Exit boot services as a proof that it works :)
-    let (st, mmap) = st.exit_boot_services(MemoryType::LOADER_DATA);
+    let (st, mmap) = unsafe { st.exit_boot_services(MemoryType::LOADER_DATA) };
 
     info!("Memory Map:");
     for desc in mmap.entries() {

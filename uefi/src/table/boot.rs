@@ -216,8 +216,8 @@ impl BootServices {
     ///
     /// The buffer must be aligned like a `MemoryDescriptor`.
     ///
-    /// The returned key is a unique identifier of the current configuration of memory.
-    /// Any allocations or such will change the memory map's key.
+    /// The returned key is a unique identifier of the current configuration of
+    /// memory. Any allocations or such will change the memory map's key.
     ///
     /// If you want to store the resulting memory map without having to keep
     /// the buffer around, you can use `.copied().collect()` on the iterator.
@@ -1628,7 +1628,7 @@ pub struct MemoryMapSize {
 /// map, you manually have to call [`MemoryMap::sort`] first.
 ///
 /// ## UEFI pitfalls
-/// **Please note that when working with memory maps, the `entry_size` is
+/// **Please note** that when working with memory maps, the `entry_size` is
 /// usually larger than `size_of::<MemoryDescriptor` [[0]]. So to be safe,
 /// always use `entry_size` as step-size when interfacing with the memory map on
 /// a low level.

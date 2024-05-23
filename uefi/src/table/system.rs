@@ -165,7 +165,7 @@ impl SystemTable<Boot> {
         let extra_entries = 8;
 
         let memory_map_size = self.boot_services().memory_map_size();
-        let extra_size = memory_map_size.entry_size.checked_mul(extra_entries)?;
+        let extra_size = memory_map_size.desc_size.checked_mul(extra_entries)?;
         memory_map_size.map_size.checked_add(extra_size)
     }
 
@@ -253,7 +253,12 @@ impl SystemTable<Boot> {
         let boot_services = self.boot_services();
 
         // Reboot the device.
-        let reset = |status| -> ! { self.runtime_services().reset(ResetType::COLD, status, None) };
+        let reset = |status| -> ! {
+            {
+                log::warn!("Resetting the machine");
+                self.runtime_services().reset(ResetType::COLD, status, None)
+            }
+        };
 
         // Get the size of the buffer to allocate. If that calculation
         // overflows treat it as an unrecoverable error.
@@ -284,7 +289,10 @@ impl SystemTable<Boot> {
                     };
                     return (st, memory_map);
                 }
-                Err(err) => status = err.status(),
+                Err(err) => {
+                    log::error!("Error retrieving the memory map for exiting the boot services");
+                    status = err.status()
+                }
             }
         }
 

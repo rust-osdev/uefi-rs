@@ -67,7 +67,7 @@ fn memory_map(bt: &BootServices) {
     let sizes = bt.memory_map_size();
 
     // 2 extra descriptors should be enough.
-    let buf_sz = sizes.map_size + 2 * sizes.entry_size;
+    let buf_sz = sizes.map_size + 2 * sizes.desc_size;
 
     // We will use vectors for convenience.
     let mut buffer = vec![0_u8; buf_sz];

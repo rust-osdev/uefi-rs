@@ -189,7 +189,7 @@ impl BootServices {
     pub fn memory_map_size(&self) -> MemoryMapSize {
         let mut map_size = 0;
         let mut map_key = MemoryMapKey(0);
-        let mut entry_size = 0;
+        let mut desc_size = 0;
         let mut entry_version = 0;
 
         let status = unsafe {
@@ -197,30 +197,41 @@ impl BootServices {
                 &mut map_size,
                 ptr::null_mut(),
                 &mut map_key.0,
-                &mut entry_size,
+                &mut desc_size,
                 &mut entry_version,
             )
         };
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
 
+        assert_eq!(
+            map_size % desc_size,
+            0,
+            "Memory map must be a multiple of the reported descriptor size."
+        );
+
         MemoryMapSize {
-            entry_size,
+            desc_size,
             map_size,
         }
     }
 
-    /// Retrieves the current memory map.
+    /// Stores the current UEFI memory map in the provided buffer.
     ///
-    /// The allocated buffer should be big enough to contain the memory map,
-    /// and a way of estimating how big it should be is by calling `memory_map_size`.
+    /// The allocated buffer must be at least aligned to a [`MemoryDescriptor`]
+    /// and should be big enough to store the whole map. To estimating how big
+    /// the map will be, you can call [`Self::memory_map_size`].
     ///
-    /// The buffer must be aligned like a `MemoryDescriptor`.
+    /// The memory map contains entries of type [`MemoryDescriptor`]. However,
+    /// the relevant step size is always the reported `desc_size` but never
+    /// `size_of::<MemoryDescriptor>()`.
     ///
     /// The returned key is a unique identifier of the current configuration of
     /// memory. Any allocations or such will change the memory map's key.
     ///
     /// If you want to store the resulting memory map without having to keep
     /// the buffer around, you can use `.copied().collect()` on the iterator.
+    /// Note that this will change the current memory map again, if the UEFI
+    /// allocator is used under the hood.
     ///
     /// # Errors
     ///
@@ -233,7 +244,7 @@ impl BootServices {
         MemoryDescriptor::assert_aligned(buffer);
         let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
         let mut map_key = MemoryMapKey(0);
-        let mut entry_size = 0;
+        let mut desc_size = 0;
         let mut entry_version = 0;
 
         assert_eq!(
@@ -247,17 +258,17 @@ impl BootServices {
                 &mut map_size,
                 map_buffer,
                 &mut map_key.0,
-                &mut entry_size,
+                &mut desc_size,
                 &mut entry_version,
             )
         }
         .to_result_with_val(move || {
-            let len = map_size / entry_size;
+            let len = map_size / desc_size;
 
             MemoryMap {
                 key: map_key,
                 buf: buffer,
-                entry_size,
+                desc_size,
                 len,
             }
         })
@@ -1613,7 +1624,7 @@ pub struct MemoryMapKey(usize);
 #[derive(Debug)]
 pub struct MemoryMapSize {
     /// Size of a single memory descriptor in bytes
-    pub entry_size: usize,
+    pub desc_size: usize,
     /// Size of the entire memory map in bytes
     pub map_size: usize,
 }
@@ -1642,7 +1653,7 @@ pub struct MemoryMap<'buf> {
     buf: &'buf mut [u8],
     /// Usually bound to the size of a [`MemoryDescriptor`] but can indicate if
     /// this field is ever extended by a new UEFI standard.
-    entry_size: usize,
+    desc_size: usize,
     len: usize,
 }
 
@@ -1653,13 +1664,19 @@ impl<'buf> MemoryMap<'buf> {
     ///
     /// This allows parsing a memory map provided by a kernel after boot
     /// services have already exited.
-    pub fn from_raw(buf: &'buf mut [u8], entry_size: usize) -> Self {
-        assert!(entry_size >= mem::size_of::<MemoryDescriptor>());
-        let len = buf.len() / entry_size;
+    pub fn from_raw(buf: &'buf mut [u8], desc_size: usize) -> Self {
+        assert!(!buf.is_empty());
+        assert_eq!(
+            buf.len() % desc_size,
+            0,
+            "The buffer length must be a multiple of the desc_size"
+        );
+        assert!(desc_size >= mem::size_of::<MemoryDescriptor>());
+        let len = buf.len() / desc_size;
         MemoryMap {
             key: MemoryMapKey(0),
             buf,
-            entry_size,
+            desc_size,
             len,
         }
     }
@@ -1727,15 +1744,15 @@ impl<'buf> MemoryMap<'buf> {
 
         unsafe {
             ptr::swap_nonoverlapping(
-                base.add(index1 * self.entry_size),
-                base.add(index2 * self.entry_size),
-                self.entry_size,
+                base.add(index1 * self.desc_size),
+                base.add(index2 * self.desc_size),
+                self.desc_size,
             );
         }
     }
 
     fn get_element_phys_addr(&self, index: usize) -> PhysicalAddress {
-        let offset = index.checked_mul(self.entry_size).unwrap();
+        let offset = index.checked_mul(self.desc_size).unwrap();
         let elem = unsafe { &*self.buf.as_ptr().add(offset).cast::<MemoryDescriptor>() };
         elem.phys_start
     }
@@ -1767,7 +1784,7 @@ impl<'buf> MemoryMap<'buf> {
             &*self
                 .buf
                 .as_ptr()
-                .add(self.entry_size * index)
+                .add(self.desc_size * index)
                 .cast::<MemoryDescriptor>()
         };
 
@@ -1785,7 +1802,7 @@ impl<'buf> MemoryMap<'buf> {
             &mut *self
                 .buf
                 .as_mut_ptr()
-                .add(self.entry_size * index)
+                .add(self.desc_size * index)
                 .cast::<MemoryDescriptor>()
         };
 

@@ -179,18 +179,18 @@ impl BootServices {
         unsafe { (self.0.free_pages)(addr, count) }.to_result()
     }
 
-    /// Returns struct which contains the size of a single memory descriptor
-    /// as well as the size of the current memory map.
+    /// Queries the `get_memory_map` function of UEFI to retrieve the current
+    /// size of the map. Returns a [`MemoryMapMeta`].
     ///
-    /// Note that the size of the memory map can increase any time an allocation happens,
-    /// so when creating a buffer to put the memory map into, it's recommended to allocate a few extra
-    /// elements worth of space above the size of the current memory map.
+    /// It is recommended to add a few more bytes for a subsequent allocation
+    /// for the memory map, as the memory map itself also needs heap memory,
+    /// and other allocations might occur before that call.
     #[must_use]
-    pub fn memory_map_size(&self) -> MemoryMapSize {
+    pub fn memory_map_size(&self) -> MemoryMapMeta {
         let mut map_size = 0;
         let mut map_key = MemoryMapKey(0);
         let mut desc_size = 0;
-        let mut entry_version = 0;
+        let mut desc_version = 0;
 
         let status = unsafe {
             (self.0.get_memory_map)(
@@ -198,7 +198,7 @@ impl BootServices {
                 ptr::null_mut(),
                 &mut map_key.0,
                 &mut desc_size,
-                &mut entry_version,
+                &mut desc_version,
             )
         };
         assert_eq!(status, Status::BUFFER_TOO_SMALL);
@@ -209,9 +209,11 @@ impl BootServices {
             "Memory map must be a multiple of the reported descriptor size."
         );
 
-        MemoryMapSize {
+        MemoryMapMeta {
             desc_size,
             map_size,
+            map_key,
+            desc_version,
         }
     }
 
@@ -1619,14 +1621,30 @@ impl Align for MemoryDescriptor {
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
-/// A structure containing the size of a memory descriptor and the size of the
-/// memory map.
-#[derive(Debug)]
-pub struct MemoryMapSize {
-    /// Size of a single memory descriptor in bytes
-    pub desc_size: usize,
-    /// Size of the entire memory map in bytes
+/// A structure containing the meta attributes associated with a call to
+/// `GetMemoryMap` of UEFI. Note that all values refer to the time this was
+/// called. All following invocations (hidden, subtle, and asynchronous ones)
+/// will likely invalidate this.
+#[derive(Copy, Clone, Debug)]
+pub struct MemoryMapMeta {
+    /// The actual size of the map.
     pub map_size: usize,
+    /// The reported memory descriptor size. Note that this is the reference
+    /// and never `size_of::<MemoryDescriptor>()`!
+    pub desc_size: usize,
+    /// A unique memory key bound to a specific memory map version/state.
+    pub map_key: MemoryMapKey,
+    /// The version of the descriptor struct.
+    pub desc_version: u32,
+}
+
+impl MemoryMapMeta {
+    /// Returns the amount of entries in the map.
+    #[must_use]
+    pub fn entry_count(&self) -> usize {
+        assert_eq!(self.map_size % self.desc_size, 0);
+        self.map_size / self.desc_size
+    }
 }
 
 /// An accessory to the memory map that can be either iterated or
@@ -1643,8 +1661,6 @@ pub struct MemoryMapSize {
 /// usually larger than `size_of::<MemoryDescriptor` [[0]]. So to be safe,
 /// always use `entry_size` as step-size when interfacing with the memory map on
 /// a low level.
-///
-///
 ///
 /// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
 #[derive(Debug)]

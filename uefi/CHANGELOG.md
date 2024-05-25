@@ -15,6 +15,8 @@
 ## Changed
 - `SystemTable::exit_boot_services` is now `unsafe`. See that method's
   documentation for details of obligations for callers.
+- `BootServices::allocate_pool` now returns `NonZero<u8>` instead of
+  `*mut u8`.
 
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger

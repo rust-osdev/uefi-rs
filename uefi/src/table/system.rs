@@ -265,7 +265,7 @@ impl SystemTable<Boot> {
         // Allocate a byte slice to hold the memory map. If the
         // allocation fails treat it as an unrecoverable error.
         let buf: *mut u8 = match boot_services.allocate_pool(memory_type, buf_size) {
-            Ok(buf) => buf,
+            Ok(buf) => buf.as_ptr(),
             Err(err) => reset(err.status()),
         };
 

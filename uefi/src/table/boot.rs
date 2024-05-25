@@ -1,6 +1,6 @@
 //! UEFI services available during boot.
 
-use super::Revision;
+use super::{system_table_boot, Revision};
 use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::device_path::DevicePath;
 use crate::proto::loaded_image::LoadedImage;
@@ -186,7 +186,7 @@ impl BootServices {
     /// for the memory map, as the memory map itself also needs heap memory,
     /// and other allocations might occur before that call.
     #[must_use]
-    pub fn memory_map_size(&self) -> MemoryMapMeta {
+    fn memory_map_size(&self) -> MemoryMapMeta {
         let mut map_size = 0;
         let mut map_key = MemoryMapKey(0);
         let mut desc_size = 0;
@@ -209,12 +209,16 @@ impl BootServices {
             "Memory map must be a multiple of the reported descriptor size."
         );
 
-        MemoryMapMeta {
+        let mmm = MemoryMapMeta {
             desc_size,
             map_size,
             map_key,
             desc_version,
-        }
+        };
+
+        mmm.assert_sanity_checks();
+
+        mmm
     }
 
     /// Stores the current UEFI memory map in the provided buffer.
@@ -1621,6 +1625,111 @@ impl Align for MemoryDescriptor {
 #[repr(C)]
 pub struct MemoryMapKey(usize);
 
+/// The backing memory for the UEFI memory app on the UEFI heap, allocated using
+/// the UEFI boot services allocator. This occupied memory will also be
+/// reflected in the memory map itself.
+///
+/// Although untyped, it is similar to the `Box` type in terms of heap
+/// allocation and deallocation, as well as ownership of the corresponding
+/// memory. Apart from that, this type only has the semantics of a buffer.
+///
+/// The memory is untyped, which is necessary due to the nature of the UEFI
+/// spec. It still ensures a correct alignment to hold [`MemoryDescriptor`]. The
+/// size of the buffer is sufficient to hold the memory map at the point in time
+/// where this is created. Note that due to (not obvious or asynchronous)
+/// allocations/deallocations in your environment, this might be outdated at the
+/// time you store the memory map in it.
+///
+/// Note that due to the nature of the UEFI memory app, this buffer might
+/// hold (a few) bytes more than necessary. The `map_size` reported by
+/// `get_memory_map` tells the actual size.
+///
+/// When this type is dropped and boot services are not exited yet, the memory
+/// is freed.
+///
+/// # Usage
+/// The type is intended to be used like this:
+/// 1. create it using [`MemoryMapBackingMemory::new`]
+/// 2. pass it to [`BootServices::get_memory_map`]
+/// 3. construct a [`MemoryMap`] from it
+#[derive(Debug)]
+#[allow(clippy::len_without_is_empty)] // this type is never empty
+pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);
+
+impl MemoryMapBackingMemory {
+    /// Constructs a new [`MemoryMapBackingMemory`].
+    ///
+    /// # Parameters
+    /// - `memory_type`: The memory type for the memory map allocation.
+    ///   Typically, [`MemoryType::LOADER_DATA`] for regular UEFI applications.
+    pub(crate) fn new(memory_type: MemoryType) -> Result<Self> {
+        let st = system_table_boot().expect("Should have boot services activated");
+        let bs = st.boot_services();
+
+        let memory_map_meta = bs.memory_map_size();
+        let len = Self::safe_allocation_size_hint(memory_map_meta);
+        let ptr = bs.allocate_pool(memory_type, len)?.as_ptr();
+
+        // Should be fine as UEFI always has  allocations with a guaranteed
+        // alignment of 8 bytes.
+        assert_eq!(ptr.align_offset(mem::align_of::<MemoryDescriptor>()), 0);
+
+        // If this panics, the UEFI implementation is broken.
+        assert_eq!(memory_map_meta.map_size % memory_map_meta.desc_size, 0);
+
+        unsafe { Ok(Self::from_raw(ptr, len)) }
+    }
+
+    unsafe fn from_raw(ptr: *mut u8, len: usize) -> Self {
+        assert_eq!(ptr.align_offset(mem::align_of::<MemoryDescriptor>()), 0);
+
+        let ptr = NonNull::new(ptr).expect("UEFI should never return a null ptr. An error should have been reflected via an Err earlier.");
+        let slice = NonNull::slice_from_raw_parts(ptr, len);
+
+        Self(slice)
+    }
+
+    /// Returns a "safe" best-effort size hint for the memory map size with
+    /// some additional bytes in buffer compared to the [`MemoryMapMeta`].
+    /// This helps
+    #[must_use]
+    fn safe_allocation_size_hint(mmm: MemoryMapMeta) -> usize {
+        // Allocate space for extra entries beyond the current size of the
+        // memory map. The value of 8 matches the value in the Linux kernel:
+        // https://github.com/torvalds/linux/blob/e544a07438/drivers/firmware/efi/libstub/efistub.h#L173
+        const EXTRA_ENTRIES: usize = 8;
+
+        let extra_size = mmm.desc_size * EXTRA_ENTRIES;
+        mmm.map_size + extra_size
+    }
+
+    /// Returns the raw pointer to the beginning of the allocation.
+    pub fn as_ptr_mut(&mut self) -> *mut u8 {
+        self.0.as_ptr().cast()
+    }
+
+    /// Returns a mutable slice to the underlying memory.
+    #[must_use]
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+        unsafe { self.0.as_mut() }
+    }
+}
+
+// Don't drop when we use this in unit tests.
+#[cfg(not(test))]
+impl Drop for MemoryMapBackingMemory {
+    fn drop(&mut self) {
+        if let Some(bs) = system_table_boot() {
+            let res = unsafe { bs.boot_services().free_pool(self.0.as_ptr().cast()) };
+            if let Err(e) = res {
+                log::error!("Failed to deallocate memory map: {e:?}");
+            }
+        } else {
+            log::debug!("Boot services are excited. Memory map won't be freed using the UEFI boot services allocator.");
+        }
+    }
+}
+
 /// A structure containing the meta attributes associated with a call to
 /// `GetMemoryMap` of UEFI. Note that all values refer to the time this was
 /// called. All following invocations (hidden, subtle, and asynchronous ones)
@@ -1644,6 +1753,21 @@ impl MemoryMapMeta {
     pub fn entry_count(&self) -> usize {
         assert_eq!(self.map_size % self.desc_size, 0);
         self.map_size / self.desc_size
+    }
+
+    /// Runs some sanity assertions.
+    pub fn assert_sanity_checks(&self) {
+        assert!(self.desc_size > 0);
+        // Although very unlikely, this might fail if the memory descriptor is
+        // extended by a future UEFI revision by a significant amount, we
+        // update the struct, but an old UEFI implementation reports a small
+        // size.
+        assert!(self.desc_size >= mem::size_of::<MemoryDescriptor>());
+        assert!(self.map_size > 0);
+
+        // Ensure the mmap size is (somehow) sane.
+        const ONE_GB: usize = 1024 * 1024 * 1024;
+        assert!(self.map_size <= ONE_GB);
     }
 }
 

@@ -16,7 +16,7 @@
 - Added `ByteConversionError`.
 - Re-exported `CapsuleFlags`.
 - One can now specify in `TimeError` what fields of `Time` are outside its valid
-  range. `Time::is_valid` has been updated accordingly. 
+  range. `Time::is_valid` has been updated accordingly.
 
 ## Changed
 - `SystemTable::exit_boot_services` is now `unsafe`. See that method's
@@ -24,6 +24,14 @@
 - `BootServices::allocate_pool` now returns `NonZero<u8>` instead of
   `*mut u8`.
 - `helpers::system_table` is deprecated, use `table::system_table_boot` instead.
+- `BootServices::memory_map` changed its signature from \
+  `pub fn memory_map<'buf>(&self, buffer: &'buf mut [u8]) -> Result<MemoryMap<'buf>> {` \
+  to \
+  `pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMap>`
+  - Allocations now happen automatically internally on the UEFI heap. Also, the
+    returned type is automatically freed on the UEFI heap, as long as boot
+    services are not excited. By removing the need for that explicit buffer and
+    the lifetime, the API is simpler.
 
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger

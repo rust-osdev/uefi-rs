@@ -2,6 +2,7 @@ use core::ffi::c_void;
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::slice;
+use uefi::table::boot::{MemoryMapBackingMemory, MemoryMapMeta};
 
 use crate::proto::console::text;
 use crate::{CStr16, Result, Status, StatusExt};
@@ -151,33 +152,15 @@ impl SystemTable<Boot> {
         unsafe { &*(*self.table).boot_services.cast_const().cast() }
     }
 
-    /// Get the size in bytes of the buffer to allocate for storing the memory
-    /// map in `exit_boot_services`.
-    ///
-    /// This map contains some extra room to avoid needing to allocate more than
-    /// once.
-    ///
-    /// Returns `None` on overflow.
-    fn memory_map_size_for_exit_boot_services(&self) -> Option<usize> {
-        // Allocate space for extra entries beyond the current size of the
-        // memory map. The value of 8 matches the value in the Linux kernel:
-        // https://github.com/torvalds/linux/blob/e544a07438/drivers/firmware/efi/libstub/efistub.h#L173
-        let extra_entries = 8;
-
-        let memory_map_size = self.boot_services().memory_map_size();
-        let extra_size = memory_map_size.desc_size.checked_mul(extra_entries)?;
-        memory_map_size.map_size.checked_add(extra_size)
-    }
-
     /// Get the current memory map and exit boot services.
     unsafe fn get_memory_map_and_exit_boot_services(
         &self,
-        buf: &'static mut [u8],
-    ) -> Result<MemoryMap<'static>> {
+        buf: &mut [u8],
+    ) -> Result<MemoryMapMeta> {
         let boot_services = self.boot_services();
 
         // Get the memory map.
-        let memory_map = boot_services.memory_map(buf)?;
+        let memory_map = boot_services.get_memory_map(buf)?;
 
         // Try to exit boot services using the memory map key. Note that after
         // the first call to `exit_boot_services`, there are restrictions on
@@ -185,7 +168,7 @@ impl SystemTable<Boot> {
         // only `get_memory_map` and `exit_boot_services` are allowed. Starting
         // in UEFI 2.9 other memory allocation functions may also be called.
         boot_services
-            .exit_boot_services(boot_services.image_handle(), memory_map.key())
+            .exit_boot_services(boot_services.image_handle(), memory_map.map_key)
             .map(move |()| memory_map)
     }
 
@@ -247,10 +230,8 @@ impl SystemTable<Boot> {
     pub unsafe fn exit_boot_services(
         self,
         memory_type: MemoryType,
-    ) -> (SystemTable<Runtime>, MemoryMap<'static>) {
+    ) -> (SystemTable<Runtime>, MemoryMap) {
         crate::helpers::exit();
-
-        let boot_services = self.boot_services();
 
         // Reboot the device.
         let reset = |status| -> ! {
@@ -260,19 +241,7 @@ impl SystemTable<Boot> {
             }
         };
 
-        // Get the size of the buffer to allocate. If that calculation
-        // overflows treat it as an unrecoverable error.
-        let buf_size = match self.memory_map_size_for_exit_boot_services() {
-            Some(buf_size) => buf_size,
-            None => reset(Status::ABORTED),
-        };
-
-        // Allocate a byte slice to hold the memory map. If the
-        // allocation fails treat it as an unrecoverable error.
-        let buf: *mut u8 = match boot_services.allocate_pool(memory_type, buf_size) {
-            Ok(buf) => buf.as_ptr(),
-            Err(err) => reset(err.status()),
-        };
+        let mut buf = MemoryMapBackingMemory::new(memory_type).expect("Failed to allocate memory");
 
         // Calling `exit_boot_services` can fail if the memory map key is not
         // current. Retry a second time if that occurs. This matches the
@@ -280,14 +249,13 @@ impl SystemTable<Boot> {
         // https://github.com/torvalds/linux/blob/e544a0743/drivers/firmware/efi/libstub/efi-stub-helper.c#L375
         let mut status = Status::ABORTED;
         for _ in 0..2 {
-            let buf: &mut [u8] = unsafe { slice::from_raw_parts_mut(buf, buf_size) };
-            match unsafe { self.get_memory_map_and_exit_boot_services(buf) } {
+            match unsafe { self.get_memory_map_and_exit_boot_services(buf.as_mut_slice()) } {
                 Ok(memory_map) => {
                     let st = SystemTable {
                         table: self.table,
                         _marker: PhantomData,
                     };
-                    return (st, memory_map);
+                    return (st, MemoryMap::from_initialized_mem(buf, memory_map));
                 }
                 Err(err) => {
                     log::error!("Error retrieving the memory map for exiting the boot services");

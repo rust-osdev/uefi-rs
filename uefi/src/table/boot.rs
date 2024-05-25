@@ -221,37 +221,46 @@ impl BootServices {
         mmm
     }
 
-    /// Stores the current UEFI memory map in the provided buffer.
-    ///
-    /// The allocated buffer must be at least aligned to a [`MemoryDescriptor`]
-    /// and should be big enough to store the whole map. To estimating how big
-    /// the map will be, you can call [`Self::memory_map_size`].
-    ///
-    /// The memory map contains entries of type [`MemoryDescriptor`]. However,
-    /// the relevant step size is always the reported `desc_size` but never
-    /// `size_of::<MemoryDescriptor>()`.
-    ///
-    /// The returned key is a unique identifier of the current configuration of
-    /// memory. Any allocations or such will change the memory map's key.
-    ///
-    /// If you want to store the resulting memory map without having to keep
-    /// the buffer around, you can use `.copied().collect()` on the iterator.
-    /// Note that this will change the current memory map again, if the UEFI
-    /// allocator is used under the hood.
+    /// Stores the current UEFI memory map in an UEFI-heap allocated buffer
+    /// and returns a [`MemoryMap`].
     ///
     /// # Errors
     ///
-    /// See section `EFI_BOOT_SERVICES.GetMemoryMap()` in the UEFI Specification for more details.
+    /// See section `EFI_BOOT_SERVICES.GetMemoryMap()` in the UEFI Specification
+    /// for more details.
     ///
     /// * [`uefi::Status::BUFFER_TOO_SMALL`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn memory_map<'buf>(&self, buffer: &'buf mut [u8]) -> Result<MemoryMap<'buf>> {
-        let mut map_size = buffer.len();
-        MemoryDescriptor::assert_aligned(buffer);
-        let map_buffer = buffer.as_mut_ptr().cast::<MemoryDescriptor>();
+    pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMap> {
+        let mut buffer = MemoryMapBackingMemory::new(mt)?;
+
+        let MemoryMapMeta {
+            map_size,
+            map_key,
+            desc_size,
+            desc_version,
+        } = self.get_memory_map(buffer.as_mut_slice())?;
+
+        let len = map_size / desc_size;
+        assert_eq!(map_size % desc_size, 0);
+        assert_eq!(desc_version, MemoryDescriptor::VERSION);
+        Ok(MemoryMap {
+            key: map_key,
+            buf: buffer,
+            desc_size,
+            len,
+        })
+    }
+
+    /// Calls the underlying `GetMemoryMap` function of UEFI. On success,
+    /// the buffer is mutated and contains the map. The map might be shorter
+    /// than the buffer, which is reflected by the return value.
+    pub(crate) fn get_memory_map(&self, buf: &mut [u8]) -> Result<MemoryMapMeta> {
+        let mut map_size = buf.len();
+        let map_buffer = buf.as_mut_ptr().cast::<MemoryDescriptor>();
         let mut map_key = MemoryMapKey(0);
         let mut desc_size = 0;
-        let mut entry_version = 0;
+        let mut desc_version = 0;
 
         assert_eq!(
             (map_buffer as usize) % mem::align_of::<MemoryDescriptor>(),
@@ -265,18 +274,14 @@ impl BootServices {
                 map_buffer,
                 &mut map_key.0,
                 &mut desc_size,
-                &mut entry_version,
+                &mut desc_version,
             )
         }
-        .to_result_with_val(move || {
-            let len = map_size / desc_size;
-
-            MemoryMap {
-                key: map_key,
-                buf: buffer,
-                desc_size,
-                len,
-            }
+        .to_result_with_val(|| MemoryMapMeta {
+            map_size,
+            desc_size,
+            map_key,
+            desc_version,
         })
     }
 
@@ -1689,6 +1694,14 @@ impl MemoryMapBackingMemory {
         Self(slice)
     }
 
+    /// Creates an instance from the provided memory, which is not necessarily
+    /// on the UEFI heap.
+    #[cfg(test)]
+    fn from_slice(buffer: &mut [u8]) -> Self {
+        let len = buffer.len();
+        unsafe { Self::from_raw(buffer.as_mut_ptr(), len) }
+    }
+
     /// Returns a "safe" best-effort size hint for the memory map size with
     /// some additional bytes in buffer compared to the [`MemoryMapMeta`].
     /// This helps
@@ -1703,8 +1716,15 @@ impl MemoryMapBackingMemory {
         mmm.map_size + extra_size
     }
 
-    /// Returns the raw pointer to the beginning of the allocation.
-    pub fn as_ptr_mut(&mut self) -> *mut u8 {
+    /// Returns a raw pointer to the beginning of the allocation.
+    #[must_use]
+    pub fn as_ptr(&self) -> *const u8 {
+        self.0.as_ptr().cast()
+    }
+
+    /// Returns a mutable raw pointer to the beginning of the allocation.
+    #[must_use]
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.0.as_ptr().cast()
     }
 
@@ -1788,37 +1808,47 @@ impl MemoryMapMeta {
 ///
 /// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
 #[derive(Debug)]
-pub struct MemoryMap<'buf> {
+pub struct MemoryMap {
+    /// Backing memory, properly initialized at this point.
+    buf: MemoryMapBackingMemory,
     key: MemoryMapKey,
-    buf: &'buf mut [u8],
     /// Usually bound to the size of a [`MemoryDescriptor`] but can indicate if
     /// this field is ever extended by a new UEFI standard.
     desc_size: usize,
     len: usize,
 }
 
-impl<'buf> MemoryMap<'buf> {
-    /// Creates a [`MemoryMap`] from the given buffer and entry size.
-    /// The entry size is usually bound to the size of a [`MemoryDescriptor`]
-    /// but can indicate if this field is ever extended by a new UEFI standard.
-    ///
-    /// This allows parsing a memory map provided by a kernel after boot
-    /// services have already exited.
-    pub fn from_raw(buf: &'buf mut [u8], desc_size: usize) -> Self {
-        assert!(!buf.is_empty());
-        assert_eq!(
-            buf.len() % desc_size,
-            0,
-            "The buffer length must be a multiple of the desc_size"
-        );
+impl MemoryMap {
+    /// Creates a [`MemoryMap`] from the give initialized memory map behind
+    /// the buffer and the reported `desc_size` from UEFI.
+    pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
+        let MemoryMapMeta {
+            map_size,
+            desc_size,
+            ..
+        } = meta;
         assert!(desc_size >= mem::size_of::<MemoryDescriptor>());
-        let len = buf.len() / desc_size;
+        let len = map_size / desc_size;
         MemoryMap {
             key: MemoryMapKey(0),
             buf,
             desc_size,
             len,
         }
+    }
+
+    #[cfg(test)]
+    fn from_raw(buf: &mut [u8], desc_size: usize) -> Self {
+        let mem = MemoryMapBackingMemory::from_slice(buf);
+        Self::from_initialized_mem(
+            mem,
+            MemoryMapMeta {
+                map_size: buf.len(),
+                desc_size,
+                map_key: MemoryMapKey(0),
+                desc_version: MemoryDescriptor::VERSION,
+            },
+        )
     }
 
     #[must_use]
@@ -1915,7 +1945,7 @@ impl<'buf> MemoryMap<'buf> {
 
     /// Returns a reference to the [`MemoryDescriptor`] at `index` or `None` if out of bounds.
     #[must_use]
-    pub fn get(&self, index: usize) -> Option<&'buf MemoryDescriptor> {
+    pub fn get(&self, index: usize) -> Option<&MemoryDescriptor> {
         if index >= self.len {
             return None;
         }
@@ -1933,7 +1963,7 @@ impl<'buf> MemoryMap<'buf> {
 
     /// Returns a mut reference to the [`MemoryDescriptor`] at `index` or `None` if out of bounds.
     #[must_use]
-    pub fn get_mut(&mut self, index: usize) -> Option<&'buf mut MemoryDescriptor> {
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut MemoryDescriptor> {
         if index >= self.len {
             return None;
         }
@@ -1950,7 +1980,7 @@ impl<'buf> MemoryMap<'buf> {
     }
 }
 
-impl core::ops::Index<usize> for MemoryMap<'_> {
+impl core::ops::Index<usize> for MemoryMap {
     type Output = MemoryDescriptor;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -1958,7 +1988,7 @@ impl core::ops::Index<usize> for MemoryMap<'_> {
     }
 }
 
-impl core::ops::IndexMut<usize> for MemoryMap<'_> {
+impl core::ops::IndexMut<usize> for MemoryMap {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         self.get_mut(index).unwrap()
     }
@@ -1967,13 +1997,13 @@ impl core::ops::IndexMut<usize> for MemoryMap<'_> {
 /// An iterator of [`MemoryDescriptor`]. The underlying memory map is always
 /// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
-pub struct MemoryMapIter<'buf> {
-    memory_map: &'buf MemoryMap<'buf>,
+pub struct MemoryMapIter<'a> {
+    memory_map: &'a MemoryMap,
     index: usize,
 }
 
-impl<'buf> Iterator for MemoryMapIter<'buf> {
-    type Item = &'buf MemoryDescriptor;
+impl<'a> Iterator for MemoryMapIter<'a> {
+    type Item = &'a MemoryDescriptor;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let sz = self.memory_map.len - self.index;
@@ -2224,7 +2254,7 @@ mod tests {
     }
 
     // Added for debug purposes on test failure
-    impl core::fmt::Display for MemoryMap<'_> {
+    impl core::fmt::Display for MemoryMap {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             writeln!(f)?;
             for desc in self.entries() {

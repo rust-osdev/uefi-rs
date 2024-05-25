@@ -63,17 +63,8 @@ fn alloc_alignment() {
 fn memory_map(bt: &BootServices) {
     info!("Testing memory map functions");
 
-    // Get the memory descriptor size and an estimate of the memory map size
-    let sizes = bt.memory_map_size();
-
-    // 2 extra descriptors should be enough.
-    let buf_sz = sizes.map_size + 2 * sizes.desc_size;
-
-    // We will use vectors for convenience.
-    let mut buffer = vec![0_u8; buf_sz];
-
     let mut memory_map = bt
-        .memory_map(&mut buffer)
+        .memory_map(MemoryType::LOADER_DATA)
         .expect("Failed to retrieve UEFI memory map");
 
     memory_map.sort();

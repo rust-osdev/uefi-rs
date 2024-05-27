@@ -86,7 +86,7 @@ unsafe impl GlobalAlloc for Allocator {
             // within the allocation.
             let full_alloc_ptr =
                 if let Ok(ptr) = boot_services.allocate_pool(memory_type, size + align) {
-                    ptr
+                    ptr.as_ptr()
                 } else {
                     return ptr::null_mut();
                 };
@@ -116,6 +116,7 @@ unsafe impl GlobalAlloc for Allocator {
             // use `allocate_pool` directly.
             boot_services
                 .allocate_pool(memory_type, size)
+                .map(|ptr| ptr.as_ptr())
                 .unwrap_or(ptr::null_mut())
         }
     }

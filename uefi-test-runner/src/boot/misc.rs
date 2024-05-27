@@ -121,7 +121,8 @@ fn test_install_protocol_interface(bt: &BootServices) {
             mem::size_of::<TestProtocol>(),
         )
         .unwrap()
-        .cast();
+        .cast()
+        .as_ptr();
     unsafe { alloc.write(TestProtocol { data: 123 }) };
 
     let _ = unsafe {
@@ -187,7 +188,8 @@ fn test_install_configuration_table(st: &SystemTable<Boot>) {
     let config = st
         .boot_services()
         .allocate_pool(MemoryType::ACPI_RECLAIM, 1)
-        .expect("Failed to allocate config table");
+        .expect("Failed to allocate config table")
+        .as_ptr();
     unsafe { config.write(42) };
 
     let count = st.config_table().len();

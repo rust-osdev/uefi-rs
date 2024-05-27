@@ -271,9 +271,13 @@ impl BootServices {
     ///
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<*mut u8> {
+    pub fn allocate_pool(&self, mem_ty: MemoryType, size: usize) -> Result<NonNull<u8>> {
         let mut buffer = ptr::null_mut();
-        unsafe { (self.0.allocate_pool)(mem_ty, size, &mut buffer) }.to_result_with_val(|| buffer)
+        let ptr = unsafe { (self.0.allocate_pool)(mem_ty, size, &mut buffer) }
+            .to_result_with_val(|| buffer)?;
+
+        Ok(NonNull::new(ptr)
+            .expect("UEFI should return error if an allocation failed but never a null pointer"))
     }
 
     /// Frees memory allocated from a pool.

@@ -14,7 +14,7 @@ heck = "0.4.0"
 itertools = "0.12.0"
 lzma-rs = "0.3.0"
 mbrman = "0.5.1"
-nix = { version = "0.28.0", default-features = false, features = ["fs"] }
+nix = { version = "0.29.0", default-features = false, features = ["fs"] }
 os_info = { version = "3.6.0", default-features = false }
 proc-macro2 = { version = "1.0.46", features = ["span-locations"] }
 quote = "1.0.21"

@@ -271,6 +271,21 @@ impl Cargo {
             }
             CargoAction::Test => {
                 action = "test";
+
+                // Ensure that uefi-macros trybuild tests work regardless of
+                // whether RUSTFLAGS is set.
+                //
+                // The trybuild tests run `rustc` with `--verbose`, which
+                // affects error output. This flag is set via
+                // `--config=build.rustflags` [1], but that will be ignored if
+                // the RUSTFLAGS env var is set. Compensate by appending
+                // `--verbose` to the var in that case.
+                //
+                // [1]: https://github.com/dtolnay/trybuild/blob/b1b7064b7ad11e0ab563e9eb843651d86e4545b7/src/cargo.rs#L44
+                if let Ok(mut rustflags) = env::var("RUSTFLAGS") {
+                    rustflags.push_str(" --verbose");
+                    cmd.env("RUSTFLAGS", rustflags);
+                }
             }
         };
         cmd.arg(action);

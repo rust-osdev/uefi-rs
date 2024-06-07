@@ -1585,6 +1585,7 @@ impl<'a, P: Protocol + ?Sized> ScopedProtocol<'a, P> {
 }
 
 /// Type of allocation to perform.
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub enum AllocateType {
     /// Allocate any possible pages.

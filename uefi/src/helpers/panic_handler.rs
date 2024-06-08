@@ -1,5 +1,5 @@
-use crate::helpers::system_table_opt;
 use crate::println;
+use crate::table::system_table_boot;
 use cfg_if::cfg_if;
 
 #[panic_handler]
@@ -7,7 +7,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     println!("[PANIC]: {}", info);
 
     // Give the user some time to read the message
-    if let Some(st) = system_table_opt() {
+    if let Some(st) = system_table_boot() {
         st.boot_services().stall(10_000_000);
     } else {
         let mut dummy = 0u64;
@@ -28,7 +28,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
             qemu_exit_handle.exit_failure();
         } else {
             // If the system table is available, use UEFI's standard shutdown mechanism
-            if let Some(st) = system_table_opt() {
+            if let Some(st) = system_table_boot() {
                 use crate::table::runtime::ResetType;
                 st.runtime_services()
                     .reset(ResetType::SHUTDOWN, crate::Status::ABORTED, None);

@@ -1,10 +1,11 @@
-use crate::helpers::system_table;
+use crate::table::system_table_boot;
 use core::fmt::Write;
 
 /// INTERNAL API! Helper for print macros.
 #[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
-    system_table()
+    system_table_boot()
+        .expect("boot services are not active")
         .stdout()
         .write_fmt(args)
         .expect("Failed to write to stdout");

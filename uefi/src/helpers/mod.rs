@@ -40,7 +40,7 @@ mod println;
 ///
 /// The returned pointer is only valid until boot services are exited.
 #[must_use]
-// TODO do we want to keep this public?
+#[deprecated(note = "use uefi::table::system_table_boot instead")]
 pub fn system_table() -> SystemTable<Boot> {
     table::system_table_boot().expect("boot services are not active")
 }

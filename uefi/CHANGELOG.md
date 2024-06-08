@@ -11,6 +11,7 @@
 - Added `table::{set_system_table, system_table_boot, system_table_runtime}`.
   This provides an initial API for global tables that do not require passing
   around a reference.
+- Added `ResetNotification` protocol.
 - Added `TryFrom<&[u8]>` for `DevicePathHeader`, `DevicePathNode` and `DevicePath`.
 - Added `ByteConversionError`.
 - Re-exported `CapsuleFlags`.
@@ -32,7 +33,6 @@
 # uefi - 0.28.0 (2024-04-19)
 
 ## Added
-- Added `ResetNotification` protocol.
 - Added `Timestamp` protocol.
 - Added `UnalignedSlice::as_ptr`.
 - Added common derives for `Event` and `Handle`.

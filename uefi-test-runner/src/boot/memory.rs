@@ -1,25 +1,24 @@
-use uefi::table::boot::{AllocateType, BootServices, MemoryType};
+use uefi::boot;
+use uefi::table::boot::{AllocateType, MemoryType};
 
 use alloc::vec::Vec;
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing memory functions");
 
-    allocate_pages(bt);
+    allocate_pages();
     vec_alloc();
     alloc_alignment();
 
-    memory_map(bt);
+    memory_map();
 }
 
-fn allocate_pages(bt: &BootServices) {
+fn allocate_pages() {
     info!("Allocating some pages of memory");
 
     let ty = AllocateType::AnyPages;
     let mem_ty = MemoryType::LOADER_DATA;
-    let pgs = bt
-        .allocate_pages(ty, mem_ty, 1)
-        .expect("Failed to allocate a page of memory");
+    let pgs = boot::allocate_pages(ty, mem_ty, 1).expect("Failed to allocate a page of memory");
 
     assert_eq!(pgs % 4096, 0, "Page pointer is not page-aligned");
 
@@ -31,7 +30,7 @@ fn allocate_pages(bt: &BootServices) {
     buf[4095] = 0x23;
 
     // Clean up to avoid memory leaks.
-    unsafe { bt.free_pages(pgs, 1) }.unwrap();
+    unsafe { boot::free_pages(pgs, 1) }.unwrap();
 }
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.
@@ -60,11 +59,11 @@ fn alloc_alignment() {
     assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
 }
 
-fn memory_map(bt: &BootServices) {
+fn memory_map() {
     info!("Testing memory map functions");
 
     // Get the memory descriptor size and an estimate of the memory map size
-    let sizes = bt.memory_map_size();
+    let sizes = boot::memory_map_size();
 
     // 2 extra descriptors should be enough.
     let buf_sz = sizes.map_size + 2 * sizes.entry_size;
@@ -72,9 +71,7 @@ fn memory_map(bt: &BootServices) {
     // We will use vectors for convenience.
     let mut buffer = vec![0_u8; buf_sz];
 
-    let mut memory_map = bt
-        .memory_map(&mut buffer)
-        .expect("Failed to retrieve UEFI memory map");
+    let mut memory_map = boot::memory_map(&mut buffer).expect("Failed to retrieve UEFI memory map");
 
     memory_map.sort();
 

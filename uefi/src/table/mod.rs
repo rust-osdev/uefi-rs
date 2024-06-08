@@ -34,45 +34,36 @@ pub unsafe fn set_system_table(ptr: *const uefi_raw::table::system::SystemTable)
 }
 
 /// Get the system table while boot services are active.
-///
-/// # Panics
-///
-/// Panics if the system table has not been set with `set_system_table`, or if
-/// boot services are not available (e.g. if [`exit_boot_services`] has been
-/// called).
-///
-/// [`exit_boot_services`]: SystemTable::exit_boot_services
-pub fn system_table_boot() -> SystemTable<Boot> {
+pub fn system_table_boot() -> Option<SystemTable<Boot>> {
     let st = SYSTEM_TABLE.load(Ordering::Acquire);
-    assert!(!st.is_null());
+    if st.is_null() {
+        return None;
+    }
 
     // SAFETY: the system table is valid per the requirements of `set_system_table`.
     unsafe {
         if (*st).boot_services.is_null() {
-            panic!("boot services are not active");
+            None
+        } else {
+            Some(SystemTable::<Boot>::from_ptr(st.cast()).unwrap())
         }
-
-        SystemTable::<Boot>::from_ptr(st.cast()).unwrap()
     }
 }
 
 /// Get the system table while runtime services are active.
-///
-/// # Panics
-///
-/// Panics if the system table has not been set with `set_system_table`, or if
-/// runtime services are not available.
-pub fn system_table_runtime() -> SystemTable<Runtime> {
+pub fn system_table_runtime() -> Option<SystemTable<Runtime>> {
     let st = SYSTEM_TABLE.load(Ordering::Acquire);
-    assert!(!st.is_null());
+    if st.is_null() {
+        return None;
+    }
 
     // SAFETY: the system table is valid per the requirements of `set_system_table`.
     unsafe {
         if (*st).runtime_services.is_null() {
-            panic!("runtime services are not active");
+            None
+        } else {
+            Some(SystemTable::<Runtime>::from_ptr(st.cast()).unwrap())
         }
-
-        SystemTable::<Runtime>::from_ptr(st.cast()).unwrap()
     }
 }
 

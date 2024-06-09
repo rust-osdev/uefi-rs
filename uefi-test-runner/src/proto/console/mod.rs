@@ -1,6 +1,6 @@
 use uefi::prelude::*;
 
-pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
+pub fn test(st: &mut SystemTable<Boot>) {
     info!("Testing console protocols");
 
     stdout::test(st.stdout());
@@ -8,7 +8,7 @@ pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
     let bt = st.boot_services();
     unsafe {
         serial::test(bt);
-        gop::test(image, bt);
+        gop::test(bt);
     }
     pointer::test(bt);
 }

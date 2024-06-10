@@ -19,8 +19,7 @@
 //! [println_macro]: uefi::println!
 
 use crate::prelude::{Boot, SystemTable};
-use crate::Result;
-use crate::StatusExt;
+use crate::{Result, StatusExt};
 use core::ffi::c_void;
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};

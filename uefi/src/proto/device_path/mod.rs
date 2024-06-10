@@ -266,6 +266,19 @@ impl PartialEq for DevicePathNode {
     }
 }
 
+impl<'a> TryFrom<&[u8]> for &'a DevicePathNode {
+    type Error = ByteConversionError;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let dp = <&DevicePathHeader>::try_from(bytes)?;
+        if usize::from(dp.length) <= bytes.len() {
+            unsafe { Ok(DevicePathNode::from_ffi_ptr(bytes.as_ptr().cast())) }
+        } else {
+            Err(ByteConversionError::InvalidLength)
+        }
+    }
+}
+
 /// A single device path instance that ends with either an [`END_INSTANCE`]
 /// or [`END_ENTIRE`] node. Use [`DevicePath::instance_iter`] to get the
 /// path instances in a [`DevicePath`].
@@ -974,5 +987,34 @@ mod tests {
         let owned_dp = dp.to_owned();
         let owned_dp_ref = &*owned_dp;
         assert_eq!(owned_dp_ref, dp)
+    }
+
+    #[test]
+    fn test_device_path_node_from_bytes() {
+        let mut raw_data = Vec::new();
+        let node = [0xa0, 0xb0];
+        let node_data = &[10, 11];
+
+        // Raw data is less than size of a [`DevicePathNode`].
+        raw_data.push(node[0]);
+        assert!(<&DevicePathNode>::try_from(raw_data.as_slice()).is_err());
+
+        // Raw data is long enough to hold a [`DevicePathNode`].
+        raw_data.push(node[1]);
+        raw_data.extend(
+            u16::try_from(mem::size_of::<DevicePathHeader>() + node_data.len())
+                .unwrap()
+                .to_le_bytes(),
+        );
+        raw_data.extend(node_data);
+        let dp = <&DevicePathNode>::try_from(raw_data.as_slice()).unwrap();
+
+        // Relevant assertions to verify the conversion is fine.
+        assert_eq!(mem::size_of_val(dp), 6);
+        check_node(dp, 0xa0, 0xb0, &[10, 11]);
+
+        // [`DevicePathNode`] data length exceeds the raw_data slice.
+        raw_data[2] += 1;
+        assert!(<&DevicePathNode>::try_from(raw_data.as_slice()).is_err());
     }
 }

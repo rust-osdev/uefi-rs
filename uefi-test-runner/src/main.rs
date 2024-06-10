@@ -13,8 +13,7 @@ use uefi::proto::console::serial::Serial;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::messaging::Vendor;
 use uefi::table::boot::MemoryType;
-use uefi::Result;
-use uefi::{print, println};
+use uefi::{print, println, Result};
 
 mod boot;
 mod fs;

@@ -2,19 +2,19 @@ use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::{proto, Identify};
 
-pub fn test(image: Handle, st: &mut SystemTable<Boot>) {
+pub fn test(st: &mut SystemTable<Boot>) {
     info!("Testing various protocols");
 
-    console::test(image, st);
+    console::test(st);
 
     let bt = st.boot_services();
     find_protocol(bt);
-    test_protocols_per_handle(image, bt);
+    test_protocols_per_handle(bt);
 
     debug::test(bt);
-    device_path::test(image, bt);
+    device_path::test(bt);
     driver::test(bt);
-    loaded_image::test(image, bt);
+    loaded_image::test(bt);
     media::test(bt);
     network::test(bt);
     pi::test(bt);
@@ -44,9 +44,9 @@ fn find_protocol(bt: &BootServices) {
     );
 }
 
-fn test_protocols_per_handle(image: Handle, bt: &BootServices) {
+fn test_protocols_per_handle(bt: &BootServices) {
     let pph = bt
-        .protocols_per_handle(image)
+        .protocols_per_handle(bt.image_handle())
         .expect("Failed to get protocols for image handle");
 
     info!("Image handle has {} protocols", pph.len());

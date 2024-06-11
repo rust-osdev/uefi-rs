@@ -3,7 +3,7 @@ use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
 use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 
-pub unsafe fn test(image: Handle, bt: &BootServices) {
+pub unsafe fn test(bt: &BootServices) {
     info!("Running graphics output protocol test");
     let handle = bt
         .get_handle_for_protocol::<GraphicsOutput>()
@@ -12,7 +12,7 @@ pub unsafe fn test(image: Handle, bt: &BootServices) {
         .open_protocol::<GraphicsOutput>(
             OpenProtocolParams {
                 handle,
-                agent: image,
+                agent: bt.image_handle(),
                 controller: None,
             },
             // For this test, don't open in exclusive mode. That

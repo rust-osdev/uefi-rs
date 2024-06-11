@@ -5,13 +5,13 @@ use uefi::proto::device_path::text::*;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
 
-pub fn test(image: Handle, bt: &BootServices) {
+pub fn test(bt: &BootServices) {
     info!("Running device path protocol test");
 
     // test 1/2: test low-level API by directly opening all protocols
     {
         let loaded_image = bt
-            .open_protocol_exclusive::<LoadedImage>(image)
+            .open_protocol_exclusive::<LoadedImage>(bt.image_handle())
             .expect("Failed to open LoadedImage protocol");
 
         let device_path = bt
@@ -55,7 +55,7 @@ pub fn test(image: Handle, bt: &BootServices) {
         // Get the `LoadedImageDevicePath`. Verify it start with the same nodes as
         // `device_path`.
         let loaded_image_device_path = bt
-            .open_protocol_exclusive::<LoadedImageDevicePath>(image)
+            .open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
             .expect("Failed to open LoadedImageDevicePath protocol");
 
         for (n1, n2) in device_path
@@ -69,7 +69,7 @@ pub fn test(image: Handle, bt: &BootServices) {
     // test 2/2: test high-level to-string api
     {
         let loaded_image_device_path = bt
-            .open_protocol_exclusive::<LoadedImageDevicePath>(image)
+            .open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
             .expect("Failed to open LoadedImageDevicePath protocol");
         let device_path: &DevicePath = &loaded_image_device_path;
 

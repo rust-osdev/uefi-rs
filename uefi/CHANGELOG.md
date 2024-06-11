@@ -11,6 +11,8 @@
 - Added `table::{set_system_table, system_table_boot, system_table_runtime}`.
   This provides an initial API for global tables that do not require passing
   around a reference.
+- Added `TryFrom<&[u8]>` for `DevicePathHeader`.
+- Added `ByteConversionError`.
 
 ## Changed
 - `SystemTable::exit_boot_services` is now `unsafe`. See that method's

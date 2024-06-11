@@ -119,6 +119,19 @@ pub struct DevicePathHeader {
     pub length: u16,
 }
 
+impl<'a> TryFrom<&[u8]> for &'a DevicePathHeader {
+    type Error = ByteConversionError;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if mem::size_of::<DevicePathHeader>() <= bytes.len() {
+            unsafe {
+                return Ok(&*bytes.as_ptr().cast::<DevicePathHeader>());
+            }
+        }
+        Err(ByteConversionError::InvalidLength)
+    }
+}
+
 /// A single node within a [`DevicePath`].
 ///
 /// Each node starts with a [`DevicePathHeader`]. The rest of the data
@@ -727,6 +740,14 @@ impl DeviceSubType {
     pub const END_INSTANCE: DeviceSubType = DeviceSubType(0x01);
     /// End entire Device Path.
     pub const END_ENTIRE: DeviceSubType = DeviceSubType(0xff);
+}
+
+/// Error returned when attempting to convert from a `&[u8]` to a
+/// [`DevicePath`] type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ByteConversionError {
+    /// The length of the given slice is not valid for its [`DevicePath`] type.
+    InvalidLength,
 }
 
 /// Error returned when converting from a [`DevicePathNode`] to a more

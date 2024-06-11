@@ -397,6 +397,35 @@ impl DevicePath {
         total_size_in_bytes
     }
 
+    /// Calculate the size in bytes of the entire `DevicePath` starting
+    /// at `bytes`. This adds up each node's length, including the
+    /// end-entire node.
+    ///
+    /// # Errors
+    ///
+    /// The [`ByteConversionError::InvalidLength`] error will be returned
+    /// when the length of the given bytes slice cannot contain the full
+    /// [`DevicePath`] represented by the slice.
+    fn size_in_bytes_from_slice(mut bytes: &[u8]) -> Result<usize, ByteConversionError> {
+        let max_size_in_bytes = bytes.len();
+        let mut total_size_in_bytes: usize = 0;
+        loop {
+            let node = <&DevicePathNode>::try_from(bytes)?;
+            let node_size_in_bytes = usize::from(node.length());
+            total_size_in_bytes += node_size_in_bytes;
+            // Length of last processed node extends past the bytes slice.
+            if total_size_in_bytes > max_size_in_bytes {
+                return Err(ByteConversionError::InvalidLength);
+            }
+            if node.is_end_entire() {
+                break;
+            }
+            bytes = &bytes[node_size_in_bytes..];
+        }
+
+        Ok(total_size_in_bytes)
+    }
+
     /// Create a [`DevicePath`] reference from an opaque pointer.
     ///
     /// # Safety
@@ -485,6 +514,15 @@ impl Debug for DevicePath {
 impl PartialEq for DevicePath {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
+    }
+}
+
+impl<'a> TryFrom<&[u8]> for &'a DevicePath {
+    type Error = ByteConversionError;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let len = DevicePath::size_in_bytes_from_slice(bytes)?;
+        unsafe { Ok(&*ptr_meta::from_raw_parts(bytes.as_ptr().cast(), len)) }
     }
 }
 
@@ -1016,5 +1054,29 @@ mod tests {
         // [`DevicePathNode`] data length exceeds the raw_data slice.
         raw_data[2] += 1;
         assert!(<&DevicePathNode>::try_from(raw_data.as_slice()).is_err());
+    }
+
+    #[test]
+    fn test_device_path_nodes_from_bytes() {
+        let raw_data = create_raw_device_path();
+        let dp = <&DevicePath>::try_from(raw_data.as_slice()).unwrap();
+
+        // Check that the size is the sum of the nodes' lengths.
+        assert_eq!(mem::size_of_val(dp), 6 + 8 + 4 + 6 + 8 + 4);
+
+        // Check the list's node iter.
+        let nodes: Vec<_> = dp.node_iter().collect();
+        check_node(nodes[0], 0xa0, 0xb0, &[10, 11]);
+        check_node(nodes[1], 0xa1, 0xb1, &[20, 21, 22, 23]);
+        check_node(
+            nodes[2],
+            DeviceType::END.0,
+            DeviceSubType::END_INSTANCE.0,
+            &[],
+        );
+        check_node(nodes[3], 0xa2, 0xb2, &[30, 31]);
+        check_node(nodes[4], 0xa3, 0xb3, &[40, 41, 42, 43]);
+        // The end-entire node is not returned by the iterator.
+        assert_eq!(nodes.len(), 5);
     }
 }

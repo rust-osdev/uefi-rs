@@ -124,11 +124,10 @@ impl<'a> TryFrom<&[u8]> for &'a DevicePathHeader {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         if mem::size_of::<DevicePathHeader>() <= bytes.len() {
-            unsafe {
-                return Ok(&*bytes.as_ptr().cast::<DevicePathHeader>());
-            }
+            unsafe { Ok(&*bytes.as_ptr().cast::<DevicePathHeader>()) }
+        } else {
+            Err(ByteConversionError::InvalidLength)
         }
-        Err(ByteConversionError::InvalidLength)
     }
 }
 

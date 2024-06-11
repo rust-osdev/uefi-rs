@@ -19,6 +19,7 @@
   documentation for details of obligations for callers.
 - `BootServices::allocate_pool` now returns `NonZero<u8>` instead of
   `*mut u8`.
+- `helpers::system_table` is deprecated, use `table::system_table_boot` instead.
 
 ## Removed
 - Removed the `panic-on-logger-errors` feature of the `uefi` crate. Logger

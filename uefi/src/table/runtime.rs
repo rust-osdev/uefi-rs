@@ -7,7 +7,7 @@ use core::fmt::{self, Debug, Display, Formatter};
 use core::mem::MaybeUninit;
 use core::ptr;
 
-pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleHeader};
+pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
 };

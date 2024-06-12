@@ -13,6 +13,7 @@
   around a reference.
 - Added `TryFrom<&[u8]>` for `DevicePathHeader`, `DevicePathNode` and `DevicePath`.
 - Added `ByteConversionError`.
+- Re-exported `CapsuleFlags`.
 
 ## Changed
 - `SystemTable::exit_boot_services` is now `unsafe`. See that method's

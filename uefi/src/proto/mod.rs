@@ -9,8 +9,11 @@
 //!
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
-use crate::Identify;
 use core::ffi::c_void;
+
+pub use uefi_macros::unsafe_protocol;
+
+use crate::Identify;
 
 /// Common trait implemented by all standard UEFI protocols.
 ///
@@ -64,8 +67,6 @@ where
     }
 }
 
-pub use uefi_macros::unsafe_protocol;
-
 pub mod console;
 pub mod debug;
 pub mod device_path;
@@ -76,6 +77,7 @@ pub mod misc;
 pub mod network;
 pub mod pi;
 pub mod rng;
+pub mod scsi;
 pub mod security;
 pub mod shell_params;
 pub mod shim;

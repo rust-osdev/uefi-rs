@@ -1,6 +1,10 @@
 # uefi - [Unreleased]
 
 ## Added
+
+- Added `ScsiIo` Protocol.
+
+## Added
 - Added `RuntimeServices::update_capsule`.
 - Added `RuntimeServices::query_capsule_capabilities`.
 - The logger from `uefi::helpers` now also logs to the [debugcon](https://phip1611.de/blog/how-to-use-qemus-debugcon-feature/)

@@ -473,7 +473,7 @@ impl Time {
     /// Query the time offset in minutes from UTC, or None if using local time.
     #[must_use]
     pub const fn time_zone(&self) -> Option<i16> {
-        if self.0.time_zone == 2047 {
+        if self.0.time_zone == Self::UNSPECIFIED_TIMEZONE {
             None
         } else {
             Some(self.0.time_zone)

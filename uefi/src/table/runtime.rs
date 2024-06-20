@@ -4,7 +4,7 @@ use super::Revision;
 use crate::table::boot::MemoryDescriptor;
 use crate::{CStr16, Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Display, Formatter};
-use core::mem::MaybeUninit;
+use core::mem::{size_of, MaybeUninit};
 use core::ptr;
 
 pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
@@ -582,6 +582,69 @@ impl Display for Time {
     }
 }
 
+/// Error returned from failing to convert a byte slice into a [`Time`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TimeByteConversionError {
+    /// One or more fields of the converted [`Time`] is invalid.
+    InvalidFields(TimeError),
+    /// The byte slice is not large enough to hold a [`Time`].
+    InvalidSize,
+}
+
+impl Display for TimeByteConversionError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::InvalidFields(error) => write!(f, "{error}"),
+            Self::InvalidSize => write!(
+                f,
+                "the byte slice is not large enough to hold a Time struct"
+            ),
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for Time {
+    type Error = TimeByteConversionError;
+
+    fn try_from(bytes: &[u8]) -> core::result::Result<Self, Self::Error> {
+        if size_of::<Time>() <= bytes.len() {
+            let year = u16::from_le_bytes(bytes[0..2].try_into().unwrap());
+            let month = bytes[2];
+            let day = bytes[3];
+            let hour = bytes[4];
+            let minute = bytes[5];
+            let second = bytes[6];
+            let nanosecond = u32::from_le_bytes(bytes[8..12].try_into().unwrap());
+            let time_zone = match i16::from_le_bytes(bytes[12..14].try_into().unwrap()) {
+                Self::UNSPECIFIED_TIMEZONE => None,
+                num => Some(num),
+            };
+            let daylight = Daylight::from_bits(bytes[14]).ok_or(
+                TimeByteConversionError::InvalidFields(TimeError {
+                    daylight: true,
+                    ..Default::default()
+                }),
+            )?;
+
+            let time_params = TimeParams {
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                nanosecond,
+                time_zone,
+                daylight,
+            };
+
+            Time::new(time_params).map_err(TimeByteConversionError::InvalidFields)
+        } else {
+            Err(TimeByteConversionError::InvalidSize)
+        }
+    }
+}
+
 /// Unique key for a variable.
 #[cfg(feature = "alloc")]
 #[derive(Debug)]
@@ -650,4 +713,87 @@ pub struct CapsuleInfo {
 
     /// The type of reset required for the capsule update.
     pub reset_type: ResetType,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use alloc::string::ToString;
+    use core::{slice, usize};
+
+    unsafe fn time_as_u8_slice(p: &Time) -> &[u8] {
+        slice::from_raw_parts(core::ptr::addr_of!(*p).cast(), size_of::<Time>())
+    }
+
+    unsafe fn time_as_u8_slice_with_size(p: &Time, len: usize) -> &[u8] {
+        slice::from_raw_parts(core::ptr::addr_of!(*p).cast(), len)
+    }
+
+    #[test]
+    fn test_successful_time_from_bytes() {
+        let mut time;
+        let mut time_from_bytes;
+        let mut time_params = TimeParams {
+            year: 2024,
+            month: 6,
+            day: 13,
+            hour: 4,
+            minute: 29,
+            second: 30,
+            nanosecond: 123_456_789,
+            time_zone: None,
+            daylight: Daylight::empty(),
+        };
+
+        time = Time::new(time_params).unwrap();
+        unsafe {
+            time_from_bytes = Time::try_from(time_as_u8_slice(&time)).unwrap();
+        }
+        assert_eq!(time, time_from_bytes);
+
+        time_params.time_zone = Some(120);
+        time = Time::new(time_params).unwrap();
+        unsafe {
+            time_from_bytes = Time::try_from(time_as_u8_slice(&time)).unwrap();
+        }
+        assert_eq!(time.to_string(), time_from_bytes.to_string());
+
+        time_params.time_zone = Some(150);
+        time = Time::new(time_params).unwrap();
+        unsafe {
+            time_from_bytes = Time::try_from(time_as_u8_slice(&time)).unwrap();
+        }
+        assert_eq!(time.to_string(), time_from_bytes.to_string());
+    }
+
+    #[test]
+    fn test_invalid_fields_in_time_byte_conversion() {
+        let time = Time::invalid();
+        let time_from_bytes;
+        unsafe {
+            time_from_bytes = Time::try_from(time_as_u8_slice(&time)).unwrap_err();
+        }
+        assert_eq!(
+            TimeByteConversionError::InvalidFields(TimeError {
+                year: true,
+                month: true,
+                day: true,
+                ..Default::default()
+            }),
+            time_from_bytes
+        );
+    }
+
+    #[test]
+    fn test_byte_slice_too_small_to_convert_to_time() {
+        let time = Time::invalid();
+        let time_from_bytes;
+        unsafe {
+            time_from_bytes =
+                Time::try_from(time_as_u8_slice_with_size(&time, size_of::<Time>() - 1))
+                    .unwrap_err();
+        }
+        assert_eq!(TimeByteConversionError::InvalidSize, time_from_bytes);
+    }
 }

@@ -14,6 +14,8 @@
 - Added `TryFrom<&[u8]>` for `DevicePathHeader`, `DevicePathNode` and `DevicePath`.
 - Added `ByteConversionError`.
 - Re-exported `CapsuleFlags`.
+- One can now specify in `TimeError` what fields of `Time` are outside its valid
+  range. `Time::is_valid` has been updated accordingly. 
 
 ## Changed
 - `SystemTable::exit_boot_services` is now `unsafe`. See that method's

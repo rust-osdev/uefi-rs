@@ -371,18 +371,60 @@ pub struct TimeParams {
     pub daylight: Daylight,
 }
 
-/// Error returned by [`Time`] methods if the input is outside the valid range.
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub struct TimeError;
-
-impl Display for TimeError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{self:?}")
-    }
+/// Error returned by [`Time`] methods. A bool value of `true` means
+/// the specified field is outside of its valid range.
+#[allow(missing_docs)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TimeError {
+    pub year: bool,
+    pub month: bool,
+    pub day: bool,
+    pub hour: bool,
+    pub minute: bool,
+    pub second: bool,
+    pub nanosecond: bool,
+    pub timezone: bool,
+    pub daylight: bool,
 }
 
 #[cfg(feature = "unstable")]
 impl core::error::Error for TimeError {}
+
+impl Display for TimeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.year {
+            writeln!(f, "year not within `1900..=9999`")?;
+        }
+        if self.month {
+            writeln!(f, "month not within `1..=12")?;
+        }
+        if self.day {
+            writeln!(f, "day not within `1..=31`")?;
+        }
+        if self.hour {
+            writeln!(f, "hour not within `0..=23`")?;
+        }
+        if self.minute {
+            writeln!(f, "minute not within `0..=59`")?;
+        }
+        if self.second {
+            writeln!(f, "second not within `0..=59`")?;
+        }
+        if self.nanosecond {
+            writeln!(f, "nanosecond not within `0..=999_999_999`")?;
+        }
+        if self.timezone {
+            writeln!(
+                f,
+                "time_zone not `Time::UNSPECIFIED_TIMEZONE` nor within `-1440..=1440`"
+            )?;
+        }
+        if self.daylight {
+            writeln!(f, "unknown bits set for daylight")?;
+        }
+        Ok(())
+    }
+}
 
 impl Time {
     /// Unspecified Timezone/local time.
@@ -404,11 +446,8 @@ impl Time {
             daylight: params.daylight,
             pad2: 0,
         });
-        if time.is_valid() {
-            Ok(time)
-        } else {
-            Err(TimeError)
-        }
+
+        time.is_valid().map(|_| time)
     }
 
     /// Create an invalid `Time` with all fields set to zero. This can
@@ -422,10 +461,39 @@ impl Time {
         Self(uefi_raw::time::Time::invalid())
     }
 
-    /// True if all fields are within valid ranges, false otherwise.
-    #[must_use]
-    pub fn is_valid(&self) -> bool {
-        self.0.is_valid()
+    /// `Ok()` if all fields are within valid ranges, `Err(TimeError)` otherwise.
+    pub fn is_valid(&self) -> core::result::Result<(), TimeError> {
+        let mut err = TimeError::default();
+        if !(1900..=9999).contains(&self.year()) {
+            err.year = true;
+        }
+        if !(1..=12).contains(&self.month()) {
+            err.month = true;
+        }
+        if !(1..=31).contains(&self.day()) {
+            err.day = true;
+        }
+        if self.hour() > 23 {
+            err.hour = true;
+        }
+        if self.minute() > 59 {
+            err.minute = true;
+        }
+        if self.second() > 59 {
+            err.second = true;
+        }
+        if self.nanosecond() > 999_999_999 {
+            err.nanosecond = true;
+        }
+        if self.time_zone().is_some() && !((-1440..=1440).contains(&self.time_zone().unwrap())) {
+            err.timezone = true;
+        }
+        // All fields are false, i.e., within their valid range.
+        if err == TimeError::default() {
+            Ok(())
+        } else {
+            Err(err)
+        }
     }
 
     /// Query the year.

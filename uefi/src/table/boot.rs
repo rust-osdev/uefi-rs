@@ -1729,6 +1729,12 @@ impl MemoryMapBackingMemory {
         self.0.as_ptr().cast()
     }
 
+    /// Returns a slice to the underlying memory.
+    #[must_use]
+    pub fn as_slice(&self) -> &[u8] {
+        unsafe { self.0.as_ref() }
+    }
+
     /// Returns a mutable slice to the underlying memory.
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
@@ -1971,6 +1977,15 @@ impl MemoryMap {
         };
 
         Some(desc)
+    }
+
+    /// Provides access to the raw memory map.
+    ///
+    /// This is for example useful if you want to embed the memory map into
+    /// another data structure, such as a Multiboot2 boot information.
+    #[must_use]
+    pub fn as_raw(&self) -> (&[u8], MemoryMapMeta) {
+        (self.buf.as_slice(), self.meta)
     }
 }
 

@@ -224,6 +224,12 @@ impl BootServices {
     /// Stores the current UEFI memory map in an UEFI-heap allocated buffer
     /// and returns a [`MemoryMap`].
     ///
+    /// # Parameters
+    ///
+    /// - `mt`: The memory type for the backing memory on the UEFI heap.
+    ///   Usually, this is [`MemoryType::LOADER_DATA`]. You can also use a
+    ///   custom type.
+    ///
     /// # Errors
     ///
     /// See section `EFI_BOOT_SERVICES.GetMemoryMap()` in the UEFI Specification

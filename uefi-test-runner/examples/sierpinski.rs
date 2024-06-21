@@ -55,6 +55,23 @@ impl Buffer {
             dims: (self.width, self.height),
         })
     }
+
+    /// Update only a pixel to the framebuffer.
+    fn blit_pixel(
+        &self,
+        gop: &mut GraphicsOutput,
+        coords: (usize, usize),
+    ) -> Result {
+        gop.blt(BltOp::BufferToVideo {
+            buffer: &self.pixels,
+            src: BltRegion::SubRectangle {
+                coords,
+                px_stride: self.width,
+            },
+            dest: coords,
+            dims: (1, 1),
+        })
+    }
 }
 // ANCHOR_END: buffer
 
@@ -90,6 +107,9 @@ fn draw_sierpinski(bt: &BootServices) -> Result {
         }
     }
 
+    // Draw background.
+    buffer.blit(&mut gop)?;
+
     let size = Point::new(width as f32, height as f32);
 
     // Define the vertices of a big triangle.
@@ -119,7 +139,7 @@ fn draw_sierpinski(bt: &BootServices) -> Result {
         pixel.blue = 0;
 
         // Draw the buffer to the screen.
-        buffer.blit(&mut gop)?;
+        buffer.blit_pixel(&mut gop, (p.x as usize, p.y as usize))?;
     }
 }
 

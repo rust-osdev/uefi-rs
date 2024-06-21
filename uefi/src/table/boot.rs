@@ -234,12 +234,13 @@ impl BootServices {
     pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMap> {
         let mut buffer = MemoryMapBackingMemory::new(mt)?;
 
+        let meta = self.get_memory_map(buffer.as_mut_slice())?;
         let MemoryMapMeta {
             map_size,
             map_key,
             desc_size,
             desc_version,
-        } = self.get_memory_map(buffer.as_mut_slice())?;
+        } = meta;
 
         let len = map_size / desc_size;
         assert_eq!(map_size % desc_size, 0);
@@ -247,7 +248,7 @@ impl BootServices {
         Ok(MemoryMap {
             key: map_key,
             buf: buffer,
-            desc_size,
+            meta,
             len,
         })
     }
@@ -1812,9 +1813,7 @@ pub struct MemoryMap {
     /// Backing memory, properly initialized at this point.
     buf: MemoryMapBackingMemory,
     key: MemoryMapKey,
-    /// Usually bound to the size of a [`MemoryDescriptor`] but can indicate if
-    /// this field is ever extended by a new UEFI standard.
-    desc_size: usize,
+    meta: MemoryMapMeta,
     len: usize,
 }
 
@@ -1822,17 +1821,12 @@ impl MemoryMap {
     /// Creates a [`MemoryMap`] from the give initialized memory map behind
     /// the buffer and the reported `desc_size` from UEFI.
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
-        let MemoryMapMeta {
-            map_size,
-            desc_size,
-            ..
-        } = meta;
-        assert!(desc_size >= mem::size_of::<MemoryDescriptor>());
-        let len = map_size / desc_size;
+        assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
+        let len = meta.entry_count();
         MemoryMap {
             key: MemoryMapKey(0),
             buf,
-            desc_size,
+            meta,
             len,
         }
     }
@@ -1914,15 +1908,15 @@ impl MemoryMap {
 
         unsafe {
             ptr::swap_nonoverlapping(
-                base.add(index1 * self.desc_size),
-                base.add(index2 * self.desc_size),
-                self.desc_size,
+                base.add(index1 * self.meta.desc_size),
+                base.add(index2 * self.meta.desc_size),
+                self.meta.desc_size,
             );
         }
     }
 
     fn get_element_phys_addr(&self, index: usize) -> PhysicalAddress {
-        let offset = index.checked_mul(self.desc_size).unwrap();
+        let offset = index.checked_mul(self.meta.desc_size).unwrap();
         let elem = unsafe { &*self.buf.as_ptr().add(offset).cast::<MemoryDescriptor>() };
         elem.phys_start
     }
@@ -1954,7 +1948,7 @@ impl MemoryMap {
             &*self
                 .buf
                 .as_ptr()
-                .add(self.desc_size * index)
+                .add(self.meta.desc_size * index)
                 .cast::<MemoryDescriptor>()
         };
 
@@ -1972,7 +1966,7 @@ impl MemoryMap {
             &mut *self
                 .buf
                 .as_mut_ptr()
-                .add(self.desc_size * index)
+                .add(self.meta.desc_size * index)
                 .cast::<MemoryDescriptor>()
         };
 

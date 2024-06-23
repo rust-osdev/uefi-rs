@@ -48,7 +48,8 @@
 //!   the Rust standard library. For example, methods that return a
 //!   `Vec` rather than filling a statically-sized array. This requires
 //!   a global allocator; you can use the `global_allocator` feature or
-//!   provide your own.
+//!   provide your own. This is independent of internal direct usages of the
+//!   UEFI boot service allocator which may happen anyway, where necessary.
 //! - `global_allocator`: Set [`allocator::Allocator`] as the global Rust
 //!   allocator. This is a simple allocator that relies on the UEFI pool
 //!   allocator. You can choose to provide your own allocator instead of

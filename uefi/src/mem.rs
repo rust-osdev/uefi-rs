@@ -23,10 +23,14 @@ use {core::alloc::Allocator, core::ptr::NonNull};
 ///   success.
 ///
 /// # Feature `unstable` / `allocator_api`
-/// By default, this function works with Rust's default allocation mechanism. If you activate the
-/// `unstable`-feature, it uses the `allocator_api` instead. In that case, the function takes an
-/// additional parameter describing the specific [`Allocator`]. You can use [`alloc::alloc::Global`]
-/// as default.
+/// By default, this function works with the allocator that is set as
+/// `#[global_allocator]`. This might be UEFI allocator but depends on your
+/// use case and how you set up the environment.
+///
+/// If you activate the `unstable`-feature, all allocations uses the provided
+/// allocator (via `allocator_api`) instead. In that case, the function takes an
+/// additional parameter describing the specific [`Allocator`]. You can use
+/// [`alloc::alloc::Global`] which defaults to the `#[global_allocator]`.
 ///
 /// [`Allocator`]: https://doc.rust-lang.org/alloc/alloc/trait.Allocator.html
 /// [`alloc::alloc::Global`]: https://doc.rust-lang.org/alloc/alloc/struct.Global.html

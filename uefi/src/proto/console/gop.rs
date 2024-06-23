@@ -76,7 +76,7 @@ pub struct GraphicsOutput(GraphicsOutputProtocol);
 impl GraphicsOutput {
     /// Returns information for an available graphics mode that the graphics
     /// device and the set of active video output devices supports.
-    pub fn query_mode(&self, index: u32, bs: &BootServices) -> Result<Mode> {
+    fn query_mode(&self, index: u32, bs: &BootServices) -> Result<Mode> {
         let mut info_sz = 0;
         let mut info_heap_ptr = ptr::null();
         // query_mode allocates a buffer and stores the heap ptr in the provided
@@ -100,7 +100,7 @@ impl GraphicsOutput {
             })
     }
 
-    /// Returns information about all available graphics modes.
+    /// Returns a [`ModeIter`].
     #[must_use]
     pub fn modes<'a>(&'a self, bs: &'a BootServices) -> ModeIter {
         ModeIter {
@@ -336,7 +336,7 @@ pub enum PixelFormat {
 }
 
 /// Represents a graphics mode compatible with a given graphics device.
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Mode {
     index: u32,
     info_sz: usize,

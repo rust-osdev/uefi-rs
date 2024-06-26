@@ -20,7 +20,8 @@
 - `MemoryMap::as_raw` which provides raw access to the memory map. This is for
   example useful if you create your own Multiboot2 bootloader that embeds the
   EFI mmap in a Multiboot2 boot information structure.
-- `Mode` is now `Copy` and `Clone`
+- `Mode` is now `Copy` and `Clone`.
+- Added `TryFrom<&[u8]>` for `Time`. 
 
 ## Changed
 - `SystemTable::exit_boot_services` is now `unsafe`. See that method's

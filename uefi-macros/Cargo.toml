@@ -1,0 +1,28 @@
+[package]
+name = "uefi-macros"
+version = "0.8.1"
+authors = ["Hadrien G. <knights_of_ni@gmx.com>"]
+readme = "README.md"
+edition = "2021"
+description = "Procedural macros for the uefi-rs crate"
+repository = "https://github.com/rust-osdev/uefi-rs"
+keywords = ["uefi", "efi"]
+categories = ["embedded", "no-std", "api-bindings"]
+license = "MPL-2.0"
+
+[badges]
+travis-ci = { repository = "rust-osdev/uefi-rs" }
+is-it-maintained-issue-resolution = { repository = "rust-osdev/uefi-rs" }
+is-it-maintained-open-issues = { repository = "rust-osdev/uefi-rs" }
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.28"
+quote = "1.0.9"
+syn = { version = "1.0.74", features = ["full"] }
+
+[dev-dependencies]
+trybuild = "1.0.61"
+uefi = { version = "0.17.0", default-features = false }

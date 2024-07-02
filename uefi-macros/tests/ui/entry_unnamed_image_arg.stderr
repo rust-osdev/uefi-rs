@@ -1,0 +1,5 @@
+error: Entry method's arguments must be named
+ --> tests/ui/entry_unnamed_image_arg.rs:9:22
+  |
+9 | fn unnamed_image_arg(_: Handle, _st: SystemTable<Boot>) -> Status {
+  |                      ^^^^^^^^^

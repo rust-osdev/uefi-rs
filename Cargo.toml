@@ -1,0 +1,53 @@
+[package]
+name = "uefi"
+version = "0.17.0"
+authors = ["Gabriel Majeri <gabriel.majeri6@gmail.com>"]
+readme = "README.md"
+edition = "2021"
+exclude = [
+    ".cargo/**",
+    "template/**",
+    "uefi-macros/**",
+    "uefi-services/**",
+    "uefi-test-runner/**",
+    "xtask/**",
+]
+description = "Safe and easy-to-use wrapper for building UEFI apps"
+repository = "https://github.com/rust-osdev/uefi-rs"
+keywords = ["uefi", "efi"]
+categories = ["embedded", "no-std", "api-bindings"]
+license = "MPL-2.0"
+
+[features]
+default = ["panic-on-logger-errors"]
+alloc = []
+exts = []
+logger = []
+# Ignore text output errors in logger as a workaround for firmware issues that
+# were observed on the VirtualBox UEFI implementation (see uefi-rs#121).
+# In those cases, this feature can be excluded by removing the default features.
+panic-on-logger-errors = []
+
+[dependencies]
+bitflags = "1.3.1"
+log = { version = "0.4.5", default-features = false }
+ucs2 = "0.3.2"
+uefi-macros = "0.8.0"
+
+[workspace]
+members = [
+    "template",
+    "uefi-macros",
+    "uefi-services",
+    "uefi-test-runner",
+    "xtask",
+]
+
+[patch.crates-io]
+uefi-macros = { path = "uefi-macros" }
+uefi-services = { path = "uefi-services" }
+uefi = { path = "." }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

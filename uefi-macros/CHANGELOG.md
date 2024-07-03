@@ -1,5 +1,8 @@
 # uefi-macros - [Unreleased]
 
+
+# uefi-macros - 0.14.0 (2024-07-02)
+
 ## Changed
 - The `entry` macro now sets the global system table pointer with `uefi::set_system_table`.
 

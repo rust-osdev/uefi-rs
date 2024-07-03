@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.28.0"
+version = "0.29.0"
 readme = "README.md"
 description = "Safe and easy-to-use wrapper for building UEFI apps."
 
@@ -25,7 +25,7 @@ global_allocator = []
 panic_handler = []
 # Some convenience when running inside QEMU.
 # - dependency log-debugcon: logical, not technical
-# - dependency panic_handler: logical, not technical 
+# - dependency panic_handler: logical, not technical
 qemu = ["dep:qemu-exit", "panic_handler", "log-debugcon"]
 # Whether the internal logger from the helpers module should also log to
 # the debugcon device (QEMU) and debug-console (cloud-hypervisor). Only works
@@ -39,8 +39,8 @@ ptr_meta.workspace = true
 uguid.workspace = true
 cfg-if = "1.0.0"
 ucs2 = "0.3.3"
-uefi-macros = "0.13.0"
-uefi-raw = "0.5.2"
+uefi-macros = "0.14.0"
+uefi-raw = "0.6.0"
 qemu-exit = { version = "3.0.2", optional = true }
 
 [package.metadata.docs.rs]

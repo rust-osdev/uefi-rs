@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+
+# uefi-raw - 0.6.0 (2024-07-02)
+
 ## Added
 - Added `ResetNotificationProtocol`.
 

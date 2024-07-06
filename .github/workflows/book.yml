@@ -2,6 +2,7 @@ name: Book
 on:
   push:
     branches: [main]
+    tags: ['*']
 permissions:
   contents: write
 # Adapted from:
@@ -21,24 +22,31 @@ jobs:
           echo `pwd`/mdbook >> $GITHUB_PATH
       - name: Deploy GitHub Pages
         run: |
-          cd book
-          mdbook build
-          git worktree add gh-pages gh-pages
+          # Configure git user so that `git commit` works.
           git config user.name "Deploy from CI"
           git config user.email ""
-          cd gh-pages
+
+          # Get the highest `uefi` release tag.
+          highest_tag="$(git tag --list | grep uefi-v | sort -V | tail -1)"
+
+          # Create a worktree for the tag.
+          git worktree add wt-tag refs/tags/"${highest_tag}"
+
+          # Create a worktree for the `gh-pages` branch.
+          git worktree add wt-gh-pages gh-pages
+
           # Delete the ref to avoid keeping history.
-          git update-ref -d refs/heads/gh-pages
-          # Place the book under a "HEAD" directory so that we can later
-          # add other versions (e.g. "stable" or "v0.17") without breaking
-          # URLs.
-          rm -rf HEAD
-          mv ../book HEAD
-          git add HEAD
-          # Add an index in the root to redirect to HEAD. If we eventually
-          # serve multiple versions, this can be changed to a real index.
-          cp ../head_redirect.html index.html
-          git add index.html
+          git -C wt-gh-pages update-ref -d refs/heads/gh-pages
+
+          # Delete existing book build.
+          rm -rf wt-gh-pages/latest-release
+
+          # Build the book for the tag. The dest dir is relative to the second
+          # path.
+          mdbook build --dest-dir ../../wt-gh-pages wt-tag/book
+
           # Commit and push.
+          cd wt-gh-pages
+          git add *
           git commit -m "Deploy $GITHUB_SHA to gh-pages"
           git push --force

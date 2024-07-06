@@ -8,7 +8,7 @@ permissions:
 # https://github.com/rust-lang/mdBook/wiki/Automated-Deployment%3A-GitHub-Actions#github-pages-deploy
 jobs:
   deploy:
-    if: github.repository == 'rust-osdev/uefi-rs'
+    # if: github.repository == 'rust-osdev/uefi-rs'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -8,8 +8,8 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, Error, Expr, ExprLit, ExprPath, FnArg, Ident, ItemFn,
-    ItemStruct, Lit, Pat, Visibility,
+    parse_macro_input, parse_quote, parse_quote_spanned, Error, Expr, ExprLit, ExprPath, FnArg,
+    Ident, ItemFn, ItemStruct, Lit, Pat, Visibility,
 };
 
 macro_rules! err {
@@ -121,17 +121,33 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
 /// Custom attribute for a UEFI executable entry point.
 ///
 /// This attribute modifies a function to mark it as the entry point for
-/// a UEFI executable. The function must have two parameters, [`Handle`]
-/// and [`SystemTable<Boot>`], and return a [`Status`]. The function can
-/// optionally be `unsafe`.
+/// a UEFI executable. The function:
+/// * Must return [`Status`].
+/// * Must have either zero parameters or two: [`Handle`] and [`SystemTable<Boot>`].
+/// * Can optionally be `unsafe`.
 ///
 /// Due to internal implementation details the parameters must both be
 /// named, so `arg` or `_arg` are allowed, but not `_`.
 ///
-/// The [`BootServices::set_image_handle`] function will be called
-/// automatically with the image [`Handle`] argument.
+/// The global system table pointer and global image handle will be set
+/// automatically.
 ///
 /// # Examples
+///
+/// With no arguments:
+///
+/// ```no_run
+/// #![no_main]
+///
+/// use uefi::prelude::*;
+///
+/// #[entry]
+/// fn main() -> Status {
+///     Status::SUCCESS
+/// }
+/// ```
+///
+/// With two arguments:
 ///
 /// ```no_run
 /// #![no_main]
@@ -180,6 +196,18 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         ));
     }
 
+    let signature_span = f.sig.span();
+
+    // If the user doesn't specify any arguments to the entry function, fill in
+    // the image handle and system table arguments automatically.
+    if f.sig.inputs.is_empty() {
+        f.sig.inputs = parse_quote_spanned!(
+            signature_span=>
+                image_handle: ::uefi::Handle,
+                system_table: ::uefi::table::SystemTable<::uefi::table::Boot>
+        );
+    }
+
     let image_handle_ident = get_function_arg_name(&f, 0, &mut errors);
     let system_table_ident = get_function_arg_name(&f, 1, &mut errors);
 
@@ -187,8 +215,6 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     if !errors.is_empty() {
         return errors.into();
     }
-
-    let signature_span = f.sig.span();
 
     f.sig.abi = Some(syn::parse2(quote_spanned! (signature_span=> extern "efiapi")).unwrap());
 

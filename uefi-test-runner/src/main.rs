@@ -23,7 +23,7 @@ mod runtime;
 #[entry]
 fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Initialize utilities (logging, memory allocation...)
-    uefi::helpers::init(&mut st).expect("Failed to initialize utilities");
+    uefi::helpers::init().expect("Failed to initialize utilities");
 
     // unit tests here
 

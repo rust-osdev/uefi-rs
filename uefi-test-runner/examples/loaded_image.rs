@@ -13,8 +13,8 @@ use uefi::{Identify, Result};
 
 // ANCHOR: main
 #[entry]
-fn main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
-    uefi::helpers::init(&mut system_table).unwrap();
+fn main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+    uefi::helpers::init().unwrap();
     let boot_services = system_table.boot_services();
 
     print_image_path(boot_services).unwrap();

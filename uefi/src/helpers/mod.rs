@@ -54,18 +54,19 @@ pub fn system_table() -> SystemTable<Boot> {
 /// **PLEASE NOTE** that these helpers are meant for the pre exit boot service
 /// epoch. Limited functionality might work after exiting them, such as logging
 /// to the debugcon device.
-#[allow(unused_variables)] // `st` is unused if logger and allocator are disabled
-pub fn init(st: &mut SystemTable<Boot>) -> Result<()> {
+pub fn init() -> Result<()> {
     // Setup logging and memory allocation
 
     #[cfg(feature = "logger")]
     unsafe {
-        logger::init(st);
+        let mut st = table::system_table_boot().expect("boot services are not active");
+        logger::init(&mut st);
     }
 
     #[cfg(feature = "global_allocator")]
     unsafe {
-        crate::allocator::init(st);
+        let mut st = table::system_table_boot().expect("boot services are not active");
+        crate::allocator::init(&mut st);
     }
 
     Ok(())

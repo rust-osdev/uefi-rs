@@ -45,8 +45,8 @@ fn get_shell_app_device_path<'a>(
 }
 
 #[entry]
-fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
-    uefi::helpers::init(&mut st).unwrap();
+fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
+    uefi::helpers::init().unwrap();
     let boot_services = st.boot_services();
 
     let mut storage = Vec::new();

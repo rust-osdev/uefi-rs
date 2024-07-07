@@ -16,10 +16,10 @@ use uefi::proto::misc::Timestamp;
 
 // ANCHOR: entry
 #[entry]
-fn main(image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+fn main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status {
     // ANCHOR_END: entry
     // ANCHOR: services
-    uefi::helpers::init(&mut system_table).unwrap();
+    uefi::helpers::init().unwrap();
     let boot_services = system_table.boot_services();
     // ANCHOR_END: services
 

@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Changed
+- **Breaking:** `uefi::helpers::init` no longer takes an argument.
+
 
 # uefi - 0.29.0 (2024-07-02)
 

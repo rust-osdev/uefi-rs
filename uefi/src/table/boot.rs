@@ -683,11 +683,11 @@ impl BootServices {
     ///
     /// * [`uefi::Status::OUT_OF_RESOURCES`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn register_protocol_notify(
+    pub fn register_protocol_notify<'guid>(
         &self,
-        protocol: &Guid,
+        protocol: &'guid Guid,
         event: Event,
-    ) -> Result<(Event, SearchType)> {
+    ) -> Result<(Event, SearchType<'guid>)> {
         let mut key = ptr::null();
         // Safety: we clone `event` a couple times, but there will be only one left once we return.
         unsafe { (self.0.register_protocol_notify)(protocol, event.as_ptr(), &mut key) }

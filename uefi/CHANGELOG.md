@@ -2,6 +2,8 @@
 
 ## Changed
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.
+- The lifetime of the `SearchType` returned from
+  `BootServices::register_protocol_notify` is now tied to the protocol GUID.
 
 
 # uefi - 0.29.0 (2024-07-02)

@@ -7,7 +7,7 @@ use uefi::table::boot::{MemoryMapBackingMemory, MemoryMapMeta};
 use crate::proto::console::text;
 use crate::{CStr16, Result, Status, StatusExt};
 
-use super::boot::{BootServices, MemoryDescriptor, MemoryMap, MemoryType};
+use super::boot::{BootServices, MemoryDescriptor, MemoryMapOwned, MemoryType};
 use super::runtime::{ResetType, RuntimeServices};
 use super::{cfg, Revision};
 
@@ -230,7 +230,7 @@ impl SystemTable<Boot> {
     pub unsafe fn exit_boot_services(
         self,
         memory_type: MemoryType,
-    ) -> (SystemTable<Runtime>, MemoryMap) {
+    ) -> (SystemTable<Runtime>, MemoryMapOwned) {
         crate::helpers::exit();
 
         // Reboot the device.
@@ -255,7 +255,7 @@ impl SystemTable<Boot> {
                         table: self.table,
                         _marker: PhantomData,
                     };
-                    return (st, MemoryMap::from_initialized_mem(buf, memory_map));
+                    return (st, MemoryMapOwned::from_initialized_mem(buf, memory_map));
                 }
                 Err(err) => {
                     log::error!("Error retrieving the memory map for exiting the boot services");

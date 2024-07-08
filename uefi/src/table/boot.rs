@@ -222,7 +222,7 @@ impl BootServices {
     }
 
     /// Stores the current UEFI memory map in an UEFI-heap allocated buffer
-    /// and returns a [`MemoryMap`].
+    /// and returns a [`MemoryMapOwned`].
     ///
     /// # Parameters
     ///
@@ -237,7 +237,7 @@ impl BootServices {
     ///
     /// * [`uefi::Status::BUFFER_TOO_SMALL`]
     /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMap> {
+    pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMapOwned> {
         let mut buffer = MemoryMapBackingMemory::new(mt)?;
 
         let meta = self.get_memory_map(buffer.as_mut_slice())?;
@@ -251,7 +251,7 @@ impl BootServices {
         let len = map_size / desc_size;
         assert_eq!(map_size % desc_size, 0);
         assert_eq!(desc_version, MemoryDescriptor::VERSION);
-        Ok(MemoryMap {
+        Ok(MemoryMapOwned {
             key: map_key,
             buf: buffer,
             meta,
@@ -1663,7 +1663,7 @@ pub struct MemoryMapKey(usize);
 /// The type is intended to be used like this:
 /// 1. create it using [`MemoryMapBackingMemory::new`]
 /// 2. pass it to [`BootServices::get_memory_map`]
-/// 3. construct a [`MemoryMap`] from it
+/// 3. construct a [`MemoryMapOwned`] from it
 #[derive(Debug)]
 #[allow(clippy::len_without_is_empty)] // this type is never empty
 pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);
@@ -1807,11 +1807,11 @@ impl MemoryMapMeta {
 /// An accessory to the memory map that can be either iterated or
 /// indexed like an array.
 ///
-/// A [`MemoryMap`] is always associated with the unique [`MemoryMapKey`]
+/// A [`MemoryMapOwned`] is always associated with the unique [`MemoryMapKey`]
 /// contained in the struct.
 ///
-/// To iterate over the entries, call [`MemoryMap::entries`]. To get a sorted
-/// map, you manually have to call [`MemoryMap::sort`] first.
+/// To iterate over the entries, call [`MemoryMapOwned::entries`]. To get a sorted
+/// map, you manually have to call [`MemoryMapOwned::sort`] first.
 ///
 /// ## UEFI pitfalls
 /// **Please note** that when working with memory maps, the `entry_size` is
@@ -1821,7 +1821,7 @@ impl MemoryMapMeta {
 ///
 /// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
 #[derive(Debug)]
-pub struct MemoryMap {
+pub struct MemoryMapOwned {
     /// Backing memory, properly initialized at this point.
     buf: MemoryMapBackingMemory,
     key: MemoryMapKey,
@@ -1829,13 +1829,13 @@ pub struct MemoryMap {
     len: usize,
 }
 
-impl MemoryMap {
-    /// Creates a [`MemoryMap`] from the give initialized memory map behind
+impl MemoryMapOwned {
+    /// Creates a [`MemoryMapOwned`] from the give initialized memory map behind
     /// the buffer and the reported `desc_size` from UEFI.
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
         assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
-        MemoryMap {
+        MemoryMapOwned {
             key: MemoryMapKey(0),
             buf,
             meta,
@@ -1935,7 +1935,7 @@ impl MemoryMap {
 
     /// Returns an [`MemoryMapIter`] emitting [`MemoryDescriptor`]s.
     ///
-    /// To get a sorted map, call [`MemoryMap::sort`] first.
+    /// To get a sorted map, call [`MemoryMapOwned::sort`] first.
     ///
     /// # UEFI pitfalls
     /// Currently, only the descriptor version specified in
@@ -1995,7 +1995,7 @@ impl MemoryMap {
     }
 }
 
-impl core::ops::Index<usize> for MemoryMap {
+impl core::ops::Index<usize> for MemoryMapOwned {
     type Output = MemoryDescriptor;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -2003,7 +2003,7 @@ impl core::ops::Index<usize> for MemoryMap {
     }
 }
 
-impl core::ops::IndexMut<usize> for MemoryMap {
+impl core::ops::IndexMut<usize> for MemoryMapOwned {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         self.get_mut(index).unwrap()
     }
@@ -2013,7 +2013,7 @@ impl core::ops::IndexMut<usize> for MemoryMap {
 /// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
 pub struct MemoryMapIter<'a> {
-    memory_map: &'a MemoryMap,
+    memory_map: &'a MemoryMapOwned,
     index: usize,
 }
 
@@ -2170,18 +2170,18 @@ pub struct ProtocolSearchKey(NonNull<c_void>);
 mod tests_mmap_artificial {
     use core::mem::{size_of, size_of_val};
 
-    use crate::table::boot::{MemoryAttribute, MemoryMap, MemoryType};
+    use crate::table::boot::{MemoryAttribute, MemoryMapOwned, MemoryType};
 
     use super::{MemoryDescriptor, MemoryMapIter};
 
-    fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMap {
+    fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMapOwned {
         let byte_buffer = {
             unsafe {
                 core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size_of_val(buffer))
             }
         };
 
-        MemoryMap::from_raw(byte_buffer, size_of::<MemoryDescriptor>())
+        MemoryMapOwned::from_raw(byte_buffer, size_of::<MemoryDescriptor>())
     }
 
     #[test]
@@ -2269,7 +2269,7 @@ mod tests_mmap_artificial {
     }
 
     // Added for debug purposes on test failure
-    impl core::fmt::Display for MemoryMap {
+    impl core::fmt::Display for MemoryMapOwned {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             writeln!(f)?;
             for desc in self.entries() {
@@ -2323,7 +2323,7 @@ mod tests_mmap_real {
         let mut buf = MMAP_RAW;
         let buf =
             unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), MMAP_META.map_size) };
-        let mut mmap = MemoryMap::from_raw(buf, MMAP_META.desc_size);
+        let mut mmap = MemoryMapOwned::from_raw(buf, MMAP_META.desc_size);
         mmap.sort();
 
         let entries = mmap.entries().copied().collect::<Vec<_>>();

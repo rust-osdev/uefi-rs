@@ -1,4 +1,4 @@
-use uefi::table::boot::{AllocateType, BootServices, MemoryType};
+use uefi::table::boot::{AllocateType, BootServices, MemoryMap, MemoryMapMut, MemoryType};
 
 use alloc::vec::Vec;
 

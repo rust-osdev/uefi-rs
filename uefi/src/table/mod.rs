@@ -11,12 +11,24 @@ pub use header::Header;
 pub use system::{Boot, Runtime, SystemTable};
 pub use uefi_raw::table::Revision;
 
-use core::ptr;
+use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 
 /// Global system table pointer. This is only modified by [`set_system_table`].
 static SYSTEM_TABLE: AtomicPtr<uefi_raw::table::system::SystemTable> =
     AtomicPtr::new(ptr::null_mut());
+
+/// Get the raw system table pointer. This may only be called after
+/// `set_system_table` has been used to set the global pointer.
+///
+/// # Panics
+///
+/// Panics if the global system table pointer is null.
+#[track_caller]
+pub(crate) fn system_table_raw_panicking() -> NonNull<uefi_raw::table::system::SystemTable> {
+    let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
+    NonNull::new(ptr).expect("global system table pointer is not set")
+}
 
 /// Update the global system table pointer.
 ///

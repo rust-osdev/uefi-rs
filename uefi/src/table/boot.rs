@@ -1921,6 +1921,14 @@ impl<'a> MemoryMap for MemoryMapRef<'a> {
     }
 }
 
+impl Index<usize> for MemoryMapRef<'_> {
+    type Output = MemoryDescriptor;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.get(index).unwrap()
+    }
+}
+
 /// Implementation of [`MemoryMapMut`] for the given buffer.
 #[derive(Debug)]
 pub struct MemoryMapRefMut<'a> {
@@ -2031,6 +2039,20 @@ impl<'a> MemoryMapRefMut<'a> {
     }
 }
 
+impl Index<usize> for MemoryMapRefMut<'_> {
+    type Output = MemoryDescriptor;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.get(index).unwrap()
+    }
+}
+
+impl IndexMut<usize> for MemoryMapRefMut<'_> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.get_mut(index).unwrap()
+    }
+}
+
 /// Implementation of [`MemoryMapMut`] that owns the buffer on the UEFI heap.
 #[derive(Debug)]
 pub struct MemoryMapOwned {
@@ -2108,6 +2130,20 @@ impl MemoryMapMut for MemoryMapOwned {
 
     unsafe fn buffer_mut(&mut self) -> &mut [u8] {
         self.buf.as_mut_slice()
+    }
+}
+
+impl Index<usize> for MemoryMapOwned {
+    type Output = MemoryDescriptor;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.get(index).unwrap()
+    }
+}
+
+impl IndexMut<usize> for MemoryMapOwned {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.get_mut(index).unwrap()
     }
 }
 
@@ -2355,7 +2391,10 @@ mod tests_mmap_artificial {
         let mut mem_map = buffer_to_map(&mut buffer);
 
         for index in 0..3 {
-            assert_eq!(mem_map.get(index), BUFFER.get(index))
+            assert_eq!(mem_map.get(index), BUFFER.get(index));
+
+            // Test Index impl
+            assert_eq!(Some(&mem_map[index]), BUFFER.get(index));
         }
 
         let mut_desc = mem_map.get_mut(2).unwrap();

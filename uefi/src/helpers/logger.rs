@@ -19,14 +19,12 @@ use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
 
 /// Global logger object
-#[cfg(feature = "logger")]
 static LOGGER: Logger = Logger::new();
 
 /// Set up logging
 ///
 /// This is unsafe because you must arrange for the logger to be reset with
 /// disable() on exit from UEFI boot services.
-#[cfg(feature = "logger")]
 pub unsafe fn init(st: &mut SystemTable<Boot>) {
     // Connect the logger to stdout.
     LOGGER.set_output(st.stdout());

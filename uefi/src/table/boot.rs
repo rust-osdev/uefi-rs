@@ -1793,15 +1793,22 @@ impl MemoryMapMeta {
     }
 }
 
-/// An accessory to the UEFI memory map that can be either iterated or indexed
-/// like an array.
+/// An accessory to the UEFI memory map and associated metadata that can be
+/// either iterated or indexed like an array.
 ///
 /// A [`MemoryMap`] is always associated with the unique [`MemoryMapKey`]
-/// bundled with the ma.
+/// bundled with the map.
 ///
 /// To iterate over the entries, call [`MemoryMap::entries`].
 ///
 /// ## UEFI pitfalls
+/// Note that a MemoryMap can quickly become outdated, as soon as any explicit
+/// or hidden allocation happens.
+///
+/// As soon as boot services are excited, all previous obtained memory maps must
+/// be considered as outdated, except if the [`MemoryMapKey`] equals the one
+/// returned by `exit_boot_services()`.
+///
 /// **Please note** that when working with memory maps, the `entry_size` is
 /// usually larger than `size_of::<MemoryDescriptor` [[0]]. So to be safe,
 /// always use `entry_size` as step-size when interfacing with the memory map on
@@ -2455,7 +2462,7 @@ mod tests_mmap_real {
         7, 1048576, 0, 1792, 15, 0, 10, 8388608, 0, 8, 15, 0, 7, 8421376, 0, 3, 15, 0, 10, 8433664,
         0, 1, 15, 0, 7, 8437760, 0, 4, 15, 0, 10, 8454144, 0, 240, 15, 0,
     ];
-    
+
     #[test]
     fn basic_functionality() {
         let mut buf = MMAP_RAW;

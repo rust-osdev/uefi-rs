@@ -2455,7 +2455,7 @@ mod tests_mmap_real {
         7, 1048576, 0, 1792, 15, 0, 10, 8388608, 0, 8, 15, 0, 7, 8421376, 0, 3, 15, 0, 10, 8433664,
         0, 1, 15, 0, 7, 8437760, 0, 4, 15, 0, 10, 8454144, 0, 240, 15, 0,
     ];
-    extern crate std;
+    
     #[test]
     fn basic_functionality() {
         let mut buf = MMAP_RAW;

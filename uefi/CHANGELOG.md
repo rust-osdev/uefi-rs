@@ -1,5 +1,10 @@
 # uefi - [Unreleased]
 
+## Added
+- `uefi::system` is a new module that provides freestanding functions for
+  accessing fields of the global system table.
+- Add standard derives for `ConfigTableEntry`.
+
 ## Changed
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.
 - The lifetime of the `SearchType` returned from

@@ -13,7 +13,7 @@ use uefi::proto::console::serial::Serial;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::messaging::Vendor;
 use uefi::table::boot::{MemoryMap, MemoryType};
-use uefi::{print, println, Result};
+use uefi::{print, println, system, Result};
 
 mod boot;
 mod fs;
@@ -45,6 +45,9 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Ensure the tests are run on a version of UEFI we support.
     check_revision(st.uefi_revision());
 
+    // Check the `uefi::system` module.
+    check_system(&st);
+
     // Test all the boot services.
     let bt = st.boot_services();
 
@@ -67,6 +70,8 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 }
 
 fn check_revision(rev: uefi::table::Revision) {
+    assert_eq!(system::uefi_revision(), rev);
+
     let (major, minor) = (rev.major(), rev.minor());
 
     info!("UEFI {}.{}", major, minor / 10);
@@ -76,6 +81,25 @@ fn check_revision(rev: uefi::table::Revision) {
         minor >= 30,
         "Old version of UEFI 2, some features might not be available."
     );
+}
+
+fn check_system(st: &SystemTable<Boot>) {
+    assert_eq!(system::firmware_vendor(), cstr16!("EDK II"));
+    check_revision(system::uefi_revision());
+
+    assert_eq!(system::firmware_revision(), st.firmware_revision());
+    system::with_config_table(|t| assert_eq!(t, st.config_table()));
+
+    system::with_stdout(|stdout| {
+        stdout
+            .output_string(cstr16!("test system::with_stdout\n"))
+            .unwrap()
+    });
+    system::with_stderr(|stdout| {
+        stdout
+            .output_string(cstr16!("test system::with_stderr\n"))
+            .unwrap()
+    });
 }
 
 #[derive(Clone, Copy, Debug)]

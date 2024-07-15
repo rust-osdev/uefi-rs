@@ -119,6 +119,7 @@ pub use uguid::guid;
 mod result;
 pub use result::{Error, Result, ResultExt, Status, StatusExt};
 
+pub mod system;
 pub mod table;
 
 pub mod proto;

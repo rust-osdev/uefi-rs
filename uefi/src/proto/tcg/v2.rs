@@ -157,7 +157,7 @@ struct EventHeader {
 /// `TCG_PCR_EVENT2` for reading events. To help clarify the usage, our
 /// API renames these types to `PcrEventInputs` and `PcrEvent`,
 /// respectively.
-#[derive(Pointee)]
+#[derive(Eq, Pointee)]
 #[repr(C, packed)]
 pub struct PcrEventInputs {
     size: u32,
@@ -225,6 +225,15 @@ impl Debug for PcrEventInputs {
             .field("event_header", &self.event_header)
             .field("event", &"<binary data>")
             .finish()
+    }
+}
+
+// Manual `PartialEq` implementation since it can't be derived for a packed DST.
+impl PartialEq for PcrEventInputs {
+    fn eq(&self, other: &PcrEventInputs) -> bool {
+        self.size == other.size
+            && self.event_header == other.event_header
+            && self.event == other.event
     }
 }
 

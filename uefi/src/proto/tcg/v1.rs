@@ -18,6 +18,12 @@ use core::marker::PhantomData;
 use core::{mem, ptr};
 use ptr_meta::Pointee;
 
+#[cfg(feature = "alloc")]
+use {crate::mem::make_boxed, alloc::boxed::Box};
+
+#[cfg(all(feature = "unstable", feature = "alloc"))]
+use {alloc::alloc::Global, core::alloc::Allocator};
+
 /// 20-byte SHA-1 digest.
 pub type Sha1Digest = [u8; 20];
 
@@ -162,6 +168,32 @@ impl PcrEvent {
             let ptr: *mut PcrEvent =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
+        }
+    }
+
+    /// Create a new `PcrEvent` in a [`Box`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
+    /// large.
+    #[cfg(feature = "alloc")]
+    pub fn new_in_box(
+        pcr_index: PcrIndex,
+        event_type: EventType,
+        digest: Sha1Digest,
+        event_data: &[u8],
+    ) -> Result<Box<Self>> {
+        #[cfg(not(feature = "unstable"))]
+        {
+            make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data))
+        }
+        #[cfg(feature = "unstable")]
+        {
+            make_boxed(
+                |buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data),
+                Global,
+            )
         }
     }
 
@@ -575,6 +607,12 @@ mod tests {
             // Event data
             0x14, 0x15, 0x16, 0x17,
         ]);
+
+        // Check that `new_in_box` gives the same value.
+        assert_eq!(
+            event,
+            &*PcrEvent::new_in_box(PcrIndex(4), EventType::IPL, digest, &data).unwrap()
+        );
     }
 
     #[test]

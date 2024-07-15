@@ -21,6 +21,12 @@ use core::marker::PhantomData;
 use core::{mem, ptr, slice};
 use ptr_meta::{Pointee, PtrExt};
 
+#[cfg(feature = "alloc")]
+use {crate::mem::make_boxed, alloc::boxed::Box};
+
+#[cfg(all(feature = "unstable", feature = "alloc"))]
+use {alloc::alloc::Global, core::alloc::Allocator};
+
 /// Version information.
 ///
 /// Layout compatible with the C type `EFI_TG2_VERSION`.
@@ -208,6 +214,31 @@ impl PcrEventInputs {
             let ptr: *mut PcrEventInputs =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
+        }
+    }
+
+    /// Create a new `PcrEventInputs` in a [`Box`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
+    /// large.
+    #[cfg(feature = "alloc")]
+    pub fn new_in_box(
+        pcr_index: PcrIndex,
+        event_type: EventType,
+        event_data: &[u8],
+    ) -> Result<Box<Self>> {
+        #[cfg(not(feature = "unstable"))]
+        {
+            make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data))
+        }
+        #[cfg(feature = "unstable")]
+        {
+            make_boxed(
+                |buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data),
+                Global,
+            )
         }
     }
 }
@@ -838,6 +869,12 @@ mod tests {
             // Event data
             0x12, 0x13, 0x14, 0x15,
         ]);
+
+        // Check that `new_in_box` gives the same value.
+        assert_eq!(
+            event,
+            &*PcrEventInputs::new_in_box(PcrIndex(4), EventType::IPL, &event_data).unwrap()
+        );
     }
 
     #[test]

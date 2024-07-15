@@ -180,7 +180,7 @@ impl PcrEventInputs {
         pcr_index: PcrIndex,
         event_type: EventType,
         event_data: &[u8],
-    ) -> Result<&'buf Self, Option<usize>> {
+    ) -> Result<&'buf mut Self, Option<usize>> {
         let required_size =
             mem::size_of::<u32>() + mem::size_of::<EventHeader>() + event_data.len();
 
@@ -205,9 +205,9 @@ impl PcrEventInputs {
             );
             ptr::copy(event_data.as_ptr(), ptr, event_data.len());
 
-            let ptr: *const PcrEventInputs =
-                ptr_meta::from_raw_parts(buffer.as_ptr().cast(), event_data.len());
-            Ok(&*ptr)
+            let ptr: *mut PcrEventInputs =
+                ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
+            Ok(&mut *ptr)
         }
     }
 }

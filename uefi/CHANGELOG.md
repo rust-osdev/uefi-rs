@@ -4,6 +4,11 @@
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.
 - The lifetime of the `SearchType` returned from
   `BootServices::register_protocol_notify` is now tied to the protocol GUID.
+- The traits `MemoryMap` and `MemoryMapMut` have been introduced together with
+  the implementations `MemoryMapRef`, `MemoryMapRefMut`, and `MemoryMapOwned`.
+  The old `MemoryMap` was renamed to `MemoryMapOwned`.
+  - `pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMap>` now returns
+     a `MemoryMapOwned`.
 
 
 # uefi - 0.29.0 (2024-07-02)

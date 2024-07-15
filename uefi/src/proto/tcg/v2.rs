@@ -172,7 +172,7 @@ impl PcrEventInputs {
     /// # Errors
     ///
     /// Returns [`Status::BUFFER_TOO_SMALL`] if the `buffer` is not large
-    /// enough.
+    /// enough. The required size will be returned in the error data.
     ///
     /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
     /// large.
@@ -181,15 +181,15 @@ impl PcrEventInputs {
         pcr_index: PcrIndex,
         event_type: EventType,
         event_data: &[u8],
-    ) -> Result<&'buf Self> {
+    ) -> Result<&'buf Self, Option<usize>> {
         let required_size =
             mem::size_of::<u32>() + mem::size_of::<EventHeader>() + event_data.len();
 
         if buffer.len() < required_size {
-            return Err(Status::BUFFER_TOO_SMALL.into());
+            return Err(Error::new(Status::BUFFER_TOO_SMALL, Some(required_size)));
         }
-        let size_field =
-            u32::try_from(required_size).map_err(|_| Error::from(Status::INVALID_PARAMETER))?;
+        let size_field = u32::try_from(required_size)
+            .map_err(|_| Error::new(Status::INVALID_PARAMETER, None))?;
 
         let mut ptr: *mut u8 = buffer.as_mut_ptr().cast();
 

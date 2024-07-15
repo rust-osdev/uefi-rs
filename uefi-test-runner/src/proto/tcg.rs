@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use core::mem::MaybeUninit;
 use uefi::proto::tcg::{v1, v2, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
 use uefi::table::boot::BootServices;
 
@@ -63,7 +62,7 @@ fn test_tcg_v1(bt: &BootServices) {
 
     let pcr_index = PcrIndex(8);
 
-    let mut event_buf = [MaybeUninit::uninit(); 256];
+    let mut event_buf = [0; 256];
     let event = v1::PcrEvent::new_in_buffer(
         &mut event_buf,
         pcr_index,
@@ -279,7 +278,7 @@ pub fn test_tcg_v2(bt: &BootServices) {
 
     // Create a PCR event.
     let pcr_index = PcrIndex(8);
-    let mut event_buf = [MaybeUninit::uninit(); 256];
+    let mut event_buf = [0; 256];
     let event_data = [0x12, 0x13, 0x14, 0x15];
     let data_to_hash = b"some-data";
     let event =

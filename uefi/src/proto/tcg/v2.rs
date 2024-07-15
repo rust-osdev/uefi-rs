@@ -18,7 +18,6 @@ use crate::{Error, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem::MaybeUninit;
 use core::{mem, ptr, slice};
 use ptr_meta::{Pointee, PtrExt};
 
@@ -177,7 +176,7 @@ impl PcrEventInputs {
     /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
     /// large.
     pub fn new_in_buffer<'buf>(
-        buffer: &'buf mut [MaybeUninit<u8>],
+        buffer: &'buf mut [u8],
         pcr_index: PcrIndex,
         event_type: EventType,
         event_data: &[u8],
@@ -791,7 +790,7 @@ mod tests {
 
     #[test]
     fn test_new_event() {
-        let mut buf = [MaybeUninit::uninit(); 22];
+        let mut buf = [0; 22];
         let event_data = [0x12, 0x13, 0x14, 0x15];
         let event =
             PcrEventInputs::new_in_buffer(&mut buf, PcrIndex(4), EventType::IPL, &event_data)

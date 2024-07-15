@@ -10,14 +10,12 @@
 
 use super::{AlgorithmId, EventType, HashAlgorithm, PcrIndex};
 use crate::data_types::{Align, PhysicalAddress};
-use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem::{self, MaybeUninit};
-use core::ptr;
+use core::{mem, ptr};
 use ptr_meta::Pointee;
 
 /// 20-byte SHA-1 digest.
@@ -133,7 +131,7 @@ impl PcrEvent {
     /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
     /// large.
     pub fn new_in_buffer<'buf>(
-        buffer: &'buf mut [MaybeUninit<u8>],
+        buffer: &'buf mut [u8],
         pcr_index: PcrIndex,
         event_type: EventType,
         digest: Sha1Digest,
@@ -152,7 +150,7 @@ impl PcrEvent {
             return Err(Error::new(Status::BUFFER_TOO_SMALL, Some(required_size)));
         }
 
-        let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
+        let mut ptr: *mut u8 = buffer.as_mut_ptr().cast();
 
         unsafe {
             ptr_write_unaligned_and_add(&mut ptr, pcr_index);
@@ -539,7 +537,7 @@ mod tests {
 
     #[test]
     fn test_new_pcr_event() {
-        let mut event_buf = [MaybeUninit::uninit(); 256];
+        let mut event_buf = [0; 256];
         #[rustfmt::skip]
         let digest = [
             0x00, 0x01, 0x02, 0x03,

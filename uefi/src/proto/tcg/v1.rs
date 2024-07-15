@@ -9,7 +9,7 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::{AlgorithmId, EventType, HashAlgorithm, PcrIndex};
-use crate::data_types::PhysicalAddress;
+use crate::data_types::{Align, PhysicalAddress};
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
@@ -197,6 +197,12 @@ impl PcrEvent {
     #[must_use]
     pub fn digest(&self) -> Sha1Digest {
         self.digest
+    }
+}
+
+impl Align for PcrEvent {
+    fn alignment() -> usize {
+        1
     }
 }
 

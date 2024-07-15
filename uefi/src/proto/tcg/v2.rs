@@ -11,7 +11,7 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::{v1, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
-use crate::data_types::{PhysicalAddress, UnalignedSlice};
+use crate::data_types::{Align, PhysicalAddress, UnalignedSlice};
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
@@ -210,6 +210,12 @@ impl PcrEventInputs {
                 ptr_meta::from_raw_parts(buffer.as_ptr().cast(), event_data.len());
             Ok(&*ptr)
         }
+    }
+}
+
+impl Align for PcrEventInputs {
+    fn alignment() -> usize {
+        1
     }
 }
 

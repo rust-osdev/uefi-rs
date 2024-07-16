@@ -9,16 +9,20 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::{AlgorithmId, EventType, HashAlgorithm, PcrIndex};
-use crate::data_types::PhysicalAddress;
-use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
+use crate::data_types::{Align, PhysicalAddress};
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem::{self, MaybeUninit};
-use core::ptr;
+use core::{mem, ptr};
 use ptr_meta::Pointee;
+
+#[cfg(feature = "alloc")]
+use {crate::mem::make_boxed, alloc::boxed::Box};
+
+#[cfg(all(feature = "unstable", feature = "alloc"))]
+use {alloc::alloc::Global, core::alloc::Allocator};
 
 /// 20-byte SHA-1 digest.
 pub type Sha1Digest = [u8; 20];
@@ -128,19 +132,19 @@ impl PcrEvent {
     /// # Errors
     ///
     /// Returns [`Status::BUFFER_TOO_SMALL`] if the `buffer` is not large
-    /// enough.
+    /// enough. The required size will be returned in the error data.
     ///
     /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
     /// large.
     pub fn new_in_buffer<'buf>(
-        buffer: &'buf mut [MaybeUninit<u8>],
+        buffer: &'buf mut [u8],
         pcr_index: PcrIndex,
         event_type: EventType,
         digest: Sha1Digest,
         event_data: &[u8],
-    ) -> Result<&'buf mut Self> {
-        let event_data_size =
-            u32::try_from(event_data.len()).map_err(|_| Error::from(Status::INVALID_PARAMETER))?;
+    ) -> Result<&'buf mut Self, Option<usize>> {
+        let event_data_size = u32::try_from(event_data.len())
+            .map_err(|_| Error::new(Status::INVALID_PARAMETER, None))?;
 
         let required_size = mem::size_of::<PcrIndex>()
             + mem::size_of::<EventType>()
@@ -149,10 +153,10 @@ impl PcrEvent {
             + event_data.len();
 
         if buffer.len() < required_size {
-            return Err(Status::BUFFER_TOO_SMALL.into());
+            return Err(Error::new(Status::BUFFER_TOO_SMALL, Some(required_size)));
         }
 
-        let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
+        let mut ptr: *mut u8 = buffer.as_mut_ptr().cast();
 
         unsafe {
             ptr_write_unaligned_and_add(&mut ptr, pcr_index);
@@ -164,6 +168,32 @@ impl PcrEvent {
             let ptr: *mut PcrEvent =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
+        }
+    }
+
+    /// Create a new `PcrEvent` in a [`Box`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
+    /// large.
+    #[cfg(feature = "alloc")]
+    pub fn new_in_box(
+        pcr_index: PcrIndex,
+        event_type: EventType,
+        digest: Sha1Digest,
+        event_data: &[u8],
+    ) -> Result<Box<Self>> {
+        #[cfg(not(feature = "unstable"))]
+        {
+            make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data))
+        }
+        #[cfg(feature = "unstable")]
+        {
+            make_boxed(
+                |buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data),
+                Global,
+            )
         }
     }
 
@@ -197,6 +227,12 @@ impl PcrEvent {
     #[must_use]
     pub fn digest(&self) -> Sha1Digest {
         self.digest
+    }
+}
+
+impl Align for PcrEvent {
+    fn alignment() -> usize {
+        1
     }
 }
 
@@ -533,7 +569,7 @@ mod tests {
 
     #[test]
     fn test_new_pcr_event() {
-        let mut event_buf = [MaybeUninit::uninit(); 256];
+        let mut event_buf = [0; 256];
         #[rustfmt::skip]
         let digest = [
             0x00, 0x01, 0x02, 0x03,
@@ -571,6 +607,12 @@ mod tests {
             // Event data
             0x14, 0x15, 0x16, 0x17,
         ]);
+
+        // Check that `new_in_box` gives the same value.
+        assert_eq!(
+            event,
+            &*PcrEvent::new_in_box(PcrIndex(4), EventType::IPL, digest, &data).unwrap()
+        );
     }
 
     #[test]

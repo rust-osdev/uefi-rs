@@ -11,16 +11,21 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::{v1, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
-use crate::data_types::{PhysicalAddress, UnalignedSlice};
+use crate::data_types::{Align, PhysicalAddress, UnalignedSlice};
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem::MaybeUninit;
 use core::{mem, ptr, slice};
 use ptr_meta::{Pointee, PtrExt};
+
+#[cfg(feature = "alloc")]
+use {crate::mem::make_boxed, alloc::boxed::Box};
+
+#[cfg(all(feature = "unstable", feature = "alloc"))]
+use {alloc::alloc::Global, core::alloc::Allocator};
 
 /// Version information.
 ///
@@ -158,7 +163,7 @@ struct EventHeader {
 /// `TCG_PCR_EVENT2` for reading events. To help clarify the usage, our
 /// API renames these types to `PcrEventInputs` and `PcrEvent`,
 /// respectively.
-#[derive(Pointee)]
+#[derive(Eq, Pointee)]
 #[repr(C, packed)]
 pub struct PcrEventInputs {
     size: u32,
@@ -172,24 +177,24 @@ impl PcrEventInputs {
     /// # Errors
     ///
     /// Returns [`Status::BUFFER_TOO_SMALL`] if the `buffer` is not large
-    /// enough.
+    /// enough. The required size will be returned in the error data.
     ///
     /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
     /// large.
     pub fn new_in_buffer<'buf>(
-        buffer: &'buf mut [MaybeUninit<u8>],
+        buffer: &'buf mut [u8],
         pcr_index: PcrIndex,
         event_type: EventType,
         event_data: &[u8],
-    ) -> Result<&'buf Self> {
+    ) -> Result<&'buf mut Self, Option<usize>> {
         let required_size =
             mem::size_of::<u32>() + mem::size_of::<EventHeader>() + event_data.len();
 
         if buffer.len() < required_size {
-            return Err(Status::BUFFER_TOO_SMALL.into());
+            return Err(Error::new(Status::BUFFER_TOO_SMALL, Some(required_size)));
         }
-        let size_field =
-            u32::try_from(required_size).map_err(|_| Error::from(Status::INVALID_PARAMETER))?;
+        let size_field = u32::try_from(required_size)
+            .map_err(|_| Error::new(Status::INVALID_PARAMETER, None))?;
 
         let mut ptr: *mut u8 = buffer.as_mut_ptr().cast();
 
@@ -206,10 +211,41 @@ impl PcrEventInputs {
             );
             ptr::copy(event_data.as_ptr(), ptr, event_data.len());
 
-            let ptr: *const PcrEventInputs =
-                ptr_meta::from_raw_parts(buffer.as_ptr().cast(), event_data.len());
-            Ok(&*ptr)
+            let ptr: *mut PcrEventInputs =
+                ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
+            Ok(&mut *ptr)
         }
+    }
+
+    /// Create a new `PcrEventInputs` in a [`Box`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
+    /// large.
+    #[cfg(feature = "alloc")]
+    pub fn new_in_box(
+        pcr_index: PcrIndex,
+        event_type: EventType,
+        event_data: &[u8],
+    ) -> Result<Box<Self>> {
+        #[cfg(not(feature = "unstable"))]
+        {
+            make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data))
+        }
+        #[cfg(feature = "unstable")]
+        {
+            make_boxed(
+                |buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data),
+                Global,
+            )
+        }
+    }
+}
+
+impl Align for PcrEventInputs {
+    fn alignment() -> usize {
+        1
     }
 }
 
@@ -220,6 +256,15 @@ impl Debug for PcrEventInputs {
             .field("event_header", &self.event_header)
             .field("event", &"<binary data>")
             .finish()
+    }
+}
+
+// Manual `PartialEq` implementation since it can't be derived for a packed DST.
+impl PartialEq for PcrEventInputs {
+    fn eq(&self, other: &PcrEventInputs) -> bool {
+        self.size == other.size
+            && self.event_header == other.event_header
+            && self.event == other.event
     }
 }
 
@@ -785,7 +830,7 @@ mod tests {
 
     #[test]
     fn test_new_event() {
-        let mut buf = [MaybeUninit::uninit(); 22];
+        let mut buf = [0; 22];
         let event_data = [0x12, 0x13, 0x14, 0x15];
         let event =
             PcrEventInputs::new_in_buffer(&mut buf, PcrIndex(4), EventType::IPL, &event_data)
@@ -824,6 +869,12 @@ mod tests {
             // Event data
             0x12, 0x13, 0x14, 0x15,
         ]);
+
+        // Check that `new_in_box` gives the same value.
+        assert_eq!(
+            event,
+            &*PcrEventInputs::new_in_box(PcrIndex(4), EventType::IPL, &event_data).unwrap()
+        );
     }
 
     #[test]

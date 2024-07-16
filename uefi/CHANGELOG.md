@@ -4,6 +4,8 @@
 - `uefi::system` is a new module that provides freestanding functions for
   accessing fields of the global system table.
 - Add standard derives for `ConfigTableEntry`.
+- `PcrEvent`/`PcrEventInputs` impl `Align`, `Eq`, and `PartialEq`.
+- Added `PcrEvent::new_in_box` and `PcrEventInputs::new_in_box`.
 
 ## Changed
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.
@@ -14,6 +16,9 @@
   The old `MemoryMap` was renamed to `MemoryMapOwned`.
   - `pub fn memory_map(&self, mt: MemoryType) -> Result<MemoryMap>` now returns
      a `MemoryMapOwned`.
+- **Breaking:** `PcrEvent::new_in_buffer` and `PcrEventInputs::new_in_buffer`
+  now take an initialized buffer (`[u8`] instead of `[MaybeUninit<u8>]`), and if
+  the buffer is too small the required size is returned in the error data.
 
 
 # uefi - 0.29.0 (2024-07-02)

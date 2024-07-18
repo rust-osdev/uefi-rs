@@ -137,6 +137,12 @@ pub trait Align {
     }
 }
 
+impl Align for [u8] {
+    fn alignment() -> usize {
+        1
+    }
+}
+
 mod guid;
 pub use guid::{Guid, Identify};
 

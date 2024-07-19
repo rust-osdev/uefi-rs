@@ -3,6 +3,8 @@
 ## Added
 - `uefi::system` is a new module that provides freestanding functions for
   accessing fields of the global system table.
+- `uefi::runtime` is a new module that provides freestanding functions for
+  runtime services using the global system table.
 - Add standard derives for `ConfigTableEntry`.
 - `PcrEvent`/`PcrEventInputs` impl `Align`, `Eq`, and `PartialEq`.
 - Added `PcrEvent::new_in_box` and `PcrEventInputs::new_in_box`.

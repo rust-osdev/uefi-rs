@@ -51,6 +51,15 @@ fn test_variables(rt: &RuntimeServices) {
         info!("First variable: {}", key);
     }
 
+    // Test that the `runtime::variable_keys` iterator gives exactly the same
+    // list as the `RuntimeServices::variable_keys` function.
+    assert_eq!(
+        runtime::variable_keys()
+            .map(|k| k.unwrap())
+            .collect::<alloc::vec::Vec<_>>(),
+        variable_keys
+    );
+
     info!("Testing delete_variable()");
     rt.delete_variable(NAME, VENDOR)
         .expect("failed to delete variable");
@@ -86,6 +95,15 @@ fn test_variables_freestanding() {
     assert_eq!(&*data, VALUE);
     assert_eq!(attrs, ATTRS);
 
+    // Test that the variable is present in the `variable_keys` iterator.
+    let find_by_key = || {
+        runtime::variable_keys().any(|k| {
+            let k = k.as_ref().unwrap();
+            k.name().unwrap() == NAME && &k.vendor == VENDOR
+        })
+    };
+    assert!(find_by_key());
+
     // Delete the variable and verify it can no longer be read.
     runtime::delete_variable(NAME, VENDOR).expect("failed to delete variable");
     assert_eq!(
@@ -94,6 +112,8 @@ fn test_variables_freestanding() {
             .status(),
         Status::NOT_FOUND
     );
+    // Variable is no longer present in the `variable_keys` iterator.
+    assert!(!find_by_key());
 }
 
 fn test_variable_info(rt: &RuntimeServices) {

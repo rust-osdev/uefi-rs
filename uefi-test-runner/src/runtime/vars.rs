@@ -117,20 +117,15 @@ fn test_variables_freestanding() {
 }
 
 fn test_variable_info(rt: &RuntimeServices) {
-    info!(
-        "Storage for non-volatile boot-services variables: {:?}",
-        rt.query_variable_info(
-            VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::NON_VOLATILE
-        )
-        .unwrap(),
-    );
-    info!(
-        "Storage for volatile runtime variables: {:?}",
-        rt.query_variable_info(
-            VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS
-        )
-        .unwrap(),
-    );
+    let attr = VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::NON_VOLATILE;
+    let info = rt.query_variable_info(attr).unwrap();
+    info!("Storage for non-volatile boot-services variables: {info:?}");
+    assert_eq!(info, runtime::query_variable_info(attr).unwrap());
+
+    let attr = VariableAttributes::BOOTSERVICE_ACCESS | VariableAttributes::RUNTIME_ACCESS;
+    let info = rt.query_variable_info(attr).unwrap();
+    info!("Storage for volatile runtime variables: {info:?}");
+    assert_eq!(info, runtime::query_variable_info(attr).unwrap());
 }
 
 pub fn test(rt: &RuntimeServices) {

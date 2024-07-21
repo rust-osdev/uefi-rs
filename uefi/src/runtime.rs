@@ -5,7 +5,8 @@
 //! functions after exiting boot services; see the "Calling Convention" section
 //! of the UEFI specification for details.
 
-use crate::{table, CStr16, Error, Result, Status, StatusExt};
+use crate::table::{self, Revision};
+use crate::{CStr16, Error, Result, Status, StatusExt};
 use core::mem;
 use core::ptr::{self, NonNull};
 
@@ -17,7 +18,9 @@ use {
 #[cfg(all(feature = "unstable", feature = "alloc"))]
 use alloc::alloc::Global;
 
-pub use crate::table::runtime::{Daylight, Time, TimeCapabilities, TimeError, TimeParams};
+pub use crate::table::runtime::{
+    Daylight, Time, TimeCapabilities, TimeError, TimeParams, VariableStorageInfo,
+};
 pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
 pub use uefi_raw::table::runtime::{ResetType, VariableAttributes, VariableVendor};
 
@@ -342,4 +345,36 @@ pub fn set_variable(
 ///   after exiting boot services.
 pub fn delete_variable(name: &CStr16, vendor: &VariableVendor) -> Result {
     set_variable(name, vendor, VariableAttributes::empty(), &[])
+}
+
+/// Get information about UEFI variable storage space for the type
+/// of variable specified in `attributes`.
+///
+/// This operation is only supported starting with UEFI 2.0.
+///
+/// See [`VariableStorageInfo`] for details of the information returned.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: invalid combination of variable attributes.
+/// * [`Status::UNSUPPORTED`]: the combination of variable attributes is not
+///   supported on this platform, or the UEFI version is less than 2.0.
+pub fn query_variable_info(attributes: VariableAttributes) -> Result<VariableStorageInfo> {
+    let rt = runtime_services_raw_panicking();
+    let rt = unsafe { rt.as_ref() };
+
+    if rt.header.revision < Revision::EFI_2_00 {
+        return Err(Status::UNSUPPORTED.into());
+    }
+
+    let mut info = VariableStorageInfo::default();
+    unsafe {
+        (rt.query_variable_info)(
+            attributes,
+            &mut info.maximum_variable_storage_size,
+            &mut info.remaining_variable_storage_size,
+            &mut info.maximum_variable_size,
+        )
+        .to_result_with_val(|| info)
+    }
 }

@@ -5,6 +5,7 @@ use crate::table::Header;
 use crate::{Char16, Event, Guid, Handle, PhysicalAddress, Status, VirtualAddress};
 use bitflags::bitflags;
 use core::ffi::c_void;
+use core::ops::RangeInclusive;
 
 /// Table of pointers to all the boot services.
 #[derive(Debug)]
@@ -381,11 +382,11 @@ newtype_enum! {
 /// The type of a memory range.
 ///
 /// UEFI allows firmwares and operating systems to introduce new memory types
-/// in the 0x70000000..0xFFFFFFFF range. Therefore, we don't know the full set
+/// in the `0x7000_0000..=0xFFFF_FFFF` range. Therefore, we don't know the full set
 /// of memory types at compile time, and it is _not_ safe to model this C enum
 /// as a Rust enum.
 pub enum MemoryType: u32 => {
-    /// This enum variant is not used.
+    /// Not usable.
     RESERVED                =  0,
     /// The code portions of a loaded UEFI application.
     LOADER_CODE             =  1,
@@ -421,10 +422,21 @@ pub enum MemoryType: u32 => {
     PAL_CODE                = 13,
     /// Memory region which is usable and is also non-volatile.
     PERSISTENT_MEMORY       = 14,
+    /// Memory that must be accepted by the boot target before it can be used.
+    UNACCEPTED              = 15,
+    /// End of the defined memory types. Higher values are possible though, see
+    /// [`MemoryType::RESERVED_FOR_OEM`] and [`MemoryType::RESERVED_FOR_OS_LOADER`].
+    MAX                     = 16,
 }}
 
 impl MemoryType {
-    /// Construct a custom `MemoryType`. Values in the range `0x80000000..=0xffffffff` are free for use if you are
+    /// Range reserved for OEM use.
+    pub const RESERVED_FOR_OEM: RangeInclusive<u32> = 0x7000_0000..=0x7fff_ffff;
+
+    /// Range reserved for OS loaders.
+    pub const RESERVED_FOR_OS_LOADER: RangeInclusive<u32> = 0x8000_0000..=0xffff_ffff;
+
+    /// Construct a custom `MemoryType`. Values in the range `0x8000_0000..=0xffff_ffff` are free for use if you are
     /// an OS loader.
     #[must_use]
     pub const fn custom(value: u32) -> MemoryType {

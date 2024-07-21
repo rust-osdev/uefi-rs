@@ -3,6 +3,8 @@
 ## Added
 - `uefi::system` is a new module that provides freestanding functions for
   accessing fields of the global system table.
+- `uefi::boot` is a new module that provides freestanding functions for
+  boot services using the global system table.
 - `uefi::runtime` is a new module that provides freestanding functions for
   runtime services using the global system table.
 - Add standard derives for `ConfigTableEntry`.

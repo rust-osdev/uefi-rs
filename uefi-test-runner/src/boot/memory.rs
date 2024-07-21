@@ -1,3 +1,4 @@
+use uefi::boot;
 use uefi::table::boot::{AllocateType, BootServices, MemoryMap, MemoryMapMut, MemoryType};
 
 use alloc::vec::Vec;
@@ -5,11 +6,43 @@ use alloc::vec::Vec;
 pub fn test(bt: &BootServices) {
     info!("Testing memory functions");
 
+    test_allocate_pages_freestanding();
+    test_allocate_pool_freestanding();
+
     allocate_pages(bt);
     vec_alloc();
     alloc_alignment();
 
     memory_map(bt);
+}
+
+fn test_allocate_pages_freestanding() {
+    let num_pages = 1;
+    let ptr =
+        boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, num_pages).unwrap();
+    let addr = ptr.as_ptr() as usize;
+    assert_eq!(addr % 4096, 0, "Page pointer is not page-aligned");
+
+    // Verify the page can be written to.
+    {
+        let ptr = ptr.as_ptr();
+        unsafe { ptr.write_volatile(0xff) };
+        unsafe { ptr.add(4095).write_volatile(0xff) };
+    }
+
+    unsafe { boot::free_pages(ptr, num_pages) }.unwrap();
+}
+
+fn test_allocate_pool_freestanding() {
+    let ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
+
+    // Verify the allocation can be written to.
+    {
+        let ptr = ptr.as_ptr();
+        unsafe { ptr.write_volatile(0xff) };
+        unsafe { ptr.add(9).write_volatile(0xff) };
+    }
+    unsafe { boot::free_pool(ptr) }.unwrap();
 }
 
 fn allocate_pages(bt: &BootServices) {

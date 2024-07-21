@@ -104,6 +104,7 @@ extern crate uefi_raw;
 #[macro_use]
 pub mod data_types;
 pub mod allocator;
+pub mod boot;
 #[cfg(feature = "alloc")]
 pub mod fs;
 pub mod helpers;

@@ -647,9 +647,9 @@ impl TryFrom<&[u8]> for Time {
 
 /// Unique key for a variable.
 #[cfg(feature = "alloc")]
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct VariableKey {
-    name: Vec<u16>,
+    pub(crate) name: Vec<u16>,
     /// Unique identifier for the vendor.
     pub vendor: VariableVendor,
 }

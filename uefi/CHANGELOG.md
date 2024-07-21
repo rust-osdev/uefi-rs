@@ -8,6 +8,7 @@
 - Add standard derives for `ConfigTableEntry`.
 - `PcrEvent`/`PcrEventInputs` impl `Align`, `Eq`, and `PartialEq`.
 - Added `PcrEvent::new_in_box` and `PcrEventInputs::new_in_box`.
+- `VariableKey` impls `Clone`, `Eq`, `PartialEq`, `Ord`, `PartialOrd`, and `Hash`.
 
 ## Changed
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.

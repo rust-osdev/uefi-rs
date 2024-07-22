@@ -443,3 +443,27 @@ pub fn query_capsule_capabilities(capsule_header_array: &[&CapsuleHeader]) -> Re
         .to_result_with_val(|| info)
     }
 }
+
+/// Resets the computer.
+///
+/// See [`ResetType`] for details of the various reset types.
+///
+/// For a normal reset the value of `status` should be
+/// [`Status::SUCCESS`]. Otherwise, an error code can be used.
+///
+/// The `data` arg is usually `None`. Otherwise, it must contain a UCS-2
+/// null-terminated string followed by additional binary data. For
+/// [`ResetType::PLATFORM_SPECIFIC`], the binary data must be a vendor-specific
+/// [`Guid`] that indicates the type of reset to perform.
+///
+/// This function never returns.
+pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
+    let rt = runtime_services_raw_panicking();
+    let rt = unsafe { rt.as_ref() };
+
+    let (size, data) = data
+        .map(|data| (data.len(), data.as_ptr()))
+        .unwrap_or((0, ptr::null()));
+
+    unsafe { (rt.reset_system)(reset_type, status, size, data) }
+}

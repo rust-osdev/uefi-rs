@@ -2,6 +2,7 @@
 
 use super::*;
 use core::fmt::Debug;
+use core::ops::{Index, IndexMut};
 
 /// An accessory to the UEFI memory map and associated metadata that can be
 /// either iterated or indexed like an array.
@@ -25,7 +26,7 @@ use core::fmt::Debug;
 /// a low level.
 ///
 /// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
-pub trait MemoryMap: Debug {
+pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
     // TODO also require IntoIterator?! :)
 
     /// Returns the associated [`MemoryMapMeta`].
@@ -73,7 +74,7 @@ pub trait MemoryMap: Debug {
 
 /// Extension to [`MemoryMap`] that adds mutable operations. This also includes
 /// the ability to sort the memory map.
-pub trait MemoryMapMut: MemoryMap {
+pub trait MemoryMapMut: MemoryMap + IndexMut<usize> {
     /// Returns a mutable reference to the [`MemoryDescriptor`] at the given
     /// index, if present.
     #[must_use]

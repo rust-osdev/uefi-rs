@@ -1716,4 +1716,4 @@ impl<'a> HandleBuffer<'a> {
 /// with [`BootServices::locate_handle`] via [`SearchType::ByRegisterNotify`].
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-pub struct ProtocolSearchKey(NonNull<c_void>);
+pub struct ProtocolSearchKey(pub(crate) NonNull<c_void>);

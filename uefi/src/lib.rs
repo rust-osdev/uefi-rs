@@ -95,50 +95,38 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
-
 // allow referring to self as ::uefi for macros to work universally (from this crate and from others)
 // see https://github.com/rust-lang/rust/issues/54647
 extern crate self as uefi;
-
-/// Re-export ucs2_cstr so that it can be used in the implementation of the
-/// cstr16 macro. It is hidden since it's not intended to be used directly.
-#[doc(hidden)]
-pub use ucs2::ucs2_cstr;
-
 #[macro_use]
 extern crate uefi_raw;
 
 #[macro_use]
 pub mod data_types;
+pub mod allocator;
 #[cfg(feature = "alloc")]
-pub use data_types::CString16;
-pub use data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
-pub use uefi_macros::entry;
-pub use uguid::guid;
-
-mod result;
-pub use result::{Error, Result, ResultExt, Status, StatusExt};
-
+pub mod fs;
+pub mod helpers;
+pub mod mem;
+pub mod prelude;
+pub mod proto;
 pub mod runtime;
 pub mod system;
 pub mod table;
 
-pub mod proto;
-
-pub mod prelude;
-
-pub mod allocator;
-
-#[cfg(feature = "alloc")]
-pub mod fs;
-
-// As long as this is behind "alloc", we can simplify cfg-feature attributes in this module.
-#[cfg(feature = "alloc")]
-pub(crate) mod mem;
-
 pub(crate) mod polyfill;
 
-pub mod helpers;
-
 mod macros;
+mod result;
 mod util;
+
+#[cfg(feature = "alloc")]
+pub use data_types::CString16;
+pub use data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
+pub use result::{Error, Result, ResultExt, Status, StatusExt};
+/// Re-export ucs2_cstr so that it can be used in the implementation of the
+/// cstr16 macro. It is hidden since it's not intended to be used directly.
+#[doc(hidden)]
+pub use ucs2::ucs2_cstr;
+pub use uefi_macros::entry;
+pub use uguid::guid;

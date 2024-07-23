@@ -38,7 +38,7 @@ pub fn image_handle() -> Handle {
 ///
 /// This function should only be called as described above, and the
 /// `image_handle` must be a valid image [`Handle`]. The safety guarantees of
-/// `open_protocol_exclusive` rely on the global image handle being correct.
+/// [`open_protocol_exclusive`] rely on the global image handle being correct.
 pub unsafe fn set_image_handle(image_handle: Handle) {
     IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
 }
@@ -162,7 +162,7 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
 
 /// Opens a protocol interface for a handle.
 ///
-/// See also `open_protocol_exclusive`, which provides a safe subset of this
+/// See also [`open_protocol_exclusive`], which provides a safe subset of this
 /// functionality.
 ///
 /// This function attempts to get the protocol implementation of a handle, based
@@ -212,6 +212,34 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
         interface: NonNull::new(P::mut_ptr_from_ffi(interface)),
         open_params: params,
     })
+}
+
+/// Opens a protocol interface for a handle in exclusive mode.
+///
+/// If successful, a [`ScopedProtocol`] is returned that will automatically
+/// close the protocol interface when dropped.
+///
+/// # Errors
+///
+/// * [`Status::UNSUPPORTED`]: the handle does not support the protocol.
+/// * [`Status::ACCESS_DENIED`]: the protocol is already open in a way that is
+///   incompatible with the new request.
+pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+) -> Result<ScopedProtocol<P>> {
+    // Safety: opening in exclusive mode with the correct agent
+    // handle set ensures that the protocol cannot be modified or
+    // removed while it is open, so this usage is safe.
+    unsafe {
+        open_protocol::<P>(
+            OpenProtocolParams {
+                handle,
+                agent: image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
+    }
 }
 
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of

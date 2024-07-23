@@ -19,12 +19,7 @@ use core::fmt::Debug;
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{ptr, slice};
-
-/// Global image handle. This is only set by `BootServices::set_image_handle`,
-/// and it is only read by `BootServices::image_handle`.
-static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
 /// Size in bytes of a UEFI page.
 ///
@@ -84,32 +79,21 @@ pub struct BootServices(uefi_raw::table::boot::BootServices);
 
 impl BootServices {
     /// Get the [`Handle`] of the currently-executing image.
+    #[must_use]
     pub fn image_handle(&self) -> Handle {
-        let ptr = IMAGE_HANDLE.load(Ordering::Acquire);
-        // Safety: the image handle must be valid. We know it is, because it was
-        // set by `set_image_handle`, which has that same safety requirement.
-        unsafe { Handle::from_ptr(ptr) }.expect("set_image_handle has not been called")
+        uefi::boot::image_handle()
     }
 
     /// Update the global image [`Handle`].
     ///
-    /// This is called automatically in the `main` entry point as part
-    /// of [`uefi::entry`]. It should not be called at any other
-    /// point in time, unless the executable does not use
-    /// [`uefi::entry`], in which case it should be called once
-    /// before calling other `BootServices` functions.
+    /// This is the same as calling [`uefi::boot::set_image_handle`]. See that
+    /// function for details.
     ///
     /// # Safety
     ///
-    /// This function should only be called as described above,
-    /// and the `image_handle` must be a valid image [`Handle`]. Then
-    /// safety guarantees of [`BootServices::open_protocol_exclusive`]
-    /// rely on the global image handle being correct.
+    /// See [`uefi::boot::set_image_handle`] for safety requirements.
     pub unsafe fn set_image_handle(&self, image_handle: Handle) {
-        // As with `image_handle`, `&self` isn't actually used, but it
-        // enforces that this function is only called while boot
-        // services are active.
-        IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
+        uefi::boot::set_image_handle(image_handle)
     }
 
     /// Raises a task's priority level and returns its previous level.

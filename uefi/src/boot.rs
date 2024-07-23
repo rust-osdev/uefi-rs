@@ -3,14 +3,45 @@
 //! These functions will panic if called after exiting boot services.
 
 use crate::data_types::PhysicalAddress;
+use core::ffi::c_void;
 use core::ptr::{self, NonNull};
-use uefi::{table, Result, StatusExt};
+use core::sync::atomic::{AtomicPtr, Ordering};
+use uefi::{table, Handle, Result, StatusExt};
 
 #[cfg(doc)]
 use uefi::Status;
 
 pub use uefi::table::boot::AllocateType;
 pub use uefi_raw::table::boot::MemoryType;
+
+/// Global image handle. This is only set by [`set_image_handle`], and it is
+/// only read by [`image_handle`].
+static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
+
+/// Get the [`Handle`] of the currently-executing image.
+#[must_use]
+pub fn image_handle() -> Handle {
+    let ptr = IMAGE_HANDLE.load(Ordering::Acquire);
+    // Safety: the image handle must be valid. We know it is, because it was set
+    // by `set_image_handle`, which has that same safety requirement.
+    unsafe { Handle::from_ptr(ptr) }.expect("set_image_handle has not been called")
+}
+
+/// Update the global image [`Handle`].
+///
+/// This is called automatically in the `main` entry point as part of
+/// [`uefi::entry`]. It should not be called at any other point in time, unless
+/// the executable does not use [`uefi::entry`], in which case it should be
+/// called once before calling other boot services functions.
+///
+/// # Safety
+///
+/// This function should only be called as described above, and the
+/// `image_handle` must be a valid image [`Handle`]. The safety guarantees of
+/// `open_protocol_exclusive` rely on the global image handle being correct.
+pub unsafe fn set_image_handle(image_handle: Handle) {
+    IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
+}
 
 fn boot_services_raw_panicking() -> NonNull<uefi_raw::table::boot::BootServices> {
     let st = table::system_table_raw_panicking();

@@ -1893,6 +1893,7 @@ pub trait MemoryMapMut: MemoryMap {
 }
 
 /// Implementation of [`MemoryMap`] for the given buffer.
+#[allow(dead_code)] // TODO: github.com/rust-osdev/uefi-rs/issues/1247
 #[derive(Debug)]
 pub struct MemoryMapRef<'a> {
     buf: &'a [u8],

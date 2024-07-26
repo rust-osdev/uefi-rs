@@ -18,7 +18,7 @@ pub struct CapsuleBlockDescriptor {
     /// Either a data block pointer or a continuation pointer.
     ///
     /// * If `length` is non-zero, this is the physical address of the data
-    /// block.
+    ///   block.
     /// * If `length` is zero:
     ///   * If `addr` is non-zero, this is the physical address of another block
     ///     of `CapsuleBlockDescriptor`.

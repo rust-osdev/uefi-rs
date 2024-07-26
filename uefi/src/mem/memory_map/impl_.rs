@@ -10,6 +10,7 @@ use uefi_raw::PhysicalAddress;
 
 /// Implementation of [`MemoryMap`] for the given buffer.
 #[derive(Debug)]
+#[allow(dead_code)] // TODO: github.com/rust-osdev/uefi-rs/issues/1247
 pub struct MemoryMapRef<'a> {
     buf: &'a [u8],
     key: MemoryMapKey,

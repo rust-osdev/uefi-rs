@@ -24,9 +24,16 @@
 - **Breaking:** `PcrEvent::new_in_buffer` and `PcrEventInputs::new_in_buffer`
   now take an initialized buffer (`[u8`] instead of `[MaybeUninit<u8>]`), and if
   the buffer is too small the required size is returned in the error data.
-- Exports of Memory Map-related types from `uefi::table::boot` are now
-  deprecated. Use `uefi::mem::memory_map` instead.
-
+- **Breaking** Exports of Memory Map-related types from `uefi::table::boot` are
+  now removed. Use `uefi::mem::memory_map` instead. The patch you have to apply
+  to the `use` statements of your code might look as follows:
+  ```diff
+  1c1,2
+  < use uefi::table::boot::{BootServices, MemoryMap, MemoryMapMut, MemoryType};
+  ---
+  > use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
+  > use uefi::table::boot::BootServices;
+  ```
 
 # uefi - 0.29.0 (2024-07-02)
 

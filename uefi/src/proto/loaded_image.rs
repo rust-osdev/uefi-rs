@@ -1,9 +1,9 @@
 //! `LoadedImage` protocol.
 
 use crate::data_types::FromSliceWithNulError;
+use crate::mem::memory_map::MemoryType;
 use crate::proto::device_path::DevicePath;
 use crate::proto::unsafe_protocol;
-use crate::table::boot::MemoryType;
 use crate::util::usize_from_u32;
 use crate::{CStr16, Handle, Status};
 use core::ffi::c_void;

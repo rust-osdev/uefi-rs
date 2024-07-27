@@ -1,28 +1,26 @@
 //! UEFI services available during boot.
 
+pub use uefi_raw::table::boot::{EventType, InterfaceType, Tpl};
+
 use super::Revision;
 use crate::data_types::PhysicalAddress;
+use crate::mem::memory_map::*;
 use crate::proto::device_path::DevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
+use core::fmt::Debug;
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{ptr, slice};
-
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
-use core::fmt::Debug;
-
-#[deprecated = "Use the `uefi::mem::memory_map` module."]
-pub use crate::mem::memory_map::*;
-pub use uefi_raw::table::boot::{EventType, InterfaceType, Tpl};
 
 /// Global image handle. This is only set by `BootServices::set_image_handle`,
 /// and it is only read by `BootServices::image_handle`.

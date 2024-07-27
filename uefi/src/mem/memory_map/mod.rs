@@ -9,7 +9,7 @@
 //! # Usecase: Obtain UEFI Memory Map
 //!
 //! You can use [`SystemTable::exit_boot_services`] or
-//! [`BootServices::memory_map`], which returns an properly initialized 
+//! [`BootServices::memory_map`], which returns an properly initialized
 //! [`MemoryMapOwned`].
 //!
 //! # Usecase: Parse Memory Slice as UEFI Memory Map
@@ -70,7 +70,7 @@ pub struct MemoryMapMeta {
     /// and never `size_of::<MemoryDescriptor>()`!
     pub desc_size: usize,
     /// A unique memory key bound to a specific memory map version/state.
-    pub map_key: crate::table::boot::MemoryMapKey,
+    pub map_key: MemoryMapKey,
     /// The version of the descriptor struct.
     pub desc_version: u32,
 }

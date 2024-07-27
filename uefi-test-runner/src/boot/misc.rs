@@ -2,10 +2,11 @@ use core::ffi::c_void;
 use core::ptr::{self, NonNull};
 
 use core::mem;
+use uefi::mem::memory_map::MemoryType;
 use uefi::proto::unsafe_protocol;
 use uefi::table::boot::{
-    BootServices, EventType, MemoryType, OpenProtocolAttributes, OpenProtocolParams, SearchType,
-    TimerTrigger, Tpl,
+    BootServices, EventType, OpenProtocolAttributes, OpenProtocolParams, SearchType, TimerTrigger,
+    Tpl,
 };
 use uefi::table::{Boot, SystemTable};
 use uefi::{guid, Event, Guid, Identify};

@@ -8,11 +8,11 @@ extern crate alloc;
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use uefi::mem::memory_map::{MemoryMap, MemoryType};
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::messaging::Vendor;
-use uefi::table::boot::{MemoryMap, MemoryType};
 use uefi::{print, println, system, Result};
 
 mod boot;

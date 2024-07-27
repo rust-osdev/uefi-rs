@@ -1,7 +1,7 @@
-use uefi::boot;
-use uefi::table::boot::{AllocateType, BootServices, MemoryMap, MemoryMapMut, MemoryType};
-
 use alloc::vec::Vec;
+use uefi::boot;
+use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
+use uefi::table::boot::{AllocateType, BootServices};
 
 pub fn test(bt: &BootServices) {
     info!("Testing memory functions");

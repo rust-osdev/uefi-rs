@@ -1,15 +1,15 @@
+use super::boot::BootServices;
+use super::runtime::{ResetType, RuntimeServices};
+use super::{cfg, Revision};
+use crate::proto::console::text;
+use crate::{CStr16, Result, Status, StatusExt};
 use core::ffi::c_void;
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 use core::slice;
-use uefi::table::boot::{MemoryMapBackingMemory, MemoryMapMeta};
-
-use crate::proto::console::text;
-use crate::{CStr16, Result, Status, StatusExt};
-
-use super::boot::{BootServices, MemoryDescriptor, MemoryMapOwned, MemoryType};
-use super::runtime::{ResetType, RuntimeServices};
-use super::{cfg, Revision};
+use uefi::mem::memory_map::{
+    MemoryDescriptor, MemoryMapBackingMemory, MemoryMapMeta, MemoryMapOwned, MemoryType,
+};
 
 /// Marker trait used to provide different views of the UEFI System Table.
 pub trait SystemTableView {}

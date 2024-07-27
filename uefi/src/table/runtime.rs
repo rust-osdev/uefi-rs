@@ -1,12 +1,5 @@
 //! UEFI services available at runtime, even after the OS boots.
 
-use super::Revision;
-use crate::table::boot::MemoryDescriptor;
-use crate::{CStr16, Error, Result, Status, StatusExt};
-use core::fmt::{self, Debug, Display, Formatter};
-use core::mem::{size_of, MaybeUninit};
-use core::ptr;
-
 pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
@@ -14,6 +7,11 @@ pub use uefi_raw::table::runtime::{
 pub use uefi_raw::time::Daylight;
 pub use uefi_raw::PhysicalAddress;
 
+use super::Revision;
+use crate::{CStr16, Error, Result, Status, StatusExt};
+use core::fmt::{self, Debug, Display, Formatter};
+use core::mem::{size_of, MaybeUninit};
+use core::ptr;
 #[cfg(feature = "alloc")]
 use {
     crate::data_types::FromSliceWithNulError,
@@ -288,7 +286,7 @@ impl RuntimeServices {
         map_size: usize,
         desc_size: usize,
         desc_version: u32,
-        virtual_map: *mut MemoryDescriptor,
+        virtual_map: *mut crate::mem::memory_map::MemoryDescriptor,
     ) -> Status {
         (self.0.set_virtual_address_map)(map_size, desc_size, desc_version, virtual_map)
     }
@@ -372,7 +370,7 @@ pub struct TimeParams {
 }
 
 /// Error returned by [`Time`] methods. A bool value of `true` means
-/// the specified field is outside of its valid range.
+/// the specified field is outside its valid range.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct TimeError {

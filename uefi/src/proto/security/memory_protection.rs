@@ -1,6 +1,6 @@
 use crate::data_types::PhysicalAddress;
+use crate::mem::memory_map::MemoryAttribute;
 use crate::proto::unsafe_protocol;
-use crate::table::boot::MemoryAttribute;
 use crate::{Result, StatusExt};
 use core::ops::Range;
 use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;

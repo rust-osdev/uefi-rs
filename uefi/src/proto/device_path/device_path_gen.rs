@@ -6,12 +6,12 @@
 // See `/xtask/src/device_path/README.md` for more details.
 
 use crate::data_types::UnalignedSlice;
+use crate::mem::memory_map::MemoryType;
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::device_path::{
     DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
 use crate::proto::network::IpAddress;
-use crate::table::boot::MemoryType;
 use crate::{guid, Guid};
 use bitflags::bitflags;
 use core::mem::{size_of, size_of_val};

@@ -16,8 +16,9 @@ use core::ffi::c_void;
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
 
+use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
-use crate::table::boot::{BootServices, MemoryType};
+use crate::table::boot::BootServices;
 use crate::table::{Boot, SystemTable};
 
 /// Reference to the system table, used to call the boot services pool memory

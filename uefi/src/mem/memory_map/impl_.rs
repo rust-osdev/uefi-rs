@@ -201,6 +201,8 @@ impl IndexMut<usize> for MemoryMapRefMut<'_> {
 /// 1. create it using [`MemoryMapBackingMemory::new`]
 /// 2. pass it to [`BootServices::get_memory_map`]
 /// 3. construct a [`MemoryMapOwned`] from it
+///
+/// [`BootServices::get_memory_map`]: crate::table::boot::BootServices::get_memory_map
 #[derive(Debug)]
 #[allow(clippy::len_without_is_empty)] // this type is never empty
 pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);
@@ -247,8 +249,9 @@ impl MemoryMapBackingMemory {
     }
 
     /// Returns a "safe" best-effort size hint for the memory map size with
-    /// some additional bytes in buffer compared to the [`crate::table::boot::mmap::MemoryMapMeta`].
-    /// This helps
+    /// some additional bytes in buffer compared to the [`MemoryMapMeta`]. This
+    /// takes into account that, as you go, more (small) allocations might
+    /// happen.
     #[must_use]
     fn safe_allocation_size_hint(mmm: MemoryMapMeta) -> usize {
         // Allocate space for extra entries beyond the current size of the

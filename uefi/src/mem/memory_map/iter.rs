@@ -1,7 +1,7 @@
 use super::*;
 
 /// An iterator of [`MemoryDescriptor`]. The underlying memory map is always
-/// associated with a unique [`crate::table::boot::mmap::MemoryMapKey`].
+/// associated with a unique [`MemoryMapKey`].
 #[derive(Debug, Clone)]
 pub struct MemoryMapIter<'a> {
     pub(crate) memory_map: &'a dyn MemoryMap,

@@ -27,8 +27,6 @@ use core::ops::{Index, IndexMut};
 ///
 /// [0]: https://github.com/tianocore/edk2/blob/7142e648416ff5d3eac6c6d607874805f5de0ca8/MdeModulePkg/Core/PiSmmCore/Page.c#L1059
 pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
-    // TODO also require IntoIterator?! :)
-
     /// Returns the associated [`MemoryMapMeta`].
     #[must_use]
     fn meta(&self) -> MemoryMapMeta;

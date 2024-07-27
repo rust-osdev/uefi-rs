@@ -1,14 +1,36 @@
-//! This module bundles all relevant types and helpers to work with the UEFI
-//! memory map. Specifically, it provides
+//! Bundles all relevant types and helpers to work with the UEFI memory map.
+//!
+//! To work with the memory map, you should use one of the structs
+//! [`MemoryMapOwned`], [`MemoryMapRef`], or [`MemoryMapRefMut`] - depending on
+//! your use-case. The  traits [`MemoryMap`] and [`MemoryMapMut`] mainly exist
+//! to guarantee a streamlined API across these types. We recommend to work with
+//! the specific implementation.
+//!
+//! # Usecase: Obtain UEFI Memory Map
+//!
+//! You can use [`SystemTable::exit_boot_services`] or
+//! [`BootServices::memory_map`], which returns an properly initialized 
+//! [`MemoryMapOwned`].
+//!
+//! # Usecase: Parse Memory Slice as UEFI Memory Map
+//!
+//! If you have a chunk of memory and want to parse it as UEFI memory map, which
+//! might be the case if a bootloader such as GRUB or Limine passes its boot
+//! information, you can use  [`MemoryMapRef`] or [`MemoryMapRefMut`].
+//! TODO add constructors.
+//!
+//! # All relevant exports:
 //!
 //! - the traits [`MemoryMap`] and [`MemoryMapMut`],
 //! - the trait implementations [`MemoryMapOwned`], [`MemoryMapRef`], and
 //!   [`MemoryMapRefMut`],
 //! - the iterator [`MemoryMapIter`]
-//! - various associated helper types, such as  [`MemoryMapKey`] and
+//! - various associated helper types, such as [`MemoryMapKey`] and
 //!   [`MemoryMapMeta`],
-//! - and re-exports the types [`MemoryDescriptor`], [`MemoryType`],
-//!   [`MemoryAttribute`]
+//! - re-exports [`MemoryDescriptor`], [`MemoryType`], and [`MemoryAttribute`].
+//!
+//! [`SystemTable::exit_boot_services`]: uefi::table::SystemTable::exit_boot_services
+//! [`BootServices::memory_map`]: uefi::table::boot::BootServices::memory_map
 
 mod api;
 mod impl_;

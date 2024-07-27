@@ -5,6 +5,7 @@
 //! functions after exiting boot services; see the "Calling Convention" section
 //! of the UEFI specification for details.
 
+use crate::data_types::PhysicalAddress;
 use crate::table::{self, Revision};
 use crate::{CStr16, Error, Result, Status, StatusExt};
 use core::mem;
@@ -19,7 +20,7 @@ use {
 use alloc::alloc::Global;
 
 pub use crate::table::runtime::{
-    Daylight, Time, TimeCapabilities, TimeError, TimeParams, VariableStorageInfo,
+    CapsuleInfo, Daylight, Time, TimeCapabilities, TimeError, TimeParams, VariableStorageInfo,
 };
 pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
 pub use uefi_raw::table::runtime::{ResetType, VariableAttributes, VariableVendor};
@@ -374,6 +375,70 @@ pub fn query_variable_info(attributes: VariableAttributes) -> Result<VariableSto
             &mut info.maximum_variable_storage_size,
             &mut info.remaining_variable_storage_size,
             &mut info.maximum_variable_size,
+        )
+        .to_result_with_val(|| info)
+    }
+}
+
+/// Passes capsules to the firmware.
+///
+/// Capsules are most commonly used to update system firmware.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: zero capsules were provided, or the
+///   capsules are invalid.
+/// * [`Status::DEVICE_ERROR`]: the capsule update was started but failed to a
+///   device error.
+/// * [`Status::OUT_OF_RESOURCES`]: before exiting boot services, indicates the
+///   capsule is compatible with the platform but there are insufficient
+///   resources to complete the update. After exiting boot services, indicates
+///   the capsule is compatible with the platform but can only be processed
+///   before exiting boot services.
+/// * [`Status::UNSUPPORTED`]: this platform does not support capsule updates
+///   after exiting boot services.
+pub fn update_capsule(
+    capsule_header_array: &[&CapsuleHeader],
+    capsule_block_descriptors: &[CapsuleBlockDescriptor],
+) -> Result {
+    let rt = runtime_services_raw_panicking();
+    let rt = unsafe { rt.as_ref() };
+
+    unsafe {
+        (rt.update_capsule)(
+            capsule_header_array.as_ptr().cast(),
+            capsule_header_array.len(),
+            capsule_block_descriptors.as_ptr() as PhysicalAddress,
+        )
+        .to_result()
+    }
+}
+
+/// Tests whether a capsule or capsules can be updated via [`update_capsule`].
+///
+/// See [`CapsuleInfo`] for details of the information returned.
+///
+/// # Errors
+///
+/// * [`Status::OUT_OF_RESOURCES`]: before exiting boot services, indicates the
+///   capsule is compatible with the platform but there are insufficient
+///   resources to complete the update. After exiting boot services, indicates
+///   the capsule is compatible with the platform but can only be processed
+///   before exiting boot services.
+/// * [`Status::UNSUPPORTED`]: either the capsule type is not supported by this
+///   platform, or the platform does not support capsule updates after exiting
+///   boot services.
+pub fn query_capsule_capabilities(capsule_header_array: &[&CapsuleHeader]) -> Result<CapsuleInfo> {
+    let rt = runtime_services_raw_panicking();
+    let rt = unsafe { rt.as_ref() };
+
+    let mut info = CapsuleInfo::default();
+    unsafe {
+        (rt.query_capsule_capabilities)(
+            capsule_header_array.as_ptr().cast(),
+            capsule_header_array.len(),
+            &mut info.maximum_capsule_size,
+            &mut info.reset_type,
         )
         .to_result_with_val(|| info)
     }

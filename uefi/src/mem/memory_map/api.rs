@@ -71,6 +71,22 @@ pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
     /// Returns an Iterator of type [`MemoryMapIter`].
     #[must_use]
     fn entries(&self) -> MemoryMapIter<'_>;
+
+    /// Returns if the underlying memory map is sorted regarding the physical
+    /// address start.
+    #[must_use]
+    fn is_sorted(&self) -> bool {
+        let iter = self.entries();
+        let iter = iter.clone().zip(iter.skip(1));
+
+        for (curr, next) in iter {
+            if next.phys_start < curr.phys_start {
+                log::debug!("next.phys_start < curr.phys_start: curr={curr:?}, next={next:?}");
+                return false;
+            }
+        }
+        true
+    }
 }
 
 /// Extension to [`MemoryMap`] that adds mutable operations. This also includes

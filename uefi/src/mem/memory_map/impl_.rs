@@ -441,3 +441,85 @@ impl IndexMut<usize> for MemoryMapOwned {
         self.get_mut(index).unwrap()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec::Vec;
+    use core::mem::size_of;
+
+    const BASE_MMAP_UNSORTED: [MemoryDescriptor; 3] = [
+        MemoryDescriptor {
+            ty: MemoryType::CONVENTIONAL,
+            phys_start: 0x3000,
+            virt_start: 0x3000,
+            page_count: 1,
+            att: MemoryAttribute::WRITE_BACK,
+        },
+        MemoryDescriptor {
+            ty: MemoryType::CONVENTIONAL,
+            phys_start: 0x2000,
+            virt_start: 0x2000,
+            page_count: 1,
+            att: MemoryAttribute::WRITE_BACK,
+        },
+        MemoryDescriptor {
+            ty: MemoryType::CONVENTIONAL,
+            phys_start: 0x1000,
+            virt_start: 0x1000,
+            page_count: 1,
+            att: MemoryAttribute::WRITE_BACK,
+        },
+    ];
+
+    /// Returns a copy of [`BASE_MMAP_UNSORTED`] owned on the stack.
+    fn new_mmap_memory() -> [MemoryDescriptor; 3] {
+        BASE_MMAP_UNSORTED
+    }
+
+    fn mmap_raw<'a>(memory: &mut [MemoryDescriptor]) -> (&'a mut [u8], MemoryMapMeta) {
+        let desc_size = size_of::<MemoryDescriptor>();
+        let len = memory.len() * desc_size;
+        let ptr = memory.as_mut_ptr().cast::<u8>();
+        let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
+        let meta = MemoryMapMeta {
+            map_size: len,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+        (slice, meta)
+    }
+
+    /// Basic sanity checks for the type [`MemoryMapRef`].
+    #[test]
+    fn memory_map_ref() {
+        let mut memory = new_mmap_memory();
+        let (mmap, meta) = mmap_raw(&mut memory);
+        let mmap = MemoryMapRef::new(mmap, meta, None).unwrap();
+
+        assert_eq!(mmap.entries().count(), 3);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>().as_slice(),
+            &BASE_MMAP_UNSORTED
+        );
+        assert!(!mmap.is_sorted());
+    }
+
+    /// Basic sanity checks for the type [`MemoryMapRefMut`].
+    #[test]
+    fn memory_map_ref_mut() {
+        let mut memory = new_mmap_memory();
+        let (mmap, meta) = mmap_raw(&mut memory);
+        let mut mmap = MemoryMapRefMut::new(mmap, meta, None).unwrap();
+
+        assert_eq!(mmap.entries().count(), 3);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>().as_slice(),
+            &BASE_MMAP_UNSORTED
+        );
+        assert!(!mmap.is_sorted());
+        mmap.sort();
+        assert!(mmap.is_sorted());
+    }
+}

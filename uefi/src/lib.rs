@@ -42,7 +42,7 @@
 //! protocol, and see the [`proto`] module for protocol implementations. New
 //! protocols can be defined with the [`unsafe_protocol`] macro.
 //!
-//! ## Optional crate features
+//! ## Optional Cargo crate features
 //!
 //! - `alloc`: Enable functionality requiring the [`alloc`] crate from
 //!   the Rust standard library. For example, methods that return a
@@ -59,8 +59,6 @@
 //!   that prints output to the UEFI console. No buffering is done; this
 //!   is not a high-performance logger.
 //! - `panic_handler`: Add a default panic handler that logs to `stdout`.
-//! - `panic-on-logger-errors` (enabled by default): Panic if a text
-//!   output error occurs in the logger.
 //! - `unstable`: Enable functionality that depends on [unstable
 //!   features] in the nightly compiler.
 //!   As example, in conjunction with the `alloc`-feature, this gate allows

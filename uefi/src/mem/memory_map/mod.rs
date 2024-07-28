@@ -105,13 +105,21 @@ mod tests_mmap_artificial {
     use core::mem::{size_of, size_of_val};
 
     fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMapOwned {
-        let byte_buffer = {
-            unsafe {
-                core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size_of_val(buffer))
-            }
+        let mmap_len = size_of_val(buffer);
+        let mmap = {
+            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, mmap_len) }
         };
 
-        MemoryMapOwned::from_raw(byte_buffer, size_of::<MemoryDescriptor>())
+        let mmap = MemoryMapBackingMemory::from_slice(mmap);
+        MemoryMapOwned::from_initialized_mem(
+            mmap,
+            MemoryMapMeta {
+                map_size: mmap_len,
+                desc_size: size_of::<MemoryDescriptor>(),
+                map_key: Default::default(),
+                desc_version: MemoryDescriptor::VERSION,
+            },
+        )
     }
 
     #[test]
@@ -258,7 +266,8 @@ mod tests_mmap_real {
         let mut buf = MMAP_RAW;
         let buf =
             unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), MMAP_META.map_size) };
-        let mut mmap = MemoryMapOwned::from_raw(buf, MMAP_META.desc_size);
+        let buf = MemoryMapBackingMemory::from_slice(buf);
+        let mut mmap = MemoryMapOwned::from_initialized_mem(buf, MMAP_META);
         mmap.sort();
 
         let entries = mmap.entries().copied().collect::<Vec<_>>();

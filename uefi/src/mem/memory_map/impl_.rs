@@ -300,10 +300,12 @@ impl MemoryMapBackingMemory {
         Self(slice)
     }
 
+    /// INTERNAL, for unit tests.
+    ///
     /// Creates an instance from the provided memory, which is not necessarily
     /// on the UEFI heap.
     #[cfg(test)]
-    fn from_slice(buffer: &mut [u8]) -> Self {
+    pub(crate) fn from_slice(buffer: &mut [u8]) -> Self {
         let len = buffer.len();
         unsafe { Self::from_raw(buffer.as_mut_ptr(), len) }
     }
@@ -346,6 +348,10 @@ impl Drop for MemoryMapBackingMemory {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }
         } else {
+            #[cfg(test)]
+            log::debug!("Boot services are not available in unit tests.");
+
+            #[cfg(not(test))]
             log::debug!("Boot services are excited. Memory map won't be freed using the UEFI boot services allocator.");
         }
     }
@@ -361,30 +367,13 @@ pub struct MemoryMapOwned {
 }
 
 impl MemoryMapOwned {
-    /// Creates a [`MemoryMapOwned`] from the give initialized memory map behind
-    /// the buffer and the reported `desc_size` from UEFI.
+    /// Creates a [`MemoryMapOwned`] from the given **initialized** memory map
+    /// (stored inside the provided buffer) and the corresponding
+    /// [`MemoryMapMeta`].
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
         assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
-        MemoryMapOwned {
-            buf,
-            meta,
-            len,
-        }
-    }
-
-    #[cfg(test)]
-    pub(super) fn from_raw(buf: &mut [u8], desc_size: usize) -> Self {
-        let mem = MemoryMapBackingMemory::from_slice(buf);
-        Self::from_initialized_mem(
-            mem,
-            MemoryMapMeta {
-                map_size: buf.len(),
-                desc_size,
-                map_key: MemoryMapKey(0),
-                desc_version: MemoryDescriptor::VERSION,
-            },
-        )
+        MemoryMapOwned { buf, meta, len }
     }
 }
 
@@ -496,7 +485,7 @@ mod tests {
     fn memory_map_ref() {
         let mut memory = new_mmap_memory();
         let (mmap, meta) = mmap_raw(&mut memory);
-        let mmap = MemoryMapRef::new(mmap, meta, None).unwrap();
+        let mmap = MemoryMapRef::new(mmap, meta).unwrap();
 
         assert_eq!(mmap.entries().count(), 3);
         assert_eq!(
@@ -511,7 +500,25 @@ mod tests {
     fn memory_map_ref_mut() {
         let mut memory = new_mmap_memory();
         let (mmap, meta) = mmap_raw(&mut memory);
-        let mut mmap = MemoryMapRefMut::new(mmap, meta, None).unwrap();
+        let mut mmap = MemoryMapRefMut::new(mmap, meta).unwrap();
+
+        assert_eq!(mmap.entries().count(), 3);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>().as_slice(),
+            &BASE_MMAP_UNSORTED
+        );
+        assert!(!mmap.is_sorted());
+        mmap.sort();
+        assert!(mmap.is_sorted());
+    }
+
+    /// Basic sanity checks for the type [`MemoryMapOwned`].
+    #[test]
+    fn memory_map_owned() {
+        let mut memory = new_mmap_memory();
+        let (mmap, meta) = mmap_raw(&mut memory);
+        let mmap = MemoryMapBackingMemory::from_slice(mmap);
+        let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
 
         assert_eq!(mmap.entries().count(), 3);
         assert_eq!(

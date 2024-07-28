@@ -13,7 +13,6 @@ use uefi_raw::PhysicalAddress;
 #[allow(dead_code)] // TODO: github.com/rust-osdev/uefi-rs/issues/1247
 pub struct MemoryMapRef<'a> {
     buf: &'a [u8],
-    key: MemoryMapKey,
     meta: MemoryMapMeta,
     len: usize,
 }
@@ -24,7 +23,7 @@ impl<'a> MemoryMap for MemoryMapRef<'a> {
     }
 
     fn key(&self) -> MemoryMapKey {
-        self.key
+        self.meta.map_key
     }
 
     fn len(&self) -> usize {
@@ -55,7 +54,6 @@ impl Index<usize> for MemoryMapRef<'_> {
 #[derive(Debug)]
 pub struct MemoryMapRefMut<'a> {
     buf: &'a mut [u8],
-    key: MemoryMapKey,
     meta: MemoryMapMeta,
     len: usize,
 }
@@ -66,7 +64,7 @@ impl<'a> MemoryMap for MemoryMapRefMut<'a> {
     }
 
     fn key(&self) -> MemoryMapKey {
-        self.key
+        self.meta.map_key
     }
 
     fn len(&self) -> usize {
@@ -297,7 +295,6 @@ impl Drop for MemoryMapBackingMemory {
 pub struct MemoryMapOwned {
     /// Backing memory, properly initialized at this point.
     pub(crate) buf: MemoryMapBackingMemory,
-    pub(crate) key: MemoryMapKey,
     pub(crate) meta: MemoryMapMeta,
     pub(crate) len: usize,
 }
@@ -309,7 +306,6 @@ impl MemoryMapOwned {
         assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
         MemoryMapOwned {
-            key: MemoryMapKey(0),
             buf,
             meta,
             len,
@@ -337,7 +333,7 @@ impl MemoryMap for MemoryMapOwned {
     }
 
     fn key(&self) -> MemoryMapKey {
-        self.key
+        self.meta.map_key
     }
 
     fn len(&self) -> usize {
@@ -360,7 +356,6 @@ impl MemoryMapMut for MemoryMapOwned {
     fn sort(&mut self) {
         let mut reference = MemoryMapRefMut {
             buf: self.buf.as_mut_slice(),
-            key: self.key,
             meta: self.meta,
             len: self.len,
         };

@@ -13,6 +13,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [features]
+# KEEP this feature list in sync with doc in lib.rs!
 default = [ "log-debugcon" ]
 alloc = []
 

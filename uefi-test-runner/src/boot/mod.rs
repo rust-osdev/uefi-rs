@@ -5,7 +5,7 @@ use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::table::boot::{BootServices, LoadImageSource, SearchType};
 use uefi::table::{Boot, SystemTable};
-use uefi::{CString16, Identify};
+use uefi::{boot, CString16, Identify};
 
 mod memory;
 mod misc;
@@ -28,6 +28,12 @@ fn test_locate_handle_buffer(bt: &BootServices) {
             .locate_handle_buffer(SearchType::AllHandles)
             .expect("Failed to locate handle buffer");
         assert!(!handles.is_empty(), "Could not find any handles");
+
+        // Compare with freestanding version.
+        assert_eq!(
+            *handles,
+            *boot::locate_handle_buffer(SearchType::AllHandles).unwrap()
+        );
     }
 
     {
@@ -38,6 +44,12 @@ fn test_locate_handle_buffer(bt: &BootServices) {
         assert!(
             !handles.is_empty(),
             "Could not find any OUTPUT protocol handles"
+        );
+
+        // Compare with freestanding version.
+        assert_eq!(
+            *handles,
+            *boot::locate_handle_buffer(SearchType::ByProtocol(&Output::GUID)).unwrap()
         );
     }
 }

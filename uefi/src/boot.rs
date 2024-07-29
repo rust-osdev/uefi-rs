@@ -4,14 +4,16 @@
 
 use crate::data_types::PhysicalAddress;
 use core::ffi::c_void;
+use core::ops::Deref;
 use core::ptr::{self, NonNull};
+use core::slice;
 use core::sync::atomic::{AtomicPtr, Ordering};
 use uefi::{table, Handle, Result, StatusExt};
 
 #[cfg(doc)]
 use uefi::Status;
 
-pub use uefi::table::boot::AllocateType;
+pub use uefi::table::boot::{AllocateType, SearchType};
 pub use uefi_raw::table::boot::MemoryType;
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
@@ -127,4 +129,57 @@ pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     let bt = unsafe { bt.as_ref() };
 
     unsafe { (bt.free_pool)(ptr.as_ptr()) }.to_result()
+}
+
+/// Returns an array of handles that support the requested protocol in a
+/// pool-allocated buffer.
+///
+/// See [`SearchType`] for details of the available search operations.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: no matching handles.
+/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let (ty, guid, key) = match search_ty {
+        SearchType::AllHandles => (0, ptr::null(), ptr::null()),
+        SearchType::ByRegisterNotify(registration) => {
+            (1, ptr::null(), registration.0.as_ptr().cast_const())
+        }
+        SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null()),
+    };
+
+    let mut num_handles: usize = 0;
+    let mut buffer: *mut uefi_raw::Handle = ptr::null_mut();
+    unsafe { (bt.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
+        .to_result_with_val(|| HandleBuffer {
+            count: num_handles,
+            buffer: NonNull::new(buffer.cast())
+                .expect("locate_handle_buffer must not return a null pointer"),
+        })
+}
+
+/// A buffer returned by [`locate_handle_buffer`] that contains an array of
+/// [`Handle`]s that support the requested protocol.
+#[derive(Debug, Eq, PartialEq)]
+pub struct HandleBuffer {
+    count: usize,
+    buffer: NonNull<Handle>,
+}
+
+impl Drop for HandleBuffer {
+    fn drop(&mut self) {
+        let _ = unsafe { free_pool(self.buffer.cast::<u8>()) };
+    }
+}
+
+impl Deref for HandleBuffer {
+    type Target = [Handle];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.buffer.as_ptr(), self.count) }
+    }
 }

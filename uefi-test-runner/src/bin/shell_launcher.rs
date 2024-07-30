@@ -13,6 +13,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use log::info;
+use uefi::boot;
 use uefi::prelude::*;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::{DevicePath, DeviceSubType, DeviceType, LoadedImageDevicePath};
@@ -21,13 +22,10 @@ use uefi::table::boot::LoadImageSource;
 
 /// Get the device path of the shell app. This is the same as the
 /// currently-loaded image's device path, but with the file path part changed.
-fn get_shell_app_device_path<'a>(
-    boot_services: &BootServices,
-    storage: &'a mut Vec<u8>,
-) -> &'a DevicePath {
-    let loaded_image_device_path = boot_services
-        .open_protocol_exclusive::<LoadedImageDevicePath>(boot_services.image_handle())
-        .expect("failed to open LoadedImageDevicePath protocol");
+fn get_shell_app_device_path(storage: &mut Vec<u8>) -> &DevicePath {
+    let loaded_image_device_path =
+        boot::open_protocol_exclusive::<LoadedImageDevicePath>(boot::image_handle())
+            .expect("failed to open LoadedImageDevicePath protocol");
 
     let mut builder = DevicePathBuilder::with_vec(storage);
     for node in loaded_image_device_path.node_iter() {
@@ -50,7 +48,7 @@ fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
     let boot_services = st.boot_services();
 
     let mut storage = Vec::new();
-    let shell_image_path = get_shell_app_device_path(boot_services, &mut storage);
+    let shell_image_path = get_shell_app_device_path(&mut storage);
 
     // Load the shell app.
     let shell_image_handle = boot_services
@@ -65,8 +63,7 @@ fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
 
     // Set the command line passed to the shell app so that it will run the
     // test-runner app. This automatically turns off the five-second delay.
-    let mut shell_loaded_image = boot_services
-        .open_protocol_exclusive::<LoadedImage>(shell_image_handle)
+    let mut shell_loaded_image = boot::open_protocol_exclusive::<LoadedImage>(shell_image_handle)
         .expect("failed to open LoadedImage protocol");
     let load_options = cstr16!(r"shell.efi test_runner.efi arg1 arg2");
     unsafe {

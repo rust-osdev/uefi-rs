@@ -83,6 +83,17 @@
 //! only unfold their potential when you invoke `uefi::helpers::init` as soon
 //! as possible in your application.
 //!
+//! # Trivia and Background
+//!
+//! [UEFI] started as the successor firmware to the BIOS in x86 space and
+//! developed to a universal firmware specification for various platforms, such
+//! as ARM. It provides an early boot environment with a variety of
+//! [specified][spec] ready-to-use "high-level" functionality, such as accessing
+//! disks or the network. EFI images, the files that can be loaded by an UEFI
+//! environment, can leverage these abstractions to extend the functionality in
+//! form of additional drivers, OS-specific bootloaders, or any different kind
+//! of low-level applications (such as an [IRC client][uefirc]).
+//!
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/
 //! [`BootServices`]: table::boot::BootServices
@@ -93,6 +104,7 @@
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
 //! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
+//! [uefirc]: https://github.com/codyd51/uefirc
 
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

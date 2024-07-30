@@ -15,14 +15,6 @@ Develop Rust software that leverages **safe**, **convenient**, and
 
 ## Description
 
-[UEFI] started as the successor firmware to the BIOS in x86 space and developed
-to a universal firmware specification for various platforms, such as ARM. It
-provides an early boot environment with a variety of [specified][spec]
-ready-to-use "high-level" functionality, such as accessing disks or the network.
-EFI images, the files that can be loaded by an UEFI environment, can leverage
-these abstractions to extend the functionality in form of additional drivers,
-OS-specific bootloaders, or different kind of low-level applications.
-
 Our mission is to provide **safe** and **performant** wrappers for UEFI
 interfaces, and allow developers to write idiomatic Rust code.
 

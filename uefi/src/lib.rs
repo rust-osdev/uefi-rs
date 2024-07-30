@@ -7,9 +7,6 @@
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].
 //!
-//! Feel free to file bug reports and questions in our [issue tracker], and [PR
-//! contributions][contributing] are also welcome!
-//!
 //! # About `uefi`
 //!
 //! With `uefi`, you have the flexibility to integrate selected types and
@@ -23,7 +20,7 @@
 //! _Note that for producing EFI images, you also need to use a corresponding
 //! `uefi` compiler target of Rust, such as `x86_64-unknown-uefi`._
 //!
-//! ## Example Use Cases
+//! # Interaction with uefi services
 //!
 //! With this crate you can write code for the pre- and post-exit boot services
 //! epochs. However, the `uefi` crate unfolds its true potential when crafting

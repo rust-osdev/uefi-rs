@@ -12,6 +12,13 @@
 //! Feel free to file bug reports and questions in our [issue tracker], and [PR
 //! contributions][contributing] are also welcome!
 //!
+//! # About this Document
+//!
+//! In this document, you find general information about this crate, such
+//! as examples and the technical documentation of the public API, as well
+//! as general information about the project, such as license or MSRV
+//! requirements.
+//!
 //! # Interaction with uefi services
 //!
 //! With this crate you can write code for the pre- and post-exit boot services

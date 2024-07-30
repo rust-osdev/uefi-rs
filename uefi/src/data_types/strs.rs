@@ -457,7 +457,7 @@ impl CStr16 {
     pub fn from_unaligned_slice<'buf>(
         src: &UnalignedSlice<'_, u16>,
         buf: &'buf mut [MaybeUninit<u16>],
-    ) -> Result<&'buf CStr16, UnalignedCStr16Error> {
+    ) -> Result<&'buf Self, UnalignedCStr16Error> {
         // The input `buf` might be longer than needed, so get a
         // subslice of the required length.
         let buf = buf
@@ -469,7 +469,7 @@ impl CStr16 {
             // Safety: `copy_buf` fully initializes the slice.
             maybe_uninit_slice_assume_init_ref(buf)
         };
-        CStr16::from_u16_with_nul(buf).map_err(|e| match e {
+        Self::from_u16_with_nul(buf).map_err(|e| match e {
             FromSliceWithNulError::InvalidChar(v) => UnalignedCStr16Error::InvalidChar(v),
             FromSliceWithNulError::InteriorNul(v) => UnalignedCStr16Error::InteriorNul(v),
             FromSliceWithNulError::NotNulTerminated => UnalignedCStr16Error::NotNulTerminated,
@@ -593,7 +593,7 @@ impl From<&CStr16> for alloc::string::String {
             .map(u16::from)
             .map(u32::from)
             .map(|int| char::from_u32(int).expect("Should be encodable as UTF-8"))
-            .collect::<alloc::string::String>()
+            .collect::<Self>()
     }
 }
 
@@ -615,8 +615,8 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CStr16 {
     }
 }
 
-impl AsRef<CStr16> for CStr16 {
-    fn as_ref(&self) -> &CStr16 {
+impl AsRef<Self> for CStr16 {
+    fn as_ref(&self) -> &Self {
         self
     }
 }

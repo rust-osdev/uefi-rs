@@ -89,8 +89,11 @@
 #![no_std]
 // Enable some additional warnings and lints.
 #![warn(clippy::ptr_as_ptr, missing_docs, unused)]
-#![deny(clippy::all)]
-#![deny(clippy::must_use_candidate)]
+#![deny(
+    clippy::all,
+    clippy::must_use_candidate,
+    clippy::use_self
+)]
 #![deny(missing_debug_implementations)]
 
 #[cfg(feature = "alloc")]

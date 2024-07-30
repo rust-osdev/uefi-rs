@@ -165,7 +165,7 @@ impl PcrEvent {
             ptr_write_unaligned_and_add(&mut ptr, event_data_size);
             ptr::copy(event_data.as_ptr(), ptr, event_data.len());
 
-            let ptr: *mut PcrEvent =
+            let ptr: *mut Self =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
         }

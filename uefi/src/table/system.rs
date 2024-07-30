@@ -278,7 +278,7 @@ impl SystemTable<Boot> {
     /// handling require taking this risk.
     #[must_use]
     pub const unsafe fn unsafe_clone(&self) -> Self {
-        SystemTable {
+        Self {
             table: self.table,
             _marker: PhantomData,
         }

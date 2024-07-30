@@ -102,7 +102,7 @@ pub struct BootServiceCapability {
 impl Default for BootServiceCapability {
     fn default() -> Self {
         // OK to unwrap, the size is less than u8.
-        let struct_size = u8::try_from(mem::size_of::<BootServiceCapability>()).unwrap();
+        let struct_size = u8::try_from(mem::size_of::<Self>()).unwrap();
 
         Self {
             size: struct_size,
@@ -211,7 +211,7 @@ impl PcrEventInputs {
             );
             ptr::copy(event_data.as_ptr(), ptr, event_data.len());
 
-            let ptr: *mut PcrEventInputs =
+            let ptr: *mut Self =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
         }
@@ -261,7 +261,7 @@ impl Debug for PcrEventInputs {
 
 // Manual `PartialEq` implementation since it can't be derived for a packed DST.
 impl PartialEq for PcrEventInputs {
-    fn eq(&self, other: &PcrEventInputs) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.size == other.size
             && self.event_header == other.event_header
             && self.event == other.event

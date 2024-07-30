@@ -80,9 +80,9 @@ impl<Output, ErrData: Debug> ResultExt<Output, ErrData> for Result<Output, ErrDa
         }
     }
 
-    fn handle_warning<O>(self, op: O) -> Result<Output, ErrData>
+    fn handle_warning<O>(self, op: O) -> Self
     where
-        O: FnOnce(Error<ErrData>) -> Result<Output, ErrData>,
+        O: FnOnce(Error<ErrData>) -> Self,
     {
         match self {
             Ok(output) => Ok(output),

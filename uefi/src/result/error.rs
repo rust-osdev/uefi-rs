@@ -44,7 +44,7 @@ impl<Data: Debug> Error<Data> {
 
 impl From<Status> for Error<()> {
     fn from(status: Status) -> Self {
-        Error::new(status, ())
+        Self::new(status, ())
     }
 }
 

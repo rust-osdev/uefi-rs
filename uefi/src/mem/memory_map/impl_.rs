@@ -373,7 +373,7 @@ impl MemoryMapOwned {
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
         assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
-        MemoryMapOwned { buf, meta, len }
+        Self { buf, meta, len }
     }
 }
 

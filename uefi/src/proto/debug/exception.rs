@@ -5,27 +5,27 @@ pub struct ExceptionType(isize);
 
 impl ExceptionType {
     /// Undefined Exception
-    pub const EXCEPT_EBC_UNDEFINED: ExceptionType = ExceptionType(0);
+    pub const EXCEPT_EBC_UNDEFINED: Self = Self(0);
     /// Divide-by-zero Error
-    pub const EXCEPT_EBC_DIVIDE_ERROR: ExceptionType = ExceptionType(1);
+    pub const EXCEPT_EBC_DIVIDE_ERROR: Self = Self(1);
     /// Debug Exception
-    pub const EXCEPT_EBC_DEBUG: ExceptionType = ExceptionType(2);
+    pub const EXCEPT_EBC_DEBUG: Self = Self(2);
     /// Breakpoint
-    pub const EXCEPT_EBC_BREAKPOINT: ExceptionType = ExceptionType(3);
+    pub const EXCEPT_EBC_BREAKPOINT: Self = Self(3);
     /// Overflow
-    pub const EXCEPT_EBC_OVERFLOW: ExceptionType = ExceptionType(4);
+    pub const EXCEPT_EBC_OVERFLOW: Self = Self(4);
     /// Invalid Opcode
-    pub const EXCEPT_EBC_INVALID_OPCODE: ExceptionType = ExceptionType(5);
+    pub const EXCEPT_EBC_INVALID_OPCODE: Self = Self(5);
     /// Stack-Segment Fault
-    pub const EXCEPT_EBC_STACK_FAULT: ExceptionType = ExceptionType(6);
+    pub const EXCEPT_EBC_STACK_FAULT: Self = Self(6);
     /// Alignment Check
-    pub const EXCEPT_EBC_ALIGNMENT_CHECK: ExceptionType = ExceptionType(7);
+    pub const EXCEPT_EBC_ALIGNMENT_CHECK: Self = Self(7);
     /// Instruction Encoding Exception
-    pub const EXCEPT_EBC_INSTRUCTION_ENCODING: ExceptionType = ExceptionType(8);
+    pub const EXCEPT_EBC_INSTRUCTION_ENCODING: Self = Self(8);
     /// Bad Breakpoint Exception
-    pub const EXCEPT_EBC_BAD_BREAK: ExceptionType = ExceptionType(9);
+    pub const EXCEPT_EBC_BAD_BREAK: Self = Self(9);
     /// Single Step Exception
-    pub const EXCEPT_EBC_SINGLE_STEP: ExceptionType = ExceptionType(10);
+    pub const EXCEPT_EBC_SINGLE_STEP: Self = Self(10);
 }
 
 #[cfg(target_arch = "x86")]
@@ -69,39 +69,39 @@ impl ExceptionType {
 #[cfg(target_arch = "x86_64")]
 impl ExceptionType {
     /// Divide-by-zero Error
-    pub const EXCEPT_X64_DIVIDE_ERROR: ExceptionType = ExceptionType(0);
+    pub const EXCEPT_X64_DIVIDE_ERROR: Self = Self(0);
     /// Debug Exception
-    pub const EXCEPT_X64_DEBUG: ExceptionType = ExceptionType(1);
+    pub const EXCEPT_X64_DEBUG: Self = Self(1);
     /// Non-maskable Interrupt
-    pub const EXCEPT_X64_NMI: ExceptionType = ExceptionType(2);
+    pub const EXCEPT_X64_NMI: Self = Self(2);
     /// Breakpoint
-    pub const EXCEPT_X64_BREAKPOINT: ExceptionType = ExceptionType(3);
+    pub const EXCEPT_X64_BREAKPOINT: Self = Self(3);
     /// Overflow
-    pub const EXCEPT_X64_OVERFLOW: ExceptionType = ExceptionType(4);
+    pub const EXCEPT_X64_OVERFLOW: Self = Self(4);
     /// Bound Range Exceeded
-    pub const EXCEPT_X64_BOUND: ExceptionType = ExceptionType(5);
+    pub const EXCEPT_X64_BOUND: Self = Self(5);
     /// Invalid Opcode
-    pub const EXCEPT_X64_INVALID_OPCODE: ExceptionType = ExceptionType(6);
+    pub const EXCEPT_X64_INVALID_OPCODE: Self = Self(6);
     /// Double Fault
-    pub const EXCEPT_X64_DOUBLE_FAULT: ExceptionType = ExceptionType(8);
+    pub const EXCEPT_X64_DOUBLE_FAULT: Self = Self(8);
     /// Invalid TSS
-    pub const EXCEPT_X64_INVALID_TSS: ExceptionType = ExceptionType(10);
+    pub const EXCEPT_X64_INVALID_TSS: Self = Self(10);
     /// Segment Not Present
-    pub const EXCEPT_X64_SEG_NOT_PRESENT: ExceptionType = ExceptionType(11);
+    pub const EXCEPT_X64_SEG_NOT_PRESENT: Self = Self(11);
     /// Stack-Segment Fault
-    pub const EXCEPT_X64_STACK_FAULT: ExceptionType = ExceptionType(12);
+    pub const EXCEPT_X64_STACK_FAULT: Self = Self(12);
     /// General Protection Fault
-    pub const EXCEPT_X64_GP_FAULT: ExceptionType = ExceptionType(13);
+    pub const EXCEPT_X64_GP_FAULT: Self = Self(13);
     /// Page Fault
-    pub const EXCEPT_X64_PAGE_FAULT: ExceptionType = ExceptionType(14);
+    pub const EXCEPT_X64_PAGE_FAULT: Self = Self(14);
     /// x87 Floating-Point Exception
-    pub const EXCEPT_X64_FP_ERROR: ExceptionType = ExceptionType(16);
+    pub const EXCEPT_X64_FP_ERROR: Self = Self(16);
     /// Alignment Check
-    pub const EXCEPT_X64_ALIGNMENT_CHECK: ExceptionType = ExceptionType(17);
+    pub const EXCEPT_X64_ALIGNMENT_CHECK: Self = Self(17);
     /// Machine Check
-    pub const EXCEPT_X64_MACHINE_CHECK: ExceptionType = ExceptionType(18);
+    pub const EXCEPT_X64_MACHINE_CHECK: Self = Self(18);
     /// SIMD Floating-Point Exception
-    pub const EXCEPT_X64_SIMD: ExceptionType = ExceptionType(19);
+    pub const EXCEPT_X64_SIMD: Self = Self(19);
 }
 
 #[cfg(target_arch = "arm")]

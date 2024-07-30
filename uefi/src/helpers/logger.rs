@@ -58,7 +58,7 @@ impl core::fmt::Write for DebugconWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for &byte in s.as_bytes() {
             unsafe {
-                core::arch::asm!("outb %al, %dx", in("al") byte, in("dx") DebugconWriter::IO_PORT, options(att_syntax))
+                core::arch::asm!("outb %al, %dx", in("al") byte, in("dx") Self::IO_PORT, options(att_syntax))
             };
         }
         Ok(())
@@ -83,7 +83,7 @@ impl Logger {
     /// [`set_output`]: Self::set_output
     #[must_use]
     pub const fn new() -> Self {
-        Logger {
+        Self {
             writer: AtomicPtr::new(ptr::null_mut()),
         }
     }

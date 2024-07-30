@@ -605,7 +605,7 @@ impl TryFrom<&[u8]> for Time {
     type Error = TimeByteConversionError;
 
     fn try_from(bytes: &[u8]) -> core::result::Result<Self, Self::Error> {
-        if size_of::<Time>() <= bytes.len() {
+        if size_of::<Self>() <= bytes.len() {
             let year = u16::from_le_bytes(bytes[0..2].try_into().unwrap());
             let month = bytes[2];
             let day = bytes[3];
@@ -636,7 +636,7 @@ impl TryFrom<&[u8]> for Time {
                 daylight,
             };
 
-            Time::new(time_params).map_err(TimeByteConversionError::InvalidFields)
+            Self::new(time_params).map_err(TimeByteConversionError::InvalidFields)
         } else {
             Err(TimeByteConversionError::InvalidSize)
         }

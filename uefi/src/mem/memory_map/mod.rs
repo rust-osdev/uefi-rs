@@ -16,8 +16,7 @@
 //!
 //! If you have a chunk of memory and want to parse it as UEFI memory map, which
 //! might be the case if a bootloader such as GRUB or Limine passes its boot
-//! information, you can use  [`MemoryMapRef`] or [`MemoryMapRefMut`].
-//! TODO add constructors.
+//! information, you can use [`MemoryMapRef`] or [`MemoryMapRefMut`].
 //!
 //! # All relevant exports:
 //!
@@ -50,12 +49,13 @@ impl Align for MemoryDescriptor {
     }
 }
 
-/// A unique identifier of a memory map.
+/// A unique identifier of a UEFI memory map, used to tell the firmware that one  
+/// has the latest valid memory map when exiting boot services.
 ///
-/// If the memory map changes, this value is no longer valid.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+/// If the memory map changes, due to any allocation or deallocation, this value
+/// is no longer valid, and exiting boot services will fail.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(C)]
-// TODO add some convenience?!
 pub struct MemoryMapKey(pub(crate) usize);
 
 /// A structure containing the meta attributes associated with a call to
@@ -99,19 +99,29 @@ impl MemoryMapMeta {
     }
 }
 
+/// Comprehensive unit test of the memory map functionality with the simplified
+/// data. Here, `desc_size` equals `size_of::<MemoryDescriptor`.
 #[cfg(test)]
 mod tests_mmap_artificial {
     use super::*;
     use core::mem::{size_of, size_of_val};
 
-    fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMapOwned {
-        let byte_buffer = {
-            unsafe {
-                core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, size_of_val(buffer))
-            }
+    fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMapRefMut {
+        let mmap_len = size_of_val(buffer);
+        let mmap = {
+            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, mmap_len) }
         };
 
-        MemoryMapOwned::from_raw(byte_buffer, size_of::<MemoryDescriptor>())
+        MemoryMapRefMut::new(
+            mmap,
+            MemoryMapMeta {
+                map_size: mmap_len,
+                desc_size: size_of::<MemoryDescriptor>(),
+                map_key: Default::default(),
+                desc_version: MemoryDescriptor::VERSION,
+            },
+        )
+        .unwrap()
     }
 
     #[test]
@@ -148,7 +158,7 @@ mod tests_mmap_artificial {
         mem_map.sort();
 
         if !is_sorted(&mem_map.entries()) {
-            panic!("mem_map is not sorted: {}", mem_map);
+            panic!("mem_map is not sorted: {:?}", mem_map);
         }
     }
 
@@ -201,17 +211,6 @@ mod tests_mmap_artificial {
         assert_ne!(*desc, BUFFER[2]);
     }
 
-    // Added for debug purposes on test failure
-    impl core::fmt::Display for MemoryMapOwned {
-        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            writeln!(f)?;
-            for desc in self.entries() {
-                writeln!(f, "{:?}", desc)?;
-            }
-            Ok(())
-        }
-    }
-
     fn is_sorted(iter: &MemoryMapIter) -> bool {
         let mut iter = iter.clone();
         let mut curr_start;
@@ -232,6 +231,9 @@ mod tests_mmap_artificial {
     }
 }
 
+/// Comprehensive unit test of the memory map functionality with the data from a
+/// real UEFI memory map. The important property that we test here is that
+/// the reported `desc_size` doesn't equal `size_of::<MemoryDescriptor`.
 #[cfg(test)]
 mod tests_mmap_real {
     use super::*;
@@ -258,8 +260,11 @@ mod tests_mmap_real {
         let mut buf = MMAP_RAW;
         let buf =
             unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), MMAP_META.map_size) };
-        let mut mmap = MemoryMapOwned::from_raw(buf, MMAP_META.desc_size);
+        let mut mmap = MemoryMapRefMut::new(buf, MMAP_META).unwrap();
+
+        assert!(mmap.is_sorted());
         mmap.sort();
+        assert!(mmap.is_sorted());
 
         let entries = mmap.entries().copied().collect::<Vec<_>>();
 

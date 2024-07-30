@@ -3,19 +3,58 @@
 
 use super::*;
 use crate::table::system_table_boot;
+use core::fmt::{Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
 use core::ptr::NonNull;
 use core::{mem, ptr};
 use uefi_raw::PhysicalAddress;
 
+/// Errors that may happen when constructing a [`MemoryMapRef`] or
+/// [`MemoryMapRefMut`].
+#[derive(Copy, Clone, Debug)]
+pub enum MemoryMapError {
+    /// The buffer is not 8-byte aligned.
+    Misaligned,
+    /// The memory map size is invalid.
+    InvalidSize,
+}
+
+impl Display for MemoryMapError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for MemoryMapError {}
+
 /// Implementation of [`MemoryMap`] for the given buffer.
 #[derive(Debug)]
-#[allow(dead_code)] // TODO: github.com/rust-osdev/uefi-rs/issues/1247
 pub struct MemoryMapRef<'a> {
     buf: &'a [u8],
-    key: MemoryMapKey,
     meta: MemoryMapMeta,
     len: usize,
+}
+
+impl<'a> MemoryMapRef<'a> {
+    /// Constructs a new [`MemoryMapRef`].
+    ///
+    /// The underlying memory might contain an invalid/malformed memory map
+    /// which can't be checked during construction of this type. The entry
+    /// iterator might yield unexpected results.
+    pub fn new(buffer: &'a [u8], meta: MemoryMapMeta) -> Result<Self, MemoryMapError> {
+        if buffer.as_ptr().align_offset(8) != 0 {
+            return Err(MemoryMapError::Misaligned);
+        }
+        if buffer.len() < meta.map_size {
+            return Err(MemoryMapError::InvalidSize);
+        }
+        Ok(Self {
+            buf: buffer,
+            meta,
+            len: meta.entry_count(),
+        })
+    }
 }
 
 impl<'a> MemoryMap for MemoryMapRef<'a> {
@@ -24,7 +63,7 @@ impl<'a> MemoryMap for MemoryMapRef<'a> {
     }
 
     fn key(&self) -> MemoryMapKey {
-        self.key
+        self.meta.map_key
     }
 
     fn len(&self) -> usize {
@@ -55,9 +94,29 @@ impl Index<usize> for MemoryMapRef<'_> {
 #[derive(Debug)]
 pub struct MemoryMapRefMut<'a> {
     buf: &'a mut [u8],
-    key: MemoryMapKey,
     meta: MemoryMapMeta,
     len: usize,
+}
+
+impl<'a> MemoryMapRefMut<'a> {
+    /// Constructs a new [`MemoryMapRefMut`].
+    ///
+    /// The underlying memory might contain an invalid/malformed memory map
+    /// which can't be checked during construction of this type. The entry
+    /// iterator might yield unexpected results.
+    pub fn new(buffer: &'a mut [u8], meta: MemoryMapMeta) -> Result<Self, MemoryMapError> {
+        if buffer.as_ptr().align_offset(8) != 0 {
+            return Err(MemoryMapError::Misaligned);
+        }
+        if buffer.len() < meta.map_size {
+            return Err(MemoryMapError::InvalidSize);
+        }
+        Ok(Self {
+            buf: buffer,
+            meta,
+            len: meta.entry_count(),
+        })
+    }
 }
 
 impl<'a> MemoryMap for MemoryMapRefMut<'a> {
@@ -66,7 +125,7 @@ impl<'a> MemoryMap for MemoryMapRefMut<'a> {
     }
 
     fn key(&self) -> MemoryMapKey {
-        self.key
+        self.meta.map_key
     }
 
     fn len(&self) -> usize {
@@ -241,10 +300,12 @@ impl MemoryMapBackingMemory {
         Self(slice)
     }
 
+    /// INTERNAL, for unit tests.
+    ///
     /// Creates an instance from the provided memory, which is not necessarily
     /// on the UEFI heap.
     #[cfg(test)]
-    fn from_slice(buffer: &mut [u8]) -> Self {
+    pub(crate) fn from_slice(buffer: &mut [u8]) -> Self {
         let len = buffer.len();
         unsafe { Self::from_raw(buffer.as_mut_ptr(), len) }
     }
@@ -287,6 +348,10 @@ impl Drop for MemoryMapBackingMemory {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }
         } else {
+            #[cfg(test)]
+            log::debug!("Boot services are not available in unit tests.");
+
+            #[cfg(not(test))]
             log::debug!("Boot services are excited. Memory map won't be freed using the UEFI boot services allocator.");
         }
     }
@@ -297,37 +362,18 @@ impl Drop for MemoryMapBackingMemory {
 pub struct MemoryMapOwned {
     /// Backing memory, properly initialized at this point.
     pub(crate) buf: MemoryMapBackingMemory,
-    pub(crate) key: MemoryMapKey,
     pub(crate) meta: MemoryMapMeta,
     pub(crate) len: usize,
 }
 
 impl MemoryMapOwned {
-    /// Creates a [`MemoryMapOwned`] from the give initialized memory map behind
-    /// the buffer and the reported `desc_size` from UEFI.
+    /// Creates a [`MemoryMapOwned`] from the given **initialized** memory map
+    /// (stored inside the provided buffer) and the corresponding
+    /// [`MemoryMapMeta`].
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
         assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
-        MemoryMapOwned {
-            key: MemoryMapKey(0),
-            buf,
-            meta,
-            len,
-        }
-    }
-
-    #[cfg(test)]
-    pub(super) fn from_raw(buf: &mut [u8], desc_size: usize) -> Self {
-        let mem = MemoryMapBackingMemory::from_slice(buf);
-        Self::from_initialized_mem(
-            mem,
-            MemoryMapMeta {
-                map_size: buf.len(),
-                desc_size,
-                map_key: MemoryMapKey(0),
-                desc_version: MemoryDescriptor::VERSION,
-            },
-        )
+        MemoryMapOwned { buf, meta, len }
     }
 }
 
@@ -337,7 +383,7 @@ impl MemoryMap for MemoryMapOwned {
     }
 
     fn key(&self) -> MemoryMapKey {
-        self.key
+        self.meta.map_key
     }
 
     fn len(&self) -> usize {
@@ -360,7 +406,6 @@ impl MemoryMapMut for MemoryMapOwned {
     fn sort(&mut self) {
         let mut reference = MemoryMapRefMut {
             buf: self.buf.as_mut_slice(),
-            key: self.key,
             meta: self.meta,
             len: self.len,
         };
@@ -383,5 +428,105 @@ impl Index<usize> for MemoryMapOwned {
 impl IndexMut<usize> for MemoryMapOwned {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         self.get_mut(index).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec::Vec;
+    use core::mem::size_of;
+
+    const BASE_MMAP_UNSORTED: [MemoryDescriptor; 3] = [
+        MemoryDescriptor {
+            ty: MemoryType::CONVENTIONAL,
+            phys_start: 0x3000,
+            virt_start: 0x3000,
+            page_count: 1,
+            att: MemoryAttribute::WRITE_BACK,
+        },
+        MemoryDescriptor {
+            ty: MemoryType::CONVENTIONAL,
+            phys_start: 0x2000,
+            virt_start: 0x2000,
+            page_count: 1,
+            att: MemoryAttribute::WRITE_BACK,
+        },
+        MemoryDescriptor {
+            ty: MemoryType::CONVENTIONAL,
+            phys_start: 0x1000,
+            virt_start: 0x1000,
+            page_count: 1,
+            att: MemoryAttribute::WRITE_BACK,
+        },
+    ];
+
+    /// Returns a copy of [`BASE_MMAP_UNSORTED`] owned on the stack.
+    fn new_mmap_memory() -> [MemoryDescriptor; 3] {
+        BASE_MMAP_UNSORTED
+    }
+
+    fn mmap_raw<'a>(memory: &mut [MemoryDescriptor]) -> (&'a mut [u8], MemoryMapMeta) {
+        let desc_size = size_of::<MemoryDescriptor>();
+        let len = memory.len() * desc_size;
+        let ptr = memory.as_mut_ptr().cast::<u8>();
+        let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
+        let meta = MemoryMapMeta {
+            map_size: len,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+        (slice, meta)
+    }
+
+    /// Basic sanity checks for the type [`MemoryMapRef`].
+    #[test]
+    fn memory_map_ref() {
+        let mut memory = new_mmap_memory();
+        let (mmap, meta) = mmap_raw(&mut memory);
+        let mmap = MemoryMapRef::new(mmap, meta).unwrap();
+
+        assert_eq!(mmap.entries().count(), 3);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>().as_slice(),
+            &BASE_MMAP_UNSORTED
+        );
+        assert!(!mmap.is_sorted());
+    }
+
+    /// Basic sanity checks for the type [`MemoryMapRefMut`].
+    #[test]
+    fn memory_map_ref_mut() {
+        let mut memory = new_mmap_memory();
+        let (mmap, meta) = mmap_raw(&mut memory);
+        let mut mmap = MemoryMapRefMut::new(mmap, meta).unwrap();
+
+        assert_eq!(mmap.entries().count(), 3);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>().as_slice(),
+            &BASE_MMAP_UNSORTED
+        );
+        assert!(!mmap.is_sorted());
+        mmap.sort();
+        assert!(mmap.is_sorted());
+    }
+
+    /// Basic sanity checks for the type [`MemoryMapOwned`].
+    #[test]
+    fn memory_map_owned() {
+        let mut memory = new_mmap_memory();
+        let (mmap, meta) = mmap_raw(&mut memory);
+        let mmap = MemoryMapBackingMemory::from_slice(mmap);
+        let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
+
+        assert_eq!(mmap.entries().count(), 3);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>().as_slice(),
+            &BASE_MMAP_UNSORTED
+        );
+        assert!(!mmap.is_sorted());
+        mmap.sort();
+        assert!(mmap.is_sorted());
     }
 }

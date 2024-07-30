@@ -31,7 +31,8 @@ pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
     #[must_use]
     fn meta(&self) -> MemoryMapMeta;
 
-    /// Returns the associated [`MemoryMapKey`].
+    /// Returns the associated [`MemoryMapKey`]. Note that this isn't
+    /// necessarily the key of the latest valid UEFI memory map.
     #[must_use]
     fn key(&self) -> MemoryMapKey;
 
@@ -64,10 +65,28 @@ pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
     }
 
     /// Returns a reference to the underlying memory.
+    #[must_use]
     fn buffer(&self) -> &[u8];
 
     /// Returns an Iterator of type [`MemoryMapIter`].
+    #[must_use]
     fn entries(&self) -> MemoryMapIter<'_>;
+
+    /// Returns if the underlying memory map is sorted regarding the physical
+    /// address start.
+    #[must_use]
+    fn is_sorted(&self) -> bool {
+        let iter = self.entries();
+        let iter = iter.clone().zip(iter.skip(1));
+
+        for (curr, next) in iter {
+            if next.phys_start < curr.phys_start {
+                log::debug!("next.phys_start < curr.phys_start: curr={curr:?}, next={next:?}");
+                return false;
+            }
+        }
+        true
+    }
 }
 
 /// Extension to [`MemoryMap`] that adds mutable operations. This also includes

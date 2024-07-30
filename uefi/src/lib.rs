@@ -16,6 +16,12 @@
 //! epochs. However, the `uefi` crate unfolds its true potential when
 //! interacting with UEFI boot services.
 //!
+//! ## Supported Architectures
+//!
+//! `uefi` is compatible with all platforms that both the Rust compiler and
+//! UEFI support, such as `i686`, `x86_64`, and `aarch64`. Please note that we
+//! can't test all possible hardware/firmware/platform combinations in CI.
+//!
 //! # Crate organisation
 //!
 //! The top-level module contains some of the most used types and macros,

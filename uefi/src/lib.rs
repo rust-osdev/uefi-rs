@@ -118,6 +118,25 @@
 //! Contributions in form of a PR are also highly welcome. Check our
 //! [contributing guide][contributing] for details.
 //!
+//! # Comparison to other Projects in the Ecosystem
+//!
+//! ## Rust `std` implementation
+//!
+//! There is an ongoing effort for a `std` implementation of the Rust standard
+//! library. ([Platform description][rustc-uefi-std],
+//! [tracking issue][uefi-std-tr-issue]), that is yet far from being mature. As
+//! of Mid-2024, we recommend to use our `uefi` library in a `no_std` binary to
+//! create EFI images.
+//!
+//! We will closely monitor the situation and update the documentation
+//! accordingly, once the `std` implementation is more mature.
+//!
+//! ## `r-efi`
+//!
+//! Raw UEFI bindings without high-level convenience similar to our `uefi-raw`
+//! crate, which is part of this  project, but more feature-complete. It
+//! targets a lower-level than our `uefi` crate does.
+//!
 //! # MSRV
 //! <!-- Keep in Sync with README! -->
 //!
@@ -157,6 +176,8 @@
 //! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 //! [uefirc]: https://github.com/codyd51/uefirc
+//! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html
+//! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
 
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

@@ -42,6 +42,19 @@
 //! UEFI support, such as `i686`, `x86_64`, and `aarch64`. Please note that we
 //! can't test all possible hardware/firmware/platform combinations in CI.
 //!
+//! # API/User Documentation, Documentation Structure, and other Resources
+//!
+//! Down below, you find typical technical documentation of all types, modules,
+//! and functions exported by `uefi`.
+//!
+//! For a TL;DR quick start with an example on how to create your own EFI
+//! application, please check out [the UEFI application template][template]. The
+//! [Rust UEFI Book] is a more beginner-friendly tutorial with How-Tos, and
+//! overviews of some important UEFI concepts and the abstractions provided by
+//! this library.
+//!
+//! For more details of UEFI itself, see the latest [UEFI Specification][spec].
+//!
 //! # Crate organisation
 //!
 //! The top-level module contains some of the most used types and macros,
@@ -168,6 +181,7 @@
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
 //! [spec]: https://uefi.org/specifications
+//! [template]: https://github.com/rust-osdev/uefi-rs/tree/main/template
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 //! [uefirc]: https://github.com/codyd51/uefirc
 //! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html

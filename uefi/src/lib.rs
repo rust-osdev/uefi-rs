@@ -16,6 +16,19 @@
 //! as general information about the project, such as license or MSRV
 //! requirements.
 //!
+//! # About `uefi`
+//!
+//! With `uefi`, you have the flexibility to integrate selected types and
+//! abstractions into your project or to conveniently create EFI images,
+//! addressing the entire spectrum of your development needs.
+//!
+//! `uefi` works with stable Rust, but additional nightly-only features are
+//! gated behind an `unstable` Cargo feature flag. Please find more information
+//! about supported features below.
+//!
+//! _Note that for producing EFI images, you also need to use a corresponding
+//! `uefi` compiler target of Rust, such as `x86_64-unknown-uefi`._
+//!
 //! # Interaction with uefi services
 //!
 //! With this crate you can write code for the pre- and post-exit boot services

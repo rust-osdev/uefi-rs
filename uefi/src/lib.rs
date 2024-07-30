@@ -1,5 +1,10 @@
 //! Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
 //!
+//! # TL;DR
+//!
+//! Develop Rust software that leverages **safe**, **convenient**, and
+//! **performant** abstractions for [UEFI] functionality.
+//!
 //! See the [Rust UEFI Book] for a tutorial, how-tos, and overviews of some
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].

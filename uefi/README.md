@@ -1,4 +1,6 @@
-# uefi-rs
+# `uefi`
+
+Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
 
 [![Crates.io](https://img.shields.io/crates/v/uefi)](https://crates.io/crates/uefi)
 [![Docs.rs](https://docs.rs/uefi/badge.svg)](https://docs.rs/uefi)
@@ -6,6 +8,10 @@
 ![Build status](https://github.com/rust-osdev/uefi-rs/workflows/Rust/badge.svg)
 ![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
 
+## TL;DR
+
+Develop Rust software that leverages **safe**, **convenient**, and
+**performant** abstractions for [UEFI] functionality.
 
 For an introduction to the `uefi-rs` project and documentation, please refer to
 our main [README].

@@ -66,6 +66,7 @@ fn gen_code_as_string(groups: &[NodeGroup]) -> Result<String> {
 // `cargo xtask gen-code`
 //
 // See `/xtask/src/device_path/README.md` for more details.
+#![allow(clippy::missing_const_for_fn)]
 
 {code}"
     );

@@ -16,7 +16,7 @@ pub struct ShellParameters(ShellParametersProtocol);
 impl ShellParameters {
     /// Get the number of shell parameter arguments
     #[must_use]
-    pub fn args_len(&self) -> usize {
+    pub const fn args_len(&self) -> usize {
         self.0.argc
     }
 
@@ -29,7 +29,7 @@ impl ShellParameters {
 
     /// Get a slice of the args, as Char16 pointers
     #[must_use]
-    fn args_slice(&self) -> &[*const Char16] {
+    const fn args_slice(&self) -> &[*const Char16] {
         unsafe {
             from_raw_parts(
                 self.0.argv.cast::<*const data_types::chars::Char16>(),

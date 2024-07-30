@@ -217,7 +217,7 @@ impl DevicePathNode {
 
     /// Returns the payload data of this node.
     #[must_use]
-    pub fn data(&self) -> &[u8] {
+    pub const fn data(&self) -> &[u8] {
         &self.data
     }
 

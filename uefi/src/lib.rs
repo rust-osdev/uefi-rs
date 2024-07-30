@@ -92,7 +92,8 @@
 #![deny(
     clippy::all,
     clippy::must_use_candidate,
-    clippy::use_self
+    clippy::use_self,
+    clippy::missing_const_for_fn
 )]
 #![deny(missing_debug_implementations)]
 

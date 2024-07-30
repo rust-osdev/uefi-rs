@@ -26,7 +26,7 @@ pub struct FileSystem<'a>(ScopedProtocol<'a, SimpleFileSystemProtocol>);
 impl<'a> FileSystem<'a> {
     /// Constructor.
     #[must_use]
-    pub fn new(proto: ScopedProtocol<'a, SimpleFileSystemProtocol>) -> Self {
+    pub const fn new(proto: ScopedProtocol<'a, SimpleFileSystemProtocol>) -> Self {
         Self(proto)
     }
 

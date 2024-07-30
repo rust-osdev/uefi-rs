@@ -22,7 +22,7 @@ impl Directory {
     /// This function should only be called on files which ARE directories,
     /// doing otherwise is unsafe.
     #[must_use]
-    pub unsafe fn new(handle: FileHandle) -> Self {
+    pub const unsafe fn new(handle: FileHandle) -> Self {
         Self(RegularFile::new(handle))
     }
 

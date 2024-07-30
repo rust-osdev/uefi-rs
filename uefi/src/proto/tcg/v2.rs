@@ -123,7 +123,7 @@ impl Default for BootServiceCapability {
 impl BootServiceCapability {
     /// Whether the TPM device is present.
     #[must_use]
-    pub fn tpm_present(&self) -> bool {
+    pub const fn tpm_present(&self) -> bool {
         self.present_flag != 0
     }
 }
@@ -419,7 +419,7 @@ impl<'a> EventLog<'a> {
     /// Whether the event log is truncated due to not enough space in the log to
     /// contain some events.
     #[must_use]
-    pub fn is_truncated(&self) -> bool {
+    pub const fn is_truncated(&self) -> bool {
         self.is_truncated
     }
 }
@@ -533,7 +533,7 @@ impl<'a> PcrEvent<'a> {
 
     /// PCR index for the event.
     #[must_use]
-    pub fn pcr_index(&self) -> PcrIndex {
+    pub const fn pcr_index(&self) -> PcrIndex {
         self.pcr_index
     }
 
@@ -541,7 +541,7 @@ impl<'a> PcrEvent<'a> {
     ///
     /// [`event_data`]: Self::event_data
     #[must_use]
-    pub fn event_type(&self) -> EventType {
+    pub const fn event_type(&self) -> EventType {
         self.event_type
     }
 
@@ -553,7 +553,7 @@ impl<'a> PcrEvent<'a> {
     /// [`digests`]: Self::digests
     /// [`event_type`]: Self::event_type
     #[must_use]
-    pub fn event_data(&self) -> &[u8] {
+    pub const fn event_data(&self) -> &[u8] {
         self.event_data
     }
 

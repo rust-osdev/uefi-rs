@@ -21,7 +21,7 @@ impl Path {
 
     /// Returns the underlying string.
     #[must_use]
-    pub fn to_cstr16(&self) -> &CStr16 {
+    pub const fn to_cstr16(&self) -> &CStr16 {
         &self.0
     }
 
@@ -79,7 +79,7 @@ impl Path {
 
     /// Returns of the path is empty.
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.to_cstr16().is_empty()
     }
 }

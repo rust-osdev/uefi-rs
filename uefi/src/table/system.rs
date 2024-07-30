@@ -117,7 +117,7 @@ impl<View: SystemTableView> SystemTable<View> {
 
     /// Get the underlying raw pointer.
     #[must_use]
-    pub fn as_ptr(&self) -> *const c_void {
+    pub const fn as_ptr(&self) -> *const c_void {
         self.table.cast()
     }
 }

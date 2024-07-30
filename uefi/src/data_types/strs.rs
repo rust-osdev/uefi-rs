@@ -524,7 +524,7 @@ impl CStr16 {
 
     /// Returns if the string is empty. This ignores the null character.
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.num_chars() == 0
     }
 
@@ -566,7 +566,7 @@ impl CStr16 {
     /// Returns the underlying bytes as slice including the terminating null
     /// character.
     #[must_use]
-    pub fn as_bytes(&self) -> &[u8] {
+    pub const fn as_bytes(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.0.as_ptr().cast(), self.num_bytes()) }
     }
 }

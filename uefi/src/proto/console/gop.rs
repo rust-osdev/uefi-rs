@@ -102,7 +102,7 @@ impl GraphicsOutput {
 
     /// Returns a [`ModeIter`].
     #[must_use]
-    pub fn modes<'a>(&'a self, bs: &'a BootServices) -> ModeIter {
+    pub const fn modes<'a>(&'a self, bs: &'a BootServices) -> ModeIter {
         ModeIter {
             gop: self,
             bs,

@@ -29,11 +29,21 @@
 //! _Note that for producing EFI images, you also need to use a corresponding
 //! `uefi` compiler target of Rust, such as `x86_64-unknown-uefi`._
 //!
-//! # Interaction with uefi services
+//! ## Example Use Cases
 //!
 //! With this crate you can write code for the pre- and post-exit boot services
-//! epochs. However, the `uefi` crate unfolds its true potential when
-//! interacting with UEFI boot services.
+//! epochs. However, the `uefi` crate unfolds its true potential when crafting
+//! EFI images interacting with UEFI boot services and eventually exiting them.
+//!
+//! By EFI images (`image.efi`), we are referring to EFI applications, EFI
+//! boot service drivers, and EFI runtime service drivers. An EFI application
+//! might be your OS-specific loader technically similar to _GRUB_ or _Limine_.
+//!
+//! You can also use this crate to parse the UEFI memory map when a bootloader,
+//! such as _GRUB_ or _Limine_, passed the UEFI memory map as part of the
+//! corresponding boot information to your kernel, or to access runtime services
+//! from your kernel. Hence, when you also use utilize `uefi` also in ELF
+//! binaries and are not limited to EFI images.
 //!
 //! # Crate organisation
 //!

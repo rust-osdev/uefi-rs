@@ -31,7 +31,8 @@ pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
     #[must_use]
     fn meta(&self) -> MemoryMapMeta;
 
-    /// Returns the associated [`MemoryMapKey`].
+    /// Returns the associated [`MemoryMapKey`]. Note that this isn't
+    /// necessarily the key of the latest valid UEFI memory map.
     #[must_use]
     fn key(&self) -> MemoryMapKey;
 
@@ -64,9 +65,11 @@ pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
     }
 
     /// Returns a reference to the underlying memory.
+    #[must_use]
     fn buffer(&self) -> &[u8];
 
     /// Returns an Iterator of type [`MemoryMapIter`].
+    #[must_use]
     fn entries(&self) -> MemoryMapIter<'_>;
 }
 

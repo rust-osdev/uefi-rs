@@ -1,7 +1,10 @@
 use super::*;
 
-/// An iterator of [`MemoryDescriptor`]. The underlying memory map is always
-/// associated with a unique [`MemoryMapKey`].
+/// An iterator for [`MemoryMap`].
+///
+/// The underlying memory might contain an invalid/malformed memory map
+/// which can't be checked during construction of this type. The iterator
+/// might yield unexpected results.  
 #[derive(Debug, Clone)]
 pub struct MemoryMapIter<'a> {
     pub(crate) memory_map: &'a dyn MemoryMap,

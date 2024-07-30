@@ -16,8 +16,7 @@
 //!
 //! If you have a chunk of memory and want to parse it as UEFI memory map, which
 //! might be the case if a bootloader such as GRUB or Limine passes its boot
-//! information, you can use  [`MemoryMapRef`] or [`MemoryMapRefMut`].
-//! TODO add constructors.
+//! information, you can use [`MemoryMapRef`] or [`MemoryMapRefMut`].
 //!
 //! # All relevant exports:
 //!
@@ -50,12 +49,13 @@ impl Align for MemoryDescriptor {
     }
 }
 
-/// A unique identifier of a memory map.
+/// A unique identifier of a UEFI memory map, used to tell the firmware that one  
+/// has the latest valid memory map when exiting boot services.
 ///
-/// If the memory map changes, this value is no longer valid.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+/// If the memory map changes, due to any allocation or deallocation, this value
+/// is no longer valid, and exiting boot services will fail.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(C)]
-// TODO add some convenience?!
 pub struct MemoryMapKey(pub(crate) usize);
 
 /// A structure containing the meta attributes associated with a call to

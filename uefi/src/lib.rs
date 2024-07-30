@@ -60,12 +60,20 @@
 //!
 //! For more details of UEFI itself, see the latest [UEFI Specification][spec].
 //!
-//! # Crate organisation
+//! # Library Structure & Tips
 //!
 //! The top-level module contains some of the most used types and macros,
 //! including the [`Handle`] and [`Result`] types, the [`CStr16`] and
 //! [`CString16`] types for working with UCS-2 strings, and the [`entry`] and
 //! [`guid`] macros.
+//!
+//! ## UEFI Strings
+//!
+//! Rust string literals are UTF-8 encoded and thus, not compatible with most
+//! UEFI interfaces. We provide [`CStr16`] and [`CString16`] for proper working
+//! with UCS-2 strings, including various transformation functions from standard
+//! Rust strings. You can use [`ctr16!`] to create UCS-2 string literals at
+//! compile time.
 //!
 //! ## Tables
 //!
@@ -179,6 +187,7 @@
 //! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable
+//! [`ctr16!`]: crate::cstr16
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues

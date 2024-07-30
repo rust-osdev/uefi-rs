@@ -45,6 +45,12 @@
 //! from your kernel. Hence, when you also use utilize `uefi` also in ELF
 //! binaries and are not limited to EFI images.
 //!
+//! ## Supported Architectures
+//!
+//! `uefi` is compatible with all platforms that both the Rust compiler and
+//! UEFI support, such as `i686`, `x86_64`, and `aarch64`. Please note that we
+//! can't test all possible hardware/firmware/platform combinations in CI.
+//!
 //! # Crate organisation
 //!
 //! The top-level module contains some of the most used types and macros,

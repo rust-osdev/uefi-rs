@@ -32,10 +32,6 @@ You can use the abstractions for example to:
 - create OS-specific loaders and leverage UEFI boot service
 - access UEFI runtime services from an OS
 
-All crates are compatible with all platforms that both the Rust compiler and
-UEFI support, such as `i686`, `x86_64`, and `aarch64`). Please note that we
-can't test all possible hardware/firmware/platform combinations.
-
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
 ![UEFI App running in QEMU](https://imgur.com/SFPSVuO.png)

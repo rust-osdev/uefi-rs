@@ -3,17 +3,15 @@
 //! These functions will panic if called after exiting boot services.
 
 use crate::data_types::PhysicalAddress;
+use crate::proto::{Protocol, ProtocolPointer};
 use core::ffi::c_void;
-use core::ops::Deref;
+use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::slice;
 use core::sync::atomic::{AtomicPtr, Ordering};
-use uefi::{table, Handle, Result, StatusExt};
+use uefi::{table, Handle, Result, Status, StatusExt};
 
-#[cfg(doc)]
-use uefi::Status;
-
-pub use uefi::table::boot::{AllocateType, SearchType};
+pub use uefi::table::boot::{AllocateType, OpenProtocolAttributes, OpenProtocolParams, SearchType};
 pub use uefi_raw::table::boot::MemoryType;
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
@@ -162,6 +160,60 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
         })
 }
 
+/// Opens a protocol interface for a handle.
+///
+/// See also `open_protocol_exclusive`, which provides a safe subset of this
+/// functionality.
+///
+/// This function attempts to get the protocol implementation of a handle, based
+/// on the [protocol GUID].
+///
+/// See [`OpenProtocolParams`] and [`OpenProtocolAttributes`] for details of the
+/// input parameters.
+///
+/// If successful, a [`ScopedProtocol`] is returned that will automatically
+/// close the protocol interface when dropped.
+///
+/// [protocol GUID]: uefi::data_types::Identify::GUID
+///
+/// # Safety
+///
+/// This function is unsafe because it can be used to open a protocol in ways
+/// that don't get tracked by the UEFI implementation. This could allow the
+/// protocol to be removed from a handle, or for the handle to be deleted
+/// entirely, while a reference to the protocol is still active. The caller is
+/// responsible for ensuring that the handle and protocol remain valid until the
+/// `ScopedProtocol` is dropped.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: an invalid combination of `params` and
+///   `attributes` was provided.
+/// * [`Status::UNSUPPORTED`]: the handle does not support the protocol.
+/// * [`Status::ACCESS_DENIED`] or [`Status::ALREADY_STARTED`]: the protocol is
+///   already open in a way that is incompatible with the new request.
+pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
+    params: OpenProtocolParams,
+    attributes: OpenProtocolAttributes,
+) -> Result<ScopedProtocol<P>> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut interface = ptr::null_mut();
+    (bt.open_protocol)(
+        params.handle.as_ptr(),
+        &P::GUID,
+        &mut interface,
+        params.agent.as_ptr(),
+        Handle::opt_to_ptr(params.controller),
+        attributes as u32,
+    )
+    .to_result_with_val(|| ScopedProtocol {
+        interface: NonNull::new(P::mut_ptr_from_ffi(interface)),
+        open_params: params,
+    })
+}
+
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of
 /// [`Handle`]s that support the requested protocol.
 #[derive(Debug, Eq, PartialEq)]
@@ -181,5 +233,80 @@ impl Deref for HandleBuffer {
 
     fn deref(&self) -> &Self::Target {
         unsafe { slice::from_raw_parts(self.buffer.as_ptr(), self.count) }
+    }
+}
+
+/// An open protocol interface. Automatically closes the protocol
+/// interface on drop.
+///
+/// Most protocols have interface data associated with them. `ScopedProtocol`
+/// implements [`Deref`] and [`DerefMut`] to access this data. A few protocols
+/// (such as [`DevicePath`] and [`LoadedImageDevicePath`]) may be installed with
+/// null interface data, in which case [`Deref`] and [`DerefMut`] will
+/// panic. The [`get`] and [`get_mut`] methods may be used to access the
+/// optional interface data without panicking.
+///
+/// [`DevicePath`]: crate::proto::device_path::DevicePath
+/// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
+/// [`get`]: ScopedProtocol::get
+/// [`get_mut`]: ScopedProtocol::get_mut
+#[derive(Debug)]
+pub struct ScopedProtocol<P: Protocol + ?Sized> {
+    /// The protocol interface.
+    interface: Option<NonNull<P>>,
+    open_params: OpenProtocolParams,
+}
+
+impl<P: Protocol + ?Sized> Drop for ScopedProtocol<P> {
+    fn drop(&mut self) {
+        let bt = boot_services_raw_panicking();
+        let bt = unsafe { bt.as_ref() };
+
+        let status = unsafe {
+            (bt.close_protocol)(
+                self.open_params.handle.as_ptr(),
+                &P::GUID,
+                self.open_params.agent.as_ptr(),
+                Handle::opt_to_ptr(self.open_params.controller),
+            )
+        };
+        // All of the error cases for close_protocol boil down to
+        // calling it with a different set of parameters than what was
+        // passed to open_protocol. The public API prevents such errors,
+        // and the error can't be propagated out of drop anyway, so just
+        // assert success.
+        assert_eq!(status, Status::SUCCESS);
+    }
+}
+
+impl<P: Protocol + ?Sized> Deref for ScopedProtocol<P> {
+    type Target = P;
+
+    #[track_caller]
+    fn deref(&self) -> &Self::Target {
+        unsafe { self.interface.unwrap().as_ref() }
+    }
+}
+
+impl<P: Protocol + ?Sized> DerefMut for ScopedProtocol<P> {
+    #[track_caller]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { self.interface.unwrap().as_mut() }
+    }
+}
+
+impl<P: Protocol + ?Sized> ScopedProtocol<P> {
+    /// Get the protocol interface data, or `None` if the open protocol's
+    /// interface is null.
+    #[must_use]
+    pub fn get(&self) -> Option<&P> {
+        self.interface.map(|p| unsafe { p.as_ref() })
+    }
+
+    /// Get the protocol interface data, or `None` if the open protocol's
+    /// interface is null.
+    #[must_use]
+    pub fn get_mut(&mut self) -> Option<&mut P> {
+        self.interface.map(|mut p| unsafe { p.as_mut() })
     }
 }

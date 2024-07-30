@@ -1136,13 +1136,13 @@ impl BootServices {
     ///
     /// # Safety
     ///
-    /// This function is unsafe because it can be used to open a
-    /// protocol in ways that don't get tracked by the UEFI
-    /// implementation. This could allow the protocol to be removed from
-    /// a handle, or for the handle to be deleted entirely, while a
-    /// reference to the protocol is still active. The caller is
-    /// responsible for ensuring that the handle and protocol remain
-    /// valid until the `ScopedProtocol` is dropped.
+    /// This function is unsafe because it can be used to open a protocol in
+    /// ways that don't get tracked by the UEFI implementation. This could allow
+    /// the protocol to be removed from a handle, or for the handle to be
+    /// deleted entirely, while a reference to the protocol is still active. The
+    /// caller is responsible for ensuring that the handle and protocol remain
+    /// valid until the `ScopedProtocol` is dropped, and the caller must ensure
+    /// that there is never more than one mutable reference to the protocol.
     ///
     /// [`open_protocol`]: BootServices::open_protocol
     /// [`open_protocol_exclusive`]: BootServices::open_protocol_exclusive

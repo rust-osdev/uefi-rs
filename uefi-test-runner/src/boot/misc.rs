@@ -9,7 +9,7 @@ use uefi::table::boot::{
     Tpl,
 };
 use uefi::table::{Boot, SystemTable};
-use uefi::{guid, Event, Guid, Identify};
+use uefi::{boot, guid, Event, Guid, Identify};
 
 pub fn test(st: &SystemTable<Boot>) {
     let bt = st.boot_services();
@@ -164,16 +164,15 @@ fn test_uninstall_protocol_interface(bt: &BootServices) {
         // pointer. Open the protocol to get that pointer, making sure to drop
         // the `ScopedProtocol` _before_ uninstalling the protocol interface.
         let interface_ptr: *mut TestProtocol = {
-            let mut sp = bt
-                .open_protocol::<TestProtocol>(
-                    OpenProtocolParams {
-                        handle,
-                        agent: bt.image_handle(),
-                        controller: None,
-                    },
-                    OpenProtocolAttributes::GetProtocol,
-                )
-                .unwrap();
+            let mut sp = boot::open_protocol::<TestProtocol>(
+                OpenProtocolParams {
+                    handle,
+                    agent: bt.image_handle(),
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+            .unwrap();
             assert_eq!(sp.data, 123);
             &mut *sp
         };

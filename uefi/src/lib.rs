@@ -9,9 +9,6 @@
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].
 //!
-//! Feel free to file bug reports and questions in our [issue tracker], and [PR
-//! contributions][contributing] are also welcome!
-//!
 //! # About this Document
 //!
 //! In this document, you find general information about this crate, such
@@ -83,6 +80,30 @@
 //! only unfold their potential when you invoke `uefi::helpers::init` as soon
 //! as possible in your application.
 //!
+//! # Discuss and Contribute
+//!
+//! For general discussions, feel free to join us in our [Zulip] and ask
+//! your questions there.
+//!
+//! Further, you can submit bugs and also ask questions in our [issue tracker].
+//! Contributions in form of a PR are also highly welcome. Check our
+//! [contributing guide][contributing] for details.
+//!
+//! # MSRV
+//! <!-- Keep in Sync with README! -->
+//!
+//! The minimum supported Rust version is currently 1.70.
+//! Our policy is to support at least the past two stable releases.
+//!
+//! # License
+//! <!-- Keep in Sync with README! -->
+//!
+//! The code in this repository is licensed under the Mozilla Public License 2.
+//! This license allows you to use the crate in proprietary programs, but any
+//! modifications to the files must be open-sourced.
+//!
+//! The full text of the license is available in the [license file][LICENSE].
+//!
 //! # Trivia and Background
 //!
 //! [UEFI] started as the successor firmware to the BIOS in x86 space and
@@ -94,8 +115,10 @@
 //! form of additional drivers, OS-specific bootloaders, or any different kind
 //! of low-level applications (such as an [IRC client][uefirc]).
 //!
+//! [LICENSE]: https://github.com/rust-osdev/uefi-rs/blob/main/uefi/LICENSE
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/
+//! [Zulip]: https://rust-osdev.zulipchat.com
 //! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable

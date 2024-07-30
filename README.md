@@ -122,11 +122,14 @@ most of the library's functionality.
 Check out the testing project's [`README.md`](uefi-test-runner/README.md) for
 prerequisites for running the tests.
 
-## Contributing
+## Discuss and Contribute
 
-We welcome issues and pull requests! For instructions on how to set up a
-development environment and how to add new protocols, check out
-[CONTRIBUTING.md](CONTRIBUTING.md).
+For general discussions, feel free to join us in our [Zulip] and ask
+your questions there.
+
+Further, you can submit bugs and also ask questions in our [issue tracker].
+Contributions in form of a PR are also highly welcome. Check our
+[contributing guide](./CONTRIBUTING.md) for details.
 
 ## License
 
@@ -137,3 +140,4 @@ modifications to the files must be open-sourced.
 The full text of the license is available in the [license file](LICENSE).
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
+[Zulip]: https://rust-osdev.zulipchat.com

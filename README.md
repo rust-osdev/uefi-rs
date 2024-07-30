@@ -13,73 +13,32 @@ Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
 Develop Rust software that leverages **safe**, **convenient**, and
 **performant** abstractions for [UEFI] functionality.
 
-## Description
+## API and User Documentation
 
-Our mission is to provide **safe** and **performant** wrappers for UEFI
-interfaces, and allow developers to write idiomatic Rust code.
-
-This repository provides various crates:
-
-- `uefi-raw`: Raw Rust UEFI bindings for basic structures and functions.
-- `uefi`: High-level wrapper around various low-level UEFI APIs. \
-  Offers various optional features for typical Rust convenience, such as a
-  Logger and an Allocator. (_This is what you are usually looking for!_)
-- `uefi-macros`: Helper macros. Used by `uefi`.
-
-
-You can use the abstractions for example to:
-
-- create OS-specific loaders and leverage UEFI boot service
-- access UEFI runtime services from an OS
-
-[UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
+The main contribution of this project is the `uefi` crate.
+Please refer to [docs.rs](https://docs.rs/uefi) for comprehensive documentation
+of the **latest stable release**. The latest not necessarily yet published
+documentation can be found in [`src/lib.rs`](./uefi/src/lib.rs), which can also
+be locally build by running `$ cargo xtask doc --open`.
 
 ![UEFI App running in QEMU](https://imgur.com/SFPSVuO.png)
 Screenshot of an application running in QEMU on an UEFI firmware that leverages
 our Rust library.
 
-## User Documentation
-
-<!-- KEEP IN SYNC WITH uefi/README -->
-
-For a quick start, please check out [the UEFI application template](template).
-
-The [uefi-rs book] contains a tutorial, how-tos, and overviews of some important
-UEFI concepts. Reference documentation for the various crates can be found on
-[docs.rs]:
-
-- [docs.rs/uefi](https://docs.rs/uefi)
-- [docs.rs/uefi-macros](https://docs.rs/uefi-macros)
-- [docs.rs/uefi-raw](https://docs.rs/uefi-raw)
-
-For additional information, refer to the [UEFI specification][spec].
-
-[spec]: https://uefi.org/specs/UEFI/2.10
-[uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD
-[docs.rs]: https://docs.rs
-
-### MSRV
-
-See the [uefi package's README](uefi/README.md#MSRV).
-
 ## Developer Guide
 
-### Project structure
+### Repository Structure
 
-This project contains multiple sub-crates:
+This repository provides various crates:
 
-- `uefi`: defines the standard UEFI tables / interfaces.
-  The objective is to stay unopinionated and safely wrap most interfaces.
-  Additional opinionated features (such as a Logger) are feature-gated.
+- [`uefi-raw`](/uefi-raw/README.md): Raw Rust UEFI bindings for basic structures and functions.
+- [`uefi`](/uefi/README.md): High-level wrapper around various low-level UEFI APIs. \
+  Offers various optional features for typical Rust convenience, such as a
+  Logger and an Allocator.
+  This is the **main contribution** of this project.
+- [`uefi-macros`](/uefi-macros/README.md): Helper macros used by `uefi`.
+- [`uefi-test-runner`](/uefi-test-runner/README.md): a UEFI application that runs our unit / integration tests.
 
-- `uefi-macros`: procedural macros that are used to derive some traits
-  in `uefi`.
-
-- `uefi-raw`: raw types that closely match the definitions in the UEFI
-  Specification. Safe wrappers for these types are provided by the `uefi`
-  crate. The raw types are suitable for implementing UEFI firmware.
-
-- `uefi-test-runner`: a UEFI application that runs unit / integration tests.
 
 [log]: https://github.com/rust-lang-nursery/log
 

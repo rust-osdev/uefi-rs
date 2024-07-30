@@ -25,26 +25,14 @@ gated behind an `unstable` Cargo feature flag.
 _Note that for producing EFI images, you also need to use a corresponding `uefi`
 compiler target of Rust, such as `x86_64-unknown-uefi`._
 
-For an introduction to the `uefi-rs` project and documentation, please refer to
-our main [README].
+## API and User Documentation
 
-[README]: https://github.com/rust-osdev/uefi-rs/blob/main/README.md
+Please refer to [docs.rs](https://docs.rs/uefi) for comprehensive documentation
+of the **latest stable release**. The latest not necessarily yet published
+documentation can be found in [`src/lib.rs`](./src/lib.rs), which can also be
+locally build by running `$ cargo xtask doc --open`.
 
-## Optional features
-
-This crate's features are described in [`src/lib.rs`].
-
-[`src/lib.rs`]: src/lib.rs
-
-## MSRV
-
-The minimum supported Rust version is currently 1.70.
-
-Our policy is to support at least the past two stable releases.
-
-## License
-
-The code in this repository is licensed under the Mozilla Public License 2.
-This license allows you to use the crate in proprietary programs, but any modifications to the files must be open-sourced.
-
-The full text of the license is available in the [license file](LICENSE).
+For an introduction to the `uefi-rs` project and this repository, please refer
+to our main [README](https://github.com/rust-osdev/uefi-rs/blob/main/README.md).
+<!-- ^ This link can't be relative as it also should work in the packaged crate
+     on crates.io. -->

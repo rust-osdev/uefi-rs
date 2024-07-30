@@ -33,23 +33,6 @@ This crate's features are described in [`src/lib.rs`].
 
 [`src/lib.rs`]: src/lib.rs
 
-## User Documentation
-
-<!-- KEEP IN SYNC WITH MAIN README -->
-
-For a quick start, please check out [the UEFI application template](template).
-
-The [uefi-rs book] contains a tutorial, how-tos, and overviews of some important
-UEFI concepts. Reference documentation for the various crates can be found on
-[docs.rs]:
-
-- [docs.rs/uefi](https://docs.rs/uefi)
-- [docs.rs/uefi-macros](https://docs.rs/uefi-macros)
-- [docs.rs/uefi-raw](https://docs.rs/uefi-raw)
-
-[spec]: http://www.uefi.org/specifications
-[uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD
-
 ## MSRV
 
 The minimum supported Rust version is currently 1.70.

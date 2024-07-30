@@ -20,7 +20,7 @@
 //! _Note that for producing EFI images, you also need to use a corresponding
 //! `uefi` compiler target of Rust, such as `x86_64-unknown-uefi`._
 //!
-//! # Interaction with uefi services
+//! ## Example Use Cases
 //!
 //! With this crate you can write code for the pre- and post-exit boot services
 //! epochs. However, the `uefi` crate unfolds its true potential when crafting

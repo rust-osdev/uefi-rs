@@ -3,18 +3,58 @@
 
 use super::*;
 use crate::table::system_table_boot;
+use core::fmt::{Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
 use core::ptr::NonNull;
 use core::{mem, ptr};
 use uefi_raw::PhysicalAddress;
 
+/// Errors that may happen when constructing a [`MemoryMapRef`] or
+/// [`MemoryMapRefMut`].
+#[derive(Copy, Clone, Debug)]
+pub enum MemoryMapError {
+    /// The buffer is not 8-byte aligned.
+    Misaligned,
+    /// The memory map size is invalid.
+    InvalidSize,
+}
+
+impl Display for MemoryMapError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for MemoryMapError {}
+
 /// Implementation of [`MemoryMap`] for the given buffer.
 #[derive(Debug)]
-#[allow(dead_code)] // TODO: github.com/rust-osdev/uefi-rs/issues/1247
 pub struct MemoryMapRef<'a> {
     buf: &'a [u8],
     meta: MemoryMapMeta,
     len: usize,
+}
+
+impl<'a> MemoryMapRef<'a> {
+    /// Constructs a new [`MemoryMapRef`].
+    ///
+    /// The underlying memory might contain an invalid/malformed memory map
+    /// which can't be checked during construction of this type. The entry
+    /// iterator might yield unexpected results.
+    pub fn new(buffer: &'a [u8], meta: MemoryMapMeta) -> Result<Self, MemoryMapError> {
+        if buffer.as_ptr().align_offset(8) != 0 {
+            return Err(MemoryMapError::Misaligned);
+        }
+        if buffer.len() < meta.map_size {
+            return Err(MemoryMapError::InvalidSize);
+        }
+        Ok(Self {
+            buf: buffer,
+            meta,
+            len: meta.entry_count(),
+        })
+    }
 }
 
 impl<'a> MemoryMap for MemoryMapRef<'a> {
@@ -56,6 +96,27 @@ pub struct MemoryMapRefMut<'a> {
     buf: &'a mut [u8],
     meta: MemoryMapMeta,
     len: usize,
+}
+
+impl<'a> MemoryMapRefMut<'a> {
+    /// Constructs a new [`MemoryMapRefMut`].
+    ///
+    /// The underlying memory might contain an invalid/malformed memory map
+    /// which can't be checked during construction of this type. The entry
+    /// iterator might yield unexpected results.
+    pub fn new(buffer: &'a mut [u8], meta: MemoryMapMeta) -> Result<Self, MemoryMapError> {
+        if buffer.as_ptr().align_offset(8) != 0 {
+            return Err(MemoryMapError::Misaligned);
+        }
+        if buffer.len() < meta.map_size {
+            return Err(MemoryMapError::InvalidSize);
+        }
+        Ok(Self {
+            buf: buffer,
+            meta,
+            len: meta.entry_count(),
+        })
+    }
 }
 
 impl<'a> MemoryMap for MemoryMapRefMut<'a> {

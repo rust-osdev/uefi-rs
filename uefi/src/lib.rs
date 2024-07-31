@@ -87,15 +87,16 @@
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
-// Enable some additional warnings and lints.
-#![warn(clippy::ptr_as_ptr, missing_docs, unused)]
 #![deny(
     clippy::all,
+    clippy::missing_const_for_fn,
     clippy::must_use_candidate,
+    clippy::ptr_as_ptr,
     clippy::use_self,
-    clippy::missing_const_for_fn
+    missing_debug_implementations,
+    missing_docs,
+    unused
 )]
-#![deny(missing_debug_implementations)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

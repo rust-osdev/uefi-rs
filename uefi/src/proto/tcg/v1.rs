@@ -22,7 +22,7 @@ use ptr_meta::Pointee;
 use {crate::mem::make_boxed, alloc::boxed::Box};
 
 #[cfg(all(feature = "unstable", feature = "alloc"))]
-use {alloc::alloc::Global, core::alloc::Allocator};
+use alloc::alloc::Global;
 
 /// 20-byte SHA-1 digest.
 pub type Sha1Digest = [u8; 20];

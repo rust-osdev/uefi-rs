@@ -25,7 +25,7 @@ use ptr_meta::{Pointee, PtrExt};
 use {crate::mem::make_boxed, alloc::boxed::Box};
 
 #[cfg(all(feature = "unstable", feature = "alloc"))]
-use {alloc::alloc::Global, core::alloc::Allocator};
+use alloc::alloc::Global;
 
 /// Version information.
 ///

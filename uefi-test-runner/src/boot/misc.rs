@@ -13,6 +13,7 @@ use uefi::{boot, guid, Event, Guid, Identify};
 
 pub fn test(st: &SystemTable<Boot>) {
     let bt = st.boot_services();
+    test_tpl();
     info!("Testing timer...");
     test_timer(bt);
     info!("Testing events...");
@@ -26,6 +27,12 @@ pub fn test(st: &SystemTable<Boot>) {
     test_reinstall_protocol_interface(bt);
     test_uninstall_protocol_interface(bt);
     test_install_configuration_table(st);
+}
+
+fn test_tpl() {
+    info!("Testing watchdog...");
+    // There's no way to query the TPL, so we can't assert that this does anything.
+    let _guard = unsafe { boot::raise_tpl(Tpl::NOTIFY) };
 }
 
 fn test_timer(bt: &BootServices) {

@@ -264,7 +264,7 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
 /// If the image is successfully loaded, a [`Handle`] supporting the
 /// [`LoadedImage`] and [`LoadedImageDevicePath`] protocols is returned. The
 /// image can be started with `start_image` and unloaded with
-/// `unload_image`.
+/// [`unload_image`].
 ///
 /// # Errors
 ///
@@ -319,6 +319,19 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
             || Handle::from_ptr(image_handle).unwrap(),
         )
     }
+}
+
+/// Unloads a UEFI image.
+///
+/// # Errors
+///
+/// * [`Status::UNSUPPORTED`]: the image has been started, and does not support unload.
+/// * [`Status::INVALID_PARAMETER`]: `image_handle` is not valid.
+pub fn unload_image(image_handle: Handle) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    unsafe { (bt.unload_image)(image_handle.as_ptr()) }.to_result()
 }
 
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of

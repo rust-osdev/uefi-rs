@@ -11,7 +11,15 @@ use core::slice;
 use core::sync::atomic::{AtomicPtr, Ordering};
 use uefi::{table, Handle, Result, Status, StatusExt};
 
-pub use uefi::table::boot::{AllocateType, OpenProtocolAttributes, OpenProtocolParams, SearchType};
+#[cfg(doc)]
+use {
+    crate::proto::device_path::LoadedImageDevicePath, crate::proto::loaded_image::LoadedImage,
+    crate::proto::media::fs::SimpleFileSystem,
+};
+
+pub use uefi::table::boot::{
+    AllocateType, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams, SearchType,
+};
 pub use uefi_raw::table::boot::MemoryType;
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
@@ -238,6 +246,77 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
                 controller: None,
             },
             OpenProtocolAttributes::Exclusive,
+        )
+    }
+}
+
+/// Loads a UEFI image into memory and return a [`Handle`] to the image.
+///
+/// There are two ways to load the image: by copying raw image data
+/// from a source buffer, or by loading the image via the
+/// [`SimpleFileSystem`] protocol. See [`LoadImageSource`] for more
+/// details of the `source` parameter.
+///
+/// The `parent_image_handle` is used to initialize the
+/// `parent_handle` field of the [`LoadedImage`] protocol for the
+/// image.
+///
+/// If the image is successfully loaded, a [`Handle`] supporting the
+/// [`LoadedImage`] and [`LoadedImageDevicePath`] protocols is returned. The
+/// image can be started with `start_image` and unloaded with
+/// `unload_image`.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `source` contains an invalid value.
+/// * [`Status::UNSUPPORTED`]: the image type is not supported.
+/// * [`Status::OUT_OF_RESOURCES`]: insufficient resources to load the image.
+/// * [`Status::LOAD_ERROR`]: the image is invalid.
+/// * [`Status::DEVICE_ERROR`]: failed to load image due to a read error.
+/// * [`Status::ACCESS_DENIED`]: failed to load image due to a security policy.
+/// * [`Status::SECURITY_VIOLATION`]: a security policy specifies that the image
+///   should not be started.
+pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Result<Handle> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let boot_policy;
+    let device_path;
+    let source_buffer;
+    let source_size;
+    match source {
+        LoadImageSource::FromBuffer { buffer, file_path } => {
+            // Boot policy is ignored when loading from source buffer.
+            boot_policy = 0;
+
+            device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
+            source_buffer = buffer.as_ptr();
+            source_size = buffer.len();
+        }
+        LoadImageSource::FromDevicePath {
+            device_path: file_path,
+            from_boot_manager,
+        } => {
+            boot_policy = u8::from(from_boot_manager);
+            device_path = file_path.as_ffi_ptr();
+            source_buffer = ptr::null();
+            source_size = 0;
+        }
+    };
+
+    let mut image_handle = ptr::null_mut();
+    unsafe {
+        (bt.load_image)(
+            boot_policy,
+            parent_image_handle.as_ptr(),
+            device_path.cast(),
+            source_buffer,
+            source_size,
+            &mut image_handle,
+        )
+        .to_result_with_val(
+            // OK to unwrap: image handle is non-null for Status::SUCCESS.
+            || Handle::from_ptr(image_handle).unwrap(),
         )
     }
 }

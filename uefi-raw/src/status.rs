@@ -104,14 +104,14 @@ impl Status {
     #[inline]
     #[must_use]
     pub fn is_success(self) -> bool {
-        self == Status::SUCCESS
+        self == Self::SUCCESS
     }
 
     /// Returns true if status code indicates a warning.
     #[inline]
     #[must_use]
     pub fn is_warning(self) -> bool {
-        (self != Status::SUCCESS) && (self.0 & Self::ERROR_BIT == 0)
+        (self != Self::SUCCESS) && (self.0 & Self::ERROR_BIT == 0)
     }
 
     /// Returns true if the status code indicates an error.

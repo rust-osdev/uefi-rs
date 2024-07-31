@@ -98,11 +98,11 @@ pub enum Key {
 }
 
 impl From<InputKey> for Key {
-    fn from(k: InputKey) -> Key {
+    fn from(k: InputKey) -> Self {
         if k.scan_code == ScanCode::NULL.0 {
-            Key::Printable(Char16::try_from(k.unicode_char).unwrap())
+            Self::Printable(Char16::try_from(k.unicode_char).unwrap())
         } else {
-            Key::Special(ScanCode(k.scan_code))
+            Self::Special(ScanCode(k.scan_code))
         }
     }
 }

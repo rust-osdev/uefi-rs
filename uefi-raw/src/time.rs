@@ -111,7 +111,7 @@ impl Display for Time {
 
 /// The padding fields of `Time` are ignored for comparison.
 impl PartialEq for Time {
-    fn eq(&self, other: &Time) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.year == other.year
             && self.month == other.month
             && self.day == other.day

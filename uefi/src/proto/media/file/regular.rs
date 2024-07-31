@@ -19,7 +19,7 @@ impl RegularFile {
     /// This function should only be called on handles which ARE NOT directories,
     /// doing otherwise is unsafe.
     #[must_use]
-    pub unsafe fn new(handle: FileHandle) -> Self {
+    pub const unsafe fn new(handle: FileHandle) -> Self {
         Self(handle)
     }
 

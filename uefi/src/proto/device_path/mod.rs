@@ -171,7 +171,7 @@ impl DevicePathNode {
     /// remain valid for the lifetime `'a`, and cannot be mutated during
     /// that lifetime.
     #[must_use]
-    pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a DevicePathNode {
+    pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
         let header = *ptr.cast::<DevicePathHeader>();
 
         let data_len = usize::from(header.length) - mem::size_of::<DevicePathHeader>();
@@ -217,7 +217,7 @@ impl DevicePathNode {
 
     /// Returns the payload data of this node.
     #[must_use]
-    pub fn data(&self) -> &[u8] {
+    pub const fn data(&self) -> &[u8] {
         &self.data
     }
 
@@ -339,7 +339,7 @@ impl PartialEq for DevicePathInstance {
 
 #[cfg(feature = "alloc")]
 impl ToOwned for DevicePathInstance {
-    type Owned = Box<DevicePathInstance>;
+    type Owned = Box<Self>;
 
     fn to_owned(&self) -> Self::Owned {
         self.to_boxed()
@@ -433,7 +433,7 @@ impl DevicePath {
     /// remain valid for the lifetime `'a`, and cannot be mutated during
     /// that lifetime.
     #[must_use]
-    pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a DevicePath {
+    pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
         &*Self::ptr_from_ffi(ptr.cast::<c_void>())
     }
 
@@ -527,7 +527,7 @@ impl<'a> TryFrom<&[u8]> for &'a DevicePath {
 
 #[cfg(feature = "alloc")]
 impl ToOwned for DevicePath {
-    type Owned = Box<DevicePath>;
+    type Owned = Box<Self>;
 
     fn to_owned(&self) -> Self::Owned {
         self.to_boxed()
@@ -678,118 +678,118 @@ pub struct DeviceSubType(pub u8);
 
 impl DeviceSubType {
     /// PCI Device Path.
-    pub const HARDWARE_PCI: DeviceSubType = DeviceSubType(1);
+    pub const HARDWARE_PCI: Self = Self(1);
     /// PCCARD Device Path.
-    pub const HARDWARE_PCCARD: DeviceSubType = DeviceSubType(2);
+    pub const HARDWARE_PCCARD: Self = Self(2);
     /// Memory-mapped Device Path.
-    pub const HARDWARE_MEMORY_MAPPED: DeviceSubType = DeviceSubType(3);
+    pub const HARDWARE_MEMORY_MAPPED: Self = Self(3);
     /// Vendor-Defined Device Path.
-    pub const HARDWARE_VENDOR: DeviceSubType = DeviceSubType(4);
+    pub const HARDWARE_VENDOR: Self = Self(4);
     /// Controller Device Path.
-    pub const HARDWARE_CONTROLLER: DeviceSubType = DeviceSubType(5);
+    pub const HARDWARE_CONTROLLER: Self = Self(5);
     /// BMC Device Path.
-    pub const HARDWARE_BMC: DeviceSubType = DeviceSubType(6);
+    pub const HARDWARE_BMC: Self = Self(6);
 
     /// ACPI Device Path.
-    pub const ACPI: DeviceSubType = DeviceSubType(1);
+    pub const ACPI: Self = Self(1);
     /// Expanded ACPI Device Path.
-    pub const ACPI_EXPANDED: DeviceSubType = DeviceSubType(2);
+    pub const ACPI_EXPANDED: Self = Self(2);
     /// ACPI _ADR Device Path.
-    pub const ACPI_ADR: DeviceSubType = DeviceSubType(3);
+    pub const ACPI_ADR: Self = Self(3);
     /// NVDIMM Device Path.
-    pub const ACPI_NVDIMM: DeviceSubType = DeviceSubType(4);
+    pub const ACPI_NVDIMM: Self = Self(4);
 
     /// ATAPI Device Path.
-    pub const MESSAGING_ATAPI: DeviceSubType = DeviceSubType(1);
+    pub const MESSAGING_ATAPI: Self = Self(1);
     /// SCSI Device Path.
-    pub const MESSAGING_SCSI: DeviceSubType = DeviceSubType(2);
+    pub const MESSAGING_SCSI: Self = Self(2);
     /// Fibre Channel Device Path.
-    pub const MESSAGING_FIBRE_CHANNEL: DeviceSubType = DeviceSubType(3);
+    pub const MESSAGING_FIBRE_CHANNEL: Self = Self(3);
     /// 1394 Device Path.
-    pub const MESSAGING_1394: DeviceSubType = DeviceSubType(4);
+    pub const MESSAGING_1394: Self = Self(4);
     /// USB Device Path.
-    pub const MESSAGING_USB: DeviceSubType = DeviceSubType(5);
+    pub const MESSAGING_USB: Self = Self(5);
     /// I2O Device Path.
-    pub const MESSAGING_I2O: DeviceSubType = DeviceSubType(6);
+    pub const MESSAGING_I2O: Self = Self(6);
     /// Infiniband Device Path.
-    pub const MESSAGING_INFINIBAND: DeviceSubType = DeviceSubType(9);
+    pub const MESSAGING_INFINIBAND: Self = Self(9);
     /// Vendor-Defined Device Path.
-    pub const MESSAGING_VENDOR: DeviceSubType = DeviceSubType(10);
+    pub const MESSAGING_VENDOR: Self = Self(10);
     /// MAC Address Device Path.
-    pub const MESSAGING_MAC_ADDRESS: DeviceSubType = DeviceSubType(11);
+    pub const MESSAGING_MAC_ADDRESS: Self = Self(11);
     /// IPV4 Device Path.
-    pub const MESSAGING_IPV4: DeviceSubType = DeviceSubType(12);
+    pub const MESSAGING_IPV4: Self = Self(12);
     /// IPV6 Device Path.
-    pub const MESSAGING_IPV6: DeviceSubType = DeviceSubType(13);
+    pub const MESSAGING_IPV6: Self = Self(13);
     /// UART Device Path.
-    pub const MESSAGING_UART: DeviceSubType = DeviceSubType(14);
+    pub const MESSAGING_UART: Self = Self(14);
     /// USB Class Device Path.
-    pub const MESSAGING_USB_CLASS: DeviceSubType = DeviceSubType(15);
+    pub const MESSAGING_USB_CLASS: Self = Self(15);
     /// USB WWID Device Path.
-    pub const MESSAGING_USB_WWID: DeviceSubType = DeviceSubType(16);
+    pub const MESSAGING_USB_WWID: Self = Self(16);
     /// Device Logical Unit.
-    pub const MESSAGING_DEVICE_LOGICAL_UNIT: DeviceSubType = DeviceSubType(17);
+    pub const MESSAGING_DEVICE_LOGICAL_UNIT: Self = Self(17);
     /// SATA Device Path.
-    pub const MESSAGING_SATA: DeviceSubType = DeviceSubType(18);
+    pub const MESSAGING_SATA: Self = Self(18);
     /// iSCSI Device Path node (base information).
-    pub const MESSAGING_ISCSI: DeviceSubType = DeviceSubType(19);
+    pub const MESSAGING_ISCSI: Self = Self(19);
     /// VLAN Device Path node.
-    pub const MESSAGING_VLAN: DeviceSubType = DeviceSubType(20);
+    pub const MESSAGING_VLAN: Self = Self(20);
     /// Fibre Channel Ex Device Path.
-    pub const MESSAGING_FIBRE_CHANNEL_EX: DeviceSubType = DeviceSubType(21);
+    pub const MESSAGING_FIBRE_CHANNEL_EX: Self = Self(21);
     /// Serial Attached SCSI (SAS) Ex Device Path.
-    pub const MESSAGING_SCSI_SAS_EX: DeviceSubType = DeviceSubType(22);
+    pub const MESSAGING_SCSI_SAS_EX: Self = Self(22);
     /// NVM Express Namespace Device Path.
-    pub const MESSAGING_NVME_NAMESPACE: DeviceSubType = DeviceSubType(23);
+    pub const MESSAGING_NVME_NAMESPACE: Self = Self(23);
     /// Uniform Resource Identifiers (URI) Device Path.
-    pub const MESSAGING_URI: DeviceSubType = DeviceSubType(24);
+    pub const MESSAGING_URI: Self = Self(24);
     /// UFS Device Path.
-    pub const MESSAGING_UFS: DeviceSubType = DeviceSubType(25);
+    pub const MESSAGING_UFS: Self = Self(25);
     /// SD (Secure Digital) Device Path.
-    pub const MESSAGING_SD: DeviceSubType = DeviceSubType(26);
+    pub const MESSAGING_SD: Self = Self(26);
     /// Bluetooth Device Path.
-    pub const MESSAGING_BLUETOOTH: DeviceSubType = DeviceSubType(27);
+    pub const MESSAGING_BLUETOOTH: Self = Self(27);
     /// Wi-Fi Device Path.
-    pub const MESSAGING_WIFI: DeviceSubType = DeviceSubType(28);
+    pub const MESSAGING_WIFI: Self = Self(28);
     /// eMMC (Embedded Multi-Media Card) Device Path.
-    pub const MESSAGING_EMMC: DeviceSubType = DeviceSubType(29);
+    pub const MESSAGING_EMMC: Self = Self(29);
     /// BluetoothLE Device Path.
-    pub const MESSAGING_BLUETOOTH_LE: DeviceSubType = DeviceSubType(30);
+    pub const MESSAGING_BLUETOOTH_LE: Self = Self(30);
     /// DNS Device Path.
-    pub const MESSAGING_DNS: DeviceSubType = DeviceSubType(31);
+    pub const MESSAGING_DNS: Self = Self(31);
     /// NVDIMM Namespace Device Path.
-    pub const MESSAGING_NVDIMM_NAMESPACE: DeviceSubType = DeviceSubType(32);
+    pub const MESSAGING_NVDIMM_NAMESPACE: Self = Self(32);
     /// REST Service Device Path.
-    pub const MESSAGING_REST_SERVICE: DeviceSubType = DeviceSubType(33);
+    pub const MESSAGING_REST_SERVICE: Self = Self(33);
     /// NVME over Fabric (NVMe-oF) Namespace Device Path.
-    pub const MESSAGING_NVME_OF_NAMESPACE: DeviceSubType = DeviceSubType(34);
+    pub const MESSAGING_NVME_OF_NAMESPACE: Self = Self(34);
 
     /// Hard Drive Media Device Path.
-    pub const MEDIA_HARD_DRIVE: DeviceSubType = DeviceSubType(1);
+    pub const MEDIA_HARD_DRIVE: Self = Self(1);
     /// CD-ROM Media Device Path.
-    pub const MEDIA_CD_ROM: DeviceSubType = DeviceSubType(2);
+    pub const MEDIA_CD_ROM: Self = Self(2);
     /// Vendor-Defined Media Device Path.
-    pub const MEDIA_VENDOR: DeviceSubType = DeviceSubType(3);
+    pub const MEDIA_VENDOR: Self = Self(3);
     /// File Path Media Device Path.
-    pub const MEDIA_FILE_PATH: DeviceSubType = DeviceSubType(4);
+    pub const MEDIA_FILE_PATH: Self = Self(4);
     /// Media Protocol Device Path.
-    pub const MEDIA_PROTOCOL: DeviceSubType = DeviceSubType(5);
+    pub const MEDIA_PROTOCOL: Self = Self(5);
     /// PIWG Firmware File.
-    pub const MEDIA_PIWG_FIRMWARE_FILE: DeviceSubType = DeviceSubType(6);
+    pub const MEDIA_PIWG_FIRMWARE_FILE: Self = Self(6);
     /// PIWG Firmware Volume.
-    pub const MEDIA_PIWG_FIRMWARE_VOLUME: DeviceSubType = DeviceSubType(7);
+    pub const MEDIA_PIWG_FIRMWARE_VOLUME: Self = Self(7);
     /// Relative Offset Range.
-    pub const MEDIA_RELATIVE_OFFSET_RANGE: DeviceSubType = DeviceSubType(8);
+    pub const MEDIA_RELATIVE_OFFSET_RANGE: Self = Self(8);
     /// RAM Disk Device Path.
-    pub const MEDIA_RAM_DISK: DeviceSubType = DeviceSubType(9);
+    pub const MEDIA_RAM_DISK: Self = Self(9);
 
     /// BIOS Boot Specification Device Path.
-    pub const BIOS_BOOT_SPECIFICATION: DeviceSubType = DeviceSubType(1);
+    pub const BIOS_BOOT_SPECIFICATION: Self = Self(1);
 
     /// End this instance of a Device Path and start a new one.
-    pub const END_INSTANCE: DeviceSubType = DeviceSubType(0x01);
+    pub const END_INSTANCE: Self = Self(0x01);
     /// End entire Device Path.
-    pub const END_ENTIRE: DeviceSubType = DeviceSubType(0xff);
+    pub const END_ENTIRE: Self = Self(0xff);
 }
 
 /// Error returned when attempting to convert from a `&[u8]` to a

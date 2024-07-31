@@ -39,7 +39,7 @@ impl Handle {
 
     /// Get the underlying raw pointer.
     #[must_use]
-    pub fn as_ptr(&self) -> *mut c_void {
+    pub const fn as_ptr(&self) -> *mut c_void {
         self.0.as_ptr()
     }
 
@@ -78,7 +78,7 @@ impl Event {
 
     /// Get the underlying raw pointer.
     #[must_use]
-    pub fn as_ptr(&self) -> *mut c_void {
+    pub const fn as_ptr(&self) -> *mut c_void {
         self.0.as_ptr()
     }
 }

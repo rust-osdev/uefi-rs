@@ -18,7 +18,7 @@ pub struct UefiDirectoryIter(UefiDirectoryHandle);
 impl UefiDirectoryIter {
     /// Constructor.
     #[must_use]
-    pub fn new(handle: UefiDirectoryHandle) -> Self {
+    pub const fn new(handle: UefiDirectoryHandle) -> Self {
         Self(handle)
     }
 }

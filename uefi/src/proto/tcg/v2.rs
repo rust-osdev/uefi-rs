@@ -102,7 +102,7 @@ pub struct BootServiceCapability {
 impl Default for BootServiceCapability {
     fn default() -> Self {
         // OK to unwrap, the size is less than u8.
-        let struct_size = u8::try_from(mem::size_of::<BootServiceCapability>()).unwrap();
+        let struct_size = u8::try_from(mem::size_of::<Self>()).unwrap();
 
         Self {
             size: struct_size,
@@ -123,7 +123,7 @@ impl Default for BootServiceCapability {
 impl BootServiceCapability {
     /// Whether the TPM device is present.
     #[must_use]
-    pub fn tpm_present(&self) -> bool {
+    pub const fn tpm_present(&self) -> bool {
         self.present_flag != 0
     }
 }
@@ -211,7 +211,7 @@ impl PcrEventInputs {
             );
             ptr::copy(event_data.as_ptr(), ptr, event_data.len());
 
-            let ptr: *mut PcrEventInputs =
+            let ptr: *mut Self =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
         }
@@ -261,7 +261,7 @@ impl Debug for PcrEventInputs {
 
 // Manual `PartialEq` implementation since it can't be derived for a packed DST.
 impl PartialEq for PcrEventInputs {
-    fn eq(&self, other: &PcrEventInputs) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.size == other.size
             && self.event_header == other.event_header
             && self.event == other.event
@@ -419,7 +419,7 @@ impl<'a> EventLog<'a> {
     /// Whether the event log is truncated due to not enough space in the log to
     /// contain some events.
     #[must_use]
-    pub fn is_truncated(&self) -> bool {
+    pub const fn is_truncated(&self) -> bool {
         self.is_truncated
     }
 }
@@ -533,7 +533,7 @@ impl<'a> PcrEvent<'a> {
 
     /// PCR index for the event.
     #[must_use]
-    pub fn pcr_index(&self) -> PcrIndex {
+    pub const fn pcr_index(&self) -> PcrIndex {
         self.pcr_index
     }
 
@@ -541,7 +541,7 @@ impl<'a> PcrEvent<'a> {
     ///
     /// [`event_data`]: Self::event_data
     #[must_use]
-    pub fn event_type(&self) -> EventType {
+    pub const fn event_type(&self) -> EventType {
         self.event_type
     }
 
@@ -553,7 +553,7 @@ impl<'a> PcrEvent<'a> {
     /// [`digests`]: Self::digests
     /// [`event_type`]: Self::event_type
     #[must_use]
-    pub fn event_data(&self) -> &[u8] {
+    pub const fn event_data(&self) -> &[u8] {
         self.event_data
     }
 

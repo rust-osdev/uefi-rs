@@ -28,7 +28,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     /// The `data` pointer must point to a packed array of at least
     /// `len` elements of type `T`. The pointer must remain valid for as
     /// long as the `'a` lifetime.
-    pub unsafe fn new(data: *const T, len: usize) -> Self {
+    pub const unsafe fn new(data: *const T, len: usize) -> Self {
         Self {
             data,
             len,

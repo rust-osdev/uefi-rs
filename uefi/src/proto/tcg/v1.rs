@@ -49,13 +49,13 @@ pub struct BootServiceCapability {
 impl BootServiceCapability {
     /// Version of the `BootServiceCapability` structure.
     #[must_use]
-    pub fn structure_version(&self) -> Version {
+    pub const fn structure_version(&self) -> Version {
         self.structure_version
     }
 
     /// Version of the `Tcg` protocol.
     #[must_use]
-    pub fn protocol_spec_version(&self) -> Version {
+    pub const fn protocol_spec_version(&self) -> Version {
         self.protocol_spec_version
     }
 
@@ -69,13 +69,13 @@ impl BootServiceCapability {
 
     /// Whether the TPM device is present.
     #[must_use]
-    pub fn tpm_present(&self) -> bool {
+    pub const fn tpm_present(&self) -> bool {
         self.tpm_present_flag != 0
     }
 
     /// Whether the TPM device is deactivated.
     #[must_use]
-    pub fn tpm_deactivated(&self) -> bool {
+    pub const fn tpm_deactivated(&self) -> bool {
         self.tpm_deactivated_flag != 0
     }
 }
@@ -165,7 +165,7 @@ impl PcrEvent {
             ptr_write_unaligned_and_add(&mut ptr, event_data_size);
             ptr::copy(event_data.as_ptr(), ptr, event_data.len());
 
-            let ptr: *mut PcrEvent =
+            let ptr: *mut Self =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), event_data.len());
             Ok(&mut *ptr)
         }
@@ -199,7 +199,7 @@ impl PcrEvent {
 
     /// PCR index for the event.
     #[must_use]
-    pub fn pcr_index(&self) -> PcrIndex {
+    pub const fn pcr_index(&self) -> PcrIndex {
         self.pcr_index
     }
 
@@ -207,7 +207,7 @@ impl PcrEvent {
     ///
     /// [`event_data`]: Self::event_data
     #[must_use]
-    pub fn event_type(&self) -> EventType {
+    pub const fn event_type(&self) -> EventType {
         self.event_type
     }
 
@@ -219,13 +219,13 @@ impl PcrEvent {
     /// [`digest`]: Self::digest
     /// [`event_type`]: Self::event_type
     #[must_use]
-    pub fn event_data(&self) -> &[u8] {
+    pub const fn event_data(&self) -> &[u8] {
         &self.event_data
     }
 
     /// SHA-1 digest of the data hashed for this event.
     #[must_use]
-    pub fn digest(&self) -> Sha1Digest {
+    pub const fn digest(&self) -> Sha1Digest {
         self.digest
     }
 }
@@ -288,7 +288,7 @@ pub struct EventLog<'a> {
 }
 
 impl<'a> EventLog<'a> {
-    pub(super) unsafe fn new(
+    pub(super) const unsafe fn new(
         location: *const u8,
         last_entry: *const u8,
         is_truncated: bool,
@@ -303,7 +303,7 @@ impl<'a> EventLog<'a> {
 
     /// Iterator of events in the log.
     #[must_use]
-    pub fn iter(&self) -> EventLogIter {
+    pub const fn iter(&self) -> EventLogIter {
         EventLogIter {
             log: self,
             location: self.location,
@@ -319,7 +319,7 @@ impl<'a> EventLog<'a> {
     ///
     /// [`v1::Tcg`]: Tcg
     #[must_use]
-    pub fn is_truncated(&self) -> bool {
+    pub const fn is_truncated(&self) -> bool {
         self.is_truncated
     }
 }

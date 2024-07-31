@@ -117,7 +117,7 @@ impl<View: SystemTableView> SystemTable<View> {
 
     /// Get the underlying raw pointer.
     #[must_use]
-    pub fn as_ptr(&self) -> *const c_void {
+    pub const fn as_ptr(&self) -> *const c_void {
         self.table.cast()
     }
 }
@@ -278,7 +278,7 @@ impl SystemTable<Boot> {
     /// handling require taking this risk.
     #[must_use]
     pub const unsafe fn unsafe_clone(&self) -> Self {
-        SystemTable {
+        Self {
             table: self.table,
             _marker: PhantomData,
         }

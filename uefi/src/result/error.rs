@@ -44,7 +44,7 @@ impl<Data: Debug> Error<Data> {
 
 impl From<Status> for Error<()> {
     fn from(status: Status) -> Self {
-        Error::new(status, ())
+        Self::new(status, ())
     }
 }
 
@@ -60,7 +60,7 @@ impl<Data: Debug> Error<Data> {
     /// - to retain the erroneous status code,
     /// - do not care about the payload, and
     /// - refrain from generic type complexity in a higher API level.
-    pub fn to_err_without_payload(&self) -> Error<()> {
+    pub const fn to_err_without_payload(&self) -> Error<()> {
         Error {
             status: self.status,
             data: (),

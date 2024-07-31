@@ -315,7 +315,7 @@ impl MemoryMapBackingMemory {
     /// takes into account that, as you go, more (small) allocations might
     /// happen.
     #[must_use]
-    fn safe_allocation_size_hint(mmm: MemoryMapMeta) -> usize {
+    const fn safe_allocation_size_hint(mmm: MemoryMapMeta) -> usize {
         // Allocate space for extra entries beyond the current size of the
         // memory map. The value of 8 matches the value in the Linux kernel:
         // https://github.com/torvalds/linux/blob/e544a07438/drivers/firmware/efi/libstub/efistub.h#L173
@@ -373,7 +373,7 @@ impl MemoryMapOwned {
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
         assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
-        MemoryMapOwned { buf, meta, len }
+        Self { buf, meta, len }
     }
 }
 

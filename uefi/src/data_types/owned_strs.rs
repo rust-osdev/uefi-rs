@@ -113,7 +113,7 @@ impl CString16 {
 
 impl Default for CString16 {
     fn default() -> Self {
-        CString16::new()
+        Self::new()
     }
 }
 
@@ -141,7 +141,7 @@ impl TryFrom<&str> for CString16 {
         // Add trailing nul.
         output.push(NUL_16);
 
-        Ok(CString16(output))
+        Ok(Self(output))
     }
 }
 
@@ -175,7 +175,7 @@ impl<'a> TryFrom<&UnalignedSlice<'a, u16>> for CString16 {
 
     fn try_from(input: &UnalignedSlice<u16>) -> Result<Self, Self::Error> {
         let v = input.to_vec();
-        CString16::try_from(v)
+        Self::try_from(v)
     }
 }
 
@@ -189,7 +189,7 @@ impl From<&CStr16> for CString16 {
 impl From<&CString16> for String {
     fn from(value: &CString16) -> Self {
         let slice: &CStr16 = value.as_ref();
-        String::from(slice)
+        Self::from(slice)
     }
 }
 

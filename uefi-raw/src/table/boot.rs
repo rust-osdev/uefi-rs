@@ -367,8 +367,8 @@ impl MemoryDescriptor {
 }
 
 impl Default for MemoryDescriptor {
-    fn default() -> MemoryDescriptor {
-        MemoryDescriptor {
+    fn default() -> Self {
+        Self {
             ty: MemoryType::RESERVED,
             phys_start: 0,
             virt_start: 0,
@@ -439,9 +439,9 @@ impl MemoryType {
     /// Construct a custom `MemoryType`. Values in the range `0x8000_0000..=0xffff_ffff` are free for use if you are
     /// an OS loader.
     #[must_use]
-    pub const fn custom(value: u32) -> MemoryType {
+    pub const fn custom(value: u32) -> Self {
         assert!(value >= 0x80000000);
-        MemoryType(value)
+        Self(value)
     }
 }
 

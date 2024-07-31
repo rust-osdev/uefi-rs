@@ -10,10 +10,15 @@
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![deny(missing_debug_implementations)]
-#![deny(clippy::all)]
-#![deny(clippy::ptr_as_ptr, unused)]
-#![deny(clippy::must_use_candidate)]
+#![deny(
+    clippy::all,
+    clippy::missing_const_for_fn,
+    clippy::must_use_candidate,
+    clippy::ptr_as_ptr,
+    clippy::use_self,
+    missing_debug_implementations,
+    unused
+)]
 
 #[macro_use]
 mod enums;

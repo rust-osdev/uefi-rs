@@ -4,6 +4,7 @@
 // `cargo xtask gen-code`
 //
 // See `/xtask/src/device_path/README.md` for more details.
+#![allow(clippy::missing_const_for_fn)]
 
 use crate::data_types::UnalignedSlice;
 use crate::mem::memory_map::MemoryType;

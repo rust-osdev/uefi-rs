@@ -261,13 +261,13 @@ impl SimpleNetwork {
     /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
     /// of UEFI properly implements this event before using it.
     #[must_use]
-    pub fn wait_for_packet(&self) -> &Event {
+    pub const fn wait_for_packet(&self) -> &Event {
         &self.wait_for_packet
     }
 
     /// Returns a reference to the Simple Network mode.
     #[must_use]
-    pub fn mode(&self) -> &NetworkMode {
+    pub const fn mode(&self) -> &NetworkMode {
         unsafe { &*self.mode }
     }
 }
@@ -347,14 +347,14 @@ pub struct NetworkStats {
 
 impl NetworkStats {
     /// Any statistic value of -1 is not available
-    fn available(&self, stat: u64) -> bool {
+    const fn available(&self, stat: u64) -> bool {
         stat as i64 != -1
     }
 
     /// Takes a statistic and converts it to an option
     ///
     /// When the statistic is not available, `None` is returned
-    fn to_option(&self, stat: u64) -> Option<u64> {
+    const fn to_option(&self, stat: u64) -> Option<u64> {
         match self.available(stat) {
             true => Some(stat),
             false => None,
@@ -364,175 +364,175 @@ impl NetworkStats {
     /// The total number of frames received, including error frames
     /// and dropped frames
     #[must_use]
-    pub fn rx_total_frames(&self) -> Option<u64> {
+    pub const fn rx_total_frames(&self) -> Option<u64> {
         self.to_option(self.rx_total_frames)
     }
 
     /// The total number of good frames received and copied
     /// into receive buffers
     #[must_use]
-    pub fn rx_good_frames(&self) -> Option<u64> {
+    pub const fn rx_good_frames(&self) -> Option<u64> {
         self.to_option(self.rx_good_frames)
     }
 
     /// The number of frames below the minimum length for the
     /// communications device
     #[must_use]
-    pub fn rx_undersize_frames(&self) -> Option<u64> {
+    pub const fn rx_undersize_frames(&self) -> Option<u64> {
         self.to_option(self.rx_undersize_frames)
     }
 
     /// The number of frames longer than the maximum length for
     /// the communications length device
     #[must_use]
-    pub fn rx_oversize_frames(&self) -> Option<u64> {
+    pub const fn rx_oversize_frames(&self) -> Option<u64> {
         self.to_option(self.rx_oversize_frames)
     }
 
     /// The number of valid frames that were dropped because
     /// the receive buffers were full
     #[must_use]
-    pub fn rx_dropped_frames(&self) -> Option<u64> {
+    pub const fn rx_dropped_frames(&self) -> Option<u64> {
         self.to_option(self.rx_dropped_frames)
     }
 
     /// The number of valid unicast frames received and not dropped
     #[must_use]
-    pub fn rx_unicast_frames(&self) -> Option<u64> {
+    pub const fn rx_unicast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_unicast_frames)
     }
 
     /// The number of valid broadcast frames received and not dropped
     #[must_use]
-    pub fn rx_broadcast_frames(&self) -> Option<u64> {
+    pub const fn rx_broadcast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_broadcast_frames)
     }
 
     /// The number of valid multicast frames received and not dropped
     #[must_use]
-    pub fn rx_multicast_frames(&self) -> Option<u64> {
+    pub const fn rx_multicast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_multicast_frames)
     }
 
     /// Number of frames with CRC or alignment errors
     #[must_use]
-    pub fn rx_crc_error_frames(&self) -> Option<u64> {
+    pub const fn rx_crc_error_frames(&self) -> Option<u64> {
         self.to_option(self.rx_crc_error_frames)
     }
 
     /// The total number of bytes received including frames with errors
     /// and dropped frames
     #[must_use]
-    pub fn rx_total_bytes(&self) -> Option<u64> {
+    pub const fn rx_total_bytes(&self) -> Option<u64> {
         self.to_option(self.rx_total_bytes)
     }
 
     /// The total number of frames transmitted including frames
     /// with errors and dropped frames
     #[must_use]
-    pub fn tx_total_frames(&self) -> Option<u64> {
+    pub const fn tx_total_frames(&self) -> Option<u64> {
         self.to_option(self.tx_total_frames)
     }
 
     /// The total number of valid frames transmitted and copied
     /// into receive buffers
     #[must_use]
-    pub fn tx_good_frames(&self) -> Option<u64> {
+    pub const fn tx_good_frames(&self) -> Option<u64> {
         self.to_option(self.tx_good_frames)
     }
 
     /// The number of frames below the minimum length for
     /// the media. This would be less than 64 for Ethernet
     #[must_use]
-    pub fn tx_undersize_frames(&self) -> Option<u64> {
+    pub const fn tx_undersize_frames(&self) -> Option<u64> {
         self.to_option(self.tx_undersize_frames)
     }
 
     /// The number of frames longer than the maximum length for
     /// the media. This would be 1500 for Ethernet
     #[must_use]
-    pub fn tx_oversize_frames(&self) -> Option<u64> {
+    pub const fn tx_oversize_frames(&self) -> Option<u64> {
         self.to_option(self.tx_oversize_frames)
     }
 
     /// The number of valid frames that were dropped because
     /// received buffers were full
     #[must_use]
-    pub fn tx_dropped_frames(&self) -> Option<u64> {
+    pub const fn tx_dropped_frames(&self) -> Option<u64> {
         self.to_option(self.tx_dropped_frames)
     }
 
     /// The number of valid unicast frames transmitted and not
     /// dropped
     #[must_use]
-    pub fn tx_unicast_frames(&self) -> Option<u64> {
+    pub const fn tx_unicast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_unicast_frames)
     }
 
     /// The number of valid broadcast frames transmitted and
     /// not dropped
     #[must_use]
-    pub fn tx_broadcast_frames(&self) -> Option<u64> {
+    pub const fn tx_broadcast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_broadcast_frames)
     }
 
     /// The number of valid multicast frames transmitted
     /// and not dropped
     #[must_use]
-    pub fn tx_multicast_frames(&self) -> Option<u64> {
+    pub const fn tx_multicast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_multicast_frames)
     }
 
     /// The number of transmitted frames with CRC or
     /// alignment errors
     #[must_use]
-    pub fn tx_crc_error_frames(&self) -> Option<u64> {
+    pub const fn tx_crc_error_frames(&self) -> Option<u64> {
         self.to_option(self.tx_crc_error_frames)
     }
 
     /// The total number of bytes transmitted including
     /// error frames and dropped frames
     #[must_use]
-    pub fn tx_total_bytes(&self) -> Option<u64> {
+    pub const fn tx_total_bytes(&self) -> Option<u64> {
         self.to_option(self.tx_total_bytes)
     }
 
     /// The number of collisions detected on this subnet
     #[must_use]
-    pub fn collisions(&self) -> Option<u64> {
+    pub const fn collisions(&self) -> Option<u64> {
         self.to_option(self.collisions)
     }
 
     /// The number of frames destined for unsupported protocol
     #[must_use]
-    pub fn unsupported_protocol(&self) -> Option<u64> {
+    pub const fn unsupported_protocol(&self) -> Option<u64> {
         self.to_option(self.unsupported_protocol)
     }
 
     /// The number of valid frames received that were duplicated
     #[must_use]
-    pub fn rx_duplicated_frames(&self) -> Option<u64> {
+    pub const fn rx_duplicated_frames(&self) -> Option<u64> {
         self.to_option(self.rx_duplicated_frames)
     }
 
     /// The number of encrypted frames received that failed
     /// to decrypt
     #[must_use]
-    pub fn rx_decrypt_error_frames(&self) -> Option<u64> {
+    pub const fn rx_decrypt_error_frames(&self) -> Option<u64> {
         self.to_option(self.rx_decrypt_error_frames)
     }
 
     /// The number of frames that failed to transmit after
     /// exceeding the retry limit
     #[must_use]
-    pub fn tx_error_frames(&self) -> Option<u64> {
+    pub const fn tx_error_frames(&self) -> Option<u64> {
         self.to_option(self.tx_error_frames)
     }
 
     /// The number of frames that transmitted successfully
     /// after more than one attempt
     #[must_use]
-    pub fn tx_retry_frames(&self) -> Option<u64> {
+    pub const fn tx_retry_frames(&self) -> Option<u64> {
         self.to_option(self.tx_retry_frames)
     }
 }

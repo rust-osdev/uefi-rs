@@ -185,7 +185,7 @@ impl LoadedImage {
     ///  - `MemoryType::BOOT_SERVICES_CODE` for UEFI boot drivers
     ///  - `MemoryType::RUNTIME_SERVICES_CODE` for UEFI runtime drivers
     #[must_use]
-    pub fn code_type(&self) -> MemoryType {
+    pub const fn code_type(&self) -> MemoryType {
         self.0.image_code_type
     }
 
@@ -196,7 +196,7 @@ impl LoadedImage {
     ///  - `MemoryType::BOOT_SERVICES_DATA` for UEFI boot drivers
     ///  - `MemoryType::RUNTIME_SERVICES_DATA` for UEFI runtime drivers
     #[must_use]
-    pub fn data_type(&self) -> MemoryType {
+    pub const fn data_type(&self) -> MemoryType {
         self.0.image_data_type
     }
 }

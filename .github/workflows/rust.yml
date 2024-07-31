@@ -136,8 +136,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo xtask build --feature-permutations
+  # Nightly + unstable feature
   nightly_channel:
-    name: Build (nightly + unstable feature)
+    name: Nightly (build, test, doc)
     runs-on: ubuntu-latest
     env:
       # TODO: temporarily allow warnings to not be errors on nightly due to
@@ -163,6 +164,20 @@ jobs:
         # Skip testing uefi-macros on nightly because the tests that check the
         # compiler error output produce different output on stable vs nightly.
         run: cargo xtask test --unstable --skip-macro-tests
+  miri:
+    name: Unit + Doc Tests (Miri)
+    runs-on: ubuntu-latest
+    env:
+      # TODO: temporarily allow warnings to not be errors on nightly due to
+      # incorrect dead_code lint.
+      # https://github.com/rust-osdev/uefi-rs/issues/1205
+      RUSTFLAGS: ""
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Enable nightly toolchain
+        run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+      - uses: Swatinem/rust-cache@v2
       - name: Run unit tests and doctests under Miri
         run: |
           rustup component add miri

@@ -263,7 +263,7 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
 ///
 /// If the image is successfully loaded, a [`Handle`] supporting the
 /// [`LoadedImage`] and [`LoadedImageDevicePath`] protocols is returned. The
-/// image can be started with `start_image` and unloaded with
+/// image can be started with [`start_image`] and unloaded with
 /// [`unload_image`].
 ///
 /// # Errors
@@ -332,6 +332,27 @@ pub fn unload_image(image_handle: Handle) -> Result {
     let bt = unsafe { bt.as_ref() };
 
     unsafe { (bt.unload_image)(image_handle.as_ptr()) }.to_result()
+}
+
+/// Transfers control to a loaded image's entry point.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `image_handle` is not valid, or the image
+///   has already been initialized with `start_image`.
+/// * [`Status::SECURITY_VIOLATION`]: a security policy specifies that the image
+///   should not be started.
+pub fn start_image(image_handle: Handle) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    // TODO: implement returning exit data to the caller.
+    let mut exit_data_size: usize = 0;
+    let mut exit_data: *mut u16 = ptr::null_mut();
+
+    unsafe {
+        (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data).to_result()
+    }
 }
 
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of

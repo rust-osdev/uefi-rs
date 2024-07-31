@@ -13,12 +13,11 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use log::info;
-use uefi::boot;
+use uefi::boot::{self, LoadImageSource};
 use uefi::prelude::*;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::{DevicePath, DeviceSubType, DeviceType, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::table::boot::LoadImageSource;
 
 /// Get the device path of the shell app. This is the same as the
 /// currently-loaded image's device path, but with the file path part changed.
@@ -43,23 +42,21 @@ fn get_shell_app_device_path(storage: &mut Vec<u8>) -> &DevicePath {
 }
 
 #[entry]
-fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
+fn efi_main() -> Status {
     uefi::helpers::init().unwrap();
-    let boot_services = st.boot_services();
 
     let mut storage = Vec::new();
     let shell_image_path = get_shell_app_device_path(&mut storage);
 
     // Load the shell app.
-    let shell_image_handle = boot_services
-        .load_image(
-            image,
-            LoadImageSource::FromDevicePath {
-                device_path: shell_image_path,
-                from_boot_manager: false,
-            },
-        )
-        .expect("failed to load shell app");
+    let shell_image_handle = boot::load_image(
+        boot::image_handle(),
+        LoadImageSource::FromDevicePath {
+            device_path: shell_image_path,
+            from_boot_manager: false,
+        },
+    )
+    .expect("failed to load shell app");
 
     // Set the command line passed to the shell app so that it will run the
     // test-runner app. This automatically turns off the five-second delay.
@@ -74,9 +71,7 @@ fn efi_main(image: Handle, st: SystemTable<Boot>) -> Status {
     }
 
     info!("launching the shell app");
-    boot_services
-        .start_image(shell_image_handle)
-        .expect("failed to launch the shell app");
+    boot::start_image(shell_image_handle).expect("failed to launch the shell app");
 
     Status::SUCCESS
 }

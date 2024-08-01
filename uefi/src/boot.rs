@@ -3,6 +3,7 @@
 //! These functions will panic if called after exiting boot services.
 
 use crate::data_types::PhysicalAddress;
+use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::ops::{Deref, DerefMut};
@@ -135,6 +136,72 @@ pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     let bt = unsafe { bt.as_ref() };
 
     unsafe { (bt.free_pool)(ptr.as_ptr()) }.to_result()
+}
+
+/// Connect one or more drivers to a controller.
+///
+/// Usually one disconnects and then reconnects certain drivers
+/// to make them rescan some state that changed, e.g. reconnecting
+/// a block handle after your app modified disk partitions.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: there are no driver-binding protocol instances
+///   present in the system, or no drivers are connected to `controller`.
+/// * [`Status::SECURITY_VIOLATION`]: the caller does not have permission to
+///   start drivers associated with `controller`.
+pub fn connect_controller(
+    controller: Handle,
+    driver_image: Option<Handle>,
+    remaining_device_path: Option<&DevicePath>,
+    recursive: bool,
+) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    unsafe {
+        (bt.connect_controller)(
+            controller.as_ptr(),
+            Handle::opt_to_ptr(driver_image),
+            remaining_device_path
+                .map(|dp| dp.as_ffi_ptr())
+                .unwrap_or(ptr::null())
+                .cast(),
+            recursive,
+        )
+    }
+    .to_result_with_err(|_| ())
+}
+
+/// Disconnect one or more drivers from a controller.
+///
+/// See also [`connect_controller`].
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `driver_image` is set but does not manage
+///   `controller`, or does not support the driver binding protocol, or one of
+///   the handles is invalid.
+/// * [`Status::OUT_OF_RESOURCES`]: not enough resources available to disconnect
+///   drivers.
+/// * [`Status::DEVICE_ERROR`]: the controller could not be disconnected due to
+///   a device error.
+pub fn disconnect_controller(
+    controller: Handle,
+    driver_image: Option<Handle>,
+    child: Option<Handle>,
+) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    unsafe {
+        (bt.disconnect_controller)(
+            controller.as_ptr(),
+            Handle::opt_to_ptr(driver_image),
+            Handle::opt_to_ptr(child),
+        )
+    }
+    .to_result_with_err(|_| ())
 }
 
 /// Returns an array of handles that support the requested protocol in a

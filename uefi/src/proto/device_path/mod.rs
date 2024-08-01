@@ -119,7 +119,7 @@ pub struct DevicePathHeader {
     pub length: u16,
 }
 
-impl<'a> TryFrom<&[u8]> for &'a DevicePathHeader {
+impl<'a> TryFrom<&'a [u8]> for &'a DevicePathHeader {
     type Error = ByteConversionError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
@@ -265,7 +265,7 @@ impl PartialEq for DevicePathNode {
     }
 }
 
-impl<'a> TryFrom<&[u8]> for &'a DevicePathNode {
+impl<'a> TryFrom<&'a [u8]> for &'a DevicePathNode {
     type Error = ByteConversionError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
@@ -516,7 +516,7 @@ impl PartialEq for DevicePath {
     }
 }
 
-impl<'a> TryFrom<&[u8]> for &'a DevicePath {
+impl<'a> TryFrom<&'a [u8]> for &'a DevicePath {
     type Error = ByteConversionError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {

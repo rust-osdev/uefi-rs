@@ -20,7 +20,7 @@ use {
 pub use uefi::table::boot::{
     AllocateType, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams, SearchType,
 };
-pub use uefi_raw::table::boot::MemoryType;
+pub use uefi_raw::table::boot::{MemoryType, Tpl};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
@@ -56,6 +56,30 @@ fn boot_services_raw_panicking() -> NonNull<uefi_raw::table::boot::BootServices>
     // SAFETY: valid per requirements of `set_system_table`.
     let st = unsafe { st.as_ref() };
     NonNull::new(st.boot_services).expect("boot services are not active")
+}
+
+/// Raises a task's priority level and returns a [`TplGuard`].
+///
+/// The effect of calling `raise_tpl` with a `Tpl` that is below the current
+/// one (which, sadly, cannot be queried) is undefined by the UEFI spec,
+/// which also warns against remaining at high `Tpl`s for a long time.
+///
+/// This function returns an RAII guard that will automatically restore the
+/// original `Tpl` when dropped.
+///
+/// # Safety
+///
+/// Raising a task's priority level can affect other running tasks and
+/// critical processes run by UEFI. The highest priority level is the
+/// most dangerous, since it disables interrupts.
+#[must_use]
+pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    TplGuard {
+        old_tpl: (bt.raise_tpl)(tpl),
+    }
 }
 
 /// Allocates memory pages from the system.
@@ -449,5 +473,24 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
     #[must_use]
     pub fn get_mut(&mut self) -> Option<&mut P> {
         self.interface.map(|mut p| unsafe { p.as_mut() })
+    }
+}
+
+/// RAII guard for task priority level changes.
+///
+/// Will automatically restore the former task priority level when dropped.
+#[derive(Debug)]
+pub struct TplGuard {
+    old_tpl: Tpl,
+}
+
+impl Drop for TplGuard {
+    fn drop(&mut self) {
+        let bt = boot_services_raw_panicking();
+        let bt = unsafe { bt.as_ref() };
+
+        unsafe {
+            (bt.restore_tpl)(self.old_tpl);
+        }
     }
 }

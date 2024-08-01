@@ -5,12 +5,13 @@
 use crate::data_types::PhysicalAddress;
 use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
+use crate::util::opt_nonnull_to_ptr;
 use core::ffi::c_void;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
-use core::slice;
 use core::sync::atomic::{AtomicPtr, Ordering};
-use uefi::{table, Char16, Handle, Result, Status, StatusExt};
+use core::{mem, slice};
+use uefi::{table, Char16, Event, Handle, Result, Status, StatusExt};
 
 #[cfg(doc)]
 use {
@@ -19,9 +20,10 @@ use {
 };
 
 pub use uefi::table::boot::{
-    AllocateType, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams, SearchType,
+    AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
+    SearchType,
 };
-pub use uefi_raw::table::boot::{MemoryType, Tpl};
+pub use uefi_raw::table::boot::{EventType, MemoryType, Tpl};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
@@ -160,6 +162,50 @@ pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     let bt = unsafe { bt.as_ref() };
 
     unsafe { (bt.free_pool)(ptr.as_ptr()) }.to_result()
+}
+
+/// Creates an event.
+///
+/// This function creates a new event of the specified type and returns it.
+///
+/// Events are created in a "waiting" state, and may switch to a "signaled"
+/// state. If the event type has flag `NotifySignal` set, this will result in
+/// a callback for the event being immediately enqueued at the `notify_tpl`
+/// priority level. If the event type has flag `NotifyWait`, the notification
+/// will be delivered next time `wait_for_event` or `check_event` is called.
+/// In both cases, a `notify_fn` callback must be specified.
+///
+/// # Safety
+///
+/// This function is unsafe because callbacks must handle exit from boot
+/// services correctly.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: an invalid combination of parameters was provided.
+/// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
+pub unsafe fn create_event(
+    event_ty: EventType,
+    notify_tpl: Tpl,
+    notify_fn: Option<EventNotifyFn>,
+    notify_ctx: Option<NonNull<c_void>>,
+) -> Result<Event> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut event = ptr::null_mut();
+
+    // Safety: the argument types of the function pointers are defined
+    // differently, but are compatible and can be safely transmuted.
+    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+
+    let notify_ctx = opt_nonnull_to_ptr(notify_ctx);
+
+    // Now we're ready to call UEFI
+    (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event).to_result_with_val(
+        // OK to unwrap: event is non-null for Status::SUCCESS.
+        || Event::from_ptr(event).unwrap(),
+    )
 }
 
 /// Connect one or more drivers to a controller.

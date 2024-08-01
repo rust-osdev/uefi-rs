@@ -143,7 +143,7 @@ fn send_request_helper(serial: &mut Serial, request: HostRequest) -> Result {
 /// This must be called after opening the serial protocol in exclusive mode, as
 /// that breaks the connection to the console, which in turn prevents logs from
 /// getting to the host.
-fn reconnect_serial_to_console(boot_services: &BootServices, serial_handle: Handle) {
+fn reconnect_serial_to_console(serial_handle: Handle) {
     let mut storage = Vec::new();
     // Create a device path that specifies the terminal type.
     let terminal_guid = if cfg!(target_arch = "aarch64") {
@@ -160,8 +160,7 @@ fn reconnect_serial_to_console(boot_services: &BootServices, serial_handle: Hand
         .finalize()
         .unwrap();
 
-    boot_services
-        .connect_controller(serial_handle, None, Some(terminal_device_path), true)
+    uefi::boot::connect_controller(serial_handle, None, Some(terminal_device_path), true)
         .expect("failed to reconnect serial to console");
 }
 
@@ -198,7 +197,7 @@ fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     // device, which was broken when we opened the protocol in exclusive
     // mode above.
     drop(serial);
-    reconnect_serial_to_console(bt, serial_handle);
+    reconnect_serial_to_console(serial_handle);
 
     if let Err(err) = res {
         panic!("request failed: \"{request:?}\": {:?}", err.status());

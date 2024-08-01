@@ -67,7 +67,7 @@ pub unsafe fn test(bt: &BootServices) {
     // device, which was broken when we opened the protocol in exclusive
     // mode above.
     drop(serial);
-    reconnect_serial_to_console(bt, handle);
+    reconnect_serial_to_console(handle);
 
     if let Err(err) = res {
         panic!("serial test failed: {:?}", err.status());

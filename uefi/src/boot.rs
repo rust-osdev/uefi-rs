@@ -10,7 +10,7 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::slice;
 use core::sync::atomic::{AtomicPtr, Ordering};
-use uefi::{table, Handle, Result, Status, StatusExt};
+use uefi::{table, Char16, Handle, Result, Status, StatusExt};
 
 #[cfg(doc)]
 use {
@@ -444,6 +444,35 @@ pub fn start_image(image_handle: Handle) -> Result {
     unsafe {
         (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data).to_result()
     }
+}
+
+/// Exits the UEFI application and returns control to the UEFI component
+/// that started the UEFI application.
+///
+/// # Safety
+///
+/// The caller must ensure that resources owned by the application are properly
+/// cleaned up.
+///
+/// Note that event callbacks installed by the application are not automatically
+/// uninstalled. If such a callback is invoked after exiting the application,
+/// the function's code may no longer be loaded in memory, leading to a crash or
+/// other unexpected behavior.
+pub unsafe fn exit(
+    image_handle: Handle,
+    exit_status: Status,
+    exit_data_size: usize,
+    exit_data: *mut Char16,
+) -> ! {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    (bt.exit)(
+        image_handle.as_ptr(),
+        exit_status,
+        exit_data_size,
+        exit_data.cast(),
+    )
 }
 
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of

@@ -40,7 +40,7 @@
   ```
 
 
-# uefi - 0.30.0 (unreleased)
+# uefi - 0.30.0 (2024-08-02)
 ## Changed
 - **Breaking:**: Fixed a bug in the impls of `TryFrom<&[u8]>` for
   `&DevicePathHeader`, `&DevicePathNode` and `&DevicePath` that could lead to

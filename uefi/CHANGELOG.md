@@ -47,6 +47,13 @@
   memory unsafety. See <https://github.com/rust-osdev/uefi-rs/issues/1281>.
 
 
+# uefi - 0.30.0 (2024-08-02)
+## Changed
+- **Breaking:**: Fixed a bug in the impls of `TryFrom<&[u8]>` for
+  `&DevicePathHeader`, `&DevicePathNode` and `&DevicePath` that could lead to
+  memory unsafety. See <https://github.com/rust-osdev/uefi-rs/issues/1281>.
+
+
 # uefi - 0.29.0 (2024-07-02)
 
 ## Added

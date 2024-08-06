@@ -7,21 +7,68 @@
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].
 //!
-//! Feel free to file bug reports and questions in our [issue tracker], and [PR
-//! contributions][contributing] are also welcome!
+//! # About `uefi`
 //!
-//! # Interaction with uefi services
+//! With `uefi`, you have the flexibility to integrate selected types and
+//! abstractions into your project or to conveniently create EFI images,
+//! addressing the entire spectrum of your development needs.
+//!
+//! `uefi` works with stable Rust, but additional nightly-only features are
+//! gated behind an `unstable` Cargo feature flag. Please find more information
+//! about supported features below.
+//!
+//! _Note that for producing EFI images, you also need to use a corresponding
+//! `uefi` compiler target of Rust, such as `x86_64-unknown-uefi`._
+//!
+//! ## Example Use Cases
 //!
 //! With this crate you can write code for the pre- and post-exit boot services
-//! epochs. However, the `uefi` crate unfolds its true potential when
-//! interacting with UEFI boot services.
+//! epochs. However, the `uefi` crate unfolds its true potential when crafting
+//! EFI images interacting with UEFI boot services and eventually exiting them.
 //!
-//! # Crate organisation
+//! By EFI images (`image.efi`), we are referring to EFI applications, EFI
+//! boot service drivers, and EFI runtime service drivers. An EFI application
+//! might be your OS-specific loader technically similar to _GRUB_ or _Limine_.
+//!
+//! You can also use this crate to parse the UEFI memory map when a bootloader,
+//! such as _GRUB_ or _Limine_, passed the UEFI memory map as part of the
+//! corresponding boot information to your kernel, or to access runtime services
+//! from your kernel. Hence, when you also use utilize `uefi` also in ELF
+//! binaries and are not limited to EFI images.
+//!
+//! ## Supported Architectures
+//!
+//! `uefi` is compatible with all platforms that both the Rust compiler and
+//! UEFI support, such as `i686`, `x86_64`, and `aarch64`. Please note that we
+//! can't test all possible hardware/firmware/platform combinations in CI.
+//!
+//! # API/User Documentation, Documentation Structure, and other Resources
+//!
+//! Down below, you find typical technical documentation of all types, modules,
+//! and functions exported by `uefi`.
+//!
+//! For a TL;DR quick start with an example on how to create your own EFI
+//! application, please check out [the UEFI application template][template]. The
+//! [Rust UEFI Book] is a more beginner-friendly tutorial with How-Tos, and
+//! overviews of some important UEFI concepts and the abstractions provided by
+//! this library.
+//!
+//! For more details of UEFI itself, see the latest [UEFI Specification][spec].
+//!
+//! # Library Structure & Tips
 //!
 //! The top-level module contains some of the most used types and macros,
 //! including the [`Handle`] and [`Result`] types, the [`CStr16`] and
 //! [`CString16`] types for working with UCS-2 strings, and the [`entry`] and
 //! [`guid`] macros.
+//!
+//! ## UEFI Strings
+//!
+//! Rust string literals are UTF-8 encoded and thus, not compatible with most
+//! UEFI interfaces. We provide [`CStr16`] and [`CString16`] for proper working
+//! with UCS-2 strings, including various transformation functions from standard
+//! Rust strings. You can use [`ctr16!`] to create UCS-2 string literals at
+//! compile time.
 //!
 //! ## Tables
 //!
@@ -74,16 +121,80 @@
 //! only unfold their potential when you invoke `uefi::helpers::init` as soon
 //! as possible in your application.
 //!
+//! # Discuss and Contribute
+//!
+//! For general discussions, feel free to join us in our [Zulip] and ask
+//! your questions there.
+//!
+//! Further, you can submit bugs and also ask questions in our [issue tracker].
+//! Contributions in form of a PR are also highly welcome. Check our
+//! [contributing guide][contributing] for details.
+//!
+//! # Comparison to other Projects in the Ecosystem
+//!
+//! ## Rust `std` implementation
+//!
+//! There is an ongoing effort for a `std` implementation of the Rust standard
+//! library. ([Platform description][rustc-uefi-std],
+//! [tracking issue][uefi-std-tr-issue]), that is yet far from being mature. As
+//! of Mid-2024, we recommend to use our `uefi` library in a `no_std` binary to
+//! create EFI images.
+//!
+//! We will closely monitor the situation and update the documentation
+//! accordingly, once the `std` implementation is more mature.
+//!
+//! ## `r-efi`
+//!
+//! Raw UEFI bindings without high-level convenience similar to our `uefi-raw`
+//! crate, which is part of this  project, but more feature-complete. It
+//! targets a lower-level than our `uefi` crate does.
+//!
+//! # MSRV
+//! <!-- Keep in Sync with README! -->
+//!
+//! The minimum supported Rust version is currently 1.70.
+//! Our policy is to support at least the past two stable releases.
+//!
+//! # License
+//! <!-- Keep in Sync with README! -->
+//!
+//! The code in this repository is licensed under the Mozilla Public License 2.
+//! This license allows you to use the crate in proprietary programs, but any
+//! modifications to the files must be open-sourced.
+//!
+//! The full text of the license is available in the [license file][LICENSE].
+//!
+//! # Trivia and Background
+//!
+//! [UEFI] started as the successor firmware to the BIOS in x86 space and
+//! developed to a universal firmware specification for various platforms, such
+//! as ARM. It provides an early boot environment with a variety of
+//! [specified][spec] ready-to-use "high-level" functionality, such as accessing
+//! disks or the network. EFI images, the files that can be loaded by an UEFI
+//! environment, can leverage these abstractions to extend the functionality in
+//! form of additional drivers, OS-specific bootloaders, or any different kind
+//! of low-level applications.
+//!
+//! Even joke projects such as an [IRC client][uefirc] leveraging only existing
+//! UEFI boot services are possible! 😉
+//!
+//! [LICENSE]: https://github.com/rust-osdev/uefi-rs/blob/main/uefi/LICENSE
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/
+//! [Zulip]: https://rust-osdev.zulipchat.com
 //! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable
+//! [`ctr16!`]: crate::cstr16
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
 //! [spec]: https://uefi.org/specifications
+//! [template]: https://github.com/rust-osdev/uefi-rs/tree/main/template
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
+//! [uefirc]: https://github.com/codyd51/uefirc
+//! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html
+//! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
 
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

@@ -1,6 +1,7 @@
 use alloc::string::ToString;
 use core::cell::RefCell;
 use core::ptr::NonNull;
+use uefi::boot;
 use uefi::data_types::Align;
 use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
@@ -305,8 +306,7 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
 
         unsafe {
             // Create the completion event
-            let mut event = bt
-                .create_event(EventType::empty(), Tpl::NOTIFY, None, None)
+            let mut event = boot::create_event(EventType::empty(), Tpl::NOTIFY, None, None)
                 .expect("Failed to create disk I/O completion event");
 
             // Initialise the task context

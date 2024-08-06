@@ -1616,8 +1616,8 @@ impl<'guid> SearchType<'guid> {
     }
 }
 
-/// Raw event notification function
-type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
+/// Event notification callback type.
+pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
 /// Timer events manipulation.
 #[derive(Debug)]

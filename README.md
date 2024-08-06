@@ -1,5 +1,10 @@
 # uefi-rs
 
+Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
+
+This crate makes it easy to develop Rust software that leverages **safe**,
+**convenient**, and **performant** abstractions for [UEFI] functionality.
+
 [![Crates.io](https://img.shields.io/crates/v/uefi)](https://crates.io/crates/uefi)
 [![Docs.rs](https://docs.rs/uefi/badge.svg)](https://docs.rs/uefi)
 ![License](https://img.shields.io/github/license/rust-osdev/uefi-rs)
@@ -136,3 +141,5 @@ This license allows you to use the crate in proprietary programs, but any
 modifications to the files must be open-sourced.
 
 The full text of the license is available in the [license file](LICENSE).
+
+[UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface

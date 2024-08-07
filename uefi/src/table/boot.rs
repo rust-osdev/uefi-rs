@@ -1,6 +1,8 @@
 //! UEFI services available during boot.
 
-pub use uefi_raw::table::boot::{EventType, InterfaceType, Tpl};
+pub use uefi_raw::table::boot::{
+    EventType, InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
+};
 
 use super::Revision;
 use crate::data_types::PhysicalAddress;

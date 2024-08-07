@@ -21,7 +21,7 @@ use {
 
 pub use uefi::table::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    SearchType,
+    SearchType, TimerTrigger,
 };
 pub use uefi_raw::table::boot::{EventType, MemoryType, Tpl};
 
@@ -231,6 +231,25 @@ pub fn check_event(event: Event) -> Result<bool> {
         Status::NOT_READY => Ok(false),
         _ => Err(status.into()),
     }
+}
+
+/// Sets the trigger for an event of type [`TIMER`].
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `event` is not valid.
+///
+/// [`TIMER`]: EventType::TIMER
+pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let (ty, time) = match trigger_time {
+        TimerTrigger::Cancel => (0, 0),
+        TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
+        TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
+    };
+    unsafe { (bt.set_timer)(event.as_ptr(), ty, time) }.to_result()
 }
 
 /// Connect one or more drivers to a controller.

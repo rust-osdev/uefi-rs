@@ -521,6 +521,18 @@ pub unsafe fn exit(
     )
 }
 
+/// Stalls execution for the given number of microseconds.
+pub fn stall(microseconds: usize) {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    unsafe {
+        // No error conditions are defined in the spec for this function, so
+        // ignore the status.
+        let _ = (bt.stall)(microseconds);
+    }
+}
+
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of
 /// [`Handle`]s that support the requested protocol.
 #[derive(Debug, Eq, PartialEq)]

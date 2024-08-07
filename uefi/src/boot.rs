@@ -208,6 +208,31 @@ pub unsafe fn create_event(
     )
 }
 
+/// Checks to see if an event is signaled, without blocking execution to wait for it.
+///
+/// Returns `Ok(true)` if the event is in the signaled state or `Ok(false)`
+/// if the event is not in the signaled state.
+///
+/// # Errors
+///
+/// Note: Instead of returning [`Status::NOT_READY`] as listed in the UEFI
+/// Specification, this function will return `Ok(false)`.
+///
+/// * [`Status::INVALID_PARAMETER`]: `event` is of type [`NOTIFY_SIGNAL`].
+///
+/// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
+pub fn check_event(event: Event) -> Result<bool> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let status = unsafe { (bt.check_event)(event.as_ptr()) };
+    match status {
+        Status::SUCCESS => Ok(true),
+        Status::NOT_READY => Ok(false),
+        _ => Err(status.into()),
+    }
+}
+
 /// Connect one or more drivers to a controller.
 ///
 /// Usually one disconnects and then reconnects certain drivers

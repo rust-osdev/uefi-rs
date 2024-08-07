@@ -17,6 +17,7 @@ pub fn test(st: &SystemTable<Boot>) {
     info!("Testing timer...");
     test_timer(bt);
     info!("Testing events...");
+    test_check_event_freestanding();
     test_event_callback(bt);
     test_callback_with_ctx(bt);
     info!("Testing watchdog...");
@@ -33,6 +34,18 @@ fn test_tpl() {
     info!("Testing watchdog...");
     // There's no way to query the TPL, so we can't assert that this does anything.
     let _guard = unsafe { boot::raise_tpl(Tpl::NOTIFY) };
+}
+
+fn test_check_event_freestanding() {
+    extern "efiapi" fn callback(_event: Event, _ctx: Option<NonNull<c_void>>) {
+        info!("Callback triggered by check_event");
+    }
+
+    let event =
+        unsafe { boot::create_event(EventType::NOTIFY_WAIT, Tpl::CALLBACK, Some(callback), None) }
+            .unwrap();
+    let is_signaled = boot::check_event(event).unwrap();
+    assert!(!is_signaled);
 }
 
 fn test_timer(bt: &BootServices) {

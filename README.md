@@ -13,14 +13,6 @@ This crate makes it easy to develop Rust software that leverages **safe**,
 
 ## Description
 
-[UEFI] started as the successor firmware to the BIOS in x86 space and developed
-to a universal firmware specification for various platforms, such as ARM. It
-provides an early boot environment with a variety of [specified][spec]
-ready-to-use "high-level" functionality, such as accessing disks or the network.
-EFI images, the files that can be loaded by an UEFI environment, can leverage
-these abstractions to extend the functionality in form of additional drivers,
-OS-specific bootloaders, or different kind of low-level applications.
-
 Our mission is to provide **safe** and **performant** wrappers for UEFI
 interfaces, and allow developers to write idiomatic Rust code.
 
@@ -37,10 +29,6 @@ You can use the abstractions for example to:
 
 - create OS-specific loaders and leverage UEFI boot service
 - access UEFI runtime services from an OS
-
-All crates are compatible with all platforms that both the Rust compiler and
-UEFI support, such as `i686`, `x86_64`, and `aarch64`). Please note that we
-can't test all possible hardware/firmware/platform combinations.
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 
@@ -128,11 +116,14 @@ most of the library's functionality.
 Check out the testing project's [`README.md`](uefi-test-runner/README.md) for
 prerequisites for running the tests.
 
-## Contributing
+## Discuss and Contribute
 
-We welcome issues and pull requests! For instructions on how to set up a
-development environment and how to add new protocols, check out
-[CONTRIBUTING.md](CONTRIBUTING.md).
+For general discussions, feel free to join us in our [Zulip] and ask
+your questions there.
+
+Further, you can submit bugs and also ask questions in our [issue tracker].
+Contributions in the form of a PR are also highly welcome. Check our
+[contributing guide](./CONTRIBUTING.md) for details.
 
 ## License
 
@@ -143,3 +134,4 @@ modifications to the files must be open-sourced.
 The full text of the license is available in the [license file](LICENSE).
 
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
+[Zulip]: https://rust-osdev.zulipchat.com

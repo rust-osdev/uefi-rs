@@ -11,7 +11,8 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{mem, slice};
-use uefi::{table, Char16, Event, Handle, Result, Status, StatusExt};
+use uefi::{table, Char16, Event, Guid, Handle, Result, Status, StatusExt};
+use uefi_raw::table::boot::InterfaceType;
 
 #[cfg(doc)]
 use {
@@ -297,6 +298,39 @@ pub fn disconnect_controller(
         )
     }
     .to_result_with_err(|_| ())
+}
+
+/// Installs a protocol interface on a device handle.
+///
+/// When a protocol interface is installed, firmware will call all functions
+/// that have registered to wait for that interface to be installed.
+///
+/// If `handle` is `None`, a new handle will be created and returned.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// * [`Status::OUT_OF_RESOURCES`]: failed to allocate a new handle.
+/// * [`Status::INVALID_PARAMETER`]: this protocol is already installed on the handle.
+pub unsafe fn install_protocol_interface(
+    handle: Option<Handle>,
+    protocol: &Guid,
+    interface: *const c_void,
+) -> Result<Handle> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut handle = Handle::opt_to_ptr(handle);
+    ((bt.install_protocol_interface)(
+        &mut handle,
+        protocol,
+        InterfaceType::NATIVE_INTERFACE,
+        interface,
+    ))
+    .to_result_with_val(|| Handle::from_ptr(handle).unwrap())
 }
 
 /// Returns an array of handles that support the requested protocol in a

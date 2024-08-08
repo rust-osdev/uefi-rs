@@ -9,7 +9,7 @@ use uefi::table::boot::{
     Tpl,
 };
 use uefi::table::{Boot, SystemTable};
-use uefi::{boot, guid, Event, Guid, Identify};
+use uefi::{boot, guid, Event, Guid, Identify, Status};
 
 pub fn test(st: &SystemTable<Boot>) {
     let bt = st.boot_services();
@@ -24,6 +24,7 @@ pub fn test(st: &SystemTable<Boot>) {
     test_watchdog(bt);
     info!("Testing protocol handler services...");
     test_register_protocol_notify(bt);
+    test_protocol_interface_management();
     test_install_protocol_interface(bt);
     test_reinstall_protocol_interface(bt);
     test_uninstall_protocol_interface(bt);
@@ -131,6 +132,48 @@ fn test_register_protocol_notify(bt: &BootServices) {
 
     bt.register_protocol_notify(protocol, event)
         .expect("Failed to register protocol notify fn");
+}
+
+fn test_protocol_interface_management() {
+    let mut interface = TestProtocol { data: 123 };
+    let interface_ptr: *mut _ = &mut interface;
+
+    // Install the protocol.
+    let handle = unsafe {
+        boot::install_protocol_interface(None, &TestProtocol::GUID, interface_ptr.cast())
+    }
+    .unwrap();
+
+    // Verify the handle was installed.
+    assert_eq!(
+        &*boot::locate_handle_buffer(SearchType::from_proto::<TestProtocol>()).unwrap(),
+        [handle]
+    );
+
+    // Re-install the protocol.
+    unsafe {
+        boot::reinstall_protocol_interface(
+            handle,
+            &TestProtocol::GUID,
+            interface_ptr.cast(),
+            interface_ptr.cast(),
+        )
+    }
+    .unwrap();
+
+    // Uninstall the protocol.
+    unsafe {
+        boot::uninstall_protocol_interface(handle, &TestProtocol::GUID, interface_ptr.cast())
+    }
+    .unwrap();
+
+    // Verify the protocol was uninstalled.
+    assert_eq!(
+        boot::locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
+            .unwrap_err()
+            .status(),
+        Status::NOT_FOUND
+    );
 }
 
 fn test_install_protocol_interface(bt: &BootServices) {

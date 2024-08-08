@@ -33,14 +33,21 @@ pub(crate) fn system_table_raw_panicking() -> NonNull<uefi_raw::table::system::S
 /// Update the global system table pointer.
 ///
 /// This is called automatically in the `main` entry point as part of
-/// [`uefi::entry`]. It should not be called at any other point in time, unless
-/// the executable does not use [`uefi::entry`], in which case it should be
-/// called once before calling any other API in this crate.
+/// [`uefi::entry`].
+///
+/// It is also called by [`set_virtual_address_map`] to transition from a
+/// physical address to a virtual address.
+///
+/// This function should not be called at any other point in time, unless the
+/// executable does not use [`uefi::entry`], in which case it should be called
+/// once before calling any other API in this crate.
 ///
 /// # Safety
 ///
 /// This function should only be called as described above, and the
 /// `ptr` must be a valid [`SystemTable`].
+///
+/// [`set_virtual_address_map`]: uefi::runtime::set_virtual_address_map
 pub unsafe fn set_system_table(ptr: *const uefi_raw::table::system::SystemTable) {
     SYSTEM_TABLE.store(ptr.cast_mut(), Ordering::Release);
 }

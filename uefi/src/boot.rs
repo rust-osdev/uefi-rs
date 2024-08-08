@@ -333,6 +333,35 @@ pub unsafe fn install_protocol_interface(
     .to_result_with_val(|| Handle::from_ptr(handle).unwrap())
 }
 
+/// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
+/// These interfaces may be the same, in which case the registered protocol notifications occur for the handle
+/// without replacing the interface.
+///
+/// As with `install_protocol_interface`, any process that has registered to wait for the installation of
+/// the interface is notified.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to the `old_interface` that is being
+/// removed.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: the old interface was not found on the handle.
+/// * [`Status::ACCESS_DENIED`]: the old interface is still in use and cannot be uninstalled.
+pub unsafe fn reinstall_protocol_interface(
+    handle: Handle,
+    protocol: &Guid,
+    old_interface: *const c_void,
+    new_interface: *const c_void,
+) -> Result<()> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    (bt.reinstall_protocol_interface)(handle.as_ptr(), protocol, old_interface, new_interface)
+        .to_result()
+}
+
 /// Returns an array of handles that support the requested protocol in a
 /// pool-allocated buffer.
 ///

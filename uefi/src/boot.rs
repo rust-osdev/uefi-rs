@@ -362,6 +362,32 @@ pub unsafe fn reinstall_protocol_interface(
         .to_result()
 }
 
+/// Removes a protocol interface from a device handle.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to a protocol interface
+/// that has been removed. Some protocols may not be able to be removed as there is no information
+/// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
+/// to device protocols.
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: the interface was not found on the handle.
+/// * [`Status::ACCESS_DENIED`]: the interface is still in use and cannot be uninstalled.
+pub unsafe fn uninstall_protocol_interface(
+    handle: Handle,
+    protocol: &Guid,
+    interface: *const c_void,
+) -> Result<()> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
+}
+
 /// Returns an array of handles that support the requested protocol in a
 /// pool-allocated buffer.
 ///

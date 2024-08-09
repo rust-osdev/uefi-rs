@@ -21,7 +21,7 @@ use {
 
 pub use uefi::table::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    SearchType,
+    SearchType, TimerTrigger,
 };
 pub use uefi_raw::table::boot::{EventType, MemoryType, Tpl};
 
@@ -231,6 +231,78 @@ pub fn check_event(event: Event) -> Result<bool> {
         Status::NOT_READY => Ok(false),
         _ => Err(status.into()),
     }
+}
+
+/// Sets the trigger for an event of type [`TIMER`].
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `event` is not valid.
+///
+/// [`TIMER`]: EventType::TIMER
+pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let (ty, time) = match trigger_time {
+        TimerTrigger::Cancel => (0, 0),
+        TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
+        TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
+    };
+    unsafe { (bt.set_timer)(event.as_ptr(), ty, time) }.to_result()
+}
+
+/// Stops execution until an event is signaled.
+///
+/// This function must be called at priority level [`Tpl::APPLICATION`].
+///
+/// The input [`Event`] slice is repeatedly iterated from first to last until
+/// an event is signaled or an error is detected. The following checks are
+/// performed on each event:
+///
+/// * If an event is of type [`NOTIFY_SIGNAL`], then a
+///   [`Status::INVALID_PARAMETER`] error is returned with the index of the
+///   event that caused the failure.
+/// * If an event is in the signaled state, the signaled state is cleared
+///   and the index of the event that was signaled is returned.
+/// * If an event is not in the signaled state but does have a notification
+///   function, the notification function is queued at the event's
+///   notification task priority level. If the execution of the event's
+///   notification function causes the event to be signaled, then the
+///   signaled state is cleared and the index of the event that was signaled
+///   is returned.
+///
+/// To wait for a specified time, a timer event must be included in `events`.
+///
+/// To check if an event is signaled without waiting, an already signaled
+/// event can be used as the last event in the slice being checked, or the
+/// [`check_event`] interface may be used.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `events` is empty, or one of the events of
+///   of type [`NOTIFY_SIGNAL`].
+/// * [`Status::UNSUPPORTED`]: the current TPL is not [`Tpl::APPLICATION`].
+///
+/// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
+pub fn wait_for_event(events: &mut [Event]) -> Result<usize, Option<usize>> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let number_of_events = events.len();
+    let events: *mut uefi_raw::Event = events.as_mut_ptr().cast();
+
+    let mut index = 0;
+    unsafe { (bt.wait_for_event)(number_of_events, events, &mut index) }.to_result_with(
+        || index,
+        |s| {
+            if s == Status::INVALID_PARAMETER {
+                Some(index)
+            } else {
+                None
+            }
+        },
+    )
 }
 
 /// Connect one or more drivers to a controller.

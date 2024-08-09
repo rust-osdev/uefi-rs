@@ -18,6 +18,7 @@ pub fn test(st: &SystemTable<Boot>) {
     test_timer(bt);
     info!("Testing events...");
     test_check_event_freestanding();
+    test_timer_freestanding();
     test_event_callback(bt);
     test_callback_with_ctx(bt);
     info!("Testing watchdog...");
@@ -46,6 +47,14 @@ fn test_check_event_freestanding() {
             .unwrap();
     let is_signaled = boot::check_event(event).unwrap();
     assert!(!is_signaled);
+}
+
+fn test_timer_freestanding() {
+    let timer_event =
+        unsafe { boot::create_event(EventType::TIMER, Tpl::CALLBACK, None, None) }.unwrap();
+    let mut events = unsafe { [timer_event.unsafe_clone()] };
+    boot::set_timer(&timer_event, TimerTrigger::Relative(5_0 /*00 ns */)).unwrap();
+    assert_eq!(boot::wait_for_event(&mut events).unwrap(), 0);
 }
 
 fn test_timer(bt: &BootServices) {

@@ -1,6 +1,6 @@
 use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::{proto, Identify};
+use uefi::{boot, proto, Identify};
 
 pub fn test(st: &mut SystemTable<Boot>) {
     info!("Testing various protocols");
@@ -10,6 +10,7 @@ pub fn test(st: &mut SystemTable<Boot>) {
     let bt = st.boot_services();
     find_protocol(bt);
     test_protocols_per_handle(bt);
+    test_protocols_per_handle_freestanding();
 
     debug::test(bt);
     device_path::test(bt);
@@ -51,6 +52,13 @@ fn test_protocols_per_handle(bt: &BootServices) {
 
     info!("Image handle has {} protocols", pph.len());
 
+    // Check that one of the image's protocols is `LoadedImage`.
+    assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
+}
+
+fn test_protocols_per_handle_freestanding() {
+    let pph = boot::protocols_per_handle(boot::image_handle()).unwrap();
+    info!("Image handle has {} protocols", pph.len());
     // Check that one of the image's protocols is `LoadedImage`.
     assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
 }

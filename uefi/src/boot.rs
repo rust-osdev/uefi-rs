@@ -234,6 +234,23 @@ pub fn check_event(event: Event) -> Result<bool> {
     }
 }
 
+/// Removes `event` from any event group to which it belongs and closes it.
+///
+/// If `event` was registered with `register_protocol_notify`, then the
+/// corresponding registration will be removed. Calling this function within the
+/// corresponding notify function is allowed.
+///
+/// # Errors
+///
+/// The specification does not list any errors, however implementations are
+/// allowed to return an error if needed.
+pub fn close_event(event: Event) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    unsafe { (bt.close_event)(event.as_ptr()) }.to_result()
+}
+
 /// Sets the trigger for an event of type [`TIMER`].
 ///
 /// # Errors

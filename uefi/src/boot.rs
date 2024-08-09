@@ -11,7 +11,8 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{mem, slice};
-use uefi::{table, Char16, Event, Handle, Result, Status, StatusExt};
+use uefi::{table, Char16, Event, Guid, Handle, Result, Status, StatusExt};
+use uefi_raw::table::boot::InterfaceType;
 
 #[cfg(doc)]
 use {
@@ -369,6 +370,94 @@ pub fn disconnect_controller(
         )
     }
     .to_result_with_err(|_| ())
+}
+
+/// Installs a protocol interface on a device handle.
+///
+/// When a protocol interface is installed, firmware will call all functions
+/// that have registered to wait for that interface to be installed.
+///
+/// If `handle` is `None`, a new handle will be created and returned.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// * [`Status::OUT_OF_RESOURCES`]: failed to allocate a new handle.
+/// * [`Status::INVALID_PARAMETER`]: this protocol is already installed on the handle.
+pub unsafe fn install_protocol_interface(
+    handle: Option<Handle>,
+    protocol: &Guid,
+    interface: *const c_void,
+) -> Result<Handle> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut handle = Handle::opt_to_ptr(handle);
+    ((bt.install_protocol_interface)(
+        &mut handle,
+        protocol,
+        InterfaceType::NATIVE_INTERFACE,
+        interface,
+    ))
+    .to_result_with_val(|| Handle::from_ptr(handle).unwrap())
+}
+
+/// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
+/// These interfaces may be the same, in which case the registered protocol notifications occur for the handle
+/// without replacing the interface.
+///
+/// As with `install_protocol_interface`, any process that has registered to wait for the installation of
+/// the interface is notified.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to the `old_interface` that is being
+/// removed.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: the old interface was not found on the handle.
+/// * [`Status::ACCESS_DENIED`]: the old interface is still in use and cannot be uninstalled.
+pub unsafe fn reinstall_protocol_interface(
+    handle: Handle,
+    protocol: &Guid,
+    old_interface: *const c_void,
+    new_interface: *const c_void,
+) -> Result<()> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    (bt.reinstall_protocol_interface)(handle.as_ptr(), protocol, old_interface, new_interface)
+        .to_result()
+}
+
+/// Removes a protocol interface from a device handle.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to a protocol interface
+/// that has been removed. Some protocols may not be able to be removed as there is no information
+/// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
+/// to device protocols.
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: the interface was not found on the handle.
+/// * [`Status::ACCESS_DENIED`]: the interface is still in use and cannot be uninstalled.
+pub unsafe fn uninstall_protocol_interface(
+    handle: Handle,
+    protocol: &Guid,
+    interface: *const c_void,
+) -> Result<()> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
 }
 
 /// Returns an array of handles that support the requested protocol in a

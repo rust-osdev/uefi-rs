@@ -7,11 +7,28 @@
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].
 //!
-//! # Interaction with uefi services
+//! # Value-add and Use Cases
 //!
-//! With this crate you can write code for the pre- and post-exit boot services
-//! epochs. However, the `uefi` crate unfolds its true potential when
-//! interacting with UEFI boot services.
+//! With `uefi`, you have the flexibility to integrate selected types and
+//! abstractions into your project or to conveniently create EFI images,
+//! addressing the entire spectrum of your development needs. It supports you
+//! to write code for both pre- and post-exit boot services epochs. However, its
+//! true strength shines when you create EFI images that heavily interact with
+//! UEFI boot services.
+//!
+//! ## Example Use Cases
+//!
+//! This library significantly simplifies the process of creating **EFI images**
+//! by abstracting away much of the UEFI API complexity and by providing
+//! convenient wrappers. When we mention EFI images, we are talking about EFI
+//! applications, EFI boot service drivers, and EFI runtime service drivers,
+//! which typically have the `.efi` file extension. For instance, an EFI
+//! application could be an OS-specific loader, similar to _GRUB_ or _Limine_.
+//!
+//! Additionally, you can use this crate in non-EFI images (such as a kernel
+//! in ELF format) to perform tasks like parsing the UEFI memory map embedded in
+//! the boot information provided by a bootloader. It also enables access to
+//! UEFI runtime services from a non-EFI image kernel.
 //!
 //! # Supported Architectures
 //!

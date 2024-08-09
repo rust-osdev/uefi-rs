@@ -9,8 +9,6 @@
 //!
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
-#![warn(dead_code)] // https://github.com/rust-osdev/uefi-rs/issues/1205
-
 use crate::Identify;
 use core::ffi::c_void;
 

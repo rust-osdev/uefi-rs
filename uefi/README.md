@@ -11,6 +11,15 @@ This crate makes it easy to develop Rust software that leverages **safe**,
 ![Build status](https://github.com/rust-osdev/uefi-rs/workflows/Rust/badge.svg)
 ![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
 
+## Value-add and Use Cases
+
+With `uefi`, you have the flexibility to integrate selected types and
+abstractions into your project or to conveniently create EFI images,
+addressing the entire spectrum of your development needs. It supports you
+to write code for both pre- and post-exit boot services epochs. However, its
+true strength shines when you create EFI images that heavily interact with
+UEFI boot services.
+
 For an introduction to the `uefi-rs` project and documentation, please refer to
 our main [README].
 

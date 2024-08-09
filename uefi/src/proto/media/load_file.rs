@@ -1,6 +1,14 @@
-use crate::protocol::device_path::DevicePathProtocol;
-use crate::{guid, Guid, Status};
-use core::ffi::c_void;
+//! LoadFile and LoadFile2 protocols.
+
+use crate::proto::unsafe_protocol;
+#[cfg(all(feature = "alloc", feature = "unstable"))]
+use alloc::alloc::Global;
+use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
+#[cfg(feature = "alloc")]
+use {
+    crate::{mem::make_boxed, proto::device_path::DevicePath, Result, StatusExt},
+    alloc::boxed::Box,
+};
 
 /// Load File Protocol.
 ///
@@ -20,23 +28,19 @@ use core::ffi::c_void;
 /// LoadFile() function implements the policy of interpreting the File Path
 /// value.
 #[derive(Debug)]
-#[repr(C)]
-pub struct LoadFileProtocol {
+#[repr(transparent)]
+#[unsafe_protocol(LoadFileProtocol::GUID)]
+pub struct LoadFile(LoadFileProtocol);
+
+impl LoadFile {
     /// Causes the driver to load a specified file.
     ///
     /// # Parameters
-    /// - `this` pointer to self
     /// - `file_path` The device specific path of the file to load.
     /// - `boot_policy` If TRUE, indicates that the request originates from the
     ///   boot manager, and that the boot manager is attempting to load FilePath
     ///   as a boot selection. If FALSE, then FilePath must match an exact file
     ///   to be loaded.
-    /// - `buffer_size` On input the size of Buffer in bytes. On output with a
-    ///   return code of EFI_SUCCESS, the amount of data transferred to Buffer.
-    ///   On output with a return code of EFI_BUFFER_TOO_SMALL, the size of
-    ///   Buffer required to retrieve the requested file.
-    /// - `buffer` The memory buffer to transfer the file to. If Buffer is NULL,
-    ///   then the size of the requested file is returned in BufferSize.
     ///
     /// # Errors
     /// - `uefi::status::EFI_SUCCESS` The file was loaded.
@@ -56,17 +60,37 @@ pub struct LoadFileProtocol {
     ///   size needed to complete the request.
     /// - `uefi::status::EFI_WARN_FILE_SYSTEM` The resulting Buffer contains
     ///   UEFI-compliant file system.
-    pub load_file: unsafe extern "efiapi" fn(
-        this: *mut LoadFileProtocol,
-        file_path: *const DevicePathProtocol,
+    #[cfg(feature = "alloc")]
+    #[allow(clippy::extra_unused_lifetimes)] // false positive, it is used
+    pub fn load_file<'a>(
+        &mut self,
+        file_path: &DevicePath,
         boot_policy: bool,
-        buffer_size: *mut usize,
-        buffer: *mut c_void,
-    ) -> Status,
-}
+    ) -> Result<Box<[u8]>> {
+        let this = core::ptr::addr_of_mut!(*self).cast();
 
-impl LoadFileProtocol {
-    pub const GUID: Guid = guid!("56ec3091-954c-11d2-8e3f-00a0c969723b");
+        let fetch_data_fn = |buf: &'a mut [u8]| {
+            let mut size = buf.len();
+            let status = unsafe {
+                (self.0.load_file)(
+                    this,
+                    file_path.as_ffi_ptr().cast(),
+                    boot_policy,
+                    &mut size,
+                    buf.as_mut_ptr().cast(),
+                )
+            };
+            status.to_result_with_err(|_| Some(size)).map(|_| buf)
+        };
+
+        #[cfg(not(feature = "unstable"))]
+        let file: Box<[u8]> = make_boxed::<[u8], _>(fetch_data_fn)?;
+
+        #[cfg(feature = "unstable")]
+        let file = make_boxed::<[u8], _, _>(fetch_data_fn, Global)?;
+
+        Ok(file)
+    }
 }
 
 /// Load File2 Protocol.
@@ -81,20 +105,15 @@ impl LoadFileProtocol {
 /// its BootOption parameter is FALSE and the FilePath does not have an instance
 /// of the EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.
 #[derive(Debug)]
-#[repr(C)]
-pub struct LoadFile2Protocol {
+#[repr(transparent)]
+#[unsafe_protocol(LoadFile2Protocol::GUID)]
+pub struct LoadFile2(LoadFile2Protocol);
+
+impl LoadFile2 {
     /// Causes the driver to load a specified file.
     ///
     /// # Parameters
-    /// - `this` pointer to self
     /// - `file_path` The device specific path of the file to load.
-    /// - `boot_policy` Should always be FALSE.
-    /// - `buffer_size` On input the size of Buffer in bytes. On output with a
-    ///   return code of EFI_SUCCESS, the amount of data transferred to Buffer.
-    ///   On output with a return code of EFI_BUFFER_TOO_SMALL, the size of
-    ///   Buffer required to retrieve the requested file.
-    /// - `buffer` The memory buffer to transfer the file to. If Buffer is NULL,
-    ///   then the size of the requested file is returned in BufferSize.
     ///
     /// # Errors
     /// - `uefi::status::EFI_SUCCESS` The file was loaded.
@@ -111,15 +130,31 @@ pub struct LoadFile2Protocol {
     /// - `uefi::status::EFI_BUFFER_TOO_SMALL` The BufferSize is too small to
     ///   read the current directory entry. BufferSize has been updated with the
     ///   size needed to complete the request.
-    pub load_file: unsafe extern "efiapi" fn(
-        this: *mut LoadFile2Protocol,
-        file_path: *const DevicePathProtocol,
-        boot_policy: bool,
-        buffer_size: *mut usize,
-        buffer: *mut c_void,
-    ) -> Status,
-}
+    #[cfg(feature = "alloc")]
+    #[allow(clippy::extra_unused_lifetimes)] // false positive, it is used
+    pub fn load_file<'a>(&mut self, file_path: &DevicePath) -> Result<Box<[u8]>> {
+        let this = core::ptr::addr_of_mut!(*self).cast();
 
-impl LoadFile2Protocol {
-    pub const GUID: Guid = guid!("4006c0c1-fcb3-403e-996d-4a6c8724e06d");
+        let fetch_data_fn = |buf: &'a mut [u8]| {
+            let mut size = buf.len();
+            let status = unsafe {
+                (self.0.load_file)(
+                    this,
+                    file_path.as_ffi_ptr().cast(),
+                    false, /* always false - see spec */
+                    &mut size,
+                    buf.as_mut_ptr().cast(),
+                )
+            };
+            status.to_result_with_err(|_| Some(size)).map(|_| buf)
+        };
+
+        #[cfg(not(feature = "unstable"))]
+        let file: Box<[u8]> = make_boxed::<[u8], _>(fetch_data_fn)?;
+
+        #[cfg(feature = "unstable")]
+        let file = make_boxed::<[u8], _, _>(fetch_data_fn, Global)?;
+
+        Ok(file)
+    }
 }

@@ -54,7 +54,10 @@ pub(crate) fn make_boxed<
         // Propagate any other error.
         Err((status, _)) => Err(Error::from(status)),
         // Success is unexpected, return an error.
-        Ok(_) => Err(Error::from(Status::UNSUPPORTED)),
+        Ok(_) => {
+            log::debug!("Got unexpected success status");
+            Err(Error::from(Status::UNSUPPORTED))
+        }
     }?;
 
     // We add trailing padding because the size of a rust structure must

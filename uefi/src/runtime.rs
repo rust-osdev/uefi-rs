@@ -10,6 +10,7 @@ use crate::table::{self, Revision};
 use crate::{CStr16, Error, Result, Status, StatusExt};
 use core::mem;
 use core::ptr::{self, NonNull};
+use uefi_raw::table::boot::MemoryDescriptor;
 
 #[cfg(feature = "alloc")]
 use {
@@ -466,4 +467,48 @@ pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
         .unwrap_or((0, ptr::null()));
 
     unsafe { (rt.reset_system)(reset_type, status, size, data) }
+}
+
+/// Changes the runtime addressing mode of EFI firmware from physical to
+/// virtual. It is up to the caller to translate the old system table address
+/// to a new virtual address and provide it for this function.
+///
+/// If successful, this function will call [`set_system_table`] with
+/// `new_system_table_virtual_addr`.
+///
+/// [`set_system_table`]: table::set_system_table
+///
+/// # Safety
+///
+/// The caller must ensure the memory map is valid.
+///
+/// # Errors
+///
+/// * [`Status::UNSUPPORTED`]: either boot services haven't been exited, the
+///   firmware's addressing mode is already virtual, or the firmware does not
+///   support this operation.
+/// * [`Status::NO_MAPPING`]: `map` is missing a required range.
+/// * [`Status::NOT_FOUND`]: `map` contains an address that is not in the
+///   current memory map.
+pub unsafe fn set_virtual_address_map(
+    map: &mut [MemoryDescriptor],
+    new_system_table_virtual_addr: *const uefi_raw::table::system::SystemTable,
+) -> Result {
+    let rt = runtime_services_raw_panicking();
+    let rt = unsafe { rt.as_ref() };
+
+    // Unsafe Code Guidelines guarantees that there is no padding in an array or a slice
+    // between its elements if the element type is `repr(C)`, which is our case.
+    //
+    // See https://rust-lang.github.io/unsafe-code-guidelines/layout/arrays-and-slices.html
+    let map_size = core::mem::size_of_val(map);
+    let entry_size = core::mem::size_of::<MemoryDescriptor>();
+    let entry_version = MemoryDescriptor::VERSION;
+    let map_ptr = map.as_mut_ptr();
+    (rt.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).to_result()?;
+
+    // Update the global system table pointer.
+    table::set_system_table(new_system_table_virtual_addr);
+
+    Ok(())
 }

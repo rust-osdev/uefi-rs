@@ -9,7 +9,7 @@ use uefi::table::boot::{
     Tpl,
 };
 use uefi::table::{Boot, SystemTable};
-use uefi::{boot, guid, Event, Guid, Identify, Status};
+use uefi::{boot, guid, system, Event, Guid, Identify, Status};
 
 pub fn test(st: &SystemTable<Boot>) {
     let bt = st.boot_services();
@@ -30,6 +30,7 @@ pub fn test(st: &SystemTable<Boot>) {
     test_reinstall_protocol_interface(bt);
     test_uninstall_protocol_interface(bt);
     test_install_configuration_table(st);
+    test_install_configuration_table_freestanding();
 }
 
 fn test_tpl() {
@@ -259,6 +260,35 @@ fn test_uninstall_protocol_interface(bt: &BootServices) {
             .expect("Failed to uninstall protocol interface");
 
         bt.free_pool(interface_ptr.cast()).unwrap();
+    }
+}
+
+fn test_install_configuration_table_freestanding() {
+    // Get the current number of entries.
+    let count = system::with_config_table(|t| t.len());
+
+    // Create the entry data.
+    let config = boot::allocate_pool(MemoryType::RUNTIME_SERVICES_DATA, 1)
+        .unwrap()
+        .as_ptr();
+    unsafe { config.write(42) };
+
+    // Install the table.
+    const ID: Guid = guid!("4bec53c4-5fc1-48a1-ab12-df214907d29f");
+    unsafe {
+        boot::install_configuration_table(&ID, config.cast()).unwrap();
+    }
+
+    // Verify the installation.
+    assert_eq!(count + 1, system::with_config_table(|t| t.len()));
+    system::with_config_table(|t| {
+        let config_entry = t.iter().find(|ct| ct.guid == ID).unwrap();
+        assert_eq!(unsafe { *(config_entry.address as *const u8) }, 42);
+    });
+
+    // Uninstall the table.
+    unsafe {
+        boot::install_configuration_table(&ID, ptr::null()).unwrap();
     }
 }
 

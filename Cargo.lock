@@ -901,6 +901,7 @@ dependencies = [
  "log",
  "qemu-exit",
  "uefi",
+ "uefi-raw",
 ]
 
 [[package]]

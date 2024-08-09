@@ -19,6 +19,7 @@ pkgs.mkShell {
 
     # Rust toolchain
     rustToolchain
+    rustup
 
     # Other
     yamlfmt

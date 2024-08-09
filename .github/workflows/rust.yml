@@ -123,11 +123,6 @@ jobs:
   build_feature_permutations:
     name: Build (feature permutations)
     runs-on: ubuntu-latest
-    env:
-      # TODO: temporarily allow warnings to not be errors on nightly due to
-      # incorrect dead_code lint.
-      # https://github.com/rust-osdev/uefi-rs/issues/1205
-      RUSTFLAGS: ""
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -140,11 +135,6 @@ jobs:
   nightly_channel:
     name: Nightly (build, test, doc)
     runs-on: ubuntu-latest
-    env:
-      # TODO: temporarily allow warnings to not be errors on nightly due to
-      # incorrect dead_code lint.
-      # https://github.com/rust-osdev/uefi-rs/issues/1205
-      RUSTFLAGS: ""
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -167,11 +157,6 @@ jobs:
   miri:
     name: Unit + Doc Tests (Miri)
     runs-on: ubuntu-latest
-    env:
-      # TODO: temporarily allow warnings to not be errors on nightly due to
-      # incorrect dead_code lint.
-      # https://github.com/rust-osdev/uefi-rs/issues/1205
-      RUSTFLAGS: ""
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4

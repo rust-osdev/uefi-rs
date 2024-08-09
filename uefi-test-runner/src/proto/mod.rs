@@ -14,6 +14,7 @@ pub fn test(st: &mut SystemTable<Boot>) {
     debug::test(bt);
     device_path::test(bt);
     driver::test(bt);
+    load::test(bt);
     loaded_image::test(bt);
     media::test(bt);
     network::test(bt);
@@ -59,6 +60,7 @@ mod console;
 mod debug;
 mod device_path;
 mod driver;
+mod load;
 mod loaded_image;
 mod media;
 mod misc;

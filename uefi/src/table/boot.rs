@@ -1383,9 +1383,12 @@ pub enum LoadImageSource<'a> {
     /// Load an image via the [`SimpleFileSystem`] protocol. If there is
     /// no instance of that protocol associated with the path then the
     /// behavior depends on [`BootPolicy`]. If [`BootPolicy::BootSelection`],
-    /// attempt to load via the `LoadFile` protocol. If
-    /// [`BootPolicy::ExactMatch`], attempt to load via the `LoadFile2`
-    /// protocol, then fall back to `LoadFile`.
+    /// attempt to load via the [`LoadFile`] protocol. If
+    /// [`BootPolicy::ExactMatch`], attempt to load via the [`LoadFile2`]
+    /// protocol, then fall back to [`LoadFile`].
+    ///
+    /// [`LoadFile`]: crate::proto::media::load_file::LoadFile
+    /// [`LoadFile2`]: crate::proto::media::load_file::LoadFile2
     FromDevicePath {
         /// The full device path from which to load the image.
         ///

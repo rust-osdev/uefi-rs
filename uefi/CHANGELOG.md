@@ -20,6 +20,8 @@ details of the new `system`/`boot`/`runtime` modules, and upcoming deprecations.
   the implementations `MemoryMapRef`, `MemoryMapRefMut`, and `MemoryMapOwned`.
   This comes with some changes. Read below. We recommend to directly use the
   implementations instead of the traits.
+- Added `LoadFile` and `LoadFile2` which abstracts over the `LOAD_FILE` and
+  `LOAD_FILE2` protocols.
 
 ## Changed
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.

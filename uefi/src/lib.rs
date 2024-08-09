@@ -101,6 +101,12 @@
 //!
 //! The full text of the license is available in the [license file][LICENSE].
 //!
+//! # Terminology (in this Crate)
+//!
+//! Although we sometimes use the terms "EFI" and "UEFI", both can be used
+//! interchangeably. We prefer "EFI" when talking about EFI images due to
+//! established naming conventions. Otherwise, we are using "UEFI".
+//!
 //! [LICENSE]: https://github.com/rust-osdev/uefi-rs/blob/main/uefi/LICENSE
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/

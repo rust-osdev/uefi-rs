@@ -46,8 +46,12 @@ fn test_check_event_freestanding() {
     let event =
         unsafe { boot::create_event(EventType::NOTIFY_WAIT, Tpl::CALLBACK, Some(callback), None) }
             .unwrap();
-    let is_signaled = boot::check_event(event).unwrap();
+
+    let event_clone = unsafe { event.unsafe_clone() };
+    let is_signaled = boot::check_event(event_clone).unwrap();
     assert!(!is_signaled);
+
+    boot::close_event(event).unwrap();
 }
 
 fn test_timer_freestanding() {
@@ -56,6 +60,8 @@ fn test_timer_freestanding() {
     let mut events = unsafe { [timer_event.unsafe_clone()] };
     boot::set_timer(&timer_event, TimerTrigger::Relative(5_0 /*00 ns */)).unwrap();
     assert_eq!(boot::wait_for_event(&mut events).unwrap(), 0);
+
+    boot::close_event(timer_event).unwrap();
 }
 
 fn test_timer(bt: &BootServices) {

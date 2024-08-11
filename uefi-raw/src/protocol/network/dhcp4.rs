@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Char8, Event, Guid, Ipv4Address, MacAddress, Status};
+use crate::{guid, Boolean, Char8, Event, Guid, Ipv4Address, MacAddress, Status};
 use core::ffi::c_void;
 
 newtype_enum! {
@@ -150,7 +150,7 @@ pub struct Dhcp4Protocol {
     pub start: unsafe extern "efiapi" fn(this: *mut Self, completion_event: Event) -> Status,
     pub renew_rebind: unsafe extern "efiapi" fn(
         this: *mut Self,
-        rebind_request: bool,
+        rebind_request: Boolean,
         completion_event: Event,
     ) -> Status,
     pub release: unsafe extern "efiapi" fn(this: *mut Self) -> Status,

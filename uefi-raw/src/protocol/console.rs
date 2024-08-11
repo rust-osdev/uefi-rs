@@ -2,7 +2,7 @@
 
 pub mod serial;
 
-use crate::{guid, Char16, Event, Guid, PhysicalAddress, Status};
+use crate::{guid, Boolean, Char16, Event, Guid, PhysicalAddress, Status};
 use bitflags::bitflags;
 use core::ptr;
 
@@ -44,7 +44,7 @@ pub struct AbsolutePointerState {
 #[derive(Debug)]
 #[repr(C)]
 pub struct AbsolutePointerProtocol {
-    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: u8) -> Status,
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
     pub get_state:
         unsafe extern "efiapi" fn(this: *const Self, state: *mut AbsolutePointerState) -> Status,
     pub wait_for_input: Event,
@@ -65,7 +65,7 @@ pub struct InputKey {
 #[derive(Debug)]
 #[repr(C)]
 pub struct SimpleTextInputProtocol {
-    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: bool) -> Status,
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
     pub read_key_stroke: unsafe extern "efiapi" fn(this: *mut Self, key: *mut InputKey) -> Status,
     pub wait_for_key: Event,
 }
@@ -82,13 +82,13 @@ pub struct SimpleTextOutputMode {
     pub attribute: i32,
     pub cursor_column: i32,
     pub cursor_row: i32,
-    pub cursor_visible: bool,
+    pub cursor_visible: Boolean,
 }
 
 #[derive(Debug)]
 #[repr(C)]
 pub struct SimpleTextOutputProtocol {
-    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended: bool) -> Status,
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended: Boolean) -> Status,
     pub output_string: unsafe extern "efiapi" fn(this: *mut Self, string: *const Char16) -> Status,
     pub test_string: unsafe extern "efiapi" fn(this: *mut Self, string: *const Char16) -> Status,
     pub query_mode: unsafe extern "efiapi" fn(
@@ -102,7 +102,7 @@ pub struct SimpleTextOutputProtocol {
     pub clear_screen: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
     pub set_cursor_position:
         unsafe extern "efiapi" fn(this: *mut Self, column: usize, row: usize) -> Status,
-    pub enable_cursor: unsafe extern "efiapi" fn(this: *mut Self, visible: bool) -> Status,
+    pub enable_cursor: unsafe extern "efiapi" fn(this: *mut Self, visible: Boolean) -> Status,
     pub mode: *mut SimpleTextOutputMode,
 }
 
@@ -126,8 +126,8 @@ pub struct SimplePointerState {
     pub relative_movement_x: i32,
     pub relative_movement_y: i32,
     pub relative_movement_z: i32,
-    pub left_button: u8,
-    pub right_button: u8,
+    pub left_button: Boolean,
+    pub right_button: Boolean,
 }
 
 #[derive(Debug)]
@@ -135,7 +135,7 @@ pub struct SimplePointerState {
 pub struct SimplePointerProtocol {
     pub reset: unsafe extern "efiapi" fn(
         this: *mut SimplePointerProtocol,
-        extended_verification: bool,
+        extended_verification: Boolean,
     ) -> Status,
     pub get_state: unsafe extern "efiapi" fn(
         this: *mut SimplePointerProtocol,

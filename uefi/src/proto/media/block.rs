@@ -29,7 +29,7 @@ impl BlockIO {
     /// # Errors
     /// * `uefi::Status::DEVICE_ERROR`  The block device is not functioning correctly and could not be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
-        unsafe { (self.0.reset)(&mut self.0, extended_verification) }.to_result()
+        unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
 
     /// Read the requested number of blocks from the device.
@@ -117,32 +117,32 @@ impl BlockIOMedia {
 
     /// True if the media is removable.
     #[must_use]
-    pub const fn is_removable_media(&self) -> bool {
-        self.0.removable_media
+    pub fn is_removable_media(&self) -> bool {
+        self.0.removable_media.into()
     }
 
     /// True if there is a media currently present in the device.
     #[must_use]
-    pub const fn is_media_present(&self) -> bool {
-        self.0.media_present
+    pub fn is_media_present(&self) -> bool {
+        self.0.media_present.into()
     }
 
     /// True if block IO was produced to abstract partition structure.
     #[must_use]
-    pub const fn is_logical_partition(&self) -> bool {
-        self.0.logical_partition
+    pub fn is_logical_partition(&self) -> bool {
+        self.0.logical_partition.into()
     }
 
     /// True if the media is marked read-only.
     #[must_use]
-    pub const fn is_read_only(&self) -> bool {
-        self.0.read_only
+    pub fn is_read_only(&self) -> bool {
+        self.0.read_only.into()
     }
 
     /// True if `writeBlocks` function writes data.
     #[must_use]
-    pub const fn is_write_caching(&self) -> bool {
-        self.0.write_caching
+    pub fn is_write_caching(&self) -> bool {
+        self.0.write_caching.into()
     }
 
     /// The intrinsic block size of the device.

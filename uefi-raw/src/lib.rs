@@ -33,10 +33,11 @@ pub mod time;
 
 mod status;
 
-use core::ffi::c_void;
-use core::fmt::{self, Debug, Formatter};
 pub use status::Status;
 pub use uguid::{guid, Guid};
+
+use core::ffi::c_void;
+use core::fmt::{self, Debug, Formatter};
 
 /// Handle to an event structure.
 pub type Event = *mut c_void;

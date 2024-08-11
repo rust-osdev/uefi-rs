@@ -563,7 +563,7 @@ pub fn connect_controller(
                 .map(|dp| dp.as_ffi_ptr())
                 .unwrap_or(ptr::null())
                 .cast(),
-            recursive,
+            recursive.into(),
         )
     }
     .to_result_with_err(|_| ())

@@ -13,12 +13,12 @@ use uefi::proto::BootPolicy;
 use uefi::{boot, Guid, Handle};
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
-use uefi_raw::Status;
+use uefi_raw::{Boolean, Status};
 
 unsafe extern "efiapi" fn raw_load_file(
     this: *mut LoadFile2Protocol,
     _file_path: *const DevicePathProtocol,
-    _boot_policy: bool,
+    _boot_policy: Boolean,
     buffer_size: *mut usize,
     buffer: *mut c_void,
 ) -> Status {

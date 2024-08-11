@@ -2,27 +2,7 @@
 
 //! Module for the [`BootPolicy`] helper type.
 
-use core::fmt::{Display, Formatter};
-
-/// Errors that can happen when working with [`BootPolicy`].
-#[derive(Debug, Copy, Clone, PartialOrd, PartialEq, Eq, Ord)]
-pub enum BootPolicyError {
-    /// Only `0` and `1` are valid integers, all other values are undefined.
-    InvalidInteger(u8),
-}
-
-impl Display for BootPolicyError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        let s = match self {
-            Self::InvalidInteger(_) => {
-                "Only `0` and `1` are valid integers, all other values are undefined."
-            }
-        };
-        f.write_str(s)
-    }
-}
-
-impl core::error::Error for BootPolicyError {}
+use uefi_raw::Boolean;
 
 /// The UEFI boot policy is a property that influences the behaviour of
 /// various UEFI functions that load files (typically UEFI images).
@@ -49,37 +29,18 @@ pub enum BootPolicy {
 impl From<BootPolicy> for bool {
     fn from(value: BootPolicy) -> Self {
         match value {
-            BootPolicy::BootSelection => true,
-            BootPolicy::ExactMatch => false,
+            BootPolicy::BootSelection => Boolean::TRUE,
+            BootPolicy::ExactMatch => Boolean::FALSE,
         }
     }
 }
 
-impl From<bool> for BootPolicy {
-    fn from(value: bool) -> Self {
-        match value {
+impl From<Boolean> for BootPolicy {
+    fn from(value: Boolean) -> Self {
+        let boolean: bool = value.into();
+        match boolean {
             true => Self::BootSelection,
             false => Self::ExactMatch,
-        }
-    }
-}
-
-impl From<BootPolicy> for u8 {
-    fn from(value: BootPolicy) -> Self {
-        match value {
-            BootPolicy::BootSelection => 1,
-            BootPolicy::ExactMatch => 0,
-        }
-    }
-}
-
-impl TryFrom<u8> for BootPolicy {
-    type Error = BootPolicyError;
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::ExactMatch),
-            1 => Ok(Self::BootSelection),
-            err => Err(Self::Error::InvalidInteger(err)),
         }
     }
 }

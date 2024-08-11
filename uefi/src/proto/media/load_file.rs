@@ -11,6 +11,7 @@ use {
     crate::{mem::make_boxed, proto::device_path::DevicePath, Result, StatusExt},
     alloc::boxed::Box,
     uefi::proto::BootPolicy,
+    uefi_raw::Boolean,
 };
 
 /// Load File Protocol.
@@ -143,7 +144,7 @@ impl LoadFile2 {
                 (self.0.load_file)(
                     this,
                     file_path.as_ffi_ptr().cast(),
-                    false, /* always false - see spec */
+                    Boolean::FALSE, /* always false - see spec */
                     &mut size,
                     buf.as_mut_ptr().cast(),
                 )

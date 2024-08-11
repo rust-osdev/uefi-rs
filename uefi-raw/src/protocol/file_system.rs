@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::time::Time;
-use crate::{guid, Char16, Event, Guid, Status};
+use crate::{guid, Boolean, Char16, Event, Guid, Status};
 use bitflags::bitflags;
 use core::ffi::c_void;
 
@@ -153,7 +153,7 @@ impl FileInfo {
 #[repr(C)]
 pub struct FileSystemInfo {
     pub size: u64,
-    pub read_only: u8,
+    pub read_only: Boolean,
     pub volume_size: u64,
     pub free_space: u64,
     pub block_size: u32,

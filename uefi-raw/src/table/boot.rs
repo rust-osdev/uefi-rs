@@ -4,7 +4,7 @@
 
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::table::Header;
-use crate::{Char16, Event, Guid, Handle, PhysicalAddress, Status, VirtualAddress};
+use crate::{Boolean, Char16, Event, Guid, Handle, PhysicalAddress, Status, VirtualAddress};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ops::RangeInclusive;
@@ -106,7 +106,7 @@ pub struct BootServices {
 
     // Image services
     pub load_image: unsafe extern "efiapi" fn(
-        boot_policy: u8,
+        boot_policy: Boolean,
         parent_image_handle: Handle,
         device_path: *const DevicePathProtocol,
         source_buffer: *const u8,
@@ -143,7 +143,7 @@ pub struct BootServices {
         controller: Handle,
         driver_image: Handle,
         remaining_device_path: *const DevicePathProtocol,
-        recursive: bool,
+        recursive: Boolean,
     ) -> Status,
     pub disconnect_controller: unsafe extern "efiapi" fn(
         controller: Handle,

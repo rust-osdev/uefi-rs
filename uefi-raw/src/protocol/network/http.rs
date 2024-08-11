@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Char16, Char8, Event, Guid, Ipv4Address, Ipv6Address, Status};
+use crate::{guid, Boolean, Char16, Char8, Event, Guid, Ipv4Address, Ipv6Address, Status};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
 use core::ptr;
@@ -10,7 +10,7 @@ use core::ptr;
 pub struct HttpConfigData {
     pub http_version: HttpVersion,
     pub time_out_millisec: u32,
-    pub local_addr_is_ipv6: bool,
+    pub local_addr_is_ipv6: Boolean,
     pub access_point: HttpAccessPoint,
 }
 
@@ -26,7 +26,7 @@ newtype_enum! {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct HttpV4AccessPoint {
-    pub use_default_addr: bool,
+    pub use_default_addr: Boolean,
     pub local_address: Ipv4Address,
     pub local_subnet: Ipv4Address,
     pub local_port: u16,

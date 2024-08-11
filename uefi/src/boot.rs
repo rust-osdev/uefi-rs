@@ -6,6 +6,7 @@ use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
 use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
+use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
 use core::ffi::c_void;
 use core::ops::{Deref, DerefMut};
@@ -262,6 +263,81 @@ pub unsafe fn create_event(
 
     // Now we're ready to call UEFI
     (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event).to_result_with_val(
+        // OK to unwrap: event is non-null for Status::SUCCESS.
+        || Event::from_ptr(event).unwrap(),
+    )
+}
+
+/// Creates an event in an event group.
+///
+/// The event's notification function, context, and task priority are specified
+/// by `notify_fn`, `notify_ctx`, and `notify_tpl`, respectively. The event will
+/// be added to the group of events identified by `event_group`.
+///
+/// If no group is specified by `event_group`, this function behaves as if the
+/// same parameters had been passed to `create_event()`.
+///
+/// Event groups are collections of events identified by a shared GUID where,
+/// when one member event is signaled, all other events are signaled and their
+/// individual notification actions are taken. All events are guaranteed to be
+/// signaled before the first notification action is taken. All notification
+/// functions will be executed in the order specified by their `Tpl`.
+///
+/// An event can only be part of a single event group. An event may be removed
+/// from an event group by calling [`close_event`].
+///
+/// The [`EventType`] of an event uses the same values as `create_event()`, except that
+/// `EventType::SIGNAL_EXIT_BOOT_SERVICES` and `EventType::SIGNAL_VIRTUAL_ADDRESS_CHANGE`
+/// are not valid.
+///
+/// For events of type `NOTIFY_SIGNAL` or `NOTIFY_WAIT`, `notify_fn` must be
+/// `Some` and `notify_tpl` must be a valid task priority level. For other event
+/// types these parameters are ignored.
+///
+/// More than one event of type `EventType::TIMER` may be part of a single event
+/// group. However, there is no mechanism for determining which of the timers
+/// was signaled.
+///
+/// This operation is only supported starting with UEFI 2.0; earlier versions
+/// will fail with [`Status::UNSUPPORTED`].
+///
+/// # Safety
+///
+/// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: an invalid combination of parameters was provided.
+/// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
+pub unsafe fn create_event_ex(
+    event_type: EventType,
+    notify_tpl: Tpl,
+    notify_fn: Option<EventNotifyFn>,
+    notify_ctx: Option<NonNull<c_void>>,
+    event_group: Option<NonNull<Guid>>,
+) -> Result<Event> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    if bt.header.revision < Revision::EFI_2_00 {
+        return Err(Status::UNSUPPORTED.into());
+    }
+
+    let mut event = ptr::null_mut();
+
+    // Safety: the argument types of the function pointers are defined
+    // differently, but are compatible and can be safely transmuted.
+    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+
+    (bt.create_event_ex)(
+        event_type,
+        notify_tpl,
+        notify_fn,
+        opt_nonnull_to_ptr(notify_ctx),
+        opt_nonnull_to_ptr(event_group),
+        &mut event,
+    )
+    .to_result_with_val(
         // OK to unwrap: event is non-null for Status::SUCCESS.
         || Event::from_ptr(event).unwrap(),
     )

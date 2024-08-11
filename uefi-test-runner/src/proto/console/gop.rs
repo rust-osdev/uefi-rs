@@ -28,7 +28,7 @@ pub unsafe fn test(bt: &BootServices) {
 
     // `draw_fb` is skipped on aarch64, so the screenshot doesn't match.
     if cfg!(not(target_arch = "aarch64")) {
-        send_request_to_host(bt, HostRequest::Screenshot("gop_test"));
+        send_request_to_host(HostRequest::Screenshot("gop_test"));
     }
 }
 

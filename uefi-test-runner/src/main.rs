@@ -167,10 +167,9 @@ fn reconnect_serial_to_console(serial_handle: Handle) {
 /// Send the `request` string to the host via the `serial` device, then
 /// wait up to 10 seconds to receive a reply. Returns an error if the
 /// reply is not `"OK\n"`.
-fn send_request_to_host(bt: &BootServices, request: HostRequest) {
-    let serial_handle = bt
-        .get_handle_for_protocol::<Serial>()
-        .expect("Failed to get serial handle");
+fn send_request_to_host(request: HostRequest) {
+    let serial_handle =
+        uefi::boot::get_handle_for_protocol::<Serial>().expect("Failed to get serial handle");
 
     // Open the serial protocol in exclusive mode.
     //
@@ -183,8 +182,7 @@ fn send_request_to_host(bt: &BootServices, request: HostRequest) {
     // end with `connect_controller`.
     //
     // [console splitter driver]: https://github.com/tianocore/edk2/blob/HEAD/MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitter.c
-    let mut serial = bt
-        .open_protocol_exclusive::<Serial>(serial_handle)
+    let mut serial = uefi::boot::open_protocol_exclusive::<Serial>(serial_handle)
         .expect("Could not open serial protocol");
 
     // Send the request, but don't check the result yet so that first
@@ -211,7 +209,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     // Tell the host that tests are done. We are about to exit boot
     // services, so we can't easily communicate with the host any later
     // than this.
-    send_request_to_host(st.boot_services(), HostRequest::TestsComplete);
+    send_request_to_host(HostRequest::TestsComplete);
 
     // Send a special log to the host so that we can verify that logging works
     // up until exiting boot services. See `reconnect_serial_to_console` for the

@@ -119,9 +119,14 @@ fn test_callback_with_ctx(bt: &BootServices) {
 }
 
 fn test_watchdog(bt: &BootServices) {
-    // Disable the UEFI watchdog timer
+    // There's no way to check the watchdog timer value, so just test setting it.
+
+    // Disable the UEFI watchdog timer.
     bt.set_watchdog_timer(0, 0x10000, None)
         .expect("Could not set watchdog timer");
+
+    // Set the timer with the freestanding function.
+    boot::set_watchdog_timer(240, 0x10000, None).expect("Could not set watchdog timer");
 }
 
 /// Dummy protocol for tests

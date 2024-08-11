@@ -1,5 +1,5 @@
 use crate::protocol::device_path::DevicePathProtocol;
-use crate::{guid, Guid, Status};
+use crate::{guid, Boolean, Guid, Status};
 use core::ffi::c_void;
 
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub struct LoadFileProtocol {
     pub load_file: unsafe extern "efiapi" fn(
         this: *mut LoadFileProtocol,
         file_path: *const DevicePathProtocol,
-        boot_policy: bool,
+        boot_policy: Boolean,
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status,
@@ -24,7 +24,7 @@ pub struct LoadFile2Protocol {
     pub load_file: unsafe extern "efiapi" fn(
         this: *mut LoadFile2Protocol,
         file_path: *const DevicePathProtocol,
-        boot_policy: bool,
+        boot_policy: Boolean,
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status,

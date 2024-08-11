@@ -31,10 +31,13 @@ pub mod time;
 
 mod status;
 
-use core::ffi::c_void;
-use core::fmt::{self, Debug, Formatter};
 pub use status::Status;
 pub use uguid::{guid, Guid};
+
+#[cfg(feature = "unstable")]
+use core::error::Error;
+use core::ffi::c_void;
+use core::fmt::{self, Debug, Display, Formatter};
 
 /// Handle to an event structure.
 pub type Event = *mut c_void;
@@ -64,6 +67,58 @@ pub type PhysicalAddress = u64;
 /// Virtual memory address. This is always a 64-bit value, regardless
 /// of target platform.
 pub type VirtualAddress = u64;
+
+/// The provided [`Boolean`] can't be converted to [`bool`] as it is neither
+/// `0` nor `1`.
+#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq)]
+pub struct InvalidBooleanError(u8);
+
+impl Display for InvalidBooleanError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Debug::fmt(self, f)
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl Error for InvalidBooleanError {}
+
+/// ABI-compatible UEFI boolean.
+///
+/// Opaque 1-byte value holding either `0` for FALSE or a `1` for TRUE. This
+/// type can be converted from and to `bool` via corresponding [`From`]
+/// respectively [`TryFrom`] implementations.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[repr(transparent)]
+pub struct Boolean(u8);
+
+impl Boolean {
+    /// [`Boolean`] representing `true`.
+    pub const TRUE: Self = Self(1);
+
+    /// [`Boolean`] representing `false`.
+    pub const FALSE: Self = Self(0);
+}
+
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self(1),
+            false => Self(0),
+        }
+    }
+}
+
+impl TryFrom<Boolean> for bool {
+    type Error = InvalidBooleanError;
+
+    fn try_from(value: Boolean) -> Result<Self, Self::Error> {
+        match value.0 {
+            0 => Ok(false),
+            1 => Ok(true),
+            x => Err(InvalidBooleanError(x)),
+        }
+    }
+}
 
 /// An IPv4 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -133,3 +188,31 @@ impl Default for IpAddress {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    /// Test the properties promised in [0]. This also applies for the other
+    /// architectures.
+    ///
+    /// [0] https://github.com/tianocore/edk2/blob/b0f43dd3fdec2363e3548ec31eb455dc1c4ac761/MdePkg/Include/X64/ProcessorBind.h#L192
+    fn test_boolean_abi() {
+        assert_eq!(size_of::<Boolean>(), 1);
+        assert_eq!(Boolean::from(true).0, 1);
+        assert_eq!(Boolean::from(false).0, 0);
+        assert_eq!(Boolean::TRUE.0, 1);
+        assert_eq!(Boolean::FALSE.0, 0);
+        assert_eq!(bool::try_from(Boolean(0b0)), Ok(false));
+        assert_eq!(bool::try_from(Boolean(0b1)), Ok(true));
+        assert_eq!(
+            bool::try_from(Boolean(0b11)),
+            Err(InvalidBooleanError(0b11))
+        );
+        assert_eq!(
+            bool::try_from(Boolean(0b10)),
+            Err(InvalidBooleanError(0b10))
+        );
+    }
+}

@@ -28,7 +28,7 @@ pub struct Output(SimpleTextOutputProtocol);
 impl Output {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
-        unsafe { (self.0.reset)(&mut self.0, extended) }.to_result()
+        unsafe { (self.0.reset)(&mut self.0, extended.into()) }.to_result()
     }
 
     /// Clears the output screen.
@@ -116,8 +116,9 @@ impl Output {
 
     /// Returns whether the cursor is currently shown or not.
     #[must_use]
-    pub const fn cursor_visible(&self) -> bool {
-        self.data().cursor_visible
+    pub fn cursor_visible(&self) -> bool {
+        // Panic: Misbehaving UEFI impls are so unlikely; just fail
+        self.data().cursor_visible.try_into().unwrap()
     }
 
     /// Make the cursor visible or invisible.
@@ -125,7 +126,7 @@ impl Output {
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result {
-        unsafe { (self.0.enable_cursor)(&mut self.0, visible) }.to_result()
+        unsafe { (self.0.enable_cursor)(&mut self.0, visible.into()) }.to_result()
     }
 
     /// Returns the column and row of the cursor.

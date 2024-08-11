@@ -4,6 +4,7 @@ use crate::proto::unsafe_protocol;
 #[cfg(all(feature = "alloc", feature = "unstable"))]
 use alloc::alloc::Global;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
+use uefi_raw::Boolean;
 #[cfg(feature = "alloc")]
 use {
     crate::{mem::make_boxed, proto::device_path::DevicePath, Result, StatusExt},
@@ -141,7 +142,7 @@ impl LoadFile2 {
                 (self.0.load_file)(
                     this,
                     file_path.as_ffi_ptr().cast(),
-                    false, /* always false - see spec */
+                    Boolean::FALSE, /* always false - see spec */
                     &mut size,
                     buf.as_mut_ptr().cast(),
                 )

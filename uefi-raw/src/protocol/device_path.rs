@@ -1,4 +1,4 @@
-use crate::{guid, Char16, Guid};
+use crate::{guid, Boolean, Char16, Guid};
 
 /// Device path protocol.
 ///
@@ -25,13 +25,13 @@ impl DevicePathProtocol {
 pub struct DevicePathToTextProtocol {
     pub convert_device_node_to_text: unsafe extern "efiapi" fn(
         device_node: *const DevicePathProtocol,
-        display_only: bool,
-        allow_shortcuts: bool,
+        display_only: Boolean,
+        allow_shortcuts: Boolean,
     ) -> *const Char16,
     pub convert_device_path_to_text: unsafe extern "efiapi" fn(
         device_path: *const DevicePathProtocol,
-        display_only: bool,
-        allow_shortcuts: bool,
+        display_only: Boolean,
+        allow_shortcuts: Boolean,
     ) -> *const Char16,
 }
 

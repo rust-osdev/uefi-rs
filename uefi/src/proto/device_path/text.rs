@@ -91,8 +91,8 @@ impl DevicePathToText {
         let text_device_node = unsafe {
             (self.0.convert_device_node_to_text)(
                 device_node.as_ffi_ptr().cast(),
-                display_only.0,
-                allow_shortcuts.0,
+                display_only.0.into(),
+                allow_shortcuts.0.into(),
             )
         };
         PoolString::new(text_device_node.cast())
@@ -113,8 +113,8 @@ impl DevicePathToText {
         let text_device_path = unsafe {
             (self.0.convert_device_path_to_text)(
                 device_path.as_ffi_ptr().cast(),
-                display_only.0,
-                allow_shortcuts.0,
+                display_only.0.into(),
+                allow_shortcuts.0.into(),
             )
         };
         PoolString::new(text_device_path.cast())

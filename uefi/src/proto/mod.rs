@@ -9,6 +9,8 @@
 //!
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
+pub use boot_policy::BootPolicy;
+
 use crate::Identify;
 use core::ffi::c_void;
 
@@ -81,3 +83,5 @@ pub mod shell_params;
 pub mod shim;
 pub mod string;
 pub mod tcg;
+
+mod boot_policy;

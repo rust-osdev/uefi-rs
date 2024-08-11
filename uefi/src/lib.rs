@@ -32,7 +32,11 @@
 //! the boot information provided by a bootloader. It also enables access to
 //! UEFI runtime services from a non-UEFI image kernel.
 //!
-//! # Supported Architectures
+//! # Supported Compiler Versions and Architectures
+//!
+//! `uefi` works with stable Rust, but additional nightly-only features are
+//! gated behind the `unstable` Cargo feature. Please find more information
+//! about additional crate features below.
 //!
 //! `uefi` is compatible with all platforms that both the Rust compiler and
 //! UEFI support, such as `i686`, `x86_64`, and `aarch64`. Please note that we

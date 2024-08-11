@@ -804,6 +804,53 @@ pub unsafe fn install_configuration_table(
     (bt.install_configuration_table)(guid_entry, table_ptr).to_result()
 }
 
+/// Sets the watchdog timer.
+///
+/// UEFI will start a 5-minute countdown after an UEFI image is loaded.  The
+/// image must either successfully load an OS and exit boot services in that
+/// time, or disable the watchdog.
+///
+/// Otherwise, the firmware will log the event using the provided numeric
+/// code and data, then reset the system.
+///
+/// This function allows you to change the watchdog timer's timeout to a
+/// certain amount of seconds or to disable the watchdog entirely. It also
+/// allows you to change what will be logged when the timer expires.
+///
+/// The watchdog codes from 0 to 0xffff (65535) are reserved for internal
+/// firmware use. Higher values can be used freely by applications.
+///
+/// If provided, the watchdog data must be a null-terminated string optionally
+/// followed by other binary data.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `watchdog_code` is invalid.
+/// * [`Status::UNSUPPORTED`]: the system does not have a watchdog timer.
+/// * [`Status::DEVICE_ERROR`]: the watchdog timer could not be set due to a
+///   hardware error.
+pub fn set_watchdog_timer(
+    timeout_in_seconds: usize,
+    watchdog_code: u64,
+    data: Option<&mut [u16]>,
+) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let (data_len, data) = data
+        .map(|d| {
+            assert!(
+                d.contains(&0),
+                "Watchdog data must start with a null-terminated string"
+            );
+            (d.len(), d.as_mut_ptr())
+        })
+        .unwrap_or((0, ptr::null_mut()));
+
+    unsafe { (bt.set_watchdog_timer)(timeout_in_seconds, watchdog_code, data_len, data) }
+        .to_result()
+}
+
 /// Stalls execution for the given number of microseconds.
 pub fn stall(microseconds: usize) {
     let bt = boot_services_raw_panicking();

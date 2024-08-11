@@ -557,6 +557,40 @@ pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
         })
 }
 
+/// Locates the handle of a device on the device path that supports the specified protocol.
+///
+/// The `device_path` is updated to point at the remaining part of the [`DevicePath`] after
+/// the part that matched the protocol. For example, it can be used with a device path
+/// that contains a file path to strip off the file system portion of the device path,
+/// leaving the file path and handle to the file system driver needed to access the file.
+///
+/// If the first node of `device_path` matches the protocol, the `device_path`
+/// is advanced to the device path terminator node. If `device_path` is a
+/// multi-instance device path, the function will operate on the first instance.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: no matching handles.
+pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
+    device_path: &mut &DevicePath,
+) -> Result<Handle> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut handle = ptr::null_mut();
+    let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
+        device_path.as_ffi_ptr().cast();
+    unsafe {
+        (bt.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).to_result_with_val(
+            || {
+                *device_path = DevicePath::from_ffi_ptr(device_path_ptr.cast());
+                // OK to unwrap: handle is non-null for Status::SUCCESS.
+                Handle::from_ptr(handle).unwrap()
+            },
+        )
+    }
+}
+
 /// Returns an array of handles that support the requested protocol in a
 /// pool-allocated buffer.
 ///

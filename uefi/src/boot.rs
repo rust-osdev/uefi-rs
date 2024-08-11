@@ -588,6 +588,44 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
         })
 }
 
+/// Find an arbitrary handle that supports a particular [`Protocol`]. Returns
+/// [`NOT_FOUND`] if no handles support the protocol.
+///
+/// This method is a convenient wrapper around [`locate_handle_buffer`] for
+/// getting just one handle. This is useful when you don't care which handle the
+/// protocol is opened on. For example, [`DevicePathToText`] isn't tied to a
+/// particular device, so only a single handle is expected to exist.
+///
+/// [`NOT_FOUND`]: Status::NOT_FOUND
+/// [`DevicePathToText`]: uefi::proto::device_path::text::DevicePathToText
+///
+/// # Example
+///
+/// ```
+/// use uefi::proto::device_path::text::DevicePathToText;
+/// use uefi::{boot, Handle};
+/// # use uefi::Result;
+///
+/// # fn get_fake_val<T>() -> T { todo!() }
+/// # fn test() -> Result {
+/// # let image_handle: Handle = get_fake_val();
+/// let handle = boot::get_handle_for_protocol::<DevicePathToText>()?;
+/// let device_path_to_text = boot::open_protocol_exclusive::<DevicePathToText>(handle)?;
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: no matching handle.
+/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> {
+    locate_handle_buffer(SearchType::ByProtocol(&P::GUID))?
+        .first()
+        .cloned()
+        .ok_or_else(|| Status::NOT_FOUND.into())
+}
+
 /// Opens a protocol interface for a handle.
 ///
 /// See also [`open_protocol_exclusive`], which provides a safe subset of this

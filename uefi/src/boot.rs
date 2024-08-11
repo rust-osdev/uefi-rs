@@ -477,6 +477,28 @@ pub unsafe fn uninstall_protocol_interface(
     (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
 }
 
+/// Get the list of protocol interface [`Guids`][Guid] that are installed
+/// on a [`Handle`].
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: `handle` is invalid.
+/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut protocols = ptr::null_mut();
+    let mut count = 0;
+
+    unsafe { (bt.protocols_per_handle)(handle.as_ptr(), &mut protocols, &mut count) }
+        .to_result_with_val(|| ProtocolsPerHandle {
+            count,
+            protocols: NonNull::new(protocols)
+                .expect("protocols_per_handle must not return a null pointer"),
+        })
+}
+
 /// Returns an array of handles that support the requested protocol in a
 /// pool-allocated buffer.
 ///
@@ -759,6 +781,38 @@ pub fn stall(microseconds: usize) {
         // No error conditions are defined in the spec for this function, so
         // ignore the status.
         let _ = (bt.stall)(microseconds);
+    }
+}
+
+/// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
+/// returned by [`protocols_per_handle`].
+#[derive(Debug)]
+pub struct ProtocolsPerHandle {
+    protocols: NonNull<*const Guid>,
+    count: usize,
+}
+
+impl Drop for ProtocolsPerHandle {
+    fn drop(&mut self) {
+        let _ = unsafe { free_pool(self.protocols.cast::<u8>()) };
+    }
+}
+
+impl Deref for ProtocolsPerHandle {
+    type Target = [&'static Guid];
+
+    fn deref(&self) -> &Self::Target {
+        let ptr: *const &'static Guid = self.protocols.as_ptr().cast();
+
+        // SAFETY:
+        //
+        // * The firmware is assumed to provide a correctly-aligned pointer and
+        //   array length.
+        // * The firmware is assumed to provide valid GUID pointers.
+        // * Protocol GUIDs should be constants or statics, so a 'static
+        //   lifetime (of the individual pointers, not the overall slice) can be
+        //   assumed.
+        unsafe { slice::from_raw_parts(ptr, self.count) }
     }
 }
 

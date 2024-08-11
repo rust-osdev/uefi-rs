@@ -1,6 +1,7 @@
+use uefi::boot::{self, OpenProtocolParams};
 use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::{boot, proto, Identify};
+use uefi::{proto, Identify};
 
 pub fn test(st: &mut SystemTable<Boot>) {
     info!("Testing various protocols");
@@ -11,6 +12,7 @@ pub fn test(st: &mut SystemTable<Boot>) {
     find_protocol(bt);
     test_protocols_per_handle(bt);
     test_protocols_per_handle_freestanding();
+    test_test_protocol_freestanding();
 
     debug::test(bt);
     device_path::test(bt);
@@ -61,6 +63,15 @@ fn test_protocols_per_handle_freestanding() {
     info!("Image handle has {} protocols", pph.len());
     // Check that one of the image's protocols is `LoadedImage`.
     assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
+}
+
+fn test_test_protocol_freestanding() {
+    assert!(boot::test_protocol::<LoadedImage>(OpenProtocolParams {
+        handle: boot::image_handle(),
+        agent: boot::image_handle(),
+        controller: None,
+    })
+    .unwrap());
 }
 
 mod console;

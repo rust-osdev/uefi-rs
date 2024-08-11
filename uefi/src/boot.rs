@@ -3,6 +3,7 @@
 //! These functions will panic if called after exiting boot services.
 
 use crate::data_types::PhysicalAddress;
+use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
 use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::util::opt_nonnull_to_ptr;
@@ -24,7 +25,7 @@ pub use uefi::table::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
     SearchType, TimerTrigger,
 };
-pub use uefi_raw::table::boot::{EventType, MemoryType, Tpl};
+pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
@@ -163,6 +164,63 @@ pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     let bt = unsafe { bt.as_ref() };
 
     unsafe { (bt.free_pool)(ptr.as_ptr()) }.to_result()
+}
+
+/// Stores the current UEFI memory map in an UEFI-heap allocated buffer
+/// and returns a [`MemoryMapOwned`].
+///
+/// # Parameters
+///
+/// - `mt`: The memory type for the backing memory on the UEFI heap.
+///   Usually, this is [`MemoryType::LOADER_DATA`]. You can also use a
+///   custom type.
+///
+/// # Errors
+///
+/// * [`Status::BUFFER_TOO_SMALL`]
+/// * [`Status::INVALID_PARAMETER`]
+pub fn memory_map(mt: MemoryType) -> Result<MemoryMapOwned> {
+    let mut buffer = MemoryMapBackingMemory::new(mt)?;
+
+    let meta = get_memory_map(buffer.as_mut_slice())?;
+
+    Ok(MemoryMapOwned::from_initialized_mem(buffer, meta))
+}
+
+/// Calls the underlying `GetMemoryMap` function of UEFI. On success,
+/// the buffer is mutated and contains the map. The map might be shorter
+/// than the buffer, which is reflected by the return value.
+pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut map_size = buf.len();
+    let map_buffer = buf.as_mut_ptr().cast::<MemoryDescriptor>();
+    let mut map_key = MemoryMapKey(0);
+    let mut desc_size = 0;
+    let mut desc_version = 0;
+
+    assert_eq!(
+        (map_buffer as usize) % mem::align_of::<MemoryDescriptor>(),
+        0,
+        "Memory map buffers must be aligned like a MemoryDescriptor"
+    );
+
+    unsafe {
+        (bt.get_memory_map)(
+            &mut map_size,
+            map_buffer,
+            &mut map_key.0,
+            &mut desc_size,
+            &mut desc_version,
+        )
+    }
+    .to_result_with_val(|| MemoryMapMeta {
+        map_size,
+        desc_size,
+        map_key,
+        desc_version,
+    })
 }
 
 /// Creates an event.

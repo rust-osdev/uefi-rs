@@ -724,6 +724,32 @@ pub unsafe fn exit(
     )
 }
 
+/// Adds, updates, or removes a configuration table entry
+/// from the EFI System Table.
+///
+/// # Safety
+///
+/// When installing or updating a configuration table, the data pointed to by
+/// `table_ptr` must be a pool allocation of type
+/// [`RUNTIME_SERVICES_DATA`]. Once this table has been installed, the caller
+/// should not modify or free the data.
+///
+/// [`RUNTIME_SERVICES_DATA`]: MemoryType::RUNTIME_SERVICES_DATA
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: tried to delete a nonexistent entry.
+/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+pub unsafe fn install_configuration_table(
+    guid_entry: &'static Guid,
+    table_ptr: *const c_void,
+) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    (bt.install_configuration_table)(guid_entry, table_ptr).to_result()
+}
+
 /// Stalls execution for the given number of microseconds.
 pub fn stall(microseconds: usize) {
     let bt = boot_services_raw_panicking();

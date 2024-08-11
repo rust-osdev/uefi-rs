@@ -1,9 +1,11 @@
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use uefi::boot;
 use uefi::prelude::*;
 use uefi::proto::device_path::text::*;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
+use uefi::proto::media::disk::DiskIo;
 
 pub fn test(bt: &BootServices) {
     info!("Running device path protocol test");
@@ -64,6 +66,10 @@ pub fn test(bt: &BootServices) {
         {
             assert_eq!(n1, n2);
         }
+
+        // Test `locate_device_path`.
+        let mut dp = &*device_path;
+        boot::locate_device_path::<DiskIo>(&mut dp).unwrap();
     }
 
     // test 2/2: test high-level to-string api

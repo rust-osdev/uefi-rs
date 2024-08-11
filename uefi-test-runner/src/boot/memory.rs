@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use uefi::boot;
-use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
+use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryMapOwned, MemoryType};
 use uefi::table::boot::{AllocateType, BootServices};
 
 pub fn test(bt: &BootServices) {
@@ -14,6 +14,7 @@ pub fn test(bt: &BootServices) {
     alloc_alignment();
 
     memory_map(bt);
+    memory_map_freestanding();
 }
 
 fn test_allocate_pages_freestanding() {
@@ -93,13 +94,7 @@ fn alloc_alignment() {
     assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
 }
 
-fn memory_map(bt: &BootServices) {
-    info!("Testing memory map functions");
-
-    let mut memory_map = bt
-        .memory_map(MemoryType::LOADER_DATA)
-        .expect("Failed to retrieve UEFI memory map");
-
+fn check_memory_map(mut memory_map: MemoryMapOwned) {
     memory_map.sort();
 
     // Collect the descriptors into a vector
@@ -129,4 +124,23 @@ fn memory_map(bt: &BootServices) {
     }
     let page_count = first_desc.page_count;
     assert!(page_count != 0, "Memory map entry has size zero");
+}
+
+fn memory_map(bt: &BootServices) {
+    info!("Testing memory map functions");
+
+    let memory_map = bt
+        .memory_map(MemoryType::LOADER_DATA)
+        .expect("Failed to retrieve UEFI memory map");
+
+    check_memory_map(memory_map);
+}
+
+fn memory_map_freestanding() {
+    info!("Testing memory map functions (freestanding)");
+
+    let memory_map =
+        boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to retrieve UEFI memory map");
+
+    check_memory_map(memory_map);
 }

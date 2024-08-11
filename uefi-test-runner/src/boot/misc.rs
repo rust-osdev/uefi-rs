@@ -57,7 +57,8 @@ fn test_check_event_freestanding() {
 
 fn test_timer_freestanding() {
     let timer_event =
-        unsafe { boot::create_event(EventType::TIMER, Tpl::CALLBACK, None, None) }.unwrap();
+        unsafe { boot::create_event_ex(EventType::TIMER, Tpl::CALLBACK, None, None, None) }
+            .unwrap();
     let mut events = unsafe { [timer_event.unsafe_clone()] };
     boot::set_timer(&timer_event, TimerTrigger::Relative(5_0 /*00 ns */)).unwrap();
     assert_eq!(boot::wait_for_event(&mut events).unwrap(), 0);

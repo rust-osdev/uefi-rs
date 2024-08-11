@@ -11,7 +11,7 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{mem, slice};
-use uefi::{table, Char16, Event, Guid, Handle, Result, Status, StatusExt};
+use uefi::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use uefi_raw::table::boot::InterfaceType;
 
 #[cfg(doc)]
@@ -609,6 +609,38 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
             },
             OpenProtocolAttributes::Exclusive,
         )
+    }
+}
+
+/// Tests whether a handle supports a protocol.
+///
+/// Returns `Ok(true)` if the handle supports the protocol, `Ok(false)` if not.
+///
+/// # Errors
+///
+/// * [`Status::INVALID_PARAMETER`]: one of the handles in `params` is invalid.
+pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) -> Result<bool> {
+    const TEST_PROTOCOL: u32 = 0x04;
+
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut interface = ptr::null_mut();
+    let status = unsafe {
+        (bt.open_protocol)(
+            params.handle.as_ptr(),
+            &P::GUID,
+            &mut interface,
+            params.agent.as_ptr(),
+            Handle::opt_to_ptr(params.controller),
+            TEST_PROTOCOL,
+        )
+    };
+
+    match status {
+        Status::SUCCESS => Ok(true),
+        Status::UNSUPPORTED => Ok(false),
+        _ => Err(Error::from(status)),
     }
 }
 

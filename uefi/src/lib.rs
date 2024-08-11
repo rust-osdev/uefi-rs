@@ -42,6 +42,12 @@
 //! UEFI support, such as `i686`, `x86_64`, and `aarch64`. Please note that we
 //! can't test all possible hardware/firmware/platform combinations in CI.
 //!
+//! ## MSRV
+//! <!-- Keep in Sync with README! -->
+//!
+//! The minimum supported Rust version is currently 1.70.
+//! Our policy is to support at least the past two stable releases.
+//!
 //! # Crate organisation
 //!
 //! The top-level module contains some of the most used types and macros,
@@ -108,12 +114,6 @@
 //! Further, you can submit bugs and also ask questions in our [issue tracker].
 //! Contributions in the form of a PR are also highly welcome. Check our
 //! [contributing guide][contributing] for details.
-//!
-//! # MSRV
-//! <!-- Keep in Sync with README! -->
-//!
-//! The minimum supported Rust version is currently 1.70.
-//! Our policy is to support at least the past two stable releases.
 //!
 //! # License
 //! <!-- Keep in Sync with README! -->

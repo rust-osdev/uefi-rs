@@ -1387,7 +1387,7 @@ impl super::Table for BootServices {
 /// image source.
 #[derive(Debug)]
 pub enum LoadImageSource<'a> {
-    /// Load an image from a buffer. The data will copied from the
+    /// Load an image from a buffer. The data will be copied from the
     /// buffer, so the input reference doesn't need to remain valid
     /// after the image is loaded.
     FromBuffer {

@@ -49,7 +49,6 @@ fn print_image_path(boot_services: &BootServices) -> Result {
         loaded_image.file_path().expect("File path is not set");
     let image_device_path_text = device_path_to_text
         .convert_device_path_to_text(
-            boot_services,
             image_device_path,
             DisplayOnly(true),
             AllowShortcuts(false),

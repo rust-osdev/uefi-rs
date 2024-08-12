@@ -9,6 +9,7 @@ use crate::proto::device_path::DevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
+use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
 use core::ffi::c_void;
@@ -1068,6 +1069,99 @@ pub unsafe fn exit(
         exit_data_size,
         exit_data.cast(),
     )
+}
+
+/// Get the current memory map and exit boot services.
+unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<MemoryMapMeta> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    // Get the memory map.
+    let memory_map = get_memory_map(buf)?;
+
+    // Try to exit boot services using the memory map key. Note that after
+    // the first call to `exit_boot_services`, there are restrictions on
+    // what boot services functions can be called. In UEFI 2.8 and earlier,
+    // only `get_memory_map` and `exit_boot_services` are allowed. Starting
+    // in UEFI 2.9 other memory allocation functions may also be called.
+    (bt.exit_boot_services)(image_handle().as_ptr(), memory_map.map_key.0)
+        .to_result_with_val(|| memory_map)
+}
+
+/// Exit UEFI boot services.
+///
+/// After this function completes, UEFI hands over control of the hardware
+/// to the executing OS loader, which implies that the UEFI boot services
+/// are shut down and cannot be used anymore. Only UEFI configuration tables
+/// and run-time services can be used.
+///
+/// The memory map at the time of exiting boot services returned. The map is
+/// backed by a pool allocation of the given `memory_type`. Since the boot
+/// services function to free that memory is no longer available after calling
+/// `exit_boot_services`, the allocation will not be freed on drop.
+///
+/// Note that once the boot services are exited, associated loggers and
+/// allocators can't use the boot services anymore. For the corresponding
+/// abstractions provided by this crate (see the [`helpers`] module),
+/// invoking this function will automatically disable them. If the
+/// `global_allocator` feature is enabled, attempting to use the allocator
+/// after exiting boot services will panic.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that no references to
+/// boot-services data remain. A non-exhaustive list of resources to check:
+///
+/// * All protocols will be invalid after exiting boot services. This
+///   includes the [`Output`] protocols attached to stdout/stderr. The
+///   caller must ensure that no protocol references remain.
+/// * The pool allocator is not usable after exiting boot services. Types
+///   such as [`PoolString`] which call [`free_pool`] on drop
+///   must be cleaned up before calling `exit_boot_services`, or leaked to
+///   avoid drop ever being called.
+/// * All data in the memory map marked as
+///   [`MemoryType::BOOT_SERVICES_CODE`] and
+///   [`MemoryType::BOOT_SERVICES_DATA`] will become free memory.
+///
+/// # Errors
+///
+/// This function will fail if it is unable to allocate memory for
+/// the memory map, if it fails to retrieve the memory map, or if
+/// exiting boot services fails (with up to one retry).
+///
+/// All errors are treated as unrecoverable because the system is
+/// now in an undefined state. Rather than returning control to the
+/// caller, the system will be reset.
+///
+/// [`helpers`]: crate::helpers
+/// [`Output`]: crate::proto::console::text::Output
+/// [`PoolString`]: crate::proto::device_path::text::PoolString
+#[must_use]
+pub unsafe fn exit_boot_services(memory_type: MemoryType) -> MemoryMapOwned {
+    crate::helpers::exit();
+
+    let mut buf = MemoryMapBackingMemory::new(memory_type).expect("Failed to allocate memory");
+
+    // Calling `exit_boot_services` can fail if the memory map key is not
+    // current. Retry a second time if that occurs. This matches the
+    // behavior of the Linux kernel:
+    // https://github.com/torvalds/linux/blob/e544a0743/drivers/firmware/efi/libstub/efi-stub-helper.c#L375
+    let mut status = Status::ABORTED;
+    for _ in 0..2 {
+        match unsafe { get_memory_map_and_exit_boot_services(buf.as_mut_slice()) } {
+            Ok(memory_map) => {
+                return MemoryMapOwned::from_initialized_mem(buf, memory_map);
+            }
+            Err(err) => {
+                log::error!("Error retrieving the memory map for exiting the boot services");
+                status = err.status()
+            }
+        }
+    }
+
+    // Failed to exit boot services.
+    log::warn!("Resetting the machine");
+    runtime::reset(ResetType::COLD, status, None);
 }
 
 /// Adds, updates, or removes a configuration table entry

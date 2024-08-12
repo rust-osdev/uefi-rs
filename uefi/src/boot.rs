@@ -4,11 +4,13 @@
 
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
+use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use crate::proto::device_path::DevicePath;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
 use core::ffi::c_void;
+use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
@@ -664,6 +666,47 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
                 Handle::from_ptr(handle).unwrap()
             },
         )
+    }
+}
+
+/// Enumerates all handles installed on the system which match a certain query.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: no matching handles found.
+/// * [`Status::BUFFER_TOO_SMALL`]: the buffer is not large enough. The required
+///   size (in number of handles, not bytes) will be returned in the error data.
+pub fn locate_handle<'buf>(
+    search_ty: SearchType,
+    buffer: &'buf mut [MaybeUninit<Handle>],
+) -> Result<&'buf [Handle], Option<usize>> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    // Obtain the needed data from the parameters.
+    let (ty, guid, key) = match search_ty {
+        SearchType::AllHandles => (0, ptr::null(), ptr::null()),
+        SearchType::ByRegisterNotify(registration) => {
+            (1, ptr::null(), registration.0.as_ptr().cast_const())
+        }
+        SearchType::ByProtocol(guid) => (2, guid as *const Guid, ptr::null()),
+    };
+
+    let mut buffer_size = buffer.len() * mem::size_of::<Handle>();
+    let status =
+        unsafe { (bt.locate_handle)(ty, guid, key, &mut buffer_size, buffer.as_mut_ptr().cast()) };
+
+    let num_handles = buffer_size / mem::size_of::<Handle>();
+
+    match status {
+        Status::SUCCESS => {
+            let buffer = &buffer[..num_handles];
+            // SAFETY: the entries up to `num_handles` have been initialized.
+            let handles = unsafe { maybe_uninit_slice_assume_init_ref(buffer) };
+            Ok(handles)
+        }
+        Status::BUFFER_TOO_SMALL => Err(Error::new(status, Some(num_handles))),
+        _ => Err(Error::new(status, None)),
     }
 }
 

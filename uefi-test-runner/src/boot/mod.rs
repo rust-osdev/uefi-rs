@@ -15,12 +15,12 @@ pub fn test(st: &SystemTable<Boot>) {
     info!("Testing boot services");
     memory::test(bt);
     misc::test(st);
-    test_locate_handle_buffer(bt);
+    test_locate_handles(bt);
     test_load_image(bt);
 }
 
-fn test_locate_handle_buffer(bt: &BootServices) {
-    info!("Testing the `locate_handle_buffer` function");
+fn test_locate_handles(bt: &BootServices) {
+    info!("Testing the `locate_handle_buffer`/`find_handles` functions");
 
     {
         // search all handles
@@ -51,6 +51,11 @@ fn test_locate_handle_buffer(bt: &BootServices) {
             *handles,
             *boot::locate_handle_buffer(SearchType::ByProtocol(&Output::GUID)).unwrap()
         );
+
+        // Compare with `boot::find_handles`. This implicitly tests
+        // `boot::locate_handle` as well.
+        let handles_vec = boot::find_handles::<Output>().unwrap();
+        assert_eq!(*handles, handles_vec);
     }
 }
 

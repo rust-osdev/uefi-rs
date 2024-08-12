@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
+details of a significant change to the API in this release.
+
 ## Added
 - `uefi::system` is a new module that provides freestanding functions for
   accessing fields of the global system table.
@@ -39,6 +42,7 @@
   > use uefi::table::boot::BootServices;
   ```
 
+[funcmigrate]: ../docs/funcs_migration.md
 
 # uefi - 0.30.0 (2024-08-02)
 

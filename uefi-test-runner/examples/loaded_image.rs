@@ -3,45 +3,44 @@
 #![no_std]
 
 use log::info;
+use uefi::boot::{self, SearchType};
 use uefi::prelude::*;
 use uefi::proto::device_path::text::{
     AllowShortcuts, DevicePathToText, DisplayOnly,
 };
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::table::boot::SearchType;
 use uefi::{Identify, Result};
 
 // ANCHOR: main
 #[entry]
-fn main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+fn main() -> Status {
     uefi::helpers::init().unwrap();
-    let boot_services = system_table.boot_services();
 
-    print_image_path(boot_services).unwrap();
+    print_image_path().unwrap();
 
-    boot_services.stall(10_000_000);
+    boot::stall(10_000_000);
     Status::SUCCESS
 }
 // ANCHOR_END: main
 
 // ANCHOR: print_image_path
-fn print_image_path(boot_services: &BootServices) -> Result {
+fn print_image_path() -> Result {
     // ANCHOR_END: print_image_path
     // ANCHOR: loaded_image
-    let loaded_image = boot_services
-        .open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())?;
+    let loaded_image =
+        boot::open_protocol_exclusive::<LoadedImage>(boot::image_handle())?;
     // ANCHOR_END: loaded_image
 
     // ANCHOR: device_path
-    let device_path_to_text_handle = *boot_services
-        .locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))?
-        .first()
-        .expect("DevicePathToText is missing");
+    let device_path_to_text_handle = *boot::locate_handle_buffer(
+        SearchType::ByProtocol(&DevicePathToText::GUID),
+    )?
+    .first()
+    .expect("DevicePathToText is missing");
 
-    let device_path_to_text = boot_services
-        .open_protocol_exclusive::<DevicePathToText>(
-            device_path_to_text_handle,
-        )?;
+    let device_path_to_text = boot::open_protocol_exclusive::<DevicePathToText>(
+        device_path_to_text_handle,
+    )?;
     // ANCHOR_END: device_path
 
     // ANCHOR: text

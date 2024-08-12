@@ -10,7 +10,7 @@ use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, BltRegion, GraphicsOutput};
 use uefi::proto::rng::Rng;
-use uefi::Result;
+use uefi::{boot, Result};
 
 #[derive(Clone, Copy)]
 struct Point {
@@ -82,14 +82,14 @@ fn get_random_usize(rng: &mut Rng) -> usize {
     usize::from_le_bytes(buf)
 }
 
-fn draw_sierpinski(bt: &BootServices) -> Result {
+fn draw_sierpinski() -> Result {
     // Open graphics output protocol.
-    let gop_handle = bt.get_handle_for_protocol::<GraphicsOutput>()?;
-    let mut gop = bt.open_protocol_exclusive::<GraphicsOutput>(gop_handle)?;
+    let gop_handle = boot::get_handle_for_protocol::<GraphicsOutput>()?;
+    let mut gop = boot::open_protocol_exclusive::<GraphicsOutput>(gop_handle)?;
 
     // Open random number generator protocol.
-    let rng_handle = bt.get_handle_for_protocol::<Rng>()?;
-    let mut rng = bt.open_protocol_exclusive::<Rng>(rng_handle)?;
+    let rng_handle = boot::get_handle_for_protocol::<Rng>()?;
+    let mut rng = boot::open_protocol_exclusive::<Rng>(rng_handle)?;
 
     // Create a buffer to draw into.
     let (width, height) = gop.current_mode_info().resolution();
@@ -144,10 +144,9 @@ fn draw_sierpinski(bt: &BootServices) -> Result {
 }
 
 #[entry]
-fn main(_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+fn main() -> Status {
     uefi::helpers::init().unwrap();
-    let bt = system_table.boot_services();
-    draw_sierpinski(bt).unwrap();
+    draw_sierpinski().unwrap();
     Status::SUCCESS
 }
 // ANCHOR_END: all

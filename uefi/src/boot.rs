@@ -18,6 +18,9 @@ use core::{mem, slice};
 use uefi::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use uefi_raw::table::boot::InterfaceType;
 
+#[cfg(feature = "alloc")]
+use {alloc::vec::Vec, uefi::ResultExt};
+
 #[cfg(doc)]
 use {
     crate::proto::device_path::LoadedImageDevicePath, crate::proto::loaded_image::LoadedImage,
@@ -739,6 +742,47 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
             buffer: NonNull::new(buffer.cast())
                 .expect("locate_handle_buffer must not return a null pointer"),
         })
+}
+
+/// Returns all the handles implementing a certain protocol.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: no matching handles.
+#[cfg(feature = "alloc")]
+pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
+    // Search by protocol.
+    let search_type = SearchType::from_proto::<P>();
+
+    // Determine how much we need to allocate.
+    let num_handles = match locate_handle(search_type, &mut []) {
+        Err(err) => {
+            if err.status() == Status::BUFFER_TOO_SMALL {
+                err.data().expect("error data is missing")
+            } else {
+                return Err(err.to_err_without_payload());
+            }
+        }
+        // This should never happen: if no handles match the search then a
+        // `NOT_FOUND` error should be returned.
+        Ok(_) => panic!("locate_handle should not return success with empty buffer"),
+    };
+
+    // Allocate a large enough buffer without pointless initialization.
+    let mut handles = Vec::with_capacity(num_handles);
+
+    // Perform the search.
+    let num_handles = locate_handle(search_type, handles.spare_capacity_mut())
+        .discard_errdata()?
+        .len();
+
+    // Mark the returned number of elements as initialized.
+    unsafe {
+        handles.set_len(num_handles);
+    }
+
+    // Emit output, with warnings
+    Ok(handles)
 }
 
 /// Find an arbitrary handle that supports a particular [`Protocol`]. Returns

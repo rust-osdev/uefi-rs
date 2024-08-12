@@ -48,12 +48,8 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // Check the `uefi::system` module.
     check_system(&st);
 
-    // Test all the boot services.
-    let bt = st.boot_services();
-
     // Try retrieving a handle to the file system the image was booted from.
-    bt.get_image_file_system(image)
-        .expect("Failed to retrieve boot file system");
+    uefi::boot::get_image_file_system(image).expect("Failed to retrieve boot file system");
 
     boot::test(&st);
 

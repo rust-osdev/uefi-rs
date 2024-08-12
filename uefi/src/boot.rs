@@ -6,6 +6,8 @@ use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use crate::proto::device_path::DevicePath;
+use crate::proto::loaded_image::LoadedImage;
+use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
@@ -22,10 +24,7 @@ use uefi_raw::table::boot::InterfaceType;
 use {alloc::vec::Vec, uefi::ResultExt};
 
 #[cfg(doc)]
-use {
-    crate::proto::device_path::LoadedImageDevicePath, crate::proto::loaded_image::LoadedImage,
-    crate::proto::media::fs::SimpleFileSystem,
-};
+use crate::proto::device_path::LoadedImageDevicePath;
 
 pub use uefi::table::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
@@ -1154,6 +1153,32 @@ pub fn stall(microseconds: usize) {
         // ignore the status.
         let _ = (bt.stall)(microseconds);
     }
+}
+
+/// Retrieves a [`SimpleFileSystem`] protocol associated with the device the given
+/// image was loaded from.
+///
+/// # Errors
+///
+/// This function can return errors from [`open_protocol_exclusive`] and
+/// [`locate_device_path`]. See those functions for more details.
+///
+/// * [`Status::INVALID_PARAMETER`]
+/// * [`Status::UNSUPPORTED`]
+/// * [`Status::ACCESS_DENIED`]
+/// * [`Status::ALREADY_STARTED`]
+/// * [`Status::NOT_FOUND`]
+pub fn get_image_file_system(image_handle: Handle) -> Result<ScopedProtocol<SimpleFileSystem>> {
+    let loaded_image = open_protocol_exclusive::<LoadedImage>(image_handle)?;
+
+    let device_handle = loaded_image
+        .device()
+        .ok_or(Error::new(Status::UNSUPPORTED, ()))?;
+    let device_path = open_protocol_exclusive::<DevicePath>(device_handle)?;
+
+    let device_handle = locate_device_path::<SimpleFileSystem>(&mut &*device_path)?;
+
+    open_protocol_exclusive(device_handle)
 }
 
 /// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as

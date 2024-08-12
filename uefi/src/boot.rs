@@ -28,7 +28,7 @@ use crate::proto::device_path::LoadedImageDevicePath;
 
 pub use uefi::table::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    SearchType, TimerTrigger,
+    ProtocolSearchKey, SearchType, TimerTrigger,
 };
 pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
 
@@ -374,7 +374,7 @@ pub fn check_event(event: Event) -> Result<bool> {
 
 /// Removes `event` from any event group to which it belongs and closes it.
 ///
-/// If `event` was registered with `register_protocol_notify`, then the
+/// If `event` was registered with [`register_protocol_notify`], then the
 /// corresponding registration will be removed. Calling this function within the
 /// corresponding notify function is allowed.
 ///
@@ -613,6 +613,34 @@ pub unsafe fn uninstall_protocol_interface(
     let bt = unsafe { bt.as_ref() };
 
     (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
+}
+
+/// Registers `event` to be signaled whenever a protocol interface is registered for
+/// `protocol` by [`install_protocol_interface`] or [`reinstall_protocol_interface`].
+///
+/// If successful, a [`SearchType::ByRegisterNotify`] is returned. This can be
+/// used with [`locate_handle`] or [`locate_handle_buffer`] to identify the
+/// newly (re)installed handles that support `protocol`.
+///
+/// Events can be unregistered from protocol interface notification by calling [`close_event`].
+///
+/// # Errors
+///
+/// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
+pub fn register_protocol_notify(
+    protocol: &'static Guid,
+    event: &Event,
+) -> Result<SearchType<'static>> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut key = ptr::null();
+    unsafe { (bt.register_protocol_notify)(protocol, event.as_ptr(), &mut key) }.to_result_with_val(
+        || {
+            // OK to unwrap: key is non-null for Status::SUCCESS.
+            SearchType::ByRegisterNotify(ProtocolSearchKey(NonNull::new(key.cast_mut()).unwrap()))
+        },
+    )
 }
 
 /// Get the list of protocol interface [`Guids`][Guid] that are installed

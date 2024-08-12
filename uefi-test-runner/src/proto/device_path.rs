@@ -43,7 +43,7 @@ pub fn test(bt: &BootServices) {
             );
 
             let text = device_path_to_text
-                .convert_device_node_to_text(bt, path, DisplayOnly(true), AllowShortcuts(false))
+                .convert_device_node_to_text(path, DisplayOnly(true), AllowShortcuts(false))
                 .expect("Failed to convert device path to text");
             let text = &*text;
             info!("path name: {text}");
@@ -81,7 +81,7 @@ pub fn test(bt: &BootServices) {
 
         let path_components = device_path
             .node_iter()
-            .map(|node| node.to_string(bt, DisplayOnly(false), AllowShortcuts(false)))
+            .map(|node| node.to_string(DisplayOnly(false), AllowShortcuts(false)))
             .map(|str| str.unwrap().to_string())
             .collect::<Vec<_>>();
 
@@ -107,7 +107,7 @@ pub fn test(bt: &BootServices) {
 
         // Test that to_string works for device_paths
         let path = device_path
-            .to_string(bt, DisplayOnly(false), AllowShortcuts(false))
+            .to_string(DisplayOnly(false), AllowShortcuts(false))
             .unwrap()
             .to_string();
 

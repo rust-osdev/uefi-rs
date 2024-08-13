@@ -43,6 +43,8 @@ details of a significant change to the API in this release.
   > use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
   > use uefi::table::boot::BootServices;
   ```
+- **Breaking:** Added a new `BootPolicy` type which breaks existing usages
+  of `LoadImageSource`.
 
 [funcmigrate]: ../docs/funcs_migration.md
 

@@ -21,11 +21,11 @@ use core::{mem, slice};
 use uefi::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use uefi_raw::table::boot::InterfaceType;
 
-#[cfg(feature = "alloc")]
-use {alloc::vec::Vec, uefi::ResultExt};
-
 #[cfg(doc)]
 use crate::proto::device_path::LoadedImageDevicePath;
+use uefi::proto::BootPolicy;
+#[cfg(feature = "alloc")]
+use {alloc::vec::Vec, uefi::ResultExt};
 
 pub use uefi::table::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
@@ -1002,7 +1002,7 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
     match source {
         LoadImageSource::FromBuffer { buffer, file_path } => {
             // Boot policy is ignored when loading from source buffer.
-            boot_policy = 0;
+            boot_policy = BootPolicy::ExactMatch;
 
             device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
             source_buffer = buffer.as_ptr();
@@ -1010,9 +1010,9 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
         }
         LoadImageSource::FromDevicePath {
             device_path: file_path,
-            from_boot_manager,
+            boot_policy: new_boot_policy,
         } => {
-            boot_policy = u8::from(from_boot_manager);
+            boot_policy = new_boot_policy;
             device_path = file_path.as_ffi_ptr();
             source_buffer = ptr::null();
             source_size = 0;
@@ -1022,7 +1022,7 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
     let mut image_handle = ptr::null_mut();
     unsafe {
         (bt.load_image)(
-            boot_policy,
+            boot_policy.into(),
             parent_image_handle.as_ptr(),
             device_path.cast(),
             source_buffer,

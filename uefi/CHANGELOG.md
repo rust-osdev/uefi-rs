@@ -10,6 +10,8 @@ details of a significant change to the API in this release.
   boot services using the global system table.
 - `uefi::runtime` is a new module that provides freestanding functions for
   runtime services using the global system table.
+- `uefi::table::system_table_raw` is a new function to retrieve a raw pointer to
+  the global system table.
 - Add standard derives for `ConfigTableEntry`.
 - `PcrEvent`/`PcrEventInputs` impl `Align`, `Eq`, and `PartialEq`.
 - Added `PcrEvent::new_in_box` and `PcrEventInputs::new_in_box`.

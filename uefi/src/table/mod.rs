@@ -18,6 +18,14 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 static SYSTEM_TABLE: AtomicPtr<uefi_raw::table::system::SystemTable> =
     AtomicPtr::new(ptr::null_mut());
 
+/// Get the raw system table pointer.
+///
+/// If called before `set_system_table` has been called, this will return `None`.
+pub fn system_table_raw() -> Option<NonNull<uefi_raw::table::system::SystemTable>> {
+    let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
+    NonNull::new(ptr)
+}
+
 /// Get the raw system table pointer. This may only be called after
 /// `set_system_table` has been used to set the global pointer.
 ///
@@ -26,8 +34,7 @@ static SYSTEM_TABLE: AtomicPtr<uefi_raw::table::system::SystemTable> =
 /// Panics if the global system table pointer is null.
 #[track_caller]
 pub(crate) fn system_table_raw_panicking() -> NonNull<uefi_raw::table::system::SystemTable> {
-    let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
-    NonNull::new(ptr).expect("global system table pointer is not set")
+    system_table_raw().expect("global system table pointer is not set")
 }
 
 /// Update the global system table pointer.

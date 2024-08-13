@@ -11,6 +11,17 @@ This crate makes it easy to develop Rust software that leverages **safe**,
 ![Build status](https://github.com/rust-osdev/uefi-rs/workflows/Rust/badge.svg)
 ![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
 
+## Value-add and Use Cases
+
+`uefi` supports writing code for both pre- and post-exit boot services
+epochs, but its true strength shines when you create UEFI images that heavily
+interact with UEFI boot services. Still, you have the flexibility to just
+integrate selected types and abstractions into your project, for example to
+parse the UEFI memory map.
+
+_Note that for producing UEFI images, you also need to use a corresponding
+`uefi` compiler target of Rust, such as `x86_64-unknown-uefi`._
+
 For an introduction to the `uefi-rs` project and documentation, please refer to
 our main [README].
 

@@ -9,7 +9,26 @@
 //!
 //! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
 
-pub use boot_policy::BootPolicy;
+pub mod console;
+pub mod debug;
+pub mod device_path;
+pub mod driver;
+pub mod loaded_image;
+pub mod media;
+pub mod misc;
+pub mod network;
+pub mod pi;
+pub mod rng;
+pub mod security;
+pub mod shell_params;
+pub mod shim;
+pub mod string;
+pub mod tcg;
+
+mod boot_policy;
+
+pub use boot_policy::{BootPolicy, BootPolicyError};
+pub use uefi_macros::unsafe_protocol;
 
 use crate::Identify;
 use core::ffi::c_void;
@@ -65,23 +84,3 @@ where
         ptr.cast::<Self>()
     }
 }
-
-pub use uefi_macros::unsafe_protocol;
-
-pub mod console;
-pub mod debug;
-pub mod device_path;
-pub mod driver;
-pub mod loaded_image;
-pub mod media;
-pub mod misc;
-pub mod network;
-pub mod pi;
-pub mod rng;
-pub mod security;
-pub mod shell_params;
-pub mod shim;
-pub mod string;
-pub mod tcg;
-
-mod boot_policy;

@@ -10,9 +10,9 @@
 
 use crate::proto::device_path::{DevicePath, DevicePathNode};
 use crate::proto::unsafe_protocol;
-use crate::{boot, CStr16, Char16, Result, Status};
+use crate::table::boot::BootServices;
+use crate::{CStr16, Char16, Result, Status};
 use core::ops::Deref;
-use core::ptr::NonNull;
 use uefi_raw::protocol::device_path::{DevicePathFromTextProtocol, DevicePathToTextProtocol};
 
 /// This struct is a wrapper of `display_only` parameter
@@ -42,27 +42,36 @@ pub struct AllowShortcuts(pub bool);
 /// Wrapper for a string internally allocated from
 /// UEFI boot services memory.
 #[derive(Debug)]
-pub struct PoolString(NonNull<Char16>);
+pub struct PoolString<'a> {
+    boot_services: &'a BootServices,
+    text: *const Char16,
+}
 
-impl PoolString {
-    fn new(text: *const Char16) -> Result<Self> {
-        NonNull::new(text.cast_mut())
-            .map(Self)
-            .ok_or(Status::OUT_OF_RESOURCES.into())
+impl<'a> PoolString<'a> {
+    fn new(boot_services: &'a BootServices, text: *const Char16) -> Result<Self> {
+        if text.is_null() {
+            Err(Status::OUT_OF_RESOURCES.into())
+        } else {
+            Ok(Self {
+                boot_services,
+                text,
+            })
+        }
     }
 }
 
-impl Deref for PoolString {
+impl<'a> Deref for PoolString<'a> {
     type Target = CStr16;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { CStr16::from_ptr(self.0.as_ptr()) }
+        unsafe { CStr16::from_ptr(self.text) }
     }
 }
 
-impl Drop for PoolString {
+impl Drop for PoolString<'_> {
     fn drop(&mut self) {
-        unsafe { boot::free_pool(self.0.cast()) }.expect("Failed to free pool [{addr:#?}]");
+        let addr = self.text as *mut u8;
+        unsafe { self.boot_services.free_pool(addr) }.expect("Failed to free pool [{addr:#?}]");
     }
 }
 
@@ -82,12 +91,13 @@ impl DevicePathToText {
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
-    pub fn convert_device_node_to_text(
+    pub fn convert_device_node_to_text<'boot>(
         &self,
+        boot_services: &'boot BootServices,
         device_node: &DevicePathNode,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Result<PoolString> {
+    ) -> Result<PoolString<'boot>> {
         let text_device_node = unsafe {
             (self.0.convert_device_node_to_text)(
                 device_node.as_ffi_ptr().cast(),
@@ -95,7 +105,7 @@ impl DevicePathToText {
                 allow_shortcuts.0,
             )
         };
-        PoolString::new(text_device_node.cast())
+        PoolString::new(boot_services, text_device_node.cast())
     }
 
     /// Convert a device path to its text representation.
@@ -104,12 +114,13 @@ impl DevicePathToText {
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
-    pub fn convert_device_path_to_text(
+    pub fn convert_device_path_to_text<'boot>(
         &self,
+        boot_services: &'boot BootServices,
         device_path: &DevicePath,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
-    ) -> Result<PoolString> {
+    ) -> Result<PoolString<'boot>> {
         let text_device_path = unsafe {
             (self.0.convert_device_path_to_text)(
                 device_path.as_ffi_ptr().cast(),
@@ -117,7 +128,7 @@ impl DevicePathToText {
                 allow_shortcuts.0,
             )
         };
-        PoolString::new(text_device_path.cast())
+        PoolString::new(boot_services, text_device_path.cast())
     }
 }
 

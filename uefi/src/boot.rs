@@ -2,35 +2,34 @@
 //!
 //! These functions will panic if called after exiting boot services.
 
+pub use crate::table::boot::{
+    AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
+    ProtocolSearchKey, SearchType, TimerTrigger,
+};
+pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
+
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use crate::proto::device_path::DevicePath;
+#[cfg(doc)]
+use crate::proto::device_path::LoadedImageDevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
+use crate::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{mem, slice};
-use uefi::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use uefi_raw::table::boot::InterfaceType;
-
-#[cfg(doc)]
-use crate::proto::device_path::LoadedImageDevicePath;
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
-
-pub use uefi::table::boot::{
-    AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    ProtocolSearchKey, SearchType, TimerTrigger,
-};
-pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].

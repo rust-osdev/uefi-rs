@@ -23,6 +23,8 @@ details of a significant change to the API in this release.
 
 ## Changed
 - **Breaking:** `uefi::helpers::init` no longer takes an argument.
+- **Breaking:** The conversion functions between device paths and text no longer
+  take a `BootServices` argument. The global system table is used instead.
 - The lifetime of the `SearchType` returned from
   `BootServices::register_protocol_notify` is now tied to the protocol GUID.
   The old `MemoryMap` was renamed to `MemoryMapOwned`.

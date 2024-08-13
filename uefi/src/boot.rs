@@ -23,7 +23,6 @@ use uefi_raw::table::boot::InterfaceType;
 
 #[cfg(doc)]
 use crate::proto::device_path::LoadedImageDevicePath;
-use uefi::proto::BootPolicy;
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
 
@@ -995,29 +994,7 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    let boot_policy;
-    let device_path;
-    let source_buffer;
-    let source_size;
-    match source {
-        LoadImageSource::FromBuffer { buffer, file_path } => {
-            // Boot policy is ignored when loading from source buffer.
-            boot_policy = BootPolicy::ExactMatch;
-
-            device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
-            source_buffer = buffer.as_ptr();
-            source_size = buffer.len();
-        }
-        LoadImageSource::FromDevicePath {
-            device_path: file_path,
-            boot_policy: new_boot_policy,
-        } => {
-            boot_policy = new_boot_policy;
-            device_path = file_path.as_ffi_ptr();
-            source_buffer = ptr::null();
-            source_size = 0;
-        }
-    };
+    let (boot_policy, device_path, source_buffer, source_size) = source.to_ffi_params();
 
     let mut image_handle = ptr::null_mut();
     unsafe {

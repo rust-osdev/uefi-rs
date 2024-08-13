@@ -1,7 +1,7 @@
 # uefi - [Unreleased]
 
 See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
-details of a significant change to the API in this release.
+details of the new `system`/`boot`/`runtime` modules, and upcoming deprecations.
 
 ## Added
 - `uefi::system` is a new module that provides freestanding functions for

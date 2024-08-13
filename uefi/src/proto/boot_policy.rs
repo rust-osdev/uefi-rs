@@ -28,7 +28,7 @@ impl core::error::Error for BootPolicyError {}
 ///
 /// This type is not ABI compatible. On the ABI level, this is an UEFI
 /// boolean.
-#[derive(Debug, Copy, Clone, PartialOrd, PartialEq, Eq, Ord)]
+#[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub enum BootPolicy {
     /// Indicates that the request originates from the boot manager, and that
     /// the boot manager is attempting to load the provided `file_path` as a
@@ -41,6 +41,7 @@ pub enum BootPolicy {
     /// The provided `file_path` must match an exact file to be loaded.
     ///
     /// This corresponds to the `FALSE` value in the UEFI spec.
+    #[default]
     ExactMatch,
 }
 

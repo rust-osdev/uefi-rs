@@ -1419,7 +1419,7 @@ impl<'a> LoadImageSource<'a> {
         match self {
             LoadImageSource::FromBuffer { buffer, file_path } => {
                 // Boot policy is ignored when loading from source buffer.
-                boot_policy = BootPolicy::ExactMatch;
+                boot_policy = BootPolicy::default();
 
                 device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
                 source_buffer = buffer.as_ptr();

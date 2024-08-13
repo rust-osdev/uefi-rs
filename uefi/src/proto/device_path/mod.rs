@@ -90,8 +90,10 @@ use ptr_meta::Pointee;
 
 #[cfg(feature = "alloc")]
 use {
-    crate::boot::{self, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, SearchType},
     crate::proto::device_path::text::{AllowShortcuts, DevicePathToText, DisplayOnly},
+    crate::table::boot::{
+        BootServices, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, SearchType,
+    },
     crate::{CString16, Identify},
     alloc::borrow::ToOwned,
     alloc::boxed::Box,
@@ -230,13 +232,14 @@ impl DevicePathNode {
     #[cfg(feature = "alloc")]
     pub fn to_string(
         &self,
+        bs: &BootServices,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
     ) -> Result<CString16, DevicePathToTextError> {
-        let to_text_protocol = open_text_protocol()?;
+        let to_text_protocol = open_text_protocol(bs)?;
 
         to_text_protocol
-            .convert_device_node_to_text(self, display_only, allow_shortcuts)
+            .convert_device_node_to_text(bs, self, display_only, allow_shortcuts)
             .map(|pool_string| {
                 let cstr16 = &*pool_string;
                 // Another allocation; pool string is dropped. This overhead
@@ -481,13 +484,14 @@ impl DevicePath {
     #[cfg(feature = "alloc")]
     pub fn to_string(
         &self,
+        bs: &BootServices,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
     ) -> Result<CString16, DevicePathToTextError> {
-        let to_text_protocol = open_text_protocol()?;
+        let to_text_protocol = open_text_protocol(bs)?;
 
         to_text_protocol
-            .convert_device_path_to_text(self, display_only, allow_shortcuts)
+            .convert_device_path_to_text(bs, self, display_only, allow_shortcuts)
             .map(|pool_string| {
                 let cstr16 = &*pool_string;
                 // Another allocation; pool string is dropped. This overhead
@@ -874,17 +878,20 @@ impl core::error::Error for DevicePathToTextError {
 /// Helper function to open the [`DevicePathToText`] protocol using the boot
 /// services.
 #[cfg(feature = "alloc")]
-fn open_text_protocol() -> Result<ScopedProtocol<DevicePathToText>, DevicePathToTextError> {
-    let &handle = boot::locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))
+fn open_text_protocol(
+    bs: &BootServices,
+) -> Result<ScopedProtocol<DevicePathToText>, DevicePathToTextError> {
+    let &handle = bs
+        .locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))
         .map_err(DevicePathToTextError::CantLocateHandleBuffer)?
         .first()
         .ok_or(DevicePathToTextError::NoHandle)?;
 
     unsafe {
-        boot::open_protocol::<DevicePathToText>(
+        bs.open_protocol::<DevicePathToText>(
             OpenProtocolParams {
                 handle,
-                agent: boot::image_handle(),
+                agent: bs.image_handle(),
                 controller: None,
             },
             OpenProtocolAttributes::GetProtocol,

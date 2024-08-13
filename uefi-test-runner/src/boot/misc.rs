@@ -25,6 +25,7 @@ pub fn test(st: &SystemTable<Boot>) {
     test_watchdog(bt);
     info!("Testing protocol handler services...");
     test_register_protocol_notify(bt);
+    test_register_protocol_notify_freestanding();
     test_protocol_interface_management();
     test_install_protocol_interface(bt);
     test_reinstall_protocol_interface(bt);
@@ -153,6 +154,20 @@ fn test_register_protocol_notify(bt: &BootServices) {
     };
 
     bt.register_protocol_notify(protocol, event)
+        .expect("Failed to register protocol notify fn");
+}
+
+fn test_register_protocol_notify_freestanding() {
+    unsafe extern "efiapi" fn callback(_event: Event, _context: Option<NonNull<c_void>>) {
+        info!("in callback for test_register_protocol_notify_freestanding")
+    }
+
+    let protocol = &TestProtocol::GUID;
+    let event = unsafe {
+        boot::create_event(EventType::NOTIFY_SIGNAL, Tpl::NOTIFY, Some(callback), None).unwrap()
+    };
+
+    boot::register_protocol_notify(protocol, &event)
         .expect("Failed to register protocol notify fn");
 }
 

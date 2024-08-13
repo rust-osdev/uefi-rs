@@ -1,9 +1,10 @@
 # API migration: Deprecating SystemTable/BootServices/RuntimeServices
 
-Starting in uefi-0.31.0, a significant API change has been introduced. We are
-transitioning away from modeling UEFI tables with structs, and instead providing
-an API based on freestanding functions. These functions make use of a global
-system table pointer that is set automatically by the `entry` macro.
+We are in the process of introducing a significant API change in the `uefi`
+crate. We are transitioning away from modeling UEFI tables with structs, and
+instead providing an API based on freestanding functions. These functions make
+use of a global system table pointer that is set automatically by the `entry`
+macro.
 
 A short example:
 
@@ -26,15 +27,17 @@ are replacing, so in most cases migration should be as simple as updating
 imports and calling the freestanding function instead of a method on
 `SystemTable`, `BootServices`, or `RuntimeServices`.
 
-As of uefi-0.31.0, a few places in the API still require a reference to
-`BootServices`. You can retrieve one by calling
-`uefi::table::system_table_boot().boot_services()`.
-
-In uefi-0.31.0, the old API has been deprecated, but can still be used. It will
-be fully removed in a later release.
+You can retrieve a global `SystemTable` with `uefi::table::system_table_boot` or
+`uefi::table::system_table_runtime` to help ease the transition.
 
 If you run into any issues with this migration, please feel free to chat with us
 on [Zulip] or file an [issue].
+
+## Timeline
+
+As of uefi-0.31, the new API has been introduced alongside the old struct-based
+API. We plan to deprecate the old API in the release after that, and then fully
+remove the old API in a later release.
 
 ## Reason for the change
 

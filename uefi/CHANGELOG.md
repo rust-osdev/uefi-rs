@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+
+# uefi - 0.31.0 (2024-08-20)
+
 See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
 details of the new `system`/`boot`/`runtime` modules, and upcoming deprecations.
 

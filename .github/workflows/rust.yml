@@ -170,3 +170,16 @@ jobs:
         run: |
           rustup component add miri
           cargo xtask miri
+  # Builds a Rust standard binary using the `std` impl for UEFI, rather than
+  # creating a `no_std` + `no_main` binary.
+  build_standard_uefi_binary:
+    name: Build Standard Binary (nightly)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Set toolchain
+        run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo +nightly build --target x86_64-unknown-uefi --verbose -p uefi-std-example

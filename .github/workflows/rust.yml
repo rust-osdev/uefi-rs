@@ -13,10 +13,13 @@ on:
     - cron: '0 0 * * 0-6'
 env:
   RUSTFLAGS: -D warnings
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   test_aarch64:
     name: Integration Test (AArch64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -44,7 +47,7 @@ jobs:
         timeout-minutes: 4
   test_ia32:
     name: Integration Test (IA-32)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4

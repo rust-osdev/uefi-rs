@@ -13,6 +13,9 @@ on:
     - cron: '0 0 * * 0-6'
 env:
   RUSTFLAGS: -D warnings
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   test_aarch64:
     name: Integration Test (AArch64)

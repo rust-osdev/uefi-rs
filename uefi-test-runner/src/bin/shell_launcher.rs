@@ -18,6 +18,7 @@ use uefi::prelude::*;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::{DevicePath, DeviceSubType, DeviceType, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
+use uefi::proto::BootPolicy;
 
 /// Get the device path of the shell app. This is the same as the
 /// currently-loaded image's device path, but with the file path part changed.
@@ -53,7 +54,7 @@ fn efi_main() -> Status {
         boot::image_handle(),
         LoadImageSource::FromDevicePath {
             device_path: shell_image_path,
-            from_boot_manager: false,
+            boot_policy: BootPolicy::ExactMatch,
         },
     )
     .expect("failed to load shell app");

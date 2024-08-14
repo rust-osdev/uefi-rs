@@ -8,9 +8,10 @@ use super::Revision;
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::*;
 use crate::proto::device_path::DevicePath;
+use crate::proto::device_path::FfiDevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
-use crate::proto::{Protocol, ProtocolPointer};
+use crate::proto::{BootPolicy, Protocol, ProtocolPointer};
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 #[cfg(feature = "alloc")]
@@ -841,34 +842,12 @@ impl BootServices {
         parent_image_handle: Handle,
         source: LoadImageSource,
     ) -> uefi::Result<Handle> {
-        let boot_policy;
-        let device_path;
-        let source_buffer;
-        let source_size;
-        match source {
-            LoadImageSource::FromBuffer { buffer, file_path } => {
-                // Boot policy is ignored when loading from source buffer.
-                boot_policy = 0;
-
-                device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
-                source_buffer = buffer.as_ptr();
-                source_size = buffer.len();
-            }
-            LoadImageSource::FromDevicePath {
-                device_path: file_path,
-                from_boot_manager,
-            } => {
-                boot_policy = u8::from(from_boot_manager);
-                device_path = file_path.as_ffi_ptr();
-                source_buffer = ptr::null();
-                source_size = 0;
-            }
-        };
+        let (boot_policy, device_path, source_buffer, source_size) = source.to_ffi_params();
 
         let mut image_handle = ptr::null_mut();
         unsafe {
             (self.0.load_image)(
-                boot_policy,
+                boot_policy.into(),
                 parent_image_handle.as_ptr(),
                 device_path.cast(),
                 source_buffer,
@@ -1403,9 +1382,10 @@ pub enum LoadImageSource<'a> {
 
     /// Load an image via the [`SimpleFileSystem`] protocol. If there is
     /// no instance of that protocol associated with the path then the
-    /// behavior depends on `from_boot_manager`. If `true`, attempt to
-    /// load via the `LoadFile` protocol. If `false`, attempt to load
-    /// via the `LoadFile2` protocol, then fall back to `LoadFile`.
+    /// behavior depends on [`BootPolicy`]. If [`BootPolicy::BootSelection`],
+    /// attempt to load via the `LoadFile` protocol. If
+    /// [`BootPolicy::ExactMatch`], attempt to load via the `LoadFile2`
+    /// protocol, then fall back to `LoadFile`.
     FromDevicePath {
         /// The full device path from which to load the image.
         ///
@@ -1416,13 +1396,47 @@ pub enum LoadImageSource<'a> {
         /// and not just `\\EFI\\BOOT\\BOOTX64.EFI`.
         device_path: &'a DevicePath,
 
-        /// If there is no instance of [`SimpleFileSystem`] protocol associated
-        /// with the given device path, then this function will attempt to use
-        /// `LoadFileProtocol` (`from_boot_manager` is `true`) or
-        /// `LoadFile2Protocol`, and then `LoadFileProtocol`
-        /// (`from_boot_manager` is `false`).
-        from_boot_manager: bool,
+        /// The [`BootPolicy`] to use.
+        boot_policy: BootPolicy,
     },
+}
+
+impl<'a> LoadImageSource<'a> {
+    /// Returns the raw FFI parameters for `load_image`.
+    #[must_use]
+    pub(crate) fn to_ffi_params(
+        &self,
+    ) -> (
+        BootPolicy,
+        *const FfiDevicePath,
+        *const u8, /* buffer */
+        usize,     /* buffer length */
+    ) {
+        let boot_policy;
+        let device_path;
+        let source_buffer;
+        let source_size;
+        match self {
+            LoadImageSource::FromBuffer { buffer, file_path } => {
+                // Boot policy is ignored when loading from source buffer.
+                boot_policy = BootPolicy::default();
+
+                device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
+                source_buffer = buffer.as_ptr();
+                source_size = buffer.len();
+            }
+            LoadImageSource::FromDevicePath {
+                device_path: d_path,
+                boot_policy: b_policy,
+            } => {
+                boot_policy = *b_policy;
+                device_path = d_path.as_ffi_ptr();
+                source_buffer = ptr::null();
+                source_size = 0;
+            }
+        };
+        (boot_policy, device_path, source_buffer, source_size)
+    }
 }
 
 /// RAII guard for task priority level changes

@@ -43,6 +43,8 @@ details of the new `system`/`boot`/`runtime` modules, and upcoming deprecations.
   > use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
   > use uefi::table::boot::BootServices;
   ```
+- **Breaking:** Added a new `BootPolicy` type which breaks existing usages
+  of `LoadImageSource`.
 
 [funcmigrate]: ../docs/funcs_migration.md
 

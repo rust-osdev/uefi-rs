@@ -2,36 +2,34 @@
 //!
 //! These functions will panic if called after exiting boot services.
 
+pub use crate::table::boot::{
+    AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
+    ProtocolSearchKey, SearchType, TimerTrigger,
+};
+pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
+
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use crate::proto::device_path::DevicePath;
+#[cfg(doc)]
+use crate::proto::device_path::LoadedImageDevicePath;
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
 use crate::proto::{Protocol, ProtocolPointer};
 use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
+use crate::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{mem, slice};
-use uefi::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
 use uefi_raw::table::boot::InterfaceType;
-
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
-
-#[cfg(doc)]
-use crate::proto::device_path::LoadedImageDevicePath;
-
-pub use uefi::table::boot::{
-    AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    ProtocolSearchKey, SearchType, TimerTrigger,
-};
-pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
@@ -995,34 +993,12 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    let boot_policy;
-    let device_path;
-    let source_buffer;
-    let source_size;
-    match source {
-        LoadImageSource::FromBuffer { buffer, file_path } => {
-            // Boot policy is ignored when loading from source buffer.
-            boot_policy = 0;
-
-            device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
-            source_buffer = buffer.as_ptr();
-            source_size = buffer.len();
-        }
-        LoadImageSource::FromDevicePath {
-            device_path: file_path,
-            from_boot_manager,
-        } => {
-            boot_policy = u8::from(from_boot_manager);
-            device_path = file_path.as_ffi_ptr();
-            source_buffer = ptr::null();
-            source_size = 0;
-        }
-    };
+    let (boot_policy, device_path, source_buffer, source_size) = source.to_ffi_params();
 
     let mut image_handle = ptr::null_mut();
     unsafe {
         (bt.load_image)(
-            boot_policy,
+            boot_policy.into(),
             parent_image_handle.as_ptr(),
             device_path.cast(),
             source_buffer,

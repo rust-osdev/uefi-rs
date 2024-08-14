@@ -3,6 +3,7 @@ use uefi::fs::FileSystem;
 use uefi::proto::console::text::Output;
 use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
+use uefi::proto::BootPolicy;
 use uefi::table::boot::{BootServices, LoadImageSource, SearchType};
 use uefi::table::{Boot, SystemTable};
 use uefi::{boot, CString16, Identify};
@@ -122,7 +123,7 @@ fn test_load_image(bt: &BootServices) {
     {
         let load_source = LoadImageSource::FromDevicePath {
             device_path: image_device_path,
-            from_boot_manager: false,
+            boot_policy: BootPolicy::ExactMatch,
         };
         let _ = bt
             .load_image(bt.image_handle(), load_source)

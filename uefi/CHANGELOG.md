@@ -1,5 +1,7 @@
 # uefi - [Unreleased]
 
+## Added
+- Added `Handle::new`
 
 # uefi - 0.31.0 (2024-08-21)
 

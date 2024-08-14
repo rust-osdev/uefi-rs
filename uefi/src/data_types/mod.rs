@@ -13,6 +13,17 @@ use core::ptr::{self, NonNull};
 pub struct Handle(NonNull<c_void>);
 
 impl Handle {
+    /// Creates a new [`Handle`].
+    ///
+    /// # Safety
+    /// This function is unsafe because the caller must be sure that the pointer
+    /// is valid. Otherwise, further operations on the object might result in
+    /// undefined behaviour, even if the methods aren't marked as unsafe.
+    #[must_use]
+    pub const unsafe fn new(ptr: NonNull<c_void>) -> Self {
+        Self(ptr)
+    }
+
     /// Creates a new [`Handle`] from a raw address. The address might
     /// come from the Multiboot2 information structure or something similar.
     ///

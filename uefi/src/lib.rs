@@ -7,6 +7,17 @@
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].
 //!
+//! # Minimal Example
+//!
+//! Minimal example for an UEFI application using functionality of the
+//! `uefi` crate:
+//!
+//! ```ignore
+#![doc = include_str!("../../template/src/main.rs")]
+//! ```
+//!
+//! Please find more info in our [Rust UEFI Book].
+//!
 //! # Value-add and Use Cases
 //!
 //! `uefi` supports writing code for both pre- and post-exit boot services

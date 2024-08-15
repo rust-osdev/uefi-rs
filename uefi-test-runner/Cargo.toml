@@ -6,6 +6,7 @@ publish = false
 edition = "2021"
 
 [dependencies]
+uefi-raw = { path = "../uefi-raw" }
 uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu"] }
 
 log.workspace = true

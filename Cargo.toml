@@ -5,6 +5,7 @@ members = [
     "uefi",
     "uefi-macros",
     "uefi-raw",
+    "uefi-std-example",
     "uefi-test-runner",
     "xtask",
 ]

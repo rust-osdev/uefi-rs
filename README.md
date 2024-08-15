@@ -77,6 +77,8 @@ This project contains multiple sub-crates:
   Specification. Safe wrappers for these types are provided by the `uefi`
   crate. The raw types are suitable for implementing UEFI firmware.
 
+- `uefi-std-example`: Example UEFI app but as Rust standard binary.
+
 - `uefi-test-runner`: a UEFI application that runs unit / integration tests.
 
 [log]: https://github.com/rust-lang-nursery/log

@@ -1,5 +1,9 @@
 # uefi - [Unreleased]
 
+We added documentation to `lib.rs` and the [uefi-rs book] about how
+`uefi` compares to "standard Rust binaries" for UEFI (those using `std`), and
+how to integrate the `uefi` crate into them.
+
 ## Added
 - Added `Handle::new`
 
@@ -605,3 +609,6 @@ Rust 1.68 or higher.
   truncated and could result in out-of-bounds reads.
 - Fixed size check for file info types so that alignment padding is
   taken into account. This fixes potential out-of-bounds writes.
+
+
+[uefi-rs book]: https://rust-osdev.github.io/uefi-rs/HEAD

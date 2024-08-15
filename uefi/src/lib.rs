@@ -7,6 +7,17 @@
 //! important UEFI concepts. For more details of UEFI, see the latest [UEFI
 //! Specification][spec].
 //!
+//! # Minimal Example
+//!
+//! Minimal example for an UEFI application using functionality of the
+//! `uefi` crate:
+//!
+//! ```ignore
+#![doc = include_str!("../../template/src/main.rs")]
+//! ```
+//!
+//! Please find more info in our [Rust UEFI Book].
+//!
 //! # Value-add and Use Cases
 //!
 //! `uefi` supports writing code for both pre- and post-exit boot services
@@ -115,6 +126,33 @@
 //! Contributions in the form of a PR are also highly welcome. Check our
 //! [contributing guide][contributing] for details.
 //!
+//! # Comparison to other Projects in the Ecosystem
+//!
+//! ## Rust `std` implementation
+//!
+//! There is an ongoing effort for a [`std` implementation][rustc-uefi-std] of
+//! the Rust standard library, which allows you to write UEFI programs that look
+//! very similar to normal Rust programs running on top of an OS.
+//!
+//! It is still under development. You can track the progress in the
+//! corresponding [tracking issue][uefi-std-tr-issue].
+//!
+//! Using the `std` implementation simplifies the overall process of producing
+//! the binary. For example, our [`#[entry]`][entry-macro] macro won't be
+//! required any longer. As the `std` implementation evolves over time, you'll
+//! need fewer and fewer abstractions of this crate. For everything not covered
+//! by the `std` implementation, you can obtain relevant structures to work with
+//! our crate via:
+//! - `std::os::uefi::env::boot_services()`
+//! - `std::os::uefi::env::get_system_handle()`
+//! - `std::os::uefi::env::get_system_table()`
+//!
+//! ## `r-efi`
+//!
+//! [`r-efi`] provides Raw UEFI bindings without high-level convenience similar
+//! to our `uefi-raw` crate, which is part of this  project, but more
+//! feature-complete. It targets a lower-level than our `uefi` crate does.
+//!
 //! # License
 //! <!-- Keep in Sync with README! -->
 //!
@@ -136,11 +174,15 @@
 //! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable
+//! [`r-efi`]: https://crates.io/crates/r-efi
+//! [`entry-macro`]: uefi_macros::entry
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
 //! [spec]: https://uefi.org/specifications
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
+//! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html
+//! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
 
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

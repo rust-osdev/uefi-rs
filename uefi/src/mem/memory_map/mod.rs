@@ -131,6 +131,7 @@ mod tests_mmap_artificial {
 
         const BASE: MemoryDescriptor = MemoryDescriptor {
             ty: TY,
+            padding0: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,
@@ -169,6 +170,7 @@ mod tests_mmap_artificial {
 
         const BASE: MemoryDescriptor = MemoryDescriptor {
             ty: TY,
+            padding0: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,
@@ -278,6 +280,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
@@ -288,6 +291,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::BOOT_SERVICES_DATA,
@@ -298,6 +302,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
@@ -308,6 +313,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
@@ -318,6 +324,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::ACPI_NON_VOLATILE,
@@ -328,6 +335,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
@@ -338,6 +346,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::ACPI_NON_VOLATILE,
@@ -348,6 +357,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
@@ -358,6 +368,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
             MemoryDescriptor {
                 ty: MemoryType::ACPI_NON_VOLATILE,
@@ -368,6 +379,7 @@ mod tests_mmap_real {
                     | MemoryAttribute::WRITE_COMBINE
                     | MemoryAttribute::WRITE_THROUGH
                     | MemoryAttribute::WRITE_BACK,
+                ..Default::default()
             },
         ];
         assert_eq!(entries.as_slice(), &expected);

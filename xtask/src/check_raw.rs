@@ -354,7 +354,13 @@ fn check_item(item: &Item, src: &Path) -> Result<(), Error> {
             // Allow.
         }
         item => {
-            return Err(Error::new(ErrorKind::ForbiddenItemKind, src, item));
+            let allowed_exception = match item {
+                Item::ExternCrate(x) => x.ident == "std",
+                _ => false,
+            };
+            if !allowed_exception {
+                return Err(Error::new(ErrorKind::ForbiddenItemKind, src, item));
+            }
         }
     }
 

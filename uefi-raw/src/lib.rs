@@ -20,6 +20,11 @@
     unused
 )]
 
+// Useful for convenience in tests, such as `dbg!`
+#[cfg_attr(test, macro_use)]
+#[cfg(test)]
+extern crate std;
+
 #[macro_use]
 mod enums;
 

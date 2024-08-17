@@ -24,7 +24,7 @@
 //!
 //!     Status::SUCCESS
 //! }
-//! # extern crate std;
+//! # extern crate std; // For panic handler
 //! ```
 //!
 //! Please find more info in our [Rust UEFI Book].
@@ -234,6 +234,11 @@ extern crate alloc;
 extern crate self as uefi;
 #[macro_use]
 extern crate uefi_raw;
+
+// Useful for convenience in tests, such as `dbg!`
+#[cfg_attr(test, macro_use)]
+#[cfg(test)]
+extern crate std;
 
 #[macro_use]
 pub mod data_types;

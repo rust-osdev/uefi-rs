@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+
+# uefi-raw - 0.7.0 (2024-08-20)
+
 ## Added
 - New `MemoryType` constants: `UNACCEPTED`, `MAX`, `RESERVED_FOR_OEM`, and
   `RESERVED_FOR_OS_LOADER`.

@@ -1,5 +1,8 @@
 # uefi-macros - [Unreleased]
 
+
+# uefi-macros - 0.15.0 (2024-08-20)
+
 ## Changed
 
 - The `entry` macro now accepts a function with zero arguments in addition to

@@ -69,12 +69,33 @@
 //! The minimum supported Rust version is currently 1.70.
 //! Our policy is to support at least the past two stable releases.
 //!
-//! # Crate organisation
+//! # API/User Documentation, Documentation Structure, and other Resources
+//!
+//! Down below, you find typical technical documentation of all types, modules,
+//! and functions exported by `uefi`.
+//!
+//! For a TL;DR quick start with an example on how to create your own EFI
+//! application, please check out [the UEFI application template][template]. The
+//! [Rust UEFI Book] is a more beginner-friendly tutorial with How-Tos, and
+//! overviews of some important UEFI concepts and the abstractions provided by
+//! this library.
+//!
+//! For more details of UEFI itself, see the latest [UEFI Specification][spec].
+//!
+//! # Library Structure & Tips
 //!
 //! The top-level module contains some of the most used types and macros,
 //! including the [`Handle`] and [`Result`] types, the [`CStr16`] and
 //! [`CString16`] types for working with UCS-2 strings, and the [`entry`] and
 //! [`guid`] macros.
+//!
+//! ## UEFI Strings
+//!
+//! Rust string literals are UTF-8 encoded and thus, not compatible with most
+//! UEFI interfaces. We provide [`CStr16`] and [`CString16`] for proper working
+//! with UCS-2 strings, including various transformation functions from standard
+//! Rust strings. You can use [`ctr16!`] to create UCS-2 string literals at
+//! compile time.
 //!
 //! ## Tables
 //!
@@ -186,10 +207,12 @@
 //! [`SystemTable`]: table::SystemTable
 //! [`r-efi`]: https://crates.io/crates/r-efi
 //! [`entry-macro`]: uefi_macros::entry
+//! [`ctr16!`]: crate::cstr16
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
 //! [spec]: https://uefi.org/specifications
+//! [template]: https://github.com/rust-osdev/uefi-rs/tree/main/template
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 //! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html
 //! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499

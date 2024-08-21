@@ -13,7 +13,17 @@
 //! `uefi` crate:
 //!
 //! ```ignore
-#![doc = include_str!("../../template/src/main.rs")]
+//! #![no_main]
+//! #![no_std]
+//!
+//! use uefi::prelude::*;
+//!
+//! #[entry]
+//! fn main(_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+//!     uefi::helpers::init().unwrap();
+//!
+//!     Status::SUCCESS
+//! }
 //! ```
 //!
 //! Please find more info in our [Rust UEFI Book].

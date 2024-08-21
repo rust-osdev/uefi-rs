@@ -904,6 +904,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "uefi-std-example"
+version = "0.1.0"
+dependencies = [
+ "uefi",
+]
+
+[[package]]
 name = "uefi-test-runner"
 version = "0.2.0"
 dependencies = [

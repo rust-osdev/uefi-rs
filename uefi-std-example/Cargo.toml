@@ -1,0 +1,11 @@
+[package]
+name = "uefi-std-example"
+version = "0.1.0"
+authors = ["The Rust OSDev team"]
+publish = false
+edition = "2021"
+
+[dependencies]
+# Attention: Don't activate the panic_handler feature, as it will clash with
+# the one coming from `std`.
+uefi = { path = "../uefi", features = ["alloc"], default-features = false }

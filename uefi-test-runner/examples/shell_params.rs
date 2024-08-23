@@ -17,7 +17,7 @@ use alloc::vec::Vec;
 
 // ANCHOR: entry
 #[entry]
-fn main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+fn main() -> Status {
     // ANCHOR_END: entry
     // ANCHOR: services
     uefi::helpers::init().unwrap();

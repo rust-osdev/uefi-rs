@@ -9,6 +9,7 @@ extern crate alloc;
 use log::{info, warn};
 
 // ANCHOR: use
+use uefi::boot;
 use uefi::prelude::*;
 use uefi::proto::misc::Timestamp;
 
@@ -16,19 +17,18 @@ use uefi::proto::misc::Timestamp;
 
 // ANCHOR: entry
 #[entry]
-fn main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+fn main() -> Status {
     // ANCHOR_END: entry
     // ANCHOR: services
     uefi::helpers::init().unwrap();
-    let boot_services = system_table.boot_services();
     // ANCHOR_END: services
 
     // ANCHOR: params
-    test_timestamp(boot_services);
+    test_timestamp();
     // ANCHOR_END: params
 
     // ANCHOR: stall
-    boot_services.stall(10_000_000);
+    boot::stall(10_000_000);
     // ANCHOR_END: stall
 
     // ANCHOR: return
@@ -37,17 +37,17 @@ fn main(image_handle: Handle, system_table: SystemTable<Boot>) -> Status {
 // ANCHOR_END: return
 
 // ANCHOR: test_timestamp
-pub fn test_timestamp(bt: &BootServices) {
+pub fn test_timestamp() {
     // ANCHOR_END: test_timestamp
     info!("Running loaded Timestamp Protocol test");
 
-    let handle = bt.get_handle_for_protocol::<Timestamp>();
+    let handle = boot::get_handle_for_protocol::<Timestamp>();
 
     match handle {
         Ok(handle) => {
-            let timestamp_proto = bt
-                .open_protocol_exclusive::<Timestamp>(handle)
-                .expect("Founded Timestamp Protocol but open failed");
+            let timestamp_proto =
+                boot::open_protocol_exclusive::<Timestamp>(handle)
+                    .expect("Founded Timestamp Protocol but open failed");
             // ANCHOR: text
             let timestamp = timestamp_proto.get_timestamp();
             info!("Timestamp Protocol's timestamp: {:?}", timestamp);

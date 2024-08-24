@@ -60,6 +60,18 @@ pub unsafe fn set_image_handle(image_handle: Handle) {
     IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
 }
 
+/// Return true if boot services are active, false otherwise.
+pub(crate) fn are_boot_services_active() -> bool {
+    let Some(st) = table::system_table_raw() else {
+        return false;
+    };
+
+    // SAFETY: valid per requirements of `set_system_table`.
+    let st = unsafe { st.as_ref() };
+
+    !st.boot_services.is_null()
+}
+
 fn boot_services_raw_panicking() -> NonNull<uefi_raw::table::boot::BootServices> {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.

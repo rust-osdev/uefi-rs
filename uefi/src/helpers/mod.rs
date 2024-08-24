@@ -48,26 +48,18 @@ pub fn system_table() -> SystemTable<Boot> {
 /// Initialize all helpers defined in [`uefi::helpers`] whose Cargo features
 /// are activated.
 ///
-/// This must be called as early as possible, before trying to use logging or
-/// memory allocation capabilities.
+/// This must be called as early as possible, before trying to use logging.
 ///
 /// **PLEASE NOTE** that these helpers are meant for the pre exit boot service
 /// epoch. Limited functionality might work after exiting them, such as logging
 /// to the debugcon device.
 #[allow(clippy::missing_const_for_fn)]
 pub fn init() -> Result<()> {
-    // Setup logging and memory allocation
-
+    // Set up logging.
     #[cfg(feature = "logger")]
     unsafe {
         let mut st = table::system_table_boot().expect("boot services are not active");
         logger::init(&mut st);
-    }
-
-    #[cfg(feature = "global_allocator")]
-    unsafe {
-        let mut st = table::system_table_boot().expect("boot services are not active");
-        crate::allocator::init(&mut st);
     }
 
     Ok(())
@@ -77,7 +69,4 @@ pub fn init() -> Result<()> {
 pub(crate) fn exit() {
     #[cfg(feature = "logger")]
     logger::disable();
-
-    #[cfg(feature = "global_allocator")]
-    crate::allocator::exit_boot_services();
 }

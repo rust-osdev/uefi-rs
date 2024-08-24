@@ -131,7 +131,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo package -p uefi -p uefi-raw -p uefi-macros
-
   # This job requires the nightly channel, but keep it as a separate job from
   # `nightly_channel` because it takes a while to run.
   build_feature_permutations:

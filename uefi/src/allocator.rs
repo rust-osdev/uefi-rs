@@ -66,6 +66,10 @@ unsafe impl GlobalAlloc for Allocator {
     /// of type [`MemoryType::LOADER_DATA`] for UEFI applications, [`MemoryType::BOOT_SERVICES_DATA`]
     /// for UEFI boot drivers and [`MemoryType::RUNTIME_SERVICES_DATA`] for UEFI runtime drivers.
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        if !boot::are_boot_services_active() {
+            return ptr::null_mut();
+        }
+
         let size = layout.size();
         let align = layout.align();
         let memory_type = MemoryType(MEMORY_TYPE.load(Ordering::Acquire));

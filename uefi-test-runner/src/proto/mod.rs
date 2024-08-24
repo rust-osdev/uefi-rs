@@ -16,7 +16,7 @@ pub fn test(st: &mut SystemTable<Boot>) {
 
     debug::test(bt);
     device_path::test(bt);
-    driver::test(bt);
+    driver::test();
     load::test(bt);
     loaded_image::test(bt);
     media::test(bt);

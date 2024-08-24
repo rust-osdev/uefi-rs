@@ -1,6 +1,6 @@
+use uefi::boot::{self, ScopedProtocol, SearchType};
 use uefi::prelude::*;
 use uefi::proto::driver::{ComponentName, ComponentName2, LanguageError, LanguageIter};
-use uefi::table::boot::{ScopedProtocol, SearchType};
 use uefi::{CStr16, Result};
 
 #[allow(deprecated)]
@@ -8,8 +8,8 @@ use uefi::proto::driver::ComponentName1;
 
 /// Generic interface for testing `ComponentName1`, `ComponentName2`, and
 /// `ComponentName`.
-trait ComponentNameInterface<'a>: Sized {
-    fn open(boot_services: &'a BootServices, handle: Handle) -> Result<Self>;
+trait ComponentNameInterface: Sized {
+    fn open(handle: Handle) -> Result<Self>;
     fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError>;
     fn driver_name(&self, language: &str) -> Result<&CStr16>;
     fn controller_name(
@@ -21,9 +21,9 @@ trait ComponentNameInterface<'a>: Sized {
 }
 
 #[allow(deprecated)]
-impl<'a> ComponentNameInterface<'a> for ScopedProtocol<'a, ComponentName1> {
-    fn open(boot_services: &'a BootServices, handle: Handle) -> Result<Self> {
-        boot_services.open_protocol_exclusive::<ComponentName1>(handle)
+impl ComponentNameInterface for ScopedProtocol<ComponentName1> {
+    fn open(handle: Handle) -> Result<Self> {
+        boot::open_protocol_exclusive::<ComponentName1>(handle)
     }
 
     fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
@@ -44,9 +44,9 @@ impl<'a> ComponentNameInterface<'a> for ScopedProtocol<'a, ComponentName1> {
     }
 }
 
-impl<'a> ComponentNameInterface<'a> for ScopedProtocol<'a, ComponentName2> {
-    fn open(boot_services: &'a BootServices, handle: Handle) -> Result<Self> {
-        boot_services.open_protocol_exclusive::<ComponentName2>(handle)
+impl ComponentNameInterface for ScopedProtocol<ComponentName2> {
+    fn open(handle: Handle) -> Result<Self> {
+        boot::open_protocol_exclusive::<ComponentName2>(handle)
     }
 
     fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
@@ -67,9 +67,9 @@ impl<'a> ComponentNameInterface<'a> for ScopedProtocol<'a, ComponentName2> {
     }
 }
 
-impl<'a> ComponentNameInterface<'a> for ComponentName<'a> {
-    fn open(boot_services: &'a BootServices, handle: Handle) -> Result<Self> {
-        Self::open(boot_services, handle)
+impl ComponentNameInterface for ComponentName {
+    fn open(handle: Handle) -> Result<Self> {
+        Self::open(handle)
     }
 
     fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
@@ -90,13 +90,8 @@ impl<'a> ComponentNameInterface<'a> for ComponentName<'a> {
     }
 }
 
-fn test_component_name<'a, C: ComponentNameInterface<'a>>(
-    boot_services: &'a BootServices,
-    english: &str,
-) {
-    let all_handles = boot_services
-        .locate_handle_buffer(SearchType::AllHandles)
-        .unwrap();
+fn test_component_name<C: ComponentNameInterface>(english: &str) {
+    let all_handles = boot::locate_handle_buffer(SearchType::AllHandles).unwrap();
 
     let fat_driver_name = cstr16!("FAT File System Driver");
     let fat_controller_name = cstr16!("FAT File System");
@@ -105,7 +100,7 @@ fn test_component_name<'a, C: ComponentNameInterface<'a>>(
     let component_name: C = all_handles
         .iter()
         .find_map(|handle| {
-            let component_name = C::open(boot_services, *handle).ok()?;
+            let component_name = C::open(*handle).ok()?;
 
             assert!(component_name
                 .supported_languages()
@@ -138,11 +133,11 @@ fn test_component_name<'a, C: ComponentNameInterface<'a>>(
         .expect("failed to find FAT controller");
 }
 
-pub fn test(boot_services: &BootServices) {
+pub fn test() {
     info!("Running component name test");
 
     #[allow(deprecated)]
-    test_component_name::<ScopedProtocol<ComponentName1>>(boot_services, "eng");
-    test_component_name::<ScopedProtocol<ComponentName2>>(boot_services, "en");
-    test_component_name::<ComponentName>(boot_services, "en");
+    test_component_name::<ScopedProtocol<ComponentName1>>("eng");
+    test_component_name::<ScopedProtocol<ComponentName2>>("en");
+    test_component_name::<ComponentName>("en");
 }

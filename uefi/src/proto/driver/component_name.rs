@@ -4,8 +4,8 @@
 // allow more fine-grained, see https://github.com/rust-lang/rust/issues/62398.
 #![allow(deprecated)]
 
+use crate::boot::{self, ScopedProtocol};
 use crate::proto::unsafe_protocol;
-use crate::table::boot::{BootServices, ScopedProtocol};
 use crate::{CStr16, Error, Handle, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Display, Formatter};
 use core::{ptr, slice};
@@ -153,24 +153,24 @@ impl ComponentName2 {
 /// Wrapper around [`ComponentName1`] and [`ComponentName2`]. This will use
 /// [`ComponentName2`] if available, otherwise it will back to
 /// [`ComponentName1`].
-pub enum ComponentName<'a> {
+pub enum ComponentName {
     /// Opened [`ComponentName1`] protocol.
-    V1(ScopedProtocol<'a, ComponentName1>),
+    V1(ScopedProtocol<ComponentName1>),
 
     /// Opened [`ComponentName2`] protocol.
-    V2(ScopedProtocol<'a, ComponentName2>),
+    V2(ScopedProtocol<ComponentName2>),
 }
 
-impl<'a> ComponentName<'a> {
+impl ComponentName {
     /// Open the [`ComponentName2`] protocol if available, otherwise fall back to
     /// [`ComponentName1`].
-    pub fn open(boot_services: &'a BootServices, handle: Handle) -> Result<Self> {
-        if let Ok(cn2) = boot_services.open_protocol_exclusive::<ComponentName2>(handle) {
+    pub fn open(handle: Handle) -> Result<Self> {
+        if let Ok(cn2) = boot::open_protocol_exclusive::<ComponentName2>(handle) {
             Ok(Self::V2(cn2))
         } else {
-            Ok(Self::V1(
-                boot_services.open_protocol_exclusive::<ComponentName1>(handle)?,
-            ))
+            Ok(Self::V1(boot::open_protocol_exclusive::<ComponentName1>(
+                handle,
+            )?))
         }
     }
 
@@ -219,11 +219,11 @@ impl<'a> ComponentName<'a> {
     }
 }
 
-impl<'a> Debug for ComponentName<'a> {
+impl Debug for ComponentName {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            ComponentName::V1(_) => f.debug_tuple("V1").finish(),
-            ComponentName::V2(_) => f.debug_tuple("V2").finish(),
+            Self::V1(_) => f.debug_tuple("V1").finish(),
+            Self::V2(_) => f.debug_tuple("V2").finish(),
         }
     }
 }

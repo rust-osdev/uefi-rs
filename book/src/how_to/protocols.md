@@ -5,21 +5,21 @@ on that handle. See [Handles and Protocols] for an overview of what
 these terms mean.
 
 To get a handle you can use:
-* [`BootServices::locate_handle_buffer`]: this can be used to get _all_
+* [`boot::locate_handle_buffer`]: this can be used to get _all_
   available handles, or just the handles that support a particular
   protocol.
-* [`BootServices::locate_handle`]: the same as `locate_handle_buffer`,
+* [`boot::locate_handle`]: the same as `locate_handle_buffer`,
   but you provide the slice that stores the handles.
-* [`BootServices::locate_device_path`]: find a handle by [Device Path].
+* [`boot::locate_device_path`]: find a handle by [Device Path].
 
 Once you have obtained a handle, use
-[`BootServices::open_protocol_exclusive`] to open a protocol on that
+[`boot::open_protocol_exclusive`] to open a protocol on that
 handle. This returns a [`ScopedProtocol`], which automatically closes
 the protocol when dropped.
 
-Using [`BootServices::open_protocol_exclusive`] is the safest way to
+Using [`boot::open_protocol_exclusive`] is the safest way to
 open a protocol, but in some cases a protocol cannot be opened in
-exclusive mode. The `unsafe` [`BootServices::open_protocol`] can be used
+exclusive mode. The `unsafe` [`boot::open_protocol`] can be used
 in that case.
 
 ## Example
@@ -63,12 +63,11 @@ The function starts by opening the [`LoadedImage`] protocol:
 {{#include ../../../uefi-test-runner/examples/loaded_image.rs:loaded_image}}
 ```
 
-The [`open_protocol_exclusive`] method takes a type parameter, which is
+The [`boot::open_protocol_exclusive`] method takes a type parameter, which is
 the type of [`Protocol`] you want to open ([`LoadedImage`] in this
 case). It also takes one regular argument of type [`Handle`]. For this
-example we want the handle of the currently-running image, which was
-passed in as the first argument to `main`. The handle is conveniently
-accessible through [`BootServices::image_handle`], so we use that here.
+example we want the handle of the currently-running image, conveniently
+accessible through [`boot::image_handle`].
 
 Next the program opens the [`DevicePathToText`] protocol:
 
@@ -77,9 +76,9 @@ Next the program opens the [`DevicePathToText`] protocol:
 ```
 
 This protocol isn't available for the `image_handle`, so we start by
-using [`locate_handle_buffer`] to find all handles that support
+using [`boot::locate_handle_buffer`] to find all handles that support
 `DevicePathToText`. We only need one handle though, so we call `first()`
-and discard the rest. Then we call [`open_protocol_exclusive`] again. It
+and discard the rest. Then we call [`boot::open_protocol_exclusive`] again. It
 looks more or less like the previous time, but with [`DevicePathToText`]
 as the type parameter and `device_path_to_text_handle` as the handle.
 
@@ -98,13 +97,12 @@ reference documentation] and the [UEFI Specification].
 [Device Path]: ../concepts/device_paths.md
 [Handles and Protocols]: ../concepts/handles_and_protocols.md
 [UEFI Specification]: https://uefi.org/specifications
-[`BootServices::image_handle`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.image_handle
-[`BootServices::locate_device_path`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.locate_device_path
-[`BootServices::locate_handle_buffer`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.locate_handle_buffer
-[`BootServices::locate_handle`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.locate_handle
-[`BootServices::open_protocol`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.open_protocol
-[`BootServices::open_protocol_exclusive`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.open_protocol_exclusive
-[`BootServices`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html
+[`boot::image_handle`]: https://docs.rs/uefi/latest/uefi/boot/fn.image_handle.html
+[`boot::locate_device_path`]: https://docs.rs/uefi/latest/uefi/boot/fn.locate_device_path.html
+[`boot::locate_handle_buffer`]: https://docs.rs/uefi/latest/uefi/boot/fn.locate_handle_buffer.html
+[`boot::locate_handle`]: https://docs.rs/uefi/latest/uefi/boot/fn.locate_handle.html
+[`boot::open_protocol`]: https://docs.rs/uefi/latest/uefi/boot/fn.open_protocol.html
+[`boot::open_protocol_exclusive`]: https://docs.rs/uefi/latest/uefi/boot/fn.open_protocol_exclusive.html
 [`DevicePathToText`]: https://docs.rs/uefi/latest/uefi/proto/device_path/text/struct.DevicePathToText.html
 ["Hello world!" example]: ../tutorial/app.html
 [`Handle`]: https://docs.rs/uefi/latest/uefi/data_types/struct.Handle.html
@@ -113,10 +111,7 @@ reference documentation] and the [UEFI Specification].
 [`OpenProtocolAttributes`]: https://docs.rs/uefi/latest/uefi/table/boot/enum.OpenProtocolAttributes.html
 [`OpenProtocolParams`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.OpenProtocolParams.html
 [`Protocol`]: https://docs.rs/uefi/latest/uefi/proto/trait.Protocol.html
-[`ScopedProtocol`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.ScopedProtocol.html
-[`locate_handle_buffer`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.locate_handle_buffer
-[`open_protocol`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.open_protocol
-[`open_protocol_exclusive`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.open_protocol_exclusive
+[`ScopedProtocol`]: https://docs.rs/uefi/latest/uefi/boot/struct.ScopedProtocol.html
 [uefi-rs reference documentation]: https://docs.rs/uefi/latest/uefi/proto/index.html
 [`uefi::Result`]: https://docs.rs/uefi/latest/uefi/type.Result.html
 [`uefi::Status`]: https://docs.rs/uefi/latest/uefi/struct.Status.html

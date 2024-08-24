@@ -88,10 +88,16 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Run cargo fmt
+      - name: Install yamlfmt
+        env:
+          YFV: "0.13.0"
+          HASH: "043e96d754a8afa4f4c5c13ffb2f3e50c6be5a70bf53292d3025abc0b42fe4ae"
         run: |
-          rustup component add rustfmt
-          cargo fmt --all -- --check
+          curl -L --fail --output /tmp/yamlfmt.tar.xz https://github.com/google/yamlfmt/releases/download/v${YFV}/yamlfmt_${YFV}_Linux_x86_64.tar.gz
+          echo "${HASH} /tmp/yamlfmt.tar.xz" | sha256sum --check
+          tar xf /tmp/yamlfmt.tar.xz -C /usr/local/bin yamlfmt
+      - name: Check formatting
+        run: cargo xtask fmt --check
       - name: Run clippy
         run: |
           rustup component add clippy
@@ -131,7 +137,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo package -p uefi -p uefi-raw -p uefi-macros
-
   # This job requires the nightly channel, but keep it as a separate job from
   # `nightly_channel` because it takes a while to run.
   build_feature_permutations:

@@ -13,12 +13,12 @@
 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ffi::c_void;
-use core::ptr;
+use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
 
+use crate::boot;
 use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
-use crate::table::boot::BootServices;
 use crate::table::{Boot, SystemTable};
 
 /// Reference to the system table, used to call the boot services pool memory
@@ -42,18 +42,10 @@ pub unsafe fn init(system_table: &mut SystemTable<Boot>) {
 
     let boot_services = system_table.boot_services();
     if let Ok(loaded_image) =
-        boot_services.open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
+        boot::open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
     {
         MEMORY_TYPE.store(loaded_image.data_type().0, Ordering::Release);
     }
-}
-
-/// Access the boot services
-fn boot_services() -> *const BootServices {
-    let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
-    let system_table =
-        unsafe { SystemTable::from_ptr(ptr) }.expect("The system table handle is not available");
-    system_table.boot_services()
 }
 
 /// Notify the allocator library that boot services are not safe to call anymore
@@ -70,7 +62,7 @@ pub fn exit_boot_services() {
 pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
-    /// Allocate memory using [`BootServices::allocate_pool`]. The allocation is
+    /// Allocate memory using [`boot::allocate_pool`]. The allocation is
     /// of type [`MemoryType::LOADER_DATA`] for UEFI applications, [`MemoryType::BOOT_SERVICES_DATA`]
     /// for UEFI boot drivers and [`MemoryType::RUNTIME_SERVICES_DATA`] for UEFI runtime drivers.
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -78,19 +70,16 @@ unsafe impl GlobalAlloc for Allocator {
         let align = layout.align();
         let memory_type = MemoryType(MEMORY_TYPE.load(Ordering::Acquire));
 
-        let boot_services = &*boot_services();
-
         if align > 8 {
             // The requested alignment is greater than 8, but `allocate_pool` is
             // only guaranteed to provide eight-byte alignment. Allocate extra
             // space so that we can return an appropriately-aligned pointer
             // within the allocation.
-            let full_alloc_ptr =
-                if let Ok(ptr) = boot_services.allocate_pool(memory_type, size + align) {
-                    ptr.as_ptr()
-                } else {
-                    return ptr::null_mut();
-                };
+            let full_alloc_ptr = if let Ok(ptr) = boot::allocate_pool(memory_type, size + align) {
+                ptr.as_ptr()
+            } else {
+                return ptr::null_mut();
+            };
 
             // Calculate the offset needed to get an aligned pointer within the
             // full allocation. If that offset is zero, increase it to `align`
@@ -115,20 +104,24 @@ unsafe impl GlobalAlloc for Allocator {
             // The requested alignment is less than or equal to eight, and
             // `allocate_pool` always provides eight-byte alignment, so we can
             // use `allocate_pool` directly.
-            boot_services
-                .allocate_pool(memory_type, size)
+            boot::allocate_pool(memory_type, size)
                 .map(|ptr| ptr.as_ptr())
                 .unwrap_or(ptr::null_mut())
         }
     }
 
-    /// Deallocate memory using [`BootServices::free_pool`].
+    /// Deallocate memory using [`boot::free_pool`].
     unsafe fn dealloc(&self, mut ptr: *mut u8, layout: Layout) {
         if layout.align() > 8 {
             // Retrieve the pointer to the full allocation that was packed right
             // before the aligned allocation in `alloc`.
             ptr = (ptr as *const *mut u8).sub(1).read();
         }
-        (*boot_services()).free_pool(ptr).unwrap();
+
+        // OK to unwrap: `ptr` is required to be a valid allocation by the trait API.
+        let ptr = NonNull::new(ptr).unwrap();
+
+        // Warning: this will panic after exiting boot services.
+        boot::free_pool(ptr).unwrap();
     }
 }

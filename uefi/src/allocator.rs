@@ -3,13 +3,9 @@
 //! If the `global_allocator` feature is enabled, the [`Allocator`] will be used
 //! as the global Rust allocator.
 //!
-//! # Usage
-//!
-//! Call the `init` function with a reference to the boot services table.
-//! Failure to do so before calling a memory allocating function will panic.
-//!
-//! Call the `exit_boot_services` function before exiting UEFI boot services.
-//! Failure to do so will turn subsequent allocation into undefined behaviour.
+//! This allocator can only be used while boot services are active. If boot
+//! services are not active, `alloc` will return a null pointer, and `dealloc`
+//! will panic.
 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
@@ -20,18 +16,13 @@ use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
 use crate::table::{Boot, SystemTable};
 
-/// Initializes the allocator.
-///
-/// # Safety
-///
-/// This function is unsafe because you _must_ make sure that exit_boot_services
-/// will be called when UEFI boot services will be exited.
-#[allow(unused_unsafe)]
+/// Deprecated; this function is now a no-op.
+#[deprecated = "this function is now a no-op"]
+#[allow(unused_unsafe, clippy::missing_safety_doc)]
 pub unsafe fn init(_: &mut SystemTable<Boot>) {}
 
-/// Notify the allocator library that boot services are not safe to call anymore
-///
-/// You must arrange for this function to be called on exit from UEFI boot services
+/// Deprecated; this function is now a no-op.
+#[deprecated = "this function is now a no-op"]
 #[allow(clippy::missing_const_for_fn)]
 pub fn exit_boot_services() {}
 

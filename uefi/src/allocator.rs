@@ -55,6 +55,32 @@ pub fn exit_boot_services() {
     SYSTEM_TABLE.store(ptr::null_mut(), Ordering::Release);
 }
 
+/// Get the memory type to use for allocation.
+///
+/// The first time this is called, the data type of the loaded image will be
+/// retrieved. That value is cached in a static and reused on subsequent
+/// calls. If the memory type of the loaded image cannot be retrieved for some
+/// reason, a default of `LOADER_DATA` is used.
+fn get_memory_type() -> MemoryType {
+    // Initialize to a `RESERVED` to indicate the actual value hasn't been set yet.
+    static MEMORY_TYPE: AtomicU32 = AtomicU32::new(MemoryType::RESERVED.0);
+
+    let memory_type = MEMORY_TYPE.load(Ordering::Acquire);
+    if memory_type == MemoryType::RESERVED.0 {
+        let memory_type = if let Ok(loaded_image) =
+            boot::open_protocol_exclusive::<LoadedImage>(boot::image_handle())
+        {
+            loaded_image.data_type()
+        } else {
+            MemoryType::LOADER_DATA
+        };
+        MEMORY_TYPE.store(memory_type.0, Ordering::Release);
+        memory_type
+    } else {
+        MemoryType(memory_type)
+    }
+}
+
 /// Allocator which uses the UEFI pool allocation functions.
 ///
 /// Only valid for as long as the UEFI boot services are available.
@@ -72,7 +98,7 @@ unsafe impl GlobalAlloc for Allocator {
 
         let size = layout.size();
         let align = layout.align();
-        let memory_type = MemoryType(MEMORY_TYPE.load(Ordering::Acquire));
+        let memory_type = get_memory_type();
 
         if align > 8 {
             // The requested alignment is greater than 8, but `allocate_pool` is

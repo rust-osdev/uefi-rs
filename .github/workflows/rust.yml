@@ -88,10 +88,8 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - name: Run cargo fmt
-        run: |
-          rustup component add rustfmt
-          cargo fmt --all -- --check
+      - name: Check formatting
+        run: cargo xtask fmt --check
       - name: Run clippy
         run: |
           rustup component add clippy

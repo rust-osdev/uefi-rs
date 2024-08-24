@@ -2,21 +2,17 @@
 //!
 //! These functions will panic if called after exiting boot services.
 
-pub use crate::table::boot::{
-    AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    ProtocolSearchKey, SearchType, TimerTrigger,
-};
 pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
 
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
-use crate::proto::device_path::DevicePath;
 #[cfg(doc)]
 use crate::proto::device_path::LoadedImageDevicePath;
+use crate::proto::device_path::{DevicePath, FfiDevicePath};
 use crate::proto::loaded_image::LoadedImage;
 use crate::proto::media::fs::SimpleFileSystem;
-use crate::proto::{Protocol, ProtocolPointer};
+use crate::proto::{BootPolicy, Protocol, ProtocolPointer};
 use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
@@ -1438,3 +1434,206 @@ impl Drop for TplGuard {
         }
     }
 }
+
+// OpenProtocolAttributes is safe to model as a regular enum because it
+// is only used as an input. The attributes are bitflags, but all valid
+// combinations are listed in the spec and only ByDriver and Exclusive
+// can actually be combined.
+//
+// Some values intentionally excluded:
+//
+// ByHandleProtocol (0x01) excluded because it is only intended to be
+// used in an implementation of `HandleProtocol`.
+//
+// TestProtocol (0x04) excluded because it doesn't actually open the
+// protocol, just tests if it's present on the handle. Since that
+// changes the interface significantly, that's exposed as a separate
+// method: `BootServices::test_protocol`.
+
+/// Attributes for [`open_protocol`].
+#[repr(u32)]
+#[derive(Debug)]
+pub enum OpenProtocolAttributes {
+    /// Used by drivers to get a protocol interface for a handle. The
+    /// driver will not be informed if the interface is uninstalled or
+    /// reinstalled.
+    GetProtocol = 0x02,
+
+    /// Used by bus drivers to show that a protocol is being used by one
+    /// of the child controllers of the bus.
+    ByChildController = 0x08,
+
+    /// Used by a driver to gain access to a protocol interface. When
+    /// this mode is used, the driver's `Stop` function will be called
+    /// if the protocol interface is reinstalled or uninstalled. Once a
+    /// protocol interface is opened with this attribute, no other
+    /// drivers will be allowed to open the same protocol interface with
+    /// the `ByDriver` attribute.
+    ByDriver = 0x10,
+
+    /// Used by a driver to gain exclusive access to a protocol
+    /// interface. If any other drivers have the protocol interface
+    /// opened with an attribute of `ByDriver`, then an attempt will be
+    /// made to remove them with `DisconnectController`.
+    ByDriverExclusive = 0x30,
+
+    /// Used by applications to gain exclusive access to a protocol
+    /// interface. If any drivers have the protocol opened with an
+    /// attribute of `ByDriver`, then an attempt will be made to remove
+    /// them by calling the driver's `Stop` function.
+    Exclusive = 0x20,
+}
+
+/// Parameters passed to [`open_protocol`].
+#[derive(Debug)]
+pub struct OpenProtocolParams {
+    /// The handle for the protocol to open.
+    pub handle: Handle,
+
+    /// The handle of the calling agent. For drivers, this is the handle
+    /// containing the `EFI_DRIVER_BINDING_PROTOCOL` instance. For
+    /// applications, this is the image handle.
+    pub agent: Handle,
+
+    /// For drivers, this is the controller handle that requires the
+    /// protocol interface. For applications this should be set to
+    /// `None`.
+    pub controller: Option<Handle>,
+}
+
+/// Used as a parameter of [`load_image`] to provide the image source.
+#[derive(Debug)]
+pub enum LoadImageSource<'a> {
+    /// Load an image from a buffer. The data will be copied from the
+    /// buffer, so the input reference doesn't need to remain valid
+    /// after the image is loaded.
+    FromBuffer {
+        /// Raw image data.
+        buffer: &'a [u8],
+
+        /// If set, this path will be added as the file path of the
+        /// loaded image. This is not required to load the image, but
+        /// may be used by the image itself to load other resources
+        /// relative to the image's path.
+        file_path: Option<&'a DevicePath>,
+    },
+
+    /// Load an image via the [`SimpleFileSystem`] protocol. If there is
+    /// no instance of that protocol associated with the path then the
+    /// behavior depends on [`BootPolicy`]. If [`BootPolicy::BootSelection`],
+    /// attempt to load via the [`LoadFile`] protocol. If
+    /// [`BootPolicy::ExactMatch`], attempt to load via the [`LoadFile2`]
+    /// protocol, then fall back to [`LoadFile`].
+    ///
+    /// [`LoadFile`]: crate::proto::media::load_file::LoadFile
+    /// [`LoadFile2`]: crate::proto::media::load_file::LoadFile2
+    FromDevicePath {
+        /// The full device path from which to load the image.
+        ///
+        /// The provided path should be a full device path and not just the
+        /// file path portion of it. So for example, it must be (the binary
+        /// representation)
+        /// `PciRoot(0x0)/Pci(0x1F,0x2)/Sata(0x0,0xFFFF,0x0)/HD(1,MBR,0xBE1AFDFA,0x3F,0xFBFC1)/\\EFI\\BOOT\\BOOTX64.EFI`
+        /// and not just `\\EFI\\BOOT\\BOOTX64.EFI`.
+        device_path: &'a DevicePath,
+
+        /// The [`BootPolicy`] to use.
+        boot_policy: BootPolicy,
+    },
+}
+
+impl<'a> LoadImageSource<'a> {
+    /// Returns the raw FFI parameters for `load_image`.
+    #[must_use]
+    pub(crate) fn to_ffi_params(
+        &self,
+    ) -> (
+        BootPolicy,
+        *const FfiDevicePath,
+        *const u8, /* buffer */
+        usize,     /* buffer length */
+    ) {
+        let boot_policy;
+        let device_path;
+        let source_buffer;
+        let source_size;
+        match self {
+            LoadImageSource::FromBuffer { buffer, file_path } => {
+                // Boot policy is ignored when loading from source buffer.
+                boot_policy = BootPolicy::default();
+
+                device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
+                source_buffer = buffer.as_ptr();
+                source_size = buffer.len();
+            }
+            LoadImageSource::FromDevicePath {
+                device_path: d_path,
+                boot_policy: b_policy,
+            } => {
+                boot_policy = *b_policy;
+                device_path = d_path.as_ffi_ptr();
+                source_buffer = ptr::null();
+                source_size = 0;
+            }
+        };
+        (boot_policy, device_path, source_buffer, source_size)
+    }
+}
+
+/// Type of allocation to perform.
+#[derive(Debug, Copy, Clone)]
+pub enum AllocateType {
+    /// Allocate any possible pages.
+    AnyPages,
+    /// Allocate pages at any address below the given address.
+    MaxAddress(PhysicalAddress),
+    /// Allocate pages at the specified address.
+    Address(PhysicalAddress),
+}
+
+/// The type of handle search to perform.
+#[derive(Debug, Copy, Clone)]
+pub enum SearchType<'guid> {
+    /// Return all handles present on the system.
+    AllHandles,
+    /// Returns all handles supporting a certain protocol, specified by its GUID.
+    ///
+    /// If the protocol implements the `Protocol` interface,
+    /// you can use the `from_proto` function to construct a new `SearchType`.
+    ByProtocol(&'guid Guid),
+    /// Return all handles that implement a protocol when an interface for that protocol
+    /// is (re)installed.
+    ByRegisterNotify(ProtocolSearchKey),
+}
+
+impl<'guid> SearchType<'guid> {
+    /// Constructs a new search type for a specified protocol.
+    #[must_use]
+    pub const fn from_proto<P: ProtocolPointer + ?Sized>() -> Self {
+        SearchType::ByProtocol(&P::GUID)
+    }
+}
+
+/// Event notification callback type.
+pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
+
+/// Timer events manipulation.
+#[derive(Debug)]
+pub enum TimerTrigger {
+    /// Cancel event's timer
+    Cancel,
+    /// The event is to be signaled periodically.
+    /// Parameter is the period in 100ns units.
+    /// Delay of 0 will be signalled on every timer tick.
+    Periodic(u64),
+    /// The event is to be signaled once in 100ns units.
+    /// Parameter is the delay in 100ns units.
+    /// Delay of 0 will be signalled on next timer tick.
+    Relative(u64),
+}
+
+/// Opaque pointer returned by [`register_protocol_notify`] to be used
+/// with [`locate_handle`] via [`SearchType::ByRegisterNotify`].
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct ProtocolSearchKey(pub(crate) NonNull<c_void>);

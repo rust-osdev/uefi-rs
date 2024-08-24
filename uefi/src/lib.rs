@@ -205,17 +205,17 @@
 //! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable
-//! [`r-efi`]: https://crates.io/crates/r-efi
-//! [`entry-macro`]: uefi_macros::entry
 //! [`ctr16!`]: crate::cstr16
+//! [`entry-macro`]: uefi_macros::entry
+//! [`r-efi`]: https://crates.io/crates/r-efi
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
+//! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html
 //! [spec]: https://uefi.org/specifications
 //! [template]: https://github.com/rust-osdev/uefi-rs/tree/main/template
-//! [unstable features]: https://doc.rust-lang.org/unstable-book/
-//! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html
 //! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
+//! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
 #![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

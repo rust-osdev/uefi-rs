@@ -10,6 +10,8 @@ how to integrate the `uefi` crate into them.
 ## Changed
 - **Breaking:** The conversion functions between device paths and text no longer
   take a `BootServices` argument. The global system table is used instead.
+- **Breaking:** `GraphicsOutput::modes` no longer takes a `BootServices`
+  argument. The global system table is used instead.
 
 
 # uefi - 0.31.0 (2024-08-21)

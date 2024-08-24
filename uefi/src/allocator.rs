@@ -12,24 +12,13 @@
 //! Failure to do so will turn subsequent allocation into undefined behaviour.
 
 use core::alloc::{GlobalAlloc, Layout};
-use core::ffi::c_void;
 use core::ptr::{self, NonNull};
-use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
 
 use crate::boot;
 use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
 use crate::table::{Boot, SystemTable};
-
-/// Reference to the system table, used to call the boot services pool memory
-/// allocation functions.
-///
-/// The pointer is only safe to dereference if UEFI boot services have not been
-/// exited by the host application yet.
-static SYSTEM_TABLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
-
-/// The memory type used for pool memory allocations.
-static MEMORY_TYPE: AtomicU32 = AtomicU32::new(MemoryType::LOADER_DATA.0);
 
 /// Initializes the allocator.
 ///
@@ -37,23 +26,14 @@ static MEMORY_TYPE: AtomicU32 = AtomicU32::new(MemoryType::LOADER_DATA.0);
 ///
 /// This function is unsafe because you _must_ make sure that exit_boot_services
 /// will be called when UEFI boot services will be exited.
-pub unsafe fn init(system_table: &mut SystemTable<Boot>) {
-    SYSTEM_TABLE.store(system_table.as_ptr().cast_mut(), Ordering::Release);
-
-    let boot_services = system_table.boot_services();
-    if let Ok(loaded_image) =
-        boot::open_protocol_exclusive::<LoadedImage>(boot_services.image_handle())
-    {
-        MEMORY_TYPE.store(loaded_image.data_type().0, Ordering::Release);
-    }
-}
+#[allow(unused_unsafe)]
+pub unsafe fn init(_: &mut SystemTable<Boot>) {}
 
 /// Notify the allocator library that boot services are not safe to call anymore
 ///
 /// You must arrange for this function to be called on exit from UEFI boot services
-pub fn exit_boot_services() {
-    SYSTEM_TABLE.store(ptr::null_mut(), Ordering::Release);
-}
+#[allow(clippy::missing_const_for_fn)]
+pub fn exit_boot_services() {}
 
 /// Get the memory type to use for allocation.
 ///

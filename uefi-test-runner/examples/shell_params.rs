@@ -7,8 +7,8 @@
 use log::error;
 // ANCHOR: use
 use uefi::prelude::*;
-use uefi::println;
 use uefi::proto::shell_params::ShellParameters;
+use uefi::{boot, println};
 
 extern crate alloc;
 use alloc::string::{String, ToString};
@@ -21,12 +21,11 @@ fn main() -> Status {
     // ANCHOR_END: entry
     // ANCHOR: services
     uefi::helpers::init().unwrap();
-    let boot_services = system_table.boot_services();
     // ANCHOR_END: services
 
     // ANCHOR: params
     let shell_params =
-        boot_services.open_protocol_exclusive::<ShellParameters>(image_handle);
+        boot::open_protocol_exclusive::<ShellParameters>(boot::image_handle());
     let shell_params = match shell_params {
         Ok(s) => s,
         Err(e) => {

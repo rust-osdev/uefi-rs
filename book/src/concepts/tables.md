@@ -1,37 +1,31 @@
 # Tables
 
-UEFI has a few table structures. These tables are how you get access to
-UEFI services.
+UEFI has a few table structures. These tables are how you get access to UEFI
+services. In the specification and C API, `EFI_SYSTEM_TABLE` is the top-level
+table that provides access to the other tables, `EFI_BOOT_SERVICES` and
+`EFI_RUNTIME_SERVICES`.
 
-[`SystemTable`] (`EFI_SYSTEM_TABLE` in the specification) is the
-top-level table that provides access to the other tables.
+In the `uefi` crate, these tables are modeled as modules rather than structs. The
+functions in each module make use of a global pointer to the system table that
+is set automatically by the [`entry`] macro.
 
-[`BootServices`] (`EFI_BOOT_SERVICES` in the specification) provides
-access to a wide array of services such as memory allocation, executable
-loading, and optional extension interfaces called protocols. This table
-is only accessible while in the Boot Services stage.
+* [`uefi::system`] (`EFI_SYSTEM_TABLE` in the specification) provides access to
+system information such as the firmware vendor and version. It can also be used
+to access stdout/stderr/stdin.
 
-[`RuntimeServices`] (`EFI_RUNTIME_SERVICES` in the specification)
-provides access to a fairly limited set of services, including variable
-storage, system time, and virtual-memory mapping. This table is
-accessible during both the Boot Services and Runtime stages.
+* [`uefi::boot`] (`EFI_BOOT_SERVICES` in the specification) provides access to a
+wide array of services such as memory allocation, executable loading, and
+optional extension interfaces called protocols. Functions in this module can
+only be used while in the Boot Services stage. After [`exit_boot_services`] has
+been called, these functions will panic.
 
-When writing a UEFI application, you get access to the system table from
-one of the arguments to the `main` entry point:
+* [`uefi::runtime`] (`EFI_RUNTIME_SERVICES` in the specification) provides access
+to a fairly limited set of services, including variable storage, system time,
+and virtual-memory mapping. Functions in this module are accessible during both
+the Boot Services and Runtime stages.
 
-```rust,ignore
-fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status;
-```
-
-Then use [`SystemTable::boot_services`] and
-[`SystemTable::runtime_services`] to get access to the other
-tables. Once [`SystemTable::exit_boot_services`] is called, the original
-system table is consumed and a new system table is returned that only
-provides access to the [`RuntimeServices`] table.
-
-[`BootServices`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html
-[`RuntimeServices`]: https://docs.rs/uefi/latest/uefi/table/runtime/struct.RuntimeServices.html
-[`SystemTable::boot_services`]: https://docs.rs/uefi/latest/uefi/table/struct.SystemTable.html#method.boot_services
-[`SystemTable::exit_boot_services`]: https://docs.rs/uefi/latest/uefi/table/struct.SystemTable.html#method.exit_boot_services
-[`SystemTable::runtime_services`]: https://docs.rs/uefi/latest/uefi/table/struct.SystemTable.html#method.runtime_services
-[`SystemTable`]: https://docs.rs/uefi/latest/uefi/table/struct.SystemTable.html
+[`entry`]: https://docs.rs/uefi/latest/uefi/attr.entry.html
+[`exit_boot_services`]: https://docs.rs/uefi/latest/uefi/boot/fn.exit_boot_services.html
+[`uefi::boot`]: https://docs.rs/uefi/latest/uefi/boot/index.html
+[`uefi::runtime`]: https://docs.rs/uefi/latest/uefi/runtime/index.html
+[`uefi::system`]: https://docs.rs/uefi/latest/uefi/system/index.html

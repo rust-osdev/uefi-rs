@@ -200,11 +200,12 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // If the user doesn't specify any arguments to the entry function, fill in
     // the image handle and system table arguments automatically.
-    if f.sig.inputs.is_empty() {
+    let generated_args = f.sig.inputs.is_empty();
+    if generated_args {
         f.sig.inputs = parse_quote_spanned!(
             signature_span=>
                 internal_image_handle: ::uefi::Handle,
-                internal_system_table: ::uefi::table::SystemTable<::uefi::table::Boot>
+                internal_system_table: *const ::core::ffi::c_void,
         );
     }
 
@@ -225,12 +226,20 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     // Set the global image handle. If `image_handle_ident` is `None`
     // then the typecheck is going to fail anyway.
     if let Some(image_handle_ident) = image_handle_ident {
+        // Convert the system table arg (either `SystemTable<Boot>` or
+        // `*const c_void`) to a pointer of the correct type.
+        let system_table_ptr = if generated_args {
+            quote!(#system_table_ident.cast())
+        } else {
+            quote!(#system_table_ident.as_ptr().cast())
+        };
+
         f.block.stmts.insert(
             0,
             parse_quote! {
                 unsafe {
                     ::uefi::boot::set_image_handle(#image_handle_ident);
-                    ::uefi::table::set_system_table(#system_table_ident.as_ptr().cast());
+                    ::uefi::table::set_system_table(#system_table_ptr);
                 }
             },
         );
@@ -249,6 +258,16 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     });
     let fn_output = &f.sig.output;
 
+    // Get the expected argument types for the main function.
+    let expected_args = if generated_args {
+        quote!(::uefi::Handle, *const core::ffi::c_void)
+    } else {
+        quote!(
+            ::uefi::Handle,
+            ::uefi::table::SystemTable<::uefi::table::Boot>
+        )
+    };
+
     let fn_type_check = quote_spanned! {signature_span=>
         // Cast from the function type to a function pointer with the same
         // signature first, then try to assign that to an unnamed constant with
@@ -260,7 +279,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         // specifically in the function signature is incorrect.
         const _:
             // The expected fn pointer type.
-            #unsafety extern "efiapi" fn(::uefi::Handle, ::uefi::table::SystemTable<::uefi::table::Boot>) -> ::uefi::Status =
+            #unsafety extern "efiapi" fn(#expected_args) -> ::uefi::Status =
             // Cast from a fn item to a function pointer.
             #fn_ident as #unsafety extern "efiapi" fn(#(#fn_inputs),*) #fn_output;
     };

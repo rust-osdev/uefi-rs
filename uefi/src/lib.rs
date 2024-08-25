@@ -12,7 +12,7 @@
 //! Minimal example for an UEFI application using functionality of the
 //! `uefi` crate:
 //!
-//! ```ignore
+//! ```no_run
 //! #![no_main]
 //! #![no_std]
 //!
@@ -24,6 +24,7 @@
 //!
 //!     Status::SUCCESS
 //! }
+//! # extern crate std;
 //! ```
 //!
 //! Please find more info in our [Rust UEFI Book].

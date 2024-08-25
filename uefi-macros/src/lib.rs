@@ -203,8 +203,8 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     if f.sig.inputs.is_empty() {
         f.sig.inputs = parse_quote_spanned!(
             signature_span=>
-                image_handle: ::uefi::Handle,
-                system_table: ::uefi::table::SystemTable<::uefi::table::Boot>
+                internal_image_handle: ::uefi::Handle,
+                internal_system_table: ::uefi::table::SystemTable<::uefi::table::Boot>
         );
     }
 

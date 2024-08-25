@@ -4,7 +4,7 @@
 use uefi::prelude::*;
 
 #[entry]
-fn main(_handle: Handle, system_table: SystemTable<Boot>) -> Status {
+fn main() -> Status {
     uefi::helpers::init().unwrap();
 
     Status::SUCCESS

@@ -58,8 +58,7 @@ pub fn init() -> Result<()> {
     // Set up logging.
     #[cfg(feature = "logger")]
     unsafe {
-        let mut st = table::system_table_boot().expect("boot services are not active");
-        logger::init(&mut st);
+        logger::init();
     }
 
     Ok(())

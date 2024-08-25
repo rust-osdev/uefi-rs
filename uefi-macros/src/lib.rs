@@ -229,7 +229,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
             0,
             parse_quote! {
                 unsafe {
-                    #system_table_ident.boot_services().set_image_handle(#image_handle_ident);
+                    ::uefi::boot::set_image_handle(#image_handle_ident);
                     ::uefi::table::set_system_table(#system_table_ident.as_ptr().cast());
                 }
             },

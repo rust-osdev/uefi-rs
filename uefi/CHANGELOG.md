@@ -17,6 +17,8 @@ how to integrate the `uefi` crate into them.
 - `allocator::init` and `allocator::exit_boot_services` have been
   deprecated. These functions are now no-ops. The allocator now internally uses
   the global system table.
+- `FileSystem::new` now accepts `boot::ScopedProtocol` in addition to
+  `table::boot::ScopedProtocol`.
 
 
 # uefi - 0.31.0 (2024-08-21)

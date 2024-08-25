@@ -12,8 +12,8 @@
 //! The last part also means that some Unicode characters might not be
 //! supported by the UEFI console. Don't expect emoji output support.
 
-use crate::prelude::{Boot, SystemTable};
 use crate::proto::console::text::Output;
+use crate::system;
 use core::fmt::{self, Write};
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
@@ -25,9 +25,11 @@ static LOGGER: Logger = Logger::new();
 ///
 /// This is unsafe because you must arrange for the logger to be reset with
 /// disable() on exit from UEFI boot services.
-pub unsafe fn init(st: &mut SystemTable<Boot>) {
+pub unsafe fn init() {
     // Connect the logger to stdout.
-    LOGGER.set_output(st.stdout());
+    system::with_stdout(|stdout| {
+        LOGGER.set_output(stdout);
+    });
 
     // Set the logger.
     log::set_logger(&LOGGER).unwrap(); // Can only fail if already initialized.

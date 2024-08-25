@@ -6,6 +6,7 @@
 
 // ANCHOR: use
 use log::info;
+use uefi::boot;
 use uefi::prelude::*;
 // ANCHOR_END: use
 
@@ -18,7 +19,7 @@ fn main() -> Status {
     // ANCHOR_END: services
     // ANCHOR: log
     info!("Hello world!");
-    system_table.boot_services().stall(10_000_000);
+    boot::stall(10_000_000);
     // ANCHOR_END: log
     // ANCHOR: return
     Status::SUCCESS

@@ -1,5 +1,8 @@
 #![no_std]
 #![no_main]
+// TODO: temporarily allow deprecated code so that we can continue to test
+// SystemTable/BootServices/RuntimeServices.
+#![allow(deprecated)]
 
 #[macro_use]
 extern crate log;

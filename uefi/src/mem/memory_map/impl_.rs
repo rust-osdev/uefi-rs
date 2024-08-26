@@ -259,10 +259,10 @@ impl IndexMut<usize> for MemoryMapRefMut<'_> {
 /// # Usage
 /// The type is intended to be used like this:
 /// 1. create it using [`MemoryMapBackingMemory::new`]
-/// 2. pass it to [`BootServices::get_memory_map`]
+/// 2. pass it to [`boot::get_memory_map`]
 /// 3. construct a [`MemoryMapOwned`] from it
 ///
-/// [`BootServices::get_memory_map`]: crate::table::boot::BootServices::get_memory_map
+/// [`boot::get_memory_map`]: crate::boot::get_memory_map
 #[derive(Debug)]
 #[allow(clippy::len_without_is_empty)] // this type is never empty
 pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);

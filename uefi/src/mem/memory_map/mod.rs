@@ -8,8 +8,8 @@
 //!
 //! # Usecase: Obtain UEFI Memory Map
 //!
-//! You can use [`SystemTable::exit_boot_services`] or
-//! [`BootServices::memory_map`], which returns an properly initialized
+//! You can use [`boot::exit_boot_services`] or
+//! [`boot::memory_map`], which returns an properly initialized
 //! [`MemoryMapOwned`].
 //!
 //! # Usecase: Parse Memory Slice as UEFI Memory Map
@@ -28,8 +28,8 @@
 //!   [`MemoryMapMeta`],
 //! - re-exports [`MemoryDescriptor`], [`MemoryType`], and [`MemoryAttribute`].
 //!
-//! [`SystemTable::exit_boot_services`]: uefi::table::SystemTable::exit_boot_services
-//! [`BootServices::memory_map`]: uefi::table::boot::BootServices::memory_map
+//! [`boot::exit_boot_services`]: crate::table::SystemTable::exit_boot_services
+//! [`boot::memory_map`]: crate::boot::memory_map
 
 mod api;
 mod impl_;
@@ -49,7 +49,7 @@ impl Align for MemoryDescriptor {
     }
 }
 
-/// A unique identifier of a UEFI memory map, used to tell the firmware that one  
+/// A unique identifier of a UEFI memory map, used to tell the firmware that one
 /// has the latest valid memory map when exiting boot services.
 ///
 /// If the memory map changes, due to any allocation or deallocation, this value

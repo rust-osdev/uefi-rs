@@ -27,13 +27,12 @@
 //! ```no_run
 //! use uefi::CString16;
 //! use uefi::fs::{FileSystem, FileSystemResult};
-//! use uefi::prelude::BootServices;
 //! use uefi::proto::media::fs::SimpleFileSystem;
-//! use uefi::table::boot::ScopedProtocol;
+//! use uefi::boot::{self, ScopedProtocol};
 //!
-//! fn read_file(bs: BootServices, path: &str) -> FileSystemResult<Vec<u8>> {
+//! fn read_file(path: &str) -> FileSystemResult<Vec<u8>> {
 //!     let path: CString16 = CString16::try_from(path).unwrap();
-//!     let fs: ScopedProtocol<SimpleFileSystem> = bs.get_image_file_system(bs.image_handle()).unwrap();
+//!     let fs: ScopedProtocol<SimpleFileSystem> = boot::get_image_file_system(boot::image_handle()).unwrap();
 //!     let mut fs = FileSystem::new(fs);
 //!     fs.read(path.as_ref())
 //! }

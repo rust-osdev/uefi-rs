@@ -1,13 +1,13 @@
-use crate::table::system_table_boot;
+use crate::{boot, system};
 use core::fmt::Write;
 
 /// INTERNAL API! Helper for print macros.
 #[doc(hidden)]
 pub fn _print(args: core::fmt::Arguments) {
-    if let Some(mut bs) = system_table_boot() {
-        bs.stdout()
-            .write_fmt(args)
-            .expect("Failed to write to stdout");
+    if boot::are_boot_services_active() {
+        system::with_stdout(|stdout| {
+            stdout.write_fmt(args).expect("Failed to write to stdout");
+        });
     } else {
         // Ease debugging: Depending on logger, this might write to serial or
         // debugcon.
@@ -25,8 +25,7 @@ pub fn _print(args: core::fmt::Arguments) {
 /// prevent a circular runtime dependency.
 ///
 /// # Panics
-/// Will panic if `SYSTEM_TABLE` is `None` (Before [`uefi::helpers::init()`] and
-/// after [`uefi::prelude::SystemTable::exit_boot_services()`]).
+/// Will panic if the system table's `stdout` is not set, or if writing fails.
 ///
 /// # Examples
 /// ```
@@ -50,8 +49,7 @@ macro_rules! print {
 /// prevent a circular runtime dependency.
 ///
 /// # Panics
-/// Will panic if `SYSTEM_TABLE` is `None` (Before [`uefi::helpers::init()`] and
-/// after [`uefi::prelude::SystemTable::exit_boot_services()`]).
+/// Will panic if the system table's `stdout` is not set, or if writing fails.
 ///
 /// # Examples
 /// ```

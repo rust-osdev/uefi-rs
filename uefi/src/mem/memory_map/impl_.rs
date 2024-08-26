@@ -2,6 +2,7 @@
 //! as well as relevant helper types, such as [`MemoryMapBackingMemory`].
 
 use super::*;
+use crate::boot;
 use crate::table::system_table_boot;
 use core::fmt::{Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
@@ -341,8 +342,8 @@ impl MemoryMapBackingMemory {
 // Don't drop when we use this in unit tests.
 impl Drop for MemoryMapBackingMemory {
     fn drop(&mut self) {
-        if let Some(bs) = system_table_boot() {
-            let res = unsafe { bs.boot_services().free_pool(self.0.as_ptr().cast()) };
+        if boot::are_boot_services_active() {
+            let res = unsafe { boot::free_pool(self.0.cast()) };
             if let Err(e) = res {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }

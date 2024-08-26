@@ -4,7 +4,7 @@
 //!
 //! # Accessing protocols
 //!
-//! Protocols can be opened using several methods of `BootServices`. Most
+//! Protocols can be opened using several functions in this module. Most
 //! commonly, [`open_protocol_exclusive`] should be used. This ensures that
 //! nothing else can use the protocol until it is closed, and returns a
 //! [`ScopedProtocol`] that takes care of closing the protocol when it is
@@ -1510,7 +1510,7 @@ impl Drop for TplGuard {
 // TestProtocol (0x04) excluded because it doesn't actually open the
 // protocol, just tests if it's present on the handle. Since that
 // changes the interface significantly, that's exposed as a separate
-// method: `BootServices::test_protocol`.
+// method: `test_protocol`.
 
 /// Attributes for [`open_protocol`].
 #[repr(u32)]

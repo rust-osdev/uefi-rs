@@ -812,7 +812,7 @@ pub enum NodeConversionError {
 ///
 /// The layout of this type is the same as a [`DevicePath`].
 ///
-/// [`load_image`]: crate::table::boot::BootServices::load_image
+/// [`load_image`]: crate::boot::load_image
 #[repr(transparent)]
 #[unsafe_protocol("bc62157e-3e33-4fec-9920-2d3b36d750df")]
 #[derive(Debug, Pointee)]

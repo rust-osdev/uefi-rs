@@ -1,5 +1,7 @@
 //! UEFI services available during boot.
 
+#![allow(deprecated)]
+
 pub use crate::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
     ProtocolSearchKey, SearchType, TimerTrigger,
@@ -79,6 +81,7 @@ pub const PAGE_SIZE: usize = 4096;
 ///
 /// [`Output`]: crate::proto::console::text::Output
 /// [`open_protocol`]: BootServices::open_protocol
+#[deprecated = "Use the uefi::boot module instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct BootServices(uefi_raw::table::boot::BootServices);

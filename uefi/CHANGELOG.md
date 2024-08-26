@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
+details of the deprecation in this release.
+
 We added documentation to `lib.rs` and the [uefi-rs book] about how
 `uefi` compares to "standard Rust binaries" for UEFI (those using `std`), and
 how to integrate the `uefi` crate into them.
@@ -8,6 +11,8 @@ how to integrate the `uefi` crate into them.
 - Added `Handle::new`
 
 ## Changed
+- The `BootServices` and `RuntimeServices` structs have been deprecated. Use
+  the `uefi::runtime` and `uefi::boot` modules instead.
 - **Breaking:** The conversion functions between device paths and text no longer
   take a `BootServices` argument. The global system table is used instead.
 - **Breaking:** `GraphicsOutput::modes` no longer takes a `BootServices`

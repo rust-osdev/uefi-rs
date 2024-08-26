@@ -178,6 +178,51 @@ pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     unsafe { (bt.free_pool)(ptr.as_ptr()) }.to_result()
 }
 
+/// Queries the `get_memory_map` function of UEFI to retrieve the current
+/// size of the map. Returns a [`MemoryMapMeta`].
+///
+/// It is recommended to add a few more bytes for a subsequent allocation
+/// for the memory map, as the memory map itself also needs heap memory,
+/// and other allocations might occur before that call.
+#[must_use]
+pub(crate) fn memory_map_size() -> MemoryMapMeta {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    let mut map_size = 0;
+    let mut map_key = MemoryMapKey(0);
+    let mut desc_size = 0;
+    let mut desc_version = 0;
+
+    let status = unsafe {
+        (bt.get_memory_map)(
+            &mut map_size,
+            ptr::null_mut(),
+            &mut map_key.0,
+            &mut desc_size,
+            &mut desc_version,
+        )
+    };
+    assert_eq!(status, Status::BUFFER_TOO_SMALL);
+
+    assert_eq!(
+        map_size % desc_size,
+        0,
+        "Memory map must be a multiple of the reported descriptor size."
+    );
+
+    let mmm = MemoryMapMeta {
+        desc_size,
+        map_size,
+        map_key,
+        desc_version,
+    };
+
+    mmm.assert_sanity_checks();
+
+    mmm
+}
+
 /// Stores the current UEFI memory map in an UEFI-heap allocated buffer
 /// and returns a [`MemoryMapOwned`].
 ///

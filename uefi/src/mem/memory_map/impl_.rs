@@ -2,7 +2,7 @@
 //! as well as relevant helper types, such as [`MemoryMapBackingMemory`].
 
 use super::*;
-use crate::table::system_table_boot;
+use crate::boot;
 use core::fmt::{Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
 use core::ptr::NonNull;
@@ -274,12 +274,9 @@ impl MemoryMapBackingMemory {
     /// - `memory_type`: The memory type for the memory map allocation.
     ///   Typically, [`MemoryType::LOADER_DATA`] for regular UEFI applications.
     pub(crate) fn new(memory_type: MemoryType) -> crate::Result<Self> {
-        let st = system_table_boot().expect("Should have boot services activated");
-        let bs = st.boot_services();
-
-        let memory_map_meta = bs.memory_map_size();
+        let memory_map_meta = boot::memory_map_size();
         let len = Self::safe_allocation_size_hint(memory_map_meta);
-        let ptr = bs.allocate_pool(memory_type, len)?.as_ptr();
+        let ptr = boot::allocate_pool(memory_type, len)?.as_ptr();
 
         // Should be fine as UEFI always has  allocations with a guaranteed
         // alignment of 8 bytes.
@@ -339,20 +336,15 @@ impl MemoryMapBackingMemory {
 }
 
 // Don't drop when we use this in unit tests.
-#[cfg(not(test))]
 impl Drop for MemoryMapBackingMemory {
     fn drop(&mut self) {
-        if let Some(bs) = system_table_boot() {
-            let res = unsafe { bs.boot_services().free_pool(self.0.as_ptr().cast()) };
+        if boot::are_boot_services_active() {
+            let res = unsafe { boot::free_pool(self.0.cast()) };
             if let Err(e) = res {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }
         } else {
-            #[cfg(test)]
-            log::debug!("Boot services are not available in unit tests.");
-
-            #[cfg(not(test))]
-            log::debug!("Boot services are excited. Memory map won't be freed using the UEFI boot services allocator.");
+            log::debug!("Boot services are exited. Memory map won't be freed using the UEFI boot services allocator.");
         }
     }
 }

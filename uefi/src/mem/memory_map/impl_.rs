@@ -339,7 +339,6 @@ impl MemoryMapBackingMemory {
 }
 
 // Don't drop when we use this in unit tests.
-#[cfg(not(test))]
 impl Drop for MemoryMapBackingMemory {
     fn drop(&mut self) {
         if let Some(bs) = system_table_boot() {
@@ -348,11 +347,7 @@ impl Drop for MemoryMapBackingMemory {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }
         } else {
-            #[cfg(test)]
-            log::debug!("Boot services are not available in unit tests.");
-
-            #[cfg(not(test))]
-            log::debug!("Boot services are excited. Memory map won't be freed using the UEFI boot services allocator.");
+            log::debug!("Boot services are exited. Memory map won't be freed using the UEFI boot services allocator.");
         }
     }
 }

@@ -4,10 +4,9 @@
 //! ID. They can be implemented by a UEFI driver or occasionally by a
 //! UEFI application.
 //!
-//! See the [`BootServices`] documentation for details of how to open a
-//! protocol.
+//! See the [`boot`] documentation for details of how to open a protocol.
 //!
-//! [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
+//! [`boot`]: crate::boot#accessing-protocols
 
 pub mod console;
 pub mod debug;

@@ -116,7 +116,7 @@
 //! application depends on the device. For example, a PC with no network card
 //! may not provide network protocols.
 //!
-//! See the [`BootServices`] documentation for details of how to open a
+//! See the [`boot`] documentation for details of how to open a
 //! protocol, and see the [`proto`] module for protocol implementations. New
 //! protocols can be defined with the [`unsafe_protocol`] macro.
 //!

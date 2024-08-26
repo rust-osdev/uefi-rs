@@ -13,13 +13,13 @@ use uefi_raw::protocol::file_system::SimpleFileSystemProtocol;
 ///
 /// # Accessing `SimpleFileSystem` protocol
 ///
-/// Use [`BootServices::get_image_file_system`] to retrieve the `SimpleFileSystem`
+/// Use [`boot::get_image_file_system`] to retrieve the `SimpleFileSystem`
 /// protocol associated with a given image handle.
 ///
-/// See the [`BootServices`] documentation for more details of how to open a protocol.
+/// See the [`boot`] documentation for more details of how to open a protocol.
 ///
-/// [`BootServices::get_image_file_system`]: crate::table::boot::BootServices::get_image_file_system
-/// [`BootServices`]: crate::table::boot::BootServices#accessing-protocols
+/// [`boot::get_image_file_system`]: crate::boot::get_image_file_system
+/// [`boot`]: crate::boot#accessing-protocols
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleFileSystemProtocol::GUID)]

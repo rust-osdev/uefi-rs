@@ -1,6 +1,23 @@
 //! UEFI boot services.
 //!
 //! These functions will panic if called after exiting boot services.
+//!
+//! # Accessing protocols
+//!
+//! Protocols can be opened using several methods of `BootServices`. Most
+//! commonly, [`open_protocol_exclusive`] should be used. This ensures that
+//! nothing else can use the protocol until it is closed, and returns a
+//! [`ScopedProtocol`] that takes care of closing the protocol when it is
+//! dropped.
+//!
+//! Other methods for opening protocols:
+//!
+//! * [`open_protocol`]
+//! * [`get_image_file_system`]
+//!
+//! For protocol definitions, see the [`proto`] module.
+//!
+//! [`proto`]: crate::proto
 
 pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
 

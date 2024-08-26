@@ -3,7 +3,6 @@
 
 use super::*;
 use crate::boot;
-use crate::table::system_table_boot;
 use core::fmt::{Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
 use core::ptr::NonNull;
@@ -275,12 +274,9 @@ impl MemoryMapBackingMemory {
     /// - `memory_type`: The memory type for the memory map allocation.
     ///   Typically, [`MemoryType::LOADER_DATA`] for regular UEFI applications.
     pub(crate) fn new(memory_type: MemoryType) -> crate::Result<Self> {
-        let st = system_table_boot().expect("Should have boot services activated");
-        let bs = st.boot_services();
-
-        let memory_map_meta = bs.memory_map_size();
+        let memory_map_meta = boot::memory_map_size();
         let len = Self::safe_allocation_size_hint(memory_map_meta);
-        let ptr = bs.allocate_pool(memory_type, len)?.as_ptr();
+        let ptr = boot::allocate_pool(memory_type, len)?.as_ptr();
 
         // Should be fine as UEFI always has  allocations with a guaranteed
         // alignment of 8 bytes.

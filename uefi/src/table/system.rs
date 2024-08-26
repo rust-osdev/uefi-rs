@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use super::boot::BootServices;
 use super::runtime::{ResetType, RuntimeServices};
 use super::{cfg, Revision};

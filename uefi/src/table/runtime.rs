@@ -1,5 +1,7 @@
 //! UEFI services available at runtime, even after the OS boots.
 
+#![allow(deprecated)]
+
 pub use crate::runtime::{
     CapsuleInfo, Time, TimeByteConversionError, TimeError, TimeParams, VariableStorageInfo,
 };
@@ -35,6 +37,7 @@ use {
 /// A reference to `RuntimeServices` can only be accessed by calling [`SystemTable::runtime_services`].
 ///
 /// [`SystemTable::runtime_services`]: crate::table::SystemTable::runtime_services
+#[deprecated = "Use the uefi::runtime module instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 #[repr(C)]
 pub struct RuntimeServices(uefi_raw::table::runtime::RuntimeServices);

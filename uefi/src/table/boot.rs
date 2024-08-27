@@ -1329,6 +1329,7 @@ impl super::Table for BootServices {
 /// RAII guard for task priority level changes
 ///
 /// Will automatically restore the former task priority level when dropped.
+#[deprecated = "Use uefi::boot::TplGuard instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 pub struct TplGuard<'boot> {
     boot_services: &'boot BootServices,
@@ -1359,6 +1360,7 @@ impl Drop for TplGuard<'_> {
 /// [`LoadedImageDevicePath`]: crate::proto::device_path::LoadedImageDevicePath
 /// [`get`]: ScopedProtocol::get
 /// [`get_mut`]: ScopedProtocol::get_mut
+#[deprecated = "Use uefi::boot::ScopedProtocol instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 pub struct ScopedProtocol<'a, P: Protocol + ?Sized> {
     /// The protocol interface.
@@ -1421,6 +1423,7 @@ impl<'a, P: Protocol + ?Sized> ScopedProtocol<'a, P> {
 
 /// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
 /// returned by [`BootServices::protocols_per_handle`].
+#[deprecated = "Use uefi::boot::ProtocolsPerHandle instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 pub struct ProtocolsPerHandle<'a> {
     // The pointer returned by `protocols_per_handle` has to be free'd with
@@ -1461,6 +1464,7 @@ impl<'a> ProtocolsPerHandle<'a> {
 
 /// A buffer that contains an array of [`Handles`][Handle] that support the
 /// requested protocol. Returned by [`BootServices::locate_handle_buffer`].
+#[deprecated = "Use uefi::boot::HandleBuffer instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 pub struct HandleBuffer<'a> {
     // The pointer returned by `locate_handle_buffer` has to be freed with

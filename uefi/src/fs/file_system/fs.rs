@@ -18,6 +18,7 @@ pub type FileSystemResult<T> = Result<T, Error>;
 /// associated `ScopedProtocol<'a>` structs are removed this inner type can be
 /// removed as well.
 enum FileSystemInner<'a> {
+    #[allow(deprecated)]
     WithLifetime(uefi::table::boot::ScopedProtocol<'a, SimpleFileSystemProtocol>),
     WithoutLifetime(uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>),
 }
@@ -454,6 +455,7 @@ impl<'a> Debug for FileSystem<'a> {
     }
 }
 
+#[allow(deprecated)]
 impl<'a> From<uefi::table::boot::ScopedProtocol<'a, SimpleFileSystemProtocol>> for FileSystem<'a> {
     fn from(proto: uefi::table::boot::ScopedProtocol<'a, SimpleFileSystemProtocol>) -> Self {
         Self(FileSystemInner::WithLifetime(proto))

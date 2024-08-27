@@ -44,6 +44,12 @@ use uefi_raw::table::boot::InterfaceType;
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
 
+/// Size in bytes of a UEFI page.
+///
+/// Note that this is not necessarily the processor's page size. The UEFI page
+/// size is always 4 KiB.
+pub const PAGE_SIZE: usize = 4096;
+
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
 static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());

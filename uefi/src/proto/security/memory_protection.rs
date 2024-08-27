@@ -29,7 +29,7 @@ impl MemoryProtection {
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
     /// [`Status::NO_MAPPING`]: crate::Status::NO_MAPPING
-    /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
+    /// [UEFI page size]: crate::boot::PAGE_SIZE
     pub fn get_memory_attributes(
         &self,
         byte_region: Range<PhysicalAddress>,
@@ -53,7 +53,7 @@ impl MemoryProtection {
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
-    /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
+    /// [UEFI page size]: crate::boot::PAGE_SIZE
     pub fn set_memory_attributes(
         &self,
         byte_region: Range<PhysicalAddress>,
@@ -76,7 +76,7 @@ impl MemoryProtection {
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
-    /// [UEFI page size]: uefi::table::boot::PAGE_SIZE
+    /// [UEFI page size]: crate::boot::PAGE_SIZE
     pub fn clear_memory_attributes(
         &self,
         byte_region: Range<PhysicalAddress>,

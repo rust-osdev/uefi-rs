@@ -4,7 +4,7 @@
 
 pub use crate::boot::{
     AllocateType, EventNotifyFn, LoadImageSource, OpenProtocolAttributes, OpenProtocolParams,
-    ProtocolSearchKey, SearchType, TimerTrigger,
+    ProtocolSearchKey, SearchType, TimerTrigger, PAGE_SIZE,
 };
 pub use uefi_raw::table::boot::{
     EventType, InterfaceType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl,
@@ -28,12 +28,6 @@ use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use core::{ptr, slice};
-
-/// Size in bytes of a UEFI page.
-///
-/// Note that this is not necessarily the processor's page size. The UEFI page
-/// size is always 4 KiB.
-pub const PAGE_SIZE: usize = 4096;
 
 /// Contains pointers to all of the boot services.
 ///

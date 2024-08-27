@@ -42,6 +42,7 @@ mod println;
 #[must_use]
 #[deprecated(note = "use uefi::table::system_table_boot instead")]
 pub fn system_table() -> SystemTable<Boot> {
+    #[allow(deprecated)]
     table::system_table_boot().expect("boot services are not active")
 }
 

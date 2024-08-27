@@ -44,8 +44,7 @@ impl ResetNotification {
     ///
     /// ```rust
     /// use log::info;
-    /// use uefi::Handle;
-    /// use uefi::prelude::BootServices;
+    /// use uefi::{boot, Handle};
     /// use uefi::proto::misc::{ResetNotification};
     /// use uefi_raw::Status;
     /// use uefi_raw::table::runtime;
@@ -62,10 +61,9 @@ impl ResetNotification {
     ///     info!("do what you want");
     /// }
     ///
-    /// pub fn test(image: Handle, bt: &BootServices) {
+    /// pub fn test(image: Handle) {
     ///
-    ///     let mut rn = bt
-    ///         .open_protocol_exclusive::<ResetNotification>(image)
+    ///     let mut rn = boot::open_protocol_exclusive::<ResetNotification>(image)
     ///         .expect("Failed to open Timestamp protocol");
     ///
     ///     rn.register_reset_notify(efi_reset_fn)

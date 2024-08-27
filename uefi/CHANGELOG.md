@@ -16,6 +16,8 @@ how to integrate the `uefi` crate into them.
 - In `uefi::table::boot`, `ScopedProtocol`, `TplGuard`, `ProtocolsPerHandle`,
   and `HandleBuffer` have been deprecated. Use the structs of the same name in
   `uefi::boot` instead.
+- `uefi::table::system_table_boot` and `uefi::table::system_table_runtime` have
+  been deprecated. Use the `uefi::runtime` and `uefi::boot` modules instead.
 - **Breaking:** The conversion functions between device paths and text no longer
   take a `BootServices` argument. The global system table is used instead.
 - **Breaking:** `GraphicsOutput::modes` no longer takes a `BootServices`

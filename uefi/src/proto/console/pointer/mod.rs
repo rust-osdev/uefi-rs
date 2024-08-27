@@ -26,11 +26,13 @@ impl Pointer {
     /// Retrieves the pointer device's current state, if a state change occurred
     /// since the last time this function was called.
     ///
-    /// Use `wait_for_input_event()` with the `BootServices::wait_for_event()`
+    /// Use `wait_for_input_event()` with the [`boot::wait_for_event`]
     /// interface in order to wait for input from the pointer device.
     ///
     /// # Errors
     /// - `DeviceError` if there was an issue with the pointer device.
+    ///
+    /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
         let mut pointer_state = PointerState::default();
         let pointer_state_ptr: *mut _ = &mut pointer_state;
@@ -41,8 +43,10 @@ impl Pointer {
         }
     }
 
-    /// Event to be used with `BootServices::wait_for_event()` in order to wait
+    /// Event to be used with [`boot::wait_for_event`] in order to wait
     /// for input from the pointer device
+    ///
+    /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     #[must_use]
     pub fn wait_for_input_event(&self) -> Option<Event> {
         unsafe { Event::from_ptr(self.0.wait_for_input) }

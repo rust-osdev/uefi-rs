@@ -24,10 +24,10 @@ impl Input {
 
     /// Reads the next keystroke from the input device, if any.
     ///
-    /// Use [`wait_for_key_event`] with the [`BootServices::wait_for_event`]
+    /// Use [`wait_for_key_event`] with the [`boot::wait_for_event`]
     /// interface in order to wait for a key to be pressed.
     ///
-    /// [`BootServices::wait_for_event`]: uefi::table::boot::BootServices::wait_for_event
+    /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     /// [`wait_for_key_event`]: Self::wait_for_key_event
     ///
     /// # Errors
@@ -39,16 +39,13 @@ impl Input {
     /// ```
     /// use log::info;
     /// use uefi::proto::console::text::{Input, Key, ScanCode};
-    /// use uefi::table::boot::BootServices;
-    /// use uefi::{Char16, Result, ResultExt};
+    /// use uefi::{boot, Char16, Result, ResultExt};
     ///
-    /// fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Result {
+    /// fn read_keyboard_events(input: &mut Input) -> Result {
     ///     loop {
     ///         // Pause until a keyboard event occurs.
     ///         let mut events = unsafe { [input.wait_for_key_event().unwrap()] };
-    ///         boot_services
-    ///             .wait_for_event(&mut events)
-    ///             .discard_errdata()?;
+    ///         boot::wait_for_event(&mut events).discard_errdata()?;
     ///
     ///         let u_key = Char16::try_from('u').unwrap();
     ///         match input.read_key()? {
@@ -79,8 +76,10 @@ impl Input {
         }
     }
 
-    /// Event to be used with `BootServices::wait_for_event()` in order to wait
+    /// Event to be used with [`boot::wait_for_event`] in order to wait
     /// for a key to be available
+    ///
+    /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     #[must_use]
     pub fn wait_for_key_event(&self) -> Option<Event> {
         unsafe { Event::from_ptr(self.0.wait_for_key) }

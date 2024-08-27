@@ -100,12 +100,9 @@
 //!
 //! ## Tables
 //!
-//! The [`SystemTable`] provides access to almost everything in UEFI. It comes
-//! in two flavors:
-//! - `SystemTable<Boot>`: for boot-time applications such as bootloaders,
-//!   provides access to both boot and runtime services.
-//! - `SystemTable<Runtime>`: for operating systems after boot services have
-//!   been exited.
+//! Most UEFI functionality comes from the system, boot, and runtime
+//! tables. These can be accessed via the [`system`], [`boot`], and [`runtime`]
+//! modules.
 //!
 //! ## Protocols
 //!
@@ -204,7 +201,6 @@
 //! [UEFI]: https://uefi.org/
 //! [Zulip]: https://rust-osdev.zulipchat.com
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
-//! [`SystemTable`]: table::SystemTable
 //! [`ctr16!`]: crate::cstr16
 //! [`entry-macro`]: uefi_macros::entry
 //! [`r-efi`]: https://crates.io/crates/r-efi

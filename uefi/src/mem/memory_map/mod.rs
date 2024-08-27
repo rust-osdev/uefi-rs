@@ -28,7 +28,7 @@
 //!   [`MemoryMapMeta`],
 //! - re-exports [`MemoryDescriptor`], [`MemoryType`], and [`MemoryAttribute`].
 //!
-//! [`boot::exit_boot_services`]: crate::table::SystemTable::exit_boot_services
+//! [`boot::exit_boot_services`]: crate::boot::exit_boot_services
 //! [`boot::memory_map`]: crate::boot::memory_map
 
 mod api;

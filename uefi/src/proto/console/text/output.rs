@@ -11,14 +11,14 @@ use uefi_raw::protocol::console::{SimpleTextOutputMode, SimpleTextOutputProtocol
 /// # Accessing `Output` protocol
 ///
 /// The standard output and standard error output protocols can be accessed
-/// using [`SystemTable::stdout`] and [`SystemTable::stderr`], respectively.
+/// using [`system::stdout`] and [`system::stderr`], respectively.
 ///
 /// An `Output` protocol can also be accessed like any other UEFI protocol.
 /// See the [`boot`] documentation for more details of how to open a
 /// protocol.
 ///
-/// [`SystemTable::stdout`]: crate::table::SystemTable::stdout
-/// [`SystemTable::stderr`]: crate::table::SystemTable::stderr
+/// [`system::stdout`]: crate::system::with_stdout
+/// [`system::stderr`]: crate::system::with_stderr
 /// [`boot`]: crate::boot#accessing-protocols
 #[derive(Debug)]
 #[repr(transparent)]

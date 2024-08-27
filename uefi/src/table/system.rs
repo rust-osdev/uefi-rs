@@ -46,7 +46,8 @@ impl SystemTableView for Runtime {}
 /// documented in the UEFI spec. At that point, the boot view of the system
 /// table will be destroyed (which conveniently invalidates all references to
 /// UEFI boot services in the eye of the Rust borrow checker) and a runtime view
-/// will be provided to replace it.
+/// will be provided to replace it
+#[deprecated = "Use the uefi::system, uefi::boot, and uefi::runtime modules instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct SystemTable<View: SystemTableView> {

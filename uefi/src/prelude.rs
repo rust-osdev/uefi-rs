@@ -9,4 +9,5 @@ pub use crate::{cstr16, cstr8, entry, Handle, ResultExt, Status, StatusExt};
 pub use crate::table::boot::BootServices;
 #[allow(deprecated)]
 pub use crate::table::runtime::RuntimeServices;
+#[allow(deprecated)]
 pub use crate::table::{Boot, SystemTable};

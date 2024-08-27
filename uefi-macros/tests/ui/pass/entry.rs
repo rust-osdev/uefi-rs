@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use uefi::table::{Boot, SystemTable};
 use uefi::{entry, Handle, Status};
 

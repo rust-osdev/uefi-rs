@@ -14,11 +14,12 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use crate::boot;
 use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
+#[allow(deprecated)]
 use crate::table::{Boot, SystemTable};
 
 /// Deprecated; this function is now a no-op.
 #[deprecated = "this function is now a no-op"]
-#[allow(unused_unsafe, clippy::missing_safety_doc)]
+#[allow(deprecated, unused_unsafe, clippy::missing_safety_doc)]
 pub unsafe fn init(_: &mut SystemTable<Boot>) {}
 
 /// Deprecated; this function is now a no-op.

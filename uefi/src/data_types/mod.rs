@@ -70,9 +70,11 @@ impl Event {
     /// Clone this `Event`
     ///
     /// # Safety
-    /// When an event is closed by calling `BootServices::close_event`, that event and ALL references
+    /// When an event is closed by calling [`boot::close_event`], that event and ALL references
     /// to it are invalidated and the underlying memory is freed by firmware. The caller must ensure
     /// that any clones of a closed `Event` are never used again.
+    ///
+    /// [`boot::close_event`]: crate::boot::close_event
     #[must_use]
     pub const unsafe fn unsafe_clone(&self) -> Self {
         Self(self.0)

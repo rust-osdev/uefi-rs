@@ -203,7 +203,6 @@
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/
 //! [Zulip]: https://rust-osdev.zulipchat.com
-//! [`BootServices`]: table::boot::BootServices
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`SystemTable`]: table::SystemTable
 //! [`ctr16!`]: crate::cstr16

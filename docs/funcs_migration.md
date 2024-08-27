@@ -35,9 +35,13 @@ on [Zulip] or file an [issue].
 
 ## Timeline
 
-As of uefi-0.31, the new API has been introduced alongside the old struct-based
-API. We plan to deprecate the old API in the release after that, and then fully
-remove the old API in a later release.
+In uefi-0.31, the new API was introduced alongside the old struct-based API.
+
+In uefi-0.32, the old struct-based API was deprecated. In addition, some
+breaking changes were made to the API to remove `BootServices` parameters from
+various functions.
+
+We plan to entirely remove the deprecated API in uefi-0.33 or thereabouts.
 
 ## Reason for the change
 

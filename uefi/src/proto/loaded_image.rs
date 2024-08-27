@@ -139,14 +139,14 @@ impl LoadedImage {
     /// Drivers that wish to support unloading have to register their unload handler
     /// using this protocol. It is responsible for cleaning up any resources the
     /// image is using before returning. Unloading a driver is done with
-    /// [`BootServices::unload_image`].
+    /// [`boot::unload_image`].
     ///
     /// # Safety
     ///
     /// Only the driver that this [`LoadedImage`] is attached to should register an
     /// unload handler.
     ///
-    /// [`BootServices::unload_image`]: crate::table::boot::BootServices
+    /// [`boot::unload_image`]: crate::boot::unload_image
     pub unsafe fn set_unload(
         &mut self,
         unload: extern "efiapi" fn(image_handle: Handle) -> Status,
@@ -157,7 +157,7 @@ impl LoadedImage {
     }
 
     /// Set the load options for the image. This can be used prior to
-    /// calling `BootServices.start_image` to control the command line
+    /// calling [`boot::start_image`] to control the command line
     /// passed to the image.
     ///
     /// `size` is in bytes.
@@ -167,6 +167,8 @@ impl LoadedImage {
     /// This function takes `options` as a raw pointer because the
     /// load options data is not owned by `LoadedImage`. The caller
     /// must ensure that the memory lives long enough.
+    ///
+    /// [`boot::start_image`]: crate::boot::start_image
     pub unsafe fn set_load_options(&mut self, options: *const u8, size: u32) {
         self.0.load_options = options.cast();
         self.0.load_options_size = size;

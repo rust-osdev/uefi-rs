@@ -1,5 +1,6 @@
 #![allow(unused_imports)]
 #![no_main]
+#![allow(deprecated)]
 
 use uefi::prelude::*;
 use uefi_macros::entry;

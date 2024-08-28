@@ -11,8 +11,9 @@ how to integrate the `uefi` crate into them.
 - Added `Handle::new`
 
 ## Changed
-- The `BootServices` and `RuntimeServices` structs have been deprecated. Use
-  the `uefi::runtime` and `uefi::boot` modules instead.
+- The `BootServices`, `RuntimeServices`, and `SystemTable` structs have been
+  deprecated. Use the `uefi::boot` and `uefi::runtime`, and `uefi::system`
+  modules instead.
 - In `uefi::table::boot`, `ScopedProtocol`, `TplGuard`, `ProtocolsPerHandle`,
   and `HandleBuffer` have been deprecated. Use the structs of the same name in
   `uefi::boot` instead.

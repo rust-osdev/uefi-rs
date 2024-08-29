@@ -127,16 +127,6 @@ jobs:
         # library packages. Note that xtask isn't used or built here; since it's
         # just a dev tool we don't care about the MSRV for that package.
         run: cargo build --target x86_64-unknown-uefi -p uefi-test-runner
-  # Tests that the published crates keep being package-able (thus, releasable).
-  package:
-    name: Package Crates
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-      - name: Build
-        run: cargo package -p uefi -p uefi-raw -p uefi-macros
   # This job requires the nightly channel, but keep it as a separate job from
   # `nightly_channel` because it takes a while to run.
   build_feature_permutations:

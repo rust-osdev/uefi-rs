@@ -478,3 +478,9 @@ pub enum Tpl: usize => {
     /// Even processor interrupts are disable at this level.
     HIGH_LEVEL  = 31,
 }}
+
+/// Size in bytes of a UEFI page.
+///
+/// Note that this is not necessarily the processor's page size. The UEFI page
+/// size is always 4 KiB.
+pub const PAGE_SIZE: usize = 4096;

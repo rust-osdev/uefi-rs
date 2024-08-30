@@ -19,7 +19,7 @@
 //!
 //! [`proto`]: crate::proto
 
-pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl};
+pub use uefi_raw::table::boot::{EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl, PAGE_SIZE};
 
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::{MemoryMapBackingMemory, MemoryMapKey, MemoryMapMeta, MemoryMapOwned};

@@ -1,5 +1,9 @@
 # uefi-raw - [Unreleased]
 
+## Added
+
+- Added `PAGE_SIZE` constant.
+
 
 # uefi-raw - 0.7.0 (2024-08-20)
 

@@ -1,6 +1,6 @@
 use super::FileAttribute;
 use crate::data_types::Align;
-use crate::table::runtime::Time;
+use crate::runtime::Time;
 use crate::{CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
 use core::fmt::{self, Display, Formatter};
@@ -426,7 +426,7 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::table::runtime::{Daylight, Time, TimeParams};
+    use crate::runtime::{Daylight, Time, TimeParams};
     use crate::CString16;
     use alloc::vec;
 

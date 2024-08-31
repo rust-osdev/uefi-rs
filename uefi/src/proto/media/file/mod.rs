@@ -348,7 +348,7 @@ pub enum FileMode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::table::runtime::Time;
+    use crate::runtime::Time;
     use crate::{CString16, Guid, Identify};
     use ::alloc::vec;
     use uefi_raw::protocol::file_system::FileProtocolRevision;

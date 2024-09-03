@@ -1,8 +1,10 @@
 //! This module is used to simplify importing the most common UEFI types.
 //!
-//! This includes the system table types, `Status` codes, etc.
+//! This includes the system table modules, `Status` codes, etc.
 
-pub use crate::{cstr16, cstr8, entry, Handle, ResultExt, Status, StatusExt};
+pub use crate::{
+    boot, cstr16, cstr8, entry, runtime, system, Handle, ResultExt, Status, StatusExt,
+};
 
 // Import the basic table types.
 #[allow(deprecated)]

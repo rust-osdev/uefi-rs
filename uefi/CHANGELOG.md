@@ -8,7 +8,9 @@ We added documentation to `lib.rs` and the [uefi-rs book] about how
 how to integrate the `uefi` crate into them.
 
 ## Added
-- Added `Handle::new`
+- Added `Handle::new`.
+- Added the `uefi::boot`, `uefi::runtime`, and `uefi::system` modules to the
+  prelude.
 
 ## Changed
 - The `BootServices`, `RuntimeServices`, and `SystemTable` structs have been

@@ -46,16 +46,25 @@ pub fn disable() {
 /// cloud-hypervisor.
 ///
 /// More info: <https://phip1611.de/blog/how-to-use-qemus-debugcon-feature/>
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    feature = "log-debugcon"
+))]
 #[derive(Copy, Clone, Debug)]
 struct DebugconWriter;
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    feature = "log-debugcon"
+))]
 impl DebugconWriter {
     const IO_PORT: u16 = 0xe9;
 }
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(all(
+    any(target_arch = "x86", target_arch = "x86_64"),
+    feature = "log-debugcon"
+))]
 impl core::fmt::Write for DebugconWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for &byte in s.as_bytes() {

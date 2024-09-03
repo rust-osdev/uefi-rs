@@ -49,6 +49,7 @@ pub enum Feature {
     // `uefi` features.
     Alloc,
     GlobalAllocator,
+    LogDebugcon,
     Logger,
     Unstable,
     PanicHandler,
@@ -68,6 +69,7 @@ impl Feature {
         match self {
             Self::Alloc => "alloc",
             Self::GlobalAllocator => "global_allocator",
+            Self::LogDebugcon => "log-debugcon",
             Self::Logger => "logger",
             Self::Unstable => "unstable",
             Self::PanicHandler => "panic_handler",
@@ -88,6 +90,7 @@ impl Feature {
             Package::Uefi => vec![
                 Self::Alloc,
                 Self::GlobalAllocator,
+                Self::LogDebugcon,
                 Self::Logger,
                 Self::Unstable,
                 Self::PanicHandler,
@@ -112,7 +115,7 @@ impl Feature {
     /// - `include_unstable` - add all functionality behind the `unstable` feature
     /// - `runtime_features` - add all functionality that effect the runtime of Rust
     pub fn more_code(include_unstable: bool, runtime_features: bool) -> Vec<Self> {
-        let mut base_features = vec![Self::Alloc, Self::Logger];
+        let mut base_features = vec![Self::Alloc, Self::LogDebugcon, Self::Logger];
         if include_unstable {
             base_features.extend([Self::Unstable])
         }
@@ -293,6 +296,10 @@ impl Cargo {
             cmd.arg(sub_action);
         }
 
+        // Turn off default features so that `--feature-permutations` can test
+        // with each feature enabled and disabled.
+        cmd.arg("--no-default-features");
+
         if self.release {
             cmd.arg("--release");
         }
@@ -337,19 +344,19 @@ mod tests {
     fn test_comma_separated_features() {
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(false, false)),
-            "alloc,logger"
+            "alloc,log-debugcon,logger"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(false, true)),
-            "alloc,logger,global_allocator"
+            "alloc,log-debugcon,logger,global_allocator"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(true, false)),
-            "alloc,logger,unstable"
+            "alloc,log-debugcon,logger,unstable"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(true, true)),
-            "alloc,logger,unstable,global_allocator"
+            "alloc,log-debugcon,logger,unstable,global_allocator"
         );
     }
 
@@ -380,7 +387,7 @@ mod tests {
         };
         assert_eq!(
             command_to_string(&cargo.command().unwrap()),
-            "RUSTDOCFLAGS=-Dwarnings cargo doc --package uefi --package xtask --features global_allocator --no-deps --document-private-items --open"
+            "RUSTDOCFLAGS=-Dwarnings cargo doc --no-default-features --package uefi --package xtask --features global_allocator --no-deps --document-private-items --open"
         );
     }
 }

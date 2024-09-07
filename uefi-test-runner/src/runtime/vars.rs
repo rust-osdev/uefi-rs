@@ -73,8 +73,12 @@ fn test_variables(rt: &RuntimeServices) {
 
 /// Test the variable functions in `uefi::runtime`.
 fn test_variables_freestanding() {
+    assert!(!runtime::variable_exists(NAME, VENDOR).unwrap());
+
     // Create the test variable.
     runtime::set_variable(NAME, VENDOR, ATTRS, VALUE).expect("failed to set variable");
+
+    assert!(runtime::variable_exists(NAME, VENDOR).unwrap());
 
     // Test `get_variable` with too small of a buffer.
     let mut buf = [0u8; 0];
@@ -106,6 +110,7 @@ fn test_variables_freestanding() {
 
     // Delete the variable and verify it can no longer be read.
     runtime::delete_variable(NAME, VENDOR).expect("failed to delete variable");
+    assert!(!runtime::variable_exists(NAME, VENDOR).unwrap());
     assert_eq!(
         runtime::get_variable(NAME, VENDOR, &mut buf)
             .unwrap_err()

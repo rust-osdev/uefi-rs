@@ -72,6 +72,47 @@ pub unsafe fn set_time(time: &Time) -> Result {
     (rt.set_time)(time.cast()).to_result()
 }
 
+/// Checks if a variable exists.
+///
+/// Returns `Ok(true)` if the variable exists, `Ok(false)` if the variable does
+/// not exist, or `Err` if the existence of the variable could not be determined.
+///
+/// # Errors
+///
+/// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
+/// * [`Status::SECURITY_VIOLATION`]: variable could not be read due to an
+///   authentication error.
+/// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
+///   after exiting boot services.
+pub fn variable_exists(name: &CStr16, vendor: &VariableVendor) -> Result<bool> {
+    let rt = runtime_services_raw_panicking();
+    let rt = unsafe { rt.as_ref() };
+
+    let attributes = ptr::null_mut();
+    let data = ptr::null_mut();
+    let mut data_size = 0;
+
+    let status = unsafe {
+        (rt.get_variable)(
+            name.as_ptr().cast(),
+            &vendor.0,
+            attributes,
+            &mut data_size,
+            data,
+        )
+    };
+
+    match status {
+        // If the variable exists, the status will be BUFFER_TOO_SMALL because
+        // data_size is 0. Empty variables do not exist, because setting a
+        // variable with empty data deletes the variable. In other words, the
+        // status will never be SUCCESS.
+        Status::BUFFER_TOO_SMALL => Ok(true),
+        Status::NOT_FOUND => Ok(false),
+        _ => Err(Error::from(status)),
+    }
+}
+
 /// Gets the contents and attributes of a variable. The size of `buf` must be at
 /// least as big as the variable's size, although it can be larger.
 ///

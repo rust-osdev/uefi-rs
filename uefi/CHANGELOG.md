@@ -11,6 +11,7 @@ how to integrate the `uefi` crate into them.
 - Added `Handle::new`.
 - Added the `uefi::boot`, `uefi::runtime`, and `uefi::system` modules to the
   prelude.
+- Added `runtime::variable_exists`.
 
 ## Changed
 - The `BootServices`, `RuntimeServices`, and `SystemTable` structs have been

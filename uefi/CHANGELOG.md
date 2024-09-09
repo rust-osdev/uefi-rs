@@ -1,7 +1,10 @@
 # uefi - [Unreleased]
 
+
+# uefi - 0.32.0 (2024-09-09)
+
 See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
-details of the deprecation in this release.
+details of the deprecations in this release.
 
 We added documentation to `lib.rs` and the [uefi-rs book] about how
 `uefi` compares to "standard Rust binaries" for UEFI (those using `std`), and

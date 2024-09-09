@@ -1,6 +1,16 @@
 # uefi-macros - [Unreleased]
 
 
+# uefi-macros - 0.16.0 (2024-09-09)
+
+## Changed
+
+- Internal updates to the `entry` macro related to
+  [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate].
+
+[funcmigrate]: ../docs/funcs_migration.md
+
+
 # uefi-macros - 0.15.0 (2024-08-20)
 
 ## Changed

@@ -37,7 +37,7 @@ jobs:
         with:
           # This channel is only required to invoke "nix-shell".
           # Everything inside that nix-shell will use a pinned version of nixpkgs.
-          nix_path: nixpkgs=channel:nixos-23.05
+          nix_path: nixpkgs=channel:nixpkgs-unstable
       # Dedicated step to separate all the
       # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
       # messages from the actual build output. This job takes ~60secs.

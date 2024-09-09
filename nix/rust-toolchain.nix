@@ -3,7 +3,7 @@
 
 {
   # Comes from rust-overlay
-  rust-bin
+  rust-bin,
 }:
 
 # Includes rustc, cargo, rustfmt, etc

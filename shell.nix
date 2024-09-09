@@ -11,7 +11,8 @@ pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     # nix related stuff (such as dependency management)
     niv
-    nixpkgs-fmt
+    # TODO use "nixfmt" once it is stable - likely in nixpkgs @ NixOS 24.11
+    nixfmt-rfc-style
 
     # Integration test dependencies
     swtpm

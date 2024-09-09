@@ -261,9 +261,9 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
     }
 
     // fmt nix
-    if has_cmd("nixpkgs-fmt") {
+    if has_cmd("nixfmt") {
         eprintln!("Formatting: nix");
-        let mut command = Command::new("nixpkgs-fmt");
+        let mut command = Command::new("nixfmt");
         if fmt_opt.check {
             command.arg("--check");
         }

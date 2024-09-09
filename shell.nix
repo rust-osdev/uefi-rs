@@ -5,7 +5,7 @@
 let
   sources = import ./nix/sources.nix;
   pkgs = import ./nix/nixpkgs.nix;
-  rustToolchain = pkgs.callPackage ./nix/rust-toolchain.nix {};
+  rustToolchain = pkgs.callPackage ./nix/rust-toolchain.nix { };
 in
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [

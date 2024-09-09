@@ -3,4 +3,3 @@ let
   rust-overlay = import sources.rust-overlay;
 in
 import sources.nixpkgs { overlays = [ rust-overlay ]; }
-

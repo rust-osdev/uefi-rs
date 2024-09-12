@@ -50,7 +50,7 @@ used.
 
 Next up are some `use` lines. Nothing too exciting here; the
 `uefi::prelude` module is intended to be glob-imported, and exports a
-number of commonly-used types.
+number of commonly-used macros, modules, and types.
 
 ```rust
 {{#include ../../../uefi-test-runner/examples/hello_world.rs:use}}
@@ -63,22 +63,17 @@ a little different from a standard Rust program.
 {{#include ../../../uefi-test-runner/examples/hello_world.rs:entry}}
 ```
 
-The `main` function in a Uefi application always takes two arguments,
-the image handle and the system table. The image [handle] represents the
-currently-running executable, and the system [table] provides access to
-many different UEFI services. The `main` function returns a [`Status`],
-which is essentially a numeric error (or success) code defined by UEFI.
+The `main` function in a UEFI application takes no arguments and returns
+a [`Status`], which is essentially a numeric error (or success) code
+defined by UEFI. The `main` function must be marked with the `#[entry]`
+macro.
 
-The first thing we do inside of `main` is initialize `uefi_services`:
+The first thing we do inside of `main` is initialize the `helpers`
+module, which initializes logging:
 
 ```rust
 {{#include ../../../uefi-test-runner/examples/hello_world.rs:services}}
 ```
-
-The `uefi_services` crate is not strictly required to make a UEFI
-application with the `uefi` crate, but it makes things much simpler by
-setting a simple memory allocator, initializing the logger, and
-providing a panic handler.
 
 Next we use the standard `log` crate to output "Hello world!". Then we
 call `stall` to make the system pause for 10 seconds. This just ensures

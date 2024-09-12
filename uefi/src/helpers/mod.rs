@@ -18,9 +18,7 @@
 //! [print_macro]: uefi::print!
 //! [println_macro]: uefi::println!
 
-#[allow(deprecated)]
-use crate::prelude::{Boot, SystemTable};
-use crate::{table, Result};
+use crate::Result;
 #[doc(hidden)]
 pub use println::_print;
 
@@ -31,21 +29,6 @@ mod logger;
 #[cfg(feature = "panic_handler")]
 mod panic_handler;
 mod println;
-
-/// Obtains a pointer to the system table.
-///
-/// This is meant to be used by higher-level libraries,
-/// which want a convenient way to access the system table singleton.
-///
-/// `init` must have been called first by the UEFI app.
-///
-/// The returned pointer is only valid until boot services are exited.
-#[must_use]
-#[deprecated(note = "use uefi::table::system_table_boot instead")]
-#[allow(deprecated)]
-pub fn system_table() -> SystemTable<Boot> {
-    table::system_table_boot().expect("boot services are not active")
-}
 
 /// Initialize all helpers defined in [`uefi::helpers`] whose Cargo features
 /// are activated.

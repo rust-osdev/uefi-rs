@@ -6,7 +6,6 @@
 
 // ANCHOR: use
 use log::info;
-use uefi::boot;
 use uefi::prelude::*;
 // ANCHOR_END: use
 

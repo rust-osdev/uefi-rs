@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Changed
+- **Breaking:** Deleted deprecated function `helpers::system_table`.
+
 
 # uefi - 0.32.0 (2024-09-09)
 

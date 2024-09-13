@@ -95,9 +95,7 @@ fn test_load_image(bt: &BootServices) {
 
     // Variant A: FromBuffer
     {
-        let fs = bt
-            .get_image_file_system(bt.image_handle())
-            .expect("should open file system");
+        let fs = boot::get_image_file_system(bt.image_handle()).expect("should open file system");
         let path = CString16::try_from(image_device_path_file_path.as_str()).unwrap();
         let image_data = FileSystem::new(fs)
             .read(&*path)

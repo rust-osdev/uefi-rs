@@ -8,20 +8,10 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
-use core::ops::Deref;
+use uefi::boot::ScopedProtocol;
 
 /// Return type for public [`FileSystem`] operations.
 pub type FileSystemResult<T> = Result<T, Error>;
-
-/// Contents of the `FileSystem` struct, allowing either variant of
-/// `ScopedProtocol` to be used. This is temporary; once `BootServices` and the
-/// associated `ScopedProtocol<'a>` structs are removed this inner type can be
-/// removed as well.
-enum FileSystemInner<'a> {
-    #[allow(deprecated)]
-    WithLifetime(uefi::table::boot::ScopedProtocol<'a, SimpleFileSystemProtocol>),
-    WithoutLifetime(uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>),
-}
 
 /// High-level file-system abstraction for UEFI volumes with an API that is
 /// close to `std::fs`. It acts as convenient accessor around the
@@ -30,9 +20,9 @@ enum FileSystemInner<'a> {
 /// Please refer to the [module documentation] for more information.
 ///
 /// [module documentation]: uefi::fs
-pub struct FileSystem<'a>(FileSystemInner<'a>);
+pub struct FileSystem(ScopedProtocol<SimpleFileSystemProtocol>);
 
-impl<'a> FileSystem<'a> {
+impl FileSystem {
     /// Constructor.
     #[must_use]
     pub fn new(proto: impl Into<Self>) -> Self {
@@ -396,11 +386,7 @@ impl<'a> FileSystem<'a> {
 
     /// Opens a fresh handle to the root directory of the volume.
     fn open_root(&mut self) -> FileSystemResult<UefiDirectoryHandle> {
-        match &mut self.0 {
-            FileSystemInner::WithLifetime(proto) => proto.open_volume(),
-            FileSystemInner::WithoutLifetime(proto) => proto.open_volume(),
-        }
-        .map_err(|err| {
+        self.0.open_volume().map_err(|err| {
             Error::Io(IoError {
                 path: {
                     let mut path = PathBuf::new();
@@ -445,25 +431,15 @@ impl<'a> FileSystem<'a> {
     }
 }
 
-impl<'a> Debug for FileSystem<'a> {
+impl Debug for FileSystem {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let ptr: *const _ = match &self.0 {
-            FileSystemInner::WithLifetime(proto) => proto.deref(),
-            FileSystemInner::WithoutLifetime(proto) => proto.deref(),
-        };
+        let ptr: *const _ = &self.0;
         f.debug_tuple("FileSystem").field(&ptr).finish()
     }
 }
 
-#[allow(deprecated)]
-impl<'a> From<uefi::table::boot::ScopedProtocol<'a, SimpleFileSystemProtocol>> for FileSystem<'a> {
-    fn from(proto: uefi::table::boot::ScopedProtocol<'a, SimpleFileSystemProtocol>) -> Self {
-        Self(FileSystemInner::WithLifetime(proto))
-    }
-}
-
-impl<'a> From<uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>> for FileSystem<'a> {
+impl From<uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>> for FileSystem {
     fn from(proto: uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>) -> Self {
-        Self(FileSystemInner::WithoutLifetime(proto))
+        Self(proto)
     }
 }

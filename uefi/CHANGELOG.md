@@ -2,6 +2,9 @@
 
 ## Changed
 - **Breaking:** Deleted deprecated function `helpers::system_table`.
+- **Breaking:** `FileSystem` no longer has a lifetime parameter, and the
+  deprecated conversion from `uefi::table::boot::ScopedProtocol` has been
+  removed.
 
 
 # uefi - 0.32.0 (2024-09-09)

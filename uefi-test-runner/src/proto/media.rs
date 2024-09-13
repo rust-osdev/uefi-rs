@@ -1,7 +1,9 @@
 use alloc::string::ToString;
 use core::cell::RefCell;
 use core::ptr::NonNull;
-use uefi::boot;
+use uefi::boot::{
+    self, EventType, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, Tpl,
+};
 use uefi::data_types::Align;
 use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
@@ -11,9 +13,6 @@ use uefi::proto::media::file::{
 };
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::{MbrOsType, PartitionInfo};
-use uefi::table::boot::{
-    EventType, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, Tpl,
-};
 use uefi::table::runtime::{Daylight, Time, TimeParams};
 
 /// Test directory entry iteration.
@@ -370,8 +369,7 @@ fn find_test_disk(bt: &BootServices) -> (Handle, ScopedProtocol<SimpleFileSystem
     assert_eq!(handles.len(), 2);
 
     for handle in handles {
-        let mut sfs = bt
-            .open_protocol_exclusive::<SimpleFileSystem>(handle)
+        let mut sfs = boot::open_protocol_exclusive::<SimpleFileSystem>(handle)
             .expect("Failed to get simple file system");
         let mut root_directory = sfs.open_volume().unwrap();
 

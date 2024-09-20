@@ -882,30 +882,6 @@ impl BootServices {
         )
     }
 
-    /// Exits the UEFI boot services
-    ///
-    /// This unsafe method is meant to be an implementation detail of the safe
-    /// `SystemTable<Boot>::exit_boot_services()` method, which is why it is not
-    /// public.
-    ///
-    /// Everything that is explained in the documentation of the high-level
-    /// `SystemTable<Boot>` method is also true here, except that this function
-    /// is one-shot (no automatic retry) and does not prevent you from shooting
-    /// yourself in the foot by calling invalid boot services after a failure.
-    ///
-    /// # Errors
-    ///
-    /// See section `EFI_BOOT_SERVICES.ExitBootServices()` in the UEFI Specification for more details.
-    ///
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    pub(super) unsafe fn exit_boot_services(
-        &self,
-        image: Handle,
-        mmap_key: MemoryMapKey,
-    ) -> Result {
-        (self.0.exit_boot_services)(image.as_ptr(), mmap_key.0).to_result()
-    }
-
     /// Stalls the processor for an amount of time.
     ///
     /// The time is in microseconds.

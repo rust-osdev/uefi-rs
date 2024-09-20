@@ -1,7 +1,6 @@
 #![allow(deprecated)]
 
 use super::boot::BootServices;
-use super::runtime::RuntimeServices;
 use super::{cfg, Revision};
 use crate::proto::console::text;
 use crate::CStr16;
@@ -19,12 +18,6 @@ pub trait SystemTableView {}
 #[derive(Debug)]
 pub struct Boot;
 impl SystemTableView for Boot {}
-
-/// Marker struct associated with the run-time view of the UEFI System Table.
-#[deprecated = "Use the uefi::runtime module instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
-#[derive(Debug)]
-pub struct Runtime;
-impl SystemTableView for Runtime {}
 
 /// UEFI System Table interface
 ///
@@ -141,12 +134,6 @@ impl SystemTable<Boot> {
     /// Returns the standard error protocol.
     pub fn stderr(&mut self) -> &mut text::Output {
         unsafe { &mut *(*self.table).stderr.cast() }
-    }
-
-    /// Access runtime services
-    #[must_use]
-    pub const fn runtime_services(&self) -> &RuntimeServices {
-        unsafe { &*(*self.table).runtime_services.cast_const().cast() }
     }
 
     /// Access boot services

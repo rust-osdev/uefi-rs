@@ -9,7 +9,7 @@ mod system;
 
 pub use header::Header;
 #[allow(deprecated)]
-pub use system::{Boot, Runtime, SystemTable};
+pub use system::{Boot, SystemTable};
 pub use uefi_raw::table::Revision;
 
 use core::ptr::{self, NonNull};

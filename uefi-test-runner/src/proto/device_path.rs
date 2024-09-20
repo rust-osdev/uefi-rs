@@ -1,38 +1,34 @@
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use uefi::boot;
-use uefi::prelude::*;
 use uefi::proto::device_path::text::*;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::disk::DiskIo;
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Running device path protocol test");
 
     // test 1/2: test low-level API by directly opening all protocols
     {
-        let loaded_image = bt
-            .open_protocol_exclusive::<LoadedImage>(bt.image_handle())
+        let loaded_image = boot::open_protocol_exclusive::<LoadedImage>(boot::image_handle())
             .expect("Failed to open LoadedImage protocol");
 
-        let device_path = bt
-            .open_protocol_exclusive::<DevicePath>(loaded_image.device().unwrap())
-            .expect("Failed to open DevicePath protocol");
+        let device_path =
+            boot::open_protocol_exclusive::<DevicePath>(loaded_image.device().unwrap())
+                .expect("Failed to open DevicePath protocol");
 
-        let device_path_to_text = bt
-            .open_protocol_exclusive::<DevicePathToText>(
-                bt.get_handle_for_protocol::<DevicePathToText>()
-                    .expect("Failed to get DevicePathToText handle"),
-            )
-            .expect("Failed to open DevicePathToText protocol");
+        let device_path_to_text = boot::open_protocol_exclusive::<DevicePathToText>(
+            boot::get_handle_for_protocol::<DevicePathToText>()
+                .expect("Failed to get DevicePathToText handle"),
+        )
+        .expect("Failed to open DevicePathToText protocol");
 
-        let device_path_from_text = bt
-            .open_protocol_exclusive::<DevicePathFromText>(
-                bt.get_handle_for_protocol::<DevicePathFromText>()
-                    .expect("Failed to get DevicePathFromText handle"),
-            )
-            .expect("Failed to open DevicePathFromText protocol");
+        let device_path_from_text = boot::open_protocol_exclusive::<DevicePathFromText>(
+            boot::get_handle_for_protocol::<DevicePathFromText>()
+                .expect("Failed to get DevicePathFromText handle"),
+        )
+        .expect("Failed to open DevicePathFromText protocol");
 
         for path in device_path.node_iter() {
             info!(
@@ -56,9 +52,9 @@ pub fn test(bt: &BootServices) {
 
         // Get the `LoadedImageDevicePath`. Verify it start with the same nodes as
         // `device_path`.
-        let loaded_image_device_path = bt
-            .open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
-            .expect("Failed to open LoadedImageDevicePath protocol");
+        let loaded_image_device_path =
+            boot::open_protocol_exclusive::<LoadedImageDevicePath>(boot::image_handle())
+                .expect("Failed to open LoadedImageDevicePath protocol");
 
         for (n1, n2) in device_path
             .node_iter()
@@ -74,9 +70,9 @@ pub fn test(bt: &BootServices) {
 
     // test 2/2: test high-level to-string api
     {
-        let loaded_image_device_path = bt
-            .open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
-            .expect("Failed to open LoadedImageDevicePath protocol");
+        let loaded_image_device_path =
+            boot::open_protocol_exclusive::<LoadedImageDevicePath>(boot::image_handle())
+                .expect("Failed to open LoadedImageDevicePath protocol");
         let device_path: &DevicePath = &loaded_image_device_path;
 
         let path_components = device_path

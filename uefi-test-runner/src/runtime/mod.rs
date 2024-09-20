@@ -1,11 +1,10 @@
 mod vars;
 
 use uefi::runtime::{self, Daylight, Time, TimeParams};
-use uefi::table::runtime::RuntimeServices;
 
-pub fn test(rt: &RuntimeServices) {
+pub fn test() {
     info!("Testing runtime services");
-    vars::test(rt);
+    vars::test();
     test_time();
 }
 

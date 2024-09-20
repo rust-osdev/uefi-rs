@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 // TODO: temporarily allow deprecated code so that we can continue to test
-// SystemTable/BootServices/RuntimeServices.
+// SystemTable/BootServices.
 #![allow(deprecated)]
 
 #[macro_use]
@@ -63,7 +63,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // probably want to test them after exit_boot_services. However,
     // exit_boot_services is currently called during shutdown.
 
-    runtime::test(st.runtime_services());
+    runtime::test();
 
     shutdown(st);
 }

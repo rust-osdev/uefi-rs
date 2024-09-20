@@ -5,11 +5,10 @@ use core::ffi::c_void;
 use core::pin::Pin;
 use core::ptr;
 use core::ptr::addr_of;
-use uefi::prelude::BootServices;
 use uefi::proto::device_path::build::DevicePathBuilder;
 use uefi::proto::media::load_file::{LoadFile, LoadFile2};
 use uefi::proto::BootPolicy;
-use uefi::{Guid, Handle};
+use uefi::{boot, Guid, Handle};
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
 use uefi_raw::Status;
@@ -58,24 +57,12 @@ impl CustomLoadFile2Protocol {
     }
 }
 
-unsafe fn install_protocol(
-    bt: &BootServices,
-    handle: Handle,
-    guid: Guid,
-    protocol: &mut CustomLoadFile2Protocol,
-) {
-    bt.install_protocol_interface(Some(handle), &guid, addr_of!(*protocol).cast())
-        .unwrap();
+unsafe fn install_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
+    boot::install_protocol_interface(Some(handle), &guid, addr_of!(*protocol).cast()).unwrap();
 }
 
-unsafe fn uninstall_protocol(
-    bt: &BootServices,
-    handle: Handle,
-    guid: Guid,
-    protocol: &mut CustomLoadFile2Protocol,
-) {
-    bt.uninstall_protocol_interface(handle, &guid, addr_of!(*protocol).cast())
-        .unwrap();
+unsafe fn uninstall_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
+    boot::uninstall_protocol_interface(handle, &guid, addr_of!(*protocol).cast()).unwrap();
 }
 
 /// This tests the LoadFile and LoadFile2 protocols. As this protocol is not
@@ -88,8 +75,8 @@ unsafe fn uninstall_protocol(
 ///
 /// [0] https://github.com/u-boot/u-boot/commit/ec80b4735a593961fe701cc3a5d717d4739b0fd0#diff-1f940face4d1cf74f9d2324952759404d01ee0a81612b68afdcba6b49803bdbbR171
 /// [1] https://github.com/torvalds/linux/blob/ee9a43b7cfe2d8a3520335fea7d8ce71b8cabd9d/drivers/firmware/efi/libstub/efi-stub-helper.c#L550
-pub fn test(bt: &BootServices) {
-    let image = bt.image_handle();
+pub fn test() {
+    let image = boot::image_handle();
 
     let load_data_msg = "Example file content.";
     let load_data = load_data_msg.to_string().into_bytes();
@@ -100,21 +87,21 @@ pub fn test(bt: &BootServices) {
     // Install our custom protocol implementation as LoadFile and LoadFile2
     // protocol.
     unsafe {
-        install_protocol(bt, image, LoadFileProtocol::GUID, proto_load_file_ptr);
-        install_protocol(bt, image, LoadFile2Protocol::GUID, proto_load_file_ptr);
+        install_protocol(image, LoadFileProtocol::GUID, proto_load_file_ptr);
+        install_protocol(image, LoadFile2Protocol::GUID, proto_load_file_ptr);
     }
 
     let mut dvp_vec = Vec::new();
     let dummy_dvp = DevicePathBuilder::with_vec(&mut dvp_vec);
     let dummy_dvp = dummy_dvp.finalize().unwrap();
 
-    let mut load_file_protocol = bt.open_protocol_exclusive::<LoadFile>(image).unwrap();
+    let mut load_file_protocol = boot::open_protocol_exclusive::<LoadFile>(image).unwrap();
     let loadfile_file = load_file_protocol
         .load_file(dummy_dvp, BootPolicy::BootSelection)
         .unwrap();
     let loadfile_file_string = String::from_utf8(loadfile_file.to_vec()).unwrap();
 
-    let mut load_file2_protocol = bt.open_protocol_exclusive::<LoadFile2>(image).unwrap();
+    let mut load_file2_protocol = boot::open_protocol_exclusive::<LoadFile2>(image).unwrap();
     let loadfile2_file = load_file2_protocol.load_file(dummy_dvp).unwrap();
     let loadfile2_file_string = String::from_utf8(loadfile2_file.to_vec()).unwrap();
 
@@ -125,18 +112,18 @@ pub fn test(bt: &BootServices) {
     drop(load_file_protocol);
     drop(load_file2_protocol);
     unsafe {
-        uninstall_protocol(bt, image, LoadFileProtocol::GUID, proto_load_file_ptr);
-        uninstall_protocol(bt, image, LoadFile2Protocol::GUID, proto_load_file_ptr);
+        uninstall_protocol(image, LoadFileProtocol::GUID, proto_load_file_ptr);
+        uninstall_protocol(image, LoadFile2Protocol::GUID, proto_load_file_ptr);
     }
     // Ensure protocols have been uninstalled:
     assert_eq!(
-        bt.open_protocol_exclusive::<LoadFile>(image)
+        boot::open_protocol_exclusive::<LoadFile>(image)
             .map(|_| ()) // make Result Eq'able
             .map_err(|e| e.status()),
         Err(Status::UNSUPPORTED)
     );
     assert_eq!(
-        bt.open_protocol_exclusive::<LoadFile2>(image)
+        boot::open_protocol_exclusive::<LoadFile2>(image)
             .map(|_| ()) // make Result Eq'able
             .map_err(|e| e.status()),
         Err(Status::UNSUPPORTED)

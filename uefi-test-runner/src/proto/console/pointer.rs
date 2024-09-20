@@ -1,14 +1,11 @@
+use uefi::boot;
 use uefi::proto::console::pointer::Pointer;
-use uefi::table::boot::BootServices;
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Running pointer protocol test");
-    let handle = bt
-        .get_handle_for_protocol::<Pointer>()
-        .expect("missing Pointer protocol");
-    let mut pointer = bt
-        .open_protocol_exclusive::<Pointer>(handle)
-        .expect("failed to open pointer protocol");
+    let handle = boot::get_handle_for_protocol::<Pointer>().expect("missing Pointer protocol");
+    let mut pointer =
+        boot::open_protocol_exclusive::<Pointer>(handle).expect("failed to open pointer protocol");
 
     pointer
         .reset(false)

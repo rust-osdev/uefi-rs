@@ -6,25 +6,24 @@ use uefi::{proto, Identify};
 pub fn test(st: &mut SystemTable<Boot>) {
     info!("Testing various protocols");
 
-    console::test(st);
+    console::test();
 
     let bt = st.boot_services();
-    find_protocol(bt);
-    test_protocols_per_handle(bt);
-    test_protocols_per_handle_freestanding();
-    test_test_protocol_freestanding();
+    find_protocol();
+    test_protocols_per_handle();
+    test_test_protocol();
 
-    debug::test(bt);
-    device_path::test(bt);
+    debug::test();
+    device_path::test();
     driver::test();
-    load::test(bt);
-    loaded_image::test(bt);
-    media::test(bt);
+    load::test();
+    loaded_image::test();
+    media::test();
     network::test(bt);
     pi::test(bt);
-    rng::test(bt);
+    rng::test();
     shell_params::test(bt);
-    string::test(bt);
+    string::test();
     misc::test(bt);
 
     #[cfg(any(
@@ -33,13 +32,12 @@ pub fn test(st: &mut SystemTable<Boot>) {
         target_arch = "arm",
         target_arch = "aarch64"
     ))]
-    shim::test(bt);
-    tcg::test(bt);
+    shim::test();
+    tcg::test();
 }
 
-fn find_protocol(bt: &BootServices) {
-    let handles = bt
-        .find_handles::<proto::console::text::Output>()
+fn find_protocol() {
+    let handles = boot::find_handles::<proto::console::text::Output>()
         .expect("Failed to retrieve list of handles");
 
     assert!(
@@ -48,25 +46,14 @@ fn find_protocol(bt: &BootServices) {
     );
 }
 
-fn test_protocols_per_handle(bt: &BootServices) {
-    let pph = bt
-        .protocols_per_handle(bt.image_handle())
-        .expect("Failed to get protocols for image handle");
-
-    info!("Image handle has {} protocols", pph.len());
-
-    // Check that one of the image's protocols is `LoadedImage`.
-    assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
-}
-
-fn test_protocols_per_handle_freestanding() {
+fn test_protocols_per_handle() {
     let pph = boot::protocols_per_handle(boot::image_handle()).unwrap();
     info!("Image handle has {} protocols", pph.len());
     // Check that one of the image's protocols is `LoadedImage`.
     assert!(pph.iter().any(|guid| **guid == LoadedImage::GUID));
 }
 
-fn test_test_protocol_freestanding() {
+fn test_test_protocol() {
     assert!(boot::test_protocol::<LoadedImage>(OpenProtocolParams {
         handle: boot::image_handle(),
         agent: boot::image_handle(),

@@ -244,34 +244,32 @@ fn test_create_directory(root_dir: &mut Directory) {
 }
 
 /// Get the media ID via the BlockIO protocol.
-fn get_block_media_id(handle: Handle, bt: &BootServices) -> u32 {
+fn get_block_media_id(handle: Handle) -> u32 {
     // This cannot be opened in `EXCLUSIVE` mode, as doing so
     // unregisters the `DiskIO` protocol from the handle.
     unsafe {
-        let block_io = bt
-            .open_protocol::<BlockIO>(
-                OpenProtocolParams {
-                    handle,
-                    agent: bt.image_handle(),
-                    controller: None,
-                },
-                OpenProtocolAttributes::GetProtocol,
-            )
-            .expect("Failed to get block I/O protocol");
+        let block_io = boot::open_protocol::<BlockIO>(
+            OpenProtocolParams {
+                handle,
+                agent: boot::image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("Failed to get block I/O protocol");
         block_io.media().media_id()
     }
 }
 
 /// Tests raw disk I/O.
-fn test_raw_disk_io(handle: Handle, bt: &BootServices) {
+fn test_raw_disk_io(handle: Handle) {
     info!("Testing raw disk I/O");
 
-    let media_id = get_block_media_id(handle, bt);
+    let media_id = get_block_media_id(handle);
 
     // Open the disk I/O protocol on the input handle
-    let disk_io = bt
-        .open_protocol_exclusive::<DiskIo>(handle)
-        .expect("Failed to get disk I/O protocol");
+    let disk_io =
+        boot::open_protocol_exclusive::<DiskIo>(handle).expect("Failed to get disk I/O protocol");
 
     // Read from the first sector of the disk into the buffer
     let mut buf = vec![0; 512];
@@ -296,12 +294,12 @@ struct DiskIoTask {
 }
 
 /// Tests raw disk I/O through the DiskIo2 protocol.
-fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
+fn test_raw_disk_io2(handle: Handle) {
     info!("Testing raw disk I/O 2");
 
     // Open the disk I/O protocol on the input handle
-    if let Ok(disk_io2) = bt.open_protocol_exclusive::<DiskIo2>(handle) {
-        let media_id = get_block_media_id(handle, bt);
+    if let Ok(disk_io2) = boot::open_protocol_exclusive::<DiskIo2>(handle) {
+        let media_id = get_block_media_id(handle);
 
         unsafe {
             // Create the completion event
@@ -329,7 +327,7 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
                 .expect("Failed to initiate asynchronous disk I/O read");
 
             // Wait for the transaction to complete
-            bt.wait_for_event(core::slice::from_mut(&mut event))
+            boot::wait_for_event(core::slice::from_mut(&mut event))
                 .expect("Failed to wait on completion event");
 
             // Verify that the disk's MBR signature is correct
@@ -343,9 +341,8 @@ fn test_raw_disk_io2(handle: Handle, bt: &BootServices) {
 }
 
 /// Check that `disk_handle` points to the expected MBR partition.
-fn test_partition_info(bt: &BootServices, disk_handle: Handle) {
-    let pi = bt
-        .open_protocol_exclusive::<PartitionInfo>(disk_handle)
+fn test_partition_info(disk_handle: Handle) {
+    let pi = boot::open_protocol_exclusive::<PartitionInfo>(disk_handle)
         .expect("Failed to get partition info");
 
     let mbr = pi.mbr_partition_record().expect("Not an MBR disk");
@@ -362,9 +359,8 @@ fn test_partition_info(bt: &BootServices, disk_handle: Handle) {
 
 /// Find the disk with the "MbrTestDisk" label. Return the handle and opened
 /// `SimpleFileSystem` protocol for that disk.
-fn find_test_disk(bt: &BootServices) -> (Handle, ScopedProtocol<SimpleFileSystem>) {
-    let handles = bt
-        .find_handles::<SimpleFileSystem>()
+fn find_test_disk() -> (Handle, ScopedProtocol<SimpleFileSystem>) {
+    let handles = boot::find_handles::<SimpleFileSystem>()
         .expect("Failed to get handles for `SimpleFileSystem` protocol");
     assert_eq!(handles.len(), 2);
 
@@ -387,8 +383,8 @@ fn find_test_disk(bt: &BootServices) -> (Handle, ScopedProtocol<SimpleFileSystem
 
 /// Run various file-system related tests on a special test disk. The disk is created by
 /// `xtask/src/disk.rs`.
-pub fn test(bt: &BootServices) {
-    let (handle, mut sfs) = find_test_disk(bt);
+pub fn test() {
+    let (handle, mut sfs) = find_test_disk();
 
     {
         let mut root_directory = sfs.open_volume().unwrap();
@@ -433,7 +429,7 @@ pub fn test(bt: &BootServices) {
         test_create_file(&mut root_directory);
         test_create_directory(&mut root_directory);
 
-        test_partition_info(bt, handle);
+        test_partition_info(handle);
     }
 
     // Invoke the fs test after the basic low-level file system protocol
@@ -443,6 +439,6 @@ pub fn test(bt: &BootServices) {
     // tests work.
     crate::fs::test(sfs).unwrap();
 
-    test_raw_disk_io(handle, bt);
-    test_raw_disk_io2(handle, bt);
+    test_raw_disk_io(handle);
+    test_raw_disk_io2(handle);
 }

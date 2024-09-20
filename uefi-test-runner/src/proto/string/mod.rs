@@ -1,9 +1,7 @@
-use uefi::prelude::*;
-
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing String protocols");
 
-    unicode_collation::test(bt);
+    unicode_collation::test();
 }
 
 mod unicode_collation;

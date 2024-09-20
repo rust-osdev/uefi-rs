@@ -1,16 +1,15 @@
 use uefi::prelude::*;
 
-pub fn test(st: &mut SystemTable<Boot>) {
+pub fn test() {
     info!("Testing console protocols");
 
-    stdout::test(st.stdout());
+    system::with_stdout(stdout::test);
 
-    let bt = st.boot_services();
     unsafe {
-        serial::test(bt);
-        gop::test(bt);
+        serial::test();
+        gop::test();
     }
-    pointer::test(bt);
+    pointer::test();
 }
 
 mod gop;

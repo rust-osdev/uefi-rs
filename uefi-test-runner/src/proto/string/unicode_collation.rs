@@ -1,18 +1,14 @@
 use core::cmp::Ordering;
-use uefi::prelude::*;
 use uefi::proto::string::unicode_collation::{StrConversionError, UnicodeCollation};
-use uefi::{CStr16, CStr8};
+use uefi::{boot, CStr16, CStr8};
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing the Unicode Collation protocol");
 
-    let handles = bt
-        .find_handles::<UnicodeCollation>()
-        .expect("missing UnicodeCollation protocol");
+    let handles =
+        boot::find_handles::<UnicodeCollation>().expect("missing UnicodeCollation protocol");
     for handle in handles {
-        let uc = bt
-            .open_protocol_exclusive::<UnicodeCollation>(handle)
-            .unwrap();
+        let uc = boot::open_protocol_exclusive::<UnicodeCollation>(handle).unwrap();
 
         let mut buf1 = [0; 30];
         let mut buf2 = [0; 30];

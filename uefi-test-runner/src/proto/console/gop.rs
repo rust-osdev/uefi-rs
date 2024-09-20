@@ -1,26 +1,23 @@
 use crate::{send_request_to_host, HostRequest};
-use uefi::prelude::*;
+use uefi::boot::{self, OpenProtocolAttributes, OpenProtocolParams};
 use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
-use uefi::table::boot::{OpenProtocolAttributes, OpenProtocolParams};
 
-pub unsafe fn test(bt: &BootServices) {
+pub unsafe fn test() {
     info!("Running graphics output protocol test");
-    let handle = bt
-        .get_handle_for_protocol::<GraphicsOutput>()
-        .expect("missing GraphicsOutput protocol");
-    let gop = &mut bt
-        .open_protocol::<GraphicsOutput>(
-            OpenProtocolParams {
-                handle,
-                agent: bt.image_handle(),
-                controller: None,
-            },
-            // For this test, don't open in exclusive mode. That
-            // would break the connection between stdout and the
-            // video console.
-            OpenProtocolAttributes::GetProtocol,
-        )
-        .expect("failed to open Graphics Output Protocol");
+    let handle =
+        boot::get_handle_for_protocol::<GraphicsOutput>().expect("missing GraphicsOutput protocol");
+    let gop = &mut boot::open_protocol::<GraphicsOutput>(
+        OpenProtocolParams {
+            handle,
+            agent: boot::image_handle(),
+            controller: None,
+        },
+        // For this test, don't open in exclusive mode. That
+        // would break the connection between stdout and the
+        // video console.
+        OpenProtocolAttributes::GetProtocol,
+    )
+    .expect("failed to open Graphics Output Protocol");
 
     set_graphics_mode(gop);
     fill_color(gop);

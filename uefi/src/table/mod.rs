@@ -79,25 +79,6 @@ pub fn system_table_boot() -> Option<SystemTable<Boot>> {
     }
 }
 
-/// Get the system table while runtime services are active.
-#[deprecated = "Use the uefi::runtime module instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
-#[allow(deprecated)]
-pub fn system_table_runtime() -> Option<SystemTable<Runtime>> {
-    let st = SYSTEM_TABLE.load(Ordering::Acquire);
-    if st.is_null() {
-        return None;
-    }
-
-    // SAFETY: the system table is valid per the requirements of `set_system_table`.
-    unsafe {
-        if (*st).runtime_services.is_null() {
-            None
-        } else {
-            Some(SystemTable::<Runtime>::from_ptr(st.cast()).unwrap())
-        }
-    }
-}
-
 /// Common trait implemented by all standard UEFI tables.
 pub trait Table {
     /// A unique number assigned by the UEFI specification

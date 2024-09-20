@@ -1,9 +1,7 @@
-use uefi::prelude::*;
-
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing Platform Initialization protocols");
 
-    mp::test(bt);
+    mp::test();
 }
 
 mod mp;

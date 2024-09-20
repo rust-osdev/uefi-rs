@@ -1,10 +1,8 @@
-use uefi::prelude::*;
-
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing Network protocols");
 
-    pxe::test(bt);
-    snp::test(bt);
+    pxe::test();
+    snp::test();
 }
 
 mod pxe;

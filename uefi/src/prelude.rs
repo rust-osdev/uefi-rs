@@ -10,6 +10,4 @@ pub use crate::{
 #[allow(deprecated)]
 pub use crate::table::boot::BootServices;
 #[allow(deprecated)]
-pub use crate::table::runtime::RuntimeServices;
-#[allow(deprecated)]
 pub use crate::table::{Boot, SystemTable};

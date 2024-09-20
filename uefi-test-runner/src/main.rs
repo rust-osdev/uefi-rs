@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 // TODO: temporarily allow deprecated code so that we can continue to test
-// SystemTable/BootServices/RuntimeServices.
+// SystemTable/BootServices.
 #![allow(deprecated)]
 
 #[macro_use]
@@ -63,7 +63,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     // probably want to test them after exit_boot_services. However,
     // exit_boot_services is currently called during shutdown.
 
-    runtime::test(st.runtime_services());
+    runtime::test();
 
     shutdown(st);
 }
@@ -218,7 +218,7 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     info!("Testing complete, exiting boot services...");
 
     // Exit boot services as a proof that it works :)
-    let (st, mmap) = unsafe { st.exit_boot_services(MemoryType::LOADER_DATA) };
+    let mmap = unsafe { uefi::boot::exit_boot_services(MemoryType::LOADER_DATA) };
 
     info!("Memory Map:");
     for desc in mmap.entries() {
@@ -235,9 +235,6 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
 
     #[cfg(target_arch = "x86_64")]
     {
-        // Prevent unused variable warning.
-        let _ = st;
-
         use qemu_exit::QEMUExit;
         let custom_exit_success = 3;
         let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
@@ -247,11 +244,6 @@ fn shutdown(mut st: SystemTable<Boot>) -> ! {
     #[cfg(not(target_arch = "x86_64"))]
     {
         // Shut down the system
-        let rt = unsafe { st.runtime_services() };
-        rt.reset(
-            uefi::table::runtime::ResetType::SHUTDOWN,
-            Status::SUCCESS,
-            None,
-        );
+        uefi::runtime::reset(uefi::runtime::ResetType::SHUTDOWN, Status::SUCCESS, None);
     }
 }

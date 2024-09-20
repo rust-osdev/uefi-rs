@@ -1,7 +1,12 @@
 # uefi - [Unreleased]
 
+See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
+details of the deprecated items that were removed in this release.
+
 ## Changed
-- **Breaking:** Deleted deprecated function `helpers::system_table`.
+- **Breaking:** Deleted the deprecated `RuntimeServices` struct.
+- **Breaking:** Deleted deprecated functions `helpers::system_table` and
+  `table::system_table_runtime`.
 - **Breaking:** `FileSystem` no longer has a lifetime parameter, and the
   deprecated conversion from `uefi::table::boot::ScopedProtocol` has been
   removed.

@@ -13,7 +13,7 @@ use uefi::proto::media::file::{
 };
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::{MbrOsType, PartitionInfo};
-use uefi::table::runtime::{Daylight, Time, TimeParams};
+use uefi::runtime::{Daylight, Time, TimeParams};
 
 /// Test directory entry iteration.
 fn test_existing_dir(directory: &mut Directory) {

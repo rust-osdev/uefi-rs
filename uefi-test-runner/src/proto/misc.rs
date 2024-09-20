@@ -1,6 +1,6 @@
 use uefi::prelude::*;
 use uefi::proto::misc::ResetNotification;
-use uefi::table::runtime;
+use uefi::runtime::ResetType;
 
 pub fn test(bt: &BootServices) {
     test_reset_notification(bt);
@@ -19,7 +19,7 @@ pub fn test_reset_notification(bt: &BootServices) {
 
     // value efi_reset_fn is the type of ResetSystemFn, a function pointer
     unsafe extern "efiapi" fn efi_reset_fn(
-        rt: runtime::ResetType,
+        rt: ResetType,
         status: Status,
         data_size: usize,
         data: *const u8,

@@ -1,6 +1,6 @@
 use log::info;
 use uefi::prelude::*;
-use uefi::table::runtime::{VariableAttributes, VariableVendor};
+use uefi::runtime::{VariableAttributes, VariableVendor};
 use uefi::{guid, runtime, CStr16, Error};
 
 /// Test variable name.

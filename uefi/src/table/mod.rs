@@ -2,7 +2,6 @@
 
 pub mod boot;
 pub mod cfg;
-pub mod runtime;
 
 mod header;
 mod system;

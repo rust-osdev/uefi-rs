@@ -288,16 +288,6 @@ impl RuntimeServices {
         unsafe { (self.0.reset_system)(rt, status, size, data) }
     }
 
-    pub(crate) unsafe fn set_virtual_address_map(
-        &self,
-        map_size: usize,
-        desc_size: usize,
-        desc_version: u32,
-        virtual_map: *mut crate::mem::memory_map::MemoryDescriptor,
-    ) -> Status {
-        (self.0.set_virtual_address_map)(map_size, desc_size, desc_version, virtual_map)
-    }
-
     /// Passes capsules to the firmware. Capsules are most commonly used to update system firmware.
     pub fn update_capsule(
         &self,

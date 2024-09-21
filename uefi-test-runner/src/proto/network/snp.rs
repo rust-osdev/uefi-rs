@@ -1,15 +1,14 @@
-use uefi::prelude::BootServices;
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::proto::network::MacAddress;
-use uefi::Status;
+use uefi::{boot, Status};
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     info!("Testing the simple network protocol");
 
-    let handles = bt.find_handles::<SimpleNetwork>().unwrap_or_default();
+    let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();
 
     for handle in handles {
-        let simple_network = bt.open_protocol_exclusive::<SimpleNetwork>(handle);
+        let simple_network = boot::open_protocol_exclusive::<SimpleNetwork>(handle);
         if simple_network.is_err() {
             continue;
         }
@@ -102,7 +101,7 @@ pub fn test(bt: &BootServices) {
         if simple_network.receive(&mut buffer, None, None, None, None)
             == Err(Status::NOT_READY.into())
         {
-            bt.stall(1_000_000);
+            boot::stall(1_000_000);
 
             simple_network
                 .receive(&mut buffer, None, None, None, None)

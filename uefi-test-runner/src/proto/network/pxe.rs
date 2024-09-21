@@ -1,9 +1,8 @@
-use uefi::prelude::BootServices;
 use uefi::proto::network::pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, UdpOpFlags};
 use uefi::proto::network::IpAddress;
-use uefi::CStr8;
+use uefi::{boot, CStr8};
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     // Skip the test if the `pxe` feature is not enabled.
     if cfg!(not(feature = "pxe")) {
         return;
@@ -11,11 +10,9 @@ pub fn test(bt: &BootServices) {
 
     info!("Testing The PXE base code protocol");
 
-    let handles = bt
-        .find_handles::<BaseCode>()
-        .expect("failed to get PXE base code handles");
+    let handles = boot::find_handles::<BaseCode>().expect("failed to get PXE base code handles");
     for handle in handles {
-        let mut base_code = bt.open_protocol_exclusive::<BaseCode>(handle).unwrap();
+        let mut base_code = boot::open_protocol_exclusive::<BaseCode>(handle).unwrap();
 
         info!("Starting PXE Base Code");
         base_code

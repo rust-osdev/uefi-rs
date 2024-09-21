@@ -2,19 +2,17 @@ use uefi::prelude::*;
 use uefi::proto::misc::ResetNotification;
 use uefi::runtime::ResetType;
 
-pub fn test(bt: &BootServices) {
-    test_reset_notification(bt);
+pub fn test() {
+    test_reset_notification();
 }
 
-pub fn test_reset_notification(bt: &BootServices) {
+pub fn test_reset_notification() {
     info!("Running loaded ResetNotification protocol test");
 
-    let handle = bt
-        .get_handle_for_protocol::<ResetNotification>()
+    let handle = boot::get_handle_for_protocol::<ResetNotification>()
         .expect("Failed to get handles for `ResetNotification` protocol");
 
-    let mut reset_notif_proto = bt
-        .open_protocol_exclusive::<ResetNotification>(handle)
+    let mut reset_notif_proto = boot::open_protocol_exclusive::<ResetNotification>(handle)
         .expect("Founded ResetNotification Protocol but open failed");
 
     // value efi_reset_fn is the type of ResetSystemFn, a function pointer

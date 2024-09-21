@@ -1,14 +1,12 @@
 use uefi::boot::{self, OpenProtocolParams};
-use uefi::prelude::*;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::{proto, Identify};
 
-pub fn test(st: &mut SystemTable<Boot>) {
+pub fn test() {
     info!("Testing various protocols");
 
     console::test();
 
-    let bt = st.boot_services();
     find_protocol();
     test_protocols_per_handle();
     test_test_protocol();
@@ -19,12 +17,12 @@ pub fn test(st: &mut SystemTable<Boot>) {
     load::test();
     loaded_image::test();
     media::test();
-    network::test(bt);
-    pi::test(bt);
+    network::test();
+    pi::test();
     rng::test();
-    shell_params::test(bt);
+    shell_params::test();
     string::test();
-    misc::test(bt);
+    misc::test();
 
     #[cfg(any(
         target_arch = "x86",

@@ -1,14 +1,14 @@
 use core::ffi::c_void;
+use core::ptr;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use core::time::Duration;
 use uefi::proto::pi::mp::MpServices;
-use uefi::table::boot::BootServices;
-use uefi::Status;
+use uefi::{boot, Status};
 
 /// Number of cores qemu is configured to have
 const NUM_CPUS: usize = 4;
 
-pub fn test(bt: &BootServices) {
+pub fn test() {
     // Skip the test if the `multi_processing` feature is not
     // enabled. This toggle is needed because the test only works with
     // KVM, which is not available in CI or on Windows.
@@ -17,17 +17,15 @@ pub fn test(bt: &BootServices) {
     }
 
     info!("Running UEFI multi-processor services protocol test");
-    let handle = bt
-        .get_handle_for_protocol::<MpServices>()
+    let handle = boot::get_handle_for_protocol::<MpServices>()
         .expect("failed to get multi-processor services handle");
-    let mp_support = &bt
-        .open_protocol_exclusive::<MpServices>(handle)
+    let mp_support = &boot::open_protocol_exclusive::<MpServices>(handle)
         .expect("failed to open multi-processor services protocol");
 
     test_get_number_of_processors(mp_support);
     test_get_processor_info(mp_support);
-    test_startup_all_aps(mp_support, bt);
-    test_startup_this_ap(mp_support, bt);
+    test_startup_all_aps(mp_support);
+    test_startup_this_ap(mp_support);
     test_enable_disable_ap(mp_support);
     test_switch_bsp_and_who_am_i(mp_support);
 }
@@ -75,12 +73,11 @@ extern "efiapi" fn proc_increment_atomic(arg: *mut c_void) {
     counter.fetch_add(1, Ordering::Relaxed);
 }
 
-extern "efiapi" fn proc_wait_100ms(arg: *mut c_void) {
-    let bt: &BootServices = unsafe { &*(arg as *const _) };
-    bt.stall(100_000);
+extern "efiapi" fn proc_wait_100ms(_: *mut c_void) {
+    boot::stall(100_000);
 }
 
-fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
+fn test_startup_all_aps(mps: &MpServices) {
     // Ensure that APs start up
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
@@ -89,18 +86,17 @@ fn test_startup_all_aps(mps: &MpServices, bt: &BootServices) {
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
 
     // Make sure that timeout works
-    let bt_ptr: *mut c_void = bt as *const _ as *mut _;
     let ret = mps.startup_all_aps(
         false,
         proc_wait_100ms,
-        bt_ptr,
+        ptr::null_mut(),
         None,
         Some(Duration::from_millis(50)),
     );
     assert_eq!(ret.map_err(|err| err.status()), Err(Status::TIMEOUT));
 }
 
-fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
+fn test_startup_this_ap(mps: &MpServices) {
     // Ensure that each AP starts up
     let counter = AtomicUsize::new(0);
     let counter_ptr: *mut c_void = &counter as *const _ as *mut _;
@@ -111,12 +107,11 @@ fn test_startup_this_ap(mps: &MpServices, bt: &BootServices) {
     assert_eq!(counter.load(Ordering::Relaxed), NUM_CPUS - 1);
 
     // Make sure that timeout works for each AP
-    let bt_ptr: *mut c_void = bt as *const _ as *mut _;
     for i in 1..NUM_CPUS {
         let ret = mps.startup_this_ap(
             i,
             proc_wait_100ms,
-            bt_ptr,
+            ptr::null_mut(),
             None,
             Some(Duration::from_millis(50)),
         );

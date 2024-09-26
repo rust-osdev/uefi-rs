@@ -1,56 +1,40 @@
 use alloc::string::ToString;
+use uefi::boot::{LoadImageSource, SearchType};
 use uefi::fs::FileSystem;
 use uefi::proto::console::text::Output;
 use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
 use uefi::proto::BootPolicy;
-use uefi::table::boot::{BootServices, LoadImageSource, SearchType};
-use uefi::table::{Boot, SystemTable};
 use uefi::{boot, CString16, Identify};
 
 mod memory;
 mod misc;
 
-pub fn test(st: &SystemTable<Boot>) {
-    let bt = st.boot_services();
+pub fn test() {
     info!("Testing boot services");
-    memory::test(bt);
-    misc::test(st);
-    test_locate_handles(bt);
+    memory::test();
+    misc::test();
+    test_locate_handles();
     test_load_image();
 }
 
-fn test_locate_handles(bt: &BootServices) {
+fn test_locate_handles() {
     info!("Testing the `locate_handle_buffer`/`find_handles` functions");
 
     {
         // search all handles
-        let handles = bt
-            .locate_handle_buffer(SearchType::AllHandles)
+        let handles = boot::locate_handle_buffer(SearchType::AllHandles)
             .expect("Failed to locate handle buffer");
         assert!(!handles.is_empty(), "Could not find any handles");
-
-        // Compare with freestanding version.
-        assert_eq!(
-            *handles,
-            *boot::locate_handle_buffer(SearchType::AllHandles).unwrap()
-        );
     }
 
     {
         // search by protocol
-        let handles = bt
-            .locate_handle_buffer(SearchType::ByProtocol(&Output::GUID))
+        let handles = boot::locate_handle_buffer(SearchType::ByProtocol(&Output::GUID))
             .expect("Failed to locate handle buffer");
         assert!(
             !handles.is_empty(),
             "Could not find any OUTPUT protocol handles"
-        );
-
-        // Compare with freestanding version.
-        assert_eq!(
-            *handles,
-            *boot::locate_handle_buffer(SearchType::ByProtocol(&Output::GUID)).unwrap()
         );
 
         // Compare with `boot::find_handles`. This implicitly tests

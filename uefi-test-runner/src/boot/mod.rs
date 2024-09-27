@@ -17,7 +17,7 @@ pub fn test(st: &SystemTable<Boot>) {
     memory::test(bt);
     misc::test(st);
     test_locate_handles(bt);
-    test_load_image(bt);
+    test_load_image();
 }
 
 fn test_locate_handles(bt: &BootServices) {
@@ -65,15 +65,15 @@ fn test_locate_handles(bt: &BootServices) {
 ///
 /// It transitively tests the protocol [`LoadedImageDevicePath`] which is
 /// required as helper.
-fn test_load_image(bt: &BootServices) {
+fn test_load_image() {
     /// The path of the loaded image executing this integration test.
     const LOADED_IMAGE_PATH: &str = r"\EFI\BOOT\TEST_RUNNER.EFI";
 
     info!("Testing the `load_image` function");
 
-    let image_device_path_protocol = bt
-        .open_protocol_exclusive::<LoadedImageDevicePath>(bt.image_handle())
-        .expect("should open LoadedImage protocol");
+    let image_device_path_protocol =
+        boot::open_protocol_exclusive::<LoadedImageDevicePath>(boot::image_handle())
+            .expect("should open LoadedImage protocol");
 
     // Note: This is the full device path. The LoadedImage protocol would only
     // provide us with the file-path portion of the device path.
@@ -95,7 +95,8 @@ fn test_load_image(bt: &BootServices) {
 
     // Variant A: FromBuffer
     {
-        let fs = boot::get_image_file_system(bt.image_handle()).expect("should open file system");
+        let fs =
+            boot::get_image_file_system(boot::image_handle()).expect("should open file system");
         let path = CString16::try_from(image_device_path_file_path.as_str()).unwrap();
         let image_data = FileSystem::new(fs)
             .read(&*path)
@@ -104,17 +105,17 @@ fn test_load_image(bt: &BootServices) {
             buffer: image_data.as_slice(),
             file_path: None,
         };
-        let loaded_image = bt
-            .load_image(bt.image_handle(), load_source)
-            .expect("should load image");
+        let loaded_image =
+            boot::load_image(boot::image_handle(), load_source).expect("should load image");
 
         log::debug!("load_image with FromBuffer strategy works");
 
         // Check that the `LoadedImageDevicePath` protocol can be opened and
         // that the interface data is `None`.
-        let loaded_image_device_path = bt
-            .open_protocol_exclusive::<LoadedImageDevicePath>(loaded_image)
-            .expect("should open LoadedImageDevicePath protocol");
+        let loaded_image_device_path =
+            boot::open_protocol_exclusive::<LoadedImageDevicePath>(loaded_image)
+                .expect("should open LoadedImageDevicePath protocol");
+        log::info!("bish 1");
         assert!(loaded_image_device_path.get().is_none());
     }
     // Variant B: FromDevicePath
@@ -123,9 +124,7 @@ fn test_load_image(bt: &BootServices) {
             device_path: image_device_path,
             boot_policy: BootPolicy::ExactMatch,
         };
-        let _ = bt
-            .load_image(bt.image_handle(), load_source)
-            .expect("should load image");
+        let _ = boot::load_image(boot::image_handle(), load_source).expect("should load image");
 
         log::debug!("load_image with FromFilePath strategy works");
     }

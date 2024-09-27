@@ -115,7 +115,6 @@ fn test_load_image() {
         let loaded_image_device_path =
             boot::open_protocol_exclusive::<LoadedImageDevicePath>(loaded_image)
                 .expect("should open LoadedImageDevicePath protocol");
-        log::info!("bish 1");
         assert!(loaded_image_device_path.get().is_none());
     }
     // Variant B: FromDevicePath

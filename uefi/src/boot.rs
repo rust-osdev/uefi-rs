@@ -969,9 +969,16 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
         Handle::opt_to_ptr(params.controller),
         attributes as u32,
     )
-    .to_result_with_val(|| ScopedProtocol {
-        interface: NonNull::new(P::mut_ptr_from_ffi(interface)),
-        open_params: params,
+    .to_result_with_val(|| {
+        let interface = if interface.is_null() {
+            None
+        } else {
+            NonNull::new(P::mut_ptr_from_ffi(interface))
+        };
+        ScopedProtocol {
+            interface,
+            open_params: params,
+        }
     })
 }
 

@@ -10,6 +10,7 @@ details of the deprecated items that were removed in this release.
 - **Breaking:** `FileSystem` no longer has a lifetime parameter, and the
   deprecated conversion from `uefi::table::boot::ScopedProtocol` has been
   removed.
+- Fixed `boot::open_protocol` to properly handle a null interface pointer.
 
 
 # uefi - 0.32.0 (2024-09-09)

@@ -103,7 +103,7 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
             // The argument is unnamed, i.e. `_`.
             errors.append_all(err!(
                 arg.pat.span(),
-                "Entry method's arguments must be named"
+                "Entry function's arguments must be named"
             ));
             None
         }
@@ -181,18 +181,18 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut f = parse_macro_input!(input as ItemFn);
 
     if let Some(ref abi) = f.sig.abi {
-        errors.append_all(err!(abi, "Entry method must have no ABI modifier"));
+        errors.append_all(err!(abi, "Entry function must have no ABI modifier"));
     }
     if let Some(asyncness) = f.sig.asyncness {
-        errors.append_all(err!(asyncness, "Entry method should not be async"));
+        errors.append_all(err!(asyncness, "Entry function should not be async"));
     }
     if let Some(constness) = f.sig.constness {
-        errors.append_all(err!(constness, "Entry method should not be const"));
+        errors.append_all(err!(constness, "Entry function should not be const"));
     }
     if !f.sig.generics.params.is_empty() {
         errors.append_all(err!(
             f.sig.generics.params,
-            "Entry method should not be generic"
+            "Entry function should not be generic"
         ));
     }
 

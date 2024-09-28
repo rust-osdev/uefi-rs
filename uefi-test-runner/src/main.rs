@@ -1,8 +1,5 @@
 #![no_std]
 #![no_main]
-// TODO: temporarily allow deprecated code so that we can continue to test
-// SystemTable/BootServices.
-#![allow(deprecated)]
 
 #[macro_use]
 extern crate log;
@@ -24,15 +21,9 @@ mod proto;
 mod runtime;
 
 #[entry]
-fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
+fn efi_main() -> Status {
     // Initialize utilities (logging, memory allocation...)
     uefi::helpers::init().expect("Failed to initialize utilities");
-
-    // unit tests here
-
-    let firmware_vendor = st.firmware_vendor();
-    info!("Firmware Vendor: {}", firmware_vendor);
-    assert_eq!(firmware_vendor.to_string(), "EDK II");
 
     // Test print! and println! macros.
     let (print, println) = ("print!", "println!"); // necessary for clippy to ignore
@@ -43,18 +34,16 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
     );
 
     // Reset the console before running all the other tests.
-    st.stdout().reset(false).expect("Failed to reset stdout");
-
-    // Ensure the tests are run on a version of UEFI we support.
-    check_revision(st.uefi_revision());
+    system::with_stdout(|stdout| stdout.reset(false).expect("Failed to reset stdout"));
 
     // Check the `uefi::system` module.
-    check_system(&st);
+    check_system();
 
     // Try retrieving a handle to the file system the image was booted from.
-    uefi::boot::get_image_file_system(image).expect("Failed to retrieve boot file system");
+    uefi::boot::get_image_file_system(uefi::boot::image_handle())
+        .expect("Failed to retrieve boot file system");
 
-    boot::test(&st);
+    boot::test();
 
     // Test all the supported protocols.
     proto::test();
@@ -65,7 +54,7 @@ fn efi_main(image: Handle, mut st: SystemTable<Boot>) -> Status {
 
     runtime::test();
 
-    shutdown(st);
+    shutdown();
 }
 
 fn check_revision(rev: uefi::table::Revision) {
@@ -82,12 +71,12 @@ fn check_revision(rev: uefi::table::Revision) {
     );
 }
 
-fn check_system(st: &SystemTable<Boot>) {
+fn check_system() {
+    info!("Firmware Vendor: {}", system::firmware_vendor());
+    info!("Firmware Revision: {}", system::firmware_revision());
+
     assert_eq!(system::firmware_vendor(), cstr16!("EDK II"));
     check_revision(system::uefi_revision());
-
-    assert_eq!(system::firmware_revision(), st.firmware_revision());
-    system::with_config_table(|t| assert_eq!(t, st.config_table()));
 
     system::with_stdout(|stdout| {
         stdout
@@ -201,9 +190,9 @@ fn send_request_to_host(request: HostRequest) {
     }
 }
 
-fn shutdown(mut st: SystemTable<Boot>) -> ! {
+fn shutdown() -> ! {
     // Get our text output back.
-    st.stdout().reset(false).unwrap();
+    system::with_stdout(|stdout| stdout.reset(false).unwrap());
 
     // Tell the host that tests are done. We are about to exit boot
     // services, so we can't easily communicate with the host any later

@@ -5,7 +5,8 @@ details of the deprecated items that were removed in this release.
 
 ## Changed
 - **Breaking:** Deleted the deprecated `RuntimeServices` struct.
-- **Breaking:** Deleted deprecated functions `helpers::system_table` and
+- **Breaking:** Deleted deprecated functions `allocator::init`,
+  `allocator::exit_boot_services`, `helpers::system_table`, and
   `table::system_table_runtime`.
 - **Breaking:** `FileSystem` no longer has a lifetime parameter, and the
   deprecated conversion from `uefi::table::boot::ScopedProtocol` has been

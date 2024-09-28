@@ -1,6 +1,5 @@
 #![allow(deprecated)]
 
-use super::boot::BootServices;
 use super::{cfg, Revision};
 use crate::proto::console::text;
 use crate::CStr16;
@@ -134,12 +133,6 @@ impl SystemTable<Boot> {
     /// Returns the standard error protocol.
     pub fn stderr(&mut self) -> &mut text::Output {
         unsafe { &mut *(*self.table).stderr.cast() }
-    }
-
-    /// Access boot services
-    #[must_use]
-    pub const fn boot_services(&self) -> &BootServices {
-        unsafe { &*(*self.table).boot_services.cast_const().cast() }
     }
 
     /// Clone this boot-time UEFI system table interface

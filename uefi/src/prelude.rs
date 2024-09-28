@@ -8,6 +8,4 @@ pub use crate::{
 
 // Import the basic table types.
 #[allow(deprecated)]
-pub use crate::table::boot::BootServices;
-#[allow(deprecated)]
 pub use crate::table::{Boot, SystemTable};

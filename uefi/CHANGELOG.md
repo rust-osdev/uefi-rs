@@ -4,7 +4,8 @@ See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
 details of the deprecated items that were removed in this release.
 
 ## Changed
-- **Breaking:** Deleted the deprecated `RuntimeServices` struct.
+- **Breaking:** Deleted the deprecated `BootServices` and `RuntimeServices`
+  structs.
 - **Breaking:** Deleted deprecated functions `allocator::init`,
   `allocator::exit_boot_services`, `helpers::system_table`, and
   `table::system_table_runtime`.

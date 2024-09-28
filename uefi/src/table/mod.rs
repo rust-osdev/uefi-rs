@@ -1,6 +1,5 @@
 //! Standard UEFI tables.
 
-pub mod boot;
 pub mod cfg;
 
 mod header;

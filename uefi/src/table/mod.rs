@@ -3,11 +3,8 @@
 pub mod cfg;
 
 mod header;
-mod system;
 
 pub use header::Header;
-#[allow(deprecated)]
-pub use system::{Boot, SystemTable};
 pub use uefi_raw::table::Revision;
 
 use core::ptr::{self, NonNull};
@@ -53,28 +50,10 @@ pub(crate) fn system_table_raw_panicking() -> NonNull<uefi_raw::table::system::S
 /// This function should only be called as described above, and the
 /// `ptr` must be a valid [`SystemTable`].
 ///
+/// [`SystemTable`]: uefi_raw::table::system::SystemTable
 /// [`set_virtual_address_map`]: uefi::runtime::set_virtual_address_map
 pub unsafe fn set_system_table(ptr: *const uefi_raw::table::system::SystemTable) {
     SYSTEM_TABLE.store(ptr.cast_mut(), Ordering::Release);
-}
-
-/// Get the system table while boot services are active.
-#[deprecated = "Use the uefi::boot module instead. See https://github.com/rust-osdev/uefi-rs/blob/HEAD/docs/funcs_migration.md"]
-#[allow(deprecated)]
-pub fn system_table_boot() -> Option<SystemTable<Boot>> {
-    let st = SYSTEM_TABLE.load(Ordering::Acquire);
-    if st.is_null() {
-        return None;
-    }
-
-    // SAFETY: the system table is valid per the requirements of `set_system_table`.
-    unsafe {
-        if (*st).boot_services.is_null() {
-            None
-        } else {
-            Some(SystemTable::<Boot>::from_ptr(st.cast()).unwrap())
-        }
-    }
 }
 
 /// Common trait implemented by all standard UEFI tables.

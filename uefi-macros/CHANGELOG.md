@@ -1,5 +1,9 @@
 # uefi-macros - [Unreleased]
 
+## Changed
+
+- **Breaking:** The `entry` no longer accepts any arguments.
+
 
 # uefi-macros - 0.16.0 (2024-09-09)
 

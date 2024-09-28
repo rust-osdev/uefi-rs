@@ -8,8 +8,8 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, quote_spanned, TokenStreamExt};
 use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, parse_quote_spanned, Error, Expr, ExprLit, ExprPath, FnArg,
-    Ident, ItemFn, ItemStruct, Lit, Pat, Visibility,
+    parse_macro_input, parse_quote, parse_quote_spanned, Error, Expr, ExprLit, ExprPath, ItemFn,
+    ItemStruct, Lit, Visibility,
 };
 
 macro_rules! err {
@@ -93,48 +93,18 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// Get the name of a function's argument at `arg_index`.
-fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2) -> Option<Ident> {
-    if let Some(FnArg::Typed(arg)) = f.sig.inputs.iter().nth(arg_index) {
-        if let Pat::Ident(pat_ident) = &*arg.pat {
-            // The argument has a valid name such as `handle` or `_handle`.
-            Some(pat_ident.ident.clone())
-        } else {
-            // The argument is unnamed, i.e. `_`.
-            errors.append_all(err!(
-                arg.pat.span(),
-                "Entry function's arguments must be named"
-            ));
-            None
-        }
-    } else {
-        // Either there are too few arguments, or it's the wrong kind of
-        // argument (e.g. `self`).
-        //
-        // Don't append an error in this case. The error will be caught
-        // by the typecheck later on, which will give a better error
-        // message.
-        None
-    }
-}
-
 /// Custom attribute for a UEFI executable entry point.
 ///
 /// This attribute modifies a function to mark it as the entry point for
 /// a UEFI executable. The function:
 /// * Must return [`Status`].
-/// * Must have either zero parameters or two: [`Handle`] and [`SystemTable<Boot>`].
+/// * Must have zero parameters.
 /// * Can optionally be `unsafe`.
-///
-/// Due to internal implementation details the parameters must both be
-/// named, so `arg` or `_arg` are allowed, but not `_`.
 ///
 /// The global system table pointer and global image handle will be set
 /// automatically.
 ///
 /// # Examples
-///
-/// With no arguments:
 ///
 /// ```no_run
 /// #![no_main]
@@ -147,23 +117,7 @@ fn get_function_arg_name(f: &ItemFn, arg_index: usize, errors: &mut TokenStream2
 /// }
 /// ```
 ///
-/// With two arguments:
-///
-/// ```no_run
-/// #![no_main]
-///
-/// use uefi::prelude::*;
-///
-/// #[entry]
-/// fn main(image: Handle, st: SystemTable<Boot>) -> Status {
-///     Status::SUCCESS
-/// }
-/// ```
-///
-/// [`Handle`]: https://docs.rs/uefi/latest/uefi/data_types/struct.Handle.html
-/// [`SystemTable<Boot>`]: https://docs.rs/uefi/latest/uefi/table/struct.SystemTable.html
 /// [`Status`]: https://docs.rs/uefi/latest/uefi/struct.Status.html
-/// [`BootServices::set_image_handle`]: https://docs.rs/uefi/latest/uefi/table/boot/struct.BootServices.html#method.set_image_handle
 #[proc_macro_attribute]
 pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     // This code is inspired by the approach in this embedded Rust crate:
@@ -195,78 +149,50 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
             "Entry function should not be generic"
         ));
     }
-
-    let signature_span = f.sig.span();
-
-    // If the user doesn't specify any arguments to the entry function, fill in
-    // the image handle and system table arguments automatically.
-    let generated_args = f.sig.inputs.is_empty();
-    if generated_args {
-        f.sig.inputs = parse_quote_spanned!(
-            signature_span=>
-                internal_image_handle: ::uefi::Handle,
-                internal_system_table: *const ::core::ffi::c_void,
-        );
+    if !f.sig.inputs.is_empty() {
+        errors.append_all(err!(f.sig.inputs, "Entry function must have no arguments"));
     }
 
-    let image_handle_ident = get_function_arg_name(&f, 0, &mut errors);
-    let system_table_ident = get_function_arg_name(&f, 1, &mut errors);
-
-    // show most errors at once instead of one by one
+    // Show most errors all at once instead of one by one.
     if !errors.is_empty() {
         return errors.into();
     }
 
-    f.sig.abi = Some(syn::parse2(quote_spanned! (signature_span=> extern "efiapi")).unwrap());
+    let signature_span = f.sig.span();
 
-    // allow the entry function to be unsafe (by moving the keyword around so that it actually works)
-    let unsafety = &f.sig.unsafety;
-    // strip any visibility modifiers
+    // Fill in the image handle and system table arguments automatically.
+    let image_handle_ident = quote!(internal_image_handle);
+    let system_table_ident = quote!(internal_system_table);
+    f.sig.inputs = parse_quote_spanned!(
+        signature_span=>
+            #image_handle_ident: ::uefi::Handle,
+            #system_table_ident: *const ::core::ffi::c_void,
+    );
+
+    // Insert code at the beginning of the entry function to set the global
+    // image handle and system table pointer.
+    f.block.stmts.insert(
+        0,
+        parse_quote! {
+            unsafe {
+                ::uefi::boot::set_image_handle(#image_handle_ident);
+                ::uefi::table::set_system_table(#system_table_ident.cast());
+            }
+        },
+    );
+
+    // Set the required ABI.
+    f.sig.abi = Some(parse_quote_spanned!(signature_span=> extern "efiapi"));
+
+    // Strip any visibility modifiers.
     f.vis = Visibility::Inherited;
-    // Set the global image handle. If `image_handle_ident` is `None`
-    // then the typecheck is going to fail anyway.
-    if let Some(image_handle_ident) = image_handle_ident {
-        // Convert the system table arg (either `SystemTable<Boot>` or
-        // `*const c_void`) to a pointer of the correct type.
-        let system_table_ptr = if generated_args {
-            quote!(#system_table_ident.cast())
-        } else {
-            quote!(#system_table_ident.as_ptr().cast())
-        };
 
-        f.block.stmts.insert(
-            0,
-            parse_quote! {
-                unsafe {
-                    ::uefi::boot::set_image_handle(#image_handle_ident);
-                    ::uefi::table::set_system_table(#system_table_ptr);
-                }
-            },
-        );
-    }
-
+    let unsafety = &f.sig.unsafety;
     let fn_ident = &f.sig.ident;
-    // Get an iterator of the function inputs types. This is needed instead of
-    // directly using `sig.inputs` because patterns you can use in fn items like
-    // `mut <arg>` aren't valid in fn pointers.
-    let fn_inputs = f.sig.inputs.iter().map(|arg| match arg {
-        FnArg::Receiver(arg) => quote!(#arg),
-        FnArg::Typed(arg) => {
-            let ty = &arg.ty;
-            quote!(#ty)
-        }
-    });
     let fn_output = &f.sig.output;
 
     // Get the expected argument types for the main function.
-    let expected_args = if generated_args {
-        quote!(::uefi::Handle, *const core::ffi::c_void)
-    } else {
-        quote!(
-            ::uefi::Handle,
-            ::uefi::table::SystemTable<::uefi::table::Boot>
-        )
-    };
+    let expected_args = quote!(::uefi::Handle, *const core::ffi::c_void);
 
     let fn_type_check = quote_spanned! {signature_span=>
         // Cast from the function type to a function pointer with the same
@@ -281,7 +207,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
             // The expected fn pointer type.
             #unsafety extern "efiapi" fn(#expected_args) -> ::uefi::Status =
             // Cast from a fn item to a function pointer.
-            #fn_ident as #unsafety extern "efiapi" fn(#(#fn_inputs),*) #fn_output;
+            #fn_ident as #unsafety extern "efiapi" fn(#expected_args) #fn_output;
     };
 
     let result = quote! {

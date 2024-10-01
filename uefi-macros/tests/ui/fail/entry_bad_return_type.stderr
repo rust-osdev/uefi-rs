@@ -1,8 +1,8 @@
 error[E0308]: mismatched types
- --> tests/ui/fail/entry_bad_return_type.rs:9:1
+ --> tests/ui/fail/entry_bad_return_type.rs:6:1
   |
-9 | fn main(_handle: Handle, _st: SystemTable<Boot>) -> bool {
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Status`, found `bool`
+6 | fn main() -> bool {
+  | ^^^^^^^^^^^^^^^^^ expected `Status`, found `bool`
   |
-  = note: expected fn pointer `extern "efiapi" fn(uefi::Handle, uefi::prelude::SystemTable<uefi::prelude::Boot>) -> Status`
-             found fn pointer `extern "efiapi" fn(uefi::Handle, uefi::prelude::SystemTable<uefi::prelude::Boot>) -> bool`
+  = note: expected fn pointer `extern "efiapi" fn(Handle, *const c_void) -> Status`
+             found fn pointer `extern "efiapi" fn(Handle, *const c_void) -> bool`

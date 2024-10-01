@@ -1,8 +1,5 @@
-error[E0308]: mismatched types
- --> tests/ui/fail/entry_bad_arg.rs:9:1
+error: Entry function must have no arguments
+ --> tests/ui/fail/entry_bad_arg.rs:6:9
   |
-9 | fn main(_handle: Handle, _st: SystemTable<Boot>, _x: usize) -> Status {
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ incorrect number of function parameters
-  |
-  = note: expected fn pointer `extern "efiapi" fn(uefi::Handle, uefi::prelude::SystemTable<uefi::prelude::Boot>) -> uefi::Status`
-             found fn pointer `extern "efiapi" fn(uefi::Handle, uefi::prelude::SystemTable<uefi::prelude::Boot>, usize) -> uefi::Status`
+6 | fn main(_x: usize) -> Status {
+  |         ^^

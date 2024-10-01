@@ -7,8 +7,8 @@ use uefi_raw::Boolean;
 /// The UEFI boot policy is a property that influences the behaviour of
 /// various UEFI functions that load files (typically UEFI images).
 ///
-/// This type is not ABI compatible. On the ABI level, this is an UEFI
-/// boolean.
+/// This type is not ABI compatible. On the ABI level, this corresponds to
+/// a [`Boolean`].
 #[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub enum BootPolicy {
     /// Indicates that the request originates from the boot manager, and that
@@ -17,20 +17,20 @@ pub enum BootPolicy {
     ///
     /// Boot selection refers to what a user has chosen in the (GUI) boot menu.
     ///
-    /// This corresponds to the `TRUE` value in the UEFI spec.
+    /// This corresponds to the underlying [`Boolean`] being `true`.
     BootSelection,
     /// The provided `file_path` must match an exact file to be loaded.
     ///
-    /// This corresponds to the `FALSE` value in the UEFI spec.
+    /// This corresponds to the underlying [`Boolean`] being `false`.
     #[default]
     ExactMatch,
 }
 
-impl From<BootPolicy> for bool {
+impl From<BootPolicy> for Boolean {
     fn from(value: BootPolicy) -> Self {
         match value {
-            BootPolicy::BootSelection => Boolean::TRUE,
-            BootPolicy::ExactMatch => Boolean::FALSE,
+            BootPolicy::BootSelection => Self::TRUE,
+            BootPolicy::ExactMatch => Self::FALSE,
         }
     }
 }
@@ -51,20 +51,15 @@ mod tests {
 
     #[test]
     fn boot_policy() {
-        assert_eq!(bool::from(BootPolicy::ExactMatch), false);
-        assert_eq!(bool::from(BootPolicy::BootSelection), true);
-
-        assert_eq!(BootPolicy::from(false), BootPolicy::ExactMatch);
-        assert_eq!(BootPolicy::from(true), BootPolicy::BootSelection);
-
-        assert_eq!(u8::from(BootPolicy::ExactMatch), 0);
-        assert_eq!(u8::from(BootPolicy::BootSelection), 1);
-
-        assert_eq!(BootPolicy::try_from(0), Ok(BootPolicy::ExactMatch));
-        assert_eq!(BootPolicy::try_from(1), Ok(BootPolicy::BootSelection));
         assert_eq!(
-            BootPolicy::try_from(2),
-            Err(BootPolicyError::InvalidInteger(2))
+            BootPolicy::try_from(Boolean::TRUE).unwrap(),
+            BootPolicy::BootSelection
         );
+        assert_eq!(
+            BootPolicy::try_from(Boolean::FALSE).unwrap(),
+            BootPolicy::ExactMatch
+        );
+        assert_eq!(Boolean::from(BootPolicy::BootSelection), Boolean::TRUE);
+        assert_eq!(Boolean::from(BootPolicy::ExactMatch), Boolean::FALSE);
     }
 }

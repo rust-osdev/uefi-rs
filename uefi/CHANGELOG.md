@@ -1,5 +1,9 @@
 # uefi - [Unreleased]
 
+## Changed
+- **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no
+  longer fallible. `BootPolicy` now tightly integrates the new `Boolean` type
+  of `uefi-raw`.
 
 # uefi - 0.34.1 (2025-02-07)
 
@@ -53,7 +57,6 @@ details of the deprecated items that were removed in this release.
   users.
 - The `VariableKeys` iterator will now yield an error item if a variable name is
   not UCS-2.
-
 
 # uefi - 0.32.0 (2024-09-09)
 

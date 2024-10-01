@@ -26,7 +26,7 @@ pub mod tcg;
 
 mod boot_policy;
 
-pub use boot_policy::{BootPolicy, BootPolicyError};
+pub use boot_policy::BootPolicy;
 pub use uefi_macros::unsafe_protocol;
 
 use crate::Identify;

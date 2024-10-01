@@ -3,6 +3,9 @@
 See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
 details of the deprecated items that were removed in this release.
 
+## Added
+- Impl `PartialEq` and `Eq` for `GptPartitionEntry`.
+
 ## Changed
 - **Breaking:** Deleted the deprecated `BootServices`, `RuntimeServices`, and
   `SystemTable` structs.

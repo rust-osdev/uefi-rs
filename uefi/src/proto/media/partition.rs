@@ -157,7 +157,7 @@ impl GptPartitionAttributes {
 /// GPT/EFI Partition Entry.
 #[repr(C)]
 #[repr(packed)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct GptPartitionEntry {
     /// GUID that defines the type of this Partition. A value of zero
     /// indicates that this partition entry is unused.

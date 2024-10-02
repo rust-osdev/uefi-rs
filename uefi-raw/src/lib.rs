@@ -71,7 +71,8 @@ pub type VirtualAddress = u64;
 /// The provided [`Boolean`] can't be converted to [`bool`] as it is neither
 /// `0` nor `1`.
 #[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq)]
-pub struct InvalidBooleanError(u8);
+#[repr(transparent)]
+pub struct InvalidBooleanError(pub u8);
 
 impl Display for InvalidBooleanError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -89,7 +90,7 @@ impl Error for InvalidBooleanError {}
 /// respectively [`TryFrom`] implementations.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[repr(transparent)]
-pub struct Boolean(u8);
+pub struct Boolean(pub u8);
 
 impl Boolean {
     /// [`Boolean`] representing `true`.

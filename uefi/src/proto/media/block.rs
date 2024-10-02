@@ -117,35 +117,35 @@ impl BlockIOMedia {
     #[must_use]
     pub fn is_removable_media(&self) -> bool {
         // Panic: Misbehaving UEFI impls are so unlikely; just fail
-        self.0.removable_media.try_into().unwrap()
+        self.0.removable_media.into()
     }
 
     /// True if there is a media currently present in the device.
     #[must_use]
     pub fn is_media_present(&self) -> bool {
         // Panic: Misbehaving UEFI impls are so unlikely; just fail
-        self.0.media_present.try_into().unwrap()
+        self.0.media_present.into()
     }
 
     /// True if block IO was produced to abstract partition structure.
     #[must_use]
     pub fn is_logical_partition(&self) -> bool {
         // Panic: Misbehaving UEFI impls are so unlikely; just fail
-        self.0.logical_partition.try_into().unwrap()
+        self.0.logical_partition.into()
     }
 
     /// True if the media is marked read-only.
     #[must_use]
     pub fn is_read_only(&self) -> bool {
         // Panic: Misbehaving UEFI impls are so unlikely; just fail
-        self.0.read_only.try_into().unwrap()
+        self.0.read_only.into()
     }
 
     /// True if `writeBlocks` function writes data.
     #[must_use]
     pub fn is_write_caching(&self) -> bool {
         // Panic: Misbehaving UEFI impls are so unlikely; just fail
-        self.0.write_caching.try_into().unwrap()
+        self.0.write_caching.into()
     }
 
     /// The intrinsic block size of the device.

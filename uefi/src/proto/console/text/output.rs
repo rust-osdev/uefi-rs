@@ -118,7 +118,7 @@ impl Output {
     #[must_use]
     pub fn cursor_visible(&self) -> bool {
         // Panic: Misbehaving UEFI impls are so unlikely; just fail
-        self.data().cursor_visible.try_into().unwrap()
+        self.data().cursor_visible.into()
     }
 
     /// Make the cursor visible or invisible.

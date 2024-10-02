@@ -1,6 +1,6 @@
 //! Module for the [`BootPolicy`] helper type.
 
-use uefi_raw::{Boolean, InvalidBooleanError};
+use uefi_raw::Boolean;
 
 /// The UEFI boot policy is a property that influences the behaviour of
 /// various UEFI functions that load files (typically UEFI images).
@@ -33,16 +33,13 @@ impl From<BootPolicy> for Boolean {
     }
 }
 
-impl TryFrom<Boolean> for BootPolicy {
-    type Error = InvalidBooleanError;
-
-    fn try_from(value: Boolean) -> Result<Self, Self::Error> {
-        let boolean: bool = value.try_into()?;
-        let policy = match boolean {
+impl From<Boolean> for BootPolicy {
+    fn from(value: Boolean) -> Self {
+        let boolean: bool = value.into();
+        match boolean {
             true => Self::BootSelection,
             false => Self::ExactMatch,
-        };
-        Ok(policy)
+        }
     }
 }
 

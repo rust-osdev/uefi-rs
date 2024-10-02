@@ -34,10 +34,8 @@ mod status;
 pub use status::Status;
 pub use uguid::{guid, Guid};
 
-#[cfg(feature = "unstable")]
-use core::error::Error;
 use core::ffi::c_void;
-use core::fmt::{self, Debug, Display, Formatter};
+use core::fmt::{self, Debug, Formatter};
 
 /// Handle to an event structure.
 pub type Event = *mut c_void;
@@ -68,26 +66,11 @@ pub type PhysicalAddress = u64;
 /// of target platform.
 pub type VirtualAddress = u64;
 
-/// The provided [`Boolean`] can't be converted to [`bool`] as it is neither
-/// `0` nor `1`.
-#[derive(Debug, Copy, Clone, PartialEq, Ord, PartialOrd, Eq)]
-#[repr(transparent)]
-pub struct InvalidBooleanError(pub u8);
-
-impl Display for InvalidBooleanError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-#[cfg(feature = "unstable")]
-impl Error for InvalidBooleanError {}
-
 /// ABI-compatible UEFI boolean.
 ///
 /// Opaque 1-byte value holding either `0` for FALSE or a `1` for TRUE. This
 /// type can be converted from and to `bool` via corresponding [`From`]
-/// respectively [`TryFrom`] implementations.
+/// implementations.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[repr(transparent)]
 pub struct Boolean(pub u8);
@@ -109,14 +92,13 @@ impl From<bool> for Boolean {
     }
 }
 
-impl TryFrom<Boolean> for bool {
-    type Error = InvalidBooleanError;
-
-    fn try_from(value: Boolean) -> Result<Self, Self::Error> {
+impl From<Boolean> for bool {
+    #[allow(clippy::match_like_matches_macro)]
+    fn from(value: Boolean) -> Self {
+        // We handle it as in C: Any bit-pattern != 0 equals true
         match value.0 {
-            0 => Ok(false),
-            1 => Ok(true),
-            x => Err(InvalidBooleanError(x)),
+            0 => false,
+            _ => true,
         }
     }
 }
@@ -205,15 +187,10 @@ mod tests {
         assert_eq!(Boolean::from(false).0, 0);
         assert_eq!(Boolean::TRUE.0, 1);
         assert_eq!(Boolean::FALSE.0, 0);
-        assert_eq!(bool::try_from(Boolean(0b0)), Ok(false));
-        assert_eq!(bool::try_from(Boolean(0b1)), Ok(true));
-        assert_eq!(
-            bool::try_from(Boolean(0b11)),
-            Err(InvalidBooleanError(0b11))
-        );
-        assert_eq!(
-            bool::try_from(Boolean(0b10)),
-            Err(InvalidBooleanError(0b10))
-        );
+        assert_eq!(bool::from(Boolean(0b0)), false);
+        assert_eq!(bool::from(Boolean(0b1)), true);
+        // We do it a C: Every bit pattern not 0 is equal to true
+        assert_eq!(bool::from(Boolean(0b11111110)), true);
+        assert_eq!(bool::from(Boolean(0b11111111)), true);
     }
 }

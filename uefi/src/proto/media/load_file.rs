@@ -4,12 +4,12 @@ use crate::proto::unsafe_protocol;
 #[cfg(all(feature = "alloc", feature = "unstable"))]
 use alloc::alloc::Global;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
-use uefi_raw::Boolean;
 #[cfg(feature = "alloc")]
 use {
     crate::{mem::make_boxed, proto::device_path::DevicePath, Result, StatusExt},
     alloc::boxed::Box,
     uefi::proto::BootPolicy,
+    uefi_raw::Boolean,
 };
 
 /// Load File Protocol.

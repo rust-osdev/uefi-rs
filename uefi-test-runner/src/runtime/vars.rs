@@ -48,7 +48,7 @@ fn test_variables() {
     let find_by_key = || {
         runtime::variable_keys().any(|k| {
             let k = k.as_ref().unwrap();
-            k.name().unwrap() == NAME && &k.vendor == VENDOR
+            k.name == NAME && &k.vendor == VENDOR
         })
     };
     assert!(find_by_key());

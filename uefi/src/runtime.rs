@@ -15,7 +15,8 @@ use uefi_raw::table::boot::MemoryDescriptor;
 
 #[cfg(feature = "alloc")]
 use {
-    crate::mem::make_boxed, crate::Guid, alloc::borrow::ToOwned, alloc::boxed::Box, alloc::vec::Vec,
+    crate::mem::make_boxed, crate::CString16, crate::Guid, alloc::borrow::ToOwned,
+    alloc::boxed::Box, alloc::vec::Vec,
 };
 
 #[cfg(all(feature = "unstable", feature = "alloc"))]
@@ -303,15 +304,13 @@ impl Iterator for VariableKeys {
 
         match result {
             Ok(()) => {
-                // Copy the name buffer, truncated after the first null
-                // character (if one is present).
-                let name = if let Some(nul_pos) = self.name.iter().position(|c| *c == 0) {
-                    self.name[..=nul_pos].to_owned()
-                } else {
-                    self.name.clone()
+                // Convert the name to a `CStr16`, yielding an error if invalid.
+                let Ok(name) = CStr16::from_u16_until_nul(&self.name) else {
+                    return Some(Err(Status::UNSUPPORTED.into()));
                 };
+
                 Some(Ok(VariableKey {
-                    name,
+                    name: name.to_owned(),
                     vendor: self.vendor,
                 }))
             }
@@ -868,30 +867,26 @@ impl TryFrom<&[u8]> for Time {
 #[cfg(feature = "alloc")]
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct VariableKey {
-    pub(crate) name: Vec<u16>,
     /// Unique identifier for the vendor.
     pub vendor: VariableVendor,
+
+    /// Name of the variable, unique with the vendor namespace.
+    pub name: CString16,
 }
 
 #[cfg(feature = "alloc")]
 impl VariableKey {
     /// Name of the variable.
+    #[deprecated = "Use the VariableKey.name field instead"]
     pub fn name(&self) -> core::result::Result<&CStr16, crate::data_types::FromSliceWithNulError> {
-        CStr16::from_u16_with_nul(&self.name)
+        Ok(&self.name)
     }
 }
 
 #[cfg(feature = "alloc")]
 impl Display for VariableKey {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "VariableKey {{ name: ")?;
-
-        match self.name() {
-            Ok(name) => write!(f, "\"{name}\"")?,
-            Err(err) => write!(f, "Err({err:?})")?,
-        }
-
-        write!(f, ", vendor: ")?;
+        write!(f, "VariableKey {{ name: \"{}\", vendor: ", self.name)?;
 
         if self.vendor == VariableVendor::GLOBAL_VARIABLE {
             write!(f, "GLOBAL_VARIABLE")?;

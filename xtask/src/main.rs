@@ -12,12 +12,12 @@ mod tpm;
 mod util;
 
 use crate::opt::{FmtOpt, TestOpt};
-use anyhow::Result;
+use anyhow::{bail, Result};
 use arch::UefiArch;
 use cargo::{Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
-use opt::{Action, BuildOpt, ClippyOpt, DocOpt, Opt, QemuOpt, TpmVersion};
+use opt::{Action, BuildOpt, ClippyOpt, CovOpt, DocOpt, Opt, QemuOpt, TpmVersion};
 use std::process::Command;
 use util::run_cmd;
 
@@ -83,6 +83,27 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
         target_types: TargetTypes::Default,
     };
     run_cmd(cargo.command()?)
+}
+
+/// Generate a code coverage report.
+fn code_coverage(opt: &CovOpt) -> Result<()> {
+    if has_cmd("cargo-llvm-cov") {
+        let cargo = Cargo {
+            action: CargoAction::Coverage { open: opt.open },
+            features: Feature::more_code(*opt.unstable, false),
+            // Leave out uefi-macros; the compilation tests will just make
+            // things slower without contributing anything to the coverage
+            // report.
+            packages: vec![Package::UefiRaw, Package::Uefi],
+            release: false,
+            target: None,
+            warnings_as_errors: false,
+            target_types: TargetTypes::Default,
+        };
+        run_cmd(cargo.command()?)
+    } else {
+        bail!("cargo-llvm-cov not found, see https://github.com/taiki-e/cargo-llvm-cov");
+    }
 }
 
 /// Build docs.
@@ -305,6 +326,7 @@ fn main() -> Result<()> {
         Action::Build(build_opt) => build(build_opt),
         Action::CheckRaw(_) => check_raw::check_raw(),
         Action::Clippy(clippy_opt) => clippy(clippy_opt),
+        Action::Cov(cov_opt) => code_coverage(cov_opt),
         Action::Doc(doc_opt) => doc(doc_opt),
         Action::GenCode(gen_opt) => device_path::gen_code(gen_opt),
         Action::Miri(_) => run_miri(),

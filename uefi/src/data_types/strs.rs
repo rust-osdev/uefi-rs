@@ -10,7 +10,31 @@ use core::slice;
 #[cfg(feature = "alloc")]
 use super::CString16;
 
-/// Errors which can occur during checked `[uN]` -> `CStrN` conversions
+/// Error converting from a slice (which can contain interior nuls) to a string
+/// type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FromSliceUntilNulError {
+    /// An invalid character was encountered before the end of the slice.
+    InvalidChar(usize),
+
+    /// The does not contain a nul character.
+    NoNul,
+}
+
+impl Display for FromSliceUntilNulError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
+            Self::NoNul => write!(f, "no nul character"),
+        }
+    }
+}
+
+#[cfg(feature = "unstable")]
+impl core::error::Error for FromSliceUntilNulError {}
+
+/// Error converting from a slice (which cannot contain interior nuls) to a
+/// string type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FromSliceWithNulError {
     /// An invalid character was encountered before the end of the slice
@@ -337,6 +361,23 @@ impl CStr16 {
         Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
     }
 
+    /// Creates a `&CStr16` from a u16 slice, stopping at the first nul character.
+    ///
+    /// # Errors
+    ///
+    /// An error is returned if the slice contains invalid UCS-2 characters, or
+    /// if the slice does not contain any nul character.
+    pub fn from_u16_until_nul(codes: &[u16]) -> Result<&Self, FromSliceUntilNulError> {
+        for (pos, &code) in codes.iter().enumerate() {
+            let chr =
+                Char16::try_from(code).map_err(|_| FromSliceUntilNulError::InvalidChar(pos))?;
+            if chr == NUL_16 {
+                return Ok(unsafe { Self::from_u16_with_nul_unchecked(&codes[..=pos]) });
+            }
+        }
+        Err(FromSliceUntilNulError::NoNul)
+    }
+
     /// Creates a `&CStr16` from a u16 slice, if the slice contains exactly
     /// one terminating null-byte and all chars are valid UCS-2 chars.
     pub fn from_u16_with_nul(codes: &[u16]) -> Result<&Self, FromSliceWithNulError> {
@@ -367,6 +408,22 @@ impl CStr16 {
     #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
         &*(codes as *const [u16] as *const Self)
+    }
+
+    /// Creates a `&CStr16` from a [`Char16`] slice, stopping at the first nul character.
+    ///
+    /// # Errors
+    ///
+    /// An error is returned if the slice does not contain any nul character.
+    pub fn from_char16_until_nul(chars: &[Char16]) -> Result<&Self, FromSliceUntilNulError> {
+        // Find the index of the first null char.
+        let end = chars
+            .iter()
+            .position(|c| *c == NUL_16)
+            .ok_or(FromSliceUntilNulError::NoNul)?;
+
+        // Safety: the input is nul-terminated.
+        unsafe { Ok(Self::from_char16_with_nul_unchecked(&chars[..=end])) }
     }
 
     /// Creates a `&CStr16` from a [`Char16`] slice, if the slice is
@@ -732,6 +789,75 @@ mod tests {
     fn test_cstr16_num_bytes() {
         let s = CStr16::from_u16_with_nul(&[65, 66, 67, 0]).unwrap();
         assert_eq!(s.num_bytes(), 8);
+    }
+
+    #[test]
+    fn test_cstr16_from_u16_until_nul() {
+        // Invalid: empty input.
+        assert_eq!(
+            CStr16::from_u16_until_nul(&[]),
+            Err(FromSliceUntilNulError::NoNul)
+        );
+
+        // Invalid: no nul.
+        assert_eq!(
+            CStr16::from_u16_until_nul(&[65, 66]),
+            Err(FromSliceUntilNulError::NoNul)
+        );
+
+        // Invalid: not UCS-2.
+        assert_eq!(
+            CStr16::from_u16_until_nul(&[65, 0xde01, 0]),
+            Err(FromSliceUntilNulError::InvalidChar(1))
+        );
+
+        // Valid: trailing nul.
+        assert_eq!(CStr16::from_u16_until_nul(&[97, 98, 0,]), Ok(cstr16!("ab")));
+
+        // Valid: interior nul.
+        assert_eq!(
+            CStr16::from_u16_until_nul(&[97, 0, 98, 0,]),
+            Ok(cstr16!("a"))
+        );
+    }
+
+    #[test]
+    fn test_cstr16_from_char16_until_nul() {
+        // Invalid: empty input.
+        assert_eq!(
+            CStr16::from_char16_until_nul(&[]),
+            Err(FromSliceUntilNulError::NoNul)
+        );
+
+        // Invalid: no nul character.
+        assert_eq!(
+            CStr16::from_char16_until_nul(&[
+                Char16::try_from('a').unwrap(),
+                Char16::try_from('b').unwrap(),
+            ]),
+            Err(FromSliceUntilNulError::NoNul)
+        );
+
+        // Valid: trailing nul.
+        assert_eq!(
+            CStr16::from_char16_until_nul(&[
+                Char16::try_from('a').unwrap(),
+                Char16::try_from('b').unwrap(),
+                NUL_16,
+            ]),
+            Ok(cstr16!("ab"))
+        );
+
+        // Valid: interior nul.
+        assert_eq!(
+            CStr16::from_char16_until_nul(&[
+                Char16::try_from('a').unwrap(),
+                NUL_16,
+                Char16::try_from('b').unwrap(),
+                NUL_16
+            ]),
+            Ok(cstr16!("a"))
+        );
     }
 
     #[test]

@@ -5,6 +5,7 @@ details of the deprecated items that were removed in this release.
 
 ## Added
 - Impl `PartialEq` and `Eq` for `GptPartitionEntry`.
+- Added `CStr16::from_u16_until_nul` and `CStr16::from_char16_until_nul`.
 
 ## Changed
 - **Breaking:** Deleted the deprecated `BootServices`, `RuntimeServices`, and

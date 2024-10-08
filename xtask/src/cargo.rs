@@ -186,6 +186,10 @@ impl TargetTypes {
 pub enum CargoAction {
     Build,
     Clippy,
+    Coverage {
+        lcov: bool,
+        open: bool,
+    },
     Doc {
         open: bool,
         document_private_items: bool,
@@ -249,6 +253,17 @@ impl Cargo {
                 action = "clippy";
                 if self.warnings_as_errors {
                     tool_args.extend(["-D", "warnings"]);
+                }
+            }
+            CargoAction::Coverage { lcov, open } => {
+                action = "llvm-cov";
+                if lcov {
+                    extra_args.extend(["--lcov", "--output-path", "target/lcov"]);
+                } else {
+                    extra_args.push("--html");
+                }
+                if open {
+                    extra_args.push("--open");
                 }
             }
             CargoAction::Doc {

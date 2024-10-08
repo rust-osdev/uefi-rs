@@ -68,6 +68,7 @@ pub enum Action {
     Build(BuildOpt),
     CheckRaw(CheckRawOpt),
     Clippy(ClippyOpt),
+    Cov(CovOpt),
     Doc(DocOpt),
     GenCode(GenCodeOpt),
     Miri(MiriOpt),
@@ -103,6 +104,21 @@ pub struct ClippyOpt {
 
     #[clap(flatten)]
     pub warning: WarningOpt,
+}
+
+/// Generate a code coverage report.
+#[derive(Debug, Parser)]
+pub struct CovOpt {
+    /// Open the output in a browser.
+    #[clap(long, action)]
+    pub open: bool,
+
+    /// Output raw lcov data instead of HTML.
+    #[clap(long, action, conflicts_with = "open")]
+    pub lcov: bool,
+
+    #[clap(flatten)]
+    pub unstable: UnstableOpt,
 }
 
 /// Build the docs for the uefi packages.

@@ -41,7 +41,7 @@ In uefi-0.32, the old struct-based API was deprecated. In addition, some
 breaking changes were made to the API to remove `BootServices` parameters from
 various functions.
 
-We plan to entirely remove the deprecated API in uefi-0.33 or thereabouts.
+In uefi-0.33, the deprecated parts off the API were deleted.
 
 ## Reason for the change
 

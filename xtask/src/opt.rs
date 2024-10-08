@@ -113,6 +113,10 @@ pub struct CovOpt {
     #[clap(long, action)]
     pub open: bool,
 
+    /// Output raw lcov data instead of HTML.
+    #[clap(long, action, conflicts_with = "open")]
+    pub lcov: bool,
+
     #[clap(flatten)]
     pub unstable: UnstableOpt,
 }

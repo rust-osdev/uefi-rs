@@ -187,6 +187,7 @@ pub enum CargoAction {
     Build,
     Clippy,
     Coverage {
+        lcov: bool,
         open: bool,
     },
     Doc {
@@ -254,9 +255,13 @@ impl Cargo {
                     tool_args.extend(["-D", "warnings"]);
                 }
             }
-            CargoAction::Coverage { open } => {
+            CargoAction::Coverage { lcov, open } => {
                 action = "llvm-cov";
-                extra_args.push("--html");
+                if lcov {
+                    extra_args.extend(["--lcov", "--output-path", "target/lcov"]);
+                } else {
+                    extra_args.push("--html");
+                }
                 if open {
                     extra_args.push("--open");
                 }

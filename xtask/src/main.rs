@@ -89,7 +89,10 @@ fn clippy(opt: &ClippyOpt) -> Result<()> {
 fn code_coverage(opt: &CovOpt) -> Result<()> {
     if has_cmd("cargo-llvm-cov") {
         let cargo = Cargo {
-            action: CargoAction::Coverage { open: opt.open },
+            action: CargoAction::Coverage {
+                lcov: opt.lcov,
+                open: opt.open,
+            },
             features: Feature::more_code(*opt.unstable, false),
             // Leave out uefi-macros; the compilation tests will just make
             // things slower without contributing anything to the coverage

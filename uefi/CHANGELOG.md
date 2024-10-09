@@ -16,6 +16,7 @@ details of the deprecated items that were removed in this release.
 - **Breaking:** `FileSystem` no longer has a lifetime parameter, and the
   deprecated conversion from `uefi::table::boot::ScopedProtocol` has been
   removed.
+- **Breaking:** Removed `BootPolicyError` as `BootPolicy`
 - Fixed `boot::open_protocol` to properly handle a null interface pointer.
 - `VariableKey` now has a public `name` field. This `name` field always contains
   a valid string, so the `VariableKey::name()` method has been deprecated. Since
@@ -23,7 +24,6 @@ details of the deprecated items that were removed in this release.
   users.
 - The `VariableKeys` iterator will now yield an error item if a variable name is
   not UCS-2.
-
 
 # uefi - 0.32.0 (2024-09-09)
 

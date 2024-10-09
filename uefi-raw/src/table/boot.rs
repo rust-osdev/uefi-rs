@@ -350,7 +350,8 @@ bitflags! {
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
-    // Implicit 32-bit padding.
+    /// Padding field. Ignore.
+    pub padding0: u32,
     /// Starting physical address.
     pub phys_start: PhysicalAddress,
     /// Starting virtual address.
@@ -370,6 +371,7 @@ impl Default for MemoryDescriptor {
     fn default() -> Self {
         Self {
             ty: MemoryType::RESERVED,
+            padding0: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,
@@ -379,7 +381,7 @@ impl Default for MemoryDescriptor {
 }
 
 newtype_enum! {
-/// The type of a memory range.
+/// The type of memory range.
 ///
 /// UEFI allows firmwares and operating systems to introduce new memory types
 /// in the `0x7000_0000..=0xFFFF_FFFF` range. Therefore, we don't know the full set
@@ -484,3 +486,35 @@ pub enum Tpl: usize => {
 /// Note that this is not necessarily the processor's page size. The UEFI page
 /// size is always 4 KiB.
 pub const PAGE_SIZE: usize = 4096;
+
+#[cfg(test)]
+mod tests {
+    use core::{mem, slice};
+    use super::*;
+
+    // This tests succeeds if Miri doesn't complain about uninitialized memory.
+    #[test]
+    fn memory_descriptor_trivial_serialization() {
+        let descs = [
+            MemoryDescriptor {
+                ty: MemoryType::CONVENTIONAL,
+                padding0: 0,
+                phys_start: 0x1000,
+                virt_start: 0x1000,
+                page_count: 1,
+                att: Default::default(),
+            },
+        ];
+
+
+        let raw_bytes: &[u8] = {
+            let ptr = descs.as_ptr().cast::<u8>();
+            let len = mem::size_of_val(&descs);
+            unsafe { slice::from_raw_parts(ptr.cast(), len) }
+        };
+
+        // Test succeeds if Miri doesn't complain about initialized memory
+        // (implicit padding fields).
+        dbg!(&raw_bytes);
+    }
+}

@@ -23,5 +23,9 @@ bitflags.workspace = true
 ptr_meta.workspace = true
 uguid.workspace = true
 
+[features]
+default = []
+unstable = []
+
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

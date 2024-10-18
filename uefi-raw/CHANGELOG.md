@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+## Changed
+- `MemoryDescriptor` now has an explicit padding field, allowing trivial
+  memory-safe serialization and deserialization
 
 # uefi-raw - 0.8.0 (2024-09-09)
 

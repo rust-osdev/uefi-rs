@@ -133,3 +133,20 @@ impl Default for IpAddress {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);
+
+/// Bluetooth address.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(transparent)]
+pub struct BluetoothAddress(pub [u8; 6]);
+
+/// Bluetooth Low Energy address.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[repr(C)]
+pub struct BluetoothLeAddress {
+    /// Device address
+    pub address: [u8; 6],
+
+    /// 0x00 - Public Device Address
+    /// 0x01 - Random Device Address
+    pub address_type: u8,
+}

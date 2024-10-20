@@ -8,7 +8,7 @@ use crate::{guid, Char16, Guid};
 /// Note that the fields in this struct define the header at the start of each
 /// node; a device path is typically larger than these four bytes.
 #[derive(Debug)]
-#[repr(C)]
+#[repr(C,packed)]
 pub struct DevicePathProtocol {
     pub major_type: u8,
     pub sub_type: u8,

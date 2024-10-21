@@ -189,3 +189,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo +nightly build --target x86_64-unknown-uefi --verbose -p uefi-std-example
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate code coverage
+        run: cargo xtask cov --lcov
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: target/lcov

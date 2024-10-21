@@ -12,6 +12,7 @@ fn parse_boot_information_efi_mmap() {
             virt_start: 0x3000,
             page_count: 1,
             att: MemoryAttribute::WRITE_BACK,
+            ..Default::default()
         },
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
@@ -19,6 +20,7 @@ fn parse_boot_information_efi_mmap() {
             virt_start: 0x2000,
             page_count: 1,
             att: MemoryAttribute::WRITE_BACK,
+            ..Default::default()
         },
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
@@ -26,6 +28,7 @@ fn parse_boot_information_efi_mmap() {
             virt_start: 0x1000,
             page_count: 1,
             att: MemoryAttribute::WRITE_BACK,
+            ..Default::default()
         },
     ];
     let map_size = mmap_source.len() * desc_size;

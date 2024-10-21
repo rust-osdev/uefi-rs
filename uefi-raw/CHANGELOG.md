@@ -3,6 +3,7 @@
 ## Added
 
 - Added `DeviceType` and `DeviceSubType` enums.
+- Added device path node types in the `protocol::device_path` module.
 
 
 # uefi-raw - 0.8.0 (2024-09-09)

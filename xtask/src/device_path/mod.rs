@@ -13,6 +13,7 @@ use syn::{File, Item};
 use util::rustfmt_string;
 
 const INPUT_PATH: &str = "xtask/src/device_path/spec.rs";
+const UEFI_RAW_OUTPUT_PATH: &str = "uefi-raw/src/protocol/device_path/device_path_gen.rs";
 const UEFI_OUTPUT_PATH: &str = "uefi/src/proto/device_path/device_path_gen.rs";
 
 fn code_to_string(code: TokenStream) -> Result<String> {
@@ -38,6 +39,27 @@ fn code_to_string(code: TokenStream) -> Result<String> {
     let formatted = rustfmt_string(output)?;
 
     Ok(formatted)
+}
+
+fn gen_uefi_raw_code_as_string(groups: &[NodeGroup]) -> Result<String> {
+    let modules = groups.iter().map(NodeGroup::gen_raw_module);
+
+    let code = quote!(
+        // This module contains many structures that cannot derive `Debug`.
+        #![allow(missing_debug_implementations)]
+
+        use bitflags::bitflags;
+        use crate::protocol::device_path;
+        use crate::table::boot::MemoryType;
+        use crate::{guid, Guid, IpAddress};
+        use device_path::DevicePathProtocol as DevicePathHeader;
+        #[cfg(doc)]
+        use device_path::DeviceType;
+
+        #(#modules)*
+    );
+
+    code_to_string(code)
 }
 
 fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
@@ -100,6 +122,7 @@ pub fn gen_code(opt: &GenCodeOpt) -> Result<()> {
     let spec_str = include_str!("spec.rs");
 
     let groups = parse_spec(spec_str);
+    let uefi_raw_output_string = gen_uefi_raw_code_as_string(&groups)?;
     let uefi_output_string = gen_uefi_code_as_string(&groups)?;
 
     if opt.check {
@@ -107,7 +130,9 @@ pub fn gen_code(opt: &GenCodeOpt) -> Result<()> {
         // it always exits zero when reading from stdin:
         // https://github.com/rust-lang/rustfmt/issues/5376
 
-        if uefi_output_string != fs::read_to_string(UEFI_OUTPUT_PATH)? {
+        if uefi_raw_output_string != fs::read_to_string(UEFI_RAW_OUTPUT_PATH)?
+            || uefi_output_string != fs::read_to_string(UEFI_OUTPUT_PATH)?
+        {
             bail!("generated code is stale");
         }
 
@@ -116,6 +141,7 @@ pub fn gen_code(opt: &GenCodeOpt) -> Result<()> {
             bail!("spec.rs needs formatting");
         }
     } else {
+        fs::write(UEFI_RAW_OUTPUT_PATH, uefi_raw_output_string)?;
         fs::write(UEFI_OUTPUT_PATH, uefi_output_string)?;
 
         // Also format the input file. It's valid rust, but not included

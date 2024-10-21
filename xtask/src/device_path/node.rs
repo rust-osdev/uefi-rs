@@ -98,6 +98,36 @@ impl Node {
         size
     }
 
+    /// Generate struct for uefi-raw.
+    pub fn gen_raw_struct(&self) -> TokenStream {
+        let struct_ident = &self.struct_ident;
+
+        let mut fields = vec![quote!(header: DevicePathHeader)];
+        fields.extend(self.fields.iter().filter_map(|field| {
+            // For a DST group, all the slice fields will be added as
+            // one `data` slice below.
+            if field.is_slice() && self.has_dst_group() {
+                return None;
+            }
+
+            let field_name = &field.name;
+            let field_ty = field.raw_ty();
+            Some(quote!(#field_name: #field_ty))
+        }));
+
+        // Combined `data` field for a DST group.
+        if self.has_dst_group() {
+            fields.push(quote!(data: [u8; 0]));
+        }
+
+        quote!(
+            #[repr(C, packed)]
+            pub struct #struct_ident {
+                #(pub #fields),*
+            }
+        )
+    }
+
     fn gen_packed_struct(&self) -> TokenStream {
         let struct_docs = &self.docs;
         let struct_ident = &self.struct_ident;

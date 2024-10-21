@@ -1,4 +1,8 @@
+mod device_path_gen;
+
 use crate::{guid, Char16, Guid};
+
+pub use device_path_gen::{acpi, bios_boot_spec, end, hardware, media, messaging};
 
 /// Device path protocol.
 ///

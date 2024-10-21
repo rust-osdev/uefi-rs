@@ -14,6 +14,7 @@ use syn::{Attribute, Expr, ExprLit, Field, Ident, Lit, Path, Type, TypeArray};
 ///
 /// To add a new base type, verify that it meets the above requirement,
 /// then add it to the list in `BaseType::new` along with its size.
+#[derive(Clone)]
 pub struct BaseType {
     path: Path,
     size_in_bytes: usize,
@@ -86,6 +87,7 @@ impl ToTokens for BaseType {
 }
 
 /// Storage type for a field in the packed struct.
+#[derive(Clone)]
 pub enum PackedType {
     /// A fixed-size non-array type.
     Base(BaseType),
@@ -195,6 +197,18 @@ impl NodeField {
             Some(slice)
         } else {
             None
+        }
+    }
+
+    /// Get the field type for a uefi-raw node.
+    ///
+    /// This is mostly the same as `packed_ty`, except that DST slices are
+    /// converted to zero-length arrays.
+    pub fn raw_ty(&self) -> PackedType {
+        if let PackedType::Slice(ty) = &self.packed_ty {
+            PackedType::Array(ty.clone(), 0)
+        } else {
+            self.packed_ty.clone()
         }
     }
 

@@ -22,6 +22,7 @@ pkgs.mkShell {
     rustToolchain
 
     # Other
+    cargo-llvm-cov
     mdbook
     yamlfmt
     which # used by "cargo xtask fmt"

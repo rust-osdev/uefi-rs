@@ -1,12 +1,14 @@
 # uefi-raw - [Unreleased]
 
+## Added
+- `Boolean` type
 
 # uefi-raw - 0.8.0 (2024-09-09)
 
 ## Added
 
 - Added `PAGE_SIZE` constant.
-
+- Added a new `unstable` feature
 
 # uefi-raw - 0.7.0 (2024-08-20)
 

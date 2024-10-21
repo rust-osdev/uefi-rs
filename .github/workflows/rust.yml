@@ -202,5 +202,7 @@ jobs:
         run: cargo xtask cov --lcov
       - name: Upload code coverage
         uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           files: target/lcov

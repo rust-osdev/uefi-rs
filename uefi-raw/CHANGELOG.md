@@ -1,5 +1,9 @@
 # uefi-raw - [Unreleased]
 
+## Added
+
+- Added `DeviceType` and `DeviceSubType` enums.
+
 
 # uefi-raw - 0.8.0 (2024-09-09)
 

@@ -10,7 +10,7 @@ use crate::data_types::UnalignedSlice;
 use crate::mem::memory_map::MemoryType;
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::device_path::{
-    DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
+    self, DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
 use crate::proto::network::IpAddress;
 use crate::{guid, Guid};
@@ -24,7 +24,7 @@ pub mod end {
     use super::*;
     /// Node that terminates a [`DevicePathInstance`].
     ///
-    /// [`DevicePathInstance`]: crate::proto::device_path::DevicePathInstance
+    /// [`DevicePathInstance`]: device_path::DevicePathInstance
     #[repr(C, packed)]
     pub struct Instance {
         pub(super) header: DevicePathHeader,
@@ -53,7 +53,7 @@ pub mod end {
 
     /// Node that terminates an entire [`DevicePath`].
     ///
-    /// [`DevicePath`]: crate::proto::device_path::DevicePath
+    /// [`DevicePath`]: device_path::DevicePath
     #[repr(C, packed)]
     pub struct Entire {
         pub(super) header: DevicePathHeader,
@@ -312,14 +312,14 @@ pub mod hardware {
     #[repr(C, packed)]
     pub struct Bmc {
         pub(super) header: DevicePathHeader,
-        pub(super) interface_type: crate::proto::device_path::hardware::BmcInterfaceType,
+        pub(super) interface_type: device_path::hardware::BmcInterfaceType,
         pub(super) base_address: u64,
     }
 
     impl Bmc {
         /// Host interface type.
         #[must_use]
-        pub fn interface_type(&self) -> crate::proto::device_path::hardware::BmcInterfaceType {
+        pub fn interface_type(&self) -> device_path::hardware::BmcInterfaceType {
             self.interface_type
         }
 
@@ -706,21 +706,21 @@ pub mod messaging {
     #[repr(C, packed)]
     pub struct Atapi {
         pub(super) header: DevicePathHeader,
-        pub(super) primary_secondary: crate::proto::device_path::messaging::PrimarySecondary,
-        pub(super) master_slave: crate::proto::device_path::messaging::MasterSlave,
+        pub(super) primary_secondary: device_path::messaging::PrimarySecondary,
+        pub(super) master_slave: device_path::messaging::MasterSlave,
         pub(super) logical_unit_number: u16,
     }
 
     impl Atapi {
         /// Whether the ATAPI device is primary or secondary.
         #[must_use]
-        pub fn primary_secondary(&self) -> crate::proto::device_path::messaging::PrimarySecondary {
+        pub fn primary_secondary(&self) -> device_path::messaging::PrimarySecondary {
             self.primary_secondary
         }
 
         /// Whether the ATAPI device is master or slave.
         #[must_use]
-        pub fn master_slave(&self) -> crate::proto::device_path::messaging::MasterSlave {
+        pub fn master_slave(&self) -> device_path::messaging::MasterSlave {
             self.master_slave
         }
 
@@ -1297,7 +1297,7 @@ pub mod messaging {
         pub(super) local_port: u16,
         pub(super) remote_port: u16,
         pub(super) protocol: u16,
-        pub(super) ip_address_origin: crate::proto::device_path::messaging::Ipv4AddressOrigin,
+        pub(super) ip_address_origin: device_path::messaging::Ipv4AddressOrigin,
         pub(super) gateway_ip_address: [u8; 4usize],
         pub(super) subnet_mask: [u8; 4usize],
     }
@@ -1336,7 +1336,7 @@ pub mod messaging {
 
         /// Whether the source IP address is static or assigned via DHCP.
         #[must_use]
-        pub fn ip_address_origin(&self) -> crate::proto::device_path::messaging::Ipv4AddressOrigin {
+        pub fn ip_address_origin(&self) -> device_path::messaging::Ipv4AddressOrigin {
             self.ip_address_origin
         }
 
@@ -1390,7 +1390,7 @@ pub mod messaging {
         pub(super) local_port: u16,
         pub(super) remote_port: u16,
         pub(super) protocol: u16,
-        pub(super) ip_address_origin: crate::proto::device_path::messaging::Ipv6AddressOrigin,
+        pub(super) ip_address_origin: device_path::messaging::Ipv6AddressOrigin,
         pub(super) prefix_length: u8,
         pub(super) gateway_ip_address: [u8; 16usize],
     }
@@ -1429,7 +1429,7 @@ pub mod messaging {
 
         /// Origin of the local IP address.
         #[must_use]
-        pub fn ip_address_origin(&self) -> crate::proto::device_path::messaging::Ipv6AddressOrigin {
+        pub fn ip_address_origin(&self) -> device_path::messaging::Ipv6AddressOrigin {
             self.ip_address_origin
         }
 
@@ -1514,7 +1514,7 @@ pub mod messaging {
     #[repr(C, packed)]
     pub struct Infiniband {
         pub(super) header: DevicePathHeader,
-        pub(super) resource_flags: crate::proto::device_path::messaging::InfinibandResourceFlags,
+        pub(super) resource_flags: device_path::messaging::InfinibandResourceFlags,
         pub(super) port_gid: [u8; 16usize],
         pub(super) ioc_guid_or_service_id: u64,
         pub(super) target_port_id: u64,
@@ -1524,9 +1524,7 @@ pub mod messaging {
     impl Infiniband {
         /// Flags to identify/manage InfiniBand elements.
         #[must_use]
-        pub fn resource_flags(
-            &self,
-        ) -> crate::proto::device_path::messaging::InfinibandResourceFlags {
+        pub fn resource_flags(&self) -> device_path::messaging::InfinibandResourceFlags {
             self.resource_flags
         }
 
@@ -1589,8 +1587,8 @@ pub mod messaging {
         pub(super) _reserved: u32,
         pub(super) baud_rate: u64,
         pub(super) data_bits: u8,
-        pub(super) parity: crate::proto::device_path::messaging::Parity,
-        pub(super) stop_bits: crate::proto::device_path::messaging::StopBits,
+        pub(super) parity: device_path::messaging::Parity,
+        pub(super) stop_bits: device_path::messaging::StopBits,
     }
 
     impl Uart {
@@ -1608,13 +1606,13 @@ pub mod messaging {
 
         /// Parity setting.
         #[must_use]
-        pub fn parity(&self) -> crate::proto::device_path::messaging::Parity {
+        pub fn parity(&self) -> device_path::messaging::Parity {
             self.parity
         }
 
         /// Number of stop bits.
         #[must_use]
-        pub fn stop_bits(&self) -> crate::proto::device_path::messaging::StopBits {
+        pub fn stop_bits(&self) -> device_path::messaging::StopBits {
             self.stop_bits
         }
     }
@@ -1764,8 +1762,8 @@ pub mod messaging {
     #[derive(Pointee)]
     pub struct Iscsi {
         pub(super) header: DevicePathHeader,
-        pub(super) protocol: crate::proto::device_path::messaging::IscsiProtocol,
-        pub(super) options: crate::proto::device_path::messaging::IscsiLoginOptions,
+        pub(super) protocol: device_path::messaging::IscsiProtocol,
+        pub(super) options: device_path::messaging::IscsiLoginOptions,
         pub(super) logical_unit_number: [u8; 8usize],
         pub(super) target_portal_group_tag: u16,
         pub(super) iscsi_target_name: [u8],
@@ -1774,13 +1772,13 @@ pub mod messaging {
     impl Iscsi {
         /// Network protocol.
         #[must_use]
-        pub fn protocol(&self) -> crate::proto::device_path::messaging::IscsiProtocol {
+        pub fn protocol(&self) -> device_path::messaging::IscsiProtocol {
             self.protocol
         }
 
         /// iSCSI login options (bitfield).
         #[must_use]
-        pub fn options(&self) -> crate::proto::device_path::messaging::IscsiLoginOptions {
+        pub fn options(&self) -> device_path::messaging::IscsiLoginOptions {
             self.options
         }
 
@@ -2131,7 +2129,7 @@ pub mod messaging {
     pub struct BluetoothLe {
         pub(super) header: DevicePathHeader,
         pub(super) device_address: [u8; 6usize],
-        pub(super) address_type: crate::proto::device_path::messaging::BluetoothLeAddressType,
+        pub(super) address_type: device_path::messaging::BluetoothLeAddressType,
     }
 
     impl BluetoothLe {
@@ -2143,7 +2141,7 @@ pub mod messaging {
 
         /// Address type.
         #[must_use]
-        pub fn address_type(&self) -> crate::proto::device_path::messaging::BluetoothLeAddressType {
+        pub fn address_type(&self) -> device_path::messaging::BluetoothLeAddressType {
             self.address_type
         }
     }
@@ -2175,14 +2173,14 @@ pub mod messaging {
     #[derive(Pointee)]
     pub struct Dns {
         pub(super) header: DevicePathHeader,
-        pub(super) address_type: crate::proto::device_path::messaging::DnsAddressType,
+        pub(super) address_type: device_path::messaging::DnsAddressType,
         pub(super) addresses: [IpAddress],
     }
 
     impl Dns {
         /// Whether the addresses are IPv4 or IPv6.
         #[must_use]
-        pub fn address_type(&self) -> crate::proto::device_path::messaging::DnsAddressType {
+        pub fn address_type(&self) -> device_path::messaging::DnsAddressType {
             self.address_type
         }
 
@@ -2268,21 +2266,21 @@ pub mod messaging {
     #[derive(Pointee)]
     pub struct RestService {
         pub(super) header: DevicePathHeader,
-        pub(super) service_type: crate::proto::device_path::messaging::RestServiceType,
-        pub(super) access_mode: crate::proto::device_path::messaging::RestServiceAccessMode,
+        pub(super) service_type: device_path::messaging::RestServiceType,
+        pub(super) access_mode: device_path::messaging::RestServiceAccessMode,
         pub(super) vendor_guid_and_data: [u8],
     }
 
     impl RestService {
         /// Type of REST service.
         #[must_use]
-        pub fn service_type(&self) -> crate::proto::device_path::messaging::RestServiceType {
+        pub fn service_type(&self) -> device_path::messaging::RestServiceType {
             self.service_type
         }
 
         /// Whether the service is in-band or out-of-band.
         #[must_use]
-        pub fn access_mode(&self) -> crate::proto::device_path::messaging::RestServiceAccessMode {
+        pub fn access_mode(&self) -> device_path::messaging::RestServiceAccessMode {
             self.access_mode
         }
     }
@@ -2480,7 +2478,7 @@ pub mod media {
         pub(super) partition_start: u64,
         pub(super) partition_size: u64,
         pub(super) partition_signature: [u8; 16usize],
-        pub(super) partition_format: crate::proto::device_path::media::PartitionFormat,
+        pub(super) partition_format: device_path::media::PartitionFormat,
         pub(super) signature_type: u8,
     }
 
@@ -2505,7 +2503,7 @@ pub mod media {
 
         /// Partition format.
         #[must_use]
-        pub fn partition_format(&self) -> crate::proto::device_path::media::PartitionFormat {
+        pub fn partition_format(&self) -> device_path::media::PartitionFormat {
             self.partition_format
         }
     }
@@ -2877,7 +2875,7 @@ pub mod media {
         pub(super) header: DevicePathHeader,
         pub(super) starting_address: u64,
         pub(super) ending_address: u64,
-        pub(super) disk_type: crate::proto::device_path::media::RamDiskType,
+        pub(super) disk_type: device_path::media::RamDiskType,
         pub(super) disk_instance: u16,
     }
 
@@ -2896,7 +2894,7 @@ pub mod media {
 
         /// Type of RAM disk.
         #[must_use]
-        pub fn disk_type(&self) -> crate::proto::device_path::media::RamDiskType {
+        pub fn disk_type(&self) -> device_path::media::RamDiskType {
             self.disk_type
         }
 
@@ -3054,11 +3052,11 @@ pub mod bios_boot_spec {
 pub enum DevicePathNodeEnum<'a> {
     /// Node that terminates a [`DevicePathInstance`].
     ///
-    /// [`DevicePathInstance`]: crate::proto::device_path::DevicePathInstance
+    /// [`DevicePathInstance`]: device_path::DevicePathInstance
     EndInstance(&'a end::Instance),
     /// Node that terminates an entire [`DevicePath`].
     ///
-    /// [`DevicePath`]: crate::proto::device_path::DevicePath
+    /// [`DevicePath`]: device_path::DevicePath
     EndEntire(&'a end::Entire),
     /// PCI hardware device path node.
     HardwarePci(&'a hardware::Pci),
@@ -3336,7 +3334,7 @@ pub mod build {
         use super::*;
         /// Node that terminates a [`DevicePathInstance`].
         ///
-        /// [`DevicePathInstance`]: crate::proto::device_path::DevicePathInstance
+        /// [`DevicePathInstance`]: device_path::DevicePathInstance
         #[derive(Debug)]
         pub struct Instance;
         unsafe impl BuildNode for Instance {
@@ -3363,7 +3361,7 @@ pub mod build {
 
         /// Node that terminates an entire [`DevicePath`].
         ///
-        /// [`DevicePath`]: crate::proto::device_path::DevicePath
+        /// [`DevicePath`]: device_path::DevicePath
         #[derive(Debug)]
         pub struct Entire;
         unsafe impl BuildNode for Entire {
@@ -3589,7 +3587,7 @@ pub mod build {
         #[derive(Debug)]
         pub struct Bmc {
             /// Host interface type.
-            pub interface_type: crate::proto::device_path::hardware::BmcInterfaceType,
+            pub interface_type: device_path::hardware::BmcInterfaceType,
             /// Base address of the BMC. If the least-significant bit of the
             /// field is a 1 then the address is in I/O space, otherwise the
             /// address is memory-mapped.
@@ -3616,7 +3614,7 @@ pub mod build {
                         });
                     out_ptr
                         .add(4usize)
-                        .cast::<crate::proto::device_path::hardware::BmcInterfaceType>()
+                        .cast::<device_path::hardware::BmcInterfaceType>()
                         .write_unaligned(self.interface_type);
                     out_ptr
                         .add(5usize)
@@ -3836,9 +3834,9 @@ pub mod build {
         #[derive(Debug)]
         pub struct Atapi {
             /// Whether the ATAPI device is primary or secondary.
-            pub primary_secondary: crate::proto::device_path::messaging::PrimarySecondary,
+            pub primary_secondary: device_path::messaging::PrimarySecondary,
             /// Whether the ATAPI device is master or slave.
-            pub master_slave: crate::proto::device_path::messaging::MasterSlave,
+            pub master_slave: device_path::messaging::MasterSlave,
             /// Logical Unit Number (LUN).
             pub logical_unit_number: u16,
         }
@@ -3863,11 +3861,11 @@ pub mod build {
                         });
                     out_ptr
                         .add(4usize)
-                        .cast::<crate::proto::device_path::messaging::PrimarySecondary>()
+                        .cast::<device_path::messaging::PrimarySecondary>()
                         .write_unaligned(self.primary_secondary);
                     out_ptr
                         .add(5usize)
-                        .cast::<crate::proto::device_path::messaging::MasterSlave>()
+                        .cast::<device_path::messaging::MasterSlave>()
                         .write_unaligned(self.master_slave);
                     out_ptr
                         .add(6usize)
@@ -4350,7 +4348,7 @@ pub mod build {
             /// <https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>
             pub protocol: u16,
             /// Whether the source IP address is static or assigned via DHCP.
-            pub ip_address_origin: crate::proto::device_path::messaging::Ipv4AddressOrigin,
+            pub ip_address_origin: device_path::messaging::Ipv4AddressOrigin,
             /// Gateway IP address.
             pub gateway_ip_address: [u8; 4usize],
             /// Subnet mask.
@@ -4397,7 +4395,7 @@ pub mod build {
                         .write_unaligned(self.protocol);
                     out_ptr
                         .add(18usize)
-                        .cast::<crate::proto::device_path::messaging::Ipv4AddressOrigin>()
+                        .cast::<device_path::messaging::Ipv4AddressOrigin>()
                         .write_unaligned(self.ip_address_origin);
                     out_ptr
                         .add(19usize)
@@ -4426,7 +4424,7 @@ pub mod build {
             /// <https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>
             pub protocol: u16,
             /// Origin of the local IP address.
-            pub ip_address_origin: crate::proto::device_path::messaging::Ipv6AddressOrigin,
+            pub ip_address_origin: device_path::messaging::Ipv6AddressOrigin,
             /// Prefix length.
             pub prefix_length: u8,
             /// Gateway IP address.
@@ -4473,7 +4471,7 @@ pub mod build {
                         .write_unaligned(self.protocol);
                     out_ptr
                         .add(42usize)
-                        .cast::<crate::proto::device_path::messaging::Ipv6AddressOrigin>()
+                        .cast::<device_path::messaging::Ipv6AddressOrigin>()
                         .write_unaligned(self.ip_address_origin);
                     out_ptr
                         .add(43usize)
@@ -4524,7 +4522,7 @@ pub mod build {
         #[derive(Debug)]
         pub struct Infiniband {
             /// Flags to identify/manage InfiniBand elements.
-            pub resource_flags: crate::proto::device_path::messaging::InfinibandResourceFlags,
+            pub resource_flags: device_path::messaging::InfinibandResourceFlags,
             /// 128-bit Global Identifier for remote fabric port. Note that
             /// this is not the same as a UEFI GUID.
             pub port_gid: [u8; 16usize],
@@ -4557,7 +4555,7 @@ pub mod build {
                         });
                     out_ptr
                         .add(4usize)
-                        .cast::<crate::proto::device_path::messaging::InfinibandResourceFlags>()
+                        .cast::<device_path::messaging::InfinibandResourceFlags>()
                         .write_unaligned(self.resource_flags);
                     out_ptr
                         .add(8usize)
@@ -4587,9 +4585,9 @@ pub mod build {
             /// Number of data bits, or 0 to use the device's default.
             pub data_bits: u8,
             /// Parity setting.
-            pub parity: crate::proto::device_path::messaging::Parity,
+            pub parity: device_path::messaging::Parity,
             /// Number of stop bits.
-            pub stop_bits: crate::proto::device_path::messaging::StopBits,
+            pub stop_bits: device_path::messaging::StopBits,
         }
 
         unsafe impl BuildNode for Uart {
@@ -4621,11 +4619,11 @@ pub mod build {
                         .write_unaligned(self.data_bits);
                     out_ptr
                         .add(17usize)
-                        .cast::<crate::proto::device_path::messaging::Parity>()
+                        .cast::<device_path::messaging::Parity>()
                         .write_unaligned(self.parity);
                     out_ptr
                         .add(18usize)
-                        .cast::<crate::proto::device_path::messaging::StopBits>()
+                        .cast::<device_path::messaging::StopBits>()
                         .write_unaligned(self.stop_bits);
                 }
             }
@@ -4728,9 +4726,9 @@ pub mod build {
         #[derive(Debug)]
         pub struct Iscsi<'a> {
             /// Network protocol.
-            pub protocol: crate::proto::device_path::messaging::IscsiProtocol,
+            pub protocol: device_path::messaging::IscsiProtocol,
             /// iSCSI login options (bitfield).
-            pub options: crate::proto::device_path::messaging::IscsiLoginOptions,
+            pub options: device_path::messaging::IscsiLoginOptions,
             /// iSCSI Logical Unit Number.
             pub logical_unit_number: [u8; 8usize],
             /// iSCSI Target Portal group tag the initiator intends to
@@ -4764,11 +4762,11 @@ pub mod build {
                         });
                     out_ptr
                         .add(4usize)
-                        .cast::<crate::proto::device_path::messaging::IscsiProtocol>()
+                        .cast::<device_path::messaging::IscsiProtocol>()
                         .write_unaligned(self.protocol);
                     out_ptr
                         .add(6usize)
-                        .cast::<crate::proto::device_path::messaging::IscsiLoginOptions>()
+                        .cast::<device_path::messaging::IscsiLoginOptions>()
                         .write_unaligned(self.options);
                     out_ptr
                         .add(8usize)
@@ -5040,7 +5038,7 @@ pub mod build {
             /// 48-bit bluetooth device address.
             pub device_address: [u8; 6usize],
             /// Address type.
-            pub address_type: crate::proto::device_path::messaging::BluetoothLeAddressType,
+            pub address_type: device_path::messaging::BluetoothLeAddressType,
         }
 
         unsafe impl BuildNode for BluetoothLe {
@@ -5067,7 +5065,7 @@ pub mod build {
                         .write_unaligned(self.device_address);
                     out_ptr
                         .add(10usize)
-                        .cast::<crate::proto::device_path::messaging::BluetoothLeAddressType>()
+                        .cast::<device_path::messaging::BluetoothLeAddressType>()
                         .write_unaligned(self.address_type);
                 }
             }
@@ -5077,7 +5075,7 @@ pub mod build {
         #[derive(Debug)]
         pub struct Dns<'a> {
             /// Whether the addresses are IPv4 or IPv6.
-            pub address_type: crate::proto::device_path::messaging::DnsAddressType,
+            pub address_type: device_path::messaging::DnsAddressType,
             /// One or more instances of the DNS server address.
             pub addresses: &'a [IpAddress],
         }
@@ -5102,7 +5100,7 @@ pub mod build {
                         });
                     out_ptr
                         .add(4usize)
-                        .cast::<crate::proto::device_path::messaging::DnsAddressType>()
+                        .cast::<device_path::messaging::DnsAddressType>()
                         .write_unaligned(self.address_type);
                     self.addresses
                         .as_ptr()
@@ -5149,9 +5147,9 @@ pub mod build {
         #[derive(Debug)]
         pub struct RestService<'a> {
             /// Type of REST service.
-            pub service_type: crate::proto::device_path::messaging::RestServiceType,
+            pub service_type: device_path::messaging::RestServiceType,
             /// Whether the service is in-band or out-of-band.
-            pub access_mode: crate::proto::device_path::messaging::RestServiceAccessMode,
+            pub access_mode: device_path::messaging::RestServiceAccessMode,
             /// Vendor-specific data. Only used if the service type is [`VENDOR`].
             ///
             /// [`VENDOR`]: uefi::proto::device_path::messaging::RestServiceType
@@ -5178,11 +5176,11 @@ pub mod build {
                         });
                     out_ptr
                         .add(4usize)
-                        .cast::<crate::proto::device_path::messaging::RestServiceType>()
+                        .cast::<device_path::messaging::RestServiceType>()
                         .write_unaligned(self.service_type);
                     out_ptr
                         .add(5usize)
-                        .cast::<crate::proto::device_path::messaging::RestServiceAccessMode>()
+                        .cast::<device_path::messaging::RestServiceAccessMode>()
                         .write_unaligned(self.access_mode);
                     self.build_vendor_guid_and_data(&mut out[6usize..])
                 }
@@ -5249,10 +5247,7 @@ pub mod build {
         impl<'a> RestService<'a> {
             fn build_size_vendor_guid_and_data(&self) -> usize {
                 if let Some(src) = &self.vendor_guid_and_data {
-                    assert!(
-                        self.service_type
-                            == crate::proto::device_path::messaging::RestServiceType::VENDOR
-                    );
+                    assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);
                     size_of::<Guid>() + size_of_val(src.vendor_defined_data)
                 } else {
                     0
@@ -5261,10 +5256,7 @@ pub mod build {
 
             fn build_vendor_guid_and_data(&self, out: &mut [MaybeUninit<u8>]) {
                 if let Some(src) = &self.vendor_guid_and_data {
-                    assert!(
-                        self.service_type
-                            == crate::proto::device_path::messaging::RestServiceType::VENDOR
-                    );
+                    assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);
                     let (guid_out, data_out) = out.split_at_mut(size_of::<Guid>());
                     let guid_out_ptr: *mut Guid = maybe_uninit_slice_as_mut_ptr(guid_out).cast();
                     unsafe {
@@ -5295,9 +5287,9 @@ pub mod build {
             /// Size of the partition in blocks.
             pub partition_size: u64,
             /// Partition signature.
-            pub partition_signature: crate::proto::device_path::media::PartitionSignature,
+            pub partition_signature: device_path::media::PartitionSignature,
             /// Partition format.
-            pub partition_format: crate::proto::device_path::media::PartitionFormat,
+            pub partition_format: device_path::media::PartitionFormat,
         }
 
         unsafe impl BuildNode for HardDrive {
@@ -5336,7 +5328,7 @@ pub mod build {
                         .write_unaligned(self.build_partition_signature());
                     out_ptr
                         .add(40usize)
-                        .cast::<crate::proto::device_path::media::PartitionFormat>()
+                        .cast::<device_path::media::PartitionFormat>()
                         .write_unaligned(self.partition_format);
                     out_ptr
                         .add(41usize)
@@ -5614,7 +5606,7 @@ pub mod build {
             /// Ending memory address.
             pub ending_address: u64,
             /// Type of RAM disk.
-            pub disk_type: crate::proto::device_path::media::RamDiskType,
+            pub disk_type: device_path::media::RamDiskType,
             /// RAM disk instance number if supported, otherwise 0.
             pub disk_instance: u16,
         }
@@ -5647,7 +5639,7 @@ pub mod build {
                         .write_unaligned(self.ending_address);
                     out_ptr
                         .add(20usize)
-                        .cast::<crate::proto::device_path::media::RamDiskType>()
+                        .cast::<device_path::media::RamDiskType>()
                         .write_unaligned(self.disk_type);
                     out_ptr
                         .add(36usize)
@@ -5659,7 +5651,7 @@ pub mod build {
 
         impl HardDrive {
             fn build_partition_signature(&self) -> [u8; 16] {
-                use crate::proto::device_path::media::PartitionSignature::*;
+                use device_path::media::PartitionSignature::*;
                 match self.partition_signature {
                     None => [0u8; 16],
                     Mbr(mbr) => {
@@ -5674,7 +5666,7 @@ pub mod build {
             }
 
             fn build_signature_type(&self) -> u8 {
-                use crate::proto::device_path::media::PartitionSignature::*;
+                use device_path::media::PartitionSignature::*;
                 match self.partition_signature {
                     None => 0,
                     Mbr(_) => 1,

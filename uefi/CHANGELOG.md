@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+
+# uefi - 0.33.0 (2024-10-23)
+
 See [Deprecating SystemTable/BootServices/RuntimeServices][funcmigrate] for
 details of the deprecated items that were removed in this release.
 

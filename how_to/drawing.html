@@ -1,0 +1,394 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Drawing to the Screen - Rust UEFI Book</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../tutorial/introduction.html"><strong aria-hidden="true">2.</strong> Tutorial</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../tutorial/app.html"><strong aria-hidden="true">2.1.</strong> Creating a UEFI Application</a></li><li class="chapter-item expanded "><a href="../tutorial/building.html"><strong aria-hidden="true">2.2.</strong> Building</a></li><li class="chapter-item expanded "><a href="../tutorial/vm.html"><strong aria-hidden="true">2.3.</strong> Running in a VM</a></li><li class="chapter-item expanded "><a href="../tutorial/hardware.html"><strong aria-hidden="true">2.4.</strong> Running on Hardware</a></li></ol></li><li class="chapter-item expanded "><a href="../how_to/introduction.html"><strong aria-hidden="true">3.</strong> How-to</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../how_to/protocols.html"><strong aria-hidden="true">3.1.</strong> Using Protocols</a></li><li class="chapter-item expanded "><a href="../how_to/drawing.html" class="active"><strong aria-hidden="true">3.2.</strong> Drawing to the Screen</a></li><li class="chapter-item expanded "><a href="../how_to/building_drivers.html"><strong aria-hidden="true">3.3.</strong> Building drivers</a></li><li class="chapter-item expanded "><a href="../how_to/rust-std.html"><strong aria-hidden="true">3.4.</strong> Combining Rust std with uefi</a></li></ol></li><li class="chapter-item expanded "><a href="../concepts/introduction.html"><strong aria-hidden="true">4.</strong> Concepts</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../concepts/boot_stages.html"><strong aria-hidden="true">4.1.</strong> Boot Stages</a></li><li class="chapter-item expanded "><a href="../concepts/tables.html"><strong aria-hidden="true">4.2.</strong> Tables</a></li><li class="chapter-item expanded "><a href="../concepts/guid.html"><strong aria-hidden="true">4.3.</strong> GUID</a></li><li class="chapter-item expanded "><a href="../concepts/handles_and_protocols.html"><strong aria-hidden="true">4.4.</strong> Handles and Protocols</a></li><li class="chapter-item expanded "><a href="../concepts/device_paths.html"><strong aria-hidden="true">4.5.</strong> Device Paths</a></li><li class="chapter-item expanded "><a href="../concepts/variables.html"><strong aria-hidden="true">4.6.</strong> Variables</a></li><li class="chapter-item expanded "><a href="../concepts/gpt.html"><strong aria-hidden="true">4.7.</strong> GPT</a></li></ol></li><li class="chapter-item expanded "><a href="../reference.html"><strong aria-hidden="true">5.</strong> Reference</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Rust UEFI Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="drawing-to-the-screen"><a class="header" href="#drawing-to-the-screen">Drawing to the Screen</a></h1>
+<p>This example shows how to draw to the screen using the <a href="https://docs.rs/uefi/latest/uefi/proto/console/gop/index.html">graphics output protocol</a>.
+The code will a <a href="https://en.wikipedia.org/wiki/Sierpi%C5%84ski_triangle#Chaos_game">Sierpiński triangle</a> using the &quot;chaos game&quot; method.</p>
+<p><img src="https://i.imgur.com/0tpjtV6.png" alt="screenshot" /></p>
+<p>The core abstraction used here is a linear buffer:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct Buffer {
+    width: usize,
+    height: usize,
+    pixels: Vec&lt;BltPixel&gt;,
+}
+
+impl Buffer {
+    /// Create a new `Buffer`.
+    fn new(width: usize, height: usize) -&gt; Self {
+        Buffer {
+            width,
+            height,
+            pixels: vec![BltPixel::new(0, 0, 0); width * height],
+        }
+    }
+
+    /// Get a single pixel.
+    fn pixel(&amp;mut self, x: usize, y: usize) -&gt; Option&lt;&amp;mut BltPixel&gt; {
+        self.pixels.get_mut(y * self.width + x)
+    }
+
+    /// Blit the buffer to the framebuffer.
+    fn blit(&amp;self, gop: &amp;mut GraphicsOutput) -&gt; Result {
+        gop.blt(BltOp::BufferToVideo {
+            buffer: &amp;self.pixels,
+            src: BltRegion::Full,
+            dest: (0, 0),
+            dims: (self.width, self.height),
+        })
+    }
+
+    /// Update only a pixel to the framebuffer.
+    fn blit_pixel(
+        &amp;self,
+        gop: &amp;mut GraphicsOutput,
+        coords: (usize, usize),
+    ) -&gt; Result {
+        gop.blt(BltOp::BufferToVideo {
+            buffer: &amp;self.pixels,
+            src: BltRegion::SubRectangle {
+                coords,
+                px_stride: self.width,
+            },
+            dest: coords,
+            dims: (1, 1),
+        })
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>This <code>Buffer</code> type stores a <code>Vec</code> of <a href="https://docs.rs/uefi/latest/uefi/proto/console/gop/struct.BltPixel.html"><code>BltPixel</code></a>s, which are BGRX
+32-bit pixels (8 bites each for blue, green, and red, followed by 8
+unused bits of padding). We use the <code>pixel</code> method to alter a single
+pixel at a time. This is often not an efficient method; for more complex
+graphics you could use a crate like <a href="https://crates.io/crates/embedded-graphics"><code>embedded-graphics</code></a>.</p>
+<p>The <code>Buffer::blit</code> method calls the graphics output protocol's <code>blt</code>
+method to copy the buffer to the screen.</p>
+<p>Most of the rest of the code is just implementing the algorithm for
+drawing the fractal. Here's the full example:</p>
+<pre><pre class="playground"><code class="language-rust">#![no_main]
+#![no_std]
+
+extern crate alloc;
+
+use alloc::vec;
+use alloc::vec::Vec;
+use core::mem;
+use uefi::prelude::*;
+use uefi::proto::console::gop::{BltOp, BltPixel, BltRegion, GraphicsOutput};
+use uefi::proto::rng::Rng;
+use uefi::{boot, Result};
+
+#[derive(Clone, Copy)]
+struct Point {
+    x: f32,
+    y: f32,
+}
+
+impl Point {
+    fn new(x: f32, y: f32) -&gt; Self {
+        Self { x, y }
+    }
+}
+
+struct Buffer {
+    width: usize,
+    height: usize,
+    pixels: Vec&lt;BltPixel&gt;,
+}
+
+impl Buffer {
+    /// Create a new `Buffer`.
+    fn new(width: usize, height: usize) -&gt; Self {
+        Buffer {
+            width,
+            height,
+            pixels: vec![BltPixel::new(0, 0, 0); width * height],
+        }
+    }
+
+    /// Get a single pixel.
+    fn pixel(&amp;mut self, x: usize, y: usize) -&gt; Option&lt;&amp;mut BltPixel&gt; {
+        self.pixels.get_mut(y * self.width + x)
+    }
+
+    /// Blit the buffer to the framebuffer.
+    fn blit(&amp;self, gop: &amp;mut GraphicsOutput) -&gt; Result {
+        gop.blt(BltOp::BufferToVideo {
+            buffer: &amp;self.pixels,
+            src: BltRegion::Full,
+            dest: (0, 0),
+            dims: (self.width, self.height),
+        })
+    }
+
+    /// Update only a pixel to the framebuffer.
+    fn blit_pixel(
+        &amp;self,
+        gop: &amp;mut GraphicsOutput,
+        coords: (usize, usize),
+    ) -&gt; Result {
+        gop.blt(BltOp::BufferToVideo {
+            buffer: &amp;self.pixels,
+            src: BltRegion::SubRectangle {
+                coords,
+                px_stride: self.width,
+            },
+            dest: coords,
+            dims: (1, 1),
+        })
+    }
+}
+
+/// Get a random `usize` value.
+fn get_random_usize(rng: &amp;mut Rng) -&gt; usize {
+    let mut buf = [0; mem::size_of::&lt;usize&gt;()];
+    rng.get_rng(None, &amp;mut buf).expect(&quot;get_rng failed&quot;);
+    usize::from_le_bytes(buf)
+}
+
+fn draw_sierpinski() -&gt; Result {
+    // Open graphics output protocol.
+    let gop_handle = boot::get_handle_for_protocol::&lt;GraphicsOutput&gt;()?;
+    let mut gop = boot::open_protocol_exclusive::&lt;GraphicsOutput&gt;(gop_handle)?;
+
+    // Open random number generator protocol.
+    let rng_handle = boot::get_handle_for_protocol::&lt;Rng&gt;()?;
+    let mut rng = boot::open_protocol_exclusive::&lt;Rng&gt;(rng_handle)?;
+
+    // Create a buffer to draw into.
+    let (width, height) = gop.current_mode_info().resolution();
+    let mut buffer = Buffer::new(width, height);
+
+    // Initialize the buffer with a simple gradient background.
+    for y in 0..height {
+        let r = ((y as f32) / ((height - 1) as f32)) * 255.0;
+        for x in 0..width {
+            let g = ((x as f32) / ((width - 1) as f32)) * 255.0;
+            let pixel = buffer.pixel(x, y).unwrap();
+            pixel.red = r as u8;
+            pixel.green = g as u8;
+            pixel.blue = 255;
+        }
+    }
+
+    // Draw background.
+    buffer.blit(&amp;mut gop)?;
+
+    let size = Point::new(width as f32, height as f32);
+
+    // Define the vertices of a big triangle.
+    let border = 20.0;
+    let triangle = [
+        Point::new(size.x / 2.0, border),
+        Point::new(border, size.y - border),
+        Point::new(size.x - border, size.y - border),
+    ];
+
+    // `p` is the point to draw. Start at the center of the triangle.
+    let mut p = Point::new(size.x / 2.0, size.y / 2.0);
+
+    // Loop forever, drawing the frame after each new point is changed.
+    loop {
+        // Choose one of the triangle's vertices at random.
+        let v = triangle[get_random_usize(&amp;mut rng) % 3];
+
+        // Move `p` halfway to the chosen vertex.
+        p.x = (p.x + v.x) * 0.5;
+        p.y = (p.y + v.y) * 0.5;
+
+        // Set `p` to black.
+        let pixel = buffer.pixel(p.x as usize, p.y as usize).unwrap();
+        pixel.red = 0;
+        pixel.green = 100;
+        pixel.blue = 0;
+
+        // Draw the buffer to the screen.
+        buffer.blit_pixel(&amp;mut gop, (p.x as usize, p.y as usize))?;
+    }
+}
+
+#[entry]
+fn main() -&gt; Status {
+    uefi::helpers::init().unwrap();
+    draw_sierpinski().unwrap();
+    Status::SUCCESS
+}
+</code></pre></pre>
+<p>You can run this example from the <a href="https://github.com/rust-osdev/uefi-rs">uefi-rs</a> repository with:</p>
+<pre><code class="language-console">cargo xtask run --example sierpinski
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../how_to/protocols.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../how_to/building_drivers.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../how_to/protocols.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../how_to/building_drivers.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

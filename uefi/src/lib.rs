@@ -65,9 +65,8 @@
 //! can't test all possible hardware/firmware/platform combinations in CI.
 //!
 //! ## MSRV
-//! <!-- Keep in Sync with README! -->
 //!
-//! The minimum supported Rust version is currently 1.70.
+//! The minimum supported Rust version is currently 1.79.
 //! Our policy is to support at least the past two stable releases.
 //!
 //! # API/User Documentation, Documentation Structure, and other Resources

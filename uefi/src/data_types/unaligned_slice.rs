@@ -57,7 +57,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     /// Returns the element at `index`, or `None` if the `index` is out
     /// of bounds.
     #[must_use]
-    pub fn get(&self, index: usize) -> Option<T> {
+    pub const fn get(&self, index: usize) -> Option<T> {
         if index < self.len {
             Some(unsafe { self.data.add(index).read_unaligned() })
         } else {

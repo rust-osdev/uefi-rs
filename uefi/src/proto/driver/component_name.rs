@@ -41,7 +41,7 @@ impl ComponentName1 {
     /// English is encoded as "eng".
     ///
     /// [ISO 639-2]: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-    pub fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
+    pub const fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
         LanguageIter::new(self.0.supported_languages, LanguageIterKind::V1)
     }
 
@@ -108,7 +108,7 @@ impl ComponentName2 {
     /// as "en".
     ///
     /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
-    pub fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
+    pub const fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
         LanguageIter::new(self.0.supported_languages, LanguageIterKind::V2)
     }
 
@@ -266,7 +266,7 @@ pub struct LanguageIter<'a> {
 }
 
 impl<'a> LanguageIter<'a> {
-    fn new(
+    const fn new(
         languages: *const u8,
         kind: LanguageIterKind,
     ) -> core::result::Result<Self, LanguageError> {

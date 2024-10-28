@@ -324,7 +324,7 @@ impl MemoryMapBackingMemory {
 
     /// Returns a slice to the underlying memory.
     #[must_use]
-    pub fn as_slice(&self) -> &[u8] {
+    pub const fn as_slice(&self) -> &[u8] {
         unsafe { self.0.as_ref() }
     }
 

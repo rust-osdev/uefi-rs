@@ -9,7 +9,7 @@ edition.workspace = true
 anyhow = "1.0.51"
 clap = { version = "4.4.0", default-features = false, features = ["derive", "help", "usage", "std"] }
 fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std"] }
-fs-err = "2.6.0"
+fs-err = "3.0.0"
 heck = "0.5.0"
 itertools = "0.13.0"
 lzma-rs = "0.3.0"

@@ -17,6 +17,7 @@ use arch::UefiArch;
 use cargo::{Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;
 use itertools::Itertools;
+use log::{LevelFilter, Metadata, Record};
 use opt::{Action, BuildOpt, ClippyOpt, CovOpt, DocOpt, Opt, QemuOpt, TpmVersion};
 use std::process::Command;
 use util::run_cmd;
@@ -322,8 +323,32 @@ fn has_cmd(target_cmd: &str) -> bool {
     run_cmd(cmd).is_ok()
 }
 
+fn install_logger() {
+    struct Logger;
+
+    impl log::Log for Logger {
+        fn enabled(&self, _: &Metadata) -> bool {
+            true
+        }
+
+        fn log(&self, record: &Record) {
+            println!("[{}] {}", record.level(), record.args());
+        }
+
+        fn flush(&self) {}
+    }
+
+    static LOGGER: Logger = Logger;
+
+    log::set_logger(&LOGGER)
+        .map(|()| log::set_max_level(LevelFilter::Info))
+        .unwrap();
+}
+
 fn main() -> Result<()> {
     let opt = Opt::parse();
+
+    install_logger();
 
     match &opt.action {
         Action::Build(build_opt) => build(build_opt),

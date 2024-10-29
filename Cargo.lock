@@ -1155,6 +1155,7 @@ dependencies = [
  "fs-err",
  "heck",
  "itertools",
+ "log",
  "lzma-rs",
  "mbrman",
  "nix",

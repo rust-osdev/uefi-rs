@@ -12,6 +12,7 @@ fatfs = { version = "0.3.6", default-features = false, features = ["alloc", "std
 fs-err = "3.0.0"
 heck = "0.5.0"
 itertools = "0.13.0"
+log.workspace = true
 lzma-rs = "0.3.0"
 mbrman = "0.5.1"
 nix = { version = "0.29.0", default-features = false, features = ["fs"] }
@@ -24,5 +25,5 @@ sha2 = "0.10.6"
 syn = { version = "2.0.0", features = ["full"] }
 tar = "0.4.38"
 tempfile = "3.6.0"
-walkdir = "2.4.0"
 ureq = "2.8.0"
+walkdir = "2.4.0"

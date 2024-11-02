@@ -8,7 +8,7 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::{self, Display, Formatter};
-use core::ops;
+use core::{ops, ptr};
 
 /// Error returned by [`CString16::try_from::<&str>`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -204,7 +204,7 @@ impl ops::Deref for CString16 {
     type Target = CStr16;
 
     fn deref(&self) -> &CStr16 {
-        unsafe { &*(self.0.as_slice() as *const [Char16] as *const CStr16) }
+        unsafe { &*(ptr::from_ref(self.0.as_slice()) as *const CStr16) }
     }
 }
 

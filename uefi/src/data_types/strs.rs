@@ -5,7 +5,7 @@ use core::borrow::Borrow;
 use core::ffi::CStr;
 use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
-use core::slice;
+use core::{ptr, slice};
 
 #[cfg(feature = "alloc")]
 use super::CString16;
@@ -173,7 +173,7 @@ impl CStr8 {
     /// null-terminated string, with no interior null bytes.
     #[must_use]
     pub const unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
-        &*(chars as *const [u8] as *const Self)
+        &*(ptr::from_ref(chars) as *const Self)
     }
 
     /// Returns the inner pointer to this CStr8.
@@ -186,7 +186,7 @@ impl CStr8 {
     /// character.
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
-        unsafe { &*(&self.0 as *const [Char8] as *const [u8]) }
+        unsafe { &*(ptr::from_ref(&self.0) as *const [u8]) }
     }
 }
 
@@ -407,7 +407,7 @@ impl CStr16 {
     /// null-terminated string, with no interior null characters.
     #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
-        &*(codes as *const [u16] as *const Self)
+        &*(ptr::from_ref(codes) as *const Self)
     }
 
     /// Creates a `&CStr16` from a [`Char16`] slice, stopping at the first nul character.
@@ -561,7 +561,7 @@ impl CStr16 {
     /// Converts this C string to a u16 slice containing the trailing null.
     #[must_use]
     pub const fn to_u16_slice_with_nul(&self) -> &[u16] {
-        unsafe { &*(&self.0 as *const [Char16] as *const [u16]) }
+        unsafe { &*(ptr::from_ref(&self.0) as *const [u16]) }
     }
 
     /// Returns an iterator over this C string

@@ -134,7 +134,7 @@ impl GraphicsOutput {
                     self.check_framebuffer_region((dest_x, dest_y), (width, height));
                     (self.0.blt)(
                         &mut self.0,
-                        &color as *const _ as *mut _,
+                        ptr::from_ref(&color) as *mut _,
                         GraphicsOutputBltOperation::BLT_VIDEO_FILL,
                         0,
                         0,

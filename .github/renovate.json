@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
+    "config:recommended",
     "schedule:weekly"
   ],
   "lockFileMaintenance": {
@@ -11,7 +11,9 @@
   "rangeStrategy": "update-lockfile",
   "packageRules": [
     {
-      "matchPackageNames": ["crate-ci/typos"],
+      "matchPackageNames": [
+        "crate-ci/typos"
+      ],
       "automerge": true
     }
   ]

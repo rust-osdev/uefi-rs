@@ -1,5 +1,9 @@
 # uefi-raw - [Unreleased]
 
+## Changed
+
+- Added `protocol::string::UnicodeCollationProtocol`.
+
 
 # uefi-raw - 0.9.0 (2024-10-23)
 

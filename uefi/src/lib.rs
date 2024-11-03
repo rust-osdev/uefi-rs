@@ -220,6 +220,7 @@
     clippy::missing_const_for_fn,
     clippy::must_use_candidate,
     clippy::ptr_as_ptr,
+    clippy::ref_as_ptr,
     clippy::use_self,
     missing_debug_implementations,
     missing_docs,

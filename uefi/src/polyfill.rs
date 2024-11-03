@@ -2,6 +2,7 @@
 //! behind unstable features.
 
 use core::mem::MaybeUninit;
+use core::ptr;
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, core::mem::ManuallyDrop};
 
@@ -9,7 +10,7 @@ use {alloc::vec::Vec, core::mem::ManuallyDrop};
 ///
 /// See <https://github.com/rust-lang/rust/issues/63569>.
 pub const unsafe fn maybe_uninit_slice_assume_init_ref<T>(s: &[MaybeUninit<T>]) -> &[T] {
-    unsafe { &*(s as *const [MaybeUninit<T>] as *const [T]) }
+    unsafe { &*(ptr::from_ref(s) as *const [T]) }
 }
 
 /// Polyfill for the unstable `MaybeUninit::slice_as_mut_ptr` function.

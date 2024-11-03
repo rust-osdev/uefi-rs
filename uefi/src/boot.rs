@@ -790,7 +790,7 @@ pub fn locate_handle<'buf>(
         SearchType::ByRegisterNotify(registration) => {
             (1, ptr::null(), registration.0.as_ptr().cast_const())
         }
-        SearchType::ByProtocol(guid) => (2, guid as *const Guid, ptr::null()),
+        SearchType::ByProtocol(guid) => (2, ptr::from_ref(guid), ptr::null()),
     };
 
     let mut buffer_size = buffer.len() * mem::size_of::<Handle>();
@@ -829,7 +829,7 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
         SearchType::ByRegisterNotify(registration) => {
             (1, ptr::null(), registration.0.as_ptr().cast_const())
         }
-        SearchType::ByProtocol(guid) => (2, guid as *const _, ptr::null()),
+        SearchType::ByProtocol(guid) => (2, ptr::from_ref(guid), ptr::null()),
     };
 
     let mut num_handles: usize = 0;

@@ -4,6 +4,7 @@
 use crate::fs::path::{PathBuf, SEPARATOR};
 use crate::{CStr16, CString16};
 use core::fmt::{Display, Formatter};
+use core::ptr;
 
 /// A path similar to the `Path` of the standard library, but based on
 /// [`CStr16`] strings and [`SEPARATOR`] as separator.
@@ -16,7 +17,7 @@ impl Path {
     /// Constructor.
     #[must_use]
     pub fn new<S: AsRef<CStr16> + ?Sized>(s: &S) -> &Self {
-        unsafe { &*(s.as_ref() as *const CStr16 as *const Self) }
+        unsafe { &*(ptr::from_ref(s.as_ref()) as *const Self) }
     }
 
     /// Returns the underlying string.

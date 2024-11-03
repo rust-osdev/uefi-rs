@@ -173,7 +173,7 @@ impl BaseCode {
     ) -> Result<u64> {
         let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
             let buffer_size = u64::try_from(buffer.len()).unwrap();
-            ((&mut buffer[0] as *mut u8).cast(), buffer_size, false)
+            (buffer.as_mut_ptr().cast(), buffer_size, false)
         } else {
             (null_mut(), 0, true)
         };
@@ -203,7 +203,7 @@ impl BaseCode {
         overwrite: bool,
         buffer: &[u8],
     ) -> Result {
-        let buffer_ptr = (&buffer[0] as *const u8 as *mut u8).cast();
+        let buffer_ptr = buffer.as_ptr().cast_mut().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         unsafe {
@@ -231,7 +231,7 @@ impl BaseCode {
         buffer: &'a mut [u8],
     ) -> Result<impl Iterator<Item = core::result::Result<TftpFileInfo<'a>, ReadDirParseError>> + 'a>
     {
-        let buffer_ptr = (&buffer[0] as *const u8 as *mut u8).cast();
+        let buffer_ptr = buffer.as_mut_ptr().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let status = unsafe {
@@ -334,7 +334,7 @@ impl BaseCode {
     ) -> Result<u64> {
         let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
             let buffer_size = u64::try_from(buffer.len()).unwrap();
-            ((&mut buffer[0] as *mut u8).cast(), buffer_size, false)
+            (buffer.as_mut_ptr().cast(), buffer_size, false)
         } else {
             (null_mut(), 0, true)
         };
@@ -364,7 +364,7 @@ impl BaseCode {
         info: &MtftpInfo,
     ) -> Result<impl Iterator<Item = core::result::Result<MtftpFileInfo<'a>, ReadDirParseError>> + 'a>
     {
-        let buffer_ptr = (&buffer[0] as *const u8 as *mut u8).cast();
+        let buffer_ptr = buffer.as_mut_ptr().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let status = unsafe {
@@ -464,7 +464,7 @@ impl BaseCode {
         let header_size_tmp;
         let (header_size, header_ptr) = if let Some(header) = header {
             header_size_tmp = header.len();
-            (Some(&header_size_tmp), (&header[0] as *const u8).cast())
+            (Some(&header_size_tmp), header.as_ptr().cast())
         } else {
             (None, null())
         };
@@ -481,7 +481,7 @@ impl BaseCode {
                 header_size,
                 header_ptr,
                 &buffer.len(),
-                (&buffer[0] as *const u8).cast(),
+                buffer.as_ptr().cast(),
             )
         }
         .to_result()
@@ -502,7 +502,7 @@ impl BaseCode {
         let header_size_tmp;
         let (header_size, header_ptr) = if let Some(header) = header {
             header_size_tmp = header.len();
-            (Some(&header_size_tmp), (&mut header[0] as *mut u8).cast())
+            (Some(&header_size_tmp), header.as_mut_ptr().cast())
         } else {
             (None, null_mut())
         };
@@ -520,7 +520,7 @@ impl BaseCode {
                 header_size,
                 header_ptr,
                 &mut buffer_size,
-                (&mut buffer[0] as *mut u8).cast(),
+                buffer.as_mut_ptr().cast(),
             )
         };
         status.to_result_with_val(|| buffer_size)

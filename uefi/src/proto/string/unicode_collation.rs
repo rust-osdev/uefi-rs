@@ -3,34 +3,26 @@
 //! This protocol is used in the boot services environment to perform
 //! lexical comparison functions on Unicode strings for given languages.
 
-use crate::data_types::{CStr16, CStr8, Char16, Char8};
+use crate::data_types::{CStr16, CStr8};
 use crate::proto::unsafe_protocol;
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
+use uefi_raw::protocol::string::UnicodeCollationProtocol;
 
 /// The Unicode Collation Protocol.
 ///
 /// Used to perform case-insensitive comparisons of strings.
 #[derive(Debug)]
-#[repr(C)]
-#[unsafe_protocol("a4c751fc-23ae-4c3e-92e9-4964cf63f349")]
-pub struct UnicodeCollation {
-    stri_coll: extern "efiapi" fn(this: &Self, s1: *const Char16, s2: *const Char16) -> isize,
-    metai_match:
-        extern "efiapi" fn(this: &Self, string: *const Char16, pattern: *const Char16) -> bool,
-    str_lwr: extern "efiapi" fn(this: &Self, s: *mut Char16),
-    str_upr: extern "efiapi" fn(this: &Self, s: *mut Char16),
-    fat_to_str: extern "efiapi" fn(this: &Self, fat_size: usize, fat: *const Char8, s: *mut Char16),
-    str_to_fat:
-        extern "efiapi" fn(this: &Self, s: *const Char16, fat_size: usize, fat: *mut Char8) -> bool,
-}
+#[repr(transparent)]
+#[unsafe_protocol(UnicodeCollationProtocol::GUID)]
+pub struct UnicodeCollation(UnicodeCollationProtocol);
 
 impl UnicodeCollation {
     /// Performs a case insensitive comparison of two
     /// null-terminated strings.
     #[must_use]
     pub fn stri_coll(&self, s1: &CStr16, s2: &CStr16) -> Ordering {
-        let order = (self.stri_coll)(self, s1.as_ptr(), s2.as_ptr());
+        let order = unsafe { (self.0.stri_coll)(&self.0, s1.as_ptr().cast(), s2.as_ptr().cast()) };
         order.cmp(&0)
     }
 
@@ -58,7 +50,7 @@ impl UnicodeCollation {
     /// any single character followed by a "." followed by any string.
     #[must_use]
     pub fn metai_match(&self, s: &CStr16, pattern: &CStr16) -> bool {
-        (self.metai_match)(self, s.as_ptr(), pattern.as_ptr())
+        unsafe { (self.0.metai_match)(&self.0, s.as_ptr().cast(), pattern.as_ptr().cast()) }
     }
 
     /// Converts the characters in `s` to lower case characters.
@@ -75,7 +67,7 @@ impl UnicodeCollation {
         *buf.get_mut(last_index + 1)
             .ok_or(StrConversionError::BufferTooSmall)? = 0;
 
-        (self.str_lwr)(self, buf.as_ptr() as *mut _);
+        unsafe { (self.0.str_lwr)(&self.0, buf.as_mut_ptr()) };
 
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
@@ -94,7 +86,7 @@ impl UnicodeCollation {
         *buf.get_mut(last_index + 1)
             .ok_or(StrConversionError::BufferTooSmall)? = 0;
 
-        (self.str_upr)(self, buf.as_ptr() as *mut _);
+        unsafe { (self.0.str_upr)(&self.0, buf.as_mut_ptr()) };
 
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
@@ -108,12 +100,14 @@ impl UnicodeCollation {
         if buf.len() < fat.as_bytes().len() {
             return Err(StrConversionError::BufferTooSmall);
         }
-        (self.fat_to_str)(
-            self,
-            fat.as_bytes().len(),
-            fat.as_ptr(),
-            buf.as_ptr() as *mut _,
-        );
+        unsafe {
+            (self.0.fat_to_str)(
+                &self.0,
+                fat.as_bytes().len(),
+                fat.as_ptr().cast(),
+                buf.as_mut_ptr(),
+            )
+        };
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
 
@@ -126,12 +120,14 @@ impl UnicodeCollation {
         if s.as_slice_with_nul().len() > buf.len() {
             return Err(StrConversionError::BufferTooSmall);
         }
-        let failed = (self.str_to_fat)(
-            self,
-            s.as_ptr(),
-            s.as_slice_with_nul().len(),
-            buf.as_ptr() as *mut _,
-        );
+        let failed = unsafe {
+            (self.0.str_to_fat)(
+                &self.0,
+                s.as_ptr().cast(),
+                s.as_slice_with_nul().len(),
+                buf.as_mut_ptr(),
+            )
+        };
         if failed {
             Err(StrConversionError::ConversionFailed)
         } else {

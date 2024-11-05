@@ -19,10 +19,10 @@ use tempfile::TempDir;
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
 /// Name of the ovmf-prebuilt release tag.
-const OVMF_PREBUILT_TAG: &str = "edk2-stable202311-r2";
+const OVMF_PREBUILT_TAG: &str = "edk2-stable202402-r1";
 
 /// SHA-256 hash of the release tarball.
-const OVMF_PREBUILT_HASH: &str = "4a7d01b7dc6b0fdbf3a0e17dacd364b772fb5b712aaf64ecf328273584185ca0";
+const OVMF_PREBUILT_HASH: &str = "91f3148ef146794241c77810a49cfa3e925c83eb55c5cc90f34718cc1b10e9eb";
 
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";

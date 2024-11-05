@@ -102,10 +102,13 @@ impl OvmfPaths {
                 );
             }
         } else {
-            let prebuilt = Prebuilt::fetch(Source {
-                tag: OVMF_PREBUILT_TAG,
-                sha256: OVMF_PREBUILT_HASH,
-            }, OVMF_PREBUILT_DIR)?;
+            let prebuilt = Prebuilt::fetch(
+                Source {
+                    tag: OVMF_PREBUILT_TAG,
+                    sha256: OVMF_PREBUILT_HASH,
+                },
+                OVMF_PREBUILT_DIR,
+            )?;
 
             Ok(prebuilt.get_file(arch.into(), file_type))
         }

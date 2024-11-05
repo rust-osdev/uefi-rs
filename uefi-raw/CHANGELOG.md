@@ -3,6 +3,7 @@
 ## Changed
 
 - Added `protocol::string::UnicodeCollationProtocol`.
+- Added `protocol::tcg` module, containing the TCG v1 and v2 protocols.
 
 
 # uefi-raw - 0.9.0 (2024-10-23)

@@ -231,6 +231,8 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
 
 /// Formats the project: nix, rust, and yml.
 fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
+    let mut any_errors = false;
+
     // fmt rust
     {
         eprintln!("Formatting: rust");
@@ -255,6 +257,7 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
                 } else {
                     eprintln!("❌ rust formatter failed: {e:#?}");
                 }
+                any_errors = true;
             }
         }
     }
@@ -279,6 +282,7 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
                 } else {
                     eprintln!("❌ yml formatter failed: {e:#?}");
                 }
+                any_errors = true;
             }
         }
     } else {
@@ -305,10 +309,15 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
                 } else {
                     eprintln!("❌ nix formatter failed: {e:#?}");
                 }
+                any_errors = true;
             }
         }
     } else {
         eprintln!("Formatting: nix - SKIPPED");
+    }
+
+    if any_errors {
+        bail!("one or more formatting errors");
     }
 
     Ok(())

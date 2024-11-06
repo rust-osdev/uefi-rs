@@ -20,7 +20,6 @@ rust-version = "1.70"
 
 [dependencies]
 bitflags.workspace = true
-ptr_meta.workspace = true
 uguid.workspace = true
 
 [package.metadata.docs.rs]

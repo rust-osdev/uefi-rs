@@ -909,7 +909,6 @@ name = "uefi-raw"
 version = "0.9.0"
 dependencies = [
  "bitflags 2.6.0",
- "ptr_meta",
  "uguid",
 ]
 

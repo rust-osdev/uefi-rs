@@ -1,6 +1,6 @@
 # Using Protocols
 
-The open a protocol, you must first get a handle, then open a protocol
+To open a protocol, you must first get a handle, then open a protocol
 on that handle. See [Handles and Protocols] for an overview of what
 these terms mean.
 

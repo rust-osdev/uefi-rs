@@ -15,11 +15,11 @@ use crate::data_types::{Align, PhysicalAddress, UnalignedSlice};
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
-use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr, slice};
 use ptr_meta::{Pointee, PtrExt};
+use uefi_raw::protocol::tcg::v2::{Tcg2EventHeader as EventHeader, Tcg2Protocol};
 
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
@@ -27,32 +27,10 @@ use {crate::mem::make_boxed, alloc::boxed::Box};
 #[cfg(all(feature = "unstable", feature = "alloc"))]
 use alloc::alloc::Global;
 
-/// Version information.
-///
-/// Layout compatible with the C type `EFI_TG2_VERSION`.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Version {
-    /// Major version.
-    pub major: u8,
-    /// Minor version.
-    pub minor: u8,
-}
-
-bitflags! {
-    /// Event log formats supported by the firmware.
-    ///
-    /// Corresponds to the C typedef `EFI_TCG2_EVENT_ALGORITHM_BITMAP`.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct EventLogFormat: u32 {
-        /// Firmware supports the SHA-1 log format.
-        const TCG_1_2 = 0x0000_0001;
-
-        /// Firmware supports the crypto-agile log format.
-        const TCG_2 = 0x0000_0002;
-    }
-}
+pub use uefi_raw::protocol::tcg::v2::{
+    Tcg2EventLogFormat as EventLogFormat, Tcg2HashAlgorithmBitmap,
+    Tcg2HashLogExtendEventFlags as HashLogExtendEventFlags, Tcg2Version as Version,
+};
 
 /// Information about the protocol and the TPM device.
 ///
@@ -128,31 +106,6 @@ impl BootServiceCapability {
     }
 }
 
-bitflags! {
-    /// Flags for the [`Tcg::hash_log_extend_event`] function.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct HashLogExtendEventFlags: u64 {
-        /// Extend an event but don't log it.
-        const EFI_TCG2_EXTEND_ONLY = 0x0000_0000_0000_0001;
-
-        /// Use when measuring a PE/COFF image.
-        const PE_COFF_IMAGE = 0x0000_0000_0000_0010;
-    }
-}
-
-/// Header used in [`PcrEventInputs`].
-///
-/// Layout compatible with the C type `EFI_TCG2_EVENT_HEADER`.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(C, packed)]
-struct EventHeader {
-    header_size: u32,
-    header_version: u16,
-    pcr_index: PcrIndex,
-    event_type: EventType,
-}
-
 /// Event type passed to [`Tcg::hash_log_extend_event`].
 ///
 /// Layout compatible with the C type `EFI_TCG2_EVENT`.
@@ -205,7 +158,7 @@ impl PcrEventInputs {
                 EventHeader {
                     header_size: u32::try_from(mem::size_of::<EventHeader>()).unwrap(),
                     header_version: 1,
-                    pcr_index,
+                    pcr_index: pcr_index.0,
                     event_type,
                 },
             );
@@ -609,58 +562,18 @@ impl<'a> Iterator for EventLogIter<'a> {
 ///
 /// The corresponding C type is `EFI_TCG2_PROTOCOL`.
 #[derive(Debug)]
-#[repr(C)]
-#[unsafe_protocol("607f766c-7455-42be-930b-e4d76db2720f")]
-pub struct Tcg {
-    get_capability: unsafe extern "efiapi" fn(
-        this: *mut Tcg,
-        protocol_capability: *mut BootServiceCapability,
-    ) -> Status,
-
-    get_event_log: unsafe extern "efiapi" fn(
-        this: *mut Tcg,
-        event_log_format: EventLogFormat,
-        event_log_location: *mut PhysicalAddress,
-        event_log_last_entry: *mut PhysicalAddress,
-        event_log_truncated: *mut u8,
-    ) -> Status,
-
-    hash_log_extend_event: unsafe extern "efiapi" fn(
-        this: *mut Tcg,
-        flags: HashLogExtendEventFlags,
-        data_to_hash: PhysicalAddress,
-        data_to_hash_len: u64,
-        // Use `()` here rather than `PcrEventInputs` so that it's a
-        // thin pointer.
-        event: *const (),
-    ) -> Status,
-
-    submit_command: unsafe extern "efiapi" fn(
-        this: *mut Tcg,
-        input_parameter_block_size: u32,
-        input_parameter_block: *const u8,
-        output_parameter_block_size: u32,
-        output_parameter_block: *mut u8,
-    ) -> Status,
-
-    get_active_pcr_banks:
-        unsafe extern "efiapi" fn(this: *mut Tcg, active_pcr_banks: *mut HashAlgorithm) -> Status,
-
-    set_active_pcr_banks:
-        unsafe extern "efiapi" fn(this: *mut Tcg, active_pcr_banks: HashAlgorithm) -> Status,
-
-    get_result_of_set_active_pcr_banks: unsafe extern "efiapi" fn(
-        this: *mut Tcg,
-        operation_present: *mut u32,
-        response: *mut u32,
-    ) -> Status,
-}
+#[repr(transparent)]
+#[unsafe_protocol(Tcg2Protocol::GUID)]
+pub struct Tcg(Tcg2Protocol);
 
 impl Tcg {
     /// Get information about the protocol and TPM device.
     pub fn get_capability(&mut self) -> Result<BootServiceCapability> {
         let mut capability = BootServiceCapability::default();
-        unsafe { (self.get_capability)(self, &mut capability).to_result_with_val(|| capability) }
+        unsafe {
+            (self.0.get_capability)(&mut self.0, ptr::from_mut(&mut capability).cast())
+                .to_result_with_val(|| capability)
+        }
     }
 
     /// Get the V1 event log. This provides events in the same format as a V1
@@ -671,8 +584,8 @@ impl Tcg {
         let mut truncated = 0;
 
         let status = unsafe {
-            (self.get_event_log)(
-                self,
+            (self.0.get_event_log)(
+                &mut self.0,
                 EventLogFormat::TCG_1_2,
                 &mut location,
                 &mut last_entry,
@@ -700,8 +613,8 @@ impl Tcg {
         let mut truncated = 0;
 
         let status = unsafe {
-            (self.get_event_log)(
-                self,
+            (self.0.get_event_log)(
+                &mut self.0,
                 EventLogFormat::TCG_2,
                 &mut location,
                 &mut last_entry,
@@ -735,13 +648,13 @@ impl Tcg {
         let event: *const PcrEventInputs = event;
         let (event, _event_size) = PtrExt::to_raw_parts(event);
         unsafe {
-            (self.hash_log_extend_event)(
-                self,
+            (self.0.hash_log_extend_event)(
+                &mut self.0,
                 flags,
                 data_to_hash.as_ptr() as PhysicalAddress,
                 // OK to unwrap, usize fits in u64.
                 u64::try_from(data_to_hash.len()).unwrap(),
-                event,
+                event.cast(),
             )
             .to_result()
         }
@@ -767,8 +680,8 @@ impl Tcg {
             .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
 
         unsafe {
-            (self.submit_command)(
-                self,
+            (self.0.submit_command)(
+                &mut self.0,
                 input_parameter_block_len,
                 input_parameter_block.as_ptr(),
                 output_parameter_block_len,
@@ -781,18 +694,19 @@ impl Tcg {
     /// Get a bitmap of the active PCR banks. Each bank corresponds to a hash
     /// algorithm.
     pub fn get_active_pcr_banks(&mut self) -> Result<HashAlgorithm> {
-        let mut active_pcr_banks = HashAlgorithm::empty();
+        let mut active_pcr_banks = Tcg2HashAlgorithmBitmap::empty();
 
-        let status = unsafe { (self.get_active_pcr_banks)(self, &mut active_pcr_banks) };
+        let status = unsafe { (self.0.get_active_pcr_banks)(&mut self.0, &mut active_pcr_banks) };
 
-        status.to_result_with_val(|| active_pcr_banks)
+        status.to_result_with_val(|| HashAlgorithm::from_bits_retain(active_pcr_banks.bits()))
     }
 
     /// Set the active PCR banks. Each bank corresponds to a hash
     /// algorithm. This change will not take effect until the system is
     /// rebooted twice.
     pub fn set_active_pcr_banks(&mut self, active_pcr_banks: HashAlgorithm) -> Result {
-        unsafe { (self.set_active_pcr_banks)(self, active_pcr_banks) }.to_result()
+        let active_pcr_banks = Tcg2HashAlgorithmBitmap::from_bits_retain(active_pcr_banks.bits());
+        unsafe { (self.0.set_active_pcr_banks)(&mut self.0, active_pcr_banks) }.to_result()
     }
 
     /// Get the stored result of calling [`Tcg::set_active_pcr_banks`] in a
@@ -809,7 +723,11 @@ impl Tcg {
         let mut response = 0;
 
         let status = unsafe {
-            (self.get_result_of_set_active_pcr_banks)(self, &mut operation_present, &mut response)
+            (self.0.get_result_of_set_active_pcr_banks)(
+                &mut self.0,
+                &mut operation_present,
+                &mut response,
+            )
         };
 
         status.to_result_with_val(|| {
@@ -842,7 +760,7 @@ mod tests {
             EventHeader {
                 header_size: 14,
                 header_version: 1,
-                pcr_index: PcrIndex(4),
+                pcr_index: 4,
                 event_type: EventType::IPL,
             }
         );

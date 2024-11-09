@@ -1,5 +1,8 @@
 # Running on Hardware
 
+Prerequisite: To allow loading your unsigned binary on your personal machine,
+[secure boot] needs to be disabled in the BIOS setup.
+
 To run on real hardware you'll need a specially-prepared USB drive.
 
 ## Preparation
@@ -67,6 +70,7 @@ key.
 
 Once the one-time boot menu appears, select your USB drive and press enter.
 
+[secure boot]: https://en.wikipedia.org/wiki/UEFI#Secure_Boot
 [GPT]: https://en.wikipedia.org/wiki/GUID_Partition_Table
 [FAT]: https://en.wikipedia.org/wiki/File_Allocation_Table
 [boot files]: ../concepts/gpt.html#system-partition

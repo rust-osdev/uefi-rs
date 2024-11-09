@@ -14,8 +14,7 @@
 pub mod v1;
 pub mod v2;
 
-mod enums;
-pub use enums::*;
+pub use uefi_raw::protocol::tcg::{AlgorithmId, EventType};
 
 use bitflags::bitflags;
 

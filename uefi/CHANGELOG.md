@@ -1,7 +1,7 @@
 # uefi - [Unreleased]
 
 ## Changed
-- MSRV increased to 1.79.
+- MSRV increased to 1.81.
 
 
 # uefi - 0.33.0 (2024-10-23)

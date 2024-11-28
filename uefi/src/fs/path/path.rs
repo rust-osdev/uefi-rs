@@ -110,7 +110,7 @@ pub struct Components<'a> {
     i: usize,
 }
 
-impl<'a> Iterator for Components<'a> {
+impl Iterator for Components<'_> {
     // Attention. We can't iterate over &'Ctr16, as we would break any guarantee
     // made for the terminating null character.
     type Item = CString16;

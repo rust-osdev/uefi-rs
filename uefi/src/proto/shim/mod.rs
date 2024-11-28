@@ -45,7 +45,12 @@ pub struct Hashes {
 
 // These macros set the correct calling convention for the Shim protocol methods.
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(target_arch = "x86")]
+macro_rules! shim_function {
+    (fn $args:tt -> $return_type:ty) => (extern "cdecl" fn $args -> $return_type)
+}
+
+#[cfg(target_arch = "x86_64")]
 macro_rules! shim_function {
     (fn $args:tt -> $return_type:ty) => (extern "sysv64" fn $args -> $return_type)
 }

@@ -477,13 +477,17 @@ impl Node {
 
     fn gen_builder_impl(&self) -> TokenStream {
         let struct_ident = &self.struct_ident;
-        let lifetime = self.builder_lifetime();
+        let lifetime = if self.is_dst() {
+            Some(quote!(<'_>))
+        } else {
+            None
+        };
 
         let size_in_bytes_method = self.gen_builder_size_in_bytes_method();
         let write_data_method = self.gen_builder_write_data_method();
 
         quote!(
-            unsafe impl #lifetime BuildNode for #struct_ident #lifetime {
+            unsafe impl BuildNode for #struct_ident #lifetime {
                 #size_in_bytes_method
 
                 #write_data_method

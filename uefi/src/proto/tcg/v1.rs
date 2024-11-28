@@ -258,7 +258,7 @@ pub struct EventLog<'a> {
     is_truncated: bool,
 }
 
-impl<'a> EventLog<'a> {
+impl EventLog<'_> {
     pub(super) const unsafe fn new(
         location: *const u8,
         last_entry: *const u8,

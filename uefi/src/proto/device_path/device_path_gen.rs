@@ -3165,7 +3165,7 @@ pub enum DevicePathNodeEnum<'a> {
     BiosBootSpecBootSpecification(&'a bios_boot_spec::BootSpecification),
 }
 
-impl<'a> TryFrom<&DevicePathNode> for DevicePathNodeEnum<'a> {
+impl TryFrom<&DevicePathNode> for DevicePathNodeEnum<'_> {
     type Error = NodeConversionError;
     fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
         Ok(match node.full_type() {
@@ -3516,7 +3516,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for Vendor<'a> {
+        unsafe impl BuildNode for Vendor<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize + size_of_val(self.vendor_defined_data);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -3692,7 +3692,7 @@ pub mod build {
             pub cid_str: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for Expanded<'a> {
+        unsafe impl BuildNode for Expanded<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 16usize
                     + size_of_val(self.hid_str)
@@ -3744,7 +3744,7 @@ pub mod build {
             pub adr: &'a AdrSlice,
         }
 
-        unsafe impl<'a> BuildNode for Adr<'a> {
+        unsafe impl BuildNode for Adr<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.adr);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -4129,7 +4129,7 @@ pub mod build {
             pub serial_number: &'a [u16],
         }
 
-        unsafe impl<'a> BuildNode for UsbWwid<'a> {
+        unsafe impl BuildNode for UsbWwid<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 10usize + size_of_val(self.serial_number);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -4638,7 +4638,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for Vendor<'a> {
+        unsafe impl BuildNode for Vendor<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize + size_of_val(self.vendor_defined_data);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -4742,7 +4742,7 @@ pub mod build {
             pub iscsi_target_name: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for Iscsi<'a> {
+        unsafe impl BuildNode for Iscsi<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 18usize + size_of_val(self.iscsi_target_name);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -4835,7 +4835,7 @@ pub mod build {
             pub value: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for Uri<'a> {
+        unsafe impl BuildNode for Uri<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.value);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5080,7 +5080,7 @@ pub mod build {
             pub addresses: &'a [IpAddress],
         }
 
-        unsafe impl<'a> BuildNode for Dns<'a> {
+        unsafe impl BuildNode for Dns<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 5usize + size_of_val(self.addresses);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5156,7 +5156,7 @@ pub mod build {
             pub vendor_guid_and_data: Option<RestServiceVendorData<'a>>,
         }
 
-        unsafe impl<'a> BuildNode for RestService<'a> {
+        unsafe impl BuildNode for RestService<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 6usize + self.build_size_vendor_guid_and_data();
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5199,7 +5199,7 @@ pub mod build {
             pub subsystem_nqn: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for NvmeOfNamespace<'a> {
+        unsafe impl BuildNode for NvmeOfNamespace<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 21usize + size_of_val(self.subsystem_nqn);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5244,7 +5244,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
-        impl<'a> RestService<'a> {
+        impl RestService<'_> {
             fn build_size_vendor_guid_and_data(&self) -> usize {
                 if let Some(src) = &self.vendor_guid_and_data {
                     assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);
@@ -5393,7 +5393,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for Vendor<'a> {
+        unsafe impl BuildNode for Vendor<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize + size_of_val(self.vendor_defined_data);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5433,7 +5433,7 @@ pub mod build {
             pub path_name: &'a CStr16,
         }
 
-        unsafe impl<'a> BuildNode for FilePath<'a> {
+        unsafe impl BuildNode for FilePath<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.path_name);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5499,7 +5499,7 @@ pub mod build {
             pub data: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for PiwgFirmwareFile<'a> {
+        unsafe impl BuildNode for PiwgFirmwareFile<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.data);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5532,7 +5532,7 @@ pub mod build {
             pub data: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for PiwgFirmwareVolume<'a> {
+        unsafe impl BuildNode for PiwgFirmwareVolume<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.data);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)
@@ -5692,7 +5692,7 @@ pub mod build {
             pub description_string: &'a [u8],
         }
 
-        unsafe impl<'a> BuildNode for BootSpecification<'a> {
+        unsafe impl BuildNode for BootSpecification<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize + size_of_val(self.description_string);
                 u16::try_from(size).map_err(|_| BuildError::NodeTooBig)

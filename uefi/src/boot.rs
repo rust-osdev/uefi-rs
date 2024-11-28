@@ -1613,7 +1613,7 @@ pub enum LoadImageSource<'a> {
     },
 }
 
-impl<'a> LoadImageSource<'a> {
+impl LoadImageSource<'_> {
     /// Returns the raw FFI parameters for `load_image`.
     #[must_use]
     pub(crate) fn to_ffi_params(
@@ -1677,7 +1677,7 @@ pub enum SearchType<'guid> {
     ByRegisterNotify(ProtocolSearchKey),
 }
 
-impl<'guid> SearchType<'guid> {
+impl SearchType<'_> {
     /// Constructs a new search type for a specified protocol.
     #[must_use]
     pub const fn from_proto<P: ProtocolPointer + ?Sized>() -> Self {

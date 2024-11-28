@@ -170,7 +170,7 @@ impl TryFrom<Vec<u16>> for CString16 {
     }
 }
 
-impl<'a> TryFrom<&UnalignedSlice<'a, u16>> for CString16 {
+impl TryFrom<&UnalignedSlice<'_, u16>> for CString16 {
     type Error = FromSliceWithNulError;
 
     fn try_from(input: &UnalignedSlice<u16>) -> Result<Self, Self::Error> {
@@ -193,7 +193,7 @@ impl From<&CString16> for String {
     }
 }
 
-impl<'a> UnalignedSlice<'a, u16> {
+impl UnalignedSlice<'_, u16> {
     /// Copies `self` to a new [`CString16`].
     pub fn to_cstring16(&self) -> Result<CString16, FromSliceWithNulError> {
         CString16::try_from(self)

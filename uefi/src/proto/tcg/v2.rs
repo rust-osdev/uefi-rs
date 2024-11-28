@@ -231,7 +231,7 @@ struct AlgorithmDigestSize {
 #[derive(Clone, Debug)]
 struct AlgorithmDigestSizes<'a>(UnalignedSlice<'a, AlgorithmDigestSize>);
 
-impl<'a> AlgorithmDigestSizes<'a> {
+impl AlgorithmDigestSizes<'_> {
     fn get_size(&self, alg: AlgorithmId) -> Option<u16> {
         self.0.iter().find_map(|elem| {
             if { elem.algorithm_id } == alg {
@@ -332,7 +332,7 @@ pub struct EventLog<'a> {
     is_truncated: bool,
 }
 
-impl<'a> EventLog<'a> {
+impl EventLog<'_> {
     /// Iterator of events in the log.
     #[must_use]
     pub fn iter(&self) -> EventLogIter {
@@ -384,7 +384,7 @@ pub struct PcrEventDigests<'a> {
     algorithm_digest_sizes: AlgorithmDigestSizes<'a>,
 }
 
-impl<'a> Debug for PcrEventDigests<'a> {
+impl Debug for PcrEventDigests<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.clone()).finish()
     }

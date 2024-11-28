@@ -146,9 +146,7 @@ impl<'a> MemoryMap for MemoryMapRefMut<'a> {
 
 impl<'a> MemoryMapMut for MemoryMapRefMut<'a> {
     fn sort(&mut self) {
-        unsafe {
-            self.qsort(0, self.len - 1);
-        }
+        self.qsort(0, self.len - 1);
     }
 
     unsafe fn buffer_mut(&mut self) -> &mut [u8] {
@@ -159,7 +157,7 @@ impl<'a> MemoryMapMut for MemoryMapRefMut<'a> {
 impl<'a> MemoryMapRefMut<'a> {
     /// Hoare partition scheme for quicksort.
     /// Must be called with `low` and `high` being indices within bounds.
-    unsafe fn qsort(&mut self, low: usize, high: usize) {
+    fn qsort(&mut self, low: usize, high: usize) {
         if low >= high {
             return;
         }
@@ -169,7 +167,7 @@ impl<'a> MemoryMapRefMut<'a> {
         self.qsort(p + 1, high);
     }
 
-    unsafe fn partition(&mut self, low: usize, high: usize) -> usize {
+    fn partition(&mut self, low: usize, high: usize) -> usize {
         let pivot = self.get_element_phys_addr(low + (high - low) / 2);
 
         let mut left_index = low.wrapping_sub(1);
@@ -197,24 +195,30 @@ impl<'a> MemoryMapRefMut<'a> {
     }
 
     /// Indices must be smaller than len.
-    unsafe fn swap(&mut self, index1: usize, index2: usize) {
+    fn swap(&mut self, index1: usize, index2: usize) {
+        assert!(index1 < self.len);
+        assert!(index2 < self.len);
+
         if index1 == index2 {
             return;
         }
 
         let base = self.buf.as_mut_ptr();
 
+        let offset1 = index1 * self.meta.desc_size;
+        let offset2 = index2 * self.meta.desc_size;
+
+        // SAFETY: the data starting at `offset1` and `offset2` are valid
+        // descriptors, and do not overlap.
         unsafe {
-            ptr::swap_nonoverlapping(
-                base.add(index1 * self.meta.desc_size),
-                base.add(index2 * self.meta.desc_size),
-                self.meta.desc_size,
-            );
+            ptr::swap_nonoverlapping(base.add(offset1), base.add(offset2), self.meta.desc_size);
         }
     }
 
     fn get_element_phys_addr(&self, index: usize) -> PhysicalAddress {
+        assert!(index < self.len);
         let offset = index.checked_mul(self.meta.desc_size).unwrap();
+        // SAFETY: the data starting at `offset` is a valid descriptor.
         let elem = unsafe { &*self.buf.as_ptr().add(offset).cast::<MemoryDescriptor>() };
         elem.phys_start
     }

@@ -134,7 +134,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     }
 }
 
-impl<'a, T: Copy + Debug> Debug for UnalignedSlice<'a, T> {
+impl<T: Copy + Debug> Debug for UnalignedSlice<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
@@ -175,7 +175,7 @@ pub struct UnalignedSliceIntoIter<'a, T: Copy> {
     index: usize,
 }
 
-impl<'a, T: Copy> Iterator for UnalignedSliceIntoIter<'a, T> {
+impl<T: Copy> Iterator for UnalignedSliceIntoIter<'_, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
@@ -192,7 +192,7 @@ pub struct UnalignedSliceIter<'a, T: Copy> {
     index: usize,
 }
 
-impl<'a, T: Copy> Iterator for UnalignedSliceIter<'a, T> {
+impl<T: Copy> Iterator for UnalignedSliceIter<'_, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {

@@ -968,7 +968,7 @@ mod messaging {
     }
 
     #[build]
-    impl<'a> RestService<'a> {
+    impl RestService<'_> {
         fn build_size_vendor_guid_and_data(&self) -> usize {
             if let Some(src) = &self.vendor_guid_and_data {
                 assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);

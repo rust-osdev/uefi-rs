@@ -217,7 +217,7 @@ impl<'writer, 'a, W: fmt::Write> DecoratedLog<'writer, 'a, W> {
     }
 }
 
-impl<'writer, 'a, W: fmt::Write> fmt::Write for DecoratedLog<'writer, 'a, W> {
+impl<W: fmt::Write> fmt::Write for DecoratedLog<'_, '_, W> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         // Split the input string into lines
         let mut lines = s.lines();

@@ -414,7 +414,7 @@ pub struct ModeIter<'gop> {
     max: u32,
 }
 
-impl<'gop> Iterator for ModeIter<'gop> {
+impl Iterator for ModeIter<'_> {
     type Item = Mode;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -435,7 +435,7 @@ impl<'gop> Iterator for ModeIter<'gop> {
     }
 }
 
-impl<'gop> Debug for ModeIter<'gop> {
+impl Debug for ModeIter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("ModeIter")
             .field("current", &self.current)
@@ -557,7 +557,7 @@ pub struct FrameBuffer<'gop> {
     _lifetime: PhantomData<&'gop mut u8>,
 }
 
-impl<'gop> FrameBuffer<'gop> {
+impl FrameBuffer<'_> {
     /// Access the raw framebuffer pointer
     ///
     /// To use this pointer safely and correctly, you must...

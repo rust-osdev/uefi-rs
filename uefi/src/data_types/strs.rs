@@ -720,7 +720,7 @@ impl PartialEq<CString16> for &CStr16 {
     }
 }
 
-impl<'a> UnalignedSlice<'a, u16> {
+impl UnalignedSlice<'_, u16> {
     /// Create a [`CStr16`] from an [`UnalignedSlice`] using an aligned
     /// buffer for storage. The lifetime of the output is tied to `buf`,
     /// not `self`.

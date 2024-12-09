@@ -57,7 +57,7 @@ impl<'a> MemoryMapRef<'a> {
     }
 }
 
-impl<'a> MemoryMap for MemoryMapRef<'a> {
+impl MemoryMap for MemoryMapRef<'_> {
     fn meta(&self) -> MemoryMapMeta {
         self.meta
     }
@@ -119,7 +119,7 @@ impl<'a> MemoryMapRefMut<'a> {
     }
 }
 
-impl<'a> MemoryMap for MemoryMapRefMut<'a> {
+impl MemoryMap for MemoryMapRefMut<'_> {
     fn meta(&self) -> MemoryMapMeta {
         self.meta
     }
@@ -144,7 +144,7 @@ impl<'a> MemoryMap for MemoryMapRefMut<'a> {
     }
 }
 
-impl<'a> MemoryMapMut for MemoryMapRefMut<'a> {
+impl MemoryMapMut for MemoryMapRefMut<'_> {
     fn sort(&mut self) {
         self.qsort(0, self.len - 1);
     }
@@ -154,7 +154,7 @@ impl<'a> MemoryMapMut for MemoryMapRefMut<'a> {
     }
 }
 
-impl<'a> MemoryMapRefMut<'a> {
+impl MemoryMapRefMut<'_> {
     /// Hoare partition scheme for quicksort.
     /// Must be called with `low` and `high` being indices within bounds.
     fn qsort(&mut self, low: usize, high: usize) {

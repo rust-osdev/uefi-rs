@@ -265,7 +265,7 @@ pub struct LanguageIter<'a> {
     kind: LanguageIterKind,
 }
 
-impl<'a> LanguageIter<'a> {
+impl LanguageIter<'_> {
     const fn new(
         languages: *const u8,
         kind: LanguageIterKind,

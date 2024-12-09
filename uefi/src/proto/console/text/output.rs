@@ -255,7 +255,7 @@ pub struct OutputModeIter<'out> {
     max: usize,
 }
 
-impl<'out> Iterator for OutputModeIter<'out> {
+impl Iterator for OutputModeIter<'_> {
     type Item = OutputMode;
 
     fn next(&mut self) -> Option<Self::Item> {

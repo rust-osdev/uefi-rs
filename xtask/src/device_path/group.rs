@@ -182,7 +182,7 @@ impl NodeGroup {
                 #(#variants),*
             }
 
-            impl<'a> TryFrom<&DevicePathNode> for DevicePathNodeEnum<'a> {
+            impl TryFrom<&DevicePathNode> for DevicePathNodeEnum<'_> {
                 type Error = NodeConversionError;
 
                 fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {

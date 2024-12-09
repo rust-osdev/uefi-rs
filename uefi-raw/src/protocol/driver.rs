@@ -1,4 +1,33 @@
+use crate::protocol::device_path::DevicePathProtocol;
 use crate::{guid, Guid, Handle, Status};
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct DriverBindingProtocol {
+    pub supported: unsafe extern "efiapi" fn(
+        this: *const Self,
+        controller_handle: Handle,
+        remaining_device_path: *const DevicePathProtocol,
+    ) -> Status,
+    pub start: unsafe extern "efiapi" fn(
+        this: *const Self,
+        controller_handle: Handle,
+        remaining_device_path: *const DevicePathProtocol,
+    ) -> Status,
+    pub stop: unsafe extern "efiapi" fn(
+        this: *const Self,
+        controller_handle: Handle,
+        number_of_children: usize,
+        child_handle_buffer: *const Handle,
+    ) -> Status,
+    pub version: u32,
+    pub image_handle: Handle,
+    pub driver_binding_handle: Handle,
+}
+
+impl DriverBindingProtocol {
+    pub const GUID: Guid = guid!("18a031ab-b443-4d1a-a5c0-0c09261e9f71");
+}
 
 #[derive(Debug)]
 #[repr(C)]

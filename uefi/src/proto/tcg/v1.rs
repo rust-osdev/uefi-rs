@@ -90,7 +90,7 @@ pub struct PcrEvent {
 }
 
 impl PcrEvent {
-    pub(super) unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a Self {
+    pub(super) const unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a Self {
         // Get the `event_size` field.
         let ptr_u32: *const u32 = ptr.cast();
         let event_size = ptr_u32.add(7).read_unaligned();

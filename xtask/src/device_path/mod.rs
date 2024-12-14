@@ -81,7 +81,7 @@ fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         use core::mem::{size_of, size_of_val};
         use core::ptr::addr_of;
         use core::{fmt, slice};
-        use ptr_meta::{Pointee, PtrExt};
+        use ptr_meta::Pointee;
 
         #(#packed_modules)*
 

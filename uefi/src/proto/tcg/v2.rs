@@ -18,7 +18,7 @@ use crate::{Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::{mem, ptr, slice};
-use ptr_meta::{Pointee, PtrExt};
+use ptr_meta::Pointee;
 use uefi_raw::protocol::tcg::v2::{Tcg2EventHeader as EventHeader, Tcg2Protocol};
 
 #[cfg(feature = "alloc")]
@@ -646,7 +646,7 @@ impl Tcg {
         event: &PcrEventInputs,
     ) -> Result {
         let event: *const PcrEventInputs = event;
-        let (event, _event_size) = PtrExt::to_raw_parts(event);
+        let (event, _event_size) = ptr_meta::to_raw_parts(event);
         unsafe {
             (self.0.hash_log_extend_event)(
                 &mut self.0,

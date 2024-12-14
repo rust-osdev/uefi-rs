@@ -208,7 +208,7 @@ impl Node {
                     // slice instead.
                     quote!({
                         let ptr = addr_of!(#field_val);
-                        let (ptr, len) = PtrExt::to_raw_parts(ptr);
+                        let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                         let byte_len = size_of::<#slice_elem_ty>() * len;
                         unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                     })

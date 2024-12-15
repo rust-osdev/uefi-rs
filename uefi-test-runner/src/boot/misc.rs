@@ -1,5 +1,4 @@
 use core::ffi::c_void;
-use core::mem;
 use core::ptr::{self, NonNull};
 
 use uefi::boot::{
@@ -121,13 +120,11 @@ fn test_register_protocol_notify() {
 fn test_install_protocol_interface() {
     info!("Installing TestProtocol");
 
-    let alloc: *mut TestProtocol = boot::allocate_pool(
-        MemoryType::BOOT_SERVICES_DATA,
-        mem::size_of::<TestProtocol>(),
-    )
-    .unwrap()
-    .cast()
-    .as_ptr();
+    let alloc: *mut TestProtocol =
+        boot::allocate_pool(MemoryType::BOOT_SERVICES_DATA, size_of::<TestProtocol>())
+            .unwrap()
+            .cast()
+            .as_ptr();
     unsafe { alloc.write(TestProtocol { data: 123 }) };
 
     let _ = unsafe {

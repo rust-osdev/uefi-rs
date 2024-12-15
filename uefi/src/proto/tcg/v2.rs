@@ -17,7 +17,7 @@ use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
-use core::{mem, ptr, slice};
+use core::{ptr, slice};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::tcg::v2::{Tcg2EventHeader as EventHeader, Tcg2Protocol};
 
@@ -80,7 +80,7 @@ pub struct BootServiceCapability {
 impl Default for BootServiceCapability {
     fn default() -> Self {
         // OK to unwrap, the size is less than u8.
-        let struct_size = u8::try_from(mem::size_of::<Self>()).unwrap();
+        let struct_size = u8::try_from(size_of::<Self>()).unwrap();
 
         Self {
             size: struct_size,
@@ -140,8 +140,7 @@ impl PcrEventInputs {
         event_type: EventType,
         event_data: &[u8],
     ) -> Result<&'buf mut Self, Option<usize>> {
-        let required_size =
-            mem::size_of::<u32>() + mem::size_of::<EventHeader>() + event_data.len();
+        let required_size = size_of::<u32>() + size_of::<EventHeader>() + event_data.len();
 
         if buffer.len() < required_size {
             return Err(Error::new(Status::BUFFER_TOO_SMALL, Some(required_size)));
@@ -156,7 +155,7 @@ impl PcrEventInputs {
             ptr_write_unaligned_and_add(
                 &mut ptr,
                 EventHeader {
-                    header_size: u32::try_from(mem::size_of::<EventHeader>()).unwrap(),
+                    header_size: u32::try_from(size_of::<EventHeader>()).unwrap(),
                     header_version: 1,
                     pcr_index: pcr_index.0,
                     event_type,
@@ -289,7 +288,7 @@ impl<'a> EventLogHeader<'a> {
         let uintn_size = *event.get(23)?;
         let number_of_algorithms = usize_from_u32(u32_le_from_bytes_at_offset(event, 24)?);
         let vendor_info_size_byte_offset =
-            28 + (number_of_algorithms * mem::size_of::<AlgorithmDigestSize>());
+            28 + (number_of_algorithms * size_of::<AlgorithmDigestSize>());
         let vendor_info_size = usize::from(*event.get(vendor_info_size_byte_offset)?);
 
         // Safety: we know the slice is big enough because we just
@@ -462,7 +461,7 @@ impl<'a> PcrEvent<'a> {
         let mut elem_ptr = digests_ptr;
         for _ in 0..digests_count {
             let algorithm_id = AlgorithmId(elem_ptr.cast::<u16>().read_unaligned());
-            let alg_and_digest_size = mem::size_of::<AlgorithmId>()
+            let alg_and_digest_size = size_of::<AlgorithmId>()
                 + usize::from(header.algorithm_digest_sizes.get_size(algorithm_id)?);
             digests_byte_size += alg_and_digest_size;
             elem_ptr = elem_ptr.add(alg_and_digest_size);
@@ -768,7 +767,7 @@ mod tests {
         // Cast to a byte slice to check the data is exactly as expected.
         let event_ptr: *const PcrEventInputs = event;
         let event_ptr: *const u8 = event_ptr.cast();
-        let event_bytes = unsafe { slice::from_raw_parts(event_ptr, mem::size_of_val(event)) };
+        let event_bytes = unsafe { slice::from_raw_parts(event_ptr, size_of_val(event)) };
 
         #[rustfmt::skip]
         assert_eq!(event_bytes, [

@@ -85,7 +85,6 @@ pub use uefi_raw::protocol::device_path::{DeviceSubType, DeviceType};
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
-use core::mem;
 use core::ops::Deref;
 use ptr_meta::Pointee;
 
@@ -96,6 +95,7 @@ use {
     crate::{CString16, Identify},
     alloc::borrow::ToOwned,
     alloc::boxed::Box,
+    core::mem,
 };
 
 opaque_type! {
@@ -122,7 +122,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathHeader {
     type Error = ByteConversionError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        if mem::size_of::<DevicePathHeader>() <= bytes.len() {
+        if size_of::<DevicePathHeader>() <= bytes.len() {
             unsafe { Ok(&*bytes.as_ptr().cast::<DevicePathHeader>()) }
         } else {
             Err(ByteConversionError::InvalidLength)
@@ -173,7 +173,7 @@ impl DevicePathNode {
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
         let header = *ptr.cast::<DevicePathHeader>();
 
-        let data_len = usize::from(header.length) - mem::size_of::<DevicePathHeader>();
+        let data_len = usize::from(header.length) - size_of::<DevicePathHeader>();
         &*ptr_meta::from_raw_parts(ptr.cast(), data_len)
     }
 
@@ -748,7 +748,7 @@ mod tests {
         path.push(device_type);
         path.push(sub_type);
         path.extend(
-            u16::try_from(mem::size_of::<DevicePathHeader>() + node_data.len())
+            u16::try_from(size_of::<DevicePathHeader>() + node_data.len())
                 .unwrap()
                 .to_le_bytes(),
         );
@@ -787,7 +787,7 @@ mod tests {
         assert_eq!(node.sub_type().0, sub_type);
         assert_eq!(
             node.length(),
-            u16::try_from(mem::size_of::<DevicePathHeader>() + node_data.len()).unwrap()
+            u16::try_from(size_of::<DevicePathHeader>() + node_data.len()).unwrap()
         );
         assert_eq!(&node.data, node_data);
     }
@@ -798,7 +798,7 @@ mod tests {
         let dp = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
 
         // Check that the size is the sum of the nodes' lengths.
-        assert_eq!(mem::size_of_val(dp), 6 + 8 + 4 + 6 + 8 + 4);
+        assert_eq!(size_of_val(dp), 6 + 8 + 4 + 6 + 8 + 4);
 
         // Check the list's node iter.
         let nodes: Vec<_> = dp.node_iter().collect();
@@ -824,7 +824,7 @@ mod tests {
         // Check the list's instance iter.
         let mut iter = dp.instance_iter();
         let mut instance = iter.next().unwrap();
-        assert_eq!(mem::size_of_val(instance), 6 + 8 + 4);
+        assert_eq!(size_of_val(instance), 6 + 8 + 4);
 
         // Check the first instance's node iter.
         let nodes: Vec<_> = instance.node_iter().collect();
@@ -835,7 +835,7 @@ mod tests {
 
         // Check second instance.
         instance = iter.next().unwrap();
-        assert_eq!(mem::size_of_val(instance), 6 + 8 + 4);
+        assert_eq!(size_of_val(instance), 6 + 8 + 4);
 
         let nodes: Vec<_> = instance.node_iter().collect();
         check_node(nodes[0], 0xa2, 0xb2, &[30, 31]);
@@ -876,7 +876,7 @@ mod tests {
         // Raw data is long enough to hold a [`DevicePathNode`].
         raw_data.push(node[1]);
         raw_data.extend(
-            u16::try_from(mem::size_of::<DevicePathHeader>() + node_data.len())
+            u16::try_from(size_of::<DevicePathHeader>() + node_data.len())
                 .unwrap()
                 .to_le_bytes(),
         );
@@ -884,7 +884,7 @@ mod tests {
         let dp = <&DevicePathNode>::try_from(raw_data.as_slice()).unwrap();
 
         // Relevant assertions to verify the conversion is fine.
-        assert_eq!(mem::size_of_val(dp), 6);
+        assert_eq!(size_of_val(dp), 6);
         check_node(dp, 0xa0, 0xb0, &[10, 11]);
 
         // [`DevicePathNode`] data length exceeds the raw_data slice.
@@ -898,7 +898,7 @@ mod tests {
         let dp = <&DevicePath>::try_from(raw_data.as_slice()).unwrap();
 
         // Check that the size is the sum of the nodes' lengths.
-        assert_eq!(mem::size_of_val(dp), 6 + 8 + 4 + 6 + 8 + 4);
+        assert_eq!(size_of_val(dp), 6 + 8 + 4 + 6 + 8 + 4);
 
         // Check the list's node iter.
         let nodes: Vec<_> = dp.node_iter().collect();

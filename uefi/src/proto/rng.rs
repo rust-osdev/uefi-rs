@@ -2,7 +2,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Result, Status, StatusExt};
-use core::{mem, ptr};
+use core::ptr;
 
 pub use uefi_raw::protocol::rng::RngAlgorithmType;
 
@@ -18,7 +18,7 @@ impl Rng {
         &mut self,
         algorithm_list: &'buf mut [RngAlgorithmType],
     ) -> Result<&'buf [RngAlgorithmType], Option<usize>> {
-        let mut algorithm_list_size = mem::size_of_val(algorithm_list);
+        let mut algorithm_list_size = size_of_val(algorithm_list);
 
         unsafe {
             (self.0.get_info)(
@@ -28,7 +28,7 @@ impl Rng {
             )
             .to_result_with(
                 || {
-                    let len = algorithm_list_size / mem::size_of::<RngAlgorithmType>();
+                    let len = algorithm_list_size / size_of::<RngAlgorithmType>();
                     &algorithm_list[..len]
                 },
                 |status| {

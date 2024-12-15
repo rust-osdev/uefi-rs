@@ -158,7 +158,7 @@ impl SimpleNetwork {
     /// Collect statistics on a network interface.
     pub fn collect_statistics(&self) -> Result<NetworkStats> {
         let mut stats_table: NetworkStats = Default::default();
-        let mut stats_size = core::mem::size_of::<NetworkStats>();
+        let mut stats_size = size_of::<NetworkStats>();
         let status = (self.statistics)(self, false, Some(&mut stats_size), Some(&mut stats_table));
         status.to_result_with_val(|| stats_table)
     }

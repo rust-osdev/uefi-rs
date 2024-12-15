@@ -678,10 +678,10 @@ impl DiscoverInfo {
         let server_count = srv_list.len();
         assert!(server_count <= u16::MAX as usize, "too many servers");
 
-        let required_size = core::mem::size_of::<bool>() * 4
-            + core::mem::size_of::<IpAddress>()
-            + core::mem::size_of::<u16>()
-            + core::mem::size_of_val(srv_list);
+        let required_size = size_of::<bool>() * 4
+            + size_of::<IpAddress>()
+            + size_of::<u16>()
+            + size_of_val(srv_list);
 
         if buffer.len() < required_size {
             return Err(Status::BUFFER_TOO_SMALL.into());

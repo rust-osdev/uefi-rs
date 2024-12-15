@@ -9,7 +9,6 @@ use crate::data_types::PhysicalAddress;
 use crate::table::{self, Revision};
 use crate::{CStr16, Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Display, Formatter};
-use core::mem;
 use core::ptr::{self, NonNull};
 use uefi_raw::table::boot::MemoryDescriptor;
 
@@ -225,7 +224,7 @@ pub fn get_next_variable_key(
     let rt = runtime_services_raw_panicking();
     let rt = unsafe { rt.as_ref() };
 
-    let mut name_size_in_bytes = mem::size_of_val(name);
+    let mut name_size_in_bytes = size_of_val(name);
 
     let status = unsafe {
         (rt.get_next_variable_name)(&mut name_size_in_bytes, name.as_mut_ptr(), &mut vendor.0)
@@ -234,7 +233,7 @@ pub fn get_next_variable_key(
         Status::SUCCESS => Ok(()),
         Status::BUFFER_TOO_SMALL => Err(Error::new(
             status,
-            Some(name_size_in_bytes / mem::size_of::<u16>()),
+            Some(name_size_in_bytes / size_of::<u16>()),
         )),
         _ => Err(Error::new(status, None)),
     }
@@ -539,8 +538,8 @@ pub unsafe fn set_virtual_address_map(
     // between its elements if the element type is `repr(C)`, which is our case.
     //
     // See https://rust-lang.github.io/unsafe-code-guidelines/layout/arrays-and-slices.html
-    let map_size = core::mem::size_of_val(map);
-    let entry_size = core::mem::size_of::<MemoryDescriptor>();
+    let map_size = size_of_val(map);
+    let entry_size = size_of::<MemoryDescriptor>();
     let entry_version = MemoryDescriptor::VERSION;
     let map_ptr = map.as_mut_ptr();
     (rt.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).to_result()?;
@@ -825,7 +824,7 @@ impl TryFrom<&[u8]> for Time {
     type Error = TimeByteConversionError;
 
     fn try_from(bytes: &[u8]) -> core::result::Result<Self, Self::Error> {
-        if mem::size_of::<Self>() <= bytes.len() {
+        if size_of::<Self>() <= bytes.len() {
             let year = u16::from_le_bytes(bytes[0..2].try_into().unwrap());
             let month = bytes[2];
             let day = bytes[3];

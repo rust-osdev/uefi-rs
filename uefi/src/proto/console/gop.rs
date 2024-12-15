@@ -55,7 +55,6 @@ use crate::util::usize_from_u32;
 use crate::{boot, Result, StatusExt};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
-use core::mem;
 use core::ptr::{self, NonNull};
 use uefi_raw::protocol::console::{
     GraphicsOutputBltOperation, GraphicsOutputModeInformation, GraphicsOutputProtocol,
@@ -181,7 +180,7 @@ impl GraphicsOutput {
                             dest_y,
                             width,
                             height,
-                            px_stride * core::mem::size_of::<BltPixel>(),
+                            px_stride * size_of::<BltPixel>(),
                         )
                         .to_result(),
                     }
@@ -221,7 +220,7 @@ impl GraphicsOutput {
                             dest_y,
                             width,
                             height,
-                            px_stride * core::mem::size_of::<BltPixel>(),
+                            px_stride * size_of::<BltPixel>(),
                         )
                         .to_result(),
                     }
@@ -620,7 +619,7 @@ impl FrameBuffer<'_> {
     #[inline]
     pub unsafe fn write_value<T>(&mut self, index: usize, value: T) {
         debug_assert!(
-            index.saturating_add(mem::size_of::<T>()) <= self.size,
+            index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
         let ptr = self.base.add(index).cast::<T>();
@@ -643,7 +642,7 @@ impl FrameBuffer<'_> {
     #[must_use]
     pub unsafe fn read_value<T>(&self, index: usize) -> T {
         debug_assert!(
-            index.saturating_add(mem::size_of::<T>()) <= self.size,
+            index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
         (self.base.add(index) as *const T).read_volatile()

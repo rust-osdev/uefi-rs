@@ -277,7 +277,7 @@ pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
     let mut desc_version = 0;
 
     assert_eq!(
-        (map_buffer as usize) % mem::align_of::<MemoryDescriptor>(),
+        (map_buffer as usize) % align_of::<MemoryDescriptor>(),
         0,
         "Memory map buffers must be aligned like a MemoryDescriptor"
     );
@@ -793,11 +793,11 @@ pub fn locate_handle<'buf>(
         SearchType::ByProtocol(guid) => (2, ptr::from_ref(guid), ptr::null()),
     };
 
-    let mut buffer_size = buffer.len() * mem::size_of::<Handle>();
+    let mut buffer_size = buffer.len() * size_of::<Handle>();
     let status =
         unsafe { (bt.locate_handle)(ty, guid, key, &mut buffer_size, buffer.as_mut_ptr().cast()) };
 
-    let num_handles = buffer_size / mem::size_of::<Handle>();
+    let num_handles = buffer_size / size_of::<Handle>();
 
     match status {
         Status::SUCCESS => {

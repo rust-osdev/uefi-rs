@@ -5,8 +5,8 @@ use super::*;
 use crate::boot;
 use core::fmt::{Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
+use core::ptr;
 use core::ptr::NonNull;
-use core::{mem, ptr};
 use uefi_raw::PhysicalAddress;
 
 /// Errors that may happen when constructing a [`MemoryMapRef`] or
@@ -284,7 +284,7 @@ impl MemoryMapBackingMemory {
 
         // Should be fine as UEFI always has  allocations with a guaranteed
         // alignment of 8 bytes.
-        assert_eq!(ptr.align_offset(mem::align_of::<MemoryDescriptor>()), 0);
+        assert_eq!(ptr.align_offset(align_of::<MemoryDescriptor>()), 0);
 
         // If this panics, the UEFI implementation is broken.
         assert_eq!(memory_map_meta.map_size % memory_map_meta.desc_size, 0);
@@ -293,7 +293,7 @@ impl MemoryMapBackingMemory {
     }
 
     unsafe fn from_raw(ptr: *mut u8, len: usize) -> Self {
-        assert_eq!(ptr.align_offset(mem::align_of::<MemoryDescriptor>()), 0);
+        assert_eq!(ptr.align_offset(align_of::<MemoryDescriptor>()), 0);
 
         let ptr = NonNull::new(ptr).expect("UEFI should never return a null ptr. An error should have been reflected via an Err earlier.");
         let slice = NonNull::slice_from_raw_parts(ptr, len);
@@ -367,7 +367,7 @@ impl MemoryMapOwned {
     /// (stored inside the provided buffer) and the corresponding
     /// [`MemoryMapMeta`].
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
-        assert!(meta.desc_size >= mem::size_of::<MemoryDescriptor>());
+        assert!(meta.desc_size >= size_of::<MemoryDescriptor>());
         let len = meta.entry_count();
         Self { buf, meta, len }
     }
@@ -431,7 +431,7 @@ impl IndexMut<usize> for MemoryMapOwned {
 mod tests {
     use super::*;
     use alloc::vec::Vec;
-    use core::mem::size_of;
+    use size_of;
 
     const BASE_MMAP_UNSORTED: [MemoryDescriptor; 3] = [
         MemoryDescriptor {

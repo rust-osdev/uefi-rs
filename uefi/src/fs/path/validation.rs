@@ -38,7 +38,6 @@ impl Display for PathError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for PathError {}
 
 /// Validates a path for the needs of the [`fs`] module.

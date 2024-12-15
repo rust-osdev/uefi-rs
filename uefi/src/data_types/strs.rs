@@ -30,7 +30,6 @@ impl Display for FromSliceUntilNulError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for FromSliceUntilNulError {}
 
 /// Error converting from a slice (which cannot contain interior nuls) to a
@@ -57,7 +56,6 @@ impl Display for FromSliceWithNulError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for FromSliceWithNulError {}
 
 /// Error returned by [`CStr16::from_unaligned_slice`].
@@ -88,7 +86,6 @@ impl Display for UnalignedCStr16Error {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for UnalignedCStr16Error {}
 
 /// Error returned by [`CStr16::from_str_with_buf`].
@@ -115,7 +112,6 @@ impl Display for FromStrWithBufError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for FromStrWithBufError {}
 
 /// A null-terminated Latin-1 string.

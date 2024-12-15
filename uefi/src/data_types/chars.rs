@@ -15,7 +15,6 @@ impl Display for CharConversionError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for CharConversionError {}
 
 /// A Latin-1 character

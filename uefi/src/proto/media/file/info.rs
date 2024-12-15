@@ -137,7 +137,6 @@ impl Display for FileInfoCreationError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for FileInfoCreationError {}
 
 /// Generic file information

@@ -32,7 +32,6 @@ impl Display for FromStrError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for FromStrError {}
 
 /// An owned UCS-2 null-terminated string.

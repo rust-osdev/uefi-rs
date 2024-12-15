@@ -704,12 +704,11 @@ impl Display for DevicePathToTextError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for DevicePathToTextError {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
-            DevicePathToTextError::CantLocateHandleBuffer(e) => Some(e),
-            DevicePathToTextError::CantOpenProtocol(e) => Some(e),
+            Self::CantLocateHandleBuffer(e) => Some(e),
+            Self::CantOpenProtocol(e) => Some(e),
             _ => None,
         }
     }

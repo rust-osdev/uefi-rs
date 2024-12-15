@@ -171,5 +171,4 @@ impl Display for StrConversionError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for StrConversionError {}

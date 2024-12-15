@@ -94,18 +94,16 @@ impl From<PathError> for Error {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
-            Error::Io(err) => Some(err),
-            Error::Path(err) => Some(err),
-            Error::Utf8Encoding(err) => Some(err),
+            Self::Io(err) => Some(err),
+            Self::Path(err) => Some(err),
+            Self::Utf8Encoding(err) => Some(err),
         }
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for IoError {
     fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         Some(&self.uefi_error)

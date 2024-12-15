@@ -67,15 +67,15 @@ impl LoadedImage {
 
         if self.0.load_options.is_null() {
             Err(LoadOptionsError::NotSet)
-        } else if (load_options_size % mem::size_of::<u16>() != 0)
-            || (((self.0.load_options as usize) % mem::align_of::<u16>()) != 0)
+        } else if (load_options_size % size_of::<u16>() != 0)
+            || (((self.0.load_options as usize) % align_of::<u16>()) != 0)
         {
             Err(LoadOptionsError::NotAligned)
         } else {
             let s = unsafe {
                 slice::from_raw_parts(
                     self.0.load_options.cast::<u16>(),
-                    load_options_size / mem::size_of::<u16>(),
+                    load_options_size / size_of::<u16>(),
                 )
             };
             CStr16::from_u16_with_nul(s).map_err(LoadOptionsError::InvalidString)

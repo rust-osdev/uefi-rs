@@ -15,7 +15,7 @@ use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
-use core::{mem, ptr};
+use core::ptr;
 use ptr_meta::Pointee;
 use uefi_raw::protocol::tcg::v1::{TcgBootServiceCapability, TcgProtocol};
 
@@ -117,10 +117,10 @@ impl PcrEvent {
         let event_data_size = u32::try_from(event_data.len())
             .map_err(|_| Error::new(Status::INVALID_PARAMETER, None))?;
 
-        let required_size = mem::size_of::<PcrIndex>()
-            + mem::size_of::<EventType>()
-            + mem::size_of::<Sha1Digest>()
-            + mem::size_of::<u32>()
+        let required_size = size_of::<PcrIndex>()
+            + size_of::<EventType>()
+            + size_of::<Sha1Digest>()
+            + size_of::<u32>()
             + event_data.len();
 
         if buffer.len() < required_size {
@@ -322,7 +322,7 @@ impl<'a> Iterator for EventLogIter<'a> {
         if self.location == self.log.last_entry {
             self.location = ptr::null();
         } else {
-            self.location = unsafe { self.location.add(mem::size_of_val(event)) };
+            self.location = unsafe { self.location.add(size_of_val(event)) };
         }
 
         Some(event)
@@ -512,8 +512,7 @@ mod tests {
         assert_eq!(event.event_data(), data);
 
         let event_ptr: *const PcrEvent = event;
-        let bytes =
-            unsafe { slice::from_raw_parts(event_ptr.cast::<u8>(), mem::size_of_val(event)) };
+        let bytes = unsafe { slice::from_raw_parts(event_ptr.cast::<u8>(), size_of_val(event)) };
         #[rustfmt::skip]
         assert_eq!(bytes, [
             // PCR index

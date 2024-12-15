@@ -4,7 +4,7 @@ use crate::runtime::Time;
 use crate::{CStr16, Char16, Guid, Identify};
 use core::ffi::c_void;
 use core::fmt::{self, Display, Formatter};
-use core::{mem, ptr};
+use core::ptr;
 use ptr_meta::Pointee;
 
 /// Common trait for data structures that can be used with
@@ -69,7 +69,7 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
     {
         // Calculate the final size of the struct.
         let name_length_ucs2 = name.as_slice_with_nul().len();
-        let name_size = mem::size_of_val(name.as_slice_with_nul());
+        let name_size = size_of_val(name.as_slice_with_nul());
         let info_size = Self::name_offset() + name_size;
         let info_size = Self::round_up_to_alignment(info_size);
 
@@ -431,7 +431,7 @@ mod tests {
 
     fn validate_layout<T: InfoInternal + ?Sized>(info: &T, name: &[Char16]) {
         // Check the hardcoded struct alignment.
-        assert_eq!(mem::align_of_val(info), T::alignment());
+        assert_eq!(align_of_val(info), T::alignment());
         // Check the hardcoded name slice offset.
         assert_eq!(
             unsafe { (name.as_ptr() as *const u8).offset_from(info as *const _ as *const u8) },
@@ -480,7 +480,7 @@ mod tests {
         // = 100
         // Round size up to match FileInfo alignment of 8: 104
         assert_eq!(info.size, 104);
-        assert_eq!(info.size, mem::size_of_val(info) as u64);
+        assert_eq!(info.size, size_of_val(info) as u64);
 
         assert_eq!(info.file_size(), file_size);
         assert_eq!(info.physical_size(), physical_size);
@@ -517,7 +517,7 @@ mod tests {
         // = 58
         // Round size up to match FileSystemInfo alignment of 8: 64
         assert_eq!(info.size, 64);
-        assert_eq!(info.size, mem::size_of_val(info) as u64);
+        assert_eq!(info.size, size_of_val(info) as u64);
 
         assert_eq!(info.read_only, read_only);
         assert_eq!(info.volume_size, volume_size);

@@ -6,7 +6,6 @@ extern crate alloc;
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::mem;
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, BltRegion, GraphicsOutput};
 use uefi::proto::rng::Rng;
@@ -77,7 +76,7 @@ impl Buffer {
 
 /// Get a random `usize` value.
 fn get_random_usize(rng: &mut Rng) -> usize {
-    let mut buf = [0; mem::size_of::<usize>()];
+    let mut buf = [0; size_of::<usize>()];
     rng.get_rng(None, &mut buf).expect("get_rng failed");
     usize::from_le_bytes(buf)
 }

@@ -41,11 +41,10 @@ pub use iter::*;
 pub use uefi_raw::table::boot::{MemoryAttribute, MemoryDescriptor, MemoryType};
 
 use crate::data_types::Align;
-use core::mem;
 
 impl Align for MemoryDescriptor {
     fn alignment() -> usize {
-        mem::align_of::<Self>()
+        align_of::<Self>()
     }
 }
 
@@ -90,7 +89,7 @@ impl MemoryMapMeta {
         // extended by a future UEFI revision by a significant amount, we
         // update the struct, but an old UEFI implementation reports a small
         // size.
-        assert!(self.desc_size >= mem::size_of::<MemoryDescriptor>());
+        assert!(self.desc_size >= size_of::<MemoryDescriptor>());
         assert!(self.map_size > 0);
 
         // Ensure the mmap size is (somehow) sane.
@@ -238,8 +237,8 @@ mod tests_mmap_artificial {
 mod tests_mmap_real {
     use super::*;
     use alloc::vec::Vec;
-    use core::mem::size_of;
     use core::slice;
+    use size_of;
 
     const MMAP_META: MemoryMapMeta = MemoryMapMeta {
         map_size: MMAP_RAW.len() * size_of::<u64>(),

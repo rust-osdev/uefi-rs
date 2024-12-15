@@ -605,7 +605,6 @@ pub struct TimeError {
     pub daylight: bool,
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for TimeError {}
 
 impl Display for TimeError {

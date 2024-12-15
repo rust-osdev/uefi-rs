@@ -248,7 +248,6 @@ impl Display for LanguageError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for LanguageError {}
 
 #[derive(Debug, PartialEq)]

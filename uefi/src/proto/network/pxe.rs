@@ -1247,7 +1247,6 @@ impl Display for IcmpError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for IcmpError {}
 
 /// Corresponds to the anonymous union inside
@@ -1294,7 +1293,6 @@ impl Display for TftpError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for TftpError {}
 
 /// Returned by [`BaseCode::tftp_read_dir`].
@@ -1337,5 +1335,4 @@ impl Display for ReadDirParseError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for ReadDirParseError {}

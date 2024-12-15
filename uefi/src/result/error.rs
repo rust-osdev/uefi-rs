@@ -68,5 +68,4 @@ impl<Data: Debug> Error<Data> {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl<Data: Debug> core::error::Error for Error<Data> {}

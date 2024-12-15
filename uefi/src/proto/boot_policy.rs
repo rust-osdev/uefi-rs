@@ -20,7 +20,6 @@ impl Display for BootPolicyError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for BootPolicyError {}
 
 /// The UEFI boot policy is a property that influences the behaviour of

@@ -189,7 +189,6 @@ impl Display for BuildError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for BuildError {}
 
 /// Trait for types that can be used to build a node via

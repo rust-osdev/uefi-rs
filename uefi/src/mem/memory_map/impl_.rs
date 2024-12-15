@@ -25,7 +25,6 @@ impl Display for MemoryMapError {
     }
 }
 
-#[cfg(feature = "unstable")]
 impl core::error::Error for MemoryMapError {}
 
 /// Implementation of [`MemoryMap`] for the given buffer.

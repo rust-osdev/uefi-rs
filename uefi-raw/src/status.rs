@@ -98,7 +98,7 @@ pub enum Status: usize => {
 
 impl Status {
     /// Bit indicating that an UEFI status code is an error.
-    pub const ERROR_BIT: usize = 1 << (core::mem::size_of::<usize>() * 8 - 1);
+    pub const ERROR_BIT: usize = 1 << (usize::BITS - 1);
 
     /// Returns true if status code indicates success.
     #[inline]

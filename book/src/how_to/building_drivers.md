@@ -11,10 +11,15 @@ value to `efi_boot_service_driver` or `efi_runtime_driver`.
 
 Example:
 
-```toml
-# In .cargo/config.toml:
-[build]
-rustflags = ["-C", "link-args=/subsystem:efi_runtime_driver"]
+```rust
+// In build.rs
+
+fn main() {
+    let target = std::env::var("TARGET").unwrap();
+    if target.ends_with("-unknown-uefi") {
+        println!("cargo::rustc-link-arg=/subsystem:efi_runtime_driver");
+    }
+}
 ```
 
 [spec-images]: https://uefi.org/specs/UEFI/2.10/02_Overview.html#uefi-images

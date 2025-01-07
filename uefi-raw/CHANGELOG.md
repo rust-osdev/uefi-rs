@@ -7,6 +7,7 @@
 - Added `DriverBindingProtocol`.
 - Added `FirmwareVolume2Protocol`.
 - Added `FirmwareVolumeBlock2Protocol`.
+- Added `HiiDatabaseProtocol`.
 
 
 # uefi-raw - 0.9.0 (2024-10-23)

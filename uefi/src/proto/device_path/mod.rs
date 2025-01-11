@@ -644,6 +644,9 @@ pub enum ByteConversionError {
 /// specific node type.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum NodeConversionError {
+    /// The requested node type does not match the actual node type.
+    DifferentType,
+
     /// The length of the node data is not valid for its type.
     InvalidLength,
 
@@ -913,5 +916,24 @@ mod tests {
         check_node(nodes[4], 0xa3, 0xb3, &[40, 41, 42, 43]);
         // The end-entire node is not returned by the iterator.
         assert_eq!(nodes.len(), 5);
+    }
+
+    /// Test converting from `&DevicePathNode` to a specific node type.
+    #[test]
+    fn test_specific_node_from_device_path_node() {
+        let mut raw_data = Vec::new();
+        add_node(
+            &mut raw_data,
+            DeviceType::END.0,
+            DeviceSubType::END_INSTANCE.0,
+            &[],
+        );
+        let node = <&DevicePathNode>::try_from(raw_data.as_slice()).unwrap();
+
+        assert!(<&end::Instance>::try_from(node).is_ok());
+        assert_eq!(
+            <&end::Entire>::try_from(node).unwrap_err(),
+            NodeConversionError::DifferentType
+        );
     }
 }

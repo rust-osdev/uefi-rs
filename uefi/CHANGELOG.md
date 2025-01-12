@@ -3,6 +3,9 @@
 ## Changed
 - MSRV increased to 1.81.
 - `core::error::Error` impls are no longer gated by the `unstable` feature.
+- Fixed missing checks in the `TryFrom` conversion from `&DevicePathNode` to
+  specific node types. The node type and subtype are now checked, and
+  `NodeConversionError::DifferentType` is returned if they do not match.
 
 
 # uefi - 0.33.0 (2024-10-23)

@@ -268,11 +268,19 @@ impl Node {
             )
         };
 
+        let device_type = &self.device_type.const_ident();
+        let sub_type = &self.sub_type;
+
         quote!(
             impl TryFrom<&DevicePathNode> for &#struct_ident {
                 type Error = NodeConversionError;
 
                 fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+                    if node.device_type() != DeviceType::#device_type ||
+                        node.sub_type() != DeviceSubType::#sub_type {
+                        return Err(NodeConversionError::DifferentType);
+                    }
+
                     #try_from_body
 
                     // Safety: the node fields have all been verified to

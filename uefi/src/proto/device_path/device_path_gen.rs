@@ -41,6 +41,12 @@ pub mod end {
     impl TryFrom<&DevicePathNode> for &Instance {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::END
+                || node.sub_type() != DeviceSubType::END_INSTANCE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Instance>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -70,6 +76,11 @@ pub mod end {
     impl TryFrom<&DevicePathNode> for &Entire {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::END || node.sub_type() != DeviceSubType::END_ENTIRE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Entire>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -118,6 +129,12 @@ pub mod hardware {
     impl TryFrom<&DevicePathNode> for &Pci {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::HARDWARE
+                || node.sub_type() != DeviceSubType::HARDWARE_PCI
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Pci>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -154,6 +171,12 @@ pub mod hardware {
     impl TryFrom<&DevicePathNode> for &Pccard {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::HARDWARE
+                || node.sub_type() != DeviceSubType::HARDWARE_PCCARD
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Pccard>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -206,6 +229,12 @@ pub mod hardware {
     impl TryFrom<&DevicePathNode> for &MemoryMapped {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::HARDWARE
+                || node.sub_type() != DeviceSubType::HARDWARE_MEMORY_MAPPED
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<MemoryMapped>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -256,6 +285,12 @@ pub mod hardware {
     impl TryFrom<&DevicePathNode> for &Vendor {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::HARDWARE
+                || node.sub_type() != DeviceSubType::HARDWARE_VENDOR
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 20usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -297,6 +332,12 @@ pub mod hardware {
     impl TryFrom<&DevicePathNode> for &Controller {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::HARDWARE
+                || node.sub_type() != DeviceSubType::HARDWARE_CONTROLLER
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Controller>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -344,6 +385,12 @@ pub mod hardware {
     impl TryFrom<&DevicePathNode> for &Bmc {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::HARDWARE
+                || node.sub_type() != DeviceSubType::HARDWARE_BMC
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Bmc>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -398,6 +445,10 @@ pub mod acpi {
     impl TryFrom<&DevicePathNode> for &Acpi {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::ACPI || node.sub_type() != DeviceSubType::ACPI {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Acpi>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -483,6 +534,12 @@ pub mod acpi {
     impl TryFrom<&DevicePathNode> for &Expanded {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::ACPI
+                || node.sub_type() != DeviceSubType::ACPI_EXPANDED
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 16usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -534,6 +591,11 @@ pub mod acpi {
     impl TryFrom<&DevicePathNode> for &Adr {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::ACPI || node.sub_type() != DeviceSubType::ACPI_ADR
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 4usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -575,6 +637,12 @@ pub mod acpi {
     impl TryFrom<&DevicePathNode> for &Nvdimm {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::ACPI
+                || node.sub_type() != DeviceSubType::ACPI_NVDIMM
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Nvdimm>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -744,6 +812,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Atapi {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_ATAPI
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Atapi>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -788,6 +862,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Scsi {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_SCSI
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Scsi>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -834,6 +914,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &FibreChannel {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_FIBRE_CHANNEL
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<FibreChannel>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -880,6 +966,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &FibreChannelEx {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_FIBRE_CHANNEL_EX
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<FibreChannelEx>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -919,6 +1011,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Ieee1394 {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_1394
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Ieee1394>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -963,6 +1061,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Usb {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_USB
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Usb>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1020,6 +1124,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Sata {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_SATA
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Sata>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1088,6 +1198,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &UsbWwid {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_USB_WWID
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 10usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -1129,6 +1245,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &DeviceLogicalUnit {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_DEVICE_LOGICAL_UNIT
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<DeviceLogicalUnit>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1197,6 +1319,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &UsbClass {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_USB_CLASS
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<UsbClass>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1233,6 +1361,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &I2o {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_I2O
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<I2o>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1278,6 +1412,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &MacAddress {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_MAC_ADDRESS
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<MacAddress>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1371,6 +1511,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Ipv4 {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_IPV4
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Ipv4>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1464,6 +1610,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Ipv6 {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_IPV6
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Ipv6>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1500,6 +1652,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Vlan {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_VLAN
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Vlan>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1570,6 +1728,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Infiniband {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_INFINIBAND
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Infiniband>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1632,6 +1796,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Uart {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_UART
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Uart>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1682,6 +1852,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Vendor {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_VENDOR
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 20usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -1747,6 +1923,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &SasEx {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_SCSI_SAS_EX
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<SasEx>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1826,6 +2008,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Iscsi {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_ISCSI
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 18usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -1879,6 +2067,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &NvmeNamespace {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_NVME_NAMESPACE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<NvmeNamespace>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -1921,6 +2115,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Uri {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_URI
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 4usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -1970,6 +2170,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Ufs {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_UFS
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Ufs>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2006,6 +2212,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Sd {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_SD
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Sd>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2042,6 +2254,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Bluetooth {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_BLUETOOTH
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Bluetooth>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2078,6 +2296,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Wifi {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_WIFI
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Wifi>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2114,6 +2338,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Emmc {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_EMMC
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Emmc>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2158,6 +2388,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &BluetoothLe {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_BLUETOOTH_LE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<BluetoothLe>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2210,6 +2446,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &Dns {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_DNS
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 5usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2251,6 +2493,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &NvdimmNamespace {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_NVDIMM_NAMESPACE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<NvdimmNamespace>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2303,6 +2551,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &RestService {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_REST_SERVICE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 6usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2368,6 +2622,12 @@ pub mod messaging {
     impl TryFrom<&DevicePathNode> for &NvmeOfNamespace {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MESSAGING
+                || node.sub_type() != DeviceSubType::MESSAGING_NVME_OF_NAMESPACE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 21usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2524,6 +2784,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &HardDrive {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_HARD_DRIVE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<HardDrive>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2577,6 +2843,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &CdRom {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_CD_ROM
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<CdRom>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2627,6 +2899,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &Vendor {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_VENDOR
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 20usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2676,6 +2954,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &FilePath {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_FILE_PATH
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 4usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2717,6 +3001,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &Protocol {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_PROTOCOL
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<Protocol>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2759,6 +3049,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &PiwgFirmwareFile {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_PIWG_FIRMWARE_FILE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 4usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2807,6 +3103,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &PiwgFirmwareVolume {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_PIWG_FIRMWARE_VOLUME
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 4usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)
@@ -2859,6 +3161,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &RelativeOffsetRange {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_RELATIVE_OFFSET_RANGE
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<RelativeOffsetRange>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -2919,6 +3227,12 @@ pub mod media {
     impl TryFrom<&DevicePathNode> for &RamDisk {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::MEDIA
+                || node.sub_type() != DeviceSubType::MEDIA_RAM_DISK
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             if size_of_val(node) != size_of::<RamDisk>() {
                 return Err(NodeConversionError::InvalidLength);
             }
@@ -3029,6 +3343,12 @@ pub mod bios_boot_spec {
     impl TryFrom<&DevicePathNode> for &BootSpecification {
         type Error = NodeConversionError;
         fn try_from(node: &DevicePathNode) -> Result<Self, Self::Error> {
+            if node.device_type() != DeviceType::BIOS_BOOT_SPEC
+                || node.sub_type() != DeviceSubType::BIOS_BOOT_SPECIFICATION
+            {
+                return Err(NodeConversionError::DifferentType);
+            }
+
             let static_size = 8usize;
             let dst_size = size_of_val(node)
                 .checked_sub(static_size)

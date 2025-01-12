@@ -9,6 +9,7 @@
 - Added `FirmwareVolumeBlock2Protocol`.
 - Added `HiiDatabaseProtocol`.
 - Added `ScsiIoProtocol`.
+- Added `Default` and other common impls for HTTP types.
 
 
 # uefi-raw - 0.9.0 (2024-10-23)

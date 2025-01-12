@@ -1,6 +1,6 @@
 # uefi-raw - [Unreleased]
 
-## Changed
+## Added
 
 - Added `protocol::string::UnicodeCollationProtocol`.
 - Added `protocol::tcg` module, containing the TCG v1 and v2 protocols.
@@ -8,6 +8,7 @@
 - Added `FirmwareVolume2Protocol`.
 - Added `FirmwareVolumeBlock2Protocol`.
 - Added `HiiDatabaseProtocol`.
+- Added `ScsiIoProtocol`.
 
 
 # uefi-raw - 0.9.0 (2024-10-23)

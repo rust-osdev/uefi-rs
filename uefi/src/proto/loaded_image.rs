@@ -180,23 +180,13 @@ impl LoadedImage {
         (self.0.image_base, self.0.image_size)
     }
 
-    /// Get the memory type of the image's code sections.
-    ///
-    /// Normally the returned value is one of:
-    ///  - `MemoryType::LOADER_CODE` for UEFI applications
-    ///  - `MemoryType::BOOT_SERVICES_CODE` for UEFI boot drivers
-    ///  - `MemoryType::RUNTIME_SERVICES_CODE` for UEFI runtime drivers
+    /// Returns the memory type that the image's code sections were loaded as.
     #[must_use]
     pub const fn code_type(&self) -> MemoryType {
         self.0.image_code_type
     }
 
-    /// Get the memory type of the image's data sections.
-    ///
-    /// Normally the returned value is one of:
-    ///  - `MemoryType::LOADER_DATA` for UEFI applications
-    ///  - `MemoryType::BOOT_SERVICES_DATA` for UEFI boot drivers
-    ///  - `MemoryType::RUNTIME_SERVICES_DATA` for UEFI runtime drivers
+    /// Returns the memory type that the image's data sections were loaded as.
     #[must_use]
     pub const fn data_type(&self) -> MemoryType {
         self.0.image_data_type

@@ -134,25 +134,21 @@ impl LoadedImage {
         self.0.image_size = size;
     }
 
-    /// Set the callback handler to unload the image.
-    ///
-    /// Drivers that wish to support unloading have to register their unload handler
-    /// using this protocol. It is responsible for cleaning up any resources the
-    /// image is using before returning. Unloading a driver is done with
-    /// [`boot::unload_image`].
+    /// Registers a cleanup function that is called when [`boot::unload_image`]
+    /// is called.
     ///
     /// # Safety
     ///
-    /// Only the driver that this [`LoadedImage`] is attached to should register an
-    /// unload handler.
+    /// The registered function must reside in memory that is not freed until
+    /// after the image is unloaded.
     ///
     /// [`boot::unload_image`]: crate::boot::unload_image
     pub unsafe fn set_unload(
         &mut self,
         unload: extern "efiapi" fn(image_handle: Handle) -> Status,
     ) {
-        type RawFn = unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status;
-        let unload: RawFn = mem::transmute(unload);
+        let unload: unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status =
+            mem::transmute(unload);
         self.0.unload = Some(unload);
     }
 

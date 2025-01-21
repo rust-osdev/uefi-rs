@@ -184,29 +184,31 @@ fn test_uninstall_protocol_interface() {
 
 fn test_install_configuration_table() {
     // Get the current number of entries.
-    let count = system::with_config_table(|t| t.len());
+    let initial_table_count = system::with_config_table(|t| t.len());
 
     // Create the entry data.
-    let config = boot::allocate_pool(MemoryType::RUNTIME_SERVICES_DATA, 1)
-        .unwrap()
-        .as_ptr();
-    unsafe { config.write(42) };
+    let config: NonNull<u8> = boot::allocate_pool(MemoryType::RUNTIME_SERVICES_DATA, 1).unwrap();
+    unsafe { config.write(123u8) };
 
     // Install the table.
-    const ID: Guid = guid!("4bec53c4-5fc1-48a1-ab12-df214907d29f");
+    const TABLE_GUID: Guid = guid!("4bec53c4-5fc1-48a1-ab12-df214907d29f");
     unsafe {
-        boot::install_configuration_table(&ID, config.cast()).unwrap();
+        boot::install_configuration_table(&TABLE_GUID, config.as_ptr().cast()).unwrap();
     }
 
     // Verify the installation.
-    assert_eq!(count + 1, system::with_config_table(|t| t.len()));
+    assert_eq!(
+        initial_table_count + 1,
+        system::with_config_table(|t| t.len())
+    );
     system::with_config_table(|t| {
-        let config_entry = t.iter().find(|ct| ct.guid == ID).unwrap();
-        assert_eq!(unsafe { *(config_entry.address as *const u8) }, 42);
+        let config_entry = t.iter().find(|ct| ct.guid == TABLE_GUID).unwrap();
+        assert_eq!(unsafe { *config_entry.address.cast::<u8>() }, 123);
     });
 
-    // Uninstall the table.
+    // Uninstall the table and free the memory.
     unsafe {
-        boot::install_configuration_table(&ID, ptr::null()).unwrap();
+        boot::install_configuration_table(&TABLE_GUID, ptr::null()).unwrap();
+        boot::free_pool(config).unwrap();
     }
 }

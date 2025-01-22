@@ -7,13 +7,12 @@
 //! services are not active, `alloc` will return a null pointer, and `dealloc`
 //! will panic.
 
-use core::alloc::{GlobalAlloc, Layout};
-use core::ptr::{self, NonNull};
-use core::sync::atomic::{AtomicU32, Ordering};
-
 use crate::boot;
 use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
+use core::alloc::{GlobalAlloc, Layout};
+use core::ptr::{self, NonNull};
+use core::sync::atomic::{AtomicU32, Ordering};
 
 /// Get the memory type to use for allocation.
 ///
@@ -48,9 +47,11 @@ fn get_memory_type() -> MemoryType {
 pub struct Allocator;
 
 unsafe impl GlobalAlloc for Allocator {
-    /// Allocate memory using [`boot::allocate_pool`]. The allocation is
-    /// of type [`MemoryType::LOADER_DATA`] for UEFI applications, [`MemoryType::BOOT_SERVICES_DATA`]
-    /// for UEFI boot drivers and [`MemoryType::RUNTIME_SERVICES_DATA`] for UEFI runtime drivers.
+    /// Allocate memory using [`boot::allocate_pool`]. The allocation's [memory
+    /// type] matches the current image's [data type].
+    ///
+    /// [memory type]: MemoryType
+    /// [data type]: LoadedImage::data_type
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         if !boot::are_boot_services_active() {
             return ptr::null_mut();

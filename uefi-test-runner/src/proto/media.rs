@@ -15,6 +15,9 @@ use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::proto::media::partition::{MbrOsType, PartitionInfo};
 use uefi::runtime::{Daylight, Time, TimeParams};
 
+#[repr(align(8))]
+struct AlignedBuf([u8; 256]);
+
 /// Test directory entry iteration.
 fn test_existing_dir(directory: &mut Directory) {
     info!("Testing existing directory");
@@ -31,11 +34,9 @@ fn test_existing_dir(directory: &mut Directory) {
     let dir = RefCell::new(dir);
 
     assert_eq!(FileInfo::alignment(), 8);
-    #[repr(align(8))]
-    struct Buf([u8; 200]);
 
     // Backing memory to read the file info data into.
-    let mut stack_buf = Buf([0; 200]);
+    let mut stack_buf = AlignedBuf([0; 256]);
 
     // The file names that the test read from the directory.
     let entry_names = RefCell::new(vec![]);

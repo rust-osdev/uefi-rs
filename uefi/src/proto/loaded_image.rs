@@ -134,25 +134,21 @@ impl LoadedImage {
         self.0.image_size = size;
     }
 
-    /// Set the callback handler to unload the image.
-    ///
-    /// Drivers that wish to support unloading have to register their unload handler
-    /// using this protocol. It is responsible for cleaning up any resources the
-    /// image is using before returning. Unloading a driver is done with
-    /// [`boot::unload_image`].
+    /// Registers a cleanup function that is called when [`boot::unload_image`]
+    /// is called.
     ///
     /// # Safety
     ///
-    /// Only the driver that this [`LoadedImage`] is attached to should register an
-    /// unload handler.
+    /// The registered function must reside in memory that is not freed until
+    /// after the image is unloaded.
     ///
     /// [`boot::unload_image`]: crate::boot::unload_image
     pub unsafe fn set_unload(
         &mut self,
         unload: extern "efiapi" fn(image_handle: Handle) -> Status,
     ) {
-        type RawFn = unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status;
-        let unload: RawFn = mem::transmute(unload);
+        let unload: unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status =
+            mem::transmute(unload);
         self.0.unload = Some(unload);
     }
 
@@ -180,23 +176,13 @@ impl LoadedImage {
         (self.0.image_base, self.0.image_size)
     }
 
-    /// Get the memory type of the image's code sections.
-    ///
-    /// Normally the returned value is one of:
-    ///  - `MemoryType::LOADER_CODE` for UEFI applications
-    ///  - `MemoryType::BOOT_SERVICES_CODE` for UEFI boot drivers
-    ///  - `MemoryType::RUNTIME_SERVICES_CODE` for UEFI runtime drivers
+    /// Returns the memory type that the image's code sections were loaded as.
     #[must_use]
     pub const fn code_type(&self) -> MemoryType {
         self.0.image_code_type
     }
 
-    /// Get the memory type of the image's data sections.
-    ///
-    /// Normally the returned value is one of:
-    ///  - `MemoryType::LOADER_DATA` for UEFI applications
-    ///  - `MemoryType::BOOT_SERVICES_DATA` for UEFI boot drivers
-    ///  - `MemoryType::RUNTIME_SERVICES_DATA` for UEFI runtime drivers
+    /// Returns the memory type that the image's data sections were loaded as.
     #[must_use]
     pub const fn data_type(&self) -> MemoryType {
         self.0.image_data_type

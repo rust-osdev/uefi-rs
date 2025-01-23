@@ -42,7 +42,7 @@ use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::{mem, slice};
-use uefi_raw::table::boot::InterfaceType;
+use uefi_raw::table::boot::{InterfaceType, TimerDelay};
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
 
@@ -472,9 +472,9 @@ pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
     let bt = unsafe { bt.as_ref() };
 
     let (ty, time) = match trigger_time {
-        TimerTrigger::Cancel => (0, 0),
-        TimerTrigger::Periodic(hundreds_ns) => (1, hundreds_ns),
-        TimerTrigger::Relative(hundreds_ns) => (2, hundreds_ns),
+        TimerTrigger::Cancel => (TimerDelay::CANCEL, 0),
+        TimerTrigger::Periodic(period) => (TimerDelay::PERIODIC, period),
+        TimerTrigger::Relative(delay) => (TimerDelay::RELATIVE, delay),
     };
     unsafe { (bt.set_timer)(event.as_ptr(), ty, time) }.to_result()
 }
@@ -1688,19 +1688,29 @@ impl SearchType<'_> {
 /// Event notification callback type.
 pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: Option<NonNull<c_void>>);
 
-/// Timer events manipulation.
+/// Trigger type for events of type [`TIMER`].
+///
+/// See [`set_timer`].
+///
+/// [`TIMER`]: EventType::TIMER
 #[derive(Debug)]
 pub enum TimerTrigger {
-    /// Cancel event's timer
+    /// Remove the event's timer setting.
     Cancel,
-    /// The event is to be signaled periodically.
-    /// Parameter is the period in 100ns units.
-    /// Delay of 0 will be signalled on every timer tick.
-    Periodic(u64),
-    /// The event is to be signaled once in 100ns units.
-    /// Parameter is the delay in 100ns units.
-    /// Delay of 0 will be signalled on next timer tick.
-    Relative(u64),
+
+    /// Trigger the event periodically.
+    Periodic(
+        /// Duration between event signaling in units of 100ns. If set to zero,
+        /// the event will be signaled on every timer tick.
+        u64,
+    ),
+
+    /// Trigger the event one time.
+    Relative(
+        /// Duration to wait before signaling the event in units of 100ns. If
+        /// set to zero, the event will be signaled on the next timer tick.
+        u64,
+    ),
 }
 
 /// Opaque pointer returned by [`register_protocol_notify`] to be used

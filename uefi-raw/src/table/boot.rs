@@ -47,7 +47,8 @@ pub struct BootServices {
         notify_ctx: *mut c_void,
         out_event: *mut Event,
     ) -> Status,
-    pub set_timer: unsafe extern "efiapi" fn(event: Event, ty: u32, trigger_time: u64) -> Status,
+    pub set_timer:
+        unsafe extern "efiapi" fn(event: Event, ty: TimerDelay, trigger_time: u64) -> Status,
     pub wait_for_event: unsafe extern "efiapi" fn(
         number_of_events: usize,
         events: *mut Event,
@@ -484,3 +485,11 @@ pub enum Tpl: usize => {
 /// Note that this is not necessarily the processor's page size. The UEFI page
 /// size is always 4 KiB.
 pub const PAGE_SIZE: usize = 4096;
+
+newtype_enum! {
+    pub enum TimerDelay: i32 => {
+        CANCEL = 0,
+        PERIODIC = 1,
+        RELATIVE = 2,
+    }
+}

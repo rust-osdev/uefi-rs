@@ -10,6 +10,11 @@
 - Added `HiiDatabaseProtocol`.
 - Added `ScsiIoProtocol`.
 - Added `Default` and other common impls for HTTP types.
+- Added `boot::TimerDelay`.
+
+## Changed
+- The definition of `BootServices::set_timer` now uses `TimerDelay` rather than
+  a plain integer.
 
 
 # uefi-raw - 0.9.0 (2024-10-23)

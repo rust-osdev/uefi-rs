@@ -439,6 +439,7 @@ impl MemoryType {
 
     /// Construct a custom `MemoryType`. Values in the range `0x8000_0000..=0xffff_ffff` are free for use if you are
     /// an OS loader.
+    /// **Warning:** Some EFI firmware versions (e.g., OVMF r11337) may crash or behave incorrectly when using a custom `MemoryType`.
     #[must_use]
     pub const fn custom(value: u32) -> Self {
         assert!(value >= 0x80000000);

@@ -61,6 +61,30 @@ impl Deref for PoolString {
     }
 }
 
+/// Device path allocated from UEFI pool memory.
+#[derive(Debug)]
+pub struct PoolDevicePath(PoolAllocation);
+
+impl Deref for PoolDevicePath {
+    type Target = DevicePath;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { DevicePath::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
+    }
+}
+
+/// Device path node allocated from UEFI pool memory.
+#[derive(Debug)]
+pub struct PoolDevicePathNode(PoolAllocation);
+
+impl Deref for PoolDevicePathNode {
+    type Target = DevicePathNode;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { DevicePathNode::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
+    }
+}
+
 /// Device Path to Text protocol.
 ///
 /// This protocol provides common utility functions for converting device
@@ -139,14 +163,12 @@ impl DevicePathFromText {
     pub fn convert_text_to_device_node(
         &self,
         text_device_node: &CStr16,
-    ) -> Result<&DevicePathNode> {
+    ) -> Result<PoolDevicePathNode> {
         unsafe {
             let ptr = (self.0.convert_text_to_device_node)(text_device_node.as_ptr().cast());
-            if ptr.is_null() {
-                Err(Status::OUT_OF_RESOURCES.into())
-            } else {
-                Ok(DevicePathNode::from_ffi_ptr(ptr.cast()))
-            }
+            NonNull::new(ptr.cast_mut())
+                .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
+                .ok_or(Status::OUT_OF_RESOURCES.into())
         }
     }
 
@@ -160,14 +182,12 @@ impl DevicePathFromText {
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
-    pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Result<&DevicePath> {
+    pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Result<PoolDevicePath> {
         unsafe {
             let ptr = (self.0.convert_text_to_device_path)(text_device_path.as_ptr().cast());
-            if ptr.is_null() {
-                Err(Status::OUT_OF_RESOURCES.into())
-            } else {
-                Ok(DevicePath::from_ffi_ptr(ptr.cast()))
-            }
+            NonNull::new(ptr.cast_mut())
+                .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
+                .ok_or(Status::OUT_OF_RESOURCES.into())
         }
     }
 }

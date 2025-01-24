@@ -30,6 +30,17 @@ pub fn test() {
         )
         .expect("Failed to open DevicePathFromText protocol");
 
+        // Test round-trip conversion from path to text and back.
+        let device_path_string = device_path_to_text
+            .convert_device_path_to_text(&device_path, DisplayOnly(false), AllowShortcuts(false))
+            .unwrap();
+        assert_eq!(
+            *device_path_from_text
+                .convert_text_to_device_path(&device_path_string)
+                .unwrap(),
+            *device_path
+        );
+
         for path in device_path.node_iter() {
             info!(
                 "path: type={:?}, subtype={:?}, length={}",
@@ -47,7 +58,7 @@ pub fn test() {
             let convert = device_path_from_text
                 .convert_text_to_device_node(text)
                 .expect("Failed to convert text to device path");
-            assert_eq!(path, convert);
+            assert_eq!(*path, *convert);
         }
 
         // Get the `LoadedImageDevicePath`. Verify it start with the same nodes as

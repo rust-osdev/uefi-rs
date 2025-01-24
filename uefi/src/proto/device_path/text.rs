@@ -8,9 +8,10 @@
 // if there is insufficient memory. So we treat any NULL output as an
 // `OUT_OF_RESOURCES` error.
 
+use crate::mem::PoolAllocation;
 use crate::proto::device_path::{DevicePath, DevicePathNode};
 use crate::proto::unsafe_protocol;
-use crate::{boot, CStr16, Char16, Result, Status};
+use crate::{CStr16, Char16, Result, Status};
 use core::ops::Deref;
 use core::ptr::NonNull;
 use uefi_raw::protocol::device_path::{DevicePathFromTextProtocol, DevicePathToTextProtocol};
@@ -42,12 +43,12 @@ pub struct AllowShortcuts(pub bool);
 /// Wrapper for a string internally allocated from
 /// UEFI boot services memory.
 #[derive(Debug)]
-pub struct PoolString(NonNull<Char16>);
+pub struct PoolString(PoolAllocation);
 
 impl PoolString {
     fn new(text: *const Char16) -> Result<Self> {
         NonNull::new(text.cast_mut())
-            .map(Self)
+            .map(|p| Self(PoolAllocation::new(p.cast())))
             .ok_or(Status::OUT_OF_RESOURCES.into())
     }
 }
@@ -56,13 +57,31 @@ impl Deref for PoolString {
     type Target = CStr16;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { CStr16::from_ptr(self.0.as_ptr()) }
+        unsafe { CStr16::from_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
 
-impl Drop for PoolString {
-    fn drop(&mut self) {
-        unsafe { boot::free_pool(self.0.cast()) }.expect("Failed to free pool [{addr:#?}]");
+/// Device path allocated from UEFI pool memory.
+#[derive(Debug)]
+pub struct PoolDevicePath(PoolAllocation);
+
+impl Deref for PoolDevicePath {
+    type Target = DevicePath;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { DevicePath::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
+    }
+}
+
+/// Device path node allocated from UEFI pool memory.
+#[derive(Debug)]
+pub struct PoolDevicePathNode(PoolAllocation);
+
+impl Deref for PoolDevicePathNode {
+    type Target = DevicePathNode;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { DevicePathNode::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
 
@@ -144,14 +163,12 @@ impl DevicePathFromText {
     pub fn convert_text_to_device_node(
         &self,
         text_device_node: &CStr16,
-    ) -> Result<&DevicePathNode> {
+    ) -> Result<PoolDevicePathNode> {
         unsafe {
             let ptr = (self.0.convert_text_to_device_node)(text_device_node.as_ptr().cast());
-            if ptr.is_null() {
-                Err(Status::OUT_OF_RESOURCES.into())
-            } else {
-                Ok(DevicePathNode::from_ffi_ptr(ptr.cast()))
-            }
+            NonNull::new(ptr.cast_mut())
+                .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
+                .ok_or(Status::OUT_OF_RESOURCES.into())
         }
     }
 
@@ -165,14 +182,12 @@ impl DevicePathFromText {
     /// memory for the conversion.
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
-    pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Result<&DevicePath> {
+    pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Result<PoolDevicePath> {
         unsafe {
             let ptr = (self.0.convert_text_to_device_path)(text_device_path.as_ptr().cast());
-            if ptr.is_null() {
-                Err(Status::OUT_OF_RESOURCES.into())
-            } else {
-                Ok(DevicePath::from_ffi_ptr(ptr.cast()))
-            }
+            NonNull::new(ptr.cast_mut())
+                .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
+                .ok_or(Status::OUT_OF_RESOURCES.into())
         }
     }
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Re-export of low-level UEFI types but prefixed with `Uefi`. This simplifies
 //! to differ between high-level and low-level types and interfaces in this
 //! module.

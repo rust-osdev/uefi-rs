@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Module for the [`BootPolicy`] helper type.
 
 use core::fmt::{Display, Formatter};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Media access protocols.
 //!
 //! These protocols can be used to enumerate and access various media devices.

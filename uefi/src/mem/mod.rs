@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Types, functions, traits, and other helpers to work with memory in UEFI
 //! libraries and applications.
 

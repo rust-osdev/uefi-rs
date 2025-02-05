@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! A high-level file system API for UEFI applications close to the `std::fs`
 //! module from Rust's standard library. The main export of this module is
 //! [`FileSystem`].

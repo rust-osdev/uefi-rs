@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // This module defines the `ComponentName1` type and marks it deprecated. That
 // causes warnings for uses within this module (e.g. the `impl ComponentName1`
 // block), so turn off deprecated warnings. It's not yet possible to make this

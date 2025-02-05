@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This optional feature adds support for the `log` crate, providing
 //! a custom logger implementation which writes to a UEFI text output protocol.
 //!

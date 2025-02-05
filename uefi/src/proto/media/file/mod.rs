@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This module provides the `FileHandle` structure as well as the more specific `RegularFile` and
 //! `Directory` structures. This module also provides the `File` trait for opening, querying,
 //! creating, reading, and writing files.

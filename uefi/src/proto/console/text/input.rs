@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;

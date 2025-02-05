@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::data_types::PhysicalAddress;
 use crate::mem::memory_map::MemoryAttribute;
 use crate::proto::unsafe_protocol;

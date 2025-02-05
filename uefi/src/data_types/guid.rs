@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 pub use uguid::Guid;
 
 /// Several entities in the UEFI specification can be referred to by their GUID,

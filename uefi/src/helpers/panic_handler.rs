@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::{boot, println};
 use cfg_if::cfg_if;
 

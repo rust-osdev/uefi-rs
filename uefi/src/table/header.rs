@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use super::Revision;
 
 /// All standard UEFI tables begin with a common header.

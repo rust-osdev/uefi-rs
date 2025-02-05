@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::fs::{PathBuf, PathError};
 use alloc::string::FromUtf8Error;
 use core::fmt::{self, Debug, Display, Formatter};

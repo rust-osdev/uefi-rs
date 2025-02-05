@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Module for [`MemoryMapOwned`], [`MemoryMapRef`], and [`MemoryMapRefMut`],
 //! as well as relevant helper types, such as [`MemoryMapBackingMemory`].
 

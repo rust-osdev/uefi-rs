@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Utilities for creating new [`DevicePaths`].
 //!
 //! This module contains [`DevicePathBuilder`], as well as submodules

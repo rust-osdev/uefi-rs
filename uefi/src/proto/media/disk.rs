@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Disk I/O protocols.
 
 use crate::proto::unsafe_protocol;

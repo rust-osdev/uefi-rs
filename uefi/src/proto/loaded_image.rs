@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! `LoadedImage` protocol.
 
 use crate::data_types::FromSliceWithNulError;

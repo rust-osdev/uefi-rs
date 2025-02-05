@@ -24,7 +24,8 @@ fn code_to_string(code: TokenStream) -> Result<String> {
     let code = code.to_string().replace('}', "}\n\n");
 
     let output = format!(
-        "
+        "// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // DO NOT EDIT
 //
 // This file was automatically generated with:

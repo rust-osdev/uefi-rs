@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Types related to firmware storage.
 
 use crate::Guid;

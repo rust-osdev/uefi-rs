@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! UEFI services available during boot.
 
 use crate::protocol::device_path::DevicePathProtocol;

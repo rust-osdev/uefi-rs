@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 mod device_path_gen;
 
 use crate::{guid, Char16, Guid};

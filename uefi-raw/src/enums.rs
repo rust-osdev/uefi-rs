@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This module provides tooling that facilitates dealing with C-style enums
 //!
 //! C-style enums and Rust-style enums are quite different. There are things

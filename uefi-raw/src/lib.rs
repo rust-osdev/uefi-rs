@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Raw interface for working with UEFI.
 //!
 //! This crate is intended for implementing UEFI services. It is also used for

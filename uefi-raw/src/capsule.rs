@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! UEFI update capsules.
 //!
 //! Capsules are used to pass information to the firmware, for example to

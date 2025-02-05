@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use uefi::prelude::*;
 use uefi::proto::misc::ResetNotification;
 use uefi::runtime::ResetType;

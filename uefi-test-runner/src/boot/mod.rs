@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use alloc::string::ToString;
 use uefi::boot::{LoadImageSource, SearchType};
 use uefi::fs::FileSystem;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use alloc::vec::Vec;
 use uefi::boot;
 use uefi::proto::tcg::{v1, v2, AlgorithmId, EventType, HashAlgorithm, PcrIndex};

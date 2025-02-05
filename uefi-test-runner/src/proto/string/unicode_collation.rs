@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use core::cmp::Ordering;
 use uefi::proto::string::unicode_collation::{StrConversionError, UnicodeCollation};
 use uefi::{boot, CStr16, CStr8};

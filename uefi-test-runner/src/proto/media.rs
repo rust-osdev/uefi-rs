@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use alloc::string::ToString;
 use core::cell::RefCell;
 use core::ptr::NonNull;

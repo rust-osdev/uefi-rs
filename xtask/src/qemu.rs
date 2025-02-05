@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::arch::UefiArch;
 use crate::disk::{check_mbr_test_disk, create_mbr_test_disk};
 use crate::opt::QemuOpt;

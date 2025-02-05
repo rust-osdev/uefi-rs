@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use super::field::NodeField;
 use super::group::DeviceType;
 use crate::device_path::util::is_doc_attr;

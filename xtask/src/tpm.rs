@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::opt::TpmVersion;
 use crate::util::command_to_string;
 use anyhow::Result;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Validate various properties of the code in the `uefi-raw` package.
 //!
 //! For example, this checks that no Rust enums are used, that structs have an

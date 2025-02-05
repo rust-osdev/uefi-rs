@@ -245,13 +245,10 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
             Err(e) => {
                 if fmt_opt.check {
                     eprintln!("❌ {e:#?}");
-                    // TODO: Make this a hard error after all the headers have
-                    // been added.
-                    eprintln!("...ignoring for now");
                 } else {
                     eprintln!("❌ rust formatter failed: {e:#?}");
-                    any_errors = true;
                 }
+                any_errors = true;
             }
         }
     }

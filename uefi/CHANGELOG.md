@@ -1,6 +1,11 @@
 # uefi - [Unreleased]
 
 
+# uefi - 0.34.1 (2025-02-07)
+
+Trivial release to fix crate license documentation.
+
+
 # uefi - 0.34.0 (2025-02-07)
 
 As of this release, the project has been relicensed from MPL-2.0 to

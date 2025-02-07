@@ -89,11 +89,10 @@ Contributions in the form of a PR are also highly welcome. Check our
 
 ## License
 
-The code in this repository is licensed under the Mozilla Public License 2.
-This license allows you to use the crate in proprietary programs, but any
-modifications to the files must be open-sourced.
+Licensed under either of [Apache License, Version 2.0][apache] or
+[MIT license][mit] at your option.
 
-The full text of the license is available in the [license file](LICENSE).
-
+[apache]: LICENSE-APACHE
+[mit]: LICENSE-MIT
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 [Zulip]: https://rust-osdev.zulipchat.com

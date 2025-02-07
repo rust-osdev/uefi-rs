@@ -1034,7 +1034,7 @@ dependencies = [
 
 [[package]]
 name = "uefi"
-version = "0.33.0"
+version = "0.34.0"
 dependencies = [
  "bitflags 2.8.0",
  "cfg-if",
@@ -1049,7 +1049,7 @@ dependencies = [
 
 [[package]]
 name = "uefi-macros"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1060,7 +1060,7 @@ dependencies = [
 
 [[package]]
 name = "uefi-raw"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "bitflags 2.8.0",
  "uguid",

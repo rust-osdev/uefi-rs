@@ -1,5 +1,8 @@
 # uefi-macros - [Unreleased]
 
+
+# uefi-macros - 0.18.0 (2025-02-07)
+
 As of this release, the project has been relicensed from MPL-2.0 to
 Apache-2.0/MIT, to better align with the Rust crate ecosystem. (This does not
 alter the license of previous releases.)

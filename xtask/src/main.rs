@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 mod arch;
 mod cargo;
 mod check_raw;
@@ -233,6 +235,24 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
 fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
     let mut any_errors = false;
 
+    {
+        eprintln!("Formatting: file headers");
+
+        match format_file_headers(fmt_opt) {
+            Ok(_) => {
+                eprintln!("✅ expected file headers present")
+            }
+            Err(e) => {
+                if fmt_opt.check {
+                    eprintln!("❌ {e:#?}");
+                } else {
+                    eprintln!("❌ rust formatter failed: {e:#?}");
+                }
+                any_errors = true;
+            }
+        }
+    }
+
     // fmt rust
     {
         eprintln!("Formatting: rust");
@@ -318,6 +338,67 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
 
     if any_errors {
         bail!("one or more formatting errors");
+    }
+
+    Ok(())
+}
+
+/// Check that SPDX file headers are present.
+///
+/// If not in check mode, add any missing headers.
+fn format_file_headers(fmt_opt: &FmtOpt) -> Result<()> {
+    const EXPECTED_HEADER: &str = "// SPDX-License-Identifier: MIT OR Apache-2.0\n\n";
+
+    // Path prefixes that should not be checked/formatted.
+    const EXCLUDE_PATH_PREFIXES: &[&str] = &[
+        // A user copying the template or uefi-std-example does not need to use
+        // our license.
+        "template/src/main.rs",
+        "uefi-std-example/src/main.rs",
+        // This directory contains short code snippets used in `trybuild` tests,
+        // no license needed.
+        "uefi-macros/tests/ui/",
+    ];
+
+    // Recursively get Rust files
+    let mut cmd = Command::new("git");
+    cmd.args(["ls-files", "*.rs"]);
+    let output = cmd.output()?;
+    if !output.status.success() {
+        bail!("command failed: {}", output.status);
+    }
+    let mut paths: Vec<&str> = std::str::from_utf8(&output.stdout)?.lines().collect();
+
+    // Filter out excluded paths.
+    paths.retain(|path| {
+        !EXCLUDE_PATH_PREFIXES
+            .iter()
+            .any(|prefix| path.starts_with(prefix))
+    });
+
+    // Paths that are missing the file header (only used in check mode).
+    let mut missing = Vec::new();
+
+    // Format or check each path.
+    for path in paths {
+        let text = fs_err::read_to_string(path)?;
+        if text.starts_with(EXPECTED_HEADER) {
+            // File header is present, nothing to do.
+            continue;
+        }
+
+        if fmt_opt.check {
+            // Add to the list of paths missing file headers.
+            missing.push(path);
+        } else {
+            // Rewrite the file to prepend the header.
+            let text = EXPECTED_HEADER.to_owned() + &text;
+            fs_err::write(path, text)?;
+        }
+    }
+
+    if fmt_opt.check && !missing.is_empty() {
+        bail!("expected header missing from {}", missing.join(", "));
     }
 
     Ok(())

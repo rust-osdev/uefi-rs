@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Module for directory iteration. See [`UefiDirectoryIter`].
 
 use super::*;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use core::ptr::{self, NonNull};
 
 /// Copy the bytes of `val` to `ptr`, then advance pointer to just after the

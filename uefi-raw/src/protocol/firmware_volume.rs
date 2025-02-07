@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::firmware_storage::FirmwareVolumeAttributes;
 use crate::protocol::block::Lba;
 use crate::{guid, Guid, Handle, PhysicalAddress, Status};

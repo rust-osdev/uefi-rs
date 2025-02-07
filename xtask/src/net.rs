@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use std::net::UdpSocket;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};

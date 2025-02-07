@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};

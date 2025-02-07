@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::reconnect_serial_to_console;
 use uefi::proto::console::serial::{ControlBits, Serial};
 use uefi::{boot, Result, ResultExt, Status};

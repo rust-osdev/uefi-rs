@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Graphics output protocol.
 //!
 //! The UEFI GOP is meant to replace existing [VGA][vga] hardware interfaces.

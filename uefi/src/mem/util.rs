@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This is a utility module with helper methods for allocations/memory.
 
 use crate::data_types::Align;

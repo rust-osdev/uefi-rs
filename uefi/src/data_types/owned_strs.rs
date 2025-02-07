@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use super::chars::{Char16, NUL_16};
 use super::strs::{CStr16, FromSliceWithNulError};
 use crate::data_types::strs::EqStrUntilNul;

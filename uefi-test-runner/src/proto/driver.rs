@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use uefi::boot::{self, ScopedProtocol, SearchType};
 use uefi::prelude::*;
 use uefi::proto::driver::{ComponentName, ComponentName2, LanguageError, LanguageIter};

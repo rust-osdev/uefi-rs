@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use super::FileAttribute;
 use crate::data_types::Align;
 use crate::runtime::Time;

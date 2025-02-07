@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use uefi::boot;
 use uefi::proto::shell_params::ShellParameters;
 

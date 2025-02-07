@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Provides support for the UEFI debugging protocol.
 //!
 //! This protocol is designed to allow debuggers to query the state of the firmware,

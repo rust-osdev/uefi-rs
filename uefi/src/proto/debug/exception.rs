@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 /// Represents supported CPU exceptions.
 #[repr(C)]
 #[derive(Debug)]

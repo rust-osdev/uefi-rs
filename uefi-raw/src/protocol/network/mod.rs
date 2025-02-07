@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 pub mod dhcp4;
 pub mod http;
 pub mod ip4;

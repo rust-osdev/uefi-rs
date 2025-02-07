@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use anyhow::Result;
 use fatfs::{Date, DateTime, FileSystem, FormatVolumeOptions, FsOptions, Time};
 use mbrman::{MBRPartitionEntry, BOOT_INACTIVE, CHS, MBR};

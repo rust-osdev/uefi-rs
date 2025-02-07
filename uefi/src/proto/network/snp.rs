@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Simple Network Protocol
 //!
 //! Provides a packet level interface to a network adapter.

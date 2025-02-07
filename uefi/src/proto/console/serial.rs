@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use crate::proto::unsafe_protocol;

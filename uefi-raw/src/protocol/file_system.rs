@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::time::Time;
 use crate::{guid, Char16, Event, Guid, Status};
 use bitflags::bitflags;

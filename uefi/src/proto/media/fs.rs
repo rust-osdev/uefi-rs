@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! File system support protocols.
 
 use super::file::{Directory, FileHandle};

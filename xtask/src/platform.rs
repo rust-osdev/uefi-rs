@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Functions to determine the host platform.
 //!
 //! Use the functions where possible instead of `#[cfg(...)]` so that

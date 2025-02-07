@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This module provides miscellaneous opinionated but optional helpers to
 //! better integrate your application with the Rust runtime and the Rust
 //! ecosystem.

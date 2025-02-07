@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Module for UEFI-specific error encodings. See [`Error`].
 
 use super::Status;

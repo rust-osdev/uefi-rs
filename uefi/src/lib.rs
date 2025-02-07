@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
 //!
 //! This crate makes it easy to develop Rust software that leverages **safe**,

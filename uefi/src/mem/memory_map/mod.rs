@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Bundles all relevant types and helpers to work with the UEFI memory map.
 //!
 //! To work with the memory map, you should use one of the structs

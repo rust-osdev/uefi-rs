@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This application launches the UEFI shell app and runs the main
 //! uefi-test-running app inside that shell. This allows testing of protocols
 //! that require the shell.

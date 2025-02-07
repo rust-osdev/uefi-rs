@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! PXE Base Code protocol.
 
 use core::ffi::c_void;

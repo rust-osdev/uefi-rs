@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Console support protocols.
 //!
 //! The console represents the various input and output methods

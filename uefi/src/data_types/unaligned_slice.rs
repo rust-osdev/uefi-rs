@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;

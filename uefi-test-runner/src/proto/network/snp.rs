@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::proto::network::MacAddress;
 use uefi::{boot, Status};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! `Rng` protocol.
 
 use crate::{guid, Guid, Status};

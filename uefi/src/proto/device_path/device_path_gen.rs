@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // DO NOT EDIT
 //
 // This file was automatically generated with:

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! UEFI runtime services.
 //!
 //! These services are available both before and after exiting boot

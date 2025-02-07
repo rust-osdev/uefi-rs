@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // allow "path.rs" in "path"
 #![allow(clippy::module_inception)]
 

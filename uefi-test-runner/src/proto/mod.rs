@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use uefi::boot::{self, OpenProtocolParams};
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::{proto, Identify};

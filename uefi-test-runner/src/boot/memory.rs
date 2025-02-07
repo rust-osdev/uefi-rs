@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use alloc::vec::Vec;
 use uefi::boot::{self, AllocateType};
 use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};

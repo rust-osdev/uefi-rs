@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;

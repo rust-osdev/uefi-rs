@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::fs::path::Path;
 use crate::fs::SEPARATOR;
 use crate::{CStr16, CString16, Char16};

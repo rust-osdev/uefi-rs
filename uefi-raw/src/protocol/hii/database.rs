@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Bindings for HII Database Protocol
 
 use super::{HiiHandle, HiiPackageHeader, HiiPackageListHeader, KeyDescriptor};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Protocols for converting between UEFI strings and [`DevicePath`]/[`DevicePathNode`].
 
 // Note on return types: the specification of the conversion functions

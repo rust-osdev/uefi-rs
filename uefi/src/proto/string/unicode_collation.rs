@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! The Unicode Collation Protocol.
 //!
 //! This protocol is used in the boot services environment to perform

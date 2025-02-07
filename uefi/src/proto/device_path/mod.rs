@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Device Path protocol
 //!
 //! A UEFI device path is a very flexible structure for encoding a

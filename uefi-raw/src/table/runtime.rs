@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! UEFI services available at runtime, even after the OS boots.
 
 use crate::capsule::CapsuleHeader;

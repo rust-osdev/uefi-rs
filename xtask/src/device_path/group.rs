@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use super::node::{is_node_attr, Node};
 use heck::ToUpperCamelCase;
 use proc_macro2::{Span, TokenStream};

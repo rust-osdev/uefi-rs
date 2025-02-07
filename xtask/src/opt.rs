@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::arch::UefiArch;
 use clap::{Parser, Subcommand, ValueEnum};
 use std::ops::Deref;

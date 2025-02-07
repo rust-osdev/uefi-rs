@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! UEFI boot services.
 //!
 //! These functions will panic if called after exiting boot services.

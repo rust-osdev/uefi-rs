@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Multi-processor management protocols.
 //!
 //! On any system with more than one logical processor we can categorize them as:

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 // See the README in this directory for details of what this file is.
 //
 // The nodes here are in the same order as in the UEFI Specification.

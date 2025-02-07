@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Configuration table utilities.
 //!
 //! The configuration table is an array of GUIDs and pointers to extra system tables.

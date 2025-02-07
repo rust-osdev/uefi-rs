@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Network access protocols.
 //!
 //! These protocols can be used to interact with network resources.

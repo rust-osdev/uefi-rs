@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This module offers the [`Path`] and [`PathBuf`] abstractions.
 //!
 //! # Interoperability with Rust strings

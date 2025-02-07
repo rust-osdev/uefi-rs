@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! This module implements Rust's global allocator interface using UEFI's memory allocation functions.
 //!
 //! If the `global_allocator` feature is enabled, the [`Allocator`] will be used

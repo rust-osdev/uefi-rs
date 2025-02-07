@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! [TCG] (Trusted Computing Group) protocol for [TPM] (Trusted Platform
 //! Module) 1.1 and 1.2.
 //!

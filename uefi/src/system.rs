@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Functions for accessing fields of the system table.
 //!
 //! Some of these functions use a callback argument rather than returning a

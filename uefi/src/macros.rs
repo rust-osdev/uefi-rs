@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 /// Encode a string literal as a [`&CStr8`].
 ///
 /// The encoding is done at compile time, so the result can be used in a

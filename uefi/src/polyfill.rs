@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Polyfills for functions in the standard library that are currently gated
 //! behind unstable features.
 

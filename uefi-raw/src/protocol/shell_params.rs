@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use crate::{guid, Char16, Guid};
 use core::ffi::c_void;
 

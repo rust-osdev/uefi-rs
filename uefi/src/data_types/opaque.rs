@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 /// Create an opaque struct suitable for use as an FFI pointer.
 ///
 /// The internal representation uses the recommendation in the [nomicon].

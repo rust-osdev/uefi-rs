@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! Facilities for dealing with UEFI operation results.
 
 use core::fmt::Debug;

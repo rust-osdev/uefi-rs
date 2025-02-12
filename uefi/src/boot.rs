@@ -247,6 +247,10 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
 /// Stores the current UEFI memory map in an UEFI-heap allocated buffer
 /// and returns a [`MemoryMapOwned`].
 ///
+/// The implementation tries to mitigate some UEFI pitfalls, such as getting
+/// the right allocation size for the memory map to prevent
+/// [`Status::BUFFER_TOO_SMALL`].
+///
 /// # Parameters
 ///
 /// - `mt`: The memory type for the backing memory on the UEFI heap.
@@ -255,12 +259,30 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
 ///
 /// # Errors
 ///
-/// * [`Status::BUFFER_TOO_SMALL`]
-/// * [`Status::INVALID_PARAMETER`]
+/// * [`Status::INVALID_PARAMETER`]: Invalid [`MemoryType`]
+/// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
+///
+/// # Panics
+///
+/// Panics if the memory map can't be retrieved because of
+/// [`Status::BUFFER_TOO_SMALL`]. This behaviour was chosen explicitly as
+/// callers can't do anything about it anyway.
 pub fn memory_map(mt: MemoryType) -> Result<MemoryMapOwned> {
     let mut buffer = MemoryMapBackingMemory::new(mt)?;
 
-    let meta = get_memory_map(buffer.as_mut_slice())?;
+    let meta = get_memory_map(buffer.as_mut_slice());
+
+    if let Err(e) = &meta {
+        // We don't want to confuse users and let them think they should handle
+        // this, as they can't do anything about it anyway.
+        //
+        // This path won't be taken in OOM situations, but only if for unknown
+        // reasons, we failed to properly allocate the memory map.
+        if e.status() == Status::BUFFER_TOO_SMALL {
+            panic!("Failed to get a proper allocation for the memory map");
+        }
+    }
+    let meta = meta?;
 
     Ok(MemoryMapOwned::from_initialized_mem(buffer, meta))
 }

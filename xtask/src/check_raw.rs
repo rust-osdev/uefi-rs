@@ -33,6 +33,7 @@ enum ErrorKind {
     ForbiddenType,
     MalformedAttrs,
     MissingPub,
+    MissingRepr,
     MissingUnsafe,
     UnderscoreField,
     UnknownRepr,
@@ -51,6 +52,7 @@ impl Display for ErrorKind {
                 Self::ForbiddenType => "forbidden type",
                 Self::MalformedAttrs => "malformed attribute contents",
                 Self::MissingPub => "missing pub",
+                Self::MissingRepr => "missing repr",
                 Self::MissingUnsafe => "missing unsafe",
                 Self::UnderscoreField => "field name starts with `_`",
                 Self::UnknownRepr => "unknown repr",
@@ -106,18 +108,19 @@ fn is_pub(vis: &Visibility) -> bool {
     matches!(vis, Visibility::Public(_))
 }
 
-/// Type repr. A type may have more than one of these (e.g. both `C` and `Packed`).
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+/// Type repr. A type may have more than one of these (e.g. both `C` and `packed`).
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 enum Repr {
     Align(usize),
     C,
     Packed,
+    Rust,
     Transparent,
 }
 
 /// A restricted view of `Attribute`, limited to just the attributes that are
 /// expected in `uefi-raw`.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum ParsedAttr {
     Derive,
     Doc,
@@ -141,6 +144,8 @@ fn parse_attrs(attrs: &[Attribute], src: &Path) -> Result<Vec<ParsedAttr>, Error
                     va.push(ParsedAttr::Repr(Repr::C));
                 } else if meta.path.is_ident("packed") {
                     va.push(ParsedAttr::Repr(Repr::Packed));
+                } else if meta.path.is_ident("Rust") {
+                    va.push(ParsedAttr::Repr(Repr::Rust));
                 } else if meta.path.is_ident("transparent") {
                     va.push(ParsedAttr::Repr(Repr::Transparent));
                 } else if meta.path.is_ident("align") {
@@ -255,13 +260,16 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
     Ok(())
 }
 
+/// List with allowed combinations of representations (see [`Repr`]).
+const ALLOWED_REPRS: &[&[Repr]] = &[&[Repr::C], &[Repr::C, Repr::Packed], &[Repr::Transparent]];
+
 fn check_type_attrs(attrs: &[Attribute], spanned: &dyn Spanned, src: &Path) -> Result<(), Error> {
     let attrs = parse_attrs(attrs, src)?;
     let reprs = get_reprs(&attrs);
 
-    let allowed_reprs: &[&[Repr]] = &[&[Repr::C], &[Repr::C, Repr::Packed], &[Repr::Transparent]];
-
-    if allowed_reprs.contains(&reprs.as_slice()) {
+    if reprs.is_empty() {
+        Err(Error::new(ErrorKind::MissingRepr, src, spanned))
+    } else if ALLOWED_REPRS.contains(&reprs.as_slice()) {
         Ok(())
     } else {
         Err(Error::new(ErrorKind::ForbiddenRepr, src, spanned))
@@ -410,6 +418,7 @@ mod tests {
         Path::new("test")
     }
 
+    #[track_caller]
     fn check_item_err(item: Item, expected_error: ErrorKind) {
         assert_eq!(check_item(&item, src()).unwrap_err().kind, expected_error);
     }
@@ -547,9 +556,20 @@ mod tests {
             ErrorKind::UnderscoreField,
         );
 
+        // Missing `repr`.
+        check_item_err(
+            parse_quote! {
+                pub struct S {
+                    pub f: u32,
+                }
+            },
+            ErrorKind::MissingRepr,
+        );
+
         // Forbidden `repr`.
         check_item_err(
             parse_quote! {
+                #[repr(Rust)]
                 pub struct S {
                     pub f: u32,
                 }
@@ -625,7 +645,7 @@ mod tests {
                     pub f: u32,
                 }
             },
-            ErrorKind::ForbiddenRepr,
+            ErrorKind::MissingRepr,
         );
     }
 }

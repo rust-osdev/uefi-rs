@@ -67,6 +67,44 @@ pub type PhysicalAddress = u64;
 /// of target platform.
 pub type VirtualAddress = u64;
 
+/// ABI-compatible UEFI boolean.
+///
+/// This is similar to a `bool`, but allows values other than 0 or 1 to be
+/// stored without it being undefined behavior.
+///
+/// Any non-zero value is treated as logically `true`.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[repr(transparent)]
+pub struct Boolean(pub u8);
+
+impl Boolean {
+    /// [`Boolean`] representing `true`.
+    pub const TRUE: Self = Self(1);
+
+    /// [`Boolean`] representing `false`.
+    pub const FALSE: Self = Self(0);
+}
+
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self(1),
+            false => Self(0),
+        }
+    }
+}
+
+impl From<Boolean> for bool {
+    #[allow(clippy::match_like_matches_macro)]
+    fn from(value: Boolean) -> Self {
+        // We handle it as in C: Any bit-pattern != 0 equals true
+        match value.0 {
+            0 => false,
+            _ => true,
+        }
+    }
+}
+
 /// An IPv4 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
@@ -135,3 +173,26 @@ impl Default for IpAddress {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    /// Test the properties promised in [0]. This also applies for the other
+    /// architectures.
+    ///
+    /// [0] https://github.com/tianocore/edk2/blob/b0f43dd3fdec2363e3548ec31eb455dc1c4ac761/MdePkg/Include/X64/ProcessorBind.h#L192
+    fn test_boolean_abi() {
+        assert_eq!(size_of::<Boolean>(), 1);
+        assert_eq!(Boolean::from(true).0, 1);
+        assert_eq!(Boolean::from(false).0, 0);
+        assert_eq!(Boolean::TRUE.0, 1);
+        assert_eq!(Boolean::FALSE.0, 0);
+        assert_eq!(bool::from(Boolean(0b0)), false);
+        assert_eq!(bool::from(Boolean(0b1)), true);
+        // We do it as in C: Every bit pattern not 0 is equal to true.
+        assert_eq!(bool::from(Boolean(0b11111110)), true);
+        assert_eq!(bool::from(Boolean(0b11111111)), true);
+    }
+}

@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+## Added
+- Added `Boolean` type
+
 
 # uefi-raw - 0.10.0 (2025-02-07)
 

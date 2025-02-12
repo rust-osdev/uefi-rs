@@ -33,10 +33,11 @@ pub mod time;
 
 mod status;
 
-use core::ffi::c_void;
-use core::fmt::{self, Debug, Formatter};
 pub use status::Status;
 pub use uguid::{guid, Guid};
+
+use core::ffi::c_void;
+use core::fmt::{self, Debug, Formatter};
 
 /// Handle to an event structure.
 pub type Event = *mut c_void;
@@ -189,10 +190,10 @@ mod tests {
         assert_eq!(Boolean::from(false).0, 0);
         assert_eq!(Boolean::TRUE.0, 1);
         assert_eq!(Boolean::FALSE.0, 0);
-        assert_eq!(bool::from(Boolean(0b0)), false);
-        assert_eq!(bool::from(Boolean(0b1)), true);
+        assert!(!bool::from(Boolean(0b0)));
+        assert!(bool::from(Boolean(0b1)));
         // We do it as in C: Every bit pattern not 0 is equal to true.
-        assert_eq!(bool::from(Boolean(0b11111110)), true);
-        assert_eq!(bool::from(Boolean(0b11111111)), true);
+        assert!(bool::from(Boolean(0b11111110)));
+        assert!(bool::from(Boolean(0b11111111)));
     }
 }

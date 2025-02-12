@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Guid, Status};
+use crate::{guid, Boolean, Guid, Status};
 use core::ffi::c_void;
 
 /// Logical block address.
@@ -11,11 +11,11 @@ pub type Lba = u64;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct BlockIoMedia {
     pub media_id: u32,
-    pub removable_media: bool,
-    pub media_present: bool,
-    pub logical_partition: bool,
-    pub read_only: bool,
-    pub write_caching: bool,
+    pub removable_media: Boolean,
+    pub media_present: Boolean,
+    pub logical_partition: Boolean,
+    pub read_only: Boolean,
+    pub write_caching: Boolean,
     pub block_size: u32,
     pub io_align: u32,
     pub last_block: Lba,
@@ -33,7 +33,7 @@ pub struct BlockIoMedia {
 pub struct BlockIoProtocol {
     pub revision: u64,
     pub media: *const BlockIoMedia,
-    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: bool) -> Status,
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
     pub read_blocks: unsafe extern "efiapi" fn(
         this: *const Self,
         media_id: u32,

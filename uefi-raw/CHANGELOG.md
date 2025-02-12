@@ -59,6 +59,7 @@ Details at <https://github.com/rust-osdev/uefi-rs/issues/1470>.
 - `maximum_capsule_size` of `query_capsule_capabilities` now takes a *mut u64 instead of a *mut usize.
 - `ResetType` now derives the `Default` trait.
 
+
 # uefi-raw - 0.5.2 (2024-04-19)
 
 ## Added

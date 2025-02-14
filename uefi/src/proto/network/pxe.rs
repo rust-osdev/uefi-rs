@@ -1039,8 +1039,8 @@ impl DhcpV6Packet {
     /// The transaction id.
     #[must_use]
     pub fn transaction_id(&self) -> u32 {
-        u32::from(self.transaction_id[0]) << 16
-            | u32::from(self.transaction_id[1]) << 8
+        (u32::from(self.transaction_id[0]) << 16)
+            | (u32::from(self.transaction_id[1]) << 8)
             | u32::from(self.transaction_id[2])
     }
 }

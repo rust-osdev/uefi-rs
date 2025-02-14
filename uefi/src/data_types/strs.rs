@@ -259,7 +259,7 @@ const unsafe fn latin1_from_utf8_at_offset(bytes: &[u8], offset: usize) -> (u8, 
     } else if bytes[offset] & 0b1110_0000 == 0b1100_0000 {
         let a = (bytes[offset] & 0b0001_1111) as u16;
         let b = (bytes[offset + 1] & 0b0011_1111) as u16;
-        let ch = a << 6 | b;
+        let ch = (a << 6) | b;
         if ch > 0xff {
             panic!("input string cannot be encoded as Latin-1");
         }

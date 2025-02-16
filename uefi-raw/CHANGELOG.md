@@ -2,6 +2,7 @@
 
 ## Added
 - Added `Boolean` type
+- Added `protocol::network::pxe` module.
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

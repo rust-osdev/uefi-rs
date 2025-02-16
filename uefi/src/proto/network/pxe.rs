@@ -13,6 +13,7 @@ use crate::proto::unsafe_protocol;
 use crate::util::ptr_write_unaligned_and_add;
 use bitflags::bitflags;
 use ptr_meta::Pointee;
+use uefi_raw::protocol::network::pxe::PxeBaseCodeTftpOpcode;
 
 use crate::{CStr8, Char8, Result, Status, StatusExt};
 
@@ -41,7 +42,7 @@ pub struct BaseCode {
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
-        operation: TftpOpcode,
+        operation: PxeBaseCodeTftpOpcode,
         buffer: *mut c_void,
         overwrite: bool,
         buffer_size: &mut u64,
@@ -156,7 +157,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpGetFileSize,
+                PxeBaseCodeTftpOpcode::TFTP_GET_FILE_SIZE,
                 null_mut(),
                 false,
                 &mut buffer_size,
@@ -187,7 +188,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpReadFile,
+                PxeBaseCodeTftpOpcode::TFTP_READ_FILE,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -215,7 +216,7 @@ impl BaseCode {
         unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpWriteFile,
+                PxeBaseCodeTftpOpcode::TFTP_WRITE_FILE,
                 buffer_ptr,
                 overwrite,
                 &mut buffer_size,
@@ -243,7 +244,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpReadDirectory,
+                PxeBaseCodeTftpOpcode::TFTP_READ_DIRECTORY,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -316,7 +317,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::MtftpGetFileSize,
+                PxeBaseCodeTftpOpcode::MTFTP_GET_FILE_SIZE,
                 null_mut(),
                 false,
                 &mut buffer_size,
@@ -348,7 +349,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::MtftpReadFile,
+                PxeBaseCodeTftpOpcode::MTFTP_READ_FILE,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -376,7 +377,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::MtftpReadDirectory,
+                PxeBaseCodeTftpOpcode::MTFTP_READ_DIRECTORY,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -796,18 +797,6 @@ impl Server {
             Some(&self.ip_addr)
         }
     }
-}
-
-/// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_OPCODE` type in the C API.
-#[repr(C)]
-enum TftpOpcode {
-    TftpGetFileSize = 1,
-    TftpReadFile,
-    TftpWriteFile,
-    TftpReadDirectory,
-    MtftpGetFileSize,
-    MtftpReadFile,
-    MtftpReadDirectory,
 }
 
 /// MTFTP connection parameters

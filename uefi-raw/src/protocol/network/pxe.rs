@@ -4,6 +4,19 @@ use crate::{Boolean, Char8, IpAddress, MacAddress};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 
+bitflags! {
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[repr(transparent)]
+    pub struct PxeBaseCodeUdpOpFlags: u16 {
+        const ANY_SRC_IP = 0x0001;
+        const ANY_SRC_PORT = 0x0002;
+        const ANY_DEST_IP = 0x0004;
+        const ANY_DEST_PORT = 0x0008;
+        const USE_FILTER = 0x0010;
+        const MAY_FRAGMENT = 0x0020;
+    }
+}
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeMode {

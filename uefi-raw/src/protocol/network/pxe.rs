@@ -1,7 +1,28 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::{Char8, IpAddress, MacAddress};
+use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeIpFilter {
+    pub filters: PxeBaseCodeIpFilterFlags,
+    pub ip_cnt: u8,
+    pub reserved: u16,
+    pub ip_list: [IpAddress; 8],
+}
+
+bitflags! {
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[repr(transparent)]
+    pub struct PxeBaseCodeIpFilterFlags: u8 {
+        const STATION_IP = 0x01;
+        const BROADCAST = 0x02;
+        const PROMISCUOUS = 0x04;
+        const PROMISCUOUS_MULTICAST = 0x08;
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]

@@ -1,8 +1,104 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{Boolean, Char8, IpAddress, MacAddress};
+use crate::{guid, Boolean, Char8, Guid, IpAddress, MacAddress, Status};
 use bitflags::bitflags;
+use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeProtocol {
+    pub revision: u64,
+    pub start: unsafe extern "efiapi" fn(this: *mut Self, use_ipv6: Boolean) -> Status,
+    pub stop: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
+    pub dhcp: unsafe extern "efiapi" fn(this: *mut Self, sort_offers: Boolean) -> Status,
+    pub discover: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        ty: PxeBaseCodeBootType,
+        layer: *mut u16,
+        use_bis: Boolean,
+        info: *const PxeBaseCodeDiscoverInfo,
+    ) -> Status,
+    pub mtftp: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        operation: PxeBaseCodeTftpOpcode,
+        buffer: *mut c_void,
+        overwrite: Boolean,
+        buffer_size: *mut u64,
+        block_size: *const usize,
+        server_ip: *const IpAddress,
+        filename: *const Char8,
+        info: *const PxeBaseCodeMtftpInfo,
+        dont_use_buffer: Boolean,
+    ) -> Status,
+    pub udp_write: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        op_flags: PxeBaseCodeUdpOpFlags,
+        dest_ip: *const IpAddress,
+        dest_port: *const PxeBaseCodeUdpPort,
+        gateway_ip: *const IpAddress,
+        src_ip: *const IpAddress,
+        src_port: *mut PxeBaseCodeUdpPort,
+        header_size: *const usize,
+        header_ptr: *const c_void,
+        buffer_size: *const usize,
+        buffer_ptr: *const c_void,
+    ) -> Status,
+    pub udp_read: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        op_flags: PxeBaseCodeUdpOpFlags,
+        dest_ip: *mut IpAddress,
+        dest_port: *mut PxeBaseCodeUdpPort,
+        src_ip: *mut IpAddress,
+        src_port: *mut PxeBaseCodeUdpPort,
+        header_size: *const usize,
+        header_ptr: *mut c_void,
+        buffer_size: *mut usize,
+        buffer_ptr: *mut c_void,
+    ) -> Status,
+    pub set_ip_filter: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        new_filter: *const PxeBaseCodeIpFilter,
+    ) -> Status,
+    pub arp: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        ip_addr: *const IpAddress,
+        mac_addr: *mut MacAddress,
+    ) -> Status,
+    pub set_parameters: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        new_auto_arp: *const Boolean,
+        new_send_guid: *const Boolean,
+        new_ttl: *const u8,
+        new_tos: *const u8,
+        new_make_callback: *const Boolean,
+    ) -> Status,
+    pub set_station_ip: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        new_station_ip: *const IpAddress,
+        new_subnet_mask: *const IpAddress,
+    ) -> Status,
+    pub set_packets: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        new_dhcp_discover_valid: *const Boolean,
+        new_dhcp_ack_received: *const Boolean,
+        new_proxy_offer_received: *const Boolean,
+        new_pxe_discover_valid: *const Boolean,
+        new_pxe_reply_received: *const Boolean,
+        new_pxe_bis_reply_received: *const Boolean,
+        new_dhcp_discover: *const PxeBaseCodePacket,
+        new_dhcp_ack: *const PxeBaseCodePacket,
+        new_proxy_offer: *const PxeBaseCodePacket,
+        new_pxe_discover: *const PxeBaseCodePacket,
+        new_pxe_reply: *const PxeBaseCodePacket,
+        new_pxe_bis_reply: *const PxeBaseCodePacket,
+    ) -> Status,
+    pub mode: *const PxeBaseCodeMode,
+}
+
+impl PxeBaseCodeProtocol {
+    pub const GUID: Guid = guid!("03c4e603-ac28-11d3-9a2d-0090273fc14d");
+}
 
 newtype_enum! {
     pub enum PxeBaseCodeBootType: u16 => {

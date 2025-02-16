@@ -1,8 +1,47 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{Char8, IpAddress, MacAddress};
+use crate::{Boolean, Char8, IpAddress, MacAddress};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeMode {
+    pub started: Boolean,
+    pub ipv6_available: Boolean,
+    pub ipv6_supported: Boolean,
+    pub using_ipv6: Boolean,
+    pub bis_supported: Boolean,
+    pub bis_detected: Boolean,
+    pub auto_arp: Boolean,
+    pub send_guid: Boolean,
+    pub dhcp_discover_valid: Boolean,
+    pub dhcp_ack_received: Boolean,
+    pub proxy_offer_received: Boolean,
+    pub pxe_discover_valid: Boolean,
+    pub pxe_reply_received: Boolean,
+    pub pxe_bis_reply_received: Boolean,
+    pub icmp_error_received: Boolean,
+    pub tftp_error_received: Boolean,
+    pub make_callbacks: Boolean,
+    pub ttl: u8,
+    pub tos: u8,
+    pub station_ip: IpAddress,
+    pub subnet_mask: IpAddress,
+    pub dhcp_discover: PxeBaseCodePacket,
+    pub dhcp_ack: PxeBaseCodePacket,
+    pub proxy_offer: PxeBaseCodePacket,
+    pub pxe_discover: PxeBaseCodePacket,
+    pub pxe_reply: PxeBaseCodePacket,
+    pub pxe_bis_reply: PxeBaseCodePacket,
+    pub ip_filter: PxeBaseCodeIpFilter,
+    pub arp_cache_entries: u32,
+    pub arp_cache: [PxeBaseCodeArpEntry; 8],
+    pub route_table_entries: u32,
+    pub route_table: [PxeBaseCodeRouteEntry; 8],
+    pub icmp_error: PxeBaseCodeIcmpError,
+    pub tftp_error: PxeBaseCodeTftpError,
+}
 
 #[derive(Clone, Copy)]
 #[repr(C)]

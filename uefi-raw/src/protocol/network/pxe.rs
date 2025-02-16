@@ -4,6 +4,18 @@ use crate::{Boolean, Char8, IpAddress, MacAddress};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 
+pub type PxeBaseCodeUdpPort = u16;
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeMtftpInfo {
+    pub m_cast_ip: IpAddress,
+    pub c_port: PxeBaseCodeUdpPort,
+    pub s_port: PxeBaseCodeUdpPort,
+    pub listen_timeout: u16,
+    pub transmit_timeout: u16,
+}
+
 bitflags! {
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[repr(transparent)]

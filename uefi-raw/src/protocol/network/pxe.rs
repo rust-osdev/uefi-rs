@@ -4,6 +4,49 @@ use crate::{Char8, IpAddress, MacAddress};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub union PxeBaseCodePacket {
+    pub raw: [u8; 1472],
+    pub dhcpv4: PxeBaseCodeDhcpV4Packet,
+    pub dhcpv6: PxeBaseCodeDhcpV6Packet,
+}
+
+impl Debug for PxeBaseCodePacket {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PxeBaseCodePacket").finish()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeDhcpV4Packet {
+    pub bootp_opcode: u8,
+    pub bootp_hw_type: u8,
+    pub bootp_hw_addr_len: u8,
+    pub bootp_gate_hops: u8,
+    pub bootp_ident: u32,
+    pub bootp_seconds: u16,
+    pub bootp_flags: u16,
+    pub bootp_ci_addr: [u8; 4],
+    pub bootp_yi_addr: [u8; 4],
+    pub bootp_si_addr: [u8; 4],
+    pub bootp_gi_addr: [u8; 4],
+    pub bootp_hw_addr: [u8; 16],
+    pub bootp_srv_name: [u8; 64],
+    pub bootp_boot_file: [u8; 128],
+    pub dhcp_magik: u32,
+    pub dhcp_options: [u8; 56],
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeDhcpV6Packet {
+    pub message_type: u8,
+    pub transaction_id: [u8; 3],
+    pub dhcp_options: [u8; 1024],
+}
+
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeIpFilter {

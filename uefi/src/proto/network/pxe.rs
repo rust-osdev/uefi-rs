@@ -20,7 +20,8 @@ use crate::{CStr8, Char8, Result, Status, StatusExt};
 use super::{IpAddress, MacAddress};
 
 pub use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,
+    PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code protocol
@@ -615,38 +616,6 @@ impl BaseCode {
     pub const fn mode(&self) -> &Mode {
         unsafe { &*self.mode }
     }
-}
-
-/// A type of bootstrap to perform in [`BaseCode::discover`].
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_BOOT_` constants in the C API.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[repr(u16)]
-#[allow(missing_docs)]
-pub enum BootstrapType {
-    Bootstrap = 0,
-    MsWinntRis = 1,
-    IntelLcm = 2,
-    DosUndi = 3,
-    NecEsmpro = 4,
-    IbmWsoD = 5,
-    IbmLccm = 6,
-    CaUnicenterTng = 7,
-    HpOpenview = 8,
-    Altiris9 = 9,
-    Altiris10 = 10,
-    Altiris11 = 11,
-    // NOT_USED_12 = 12,
-    RedhatInstall = 13,
-    RedhatBoot = 14,
-    Rembo = 15,
-    Beoboot = 16,
-    //
-    // Values 17 through 32767 are reserved.
-    // Values 32768 through 65279 are for vendor use.
-    // Values 65280 through 65534 are reserved.
-    //
-    PxeTest = 65535,
 }
 
 opaque_type! {

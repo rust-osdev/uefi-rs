@@ -5,6 +5,32 @@ use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 
 newtype_enum! {
+    pub enum PxeBaseCodeBootType: u16 => {
+        BOOTSTRAP = 0,
+        MS_WINNT_RIS = 1,
+        INTEL_LCM = 2,
+        DOS_UNDI = 3,
+        NEC_ESMPRO = 4,
+        IBM_WSOD = 5,
+        IBM_LCCM = 6,
+        CA_UNICENTER_TNG = 7,
+        HP_OPENVIEW = 8,
+        ALTIRIS_9 = 9,
+        ALTIRIS_10 = 10,
+        ALTIRIS_11 = 11,
+        NOT_USED_12 = 12,
+        REDHAT_INSTALL = 13,
+        REDHAT_BOOT = 14,
+        REMBO = 15,
+        BEOBOOT = 16,
+        //    17..=32767: reserved.
+        // 32768..=65279: reserved for vendor use.
+        // 65280..=65534: reserved.
+        PXETEST = 65535,
+    }
+}
+
+newtype_enum! {
     pub enum PxeBaseCodeTftpOpcode: i32 => {
         TFTP_FIRST = 0,
         TFTP_GET_FILE_SIZE = 1,

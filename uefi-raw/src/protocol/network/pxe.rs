@@ -4,6 +4,29 @@ use crate::{Boolean, Char8, IpAddress, MacAddress};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 
+#[derive(Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeDiscoverInfo {
+    pub use_m_cast: Boolean,
+    pub use_b_cast: Boolean,
+    pub use_u_cast: Boolean,
+    pub must_use_list: Boolean,
+    pub server_m_cast_ip: IpAddress,
+    pub ip_cnt: u16,
+
+    /// Note that this field is actually a variable-length array.
+    pub srv_list: [PxeBaseCodeSrvlist; 0],
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeSrvlist {
+    pub server_type: u16,
+    pub accept_any_response: Boolean,
+    pub reserved: u8,
+    pub ip_addr: IpAddress,
+}
+
 pub type PxeBaseCodeUdpPort = u16;
 
 #[derive(Clone, Copy, Debug)]

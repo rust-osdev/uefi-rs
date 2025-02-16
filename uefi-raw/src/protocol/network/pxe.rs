@@ -4,6 +4,20 @@ use crate::{Boolean, Char8, IpAddress, MacAddress};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Formatter};
 
+newtype_enum! {
+    pub enum PxeBaseCodeTftpOpcode: i32 => {
+        TFTP_FIRST = 0,
+        TFTP_GET_FILE_SIZE = 1,
+        TFTP_READ_FILE = 2,
+        TFTP_WRITE_FILE = 3,
+        TFTP_READ_DIRECTORY = 4,
+        MTFTP_GET_FILE_SIZE = 5,
+        MTFTP_READ_FILE = 6,
+        MTFTP_READ_DIRECTORY = 7,
+        MTFTP_LAST = 8,
+    }
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeDiscoverInfo {

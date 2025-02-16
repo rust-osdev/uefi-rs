@@ -120,13 +120,20 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - name: Set toolchain
-        run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
+        run: |
+          # Extract the MSRV using cargo.
+          msrv=$(cargo metadata --no-deps --format-version=1 | jq --raw-output '.packages[] | select(.name == "uefi") | .rust_version')
+          echo "MSRV: ${msrv}"
+          # Set the MSRV in the toolchain config.
+          sed -i "s:stable:${msrv}:" rust-toolchain.toml
       - uses: Swatinem/rust-cache@v2
       - name: Build
         # Build uefi-test-runner since its dependency tree includes all the
         # library packages. Note that xtask isn't used or built here; since it's
         # just a dev tool we don't care about the MSRV for that package.
-        run: cargo build --target x86_64-unknown-uefi -p uefi-test-runner
+        run: |
+          cargo --version
+          cargo build --target x86_64-unknown-uefi -p uefi-test-runner
   # This job requires the nightly channel, but keep it as a separate job from
   # `nightly_channel` because it takes a while to run.
   build_feature_permutations:

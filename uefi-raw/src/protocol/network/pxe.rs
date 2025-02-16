@@ -1,7 +1,22 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::Char8;
+use crate::{Char8, IpAddress, MacAddress};
 use core::fmt::{self, Debug, Formatter};
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeArpEntry {
+    pub ip_addr: IpAddress,
+    pub mac_addr: MacAddress,
+}
+
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct PxeBaseCodeRouteEntry {
+    pub ip_addr: IpAddress,
+    pub subnet_mask: IpAddress,
+    pub gw_addr: IpAddress,
+}
 
 #[derive(Clone, Debug)]
 #[repr(C)]

@@ -18,7 +18,9 @@ use crate::{CStr8, Char8, Result, Status, StatusExt};
 
 use super::{IpAddress, MacAddress};
 
-pub use uefi_raw::protocol::network::pxe::PxeBaseCodeUdpOpFlags as UdpOpFlags;
+pub use uefi_raw::protocol::network::pxe::{
+    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+};
 
 /// PXE Base Code protocol
 #[derive(Debug)]
@@ -871,22 +873,6 @@ impl IpFilter {
     #[must_use]
     pub fn ip_list(&self) -> &[IpAddress] {
         &self.ip_list[..usize::from(self.ip_cnt)]
-    }
-}
-
-bitflags! {
-    /// IP receive filters.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct IpFilters: u8 {
-        /// Enable the Station IP address.
-        const STATION_IP = 0x01;
-        /// Enable IPv4 broadcast addresses.
-        const BROADCAST = 0x02;
-        /// Enable all addresses.
-        const PROMISCUOUS = 0x04;
-        /// Enable all multicast addresses.
-        const PROMISCUOUS_MULTICAST = 0x08;
     }
 }
 

@@ -31,10 +31,10 @@ pub use uefi_raw::protocol::network::pxe::{
 #[allow(clippy::type_complexity)]
 pub struct BaseCode {
     revision: u64,
-    start: extern "efiapi" fn(this: &Self, use_ipv6: bool) -> Status,
-    stop: extern "efiapi" fn(this: &Self) -> Status,
-    dhcp: extern "efiapi" fn(this: &Self, sort_offers: bool) -> Status,
-    discover: extern "efiapi" fn(
+    start: unsafe extern "efiapi" fn(this: &Self, use_ipv6: bool) -> Status,
+    stop: unsafe extern "efiapi" fn(this: &Self) -> Status,
+    dhcp: unsafe extern "efiapi" fn(this: &Self, sort_offers: bool) -> Status,
+    discover: unsafe extern "efiapi" fn(
         this: &Self,
         ty: BootstrapType,
         layer: &mut u16,
@@ -78,13 +78,13 @@ pub struct BaseCode {
         buffer_size: &mut usize,
         buffer_ptr: *mut c_void,
     ) -> Status,
-    set_ip_filter: extern "efiapi" fn(this: &Self, new_filter: &IpFilter) -> Status,
-    arp: extern "efiapi" fn(
+    set_ip_filter: unsafe extern "efiapi" fn(this: &Self, new_filter: &IpFilter) -> Status,
+    arp: unsafe extern "efiapi" fn(
         this: &Self,
         ip_addr: &IpAddress,
         mac_addr: Option<&mut MacAddress>,
     ) -> Status,
-    set_parameters: extern "efiapi" fn(
+    set_parameters: unsafe extern "efiapi" fn(
         this: &Self,
         new_auto_arp: Option<&bool>,
         new_send_guid: Option<&bool>,
@@ -92,12 +92,12 @@ pub struct BaseCode {
         new_tos: Option<&u8>,
         new_make_callback: Option<&bool>,
     ) -> Status,
-    set_station_ip: extern "efiapi" fn(
+    set_station_ip: unsafe extern "efiapi" fn(
         this: &Self,
         new_station_ip: Option<&IpAddress>,
         new_subnet_mask: Option<&IpAddress>,
     ) -> Status,
-    set_packets: extern "efiapi" fn(
+    set_packets: unsafe extern "efiapi" fn(
         this: &Self,
         new_dhcp_discover_valid: Option<&bool>,
         new_dhcp_ack_received: Option<&bool>,
@@ -118,18 +118,18 @@ pub struct BaseCode {
 impl BaseCode {
     /// Enables the use of the PXE Base Code Protocol functions.
     pub fn start(&mut self, use_ipv6: bool) -> Result {
-        (self.start)(self, use_ipv6).to_result()
+        unsafe { (self.start)(self, use_ipv6) }.to_result()
     }
 
     /// Disables the use of the PXE Base Code Protocol functions.
     pub fn stop(&mut self) -> Result {
-        (self.stop)(self).to_result()
+        unsafe { (self.stop)(self) }.to_result()
     }
 
     /// Attempts to complete a DHCPv4 D.O.R.A. (discover / offer / request /
     /// acknowledge) or DHCPv6 S.A.R.R (solicit / advertise / request / reply) sequence.
     pub fn dhcp(&mut self, sort_offers: bool) -> Result {
-        (self.dhcp)(self, sort_offers).to_result()
+        unsafe { (self.dhcp)(self, sort_offers) }.to_result()
     }
 
     /// Attempts to complete the PXE Boot Server and/or boot image discovery
@@ -148,7 +148,7 @@ impl BaseCode {
             })
             .unwrap_or(null());
 
-        (self.discover)(self, ty, layer, use_bis, info).to_result()
+        unsafe { (self.discover)(self, ty, layer, use_bis, info) }.to_result()
     }
 
     /// Returns the size of a file located on a TFTP server.
@@ -537,12 +537,12 @@ impl BaseCode {
     /// Updates the IP receive filters of a network device and enables software
     /// filtering.
     pub fn set_ip_filter(&mut self, new_filter: &IpFilter) -> Result {
-        (self.set_ip_filter)(self, new_filter).to_result()
+        unsafe { (self.set_ip_filter)(self, new_filter) }.to_result()
     }
 
     /// Uses the ARP protocol to resolve a MAC address.
     pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
-        (self.arp)(self, ip_addr, mac_addr).to_result()
+        unsafe { (self.arp)(self, ip_addr, mac_addr) }.to_result()
     }
 
     /// Updates the parameters that affect the operation of the PXE Base Code
@@ -555,14 +555,16 @@ impl BaseCode {
         new_tos: Option<u8>,
         new_make_callback: Option<bool>,
     ) -> Result {
-        (self.set_parameters)(
-            self,
-            new_auto_arp.as_ref(),
-            new_send_guid.as_ref(),
-            new_ttl.as_ref(),
-            new_tos.as_ref(),
-            new_make_callback.as_ref(),
-        )
+        unsafe {
+            (self.set_parameters)(
+                self,
+                new_auto_arp.as_ref(),
+                new_send_guid.as_ref(),
+                new_ttl.as_ref(),
+                new_tos.as_ref(),
+                new_make_callback.as_ref(),
+            )
+        }
         .to_result()
     }
 
@@ -573,7 +575,7 @@ impl BaseCode {
         new_station_ip: Option<&IpAddress>,
         new_subnet_mask: Option<&IpAddress>,
     ) -> Result {
-        (self.set_station_ip)(self, new_station_ip, new_subnet_mask).to_result()
+        unsafe { (self.set_station_ip)(self, new_station_ip, new_subnet_mask) }.to_result()
     }
 
     /// Updates the contents of the cached DHCP and Discover packets.
@@ -593,21 +595,23 @@ impl BaseCode {
         new_pxe_reply: Option<&Packet>,
         new_pxe_bis_reply: Option<&Packet>,
     ) -> Result {
-        (self.set_packets)(
-            self,
-            new_dhcp_discover_valid.as_ref(),
-            new_dhcp_ack_received.as_ref(),
-            new_proxy_offer_received.as_ref(),
-            new_pxe_discover_valid.as_ref(),
-            new_pxe_reply_received.as_ref(),
-            new_pxe_bis_reply_received.as_ref(),
-            new_dhcp_discover,
-            new_dhcp_ack,
-            new_proxy_offer,
-            new_pxe_discover,
-            new_pxe_reply,
-            new_pxe_bis_reply,
-        )
+        unsafe {
+            (self.set_packets)(
+                self,
+                new_dhcp_discover_valid.as_ref(),
+                new_dhcp_ack_received.as_ref(),
+                new_proxy_offer_received.as_ref(),
+                new_pxe_discover_valid.as_ref(),
+                new_pxe_reply_received.as_ref(),
+                new_pxe_bis_reply_received.as_ref(),
+                new_dhcp_discover,
+                new_dhcp_ack,
+                new_proxy_offer,
+                new_pxe_discover,
+                new_pxe_reply,
+                new_pxe_bis_reply,
+            )
+        }
         .to_result()
     }
 

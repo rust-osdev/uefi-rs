@@ -12,9 +12,10 @@ use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::iter::from_fn;
 use core::mem::MaybeUninit;
-use core::ptr::{null, null_mut};
+use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::PxeBaseCodeTftpOpcode;
+use uefi_raw::Boolean;
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,
@@ -28,27 +29,27 @@ pub use uefi_raw::protocol::network::pxe::{
 #[allow(clippy::type_complexity)]
 pub struct BaseCode {
     revision: u64,
-    start: unsafe extern "efiapi" fn(this: &Self, use_ipv6: bool) -> Status,
+    start: unsafe extern "efiapi" fn(this: &Self, use_ipv6: Boolean) -> Status,
     stop: unsafe extern "efiapi" fn(this: &Self) -> Status,
-    dhcp: unsafe extern "efiapi" fn(this: &Self, sort_offers: bool) -> Status,
+    dhcp: unsafe extern "efiapi" fn(this: &Self, sort_offers: Boolean) -> Status,
     discover: unsafe extern "efiapi" fn(
         this: &Self,
         ty: BootstrapType,
         layer: &mut u16,
-        use_bis: bool,
+        use_bis: Boolean,
         info: *const FfiDiscoverInfo,
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
         operation: PxeBaseCodeTftpOpcode,
         buffer: *mut c_void,
-        overwrite: bool,
+        overwrite: Boolean,
         buffer_size: &mut u64,
         block_size: Option<&usize>,
         server_ip: &IpAddress,
         filename: *const Char8,
         info: Option<&MtftpInfo>,
-        dont_use_buffer: bool,
+        dont_use_buffer: Boolean,
     ) -> Status,
     udp_write: unsafe extern "efiapi" fn(
         this: &Self,
@@ -83,11 +84,11 @@ pub struct BaseCode {
     ) -> Status,
     set_parameters: unsafe extern "efiapi" fn(
         this: &Self,
-        new_auto_arp: Option<&bool>,
-        new_send_guid: Option<&bool>,
+        new_auto_arp: *const Boolean,
+        new_send_guid: *const Boolean,
         new_ttl: Option<&u8>,
         new_tos: Option<&u8>,
-        new_make_callback: Option<&bool>,
+        new_make_callback: *const Boolean,
     ) -> Status,
     set_station_ip: unsafe extern "efiapi" fn(
         this: &Self,
@@ -96,12 +97,12 @@ pub struct BaseCode {
     ) -> Status,
     set_packets: unsafe extern "efiapi" fn(
         this: &Self,
-        new_dhcp_discover_valid: Option<&bool>,
-        new_dhcp_ack_received: Option<&bool>,
-        new_proxy_offer_received: Option<&bool>,
-        new_pxe_discover_valid: Option<&bool>,
-        new_pxe_reply_received: Option<&bool>,
-        new_pxe_bis_reply_received: Option<&bool>,
+        new_dhcp_discover_valid: *const Boolean,
+        new_dhcp_ack_received: *const Boolean,
+        new_proxy_offer_received: *const Boolean,
+        new_pxe_discover_valid: *const Boolean,
+        new_pxe_reply_received: *const Boolean,
+        new_pxe_bis_reply_received: *const Boolean,
         new_dhcp_discover: Option<&Packet>,
         new_dhcp_ack: Option<&Packet>,
         new_proxy_offer: Option<&Packet>,
@@ -115,7 +116,7 @@ pub struct BaseCode {
 impl BaseCode {
     /// Enables the use of the PXE Base Code Protocol functions.
     pub fn start(&mut self, use_ipv6: bool) -> Result {
-        unsafe { (self.start)(self, use_ipv6) }.to_result()
+        unsafe { (self.start)(self, use_ipv6.into()) }.to_result()
     }
 
     /// Disables the use of the PXE Base Code Protocol functions.
@@ -126,7 +127,7 @@ impl BaseCode {
     /// Attempts to complete a DHCPv4 D.O.R.A. (discover / offer / request /
     /// acknowledge) or DHCPv6 S.A.R.R (solicit / advertise / request / reply) sequence.
     pub fn dhcp(&mut self, sort_offers: bool) -> Result {
-        unsafe { (self.dhcp)(self, sort_offers) }.to_result()
+        unsafe { (self.dhcp)(self, sort_offers.into()) }.to_result()
     }
 
     /// Attempts to complete the PXE Boot Server and/or boot image discovery
@@ -145,7 +146,7 @@ impl BaseCode {
             })
             .unwrap_or(null());
 
-        unsafe { (self.discover)(self, ty, layer, use_bis, info) }.to_result()
+        unsafe { (self.discover)(self, ty, layer, use_bis.into(), info) }.to_result()
     }
 
     /// Returns the size of a file located on a TFTP server.
@@ -157,13 +158,13 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::TFTP_GET_FILE_SIZE,
                 null_mut(),
-                false,
+                Boolean::FALSE,
                 &mut buffer_size,
                 None,
                 server_ip,
                 filename.as_ptr(),
                 None,
-                false,
+                Boolean::FALSE,
             )
         };
         status.to_result_with_val(|| buffer_size)
@@ -178,9 +179,9 @@ impl BaseCode {
     ) -> Result<u64> {
         let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
             let buffer_size = u64::try_from(buffer.len()).unwrap();
-            (buffer.as_mut_ptr().cast(), buffer_size, false)
+            (buffer.as_mut_ptr().cast(), buffer_size, Boolean::FALSE)
         } else {
-            (null_mut(), 0, true)
+            (null_mut(), 0, Boolean::TRUE)
         };
 
         let status = unsafe {
@@ -188,7 +189,7 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::TFTP_READ_FILE,
                 buffer_ptr,
-                false,
+                Boolean::FALSE,
                 &mut buffer_size,
                 None,
                 server_ip,
@@ -216,13 +217,13 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::TFTP_WRITE_FILE,
                 buffer_ptr,
-                overwrite,
+                overwrite.into(),
                 &mut buffer_size,
                 None,
                 server_ip,
                 filename.as_ptr(),
                 None,
-                false,
+                Boolean::FALSE,
             )
         }
         .to_result()
@@ -244,13 +245,13 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::TFTP_READ_DIRECTORY,
                 buffer_ptr,
-                false,
+                Boolean::FALSE,
                 &mut buffer_size,
                 None,
                 server_ip,
                 directory_name.as_ptr(),
                 None,
-                false,
+                Boolean::FALSE,
             )
         };
         status.to_result()?;
@@ -317,13 +318,13 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::MTFTP_GET_FILE_SIZE,
                 null_mut(),
-                false,
+                Boolean::FALSE,
                 &mut buffer_size,
                 None,
                 server_ip,
                 filename.as_ptr(),
                 Some(info),
-                false,
+                Boolean::FALSE,
             )
         };
         status.to_result_with_val(|| buffer_size)
@@ -339,9 +340,9 @@ impl BaseCode {
     ) -> Result<u64> {
         let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
             let buffer_size = u64::try_from(buffer.len()).unwrap();
-            (buffer.as_mut_ptr().cast(), buffer_size, false)
+            (buffer.as_mut_ptr().cast(), buffer_size, Boolean::FALSE)
         } else {
-            (null_mut(), 0, true)
+            (null_mut(), 0, Boolean::TRUE)
         };
 
         let status = unsafe {
@@ -349,7 +350,7 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::MTFTP_READ_FILE,
                 buffer_ptr,
-                false,
+                Boolean::FALSE,
                 &mut buffer_size,
                 None,
                 server_ip,
@@ -377,13 +378,13 @@ impl BaseCode {
                 self,
                 PxeBaseCodeTftpOpcode::MTFTP_READ_DIRECTORY,
                 buffer_ptr,
-                false,
+                Boolean::FALSE,
                 &mut buffer_size,
                 None,
                 server_ip,
                 null_mut(),
                 Some(info),
-                false,
+                Boolean::FALSE,
             )
         };
         status.to_result()?;
@@ -555,11 +556,11 @@ impl BaseCode {
         unsafe {
             (self.set_parameters)(
                 self,
-                new_auto_arp.as_ref(),
-                new_send_guid.as_ref(),
+                opt_bool_to_ptr(&new_auto_arp),
+                opt_bool_to_ptr(&new_send_guid),
                 new_ttl.as_ref(),
                 new_tos.as_ref(),
-                new_make_callback.as_ref(),
+                opt_bool_to_ptr(&new_make_callback),
             )
         }
         .to_result()
@@ -595,12 +596,12 @@ impl BaseCode {
         unsafe {
             (self.set_packets)(
                 self,
-                new_dhcp_discover_valid.as_ref(),
-                new_dhcp_ack_received.as_ref(),
-                new_proxy_offer_received.as_ref(),
-                new_pxe_discover_valid.as_ref(),
-                new_pxe_reply_received.as_ref(),
-                new_pxe_bis_reply_received.as_ref(),
+                opt_bool_to_ptr(&new_dhcp_discover_valid),
+                opt_bool_to_ptr(&new_dhcp_ack_received),
+                opt_bool_to_ptr(&new_proxy_offer_received),
+                opt_bool_to_ptr(&new_pxe_discover_valid),
+                opt_bool_to_ptr(&new_pxe_reply_received),
+                opt_bool_to_ptr(&new_pxe_bis_reply_received),
                 new_dhcp_discover,
                 new_dhcp_ack,
                 new_proxy_offer,
@@ -617,6 +618,15 @@ impl BaseCode {
     pub const fn mode(&self) -> &Mode {
         unsafe { &*self.mode }
     }
+}
+
+/// Convert an `&Option<bool>` to a `*const Boolean`.
+///
+/// This is always a valid conversion; `bool` is an 8-bit `0` or `1`.
+fn opt_bool_to_ptr(arg: &Option<bool>) -> *const Boolean {
+    arg.as_ref()
+        .map(|arg| ptr::from_ref(arg).cast::<Boolean>())
+        .unwrap_or_else(null)
 }
 
 opaque_type! {

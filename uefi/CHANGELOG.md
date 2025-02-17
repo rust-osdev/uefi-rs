@@ -7,6 +7,9 @@
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.
+- `SimpleNetwork::transmit` now passes the correct buffer size argument.
+  Previously it incorrectly added the header size to the buffer length, which
+  could cause the firmware to read past the end of the buffer.
 
 
 # uefi - 0.34.1 (2025-02-07)

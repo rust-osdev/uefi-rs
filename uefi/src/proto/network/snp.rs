@@ -225,7 +225,7 @@ impl SimpleNetwork {
         (self.transmit)(
             self,
             header_size,
-            buffer.len() + header_size,
+            buffer.len(),
             buffer.as_ptr().cast(),
             src_addr.as_ref(),
             dest_addr.as_ref(),

@@ -18,6 +18,8 @@ use crate::{CStr8, Char8, Result, Status, StatusExt};
 
 use super::{IpAddress, MacAddress};
 
+pub use uefi_raw::protocol::network::pxe::PxeBaseCodeUdpOpFlags as UdpOpFlags;
+
 /// PXE Base Code protocol
 #[derive(Debug)]
 #[repr(C)]
@@ -827,29 +829,6 @@ pub struct MtftpInfo {
     /// The number of seconds a client should wait for a packet from the server
     /// before retransmitting the previous open request or data ack packet.
     pub transmit_timeout: u16,
-}
-
-// No corresponding type in the UEFI spec, it just uses UINT16.
-bitflags! {
-    /// Flags for UDP read and write operations.
-    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct UdpOpFlags: u16 {
-        /// Receive a packet sent from any IP address in UDP read operations.
-        const ANY_SRC_IP = 0x0001;
-        /// Receive a packet sent from any UDP port in UDP read operations. If
-        /// the source port is no specified in UDP write operations, the
-        /// source port will be automatically selected.
-        const ANY_SRC_PORT = 0x0002;
-        /// Receive a packet sent to any IP address in UDP read operations.
-        const ANY_DEST_IP = 0x0004;
-        /// Receive a packet sent to any UDP port in UDP read operations.
-        const ANY_DEST_PORT = 0x0008;
-        /// The software filter is used in UDP read operations.
-        const USE_FILTER = 0x0010;
-        /// If required, a UDP write operation may be broken up across multiple packets.
-        const MAY_FRAGMENT = 0x0020;
-    }
 }
 
 /// IP receive filter settings

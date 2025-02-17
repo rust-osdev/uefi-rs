@@ -48,7 +48,7 @@ pub struct BaseCode {
         buffer: *mut c_void,
         overwrite: Boolean,
         buffer_size: &mut u64,
-        block_size: Option<&usize>,
+        block_size: *const usize,
         server_ip: *const uefi_raw::IpAddress,
         filename: *const Char8,
         info: *const PxeBaseCodeMtftpInfo,
@@ -61,8 +61,8 @@ pub struct BaseCode {
         dest_port: &u16,
         gateway_ip: *const uefi_raw::IpAddress,
         src_ip: *const uefi_raw::IpAddress,
-        src_port: Option<&mut u16>,
-        header_size: Option<&usize>,
+        src_port: *mut u16,
+        header_size: *const usize,
         header_ptr: *const c_void,
         buffer_size: &usize,
         buffer_ptr: *const c_void,
@@ -71,10 +71,10 @@ pub struct BaseCode {
         this: &Self,
         op_flags: UdpOpFlags,
         dest_ip: *mut uefi_raw::IpAddress,
-        dest_port: Option<&mut u16>,
+        dest_port: *mut u16,
         src_ip: *mut uefi_raw::IpAddress,
-        src_port: Option<&mut u16>,
-        header_size: Option<&usize>,
+        src_port: *mut u16,
+        header_size: *const usize,
         header_ptr: *mut c_void,
         buffer_size: &mut usize,
         buffer_ptr: *mut c_void,
@@ -84,14 +84,14 @@ pub struct BaseCode {
     arp: unsafe extern "efiapi" fn(
         this: &Self,
         ip_addr: *const uefi_raw::IpAddress,
-        mac_addr: Option<&mut MacAddress>,
+        mac_addr: *mut MacAddress,
     ) -> Status,
     set_parameters: unsafe extern "efiapi" fn(
         this: &Self,
         new_auto_arp: *const Boolean,
         new_send_guid: *const Boolean,
-        new_ttl: Option<&u8>,
-        new_tos: Option<&u8>,
+        new_ttl: *const u8,
+        new_tos: *const u8,
         new_make_callback: *const Boolean,
     ) -> Status,
     set_station_ip: unsafe extern "efiapi" fn(
@@ -161,7 +161,7 @@ impl BaseCode {
                 null_mut(),
                 Boolean::FALSE,
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
                 null(),
@@ -192,7 +192,7 @@ impl BaseCode {
                 buffer_ptr,
                 Boolean::FALSE,
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
                 null(),
@@ -220,7 +220,7 @@ impl BaseCode {
                 buffer_ptr,
                 overwrite.into(),
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
                 null(),
@@ -248,7 +248,7 @@ impl BaseCode {
                 buffer_ptr,
                 Boolean::FALSE,
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(directory_name),
                 null(),
@@ -321,7 +321,7 @@ impl BaseCode {
                 null_mut(),
                 Boolean::FALSE,
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
                 info.as_raw_ptr(),
@@ -353,7 +353,7 @@ impl BaseCode {
                 buffer_ptr,
                 Boolean::FALSE,
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
                 info.as_raw_ptr(),
@@ -381,7 +381,7 @@ impl BaseCode {
                 buffer_ptr,
                 Boolean::FALSE,
                 &mut buffer_size,
-                None,
+                null(),
                 server_ip.as_raw_ptr(),
                 null_mut(),
                 info.as_raw_ptr(),
@@ -484,8 +484,8 @@ impl BaseCode {
                 &dest_port,
                 opt_ip_addr_to_ptr(gateway_ip),
                 opt_ip_addr_to_ptr(src_ip),
-                src_port,
-                header_size,
+                opt_mut_to_ptr(src_port),
+                opt_ref_to_ptr(header_size),
                 header_ptr,
                 &buffer.len(),
                 buffer.as_ptr().cast(),
@@ -509,9 +509,9 @@ impl BaseCode {
         let header_size_tmp;
         let (header_size, header_ptr) = if let Some(header) = header {
             header_size_tmp = header.len();
-            (Some(&header_size_tmp), header.as_mut_ptr().cast())
+            (ptr::from_ref(&header_size_tmp), header.as_mut_ptr().cast())
         } else {
-            (None, null_mut())
+            (null(), null_mut())
         };
 
         let mut buffer_size = buffer.len();
@@ -521,9 +521,9 @@ impl BaseCode {
                 self,
                 op_flags,
                 opt_ip_addr_to_ptr_mut(dest_ip),
-                dest_port,
+                opt_mut_to_ptr(dest_port),
                 opt_ip_addr_to_ptr_mut(src_ip),
-                src_port,
+                opt_mut_to_ptr(src_port),
                 header_size,
                 header_ptr,
                 &mut buffer_size,
@@ -542,7 +542,7 @@ impl BaseCode {
 
     /// Uses the ARP protocol to resolve a MAC address.
     pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
-        unsafe { (self.arp)(self, ip_addr.as_raw_ptr(), mac_addr) }.to_result()
+        unsafe { (self.arp)(self, ip_addr.as_raw_ptr(), opt_mut_to_ptr(mac_addr)) }.to_result()
     }
 
     /// Updates the parameters that affect the operation of the PXE Base Code
@@ -560,8 +560,8 @@ impl BaseCode {
                 self,
                 opt_bool_to_ptr(&new_auto_arp),
                 opt_bool_to_ptr(&new_send_guid),
-                new_ttl.as_ref(),
-                new_tos.as_ref(),
+                opt_ref_to_ptr(new_ttl.as_ref()),
+                opt_ref_to_ptr(new_tos.as_ref()),
                 opt_bool_to_ptr(&new_make_callback),
             )
         }
@@ -656,6 +656,16 @@ fn opt_ip_addr_to_ptr_mut(arg: Option<&mut IpAddress>) -> *mut uefi_raw::IpAddre
 /// Convert an `Option<&Packet>` to a `*const PxeBaseCodePacket`.
 fn opt_packet_to_ptr(arg: Option<&Packet>) -> *const PxeBaseCodePacket {
     arg.map(|p| ptr::from_ref(p).cast()).unwrap_or_else(null)
+}
+
+/// Convert an `Option<&T>` to a `*const T`.
+fn opt_ref_to_ptr<T>(opt: Option<&T>) -> *const T {
+    opt.map(ptr::from_ref).unwrap_or(null())
+}
+
+/// Convert an `Option<&mut T>` to a `*mut T`.
+fn opt_mut_to_ptr<T>(opt: Option<&mut T>) -> *mut T {
+    opt.map(ptr::from_mut).unwrap_or(null_mut())
 }
 
 opaque_type! {

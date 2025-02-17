@@ -294,12 +294,20 @@ pub struct PxeBaseCodeIpFilter {
 }
 
 bitflags! {
+    /// IP receive filters.
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[repr(transparent)]
     pub struct PxeBaseCodeIpFilterFlags: u8 {
+        /// Enable the Station IP address.
         const STATION_IP = 0x01;
+
+        /// Enable IPv4 broadcast addresses.
         const BROADCAST = 0x02;
+
+        /// Enable all addresses.
         const PROMISCUOUS = 0x04;
+
+        /// Enable all multicast addresses.
         const PROMISCUOUS_MULTICAST = 0x08;
     }
 }

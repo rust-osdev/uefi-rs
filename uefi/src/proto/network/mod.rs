@@ -7,6 +7,8 @@
 pub mod pxe;
 pub mod snp;
 
+pub use uefi_raw::MacAddress;
+
 /// Represents an IPv4/v6 address.
 ///
 /// Corresponds to the `EFI_IP_ADDRESS` type in the C API.
@@ -32,10 +34,3 @@ impl IpAddress {
         Self(ip_addr)
     }
 }
-
-/// Represents a MAC (media access control) address.
-///
-/// Corresponds to the `EFI_MAC_ADDRESS` type in the C API.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[repr(C)]
-pub struct MacAddress(pub [u8; 32]);

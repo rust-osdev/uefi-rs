@@ -8,7 +8,6 @@ use crate::proto::unsafe_protocol;
 use crate::util::ptr_write_unaligned_and_add;
 use crate::{CStr8, Result, Status, StatusExt};
 use bitflags::bitflags;
-use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::iter::from_fn;
 use core::mem::MaybeUninit;
@@ -16,7 +15,7 @@ use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMtftpInfo, PxeBaseCodePacket,
-    PxeBaseCodeTftpOpcode,
+    PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8};
 
@@ -27,111 +26,25 @@ pub use uefi_raw::protocol::network::pxe::{
 
 /// PXE Base Code protocol
 #[derive(Debug)]
-#[repr(C)]
-#[unsafe_protocol("03c4e603-ac28-11d3-9a2d-0090273fc14d")]
-#[allow(clippy::type_complexity)]
-pub struct BaseCode {
-    revision: u64,
-    start: unsafe extern "efiapi" fn(this: &Self, use_ipv6: Boolean) -> Status,
-    stop: unsafe extern "efiapi" fn(this: &Self) -> Status,
-    dhcp: unsafe extern "efiapi" fn(this: &Self, sort_offers: Boolean) -> Status,
-    discover: unsafe extern "efiapi" fn(
-        this: &Self,
-        ty: BootstrapType,
-        layer: &mut u16,
-        use_bis: Boolean,
-        info: *const PxeBaseCodeDiscoverInfo,
-    ) -> Status,
-    mtftp: unsafe extern "efiapi" fn(
-        this: &Self,
-        operation: PxeBaseCodeTftpOpcode,
-        buffer: *mut c_void,
-        overwrite: Boolean,
-        buffer_size: &mut u64,
-        block_size: *const usize,
-        server_ip: *const uefi_raw::IpAddress,
-        filename: *const Char8,
-        info: *const PxeBaseCodeMtftpInfo,
-        dont_use_buffer: Boolean,
-    ) -> Status,
-    udp_write: unsafe extern "efiapi" fn(
-        this: &Self,
-        op_flags: UdpOpFlags,
-        dest_ip: *const uefi_raw::IpAddress,
-        dest_port: &u16,
-        gateway_ip: *const uefi_raw::IpAddress,
-        src_ip: *const uefi_raw::IpAddress,
-        src_port: *mut u16,
-        header_size: *const usize,
-        header_ptr: *const c_void,
-        buffer_size: &usize,
-        buffer_ptr: *const c_void,
-    ) -> Status,
-    udp_read: unsafe extern "efiapi" fn(
-        this: &Self,
-        op_flags: UdpOpFlags,
-        dest_ip: *mut uefi_raw::IpAddress,
-        dest_port: *mut u16,
-        src_ip: *mut uefi_raw::IpAddress,
-        src_port: *mut u16,
-        header_size: *const usize,
-        header_ptr: *mut c_void,
-        buffer_size: &mut usize,
-        buffer_ptr: *mut c_void,
-    ) -> Status,
-    set_ip_filter:
-        unsafe extern "efiapi" fn(this: &Self, new_filter: *const PxeBaseCodeIpFilter) -> Status,
-    arp: unsafe extern "efiapi" fn(
-        this: &Self,
-        ip_addr: *const uefi_raw::IpAddress,
-        mac_addr: *mut MacAddress,
-    ) -> Status,
-    set_parameters: unsafe extern "efiapi" fn(
-        this: &Self,
-        new_auto_arp: *const Boolean,
-        new_send_guid: *const Boolean,
-        new_ttl: *const u8,
-        new_tos: *const u8,
-        new_make_callback: *const Boolean,
-    ) -> Status,
-    set_station_ip: unsafe extern "efiapi" fn(
-        this: &Self,
-        new_station_ip: *const uefi_raw::IpAddress,
-        new_subnet_mask: *const uefi_raw::IpAddress,
-    ) -> Status,
-    set_packets: unsafe extern "efiapi" fn(
-        this: &Self,
-        new_dhcp_discover_valid: *const Boolean,
-        new_dhcp_ack_received: *const Boolean,
-        new_proxy_offer_received: *const Boolean,
-        new_pxe_discover_valid: *const Boolean,
-        new_pxe_reply_received: *const Boolean,
-        new_pxe_bis_reply_received: *const Boolean,
-        new_dhcp_discover: *const PxeBaseCodePacket,
-        new_dhcp_ack: *const PxeBaseCodePacket,
-        new_proxy_offer: *const PxeBaseCodePacket,
-        new_pxe_discover: *const PxeBaseCodePacket,
-        new_pxe_reply: *const PxeBaseCodePacket,
-        new_pxe_bis_reply: *const PxeBaseCodePacket,
-    ) -> Status,
-    mode: *const Mode,
-}
+#[repr(transparent)]
+#[unsafe_protocol(PxeBaseCodeProtocol::GUID)]
+pub struct BaseCode(PxeBaseCodeProtocol);
 
 impl BaseCode {
     /// Enables the use of the PXE Base Code Protocol functions.
     pub fn start(&mut self, use_ipv6: bool) -> Result {
-        unsafe { (self.start)(self, use_ipv6.into()) }.to_result()
+        unsafe { (self.0.start)(&mut self.0, use_ipv6.into()) }.to_result()
     }
 
     /// Disables the use of the PXE Base Code Protocol functions.
     pub fn stop(&mut self) -> Result {
-        unsafe { (self.stop)(self) }.to_result()
+        unsafe { (self.0.stop)(&mut self.0) }.to_result()
     }
 
     /// Attempts to complete a DHCPv4 D.O.R.A. (discover / offer / request /
     /// acknowledge) or DHCPv6 S.A.R.R (solicit / advertise / request / reply) sequence.
     pub fn dhcp(&mut self, sort_offers: bool) -> Result {
-        unsafe { (self.dhcp)(self, sort_offers.into()) }.to_result()
+        unsafe { (self.0.dhcp)(&mut self.0, sort_offers.into()) }.to_result()
     }
 
     /// Attempts to complete the PXE Boot Server and/or boot image discovery
@@ -147,7 +60,7 @@ impl BaseCode {
             .map(|info| ptr::from_ref(info).cast())
             .unwrap_or(null());
 
-        unsafe { (self.discover)(self, ty, layer, use_bis.into(), info) }.to_result()
+        unsafe { (self.0.discover)(&mut self.0, ty, layer, use_bis.into(), info) }.to_result()
     }
 
     /// Returns the size of a file located on a TFTP server.
@@ -155,8 +68,8 @@ impl BaseCode {
         let mut buffer_size = 0;
 
         let status = unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::TFTP_GET_FILE_SIZE,
                 null_mut(),
                 Boolean::FALSE,
@@ -186,8 +99,8 @@ impl BaseCode {
         };
 
         let status = unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::TFTP_READ_FILE,
                 buffer_ptr,
                 Boolean::FALSE,
@@ -214,8 +127,8 @@ impl BaseCode {
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::TFTP_WRITE_FILE,
                 buffer_ptr,
                 overwrite.into(),
@@ -242,8 +155,8 @@ impl BaseCode {
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let status = unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::TFTP_READ_DIRECTORY,
                 buffer_ptr,
                 Boolean::FALSE,
@@ -315,8 +228,8 @@ impl BaseCode {
         let mut buffer_size = 0;
 
         let status = unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::MTFTP_GET_FILE_SIZE,
                 null_mut(),
                 Boolean::FALSE,
@@ -347,8 +260,8 @@ impl BaseCode {
         };
 
         let status = unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::MTFTP_READ_FILE,
                 buffer_ptr,
                 Boolean::FALSE,
@@ -375,8 +288,8 @@ impl BaseCode {
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let status = unsafe {
-            (self.mtftp)(
-                self,
+            (self.0.mtftp)(
+                &mut self.0,
                 PxeBaseCodeTftpOpcode::MTFTP_READ_DIRECTORY,
                 buffer_ptr,
                 Boolean::FALSE,
@@ -477,8 +390,8 @@ impl BaseCode {
         };
 
         unsafe {
-            (self.udp_write)(
-                self,
+            (self.0.udp_write)(
+                &mut self.0,
                 op_flags,
                 dest_ip.as_raw_ptr(),
                 &dest_port,
@@ -517,8 +430,8 @@ impl BaseCode {
         let mut buffer_size = buffer.len();
 
         let status = unsafe {
-            (self.udp_read)(
-                self,
+            (self.0.udp_read)(
+                &mut self.0,
                 op_flags,
                 opt_ip_addr_to_ptr_mut(dest_ip),
                 opt_mut_to_ptr(dest_port),
@@ -537,12 +450,13 @@ impl BaseCode {
     /// filtering.
     pub fn set_ip_filter(&mut self, new_filter: &IpFilter) -> Result {
         let new_filter: *const PxeBaseCodeIpFilter = ptr::from_ref(new_filter).cast();
-        unsafe { (self.set_ip_filter)(self, new_filter) }.to_result()
+        unsafe { (self.0.set_ip_filter)(&mut self.0, new_filter) }.to_result()
     }
 
     /// Uses the ARP protocol to resolve a MAC address.
     pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
-        unsafe { (self.arp)(self, ip_addr.as_raw_ptr(), opt_mut_to_ptr(mac_addr)) }.to_result()
+        unsafe { (self.0.arp)(&mut self.0, ip_addr.as_raw_ptr(), opt_mut_to_ptr(mac_addr)) }
+            .to_result()
     }
 
     /// Updates the parameters that affect the operation of the PXE Base Code
@@ -556,8 +470,8 @@ impl BaseCode {
         new_make_callback: Option<bool>,
     ) -> Result {
         unsafe {
-            (self.set_parameters)(
-                self,
+            (self.0.set_parameters)(
+                &mut self.0,
                 opt_bool_to_ptr(&new_auto_arp),
                 opt_bool_to_ptr(&new_send_guid),
                 opt_ref_to_ptr(new_ttl.as_ref()),
@@ -576,8 +490,8 @@ impl BaseCode {
         new_subnet_mask: Option<&IpAddress>,
     ) -> Result {
         unsafe {
-            (self.set_station_ip)(
-                self,
+            (self.0.set_station_ip)(
+                &mut self.0,
                 opt_ip_addr_to_ptr(new_station_ip),
                 opt_ip_addr_to_ptr(new_subnet_mask),
             )
@@ -603,8 +517,8 @@ impl BaseCode {
         new_pxe_bis_reply: Option<&Packet>,
     ) -> Result {
         unsafe {
-            (self.set_packets)(
-                self,
+            (self.0.set_packets)(
+                &mut self.0,
                 opt_bool_to_ptr(&new_dhcp_discover_valid),
                 opt_bool_to_ptr(&new_dhcp_ack_received),
                 opt_bool_to_ptr(&new_proxy_offer_received),
@@ -625,7 +539,7 @@ impl BaseCode {
     /// Returns a reference to the `Mode` struct.
     #[must_use]
     pub const fn mode(&self) -> &Mode {
-        unsafe { &*self.mode }
+        unsafe { &*(self.0.mode.cast()) }
     }
 }
 

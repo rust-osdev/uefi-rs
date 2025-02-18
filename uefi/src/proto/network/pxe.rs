@@ -13,13 +13,15 @@ use crate::proto::unsafe_protocol;
 use crate::util::ptr_write_unaligned_and_add;
 use bitflags::bitflags;
 use ptr_meta::Pointee;
+use uefi_raw::protocol::network::pxe::PxeBaseCodeTftpOpcode;
 
 use crate::{CStr8, Char8, Result, Status, StatusExt};
 
 use super::{IpAddress, MacAddress};
 
 pub use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,
+    PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code protocol
@@ -41,7 +43,7 @@ pub struct BaseCode {
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
-        operation: TftpOpcode,
+        operation: PxeBaseCodeTftpOpcode,
         buffer: *mut c_void,
         overwrite: bool,
         buffer_size: &mut u64,
@@ -156,7 +158,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpGetFileSize,
+                PxeBaseCodeTftpOpcode::TFTP_GET_FILE_SIZE,
                 null_mut(),
                 false,
                 &mut buffer_size,
@@ -187,7 +189,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpReadFile,
+                PxeBaseCodeTftpOpcode::TFTP_READ_FILE,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -215,7 +217,7 @@ impl BaseCode {
         unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpWriteFile,
+                PxeBaseCodeTftpOpcode::TFTP_WRITE_FILE,
                 buffer_ptr,
                 overwrite,
                 &mut buffer_size,
@@ -243,7 +245,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::TftpReadDirectory,
+                PxeBaseCodeTftpOpcode::TFTP_READ_DIRECTORY,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -316,7 +318,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::MtftpGetFileSize,
+                PxeBaseCodeTftpOpcode::MTFTP_GET_FILE_SIZE,
                 null_mut(),
                 false,
                 &mut buffer_size,
@@ -348,7 +350,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::MtftpReadFile,
+                PxeBaseCodeTftpOpcode::MTFTP_READ_FILE,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -376,7 +378,7 @@ impl BaseCode {
         let status = unsafe {
             (self.mtftp)(
                 self,
-                TftpOpcode::MtftpReadDirectory,
+                PxeBaseCodeTftpOpcode::MTFTP_READ_DIRECTORY,
                 buffer_ptr,
                 false,
                 &mut buffer_size,
@@ -616,38 +618,6 @@ impl BaseCode {
     }
 }
 
-/// A type of bootstrap to perform in [`BaseCode::discover`].
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_BOOT_` constants in the C API.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[repr(u16)]
-#[allow(missing_docs)]
-pub enum BootstrapType {
-    Bootstrap = 0,
-    MsWinntRis = 1,
-    IntelLcm = 2,
-    DosUndi = 3,
-    NecEsmpro = 4,
-    IbmWsoD = 5,
-    IbmLccm = 6,
-    CaUnicenterTng = 7,
-    HpOpenview = 8,
-    Altiris9 = 9,
-    Altiris10 = 10,
-    Altiris11 = 11,
-    // NOT_USED_12 = 12,
-    RedhatInstall = 13,
-    RedhatBoot = 14,
-    Rembo = 15,
-    Beoboot = 16,
-    //
-    // Values 17 through 32767 are reserved.
-    // Values 32768 through 65279 are for vendor use.
-    // Values 65280 through 65534 are reserved.
-    //
-    PxeTest = 65535,
-}
-
 opaque_type! {
     /// Opaque type that should be used to represent a pointer to a [`DiscoverInfo`] in
     /// foreign function interfaces. This type produces a thin pointer, unlike
@@ -796,18 +766,6 @@ impl Server {
             Some(&self.ip_addr)
         }
     }
-}
-
-/// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_OPCODE` type in the C API.
-#[repr(C)]
-enum TftpOpcode {
-    TftpGetFileSize = 1,
-    TftpReadFile,
-    TftpWriteFile,
-    TftpReadDirectory,
-    MtftpGetFileSize,
-    MtftpReadFile,
-    MtftpReadDirectory,
 }
 
 /// MTFTP connection parameters

@@ -10,6 +10,7 @@
 - `SimpleNetwork::transmit` now passes the correct buffer size argument.
   Previously it incorrectly added the header size to the buffer length, which
   could cause the firmware to read past the end of the buffer.
+- The `Display` impl for `CStr8` now excludes the trailing null character.
 
 
 # uefi - 0.34.1 (2025-02-07)

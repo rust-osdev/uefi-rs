@@ -196,7 +196,7 @@ impl fmt::Debug for CStr8 {
 
 impl fmt::Display for CStr8 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for c in self.0.iter() {
+        for c in &self.0[..&self.0.len() - 1] {
             <Char8 as fmt::Display>::fmt(c, f)?;
         }
         Ok(())
@@ -763,6 +763,7 @@ where
 mod tests {
     use super::*;
     use crate::{cstr16, cstr8};
+    use alloc::format;
     use alloc::string::String;
 
     // Tests if our CStr8 type can be constructed from a valid core::ffi::CStr
@@ -781,6 +782,18 @@ mod tests {
         assert_eq!(string.as_bytes(), &[b'a', 0]);
         assert_eq!(<CStr8 as AsRef<[u8]>>::as_ref(string), &[b'a', 0]);
         assert_eq!(<CStr8 as Borrow<[u8]>>::borrow(string), &[b'a', 0]);
+    }
+
+    #[test]
+    fn test_cstr8_display() {
+        let s = cstr8!("abc");
+        assert_eq!(format!("{s}"), "abc");
+    }
+
+    #[test]
+    fn test_cstr16_display() {
+        let s = cstr16!("abc");
+        assert_eq!(format!("{s}"), "abc");
     }
 
     #[test]

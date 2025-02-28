@@ -17,6 +17,7 @@ pub fn test() {
     info!("Testing events...");
     test_check_event();
     test_callback_with_ctx();
+    test_signal_event();
     info!("Testing watchdog...");
     test_watchdog();
     info!("Testing protocol handler services...");
@@ -87,6 +88,38 @@ fn test_callback_with_ctx() {
     };
 
     boot::check_event(event).expect("Failed to check event");
+
+    // Check that `data` was updated inside the event callback.
+    assert_eq!(data, 456);
+}
+
+fn test_signal_event() {
+    let mut data = 123u32;
+
+    extern "efiapi" fn callback(_event: Event, ctx: Option<NonNull<c_void>>) {
+        info!("Inside the signal event callback");
+        // Safety: this callback is run within the parent function's
+        // scope, so the context pointer is still valid.
+        unsafe {
+            let ctx = ctx.unwrap().as_ptr().cast::<u32>();
+            *ctx = 456;
+        }
+    }
+
+    let ctx: *mut u32 = &mut data;
+    let ctx = NonNull::new(ctx.cast::<c_void>()).unwrap();
+
+    let event = unsafe {
+        boot::create_event(
+            EventType::NOTIFY_SIGNAL,
+            Tpl::CALLBACK,
+            Some(callback),
+            Some(ctx),
+        )
+        .expect("Failed to create event with context")
+    };
+
+    boot::signal_event(&event).expect("Failed to signal event");
 
     // Check that `data` was updated inside the event callback.
     assert_eq!(data, 456);

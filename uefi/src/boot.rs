@@ -467,6 +467,31 @@ pub fn check_event(event: Event) -> Result<bool> {
     }
 }
 
+/// Places the supplied `event` in the signaled state. If `event` is already in
+/// the signaled state, the function returns successfully. If `event` is of type
+/// [`NOTIFY_SIGNAL`], the event's notification function is scheduled to be
+/// invoked at the event's notification task priority level.
+///
+/// This function may be invoked from any task priority level.
+///
+/// If `event` is part of an event group, then all of the events in the event
+/// group are also signaled and their notification functions are scheduled.
+///
+/// When signaling an event group, it is possible to create an event in the
+/// group, signal it and then close the event to remove it from the group.
+///
+/// # Errors
+///
+/// The specification does not list any errors.
+///
+/// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
+pub fn signal_event(event: &Event) -> Result {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+
+    unsafe { (bt.signal_event)(event.as_ptr()) }.to_result()
+}
+
 /// Removes `event` from any event group to which it belongs and closes it.
 ///
 /// If `event` was registered with [`register_protocol_notify`], then the

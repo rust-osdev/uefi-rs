@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Added
+- Added `boot::signal_event`.
+
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no
   longer fallible. `BootPolicy` now tightly integrates the new `Boolean` type

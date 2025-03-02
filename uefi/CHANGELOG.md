@@ -13,6 +13,9 @@
 - `SimpleNetwork::transmit` now passes the correct buffer size argument.
   Previously it incorrectly added the header size to the buffer length, which
   could cause the firmware to read past the end of the buffer.
+- `boot::allocate_pages` no longer panics if the allocation is at address
+  zero. The allocation is retried instead, and in all failure cases an error is
+  returned rather than panicking.
 
 
 # uefi - 0.34.1 (2025-02-07)

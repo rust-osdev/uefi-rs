@@ -134,15 +134,40 @@ pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Res
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    let (ty, mut addr) = match ty {
+    let (ty, initial_addr) = match ty {
         AllocateType::AnyPages => (0, 0),
         AllocateType::MaxAddress(addr) => (1, addr),
         AllocateType::Address(addr) => (2, addr),
     };
-    let addr =
-        unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr) }.to_result_with_val(|| addr)?;
-    let ptr = addr as *mut u8;
-    Ok(NonNull::new(ptr).expect("allocate_pages must not return a null pointer if successful"))
+
+    let mut addr1 = initial_addr;
+    unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr1) }.to_result()?;
+
+    // The UEFI spec allows `allocate_pages` to return a valid allocation at
+    // address zero. Rust does not allow writes through a null pointer (which
+    // Rust defines as address zero), so this is not very useful. Only return
+    // the allocation if the address is non-null.
+    if let Some(ptr) = NonNull::new(addr1 as *mut u8) {
+        return Ok(ptr);
+    }
+
+    // Attempt a second allocation. The first allocation (at address zero) has
+    // not yet been freed, so if this allocation succeeds it should be at a
+    // non-zero address.
+    let mut addr2 = initial_addr;
+    let r = unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr2) }.to_result();
+
+    // Free the original allocation (ignoring errors).
+    let _unused = unsafe { (bt.free_pages)(addr1, count) };
+
+    // Return an error if the second allocation failed, or if it is still at
+    // address zero. Otherwise, return a pointer to the second allocation.
+    r?;
+    if let Some(ptr) = NonNull::new(addr2 as *mut u8) {
+        Ok(ptr)
+    } else {
+        Err(Status::OUT_OF_RESOURCES.into())
+    }
 }
 
 /// Frees memory pages allocated by [`allocate_pages`].

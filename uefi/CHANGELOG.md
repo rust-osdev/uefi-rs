@@ -16,6 +16,7 @@
 - `boot::allocate_pages` no longer panics if the allocation is at address
   zero. The allocation is retried instead, and in all failure cases an error is
   returned rather than panicking.
+- The `Display` impl for `CStr8` now excludes the trailing null character.
 
 
 # uefi - 0.34.1 (2025-02-07)

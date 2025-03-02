@@ -1,5 +1,4 @@
-# Returns the Rust toolchain for Nix compliant to the rust-toolchain.toml file
-# but without rustup.
+# Returns a Rust toolchain for Nix that matches the one from the toolchain file.
 
 {
   # Comes from rust-overlay

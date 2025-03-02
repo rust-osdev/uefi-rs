@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
 jobs:
-  # Job to run change detection
+  # Job to run change detection for Nix-related files
   changes:
     runs-on: ubuntu-latest
     # Set job outputs to values from filter step.
@@ -19,13 +19,14 @@ jobs:
           filters: |
             nix-src:
               - 'nix/**'
-              - 'shell.nix'
+              - 'flake.nix'
+              - 'flake.lock'
   # This is a convenience test to verify that the toolchain provided by
   # shell.nix is valid and can build + run the integration test.
   #
   # It only runs if the "nix-src" output of the "changes" job is true.
   nix_shell_toolchain:
-    name: "Nix toolchain: `cargo xtask run` works"
+    name: "Nix shell toolchain: `cargo xtask run` works"
     needs: changes
     if: ${{ needs.changes.outputs.nix-src == 'true' }}
     runs-on: ubuntu-latest
@@ -34,17 +35,13 @@ jobs:
         uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - uses: cachix/install-nix-action@v30
-        with:
-          # This channel is only required to invoke "nix-shell".
-          # Everything inside that nix-shell will use a pinned version of nixpkgs.
-          nix_path: nixpkgs=channel:nixpkgs-unstable
       # Dedicated step to separate all the
       # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
-      # messages from the actual build output. This job takes ~60secs.
+      # messages from the actual build output.
       - name: Prepare Nix Store
-        run: nix-shell --pure --run "cargo --version"
+        run: nix develop --command bash -c "cargo --version"
       - name: Run VM tests
         run: |
           COMMAND="cargo xtask run --target x86_64 --headless --ci --tpm=v1"
-          echo "Executing in nix shell: $COMMAND"
-          nix-shell --pure --run "$COMMAND"
+          echo "Executing in Nix shell: $COMMAND"
+          nix develop --command bash -c "$COMMAND"

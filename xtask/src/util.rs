@@ -8,12 +8,15 @@ use std::process::Command;
 /// Example: "VAR=val program --arg1 arg2".
 pub fn command_to_string(cmd: &Command) -> String {
     // Format env vars as "name=val".
-    let ignore_var = ["PATH", "RUSTC", "RUSTDOC"];
     let mut parts = cmd
         .get_envs()
-        // Filter out some internally-set variables that would just
-        // clutter the output.
-        .filter(|(name, _)| !ignore_var.contains(&name.to_str().unwrap_or_default()))
+        // Filter out variables that are set or cleared by
+        // `fix_nested_cargo_env`, as they would clutter the output.
+        .filter(|(name, val)| {
+            *name != "PATH"
+                // Exclude any variables cleared with `Command::env_remove`.
+                && val.is_some()
+        })
         .map(|(name, val)| {
             format!(
                 "{}={}",
@@ -53,13 +56,10 @@ mod tests {
     #[test]
     fn test_command_to_string() {
         let mut cmd = Command::new("MyCommand");
-        cmd.args(["abc", "123"]).envs([
-            ("VAR1", "val1"),
-            ("VAR2", "val2"),
-            ("PATH", "pathval"),
-            ("RUSTC", "rustcval"),
-            ("RUSTDOC", "rustdocval"),
-        ]);
+        cmd.args(["abc", "123"])
+            .envs([("VAR1", "val1"), ("VAR2", "val2"), ("PATH", "pathval")])
+            .env_remove("RUSTC")
+            .env_remove("CARGO");
         assert_eq!(
             command_to_string(&cmd),
             "VAR1=val1 VAR2=val2 MyCommand abc 123"

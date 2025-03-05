@@ -216,12 +216,28 @@ fn sanitized_path(orig_path: OsString) -> OsString {
     env::join_paths(sanitized_paths).expect("invalid PATH")
 }
 
-/// Cargo automatically sets some env vars that can prevent the
-/// channel arg (e.g. "+nightly") from working. Unset them in the
-/// child's environment.
-pub fn fix_nested_cargo_env(cmd: &mut Command) {
+/// Update a command env to make nested cargo invocations work correctly.
+///
+/// Cargo automatically sets some env vars that cause problems with nested cargo
+/// invocations. In particular, these env vars can:
+/// * Cause unwanted rebuilds, e.g. running `cargo xtask test` multiple times
+///   will rebuild every time because cached dependencies are marked as stale.
+/// * Prevent channels args (e.g. "+nightly") from working.
+///
+/// Some related issues:
+/// * <https://github.com/rust-lang/cargo/issues/15099>
+/// * <https://github.com/rust-lang/rustup/issues/3031>
+fn fix_nested_cargo_env(cmd: &mut Command) {
     cmd.env_remove("RUSTC");
     cmd.env_remove("RUSTDOC");
+
+    // Clear all vars starting with `CARGO`.
+    for (name, _) in env::vars() {
+        if name.starts_with("CARGO") {
+            cmd.env_remove(name);
+        }
+    }
+
     let orig_path = env::var_os("PATH").unwrap_or_default();
     cmd.env("PATH", sanitized_path(orig_path));
 }

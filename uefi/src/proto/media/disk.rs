@@ -28,12 +28,10 @@ impl DiskIo {
     /// * `buffer` - Pointer to a buffer to read into.
     ///
     /// # Errors:
-    /// * `uefi::status::INVALID_PARAMETER` The read request contains device addresses that
-    ///                                     are not valid for the device.
-    /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
-    ///                                     the read operation.
-    /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
-    /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
+    /// * [`Status::INVALID_PARAMETER`] The read request contains device addresses that are not valid for the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the read operation.
+    /// * [`Status::NO_MEDIA`]          There is no medium in the device.
+    /// * [`Status::MEDIA_CHANGED`]     `media_id` is not for the current medium.
     pub fn read_disk(&self, media_id: u32, offset: u64, buffer: &mut [u8]) -> Result {
         unsafe {
             (self.0.read_disk)(
@@ -55,13 +53,11 @@ impl DiskIo {
     /// * `buffer` - Pointer to a buffer to write from.
     ///
     /// # Errors:
-    /// * `uefi::status::INVALID_PARAMETER` The write request contains device addresses that
-    ///                                     are not valid for the device.
-    /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
-    ///                                     the write operation.
-    /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
-    /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
-    /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
+    /// * [`Status::INVALID_PARAMETER`] The write request contains device addresses that are not valid for the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the write operation.
+    /// * [`Status::NO_MEDIA`]          There is no medium in the device.
+    /// * [`Status::MEDIA_CHANGED`]     `media_id` is not for the current medium.
+    /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
     pub fn write_disk(&mut self, media_id: u32, offset: u64, buffer: &[u8]) -> Result {
         unsafe {
             (self.0.write_disk)(
@@ -99,7 +95,7 @@ impl DiskIo2 {
     /// Terminates outstanding asynchronous requests to the device.
     ///
     /// # Errors:
-    /// * `uefi::status::DEVICE_ERROR`  The device reported an error while performing
+    /// * [`Status::DEVICE_ERROR`]  The device reported an error while performing
     ///                                 the cancel operation.
     pub fn cancel(&mut self) -> Result {
         unsafe { (self.0.cancel)(&mut self.0) }.to_result()
@@ -120,14 +116,11 @@ impl DiskIo2 {
     /// tracking is required.
     ///
     /// # Errors:
-    /// * `uefi::status::INVALID_PARAMETER` The read request contains device addresses
-    ///                                     that are not valid for the device.
-    /// * `uefi::status::OUT_OF_RESOURCES`  The request could not be completed due to
-    ///                                     a lack of resources.
-    /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
-    /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
-    /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
-    ///                                     the read operation.
+    /// * [`Status::INVALID_PARAMETER`] The read request contains device addresses that are not valid for the device.
+    /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
+    /// * [`Status::MEDIA_CHANGED`]     `media_id` is not for the current medium.
+    /// * [`Status::NO_MEDIA`]          There is no medium in the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the read operation.
     pub unsafe fn read_disk_raw(
         &self,
         media_id: u32,
@@ -156,15 +149,12 @@ impl DiskIo2 {
     /// tracking is required.
     ///
     /// # Errors:
-    /// * `uefi::status::INVALID_PARAMETER` The write request contains device addresses
-    ///                                     that are not valid for the device.
-    /// * `uefi::status::OUT_OF_RESOURCES`  The request could not be completed due to
-    ///                                     a lack of resources.
-    /// * `uefi::status::MEDIA_CHANGED`     `media_id` is not for the current medium.
-    /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
-    /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
-    ///                                     the write operation.
-    /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
+    /// * [`Status::INVALID_PARAMETER`] The write request contains device addresses that are not valid for the device.
+    /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
+    /// * [`Status::MEDIA_CHANGED`      `media_id` is not for the current medium.
+    /// * [`Status::NO_MEDIA`]          There is no medium in the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the write operation.
+    /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
     pub unsafe fn write_disk_raw(
         &mut self,
         media_id: u32,
@@ -191,14 +181,11 @@ impl DiskIo2 {
     /// * `token` - Transaction token for the asynchronous flush.
     ///
     /// # Errors:
-    /// * `uefi::status::OUT_OF_RESOURCES`  The request could not be completed due to
-    ///                                     a lack of resources.
-    /// * `uefi::status::MEDIA_CHANGED`     The medium in the device has changed since
-    ///                                     the last access.
-    /// * `uefi::status::NO_MEDIA`          There is no medium in the device.
-    /// * `uefi::status::DEVICE_ERROR`      The device reported an error while performing
-    ///                                     the flush operation.
-    /// * `uefi::status::WRITE_PROTECTED`   The device cannot be written to.
+    /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
+    /// * [`Status::MEDIA_CHANGED`]     The medium in the device has changed since the last access.
+    /// * [`Status::NO_MEDIA`]          There is no medium in the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the flush operation.
+    /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
     pub fn flush_disk(&mut self, token: Option<NonNull<DiskIo2Token>>) -> Result {
         let token = opt_nonnull_to_ptr(token);
         unsafe { (self.0.flush_disk_ex)(&mut self.0, token.cast()) }.to_result()

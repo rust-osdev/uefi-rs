@@ -3,6 +3,8 @@
 //! LoadFile and LoadFile2 protocols.
 
 use crate::proto::unsafe_protocol;
+#[cfg(doc)]
+use crate::Status;
 #[cfg(all(feature = "alloc", feature = "unstable"))]
 use alloc::alloc::Global;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
@@ -44,22 +46,22 @@ impl LoadFile {
     /// - `boot_policy` The [`BootPolicy`] to use.
     ///
     /// # Errors
-    /// - `uefi::status::EFI_SUCCESS` The file was loaded.
-    /// - `uefi::status::EFI_UNSUPPORTED` The device does not support the
+    /// - [`Status::SUCCESS`] The file was loaded.
+    /// - [`Status::UNSUPPORTED`] The device does not support the
     ///   provided BootPolicy.
-    /// - `uefi::status::EFI_INVALID_PARAMETER` FilePath is not a valid device
+    /// - [`Status::INVALID_PARAMETER`] FilePath is not a valid device
     ///   path, or BufferSize is NULL.
-    /// - `uefi::status::EFI_NO_MEDIA` No medium was present to load the file.
-    /// - `uefi::status::EFI_DEVICE_ERROR` The file was not loaded due to a
+    /// - [`Status::NO_MEDIA`] No medium was present to load the file.
+    /// - [`Status::DEVICE_ERROR`] The file was not loaded due to a
     ///   device error.
-    /// - `uefi::status::EFI_NO_RESPONSE` The remote system did not respond.
-    /// - `uefi::status::EFI_NOT_FOUND` The file was not found.
-    /// - `uefi::status::EFI_ABORTED` The file load process was manually
+    /// - [`Status::NO_RESPONSE`] The remote system did not respond.
+    /// - [`Status::NOT_FOUND`] The file was not found.
+    /// - [`Status::ABORTED`] The file load process was manually
     ///   cancelled.
-    /// - `uefi::status::EFI_BUFFER_TOO_SMALL` The BufferSize is too small to
+    /// - [`Status::BUFFER_TOO_SMALL`] The BufferSize is too small to
     ///   read the current directory entry. BufferSize has been updated with the
     ///   size needed to complete the request.
-    /// - `uefi::status::EFI_WARN_FILE_SYSTEM` The resulting Buffer contains
+    /// - [`Status::WARN_FILE_SYSTEM`] The resulting Buffer contains
     ///   UEFI-compliant file system.
     ///
     /// [`BootPolicy`]: uefi::proto::BootPolicy
@@ -119,18 +121,18 @@ impl LoadFile2 {
     /// - `file_path` The device specific path of the file to load.
     ///
     /// # Errors
-    /// - `uefi::status::EFI_SUCCESS` The file was loaded.
-    /// - `uefi::status::EFI_UNSUPPORTED` BootPolicy is TRUE.
-    /// - `uefi::status::EFI_INVALID_PARAMETER` FilePath is not a valid device
+    /// - [`Status::SUCCESS`] The file was loaded.
+    /// - [`Status::UNSUPPORTED`] BootPolicy is TRUE.
+    /// - [`Status::INVALID_PARAMETER`] FilePath is not a valid device
     ///   path, or BufferSize is NULL.
-    /// - `uefi::status::EFI_NO_MEDIA` No medium was present to load the file.
-    /// - `uefi::status::EFI_DEVICE_ERROR` The file was not loaded due to a
+    /// - [`Status::NO_MEDIA`] No medium was present to load the file.
+    /// - [`Status::DEVICE_ERROR`] The file was not loaded due to a
     ///   device error.
-    /// - `uefi::status::EFI_NO_RESPONSE` The remote system did not respond.
-    /// - `uefi::status::EFI_NOT_FOUND` The file was not found.
-    /// - `uefi::status::EFI_ABORTED` The file load process was manually
+    /// - [`Status::NO_RESPONSE`] The remote system did not respond.
+    /// - [`Status::NOT_FOUND`] The file was not found.
+    /// - [`Status::ABORTED`] The file load process was manually
     ///   cancelled.
-    /// - `uefi::status::EFI_BUFFER_TOO_SMALL` The BufferSize is too small to
+    /// - [`Status::BUFFER_TOO_SMALL`] The BufferSize is too small to
     ///   read the current directory entry. BufferSize has been updated with the
     ///   size needed to complete the request.
     #[cfg(feature = "alloc")]

@@ -9,6 +9,9 @@
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no
   longer fallible. `BootPolicy` now tightly integrates the new `Boolean` type
   of `uefi-raw`.
+- **Breaking:** The `pxe::BaseCode::tftp_read_dir` and
+  `pxe::BaseCode::mtftp_read_dir` methods now take `&mut self` instead of
+  `&self`.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

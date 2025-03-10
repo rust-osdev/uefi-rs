@@ -230,7 +230,7 @@ impl BaseCode {
 
     /// Reads a directory listing of a directory on a TFTP server.
     pub fn tftp_read_dir<'a>(
-        &self,
+        &mut self,
         server_ip: &IpAddress,
         directory_name: &CStr8,
         buffer: &'a mut [u8],
@@ -363,7 +363,7 @@ impl BaseCode {
 
     /// Reads a directory listing of a directory on a MTFTP server.
     pub fn mtftp_read_dir<'a>(
-        &self,
+        &mut self,
         server_ip: &IpAddress,
         buffer: &'a mut [u8],
         info: &MtftpInfo,

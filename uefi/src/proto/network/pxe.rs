@@ -2,22 +2,19 @@
 
 //! PXE Base Code protocol.
 
+use super::{IpAddress, MacAddress};
+use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
+use crate::proto::unsafe_protocol;
+use crate::util::ptr_write_unaligned_and_add;
+use crate::{CStr8, Char8, Result, Status, StatusExt};
+use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::ptr::{null, null_mut};
-
-use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
-use crate::proto::unsafe_protocol;
-use crate::util::ptr_write_unaligned_and_add;
-use bitflags::bitflags;
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::PxeBaseCodeTftpOpcode;
-
-use crate::{CStr8, Char8, Result, Status, StatusExt};
-
-use super::{IpAddress, MacAddress};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,

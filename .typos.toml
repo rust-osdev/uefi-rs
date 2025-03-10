@@ -17,4 +17,6 @@ extend-ignore-identifiers-re = [
 HD = "HD"
 
 [default.extend-identifiers]
+# We sometimes use "typ" as "type" is a reserved keyword
+typ = "typ"
 

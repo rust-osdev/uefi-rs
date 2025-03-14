@@ -7,6 +7,7 @@
 //! functions after exiting boot services; see the "Calling Convention" section
 //! of the UEFI specification for details.
 
+use alloc::vec;
 use crate::data_types::PhysicalAddress;
 use crate::table::{self, Revision};
 use crate::{CStr16, Error, Result, Status, StatusExt};
@@ -270,8 +271,7 @@ impl VariableKeys {
     fn new() -> Self {
         // Create a the name buffer with a reasonable default capacity, and
         // initialize it to an empty null-terminated string.
-        let mut name = Vec::with_capacity(32);
-        name.push(0);
+        let name = vec![0;512];
 
         Self {
             // Give the name buffer a reasonable default capacity.

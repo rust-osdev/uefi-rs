@@ -14,7 +14,7 @@ use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
-use uefi_raw::protocol::network::pxe::PxeBaseCodeTftpOpcode;
+use uefi_raw::protocol::network::pxe::{PxeBaseCodePacket, PxeBaseCodeTftpOpcode};
 use uefi_raw::{Boolean, Char8};
 
 pub use uefi_raw::protocol::network::pxe::{
@@ -103,12 +103,12 @@ pub struct BaseCode {
         new_pxe_discover_valid: *const Boolean,
         new_pxe_reply_received: *const Boolean,
         new_pxe_bis_reply_received: *const Boolean,
-        new_dhcp_discover: Option<&Packet>,
-        new_dhcp_ack: Option<&Packet>,
-        new_proxy_offer: Option<&Packet>,
-        new_pxe_discover: Option<&Packet>,
-        new_pxe_reply: Option<&Packet>,
-        new_pxe_bis_reply: Option<&Packet>,
+        new_dhcp_discover: *const PxeBaseCodePacket,
+        new_dhcp_ack: *const PxeBaseCodePacket,
+        new_proxy_offer: *const PxeBaseCodePacket,
+        new_pxe_discover: *const PxeBaseCodePacket,
+        new_pxe_reply: *const PxeBaseCodePacket,
+        new_pxe_bis_reply: *const PxeBaseCodePacket,
     ) -> Status,
     mode: *const Mode,
 }
@@ -609,12 +609,12 @@ impl BaseCode {
                 opt_bool_to_ptr(&new_pxe_discover_valid),
                 opt_bool_to_ptr(&new_pxe_reply_received),
                 opt_bool_to_ptr(&new_pxe_bis_reply_received),
-                new_dhcp_discover,
-                new_dhcp_ack,
-                new_proxy_offer,
-                new_pxe_discover,
-                new_pxe_reply,
-                new_pxe_bis_reply,
+                opt_packet_to_ptr(new_dhcp_discover),
+                opt_packet_to_ptr(new_dhcp_ack),
+                opt_packet_to_ptr(new_proxy_offer),
+                opt_packet_to_ptr(new_pxe_discover),
+                opt_packet_to_ptr(new_pxe_reply),
+                opt_packet_to_ptr(new_pxe_bis_reply),
             )
         }
         .to_result()
@@ -649,6 +649,11 @@ fn opt_ip_addr_to_ptr(arg: Option<&IpAddress>) -> *const uefi_raw::IpAddress {
 /// Convert an `Option<&mut IpAddress>` to a `*mut uefi_raw::IpAddress`.
 fn opt_ip_addr_to_ptr_mut(arg: Option<&mut IpAddress>) -> *mut uefi_raw::IpAddress {
     arg.map(|arg| arg.as_raw_ptr_mut()).unwrap_or_else(null_mut)
+}
+
+/// Convert an `Option<&Packet>` to a `*const PxeBaseCodePacket`.
+fn opt_packet_to_ptr(arg: Option<&Packet>) -> *const PxeBaseCodePacket {
+    arg.map(|p| ptr::from_ref(p).cast()).unwrap_or_else(null)
 }
 
 opaque_type! {

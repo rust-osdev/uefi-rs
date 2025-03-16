@@ -15,7 +15,7 @@ use core::mem::MaybeUninit;
 use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeMtftpInfo, PxeBaseCodePacket, PxeBaseCodeTftpOpcode,
+    PxeBaseCodeDiscoverInfo, PxeBaseCodeMtftpInfo, PxeBaseCodePacket, PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8};
 
@@ -39,7 +39,7 @@ pub struct BaseCode {
         ty: BootstrapType,
         layer: &mut u16,
         use_bis: Boolean,
-        info: *const FfiDiscoverInfo,
+        info: *const PxeBaseCodeDiscoverInfo,
     ) -> Status,
     mtftp: unsafe extern "efiapi" fn(
         this: &Self,
@@ -141,11 +141,8 @@ impl BaseCode {
         use_bis: bool,
         info: Option<&DiscoverInfo>,
     ) -> Result {
-        let info: *const FfiDiscoverInfo = info
-            .map(|info| {
-                let info_ptr: *const DiscoverInfo = info;
-                info_ptr.cast()
-            })
+        let info: *const PxeBaseCodeDiscoverInfo = info
+            .map(|info| ptr::from_ref(info).cast())
             .unwrap_or(null());
 
         unsafe { (self.discover)(self, ty, layer, use_bis.into(), info) }.to_result()

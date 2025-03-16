@@ -34,10 +34,18 @@ pub use uefi_macros::unsafe_protocol;
 use crate::Identify;
 use core::ffi::c_void;
 
-/// Common trait implemented by all standard UEFI protocols.
+#[cfg(doc)]
+use crate::boot;
+
+/// Marker trait for structures that represent UEFI protocols.
 ///
-/// You can derive the `Protocol` trait and specify the protocol's GUID using
-/// the [`unsafe_protocol`] macro.
+/// Implementing this trait allows a protocol to be opened with
+/// [`boot::open_protocol`] or [`boot::open_protocol_exclusive`]. Note that
+/// implementing this trait does not automatically install a protocol. To
+/// install a protocol, call [`boot::install_protocol_interface`].
+///
+/// As a convenience, you can derive the `Protocol` trait and specify the
+/// protocol's GUID using the [`unsafe_protocol`] macro.
 ///
 /// # Example
 ///

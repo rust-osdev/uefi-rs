@@ -15,7 +15,8 @@ use core::mem::MaybeUninit;
 use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeDiscoverInfo, PxeBaseCodeMtftpInfo, PxeBaseCodePacket, PxeBaseCodeTftpOpcode,
+    PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMtftpInfo, PxeBaseCodePacket,
+    PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8};
 
@@ -78,7 +79,8 @@ pub struct BaseCode {
         buffer_size: &mut usize,
         buffer_ptr: *mut c_void,
     ) -> Status,
-    set_ip_filter: unsafe extern "efiapi" fn(this: &Self, new_filter: &IpFilter) -> Status,
+    set_ip_filter:
+        unsafe extern "efiapi" fn(this: &Self, new_filter: *const PxeBaseCodeIpFilter) -> Status,
     arp: unsafe extern "efiapi" fn(
         this: &Self,
         ip_addr: *const uefi_raw::IpAddress,
@@ -534,6 +536,7 @@ impl BaseCode {
     /// Updates the IP receive filters of a network device and enables software
     /// filtering.
     pub fn set_ip_filter(&mut self, new_filter: &IpFilter) -> Result {
+        let new_filter: *const PxeBaseCodeIpFilter = ptr::from_ref(new_filter).cast();
         unsafe { (self.set_ip_filter)(self, new_filter) }.to_result()
     }
 

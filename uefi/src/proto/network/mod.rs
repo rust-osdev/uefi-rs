@@ -33,6 +33,13 @@ impl IpAddress {
     pub const fn new_v6(ip_addr: [u8; 16]) -> Self {
         Self(ip_addr)
     }
+
+    #[must_use]
+    const fn as_raw_ptr(&self) -> *const uefi_raw::IpAddress {
+        // The uefi-raw type is defined differently, but the layout is
+        // compatible.
+        self.0.as_ptr().cast()
+    }
 }
 
 impl From<core::net::Ipv4Addr> for IpAddress {

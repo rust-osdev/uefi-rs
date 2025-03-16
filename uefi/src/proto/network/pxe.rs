@@ -46,7 +46,7 @@ pub struct BaseCode {
         overwrite: Boolean,
         buffer_size: &mut u64,
         block_size: Option<&usize>,
-        server_ip: &IpAddress,
+        server_ip: *const uefi_raw::IpAddress,
         filename: *const Char8,
         info: Option<&MtftpInfo>,
         dont_use_buffer: Boolean,
@@ -54,7 +54,7 @@ pub struct BaseCode {
     udp_write: unsafe extern "efiapi" fn(
         this: &Self,
         op_flags: UdpOpFlags,
-        dest_ip: &IpAddress,
+        dest_ip: *const uefi_raw::IpAddress,
         dest_port: &u16,
         gateway_ip: Option<&IpAddress>,
         src_ip: Option<&IpAddress>,
@@ -79,7 +79,7 @@ pub struct BaseCode {
     set_ip_filter: unsafe extern "efiapi" fn(this: &Self, new_filter: &IpFilter) -> Status,
     arp: unsafe extern "efiapi" fn(
         this: &Self,
-        ip_addr: &IpAddress,
+        ip_addr: *const uefi_raw::IpAddress,
         mac_addr: Option<&mut MacAddress>,
     ) -> Status,
     set_parameters: unsafe extern "efiapi" fn(
@@ -161,7 +161,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 filename.as_ptr(),
                 None,
                 Boolean::FALSE,
@@ -192,7 +192,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 filename.as_ptr(),
                 None,
                 dont_use_buffer,
@@ -220,7 +220,7 @@ impl BaseCode {
                 overwrite.into(),
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 filename.as_ptr(),
                 None,
                 Boolean::FALSE,
@@ -248,7 +248,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 directory_name.as_ptr(),
                 None,
                 Boolean::FALSE,
@@ -321,7 +321,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 filename.as_ptr(),
                 Some(info),
                 Boolean::FALSE,
@@ -353,7 +353,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 filename.as_ptr(),
                 Some(info),
                 dont_use_buffer,
@@ -381,7 +381,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 None,
-                server_ip,
+                server_ip.as_raw_ptr(),
                 null_mut(),
                 Some(info),
                 Boolean::FALSE,
@@ -479,7 +479,7 @@ impl BaseCode {
             (self.udp_write)(
                 self,
                 op_flags,
-                dest_ip,
+                dest_ip.as_raw_ptr(),
                 &dest_port,
                 gateway_ip,
                 src_ip,
@@ -540,7 +540,7 @@ impl BaseCode {
 
     /// Uses the ARP protocol to resolve a MAC address.
     pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
-        unsafe { (self.arp)(self, ip_addr, mac_addr) }.to_result()
+        unsafe { (self.arp)(self, ip_addr.as_raw_ptr(), mac_addr) }.to_result()
     }
 
     /// Updates the parameters that affect the operation of the PXE Base Code

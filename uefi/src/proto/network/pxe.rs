@@ -56,8 +56,8 @@ pub struct BaseCode {
         op_flags: UdpOpFlags,
         dest_ip: *const uefi_raw::IpAddress,
         dest_port: &u16,
-        gateway_ip: Option<&IpAddress>,
-        src_ip: Option<&IpAddress>,
+        gateway_ip: *const uefi_raw::IpAddress,
+        src_ip: *const uefi_raw::IpAddress,
         src_port: Option<&mut u16>,
         header_size: Option<&usize>,
         header_ptr: *const c_void,
@@ -92,8 +92,8 @@ pub struct BaseCode {
     ) -> Status,
     set_station_ip: unsafe extern "efiapi" fn(
         this: &Self,
-        new_station_ip: Option<&IpAddress>,
-        new_subnet_mask: Option<&IpAddress>,
+        new_station_ip: *const uefi_raw::IpAddress,
+        new_subnet_mask: *const uefi_raw::IpAddress,
     ) -> Status,
     set_packets: unsafe extern "efiapi" fn(
         this: &Self,
@@ -481,8 +481,8 @@ impl BaseCode {
                 op_flags,
                 dest_ip.as_raw_ptr(),
                 &dest_port,
-                gateway_ip,
-                src_ip,
+                opt_ip_addr_to_ptr(gateway_ip),
+                opt_ip_addr_to_ptr(src_ip),
                 src_port,
                 header_size,
                 header_ptr,
@@ -573,7 +573,14 @@ impl BaseCode {
         new_station_ip: Option<&IpAddress>,
         new_subnet_mask: Option<&IpAddress>,
     ) -> Result {
-        unsafe { (self.set_station_ip)(self, new_station_ip, new_subnet_mask) }.to_result()
+        unsafe {
+            (self.set_station_ip)(
+                self,
+                opt_ip_addr_to_ptr(new_station_ip),
+                opt_ip_addr_to_ptr(new_subnet_mask),
+            )
+        }
+        .to_result()
     }
 
     /// Updates the contents of the cached DHCP and Discover packets.
@@ -627,6 +634,11 @@ fn opt_bool_to_ptr(arg: &Option<bool>) -> *const Boolean {
     arg.as_ref()
         .map(|arg| ptr::from_ref(arg).cast::<Boolean>())
         .unwrap_or_else(null)
+}
+
+/// Convert an `Option<&IpAddress>` to a `*const uefi_raw::IpAddress`.
+fn opt_ip_addr_to_ptr(arg: Option<&IpAddress>) -> *const uefi_raw::IpAddress {
+    arg.map(|arg| arg.as_raw_ptr()).unwrap_or_else(null)
 }
 
 opaque_type! {

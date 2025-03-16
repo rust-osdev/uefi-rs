@@ -25,12 +25,12 @@ macro_rules! err {
 
 /// Attribute macro for marking structs as UEFI protocols.
 ///
-/// The macro takes one argument, either a GUID string or the path to a `Guid`
-/// constant.
+/// The macro can only be applied to a struct, and takes one argument, either a
+/// GUID string or the path to a `Guid` constant.
 ///
-/// The macro can only be applied to a struct. It implements the
-/// [`Protocol`] trait and the `unsafe` [`Identify`] trait for the
-/// struct.
+/// The macro implements the [`Protocol`] trait and the `unsafe` [`Identify`]
+/// trait for the struct. See the [`Protocol`] trait for details of how it is
+/// used.
 ///
 /// # Safety
 ///
@@ -55,7 +55,7 @@ macro_rules! err {
 /// assert_eq!(ExampleProtocol2::GUID, PROTO_GUID);
 /// ```
 ///
-/// [`Identify`]: https://docs.rs/uefi/latest/uefi/trait.Identify.html
+/// [`Identify`]: https://docs.rs/uefi/latest/uefi/data_types/trait.Identify.html
 /// [`Protocol`]: https://docs.rs/uefi/latest/uefi/proto/trait.Protocol.html
 /// [send-and-sync]: https://doc.rust-lang.org/nomicon/send-and-sync.html
 #[proc_macro_attribute]

@@ -14,7 +14,9 @@ use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
-use uefi_raw::protocol::network::pxe::{PxeBaseCodePacket, PxeBaseCodeTftpOpcode};
+use uefi_raw::protocol::network::pxe::{
+    PxeBaseCodeMtftpInfo, PxeBaseCodePacket, PxeBaseCodeTftpOpcode,
+};
 use uefi_raw::{Boolean, Char8};
 
 pub use uefi_raw::protocol::network::pxe::{
@@ -48,7 +50,7 @@ pub struct BaseCode {
         block_size: Option<&usize>,
         server_ip: *const uefi_raw::IpAddress,
         filename: *const Char8,
-        info: Option<&MtftpInfo>,
+        info: *const PxeBaseCodeMtftpInfo,
         dont_use_buffer: Boolean,
     ) -> Status,
     udp_write: unsafe extern "efiapi" fn(
@@ -163,7 +165,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
-                None,
+                null(),
                 Boolean::FALSE,
             )
         };
@@ -194,7 +196,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
-                None,
+                null(),
                 dont_use_buffer,
             )
         };
@@ -222,7 +224,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
-                None,
+                null(),
                 Boolean::FALSE,
             )
         }
@@ -250,7 +252,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(directory_name),
-                None,
+                null(),
                 Boolean::FALSE,
             )
         };
@@ -323,7 +325,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
-                Some(info),
+                info.as_raw_ptr(),
                 Boolean::FALSE,
             )
         };
@@ -355,7 +357,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 cstr8_to_ptr(filename),
-                Some(info),
+                info.as_raw_ptr(),
                 dont_use_buffer,
             )
         };
@@ -383,7 +385,7 @@ impl BaseCode {
                 None,
                 server_ip.as_raw_ptr(),
                 null_mut(),
-                Some(info),
+                info.as_raw_ptr(),
                 Boolean::FALSE,
             )
         };
@@ -827,6 +829,12 @@ pub struct MtftpInfo {
     /// The number of seconds a client should wait for a packet from the server
     /// before retransmitting the previous open request or data ack packet.
     pub transmit_timeout: u16,
+}
+
+impl MtftpInfo {
+    const fn as_raw_ptr(&self) -> *const PxeBaseCodeMtftpInfo {
+        ptr::from_ref(self).cast()
+    }
 }
 
 /// IP receive filter settings

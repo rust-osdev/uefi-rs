@@ -6,7 +6,7 @@ use super::{IpAddress, MacAddress};
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
 use crate::util::ptr_write_unaligned_and_add;
-use crate::{CStr8, Char8, Result, Status, StatusExt};
+use crate::{CStr8, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
@@ -15,7 +15,7 @@ use core::mem::MaybeUninit;
 use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::PxeBaseCodeTftpOpcode;
-use uefi_raw::Boolean;
+use uefi_raw::{Boolean, Char8};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,
@@ -162,7 +162,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip.as_raw_ptr(),
-                filename.as_ptr(),
+                cstr8_to_ptr(filename),
                 None,
                 Boolean::FALSE,
             )
@@ -193,7 +193,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip.as_raw_ptr(),
-                filename.as_ptr(),
+                cstr8_to_ptr(filename),
                 None,
                 dont_use_buffer,
             )
@@ -221,7 +221,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip.as_raw_ptr(),
-                filename.as_ptr(),
+                cstr8_to_ptr(filename),
                 None,
                 Boolean::FALSE,
             )
@@ -249,7 +249,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip.as_raw_ptr(),
-                directory_name.as_ptr(),
+                cstr8_to_ptr(directory_name),
                 None,
                 Boolean::FALSE,
             )
@@ -322,7 +322,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip.as_raw_ptr(),
-                filename.as_ptr(),
+                cstr8_to_ptr(filename),
                 Some(info),
                 Boolean::FALSE,
             )
@@ -354,7 +354,7 @@ impl BaseCode {
                 &mut buffer_size,
                 None,
                 server_ip.as_raw_ptr(),
-                filename.as_ptr(),
+                cstr8_to_ptr(filename),
                 Some(info),
                 dont_use_buffer,
             )
@@ -625,6 +625,11 @@ impl BaseCode {
     pub const fn mode(&self) -> &Mode {
         unsafe { &*self.mode }
     }
+}
+
+/// Convert a `&CStr8` to a `*const uefi_raw::Char8`.
+const fn cstr8_to_ptr(s: &CStr8) -> *const Char8 {
+    s.as_ptr().cast()
 }
 
 /// Convert an `&Option<bool>` to a `*const Boolean`.

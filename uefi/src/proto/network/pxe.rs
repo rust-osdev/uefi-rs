@@ -67,9 +67,9 @@ pub struct BaseCode {
     udp_read: unsafe extern "efiapi" fn(
         this: &Self,
         op_flags: UdpOpFlags,
-        dest_ip: Option<&mut IpAddress>,
+        dest_ip: *mut uefi_raw::IpAddress,
         dest_port: Option<&mut u16>,
-        src_ip: Option<&mut IpAddress>,
+        src_ip: *mut uefi_raw::IpAddress,
         src_port: Option<&mut u16>,
         header_size: Option<&usize>,
         header_ptr: *mut c_void,
@@ -519,9 +519,9 @@ impl BaseCode {
             (self.udp_read)(
                 self,
                 op_flags,
-                dest_ip,
+                opt_ip_addr_to_ptr_mut(dest_ip),
                 dest_port,
-                src_ip,
+                opt_ip_addr_to_ptr_mut(src_ip),
                 src_port,
                 header_size,
                 header_ptr,
@@ -639,6 +639,11 @@ fn opt_bool_to_ptr(arg: &Option<bool>) -> *const Boolean {
 /// Convert an `Option<&IpAddress>` to a `*const uefi_raw::IpAddress`.
 fn opt_ip_addr_to_ptr(arg: Option<&IpAddress>) -> *const uefi_raw::IpAddress {
     arg.map(|arg| arg.as_raw_ptr()).unwrap_or_else(null)
+}
+
+/// Convert an `Option<&mut IpAddress>` to a `*mut uefi_raw::IpAddress`.
+fn opt_ip_addr_to_ptr_mut(arg: Option<&mut IpAddress>) -> *mut uefi_raw::IpAddress {
+    arg.map(|arg| arg.as_raw_ptr_mut()).unwrap_or_else(null_mut)
 }
 
 opaque_type! {

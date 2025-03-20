@@ -7,7 +7,6 @@
 //! functions after exiting boot services; see the "Calling Convention" section
 //! of the UEFI specification for details.
 
-use alloc::vec;
 use crate::data_types::PhysicalAddress;
 use crate::table::{self, Revision};
 use crate::{CStr16, Error, Result, Status, StatusExt};
@@ -18,7 +17,7 @@ use uefi_raw::table::boot::MemoryDescriptor;
 #[cfg(feature = "alloc")]
 use {
     crate::mem::make_boxed, crate::CString16, crate::Guid, alloc::borrow::ToOwned,
-    alloc::boxed::Box, alloc::vec::Vec,
+    alloc::boxed::Box, alloc::{vec, vec::Vec}
 };
 
 #[cfg(all(feature = "unstable", feature = "alloc"))]
@@ -269,12 +268,14 @@ pub struct VariableKeys {
 #[cfg(feature = "alloc")]
 impl VariableKeys {
     fn new() -> Self {
-        // Create a the name buffer with a reasonable default capacity, and
-        // initialize it to an empty null-terminated string.
-        let name = vec![0;512];
+        // Create a name buffer with a large default size and zero
+        // initialize it. A Toshiba Satellite Pro R50-B-12P was found
+        // to not correctly update the VariableNameSize passed into
+        // GetNextVariableName and starting with a large buffer works
+        // around this issue.
+        let name = vec![0; 512];
 
         Self {
-            // Give the name buffer a reasonable default capacity.
             name,
             // The initial vendor GUID is arbitrary.
             vendor: VariableVendor(Guid::default()),

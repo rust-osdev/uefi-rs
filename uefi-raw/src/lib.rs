@@ -111,10 +111,34 @@ impl From<Boolean> for bool {
 #[repr(transparent)]
 pub struct Ipv4Address(pub [u8; 4]);
 
+impl From<core::net::Ipv4Addr> for Ipv4Address {
+    fn from(ip: core::net::Ipv4Addr) -> Self {
+        Self(ip.octets())
+    }
+}
+
+impl From<Ipv4Address> for core::net::Ipv4Addr {
+    fn from(ip: Ipv4Address) -> Self {
+        Self::from(ip.0)
+    }
+}
+
 /// An IPv6 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Ipv6Address(pub [u8; 16]);
+
+impl From<core::net::Ipv6Addr> for Ipv6Address {
+    fn from(ip: core::net::Ipv6Addr) -> Self {
+        Self(ip.octets())
+    }
+}
+
+impl From<Ipv6Address> for core::net::Ipv6Addr {
+    fn from(ip: Ipv6Address) -> Self {
+        Self::from(ip.0)
+    }
+}
 
 /// An IPv4 or IPv6 internet protocol address.
 ///
@@ -170,6 +194,19 @@ impl Default for IpAddress {
     }
 }
 
+impl From<core::net::IpAddr> for IpAddress {
+    fn from(t: core::net::IpAddr) -> Self {
+        match t {
+            core::net::IpAddr::V4(ip) => Self {
+                v4: Ipv4Address::from(ip),
+            },
+            core::net::IpAddr::V6(ip) => Self {
+                v6: Ipv6Address::from(ip),
+            },
+        }
+    }
+}
+
 /// A Media Access Control (MAC) address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
@@ -198,6 +235,11 @@ impl From<MacAddress> for [u8; 6] {
 mod tests {
     use super::*;
 
+    const TEST_IPV4: [u8; 4] = [91, 92, 93, 94];
+    const TEST_IPV6: [u8; 16] = [
+        101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
+    ];
+
     #[test]
     /// Test the properties promised in [0]. This also applies for the other
     /// architectures.
@@ -214,5 +256,35 @@ mod tests {
         // We do it as in C: Every bit pattern not 0 is equal to true.
         assert!(bool::from(Boolean(0b11111110)));
         assert!(bool::from(Boolean(0b11111111)));
+    }
+
+    /// Test round-trip conversion between `Ipv4Address` and `core::net::Ipv4Addr`.
+    #[test]
+    fn test_ip_addr4_conversion() {
+        let uefi_addr = Ipv4Address(TEST_IPV4);
+        let core_addr = core::net::Ipv4Addr::from(uefi_addr);
+        assert_eq!(uefi_addr, Ipv4Address::from(core_addr));
+    }
+
+    /// Test round-trip conversion between `Ipv6Address` and `core::net::Ipv6Addr`.
+    #[test]
+    fn test_ip_addr6_conversion() {
+        let uefi_addr = Ipv6Address(TEST_IPV6);
+        let core_addr = core::net::Ipv6Addr::from(uefi_addr);
+        assert_eq!(uefi_addr, Ipv6Address::from(core_addr));
+    }
+
+    /// Test conversion from `core::net::IpAddr` to `IpvAddress`.
+    ///
+    /// Note that conversion in the other direction is not possible.
+    #[test]
+    fn test_ip_addr_conversion() {
+        let core_addr = core::net::IpAddr::V4(core::net::Ipv4Addr::from(TEST_IPV4));
+        let uefi_addr = IpAddress::from(core_addr);
+        assert_eq!(unsafe { uefi_addr.v4.0 }, TEST_IPV4);
+
+        let core_addr = core::net::IpAddr::V6(core::net::Ipv6Addr::from(TEST_IPV6));
+        let uefi_addr = IpAddress::from(core_addr);
+        assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
     }
 }

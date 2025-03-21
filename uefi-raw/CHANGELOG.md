@@ -1,6 +1,7 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+- MSRV increased to 1.77.
 - Added `Boolean` type
 - Added `protocol::network::pxe` module.
 - Added conversions between `MacAddress` and the `[u8; 6]` type that's more commonly used to represent MAC addresses.

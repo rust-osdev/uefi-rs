@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use super::device_path::DevicePathProtocol;
 use crate::{guid, Event, Guid, Status};
 use core::ffi::c_void;
+
+pub const SCSI_TARGET_MAX_BYTES: usize = 0x10;
 
 newtype_enum! {
     /// Corresponds to the `EFI_SCSI_IO_TYPE_*` defines.
@@ -110,4 +113,48 @@ pub struct ScsiIoProtocol {
 
 impl ScsiIoProtocol {
     pub const GUID: Guid = guid!("932f47e6-2362-4002-803e-3cd54b138f85");
+}
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct ExtScsiPassThruMode {
+    pub adapter_id: u32,
+    pub attributes: u32,
+    pub io_align: u32,
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct ExtScsiPassThruProtocol {
+    pub passthru_mode: *const ExtScsiPassThruMode,
+    pub pass_thru: unsafe extern "efiapi" fn(
+        this: *const Self,
+        target: *const u8,
+        lun: u64,
+        packet: *mut ScsiIoScsiRequestPacket,
+        event: Event,
+    ) -> Status,
+    pub get_next_target_lun:
+        unsafe extern "efiapi" fn(this: *const Self, target: *mut *mut u8, lun: *mut u64) -> Status,
+    pub build_device_path: unsafe extern "efiapi" fn(
+        this: *const Self,
+        target: *const u8,
+        lun: u64,
+        device_path: *mut *const DevicePathProtocol,
+    ) -> Status,
+    pub get_target_lun: unsafe extern "efiapi" fn(
+        this: *const Self,
+        device_path: *const DevicePathProtocol,
+        target: *mut *const u8,
+        lun: *mut u64,
+    ) -> Status,
+    pub reset_channel: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
+    pub reset_target_lun:
+        unsafe extern "efiapi" fn(this: *mut Self, target: *const u8, lun: u64) -> Status,
+    pub get_next_target:
+        unsafe extern "efiapi" fn(this: *const Self, target: *mut *mut u8) -> Status,
+}
+
+impl ExtScsiPassThruProtocol {
+    pub const GUID: Guid = guid!("143b7632-b81b-4cb7-abd3-b625a5b9bffe");
 }

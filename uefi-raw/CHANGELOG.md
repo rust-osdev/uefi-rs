@@ -5,6 +5,7 @@
 - Added `protocol::network::pxe` module.
 - Added conversions between `MacAddress` and the `[u8; 6]` type that's more commonly used to represent MAC addresses.
 - Added `DiskInfoProtocol`.
+- Added `ExtScsiPassThruProtocol`.
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

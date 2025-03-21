@@ -22,6 +22,8 @@
   zero. The allocation is retried instead, and in all failure cases an error is
   returned rather than panicking.
 - The `Display` impl for `CStr8` now excludes the trailing null character.
+- `VariableKeys` initializes with a larger name buffer to work around firmware
+  bugs on some devices.
 
 
 # uefi - 0.34.1 (2025-02-07)

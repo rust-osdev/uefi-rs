@@ -5,17 +5,18 @@
 use super::{IpAddress, MacAddress};
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
-use crate::util::ptr_write_unaligned_and_add;
+use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{CStr8, Result, Status, StatusExt};
 use bitflags::bitflags;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::ptr::{self, null, null_mut};
+use core::slice;
 use ptr_meta::Pointee;
 use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMtftpInfo, PxeBaseCodePacket,
-    PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
+    PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeMtftpInfo,
+    PxeBaseCodePacket, PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8};
 
@@ -814,6 +815,13 @@ pub union Packet {
     dhcpv6: DhcpV6Packet,
 }
 
+impl Packet {
+    const fn from_raw(packet: &PxeBaseCodePacket) -> &Self {
+        // Safety: `Packet` has the same layout as `PxeBaseCodePacket`.
+        unsafe { &*ptr::from_ref(packet).cast() }
+    }
+}
+
 impl Debug for Packet {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "<binary data>")
@@ -942,91 +950,169 @@ impl DhcpV6Packet {
 /// [`BaseCode`].
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_MODE` type in the C API.
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Debug)]
-pub struct Mode {
+pub struct Mode(PxeBaseCodeMode);
+
+impl Mode {
     /// `true` if this device has been started by calling [`BaseCode::start`].
     /// This field is set to `true` by [`BaseCode::start`] and to `false` by
     /// the [`BaseCode::stop`] function.
-    pub started: bool,
+    #[must_use]
+    pub fn started(&self) -> bool {
+        self.0.started.into()
+    }
+
     /// `true` if the UNDI protocol supports IPv6
-    pub ipv6_available: bool,
+    #[must_use]
+    pub fn ipv6_available(&self) -> bool {
+        self.0.ipv6_available.into()
+    }
+
     /// `true` if this PXE Base Code Protocol implementation supports IPv6.
-    pub ipv6_supported: bool,
+    #[must_use]
+    pub fn ipv6_supported(&self) -> bool {
+        self.0.ipv6_supported.into()
+    }
+
     /// `true` if this device is currently using IPv6. This field is set by
     /// [`BaseCode::start`].
-    pub using_ipv6: bool,
+    #[must_use]
+    pub fn using_ipv6(&self) -> bool {
+        self.0.using_ipv6.into()
+    }
+
     /// `true` if this PXE Base Code implementation supports Boot Integrity
     /// Services (BIS). This field is set by [`BaseCode::start`].
-    pub bis_supported: bool,
+    #[must_use]
+    pub fn bis_supported(&self) -> bool {
+        self.0.bis_supported.into()
+    }
+
     /// `true` if this device and the platform support Boot Integrity Services
     /// (BIS). This field is set by [`BaseCode::start`].
-    pub bis_detected: bool,
+    #[must_use]
+    pub fn bis_detected(&self) -> bool {
+        self.0.bis_detected.into()
+    }
+
     /// `true` for automatic ARP packet generation, `false` otherwise. This
     /// field is initialized to `true` by [`BaseCode::start`] and can be
     /// modified with [`BaseCode::set_parameters`].
-    pub auto_arp: bool,
+    #[must_use]
+    pub fn auto_arp(&self) -> bool {
+        self.0.auto_arp.into()
+    }
+
     /// This field is used to change the Client Hardware Address (chaddr) field
     /// in the DHCP and Discovery packets. Set to `true` to send the SystemGuid
     /// (if one is available). Set to `false` to send the client NIC MAC
     /// address. This field is initialized to `false` by [`BaseCode::start`]
     /// and can be modified with [`BaseCode::set_parameters`].
-    pub send_guid: bool,
+    #[must_use]
+    pub fn send_guid(&self) -> bool {
+        self.0.send_guid.into()
+    }
+
     /// This field is initialized to `false` by [`BaseCode::start`] and set to
     /// `true` when [`BaseCode::dhcp`] completes successfully. When `true`,
     /// [`Self::dhcp_discover`] is valid. This field can also be changed by
     /// [`BaseCode::set_packets`].
-    pub dhcp_discover_valid: bool,
+    #[must_use]
+    pub fn dhcp_discover_valid(&self) -> bool {
+        self.0.dhcp_discover_valid.into()
+    }
+
     /// This field is initialized to `false` by [`BaseCode::start`] and set to
     /// `true` when [`BaseCode::dhcp`] completes successfully. When `true`,
     /// [`Self::dhcp_ack`] is valid. This field can also be changed by
     /// [`BaseCode::set_packets`].
-    pub dhcp_ack_received: bool,
+    #[must_use]
+    pub fn dhcp_ack_received(&self) -> bool {
+        self.0.dhcp_ack_received.into()
+    }
+
     /// This field is initialized to `false` by [`BaseCode::start`] and set to
     /// `true` when [`BaseCode::dhcp`] completes successfully and a proxy DHCP
     /// offer packet was received. When `true`, [`Self::proxy_offer`] is valid.
     /// This field can also be changed by [`BaseCode::set_packets`].
-    pub proxy_offer_received: bool,
+    #[must_use]
+    pub fn proxy_offer_received(&self) -> bool {
+        self.0.proxy_offer_received.into()
+    }
+
     /// When `true`, [`Self::pxe_discover`] is valid. This field is set to
     /// `false` by [`BaseCode::start`] and [`BaseCode::dhcp`], and can be set
     /// to `true` or `false` by [`BaseCode::discover`] and
     /// [`BaseCode::set_packets`].
-    pub pxe_discover_valid: bool,
+    #[must_use]
+    pub fn pxe_discover_valid(&self) -> bool {
+        self.0.pxe_discover_valid.into()
+    }
+
     /// When `true`, [`Self::pxe_reply`] is valid. This field is set to `false`
     /// by [`BaseCode::start`] and [`BaseCode::dhcp`], and can be set to `true`
     /// or `false` by [`BaseCode::discover`] and [`BaseCode::set_packets`].
-    pub pxe_reply_received: bool,
+    #[must_use]
+    pub fn pxe_reply_received(&self) -> bool {
+        self.0.pxe_reply_received.into()
+    }
+
     /// When `true`, [`Self::pxe_bis_reply`] is valid. This field is set to
     /// `false` by [`BaseCode::start`] and [`BaseCode::dhcp`], and can be set
     /// to `true` or `false` by the [`BaseCode::discover`] and
     /// [`BaseCode::set_packets`].
-    pub pxe_bis_reply_received: bool,
+    #[must_use]
+    pub fn pxe_bis_reply_received(&self) -> bool {
+        self.0.pxe_bis_reply_received.into()
+    }
+
     /// Indicates whether [`Self::icmp_error`] has been updated. This field is
     /// reset to `false` by [`BaseCode::start`], [`BaseCode::dhcp`],
     /// [`BaseCode::discover`],[`BaseCode::udp_read`], [`BaseCode::udp_write`],
     /// [`BaseCode::arp`] and any of the TFTP/MTFTP operations. If an ICMP
     /// error is received, this field will be set to `true` after
     /// [`Self::icmp_error`] is updated.
-    pub icmp_error_received: bool,
+    #[must_use]
+    pub fn icmp_error_received(&self) -> bool {
+        self.0.icmp_error_received.into()
+    }
+
     /// Indicates whether [`Self::tftp_error`] has been updated. This field is
     /// reset to `false` by [`BaseCode::start`] and any of the TFTP/MTFTP
     /// operations. If a TFTP error is received, this field will be set to
     /// `true` after [`Self::tftp_error`] is updated.
-    pub tftp_error_received: bool,
+    #[must_use]
+    pub fn tftp_error_received(&self) -> bool {
+        self.0.tftp_error_received.into()
+    }
+
     /// When `false`, callbacks will not be made. When `true`, make callbacks
     /// to the PXE Base Code Callback Protocol. This field is reset to `false`
     /// by [`BaseCode::start`] if the PXE Base Code Callback Protocol is not
     /// available. It is reset to `true` by [`BaseCode::start`] if the PXE Base
     /// Code Callback Protocol is available.
-    pub make_callbacks: bool,
+    #[must_use]
+    pub fn make_callbacks(&self) -> bool {
+        self.0.make_callbacks.into()
+    }
+
     /// The "time to live" field of the IP header. This field is initialized to
     /// `16` by [`BaseCode::start`] and can be modified by
     /// [`BaseCode::set_parameters`].
-    pub ttl: u8,
+    #[must_use]
+    pub const fn ttl(&self) -> u8 {
+        self.0.ttl
+    }
+
     /// The type of service field of the IP header. This field is initialized
     /// to `0` by [`BaseCode::start`], and can be modified with
     /// [`BaseCode::set_parameters`].
-    pub tos: u8,
+    #[must_use]
+    pub const fn tos(&self) -> u8 {
+        self.0.tos
+    }
+
     /// The device’s current IP address. This field is initialized to a zero
     /// address by Start(). This field is set when [`BaseCode::dhcp`] completes
     /// successfully. This field can also be set by
@@ -1035,7 +1121,11 @@ pub struct Mode {
     /// before [`BaseCode::discover`], [`BaseCode::udp_read`],
     /// [`BaseCode::udp_write`], [`BaseCode::arp`] and any of the TFTP/MTFTP
     /// operations are called.
-    pub station_ip: IpAddress,
+    #[must_use]
+    pub fn station_ip(&self) -> IpAddress {
+        unsafe { IpAddress::from_raw(self.0.station_ip, self.using_ipv6()) }
+    }
+
     /// The device's current subnet mask. This field is initialized to a zero
     /// address by [`BaseCode::start`]. This field is set when
     /// [`BaseCode::dhcp`] completes successfully. This field can also be set
@@ -1044,58 +1134,116 @@ pub struct Mode {
     /// [`BaseCode::set_station_ip`] before [`BaseCode::discover`],
     /// [`BaseCode::udp_read`], [`BaseCode::udp_write`],
     /// [`BaseCode::arp`] or any of the TFTP/MTFTP operations are called.
-    pub subnet_mask: IpAddress,
+    #[must_use]
+    pub fn subnet_mask(&self) -> IpAddress {
+        unsafe { IpAddress::from_raw(self.0.subnet_mask, self.using_ipv6()) }
+    }
+
     /// Cached DHCP Discover packet. This field is zero-filled by the
     /// [`BaseCode::start`] function, and is set when [`BaseCode::dhcp`]
     /// completes successfully. The contents of this field can replaced by
     /// [`BaseCode::set_packets`].
-    pub dhcp_discover: Packet,
+    #[must_use]
+    pub const fn dhcp_discover(&self) -> &Packet {
+        Packet::from_raw(&self.0.dhcp_discover)
+    }
+
     /// Cached DHCP Ack packet. This field is zero-filled by
     /// [`BaseCode::start`], and is set when [`BaseCode::dhcp`] completes
     /// successfully. The contents of this field can be replaced by
     /// [`BaseCode::set_packets`].
-    pub dhcp_ack: Packet,
+    #[must_use]
+    pub const fn dhcp_ack(&self) -> &Packet {
+        Packet::from_raw(&self.0.dhcp_ack)
+    }
+
     /// Cached Proxy Offer packet. This field is zero-filled by
     /// [`BaseCode::start`], and is set when [`BaseCode::dhcp`] completes
     /// successfully. The contents of this field can be replaced by
     /// [`BaseCode::set_packets`].
-    pub proxy_offer: Packet,
+    #[must_use]
+    pub const fn proxy_offer(&self) -> &Packet {
+        Packet::from_raw(&self.0.proxy_offer)
+    }
+
     /// Cached PXE Discover packet. This field is zero-filled by
     /// [`BaseCode::start`], and is set when [`BaseCode::discover`] completes
     /// successfully. The contents of this field can be replaced by
     /// [`BaseCode::set_packets`].
-    pub pxe_discover: Packet,
+    #[must_use]
+    pub const fn pxe_discover(&self) -> &Packet {
+        Packet::from_raw(&self.0.pxe_discover)
+    }
+
     /// Cached PXE Reply packet. This field is zero-filled by
     /// [`BaseCode::start`], and is set when [`BaseCode::discover`] completes
     /// successfully. The contents of this field can be replaced by the
     /// [`BaseCode::set_packets`] function.
-    pub pxe_reply: Packet,
+    #[must_use]
+    pub const fn pxe_reply(&self) -> &Packet {
+        Packet::from_raw(&self.0.pxe_reply)
+    }
+
     /// Cached PXE BIS Reply packet. This field is zero-filled by
     /// [`BaseCode::start`], and is set when [`BaseCode::discover`] completes
     /// successfully. This field can be replaced by [`BaseCode::set_packets`].
-    pub pxe_bis_reply: Packet,
+    #[must_use]
+    pub const fn pxe_bis_reply(&self) -> &Packet {
+        Packet::from_raw(&self.0.pxe_bis_reply)
+    }
+
     /// The current IP receive filter settings. The receive filter is disabled
     /// and the number of IP receive filters is set to zero by
     /// [`BaseCode::start`], and is set by [`BaseCode::set_ip_filter`].
-    pub ip_filter: IpFilter,
-    /// The number of valid entries in the ARP cache. This field is reset to
-    /// zero by [`BaseCode::start`].
-    pub arp_cache_entries: u32,
-    /// Array of cached ARP entries.
-    pub arp_cache: [ArpEntry; 8],
+    #[must_use]
+    pub const fn ip_filter(&self) -> &IpFilter {
+        // Safety: `IpFilter` has the same layout as `PxeBaseCodeIpFilter`.
+        unsafe { &*ptr::from_ref(&self.0.ip_filter).cast() }
+    }
+
+    /// Cached ARP entries.
+    #[must_use]
+    pub const fn arp_cache(&self) -> &[ArpEntry] {
+        let len = usize_from_u32(self.0.arp_cache_entries);
+        // Safety: `ArpEntry` has the same layout as `PxeBaseCodeArpEntry`.
+        unsafe { slice::from_raw_parts(ptr::from_ref(&self.0.arp_cache).cast::<ArpEntry>(), len) }
+    }
+
     /// The number of valid entries in the current route table. This field is
     /// reset to zero by [`BaseCode::start`].
-    pub route_table_entries: u32,
+    #[must_use]
+    pub const fn route_table_entries(&self) -> u32 {
+        self.0.route_table_entries
+    }
+
     /// Array of route table entries.
-    pub route_table: [RouteEntry; 8],
+    #[must_use]
+    pub const fn route_table(&self) -> &[RouteEntry] {
+        let len = usize_from_u32(self.0.route_table_entries);
+
+        // Safety: `RouteEntry` has the same layout as `PxeBaseCodeRouteEntry`.
+        unsafe {
+            slice::from_raw_parts(ptr::from_ref(&self.0.route_table).cast::<RouteEntry>(), len)
+        }
+    }
+
     /// ICMP error packet. This field is updated when an ICMP error is received
     /// and is undefined until the first ICMP error is received. This field is
     /// zero-filled by [`BaseCode::start`].
-    pub icmp_error: IcmpError,
+    #[must_use]
+    pub const fn icmp_error(&self) -> &IcmpError {
+        // Safety: `IcmpError` has the same layout as `PxeBaseCodeIcmpError`.
+        unsafe { &*ptr::from_ref(&self.0.icmp_error).cast() }
+    }
+
     /// TFTP error packet. This field is updated when a TFTP error is received
     /// and is undefined until the first TFTP error is received. This field is
     /// zero-filled by the [`BaseCode::start`] function.
-    pub tftp_error: TftpError,
+    #[must_use]
+    pub const fn tftp_error(&self) -> &TftpError {
+        // Safety: `TftpError` has the same layout as `PxeBaseCodeTftpError`.
+        unsafe { &*ptr::from_ref(&self.0.tftp_error).cast() }
+    }
 }
 
 /// An entry for the ARP cache found in [`Mode::arp_cache`]

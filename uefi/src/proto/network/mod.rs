@@ -34,6 +34,20 @@ impl IpAddress {
         Self(ip_addr)
     }
 
+    /// Construct from a `uefi_raw::IpAddress` union.
+    ///
+    /// # Safety
+    ///
+    /// `is_ipv6` must accurately reflect how the union was initialized.
+    #[must_use]
+    const unsafe fn from_raw(ip_addr: uefi_raw::IpAddress, is_ipv6: bool) -> Self {
+        if is_ipv6 {
+            Self::new_v6(unsafe { ip_addr.v6.0 })
+        } else {
+            Self::new_v4(unsafe { ip_addr.v4.0 })
+        }
+    }
+
     #[must_use]
     const fn as_raw_ptr(&self) -> *const uefi_raw::IpAddress {
         // The uefi-raw type is defined differently, but the layout is

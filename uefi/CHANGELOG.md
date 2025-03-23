@@ -12,6 +12,8 @@
 - **Breaking:** The `pxe::BaseCode::tftp_read_dir` and
   `pxe::BaseCode::mtftp_read_dir` methods now take `&mut self` instead of
   `&self`.
+- **Breaking:** The `pxe::Mode` struct is now opaque. Use method calls to access
+  mode data instead of direct field access.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

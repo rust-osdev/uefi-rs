@@ -75,7 +75,7 @@ pub unsafe fn set_time(time: &Time) -> Result {
     let rt = unsafe { rt.as_ref() };
 
     let time: *const Time = time;
-    (rt.set_time)(time.cast()).to_result()
+    unsafe { (rt.set_time)(time.cast()) }.to_result()
 }
 
 /// Checks if a variable exists.
@@ -549,10 +549,11 @@ pub unsafe fn set_virtual_address_map(
     let entry_size = size_of::<MemoryDescriptor>();
     let entry_version = MemoryDescriptor::VERSION;
     let map_ptr = map.as_mut_ptr();
-    (rt.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr).to_result()?;
+    unsafe { (rt.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr) }
+        .to_result()?;
 
     // Update the global system table pointer.
-    table::set_system_table(new_system_table_virtual_addr);
+    unsafe { table::set_system_table(new_system_table_virtual_addr) };
 
     Ok(())
 }

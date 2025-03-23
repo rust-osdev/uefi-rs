@@ -407,14 +407,18 @@ mod tests {
         )
         .unwrap();
         let required_size = size_of_val(info);
-        if *buffer_size < required_size {
-            *buffer_size = required_size;
+        if unsafe { *buffer_size } < required_size {
+            unsafe {
+                *buffer_size = required_size;
+            }
             Status::BUFFER_TOO_SMALL
         } else {
             unsafe {
                 ptr::copy_nonoverlapping((info as *const FileInfo).cast(), buffer, required_size);
             }
-            *buffer_size = required_size;
+            unsafe {
+                *buffer_size = required_size;
+            }
             Status::SUCCESS
         }
     }

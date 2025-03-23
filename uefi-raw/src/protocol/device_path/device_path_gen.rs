@@ -10,7 +10,7 @@
 #![allow(missing_debug_implementations)]
 use crate::protocol::device_path;
 use crate::table::boot::MemoryType;
-use crate::{guid, Guid, IpAddress};
+use crate::{Guid, IpAddress, guid};
 use bitflags::bitflags;
 use device_path::DevicePathProtocol as DevicePathHeader;
 #[cfg(doc)]

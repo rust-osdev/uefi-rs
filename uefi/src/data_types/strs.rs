@@ -143,11 +143,11 @@ impl CStr8 {
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
         let mut len = 0;
-        while *ptr.add(len) != NUL_8 {
+        while unsafe { *ptr.add(len) } != NUL_8 {
             len += 1
         }
         let ptr = ptr.cast::<u8>();
-        Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
+        unsafe { Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1)) }
     }
 
     /// Creates a CStr8 reference from bytes.
@@ -171,7 +171,7 @@ impl CStr8 {
     /// null-terminated string, with no interior null bytes.
     #[must_use]
     pub const unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
-        &*(ptr::from_ref(chars) as *const Self)
+        unsafe { &*(ptr::from_ref(chars) as *const Self) }
     }
 
     /// Returns the inner pointer to this CStr8.
@@ -352,11 +352,11 @@ impl CStr16 {
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;
-        while *ptr.add(len) != NUL_16 {
+        while unsafe { *ptr.add(len) } != NUL_16 {
             len += 1
         }
         let ptr = ptr.cast::<u16>();
-        Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1))
+        unsafe { Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1)) }
     }
 
     /// Creates a `&CStr16` from a u16 slice, stopping at the first nul character.
@@ -405,7 +405,7 @@ impl CStr16 {
     /// null-terminated string, with no interior null characters.
     #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
-        &*(ptr::from_ref(codes) as *const Self)
+        unsafe { &*(ptr::from_ref(codes) as *const Self) }
     }
 
     /// Creates a `&CStr16` from a [`Char16`] slice, stopping at the first nul character.
@@ -455,7 +455,7 @@ impl CStr16 {
     #[must_use]
     pub const unsafe fn from_char16_with_nul_unchecked(chars: &[Char16]) -> &Self {
         let ptr: *const [Char16] = chars;
-        &*(ptr as *const Self)
+        unsafe { &*(ptr as *const Self) }
     }
 
     /// Convert a [`&str`] to a `&CStr16`, backed by a buffer.

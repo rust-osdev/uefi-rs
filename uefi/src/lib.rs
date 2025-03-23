@@ -224,6 +224,7 @@
     clippy::use_self,
     missing_debug_implementations,
     missing_docs,
+    unsafe_op_in_unsafe_fn,
     unused
 )]
 

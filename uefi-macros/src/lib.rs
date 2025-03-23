@@ -215,7 +215,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = quote! {
         #fn_type_check
 
-        #[export_name = "efi_main"]
+        #[unsafe(export_name = "efi_main")]
         #f
 
     };

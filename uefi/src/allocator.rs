@@ -90,9 +90,11 @@ unsafe impl GlobalAlloc for Allocator {
             // write is appropriately aligned for a `*mut u8` pointer because
             // `align_ptr` is aligned, and alignments are always powers of two
             // (as enforced by the `Layout` type).
-            let aligned_ptr = full_alloc_ptr.add(offset);
-            (aligned_ptr.cast::<*mut u8>()).sub(1).write(full_alloc_ptr);
-            aligned_ptr
+            unsafe {
+                let aligned_ptr = full_alloc_ptr.add(offset);
+                (aligned_ptr.cast::<*mut u8>()).sub(1).write(full_alloc_ptr);
+                aligned_ptr
+            }
         } else {
             // The requested alignment is less than or equal to eight, and
             // `allocate_pool` always provides eight-byte alignment, so we can
@@ -108,13 +110,13 @@ unsafe impl GlobalAlloc for Allocator {
         if layout.align() > 8 {
             // Retrieve the pointer to the full allocation that was packed right
             // before the aligned allocation in `alloc`.
-            ptr = (ptr as *const *mut u8).sub(1).read();
+            ptr = unsafe { (ptr as *const *mut u8).sub(1).read() };
         }
 
         // OK to unwrap: `ptr` is required to be a valid allocation by the trait API.
         let ptr = NonNull::new(ptr).unwrap();
 
         // Warning: this will panic after exiting boot services.
-        boot::free_pool(ptr).unwrap();
+        unsafe { boot::free_pool(ptr) }.unwrap();
     }
 }

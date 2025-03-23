@@ -25,7 +25,7 @@ impl Directory {
     /// doing otherwise is unsafe.
     #[must_use]
     pub const unsafe fn new(handle: FileHandle) -> Self {
-        Self(RegularFile::new(handle))
+        Self(unsafe { RegularFile::new(handle) })
     }
 
     /// Read the next directory entry.

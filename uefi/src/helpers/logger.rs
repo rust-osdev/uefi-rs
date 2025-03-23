@@ -29,7 +29,7 @@ static LOGGER: Logger = Logger::new();
 /// disable() on exit from UEFI boot services.
 pub unsafe fn init() {
     // Connect the logger to stdout.
-    system::with_stdout(|stdout| {
+    system::with_stdout(|stdout| unsafe {
         LOGGER.set_output(stdout);
     });
 

@@ -116,7 +116,7 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
     let bt = unsafe { bt.as_ref() };
 
     TplGuard {
-        old_tpl: (bt.raise_tpl)(tpl),
+        old_tpl: unsafe { (bt.raise_tpl)(tpl) },
     }
 }
 
@@ -381,15 +381,17 @@ pub unsafe fn create_event(
 
     // Safety: the argument types of the function pointers are defined
     // differently, but are compatible and can be safely transmuted.
-    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> =
+        unsafe { mem::transmute(notify_fn) };
 
     let notify_ctx = opt_nonnull_to_ptr(notify_ctx);
 
     // Now we're ready to call UEFI
-    (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event).to_result_with_val(
-        // OK to unwrap: event is non-null for Status::SUCCESS.
-        || Event::from_ptr(event).unwrap(),
-    )
+    unsafe { (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event) }
+        .to_result_with_val(
+            // OK to unwrap: event is non-null for Status::SUCCESS.
+            || unsafe { Event::from_ptr(event) }.unwrap(),
+        )
 }
 
 /// Creates an event in an event group.
@@ -451,19 +453,22 @@ pub unsafe fn create_event_ex(
 
     // Safety: the argument types of the function pointers are defined
     // differently, but are compatible and can be safely transmuted.
-    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> = mem::transmute(notify_fn);
+    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> =
+        unsafe { mem::transmute(notify_fn) };
 
-    (bt.create_event_ex)(
-        event_type,
-        notify_tpl,
-        notify_fn,
-        opt_nonnull_to_ptr(notify_ctx),
-        opt_nonnull_to_ptr(event_group),
-        &mut event,
-    )
+    unsafe {
+        (bt.create_event_ex)(
+            event_type,
+            notify_tpl,
+            notify_fn,
+            opt_nonnull_to_ptr(notify_ctx),
+            opt_nonnull_to_ptr(event_group),
+            &mut event,
+        )
+    }
     .to_result_with_val(
         // OK to unwrap: event is non-null for Status::SUCCESS.
-        || Event::from_ptr(event).unwrap(),
+        || unsafe { Event::from_ptr(event) }.unwrap(),
     )
 }
 
@@ -696,13 +701,15 @@ pub unsafe fn install_protocol_interface(
     let bt = unsafe { bt.as_ref() };
 
     let mut handle = Handle::opt_to_ptr(handle);
-    ((bt.install_protocol_interface)(
-        &mut handle,
-        protocol,
-        InterfaceType::NATIVE_INTERFACE,
-        interface,
-    ))
-    .to_result_with_val(|| Handle::from_ptr(handle).unwrap())
+    unsafe {
+        (bt.install_protocol_interface)(
+            &mut handle,
+            protocol,
+            InterfaceType::NATIVE_INTERFACE,
+            interface,
+        )
+    }
+    .to_result_with_val(|| unsafe { Handle::from_ptr(handle) }.unwrap())
 }
 
 /// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
@@ -730,8 +737,10 @@ pub unsafe fn reinstall_protocol_interface(
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    (bt.reinstall_protocol_interface)(handle.as_ptr(), protocol, old_interface, new_interface)
-        .to_result()
+    unsafe {
+        (bt.reinstall_protocol_interface)(handle.as_ptr(), protocol, old_interface, new_interface)
+    }
+    .to_result()
 }
 
 /// Removes a protocol interface from a device handle.
@@ -757,7 +766,7 @@ pub unsafe fn uninstall_protocol_interface(
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result()
+    unsafe { (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result() }
 }
 
 /// Registers `event` to be signaled whenever a protocol interface is registered for
@@ -1035,19 +1044,21 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
     let bt = unsafe { bt.as_ref() };
 
     let mut interface = ptr::null_mut();
-    (bt.open_protocol)(
-        params.handle.as_ptr(),
-        &P::GUID,
-        &mut interface,
-        params.agent.as_ptr(),
-        Handle::opt_to_ptr(params.controller),
-        attributes as u32,
-    )
+    unsafe {
+        (bt.open_protocol)(
+            params.handle.as_ptr(),
+            &P::GUID,
+            &mut interface,
+            params.agent.as_ptr(),
+            Handle::opt_to_ptr(params.controller),
+            attributes as u32,
+        )
+    }
     .to_result_with_val(|| {
         let interface = if interface.is_null() {
             None
         } else {
-            NonNull::new(P::mut_ptr_from_ffi(interface))
+            NonNull::new(unsafe { P::mut_ptr_from_ffi(interface) })
         };
         ScopedProtocol {
             interface,
@@ -1220,12 +1231,14 @@ pub unsafe fn exit(
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    (bt.exit)(
-        image_handle.as_ptr(),
-        exit_status,
-        exit_data_size,
-        exit_data.cast(),
-    )
+    unsafe {
+        (bt.exit)(
+            image_handle.as_ptr(),
+            exit_status,
+            exit_data_size,
+            exit_data.cast(),
+        )
+    }
 }
 
 /// Get the current memory map and exit boot services.
@@ -1241,7 +1254,7 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
     // what boot services functions can be called. In UEFI 2.8 and earlier,
     // only `get_memory_map` and `exit_boot_services` are allowed. Starting
     // in UEFI 2.9 other memory allocation functions may also be called.
-    (bt.exit_boot_services)(image_handle().as_ptr(), memory_map.map_key.0)
+    unsafe { (bt.exit_boot_services)(image_handle().as_ptr(), memory_map.map_key.0) }
         .to_result_with_val(|| memory_map)
 }
 
@@ -1344,7 +1357,7 @@ pub unsafe fn install_configuration_table(
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    (bt.install_configuration_table)(guid_entry, table_ptr).to_result()
+    unsafe { (bt.install_configuration_table)(guid_entry, table_ptr) }.to_result()
 }
 
 /// Sets the watchdog timer.

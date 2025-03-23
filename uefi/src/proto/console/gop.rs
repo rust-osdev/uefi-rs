@@ -589,7 +589,7 @@ impl FrameBuffer<'_> {
     #[inline]
     pub unsafe fn write_byte(&mut self, index: usize, value: u8) {
         debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
-        self.base.add(index).write_volatile(value)
+        unsafe { self.base.add(index).write_volatile(value) }
     }
 
     /// Read the i-th byte of the frame buffer
@@ -603,7 +603,7 @@ impl FrameBuffer<'_> {
     #[must_use]
     pub unsafe fn read_byte(&self, index: usize) -> u8 {
         debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
-        self.base.add(index).read_volatile()
+        unsafe { self.base.add(index).read_volatile() }
     }
 
     /// Write a value in the frame buffer, starting at the i-th byte
@@ -624,8 +624,10 @@ impl FrameBuffer<'_> {
             index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
-        let ptr = self.base.add(index).cast::<T>();
-        ptr.write_volatile(value)
+        unsafe {
+            let ptr = self.base.add(index).cast::<T>();
+            ptr.write_volatile(value)
+        }
     }
 
     /// Read a value from the frame buffer, starting at the i-th byte
@@ -647,6 +649,6 @@ impl FrameBuffer<'_> {
             index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
-        (self.base.add(index) as *const T).read_volatile()
+        unsafe { (self.base.add(index) as *const T).read_volatile() }
     }
 }

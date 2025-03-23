@@ -150,7 +150,7 @@ impl LoadedImage {
         unload: extern "efiapi" fn(image_handle: Handle) -> Status,
     ) {
         let unload: unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status =
-            mem::transmute(unload);
+            unsafe { mem::transmute(unload) };
         self.0.unload = Some(unload);
     }
 

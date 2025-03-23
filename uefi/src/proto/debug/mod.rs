@@ -98,7 +98,7 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
-        (self.register_periodic_callback)(self, processor_index, callback).to_result()
+        unsafe { (self.register_periodic_callback)(self, processor_index, callback) }.to_result()
     }
 
     /// Registers a function to be called when a given processor exception occurs.
@@ -122,8 +122,10 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
-        (self.register_exception_callback)(self, processor_index, callback, exception_type)
-            .to_result()
+        unsafe {
+            (self.register_exception_callback)(self, processor_index, callback, exception_type)
+        }
+        .to_result()
     }
 
     /// Invalidates processor instruction cache for a memory range for a given `processor_index`.
@@ -144,7 +146,8 @@ impl DebugSupport {
 
         // per the UEFI spec, this call should only return EFI_SUCCESS
         // Safety: As we've validated the `processor_index`, this should always be safe
-        (self.invalidate_instruction_cache)(self, processor_index, start, length).to_result()
+        unsafe { (self.invalidate_instruction_cache)(self, processor_index, start, length) }
+            .to_result()
     }
 }
 

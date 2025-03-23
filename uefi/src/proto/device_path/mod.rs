@@ -173,10 +173,10 @@ impl DevicePathNode {
     /// that lifetime.
     #[must_use]
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
-        let header = *ptr.cast::<DevicePathHeader>();
+        let header = unsafe { *ptr.cast::<DevicePathHeader>() };
 
         let data_len = usize::from(header.length) - size_of::<DevicePathHeader>();
-        &*ptr_meta::from_raw_parts(ptr.cast(), data_len)
+        unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), data_len) }
     }
 
     /// Cast to a [`FfiDevicePath`] pointer.
@@ -368,11 +368,11 @@ pub struct DevicePath {
 
 impl ProtocolPointer for DevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
-        ptr_meta::from_raw_parts(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts(ptr.cast(), unsafe { Self::size_in_bytes_from_ptr(ptr) })
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
-        ptr_meta::from_raw_parts_mut(ptr.cast(), Self::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts_mut(ptr.cast(), unsafe { Self::size_in_bytes_from_ptr(ptr) })
     }
 }
 
@@ -384,13 +384,13 @@ impl DevicePath {
         let mut ptr = ptr.cast::<u8>();
         let mut total_size_in_bytes: usize = 0;
         loop {
-            let node = DevicePathNode::from_ffi_ptr(ptr.cast::<FfiDevicePath>());
+            let node = unsafe { DevicePathNode::from_ffi_ptr(ptr.cast::<FfiDevicePath>()) };
             let node_size_in_bytes = usize::from(node.length());
             total_size_in_bytes += node_size_in_bytes;
             if node.is_end_entire() {
                 break;
             }
-            ptr = ptr.add(node_size_in_bytes);
+            ptr = unsafe { ptr.add(node_size_in_bytes) };
         }
 
         total_size_in_bytes
@@ -434,7 +434,7 @@ impl DevicePath {
     /// that lifetime.
     #[must_use]
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
-        &*Self::ptr_from_ffi(ptr.cast::<c_void>())
+        unsafe { &*Self::ptr_from_ffi(ptr.cast::<c_void>()) }
     }
 
     /// Cast to a [`FfiDevicePath`] pointer.
@@ -669,11 +669,15 @@ pub struct LoadedImageDevicePath(DevicePath);
 
 impl ProtocolPointer for LoadedImageDevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
-        ptr_meta::from_raw_parts(ptr.cast(), DevicePath::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts(ptr.cast(), unsafe {
+            DevicePath::size_in_bytes_from_ptr(ptr)
+        })
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
-        ptr_meta::from_raw_parts_mut(ptr.cast(), DevicePath::size_in_bytes_from_ptr(ptr))
+        ptr_meta::from_raw_parts_mut(ptr.cast(), unsafe {
+            DevicePath::size_in_bytes_from_ptr(ptr)
+        })
     }
 }
 

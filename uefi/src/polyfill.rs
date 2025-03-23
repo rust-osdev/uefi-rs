@@ -18,7 +18,7 @@ pub const unsafe fn maybe_uninit_slice_assume_init_ref<T>(s: &[MaybeUninit<T>]) 
 /// Polyfill for the unstable `MaybeUninit::slice_as_mut_ptr` function.
 ///
 /// See <https://github.com/rust-lang/rust/issues/63569>.
-pub fn maybe_uninit_slice_as_mut_ptr<T>(s: &mut [MaybeUninit<T>]) -> *mut T {
+pub const fn maybe_uninit_slice_as_mut_ptr<T>(s: &mut [MaybeUninit<T>]) -> *mut T {
     s.as_mut_ptr().cast::<T>()
 }
 

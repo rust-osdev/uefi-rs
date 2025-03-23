@@ -248,7 +248,7 @@ mod tests {
     };
     use core::slice;
 
-    fn path_to_bytes(path: &DevicePath) -> &[u8] {
+    const fn path_to_bytes(path: &DevicePath) -> &[u8] {
         unsafe { slice::from_raw_parts(path.as_ffi_ptr().cast::<u8>(), size_of_val(path)) }
     }
 

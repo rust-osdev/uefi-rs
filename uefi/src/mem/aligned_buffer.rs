@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn test_allocation_alignment() {
         for request_alignment in [1, 2, 4, 8, 16, 32, 64, 128] {
-            for request_len in [1 as usize, 32, 64, 128, 1024] {
+            for request_len in [1_usize, 32, 64, 128, 1024] {
                 let buffer =
                     AlignedBuffer::from_size_align(request_len, request_alignment).unwrap();
                 assert_eq!(buffer.ptr() as usize % request_alignment, 0);

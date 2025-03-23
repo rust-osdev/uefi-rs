@@ -993,10 +993,10 @@ mod tests {
     fn test_unaligned_cstr16() {
         let mut buf = [0u16; 6];
         let us = unsafe {
-            let ptr = buf.as_mut_ptr() as *mut u8;
+            let ptr = buf.as_mut_ptr().cast::<u8>();
             // Intentionally create an unaligned u16 pointer. This
             // leaves room for five u16 characters.
-            let ptr = ptr.add(1) as *mut u16;
+            let ptr = ptr.add(1).cast::<u16>();
             // Write out the "test" string.
             ptr.add(0).write_unaligned(b't'.into());
             ptr.add(1).write_unaligned(b'e'.into());

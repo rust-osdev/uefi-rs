@@ -69,13 +69,10 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
             quote!(::uefi::guid!(#lit))
         }
         Expr::Path(ExprPath { path, .. }) => quote!(#path),
-        _ => {
-            return err!(
-                expr,
-                "macro input must be either a string literal or path to a constant"
-            )
-            .into();
-        }
+        _ => err!(
+            expr,
+            "macro input must be either a string literal or path to a constant"
+        ),
     };
 
     let item_struct = parse_macro_input!(input as ItemStruct);

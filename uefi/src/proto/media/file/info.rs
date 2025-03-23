@@ -436,7 +436,11 @@ mod tests {
         assert_eq!(align_of_val(info), T::alignment());
         // Check the hardcoded name slice offset.
         assert_eq!(
-            unsafe { (name.as_ptr() as *const u8).offset_from(info as *const _ as *const u8) },
+            unsafe {
+                name.as_ptr()
+                    .cast::<u8>()
+                    .offset_from(core::ptr::from_ref(info).cast::<u8>())
+            },
             T::name_offset() as isize
         );
     }

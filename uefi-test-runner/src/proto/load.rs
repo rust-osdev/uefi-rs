@@ -23,7 +23,7 @@ unsafe extern "efiapi" fn raw_load_file(
     buffer: *mut c_void,
 ) -> Status {
     log::debug!("Called static extern \"efiapi\" `raw_load_file` glue function");
-    let this = this.cast::<CustomLoadFile2Protocol>().as_ref().unwrap();
+    let this = unsafe { this.cast::<CustomLoadFile2Protocol>().as_ref().unwrap() };
     this.load_file(buffer_size, buffer.cast())
 }
 
@@ -60,11 +60,15 @@ impl CustomLoadFile2Protocol {
 }
 
 unsafe fn install_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
-    boot::install_protocol_interface(Some(handle), &guid, addr_of!(*protocol).cast()).unwrap();
+    unsafe {
+        boot::install_protocol_interface(Some(handle), &guid, addr_of!(*protocol).cast()).unwrap();
+    }
 }
 
 unsafe fn uninstall_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
-    boot::uninstall_protocol_interface(handle, &guid, addr_of!(*protocol).cast()).unwrap();
+    unsafe {
+        boot::uninstall_protocol_interface(handle, &guid, addr_of!(*protocol).cast()).unwrap();
+    }
 }
 
 /// This tests the LoadFile and LoadFile2 protocols. As this protocol is not

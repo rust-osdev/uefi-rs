@@ -8,18 +8,20 @@ pub unsafe fn test() {
     info!("Running graphics output protocol test");
     let handle =
         boot::get_handle_for_protocol::<GraphicsOutput>().expect("missing GraphicsOutput protocol");
-    let gop = &mut boot::open_protocol::<GraphicsOutput>(
-        OpenProtocolParams {
-            handle,
-            agent: boot::image_handle(),
-            controller: None,
-        },
-        // For this test, don't open in exclusive mode. That
-        // would break the connection between stdout and the
-        // video console.
-        OpenProtocolAttributes::GetProtocol,
-    )
-    .expect("failed to open Graphics Output Protocol");
+    let gop = unsafe {
+        &mut boot::open_protocol::<GraphicsOutput>(
+            OpenProtocolParams {
+                handle,
+                agent: boot::image_handle(),
+                controller: None,
+            },
+            // For this test, don't open in exclusive mode. That
+            // would break the connection between stdout and the
+            // video console.
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .expect("failed to open Graphics Output Protocol")
+    };
 
     set_graphics_mode(gop);
     fill_color(gop);
@@ -73,10 +75,10 @@ fn draw_fb(gop: &mut GraphicsOutput) {
 
     type PixelWriter = unsafe fn(&mut FrameBuffer, usize, [u8; 3]);
     unsafe fn write_pixel_rgb(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-        fb.write_value(pixel_base, rgb);
+        unsafe { fb.write_value(pixel_base, rgb) }
     }
     unsafe fn write_pixel_bgr(fb: &mut FrameBuffer, pixel_base: usize, rgb: [u8; 3]) {
-        fb.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]]);
+        unsafe { fb.write_value(pixel_base, [rgb[2], rgb[1], rgb[0]]) }
     }
     let write_pixel: PixelWriter = match mi.pixel_format() {
         PixelFormat::Rgb => write_pixel_rgb,

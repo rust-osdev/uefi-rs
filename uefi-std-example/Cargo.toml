@@ -3,7 +3,7 @@ name = "uefi-std-example"
 version = "0.1.0"
 authors = ["The Rust OSDev team"]
 publish = false
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 # Attention: Don't activate the panic_handler feature, as it will clash with

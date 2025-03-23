@@ -95,7 +95,7 @@ impl PcrEvent {
     pub(super) const unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a Self {
         // Get the `event_size` field.
         let ptr_u32: *const u32 = ptr.cast();
-        let event_size = ptr_u32.add(7).read_unaligned();
+        let event_size = unsafe { ptr_u32.add(7).read_unaligned() };
         let event_size = usize_from_u32(event_size);
         unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), event_size) }
     }

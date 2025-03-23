@@ -452,35 +452,35 @@ pub struct PcrEvent<'a> {
 impl<'a> PcrEvent<'a> {
     unsafe fn from_ptr(ptr: *const u8, header: EventLogHeader<'a>) -> Option<Self> {
         let ptr_u32: *const u32 = ptr.cast();
-        let pcr_index = PcrIndex(ptr_u32.read_unaligned());
-        let event_type = EventType(ptr_u32.add(1).read_unaligned());
-        let digests_count = ptr_u32.add(2).read_unaligned();
-        let digests_ptr: *const u8 = ptr.add(12);
+        let pcr_index = PcrIndex(unsafe { ptr_u32.read_unaligned() });
+        let event_type = EventType(unsafe { ptr_u32.add(1).read_unaligned() });
+        let digests_count = unsafe { ptr_u32.add(2).read_unaligned() };
+        let digests_ptr: *const u8 = unsafe { ptr.add(12) };
 
         // Get the byte size of the digests so that the digests iterator
         // can be safe code.
         let mut digests_byte_size = 0;
         let mut elem_ptr = digests_ptr;
         for _ in 0..digests_count {
-            let algorithm_id = AlgorithmId(elem_ptr.cast::<u16>().read_unaligned());
+            let algorithm_id = AlgorithmId(unsafe { elem_ptr.cast::<u16>().read_unaligned() });
             let alg_and_digest_size = size_of::<AlgorithmId>()
                 + usize::from(header.algorithm_digest_sizes.get_size(algorithm_id)?);
             digests_byte_size += alg_and_digest_size;
-            elem_ptr = elem_ptr.add(alg_and_digest_size);
+            elem_ptr = unsafe { elem_ptr.add(alg_and_digest_size) };
         }
 
-        let digests = slice::from_raw_parts(digests_ptr, digests_byte_size);
-        let event_size_ptr = digests_ptr.add(digests_byte_size);
-        let event_size = usize_from_u32(event_size_ptr.cast::<u32>().read_unaligned());
-        let event_data_ptr = event_size_ptr.add(4);
-        let event_data = slice::from_raw_parts(event_data_ptr, event_size);
+        let digests = unsafe { slice::from_raw_parts(digests_ptr, digests_byte_size) };
+        let event_size_ptr = unsafe { digests_ptr.add(digests_byte_size) };
+        let event_size = usize_from_u32(unsafe { event_size_ptr.cast::<u32>().read_unaligned() });
+        let event_data_ptr = unsafe { event_size_ptr.add(4) };
+        let event_data = unsafe { slice::from_raw_parts(event_data_ptr, event_size) };
 
         Some(Self {
             pcr_index,
             event_type,
             digests,
             event_data,
-            next: event_data_ptr.add(event_size),
+            next: unsafe { event_data_ptr.add(event_size) },
             algorithm_digest_sizes: header.algorithm_digest_sizes,
         })
     }

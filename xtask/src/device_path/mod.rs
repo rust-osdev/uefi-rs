@@ -6,7 +6,7 @@ mod node;
 mod util;
 
 use crate::opt::GenCodeOpt;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use fs_err as fs;
 use group::NodeGroup;
 use proc_macro2::TokenStream;
@@ -54,7 +54,7 @@ fn gen_uefi_raw_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         use bitflags::bitflags;
         use crate::protocol::device_path;
         use crate::table::boot::MemoryType;
-        use crate::{guid, Guid, IpAddress};
+        use crate::{Guid, IpAddress, guid};
         use device_path::DevicePathProtocol as DevicePathHeader;
         #[cfg(doc)]
         use device_path::DeviceType;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Event, Guid, Status};
+use crate::{Event, Guid, Status, guid};
 use core::ffi::c_void;
 
 #[derive(Debug)]

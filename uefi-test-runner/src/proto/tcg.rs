@@ -2,7 +2,7 @@
 
 use alloc::vec::Vec;
 use uefi::boot;
-use uefi::proto::tcg::{v1, v2, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
+use uefi::proto::tcg::{AlgorithmId, EventType, HashAlgorithm, PcrIndex, v1, v2};
 
 // Environmental note:
 //
@@ -264,10 +264,11 @@ pub fn test_tcg_v2() {
 
     // Check that there was no attempt to change the active banks in the
     // previous boot.
-    assert!(tcg
-        .get_result_of_set_active_pcr_banks()
-        .expect("get_result_of_set_active_pcr_banks failed")
-        .is_none());
+    assert!(
+        tcg.get_result_of_set_active_pcr_banks()
+            .expect("get_result_of_set_active_pcr_banks failed")
+            .is_none()
+    );
 
     // PCR 8 is initially zero.
     assert_eq!(tcg_v2_read_pcr_8(&mut tcg), [0; 20]);

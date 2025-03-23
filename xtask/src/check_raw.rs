@@ -17,9 +17,9 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Comma;
 use syn::{
-    parenthesized, Abi, Attribute, Field, Fields, FieldsNamed, FieldsUnnamed, File, Item,
-    ItemConst, ItemMacro, ItemStruct, ItemType, ItemUnion, LitInt, ReturnType, Type, TypeArray,
-    TypeBareFn, TypePtr, Visibility,
+    Abi, Attribute, Field, Fields, FieldsNamed, FieldsUnnamed, File, Item, ItemConst, ItemMacro,
+    ItemStruct, ItemType, ItemUnion, LitInt, ReturnType, Type, TypeArray, TypeBareFn, TypePtr,
+    Visibility, parenthesized,
 };
 use walkdir::WalkDir;
 
@@ -492,22 +492,26 @@ mod tests {
         };
 
         // Valid fn ptr.
-        assert!(check_fn_ptr(
-            &parse_quote! {
-                unsafe extern "efiapi" fn()
-            },
-            src(),
-        )
-        .is_ok());
+        assert!(
+            check_fn_ptr(
+                &parse_quote! {
+                    unsafe extern "efiapi" fn()
+                },
+                src(),
+            )
+            .is_ok()
+        );
 
         // Valid fn ptr with c-variadics.
-        assert!(check_fn_ptr(
-            &parse_quote! {
-                unsafe extern "C" fn(usize, ...)
-            },
-            src(),
-        )
-        .is_ok());
+        assert!(
+            check_fn_ptr(
+                &parse_quote! {
+                    unsafe extern "C" fn(usize, ...)
+                },
+                src(),
+            )
+            .is_ok()
+        );
 
         // Not `extern efiapi`.
         check_fn_err(
@@ -545,16 +549,18 @@ mod tests {
     #[test]
     fn test_struct() {
         // Valid struct.
-        assert!(check_struct(
-            &parse_quote! {
-                #[repr(C)]
-                pub struct S {
-                    pub f: u32,
-                }
-            },
-            src(),
-        )
-        .is_ok());
+        assert!(
+            check_struct(
+                &parse_quote! {
+                    #[repr(C)]
+                    pub struct S {
+                        pub f: u32,
+                    }
+                },
+                src(),
+            )
+            .is_ok()
+        );
 
         // Missing `pub` on struct.
         check_item_err(
@@ -637,17 +643,19 @@ mod tests {
     #[test]
     fn test_union() {
         // Valid union.
-        assert!(check_union(
-            &parse_quote! {
-                #[repr(C)]
-                pub union U {
-                    pub a: u32,
-                    pub b: u64,
-                }
-            },
-            src(),
-        )
-        .is_ok());
+        assert!(
+            check_union(
+                &parse_quote! {
+                    #[repr(C)]
+                    pub union U {
+                        pub a: u32,
+                        pub b: u64,
+                    }
+                },
+                src(),
+            )
+            .is_ok()
+        );
 
         // Missing `pub` on union.
         check_item_err(

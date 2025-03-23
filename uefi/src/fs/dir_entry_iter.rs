@@ -3,7 +3,7 @@
 //! Module for directory iteration. See [`UefiDirectoryIter`].
 
 use super::*;
-use crate::{cstr16, CStr16, Result};
+use crate::{CStr16, Result, cstr16};
 use alloc::boxed::Box;
 
 /// Common skip dirs in UEFI/FAT-style file systems.

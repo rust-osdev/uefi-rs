@@ -2,7 +2,7 @@
 
 use uefi::boot::{self, OpenProtocolParams};
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::{proto, Identify};
+use uefi::{Identify, proto};
 
 pub fn test() {
     info!("Testing various protocols");
@@ -61,12 +61,14 @@ fn test_protocols_per_handle() {
 }
 
 fn test_test_protocol() {
-    assert!(boot::test_protocol::<LoadedImage>(OpenProtocolParams {
-        handle: boot::image_handle(),
-        agent: boot::image_handle(),
-        controller: None,
-    })
-    .unwrap());
+    assert!(
+        boot::test_protocol::<LoadedImage>(OpenProtocolParams {
+            handle: boot::image_handle(),
+            agent: boot::image_handle(),
+            controller: None,
+        })
+        .unwrap()
+    );
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]

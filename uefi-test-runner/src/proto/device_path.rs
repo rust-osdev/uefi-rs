@@ -6,7 +6,7 @@ use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::text::{
     AllowShortcuts, DevicePathFromText, DevicePathToText, DisplayOnly,
 };
-use uefi::proto::device_path::{messaging, DevicePath, DevicePathNode, LoadedImageDevicePath};
+use uefi::proto::device_path::{DevicePath, DevicePathNode, LoadedImageDevicePath, messaging};
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::disk::DiskIo;
 use uefi::{boot, cstr16};
@@ -240,11 +240,21 @@ fn test_device_path_append() {
     );
 
     assert_eq!(
-        path.append_path(&path2).unwrap().to_string(DisplayOnly(false), AllowShortcuts(false)).unwrap(),
-        cstr16!("Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)")
+        path.append_path(&path2)
+            .unwrap()
+            .to_string(DisplayOnly(false), AllowShortcuts(false))
+            .unwrap(),
+        cstr16!(
+            "Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)"
+        )
     );
     assert_eq!(
-        path.append_node(node).unwrap().to_string(DisplayOnly(false), AllowShortcuts(false)).unwrap(),
-        cstr16!("Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)")
+        path.append_node(node)
+            .unwrap()
+            .to_string(DisplayOnly(false), AllowShortcuts(false))
+            .unwrap(),
+        cstr16!(
+            "Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)"
+        )
     );
 }

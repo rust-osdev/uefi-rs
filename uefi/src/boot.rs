@@ -22,7 +22,7 @@
 //! [`proto`]: crate::proto
 
 pub use uefi_raw::table::boot::{
-    EventType, MemoryAttribute, MemoryDescriptor, MemoryType, Tpl, PAGE_SIZE,
+    EventType, MemoryAttribute, MemoryDescriptor, MemoryType, PAGE_SIZE, Tpl,
 };
 
 use crate::data_types::PhysicalAddress;
@@ -37,7 +37,7 @@ use crate::proto::{BootPolicy, Protocol, ProtocolPointer};
 use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
-use crate::{table, Char16, Error, Event, Guid, Handle, Result, Status, StatusExt};
+use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt, table};
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};

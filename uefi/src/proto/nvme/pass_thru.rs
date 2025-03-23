@@ -3,15 +3,15 @@
 //! NVM Express Pass Thru Protocol.
 
 use super::{NvmeRequest, NvmeResponse};
+use crate::StatusExt;
 use crate::mem::{AlignedBuffer, PoolAllocation};
 use crate::proto::device_path::PoolDevicePathNode;
-use crate::StatusExt;
 use core::alloc::LayoutError;
 use core::ptr::{self, NonNull};
 use uefi_macros::unsafe_protocol;
+use uefi_raw::Status;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 use uefi_raw::protocol::nvme::{NvmExpressCompletion, NvmExpressPassThruProtocol};
-use uefi_raw::Status;
 
 /// Nvme Pass Thru Protocol Mode structure.
 ///

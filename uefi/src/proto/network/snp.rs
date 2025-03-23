@@ -16,8 +16,8 @@ use crate::{Result, StatusExt};
 use core::ffi::c_void;
 use core::ptr;
 use core::ptr::NonNull;
-use uefi_raw::protocol::network::snp::SimpleNetworkProtocol;
 use uefi_raw::Boolean;
+use uefi_raw::protocol::network::snp::SimpleNetworkProtocol;
 
 pub use uefi_raw::protocol::network::snp::{
     InterruptStatus, NetworkMode, NetworkState, NetworkStatistics, ReceiveFlags,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Boolean, Char16, Char8, Event, Guid, Ipv4Address, Ipv6Address, Status};
+use crate::{Boolean, Char8, Char16, Event, Guid, Ipv4Address, Ipv6Address, Status, guid};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
 use core::ptr;

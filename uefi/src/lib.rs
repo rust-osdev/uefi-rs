@@ -258,7 +258,7 @@ mod util;
 
 #[cfg(feature = "alloc")]
 pub use data_types::CString16;
-pub use data_types::{CStr16, CStr8, Char16, Char8, Event, Guid, Handle, Identify};
+pub use data_types::{CStr8, CStr16, Char8, Char16, Event, Guid, Handle, Identify};
 pub use result::{Error, Result, ResultExt, Status, StatusExt};
 /// Re-export ucs2_cstr so that it can be used in the implementation of the
 /// cstr16 macro. It is hidden since it's not intended to be used directly.

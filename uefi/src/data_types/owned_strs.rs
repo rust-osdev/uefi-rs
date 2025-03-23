@@ -2,8 +2,8 @@
 
 use super::chars::{Char16, NUL_16};
 use super::strs::{CStr16, FromSliceWithNulError};
-use crate::data_types::strs::EqStrUntilNul;
 use crate::data_types::UnalignedSlice;
+use crate::data_types::strs::EqStrUntilNul;
 use crate::polyfill::vec_into_raw_parts;
 use alloc::borrow::{Borrow, ToOwned};
 use alloc::string::String;

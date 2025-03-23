@@ -119,11 +119,7 @@ pub trait Align {
     fn offset_up_to_alignment(val: usize) -> usize {
         assert!(Self::alignment() != 0);
         let r = val % Self::alignment();
-        if r == 0 {
-            0
-        } else {
-            Self::alignment() - r
-        }
+        if r == 0 { 0 } else { Self::alignment() - r }
     }
 
     /// Round `val` up so that it is aligned.
@@ -162,14 +158,14 @@ mod guid;
 pub use guid::{Guid, Identify};
 
 pub mod chars;
-pub use chars::{Char16, Char8};
+pub use chars::{Char8, Char16};
 
 #[macro_use]
 mod opaque;
 
 mod strs;
 pub use strs::{
-    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, PoolString,
+    CStr8, CStr16, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, PoolString,
     UnalignedCStr16Error,
 };
 

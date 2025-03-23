@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use alloc::alloc::{alloc, dealloc, Layout, LayoutError};
+use alloc::alloc::{Layout, LayoutError, alloc, dealloc};
 use core::error::Error;
 use core::fmt;
 use core::ptr::NonNull;

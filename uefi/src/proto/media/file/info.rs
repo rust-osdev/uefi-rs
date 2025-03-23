@@ -427,8 +427,8 @@ impl FileProtocolInfo for FileSystemVolumeLabel {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::runtime::{Daylight, Time, TimeParams};
     use crate::CString16;
+    use crate::runtime::{Daylight, Time, TimeParams};
     use alloc::vec;
 
     fn validate_layout<T: InfoInternal + ?Sized>(info: &T, name: &[Char16]) {

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
-use crate::data_types::Align;
 use crate::Result;
+use crate::data_types::Align;
 use core::ffi::c_void;
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};

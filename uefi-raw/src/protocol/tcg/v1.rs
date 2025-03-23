@@ -10,7 +10,7 @@
 //! [TCG]: https://trustedcomputinggroup.org/
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
-use crate::{guid, Guid, PhysicalAddress, Status};
+use crate::{Guid, PhysicalAddress, Status, guid};
 use core::ffi::c_void;
 
 /// Information about the protocol and the TPM device.

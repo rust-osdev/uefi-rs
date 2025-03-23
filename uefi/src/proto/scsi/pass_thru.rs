@@ -3,17 +3,17 @@
 //! Extended SCSI Pass Thru protocols.
 
 use super::{ScsiRequest, ScsiResponse};
+use crate::StatusExt;
 use crate::mem::{AlignedBuffer, PoolAllocation};
 use crate::proto::device_path::PoolDevicePathNode;
 use crate::proto::unsafe_protocol;
-use crate::StatusExt;
 use core::alloc::LayoutError;
 use core::ptr::{self, NonNull};
+use uefi_raw::Status;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 use uefi_raw::protocol::scsi::{
     ExtScsiPassThruMode, ExtScsiPassThruProtocol, SCSI_TARGET_MAX_BYTES,
 };
-use uefi_raw::Status;
 
 /// Structure representing a SCSI target address.
 pub type ScsiTarget = [u8; SCSI_TARGET_MAX_BYTES];

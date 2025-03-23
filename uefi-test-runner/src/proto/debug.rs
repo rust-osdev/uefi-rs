@@ -80,10 +80,10 @@ fn test_debug_support() {
             // make sure that the max processor index is a sane value, i.e. it works
             let maximum_processor_index = debug_support.get_maximum_processor_index();
             assert_ne!(
-                    maximum_processor_index,
-                    usize::MAX,
-                    "get_maximum_processor_index() returning garbage, unless you really have 18,446,744,073,709,551,615 processors"
-                );
+                maximum_processor_index,
+                usize::MAX,
+                "get_maximum_processor_index() returning garbage, unless you really have 18,446,744,073,709,551,615 processors"
+            );
 
             info!("- Architecture: {:?}", debug_support.arch());
             info!("- Maximum Processor Index: {:?}", maximum_processor_index);

@@ -2,8 +2,8 @@
 
 use uefi_raw::Status;
 
-use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
+use super::chars::{Char8, Char16, NUL_8, NUL_16};
 use crate::mem::PoolAllocation;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
@@ -801,7 +801,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{cstr16, cstr8};
+    use crate::{cstr8, cstr16};
     use alloc::format;
     use alloc::string::String;
 

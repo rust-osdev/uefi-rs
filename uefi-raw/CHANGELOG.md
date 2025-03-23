@@ -10,6 +10,10 @@
 - Added `DiskInfoProtocol`.
 - Added `ExtScsiPassThruProtocol`.
 
+## Changed
+
+- **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
+
 
 # uefi-raw - 0.10.0 (2025-02-07)
 

@@ -130,8 +130,10 @@ impl DiskIo2 {
         buffer: *mut u8,
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
-        (self.0.read_disk_ex)(&self.0, media_id, offset, token.cast(), len, buffer.cast())
-            .to_result()
+        unsafe {
+            (self.0.read_disk_ex)(&self.0, media_id, offset, token.cast(), len, buffer.cast())
+        }
+        .to_result()
     }
 
     /// Writes bytes to the disk device.
@@ -164,14 +166,16 @@ impl DiskIo2 {
         buffer: *const u8,
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
-        (self.0.write_disk_ex)(
-            &mut self.0,
-            media_id,
-            offset,
-            token.cast(),
-            len,
-            buffer.cast(),
-        )
+        unsafe {
+            (self.0.write_disk_ex)(
+                &mut self.0,
+                media_id,
+                offset,
+                token.cast(),
+                len,
+                buffer.cast(),
+            )
+        }
         .to_result()
     }
 

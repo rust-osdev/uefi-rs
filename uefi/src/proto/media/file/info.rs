@@ -45,7 +45,7 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
     /// struct.
     unsafe fn name_ptr(ptr: *mut u8) -> *mut Char16 {
         let offset_of_str = Self::name_offset();
-        ptr.add(offset_of_str).cast::<Char16>()
+        unsafe { ptr.add(offset_of_str).cast::<Char16>() }
     }
 
     /// Create a new info type in user-provided storage.
@@ -95,13 +95,13 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
         // Create a pointer to the part of info where the name is
         // stored. Note that `info_ptr` is used rather than `storage` to
         // comply with Stacked Borrows.
-        let info_name_ptr = Self::name_ptr(info_ptr.cast::<u8>());
+        let info_name_ptr = unsafe { Self::name_ptr(info_ptr.cast::<u8>()) };
 
         // Initialize the name slice.
-        ptr::copy(name.as_ptr(), info_name_ptr, name_length_ucs2);
+        unsafe { ptr::copy(name.as_ptr(), info_name_ptr, name_length_ucs2) };
 
         // The struct is now valid and safe to dereference.
-        let info = &mut *info_ptr;
+        let info = unsafe { &mut *info_ptr };
         Ok(info)
     }
 }
@@ -111,10 +111,10 @@ where
     T: InfoInternal + ?Sized,
 {
     unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self {
-        let name_ptr = Self::name_ptr(ptr.cast::<u8>());
-        let name = CStr16::from_ptr(name_ptr);
+        let name_ptr = unsafe { Self::name_ptr(ptr.cast::<u8>()) };
+        let name = unsafe { CStr16::from_ptr(name_ptr) };
         let name_len = name.as_slice_with_nul().len();
-        &mut *ptr_meta::from_raw_parts_mut(ptr.cast::<()>(), name_len)
+        unsafe { &mut *ptr_meta::from_raw_parts_mut(ptr.cast::<()>(), name_len) }
     }
 }
 

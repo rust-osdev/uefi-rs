@@ -15,7 +15,7 @@ use crate::proto::device_path::{
     self, DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
 use crate::proto::network::IpAddress;
-use crate::{guid, Guid};
+use crate::{Guid, guid};
 use bitflags::bitflags;
 use core::mem::{size_of, size_of_val};
 use core::ptr::addr_of;
@@ -3647,10 +3647,10 @@ impl TryFrom<&DevicePathNode> for DevicePathNodeEnum<'_> {
 /// Build device paths from their component nodes.
 pub mod build {
     use super::*;
+    use crate::CStr16;
     use crate::proto::device_path::build::{BuildError, BuildNode};
     use crate::proto::device_path::{DeviceSubType, DeviceType};
-    use crate::CStr16;
-    use core::mem::{size_of_val, MaybeUninit};
+    use core::mem::{MaybeUninit, size_of_val};
     /// Device path build nodes for [`DeviceType::END`].
     pub mod end {
         use super::*;

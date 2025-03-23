@@ -2,7 +2,7 @@
 
 use crate::reconnect_serial_to_console;
 use uefi::proto::console::serial::{ControlBits, Serial};
-use uefi::{boot, Result, ResultExt, Status};
+use uefi::{Result, ResultExt, Status, boot};
 
 // For the duration of this function, the serial device is opened in
 // exclusive mode. That means logs will not work, which means we should

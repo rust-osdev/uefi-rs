@@ -8,7 +8,7 @@ use uefi::boot::{
 };
 use uefi::mem::memory_map::MemoryType;
 use uefi::proto::unsafe_protocol;
-use uefi::{boot, guid, system, Event, Guid, Identify};
+use uefi::{Event, Guid, Identify, boot, guid, system};
 
 pub fn test() {
     test_tpl();

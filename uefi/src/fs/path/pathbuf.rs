@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::fs::path::Path;
 use crate::fs::SEPARATOR;
+use crate::fs::path::Path;
 use crate::{CStr16, CString16, Char16};
 use core::fmt::{Display, Formatter};
 

@@ -349,7 +349,9 @@ impl Drop for MemoryMapBackingMemory {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }
         } else {
-            log::debug!("Boot services are exited. Memory map won't be freed using the UEFI boot services allocator.");
+            log::debug!(
+                "Boot services are exited. Memory map won't be freed using the UEFI boot services allocator."
+            );
         }
     }
 }

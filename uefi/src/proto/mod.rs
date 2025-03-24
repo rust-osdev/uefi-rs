@@ -20,6 +20,8 @@ pub mod misc;
 pub mod network;
 pub mod pi;
 pub mod rng;
+#[cfg(feature = "alloc")]
+pub mod scsi;
 pub mod security;
 pub mod shell_params;
 pub mod shim;

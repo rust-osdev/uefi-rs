@@ -186,7 +186,7 @@ pub struct ExtScsiPassThruMode {
 pub struct ExtScsiPassThruProtocol {
     pub passthru_mode: *const ExtScsiPassThruMode,
     pub pass_thru: unsafe extern "efiapi" fn(
-        this: *const Self,
+        this: *mut Self,
         target: *const u8,
         lun: u64,
         packet: *mut ScsiIoScsiRequestPacket,
@@ -208,7 +208,7 @@ pub struct ExtScsiPassThruProtocol {
     ) -> Status,
     pub reset_channel: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
     pub reset_target_lun:
-        unsafe extern "efiapi" fn(this: *const Self, target: *const u8, lun: u64) -> Status,
+        unsafe extern "efiapi" fn(this: *mut Self, target: *const u8, lun: u64) -> Status,
     pub get_next_target:
         unsafe extern "efiapi" fn(this: *const Self, target: *mut *mut u8) -> Status,
 }

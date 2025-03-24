@@ -24,6 +24,11 @@ use crate::Result;
 #[doc(hidden)]
 pub use println::_print;
 
+#[cfg(feature = "alloc")]
+mod aligned_buffer;
+#[cfg(feature = "alloc")]
+pub use aligned_buffer::{AlignedBuffer, AlignmentError};
+
 #[cfg(feature = "global_allocator")]
 mod global_allocator;
 #[cfg(feature = "logger")]

@@ -9,6 +9,7 @@
   address types.
 - Added `DiskInfoProtocol`.
 - Added `ExtScsiPassThruProtocol`.
+- Added `NvmExpressPassThruProtocol`.
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

@@ -80,17 +80,75 @@ newtype_enum! {
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct ScsiIoScsiRequestPacket {
+    /// The timeout, in 100 ns units, for the execution of this SCSI Request Packet.
+    ///
+    /// A `timeout` value of 0 indicates that the function will wait indefinitely for
+    /// the execution to complete. If the execution time exceeds the specified `timeout`
+    /// (greater than 0), the function will return `EFI_TIMEOUT`.
     pub timeout: u64,
+
+    /// A pointer to the data buffer for reading from the device in read and bidirectional commands.
+    ///
+    /// - For write and non-data commands where `in_transfer_length` is 0, this field is optional and may be `NULL`.
+    /// - If not `NULL`, the buffer must meet the alignment requirement specified by the `IoAlign` field
+    ///   in the `EFI_EXT_SCSI_PASS_THRU_MODE` structure.
     pub in_data_buffer: *mut c_void,
+
+    /// A pointer to the data buffer for writing to the device in write and bidirectional commands.
+    ///
+    /// - For read and non-data commands where `out_transfer_length` is 0, this field is optional and may be `NULL`.
+    /// - If not `NULL`, the buffer must meet the alignment requirement specified by the `IoAlign` field
+    ///   in the `EFI_EXT_SCSI_PASS_THRU_MODE` structure.
     pub out_data_buffer: *mut c_void,
+
+    /// A pointer to the sense data generated during execution of the SCSI Request Packet.
+    ///
+    /// - If `sense_data_length` is 0, this field is optional and may be `NULL`.
+    /// - It is recommended to allocate a buffer of at least 252 bytes to ensure the entire sense data can be captured.
+    /// - If not `NULL`, the buffer must meet the alignment requirement specified by the `IoAlign` field
+    ///   in the `EFI_EXT_SCSI_PASS_THRU_MODE` structure.
     pub sense_data: *mut c_void,
+
+    /// A pointer to the Command Data Block (CDB) buffer to be sent to the SCSI device.
+    ///
+    /// The CDB contains the SCSI command to be executed by the device.
     pub cdb: *mut c_void,
+
+    /// The input size (in bytes) of the `in_data_buffer`, and the number of bytes transferred on output.
+    ///
+    /// - On input: Specifies the size of `in_data_buffer`.
+    /// - On output: Specifies the number of bytes successfully transferred.
+    /// - If the size exceeds the controller's capability, no data is transferred, the field is updated
+    ///   with the number of transferable bytes, and `EFI_BAD_BUFFER_SIZE` is returned.
     pub in_transfer_length: u32,
+
+    /// The input size (in bytes) of the `out_data_buffer`, and the number of bytes transferred on output.
+    ///
+    /// - On input: Specifies the size of `out_data_buffer`.
+    /// - On output: Specifies the number of bytes successfully transferred.
+    /// - If the size exceeds the controller's capability, no data is transferred, the field is updated
+    ///   with the number of transferable bytes, and `EFI_BAD_BUFFER_SIZE` is returned.
     pub out_transfer_length: u32,
+
+    /// The length (in bytes) of the Command Data Block (CDB).
+    ///
+    /// Standard values for CDB length are typically 6, 10, 12, or 16 bytes. Other values are possible
+    /// for variable-length CDBs.
     pub cdb_length: u8,
+
+    /// The direction of data transfer for the SCSI Request Packet.
     pub data_direction: ScsiIoDataDirection,
+
+    /// The status of the host adapter when the SCSI Request Packet was executed.
     pub host_adapter_status: ScsiIoHostAdapterStatus,
+
+    /// The status of the target device when the SCSI Request Packet was executed.
     pub target_status: ScsiIoTargetStatus,
+
+    /// The size (in bytes) of the `sense_data` buffer on input, and the number of bytes written on output.
+    ///
+    /// - On input: Specifies the size of the `sense_data` buffer.
+    /// - On output: Specifies the number of bytes written to the buffer.
     pub sense_data_length: u8,
 }
 

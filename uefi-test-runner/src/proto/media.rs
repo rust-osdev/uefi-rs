@@ -10,6 +10,7 @@ use uefi::data_types::Align;
 use uefi::prelude::*;
 use uefi::proto::media::block::BlockIO;
 use uefi::proto::media::disk::{DiskIo, DiskIo2, DiskIo2Token};
+use uefi::proto::media::disk_info::{DiskInfo, DiskInfoInterface};
 use uefi::proto::media::file::{
     Directory, File, FileAttribute, FileInfo, FileMode, FileSystemInfo, FileSystemVolumeLabel,
 };
@@ -343,6 +344,38 @@ fn test_raw_disk_io2(handle: Handle) {
     }
 }
 
+fn test_disk_info() {
+    let disk_handles = uefi::boot::find_handles::<DiskInfo>().unwrap();
+
+    let mut found_drive = false;
+    for handle in disk_handles {
+        let disk_info = uefi::boot::open_protocol_exclusive::<DiskInfo>(handle).unwrap();
+        info!(
+            "DiskInfo at: {:?} (interface= {:?})",
+            handle,
+            disk_info.interface()
+        );
+        // Find our disk
+        if disk_info.interface() != DiskInfoInterface::SCSI {
+            continue;
+        }
+        let mut inquiry_bfr = [0; 128];
+        let Ok(len) = disk_info.inquiry(&mut inquiry_bfr) else {
+            continue;
+        };
+        // SCSI Spec states: The standard INQUIRY data (see table 59) shall contain at least 36 bytes
+        assert!(len >= 36);
+        let vendor_id = core::str::from_utf8(&inquiry_bfr[8..16]).unwrap().trim();
+        let product_id = core::str::from_utf8(&inquiry_bfr[16..32]).unwrap().trim();
+        if vendor_id == "uefi-rs" && product_id == "ExtScsiPassThru" {
+            info!("Found Testdisk at Handle: {:?}", handle);
+            found_drive = true;
+        }
+    }
+
+    assert!(found_drive);
+}
+
 /// Check that `disk_handle` points to the expected MBR partition.
 fn test_partition_info(disk_handle: Handle) {
     let pi = boot::open_protocol_exclusive::<PartitionInfo>(disk_handle)
@@ -444,4 +477,5 @@ pub fn test() {
 
     test_raw_disk_io(handle);
     test_raw_disk_io2(handle);
+    test_disk_info();
 }

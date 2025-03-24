@@ -456,6 +456,10 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     add_pflash_args(&mut cmd, &ovmf_paths.code, PflashMode::ReadOnly);
     add_pflash_args(&mut cmd, &ovmf_vars, PflashMode::ReadWrite);
 
+    // Configure SCSI Controller
+    cmd.arg("-device");
+    cmd.arg("virtio-scsi-pci");
+
     // Mount a local directory as a FAT partition.
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("format=raw,file=fat:rw:");
@@ -467,13 +471,23 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         cmd.args(["-display", "none"]);
     }
 
+    // Second (FAT) disk
     let test_disk = tmp_dir.join("test_disk.fat.img");
     create_mbr_test_disk(&test_disk)?;
-
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("format=raw,file=");
     drive_arg.push(test_disk.clone());
     cmd.arg(drive_arg);
+
+    // Third (SCSI) disk for ExtScsiPassThru tests
+    let scsi_test_disk = tmp_dir.join("test_disk2.empty.img");
+    std::fs::File::create(&scsi_test_disk)?.set_len(1024 * 1024 * 10)?;
+    cmd.arg("-drive");
+    let mut drive_arg = OsString::from("if=none,id=scsidisk0,format=raw,file=");
+    drive_arg.push(scsi_test_disk.clone());
+    cmd.arg(drive_arg);
+    cmd.arg("-device"); // attach disk to SCSI controller
+    cmd.arg("scsi-hd,drive=scsidisk0,vendor=uefi-rs,product=ExtScsiPassThru");
 
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
     let serial_pipe = Pipe::new(tmp_dir, "serial")?;

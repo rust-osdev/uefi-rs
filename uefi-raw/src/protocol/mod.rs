@@ -19,6 +19,7 @@ pub mod media;
 pub mod memory_protection;
 pub mod misc;
 pub mod network;
+pub mod nvme;
 pub mod rng;
 pub mod scsi;
 pub mod shell_params;

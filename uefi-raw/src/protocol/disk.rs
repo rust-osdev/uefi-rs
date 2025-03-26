@@ -65,6 +65,9 @@ impl DiskIo2Protocol {
     pub const REVISION: u64 = 0x00020000;
 }
 
+/// DiskInfo protocol (EFI_DISK_INFO_PROTOCOL)
+///
+/// See: UEFI Platform Initialization Specification
 #[derive(Debug)]
 #[repr(C)]
 pub struct DiskInfoProtocol {

@@ -48,7 +48,7 @@ pub struct DeviceLocationInfo {
     /// For AHCI, this returns the port.
     pub channel: u32,
     /// For IDE, this contains whether the device is master or slave.
-    /// For AHCI, this returns the port-multiplier.
+    /// For AHCI, this returns the port multiplier port.
     pub device: u32,
 }
 

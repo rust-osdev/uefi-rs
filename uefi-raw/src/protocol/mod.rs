@@ -6,6 +6,7 @@
 //! ID. They can be implemented by a UEFI driver or occasionally by a
 //! UEFI application.
 
+pub mod ata;
 pub mod block;
 pub mod console;
 pub mod device_path;

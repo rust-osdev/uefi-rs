@@ -25,6 +25,7 @@ pub fn test() {
     shell_params::test();
     string::test();
     misc::test();
+    nvme::test();
 
     #[cfg(any(
         target_arch = "x86",
@@ -71,6 +72,7 @@ mod loaded_image;
 mod media;
 mod misc;
 mod network;
+mod nvme;
 mod pi;
 mod rng;
 mod shell_params;

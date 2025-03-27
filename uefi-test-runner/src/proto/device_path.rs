@@ -6,7 +6,7 @@ use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::text::{
     AllowShortcuts, DevicePathFromText, DevicePathToText, DisplayOnly,
 };
-use uefi::proto::device_path::{messaging, DevicePath, DevicePathNode, LoadedImageDevicePath};
+use uefi::proto::device_path::{DevicePath, DevicePathNode, LoadedImageDevicePath, messaging};
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::proto::media::disk::DiskIo;
 use uefi::{boot, cstr16};

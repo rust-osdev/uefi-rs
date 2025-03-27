@@ -14,7 +14,7 @@ mod tpm;
 mod util;
 
 use crate::opt::{FmtOpt, TestOpt};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use arch::UefiArch;
 use cargo::{Cargo, CargoAction, Feature, Package, TargetTypes};
 use clap::Parser;

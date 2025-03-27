@@ -104,10 +104,12 @@ fn test_component_name<C: ComponentNameInterface>(english: &str) {
         .find_map(|handle| {
             let component_name = C::open(*handle).ok()?;
 
-            assert!(component_name
-                .supported_languages()
-                .ok()?
-                .any(|lang| lang == english));
+            assert!(
+                component_name
+                    .supported_languages()
+                    .ok()?
+                    .any(|lang| lang == english)
+            );
 
             let driver_name = component_name.driver_name(english).ok()?;
             if driver_name == fat_driver_name {

@@ -80,11 +80,11 @@ pub mod text;
 
 mod device_path_gen;
 pub use device_path_gen::{
-    acpi, bios_boot_spec, end, hardware, media, messaging, DevicePathNodeEnum,
+    DevicePathNodeEnum, acpi, bios_boot_spec, end, hardware, media, messaging,
 };
 pub use uefi_raw::protocol::device_path::{DeviceSubType, DeviceType};
 
-use crate::proto::{unsafe_protocol, ProtocolPointer};
+use crate::proto::{ProtocolPointer, unsafe_protocol};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::ops::Deref;

@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use fatfs::{Date, DateTime, FileSystem, FormatVolumeOptions, FsOptions, Time};
-use mbrman::{MBRPartitionEntry, BOOT_INACTIVE, CHS, MBR};
+use mbrman::{BOOT_INACTIVE, CHS, MBR, MBRPartitionEntry};
 use std::io::{Cursor, Read, Write};
 use std::ops::Range;
 use std::path::Path;

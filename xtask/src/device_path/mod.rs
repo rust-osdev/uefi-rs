@@ -6,7 +6,7 @@ mod node;
 mod util;
 
 use crate::opt::GenCodeOpt;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use fs_err as fs;
 use group::NodeGroup;
 use proc_macro2::TokenStream;
@@ -54,7 +54,7 @@ fn gen_uefi_raw_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         use bitflags::bitflags;
         use crate::protocol::device_path;
         use crate::table::boot::MemoryType;
-        use crate::{guid, Guid, IpAddress};
+        use crate::{Guid, IpAddress, guid};
         use device_path::DevicePathProtocol as DevicePathHeader;
         #[cfg(doc)]
         use device_path::DeviceType;
@@ -73,7 +73,7 @@ fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
     let code = quote!(
         use bitflags::bitflags;
         use crate::data_types::UnalignedSlice;
-        use crate::{guid, Guid};
+        use crate::{Guid, guid};
         use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
         use crate::proto::device_path::{
             self, DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType,

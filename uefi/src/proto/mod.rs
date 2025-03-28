@@ -10,6 +10,8 @@
 //!
 //! [`boot`]: crate::boot#accessing-protocols
 
+#[cfg(feature = "alloc")]
+pub mod ata;
 pub mod console;
 pub mod debug;
 pub mod device_path;

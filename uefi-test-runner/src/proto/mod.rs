@@ -13,6 +13,8 @@ pub fn test() {
     test_protocols_per_handle();
     test_test_protocol();
 
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    ata::test();
     debug::test();
     device_path::test();
     driver::test();
@@ -62,6 +64,8 @@ fn test_test_protocol() {
     .unwrap());
 }
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+mod ata;
 mod console;
 mod debug;
 mod device_path;

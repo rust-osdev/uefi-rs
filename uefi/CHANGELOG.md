@@ -6,6 +6,8 @@
 - Added conversions between `proto::network::MacAddress` and the `[u8; 6]` type that's more commonly used to represent MAC addresses.
 - Added `proto::media::disk_info::DiskInfo`.
 - Added `mem::AlignedBuffer`.
+- Added `proto::device_path::DevicePath::append_path()`.
+- Added `proto::device_path::DevicePath::append_node()`.
 
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no
@@ -16,6 +18,8 @@
   `&self`.
 - **Breaking:** The `pxe::Mode` struct is now opaque. Use method calls to access
   mode data instead of direct field access.
+- **Breaking:** `PoolDevicePathNode` and `PoolDevicePath` moved from module
+  `proto::device_path::text` to `proto::device_path`.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

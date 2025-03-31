@@ -215,3 +215,40 @@ pub struct DevicePathFromTextProtocol {
 impl DevicePathFromTextProtocol {
     pub const GUID: Guid = guid!("05c99a21-c70f-4ad2-8a5f-35df3343f51e");
 }
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct DevicePathUtilitiesProtocol {
+    pub get_device_path_size:
+        unsafe extern "efiapi" fn(device_path: *const DevicePathProtocol) -> usize,
+    pub duplicate_device_path: unsafe extern "efiapi" fn(
+        device_path: *const DevicePathProtocol,
+    ) -> *const DevicePathProtocol,
+    pub append_device_path: unsafe extern "efiapi" fn(
+        src1: *const DevicePathProtocol,
+        src2: *const DevicePathProtocol,
+    ) -> *const DevicePathProtocol,
+    pub append_device_node: unsafe extern "efiapi" fn(
+        device_path: *const DevicePathProtocol,
+        device_node: *const DevicePathProtocol,
+    ) -> *const DevicePathProtocol,
+    pub append_device_path_instance: unsafe extern "efiapi" fn(
+        device_path: *const DevicePathProtocol,
+        device_path_instance: *const DevicePathProtocol,
+    ) -> *const DevicePathProtocol,
+    pub get_next_device_path_instance: unsafe extern "efiapi" fn(
+        device_path_instance: *mut *const DevicePathProtocol,
+        device_path_instance_size: *mut usize,
+    ) -> *const DevicePathProtocol,
+    pub is_device_path_multi_instance:
+        unsafe extern "efiapi" fn(device_path: *const DevicePathProtocol) -> bool,
+    pub create_device_node: unsafe extern "efiapi" fn(
+        node_type: DeviceType,
+        node_sub_type: DeviceSubType,
+        node_length: u16,
+    ) -> *const DevicePathProtocol,
+}
+
+impl DevicePathUtilitiesProtocol {
+    pub const GUID: Guid = guid!("0379be4e-d706-437d-b037-edb82fb772a4");
+}

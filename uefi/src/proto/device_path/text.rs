@@ -18,6 +18,8 @@ use core::ops::Deref;
 use core::ptr::NonNull;
 use uefi_raw::protocol::device_path::{DevicePathFromTextProtocol, DevicePathToTextProtocol};
 
+use super::{PoolDevicePath, PoolDevicePathNode};
+
 /// Parameter for [`DevicePathToText`] that alters the output format.
 ///
 /// * `DisplayOnly(false)` produces parseable output.
@@ -67,30 +69,6 @@ impl Deref for PoolString {
 
     fn deref(&self) -> &Self::Target {
         unsafe { CStr16::from_ptr(self.0.as_ptr().as_ptr().cast()) }
-    }
-}
-
-/// Device path allocated from UEFI pool memory.
-#[derive(Debug)]
-pub struct PoolDevicePath(PoolAllocation);
-
-impl Deref for PoolDevicePath {
-    type Target = DevicePath;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { DevicePath::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
-    }
-}
-
-/// Device path node allocated from UEFI pool memory.
-#[derive(Debug)]
-pub struct PoolDevicePathNode(PoolAllocation);
-
-impl Deref for PoolDevicePathNode {
-    type Target = DevicePathNode;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { DevicePathNode::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
 

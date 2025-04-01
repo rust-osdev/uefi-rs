@@ -5,6 +5,7 @@
 - Added conversions between `proto::network::IpAddress` and `core::net` types.
 - Added conversions between `proto::network::MacAddress` and the `[u8; 6]` type that's more commonly used to represent MAC addresses.
 - Added `proto::media::disk_info::DiskInfo`.
+- Added `proto::scsi::pass_thru::ExtScsiPassThru`.
 
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no

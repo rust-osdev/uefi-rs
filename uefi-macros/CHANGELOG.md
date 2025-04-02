@@ -1,5 +1,8 @@
 # uefi-macros - [Unreleased]
 
+## Changed
+
+- **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
 
 # uefi-macros - 0.18.0 (2025-02-07)
 

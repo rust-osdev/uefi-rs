@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::table::runtime;
-use crate::{guid, Guid, Status};
+use crate::{Guid, Status, guid};
 
 #[derive(Debug)]
 #[repr(C)]

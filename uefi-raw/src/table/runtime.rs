@@ -3,10 +3,10 @@
 //! UEFI services available at runtime, even after the OS boots.
 
 use crate::capsule::CapsuleHeader;
-use crate::table::boot::MemoryDescriptor;
 use crate::table::Header;
+use crate::table::boot::MemoryDescriptor;
 use crate::time::Time;
-use crate::{guid, Boolean, Char16, Guid, PhysicalAddress, Status};
+use crate::{Boolean, Char16, Guid, PhysicalAddress, Status, guid};
 use bitflags::bitflags;
 use core::ffi::c_void;
 

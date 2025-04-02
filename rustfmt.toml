@@ -1,0 +1,8 @@
+# We keep this file explicitley to ensure that direct invocations of `rustfmt`
+# also use the proper style edition. Unlike `cargo fmt`, which forwards the
+# Rust edition specified in Cargo.toml to `rustfmt`, `rustfmt` still defaults to
+# the 2021 edition and is unaware of `Cargo.toml`.
+#
+# We use a direct invocation of `rustfmt` in our device path generation code.
+
+style_edition = "2024"

@@ -95,7 +95,7 @@ impl LoadedImage {
     ///
     /// [`load_options_as_cstr16`]: `Self::load_options_as_cstr16`
     #[must_use]
-    pub fn load_options_as_bytes(&self) -> Option<&[u8]> {
+    pub const fn load_options_as_bytes(&self) -> Option<&[u8]> {
         if self.0.load_options.is_null() {
             None
         } else {

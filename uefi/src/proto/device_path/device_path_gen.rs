@@ -15,7 +15,7 @@ use crate::proto::device_path::{
     self, DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
 use crate::proto::network::IpAddress;
-use crate::{guid, Guid};
+use crate::{Guid, guid};
 use bitflags::bitflags;
 use core::mem::{size_of, size_of_val};
 use core::ptr::addr_of;
@@ -274,11 +274,11 @@ pub mod hardware {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Vendor")
                 .field("vendor_guid", &{ self.vendor_guid })
-                .field("vendor_defined_data", {
+                .field("vendor_defined_data", &{
                     let ptr = addr_of!(self.vendor_defined_data);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -580,11 +580,11 @@ pub mod acpi {
     impl fmt::Debug for Adr {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Adr")
-                .field("adr", {
+                .field("adr", &{
                     let ptr = addr_of!(self.adr);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u32>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -1187,11 +1187,11 @@ pub mod messaging {
                 .field("interface_number", &{ self.interface_number })
                 .field("device_vendor_id", &{ self.device_vendor_id })
                 .field("device_product_id", &{ self.device_product_id })
-                .field("serial_number", {
+                .field("serial_number", &{
                     let ptr = addr_of!(self.serial_number);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -1841,11 +1841,11 @@ pub mod messaging {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Vendor")
                 .field("vendor_guid", &{ self.vendor_guid })
-                .field("vendor_defined_data", {
+                .field("vendor_defined_data", &{
                     let ptr = addr_of!(self.vendor_defined_data);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -1997,11 +1997,11 @@ pub mod messaging {
                 .field("options", &{ self.options })
                 .field("logical_unit_number", &{ self.logical_unit_number })
                 .field("target_portal_group_tag", &{ self.target_portal_group_tag })
-                .field("iscsi_target_name", {
+                .field("iscsi_target_name", &{
                     let ptr = addr_of!(self.iscsi_target_name);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -2104,11 +2104,11 @@ pub mod messaging {
     impl fmt::Debug for Uri {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Uri")
-                .field("value", {
+                .field("value", &{
                     let ptr = addr_of!(self.value);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -2435,11 +2435,11 @@ pub mod messaging {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Dns")
                 .field("address_type", &{ self.address_type })
-                .field("addresses", {
+                .field("addresses", &{
                     let ptr = addr_of!(self.addresses);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<IpAddress>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -2540,11 +2540,11 @@ pub mod messaging {
             f.debug_struct("RestService")
                 .field("service_type", &{ self.service_type })
                 .field("access_mode", &{ self.access_mode })
-                .field("vendor_guid_and_data", {
+                .field("vendor_guid_and_data", &{
                     let ptr = addr_of!(self.vendor_guid_and_data);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -2611,11 +2611,11 @@ pub mod messaging {
             f.debug_struct("NvmeOfNamespace")
                 .field("nidt", &{ self.nidt })
                 .field("nid", &{ self.nid })
-                .field("subsystem_nqn", {
+                .field("subsystem_nqn", &{
                     let ptr = addr_of!(self.subsystem_nqn);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -2888,11 +2888,11 @@ pub mod media {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Vendor")
                 .field("vendor_guid", &{ self.vendor_guid })
-                .field("vendor_defined_data", {
+                .field("vendor_defined_data", &{
                     let ptr = addr_of!(self.vendor_defined_data);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -2943,11 +2943,11 @@ pub mod media {
     impl fmt::Debug for FilePath {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("FilePath")
-                .field("path_name", {
+                .field("path_name", &{
                     let ptr = addr_of!(self.path_name);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -3038,11 +3038,11 @@ pub mod media {
     impl fmt::Debug for PiwgFirmwareFile {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("PiwgFirmwareFile")
-                .field("data", {
+                .field("data", &{
                     let ptr = addr_of!(self.data);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -3092,11 +3092,11 @@ pub mod media {
     impl fmt::Debug for PiwgFirmwareVolume {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("PiwgFirmwareVolume")
-                .field("data", {
+                .field("data", &{
                     let ptr = addr_of!(self.data);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -3332,11 +3332,11 @@ pub mod bios_boot_spec {
             f.debug_struct("BootSpecification")
                 .field("device_type", &{ self.device_type })
                 .field("status_flag", &{ self.status_flag })
-                .field("description_string", {
+                .field("description_string", &{
                     let ptr = addr_of!(self.description_string);
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                 })
                 .finish()
         }
@@ -3647,10 +3647,10 @@ impl TryFrom<&DevicePathNode> for DevicePathNodeEnum<'_> {
 /// Build device paths from their component nodes.
 pub mod build {
     use super::*;
+    use crate::CStr16;
     use crate::proto::device_path::build::{BuildError, BuildNode};
     use crate::proto::device_path::{DeviceSubType, DeviceType};
-    use crate::CStr16;
-    use core::mem::{size_of_val, MaybeUninit};
+    use core::mem::{MaybeUninit, size_of_val};
     /// Device path build nodes for [`DeviceType::END`].
     pub mod end {
         use super::*;

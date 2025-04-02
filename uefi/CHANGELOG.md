@@ -27,6 +27,7 @@
 - The `Display` impl for `CStr8` now excludes the trailing null character.
 - `VariableKeys` initializes with a larger name buffer to work around firmware
   bugs on some devices.
+- **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
 
 
 # uefi - 0.34.1 (2025-02-07)

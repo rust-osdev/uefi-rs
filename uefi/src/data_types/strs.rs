@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
+use super::chars::{Char8, Char16, NUL_8, NUL_16};
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
 use core::ffi::CStr;
@@ -762,7 +762,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{cstr16, cstr8};
+    use crate::{cstr8, cstr16};
     use alloc::format;
     use alloc::string::String;
 

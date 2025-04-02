@@ -9,7 +9,7 @@
 //! This module contains the actual entries of the configuration table,
 //! as well as GUIDs for many known vendor tables.
 
-use crate::{guid, Guid};
+use crate::{Guid, guid};
 use bitflags::bitflags;
 use core::ffi::c_void;
 

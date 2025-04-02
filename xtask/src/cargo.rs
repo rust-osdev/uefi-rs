@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::arch::UefiArch;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use std::env;
 use std::ffi::OsString;
 use std::process::Command;

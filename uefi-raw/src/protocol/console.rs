@@ -2,7 +2,7 @@
 
 pub mod serial;
 
-use crate::{guid, Boolean, Char16, Event, Guid, PhysicalAddress, Status};
+use crate::{Boolean, Char16, Event, Guid, PhysicalAddress, Status, guid};
 use bitflags::bitflags;
 use core::ptr;
 

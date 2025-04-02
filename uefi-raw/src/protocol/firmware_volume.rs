@@ -2,7 +2,7 @@
 
 use crate::firmware_storage::FirmwareVolumeAttributes;
 use crate::protocol::block::Lba;
-use crate::{guid, Guid, Handle, PhysicalAddress, Status};
+use crate::{Guid, Handle, PhysicalAddress, Status, guid};
 use core::ffi::c_void;
 use core::ops::RangeInclusive;
 

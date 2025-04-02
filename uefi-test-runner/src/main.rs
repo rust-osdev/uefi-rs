@@ -15,7 +15,7 @@ use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::messaging::Vendor;
-use uefi::{print, println, system, Result};
+use uefi::{Result, print, println, system};
 
 mod boot;
 mod fs;

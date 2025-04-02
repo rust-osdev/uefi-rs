@@ -2,15 +2,15 @@
 
 //! LoadFile and LoadFile2 protocols.
 
-use crate::proto::unsafe_protocol;
 #[cfg(doc)]
 use crate::Status;
+use crate::proto::unsafe_protocol;
 #[cfg(all(feature = "alloc", feature = "unstable"))]
 use alloc::alloc::Global;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
 #[cfg(feature = "alloc")]
 use {
-    crate::{mem::make_boxed, proto::device_path::DevicePath, Result, StatusExt},
+    crate::{Result, StatusExt, mem::make_boxed, proto::device_path::DevicePath},
     alloc::boxed::Box,
     uefi::proto::BootPolicy,
     uefi_raw::Boolean,

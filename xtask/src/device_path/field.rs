@@ -2,7 +2,7 @@
 
 use crate::device_path::util::is_doc_attr;
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{ToTokens, TokenStreamExt, quote};
 use syn::{Attribute, Expr, ExprLit, Field, Ident, Lit, Path, Type, TypeArray};
 
 /// A fixed-size non-array type.

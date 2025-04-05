@@ -21,6 +21,7 @@
     missing_debug_implementations,
     unused
 )]
+#![allow(clippy::doc_overindented_list_items)]
 
 #[macro_use]
 mod enums;

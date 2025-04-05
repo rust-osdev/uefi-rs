@@ -884,6 +884,7 @@ pub struct VariableKey {
 impl VariableKey {
     /// Name of the variable.
     #[deprecated = "Use the VariableKey.name field instead"]
+    #[allow(clippy::missing_const_for_fn)] // false-positive since Rust 1.86
     pub fn name(&self) -> core::result::Result<&CStr16, crate::data_types::FromSliceWithNulError> {
         Ok(&self.name)
     }

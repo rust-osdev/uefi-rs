@@ -95,8 +95,7 @@ impl DiskIo2 {
     /// Terminates outstanding asynchronous requests to the device.
     ///
     /// # Errors:
-    /// * [`Status::DEVICE_ERROR`]  The device reported an error while performing
-    ///                                 the cancel operation.
+    /// * [`Status::DEVICE_ERROR`] The device reported an error while performing
     pub fn cancel(&mut self) -> Result {
         unsafe { (self.0.cancel)(&mut self.0) }.to_result()
     }

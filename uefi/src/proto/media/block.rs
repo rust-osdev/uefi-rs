@@ -23,11 +23,12 @@ impl BlockIO {
     /// Resets the block device hardware.
     ///
     /// # Arguments
-    /// * `extended_verification`   Indicates that the driver may perform a more exhaustive verification operation of
-    ///     the device during reset.
+    /// * `extended_verification` Indicates that the driver may perform a more
+    ///   exhaustive verification operation of the device during reset.
     ///
     /// # Errors
-    /// * `uefi::Status::DEVICE_ERROR`  The block device is not functioning correctly and could not be reset.
+    /// * `uefi::Status::DEVICE_ERROR`  The block device is not functioning
+    ///   correctly and could not be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
@@ -41,13 +42,13 @@ impl BlockIO {
     ///
     /// # Errors
     /// * `uefi::Status::DEVICE_ERROR`       The device reported an error while attempting to perform the read
-    ///     operation.
+    ///   operation.
     /// * `uefi::Status::NO_MEDIA`           There is no media in the device.
     /// * `uefi::Status::MEDIA_CHANGED`      The `media_id` is not for the current media.
     /// * `uefi::Status::BAD_BUFFER_SIZE`    The buffer size parameter is not a multiple of the intrinsic block size of
-    ///     the device.
+    ///   the device.
     /// * `uefi::Status::INVALID_PARAMETER`  The read request contains LBAs that are not valid, or the buffer is not on
-    ///     proper alignment.
+    ///   proper alignment.
     pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
         let buffer_size = buffer.len();
         unsafe {
@@ -74,11 +75,11 @@ impl BlockIO {
     /// * `uefi::Status::NO_MEDIA`              There is no media in the device.
     /// * `uefi::Status::MEDIA_CHANGED`         The `media_id` is not for the current media.
     /// * `uefi::Status::DEVICE_ERROR`          The device reported an error while attempting to perform the write
-    ///     operation.
+    ///   operation.
     /// * `uefi::Status::BAD_BUFFER_SIZE`       The buffer size parameter is not a multiple of the intrinsic block size
-    ///     of the device.
+    ///   of the device.
     /// * `uefi::Status::INVALID_PARAMETER`     The write request contains LBAs that are not valid, or the buffer is not
-    ///     on proper alignment.
+    ///   on proper alignment.
     pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
         let buffer_size = buffer.len();
         unsafe {

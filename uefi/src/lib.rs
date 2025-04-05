@@ -227,6 +227,7 @@
     unsafe_op_in_unsafe_fn,
     unused
 )]
+#![allow(clippy::doc_overindented_list_items)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

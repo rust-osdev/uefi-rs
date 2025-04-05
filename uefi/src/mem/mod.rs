@@ -14,6 +14,11 @@ pub(crate) mod util;
 #[cfg(feature = "alloc")]
 pub(crate) use util::*;
 
+#[cfg(feature = "alloc")]
+mod aligned_buffer;
+#[cfg(feature = "alloc")]
+pub use aligned_buffer::{AlignedBuffer, AlignmentError};
+
 /// Wrapper for memory allocated with UEFI's pool allocator. The memory is freed
 /// on drop.
 #[derive(Debug)]

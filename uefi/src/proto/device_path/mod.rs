@@ -401,7 +401,6 @@ impl DevicePath {
     /// end-entire node.
     ///
     /// # Errors
-    ///
     /// The [`ByteConversionError::InvalidLength`] error will be returned
     /// when the length of the given bytes slice cannot contain the full
     /// [`DevicePath`] represented by the slice.

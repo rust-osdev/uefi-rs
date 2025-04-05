@@ -130,7 +130,6 @@ impl PcrEventInputs {
     /// Create a new `PcrEventInputs` using a byte buffer for storage.
     ///
     /// # Errors
-    ///
     /// Returns [`Status::BUFFER_TOO_SMALL`] if the `buffer` is not large
     /// enough. The required size will be returned in the error data.
     ///
@@ -174,7 +173,6 @@ impl PcrEventInputs {
     /// Create a new `PcrEventInputs` in a [`Box`].
     ///
     /// # Errors
-    ///
     /// Returns [`Status::INVALID_PARAMETER`] if the `event_data` size is too
     /// large.
     #[cfg(feature = "alloc")]

@@ -125,11 +125,10 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
 /// UEFI OS loaders should allocate memory of the type `LoaderData`.
 ///
 /// # Errors
-///
-/// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
-/// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
+/// * [`Status::OUT_OF_RESOURCES`] when allocation failed.
+/// * [`Status::INVALID_PARAMETER`] when `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
-/// * [`Status::NOT_FOUND`]: the requested pages could not be found.
+/// * [`Status::NOT_FOUND`] if the requested pages could not be found.
 pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -178,9 +177,8 @@ pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Res
 /// and that the memory at the allocation is not used after it is freed.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: `ptr` was not allocated by [`allocate_pages`].
-/// * [`Status::INVALID_PARAMETER`]: `ptr` is not page aligned or is otherwise invalid.
+/// * [`Status::NOT_FOUND`] if `ptr` was not allocated by [`allocate_pages`].
+/// * [`Status::INVALID_PARAMETER`] if `ptr` is not page aligned or is otherwise invalid.
 pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -192,9 +190,8 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
 /// Allocates from a memory pool. The pointer will be 8-byte aligned.
 ///
 /// # Errors
-///
-/// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
-/// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
+/// * [`Status::OUT_OF_RESOURCES`] when is allocation failed.
+/// * [`Status::INVALID_PARAMETER`] when `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
 pub fn allocate_pool(mem_ty: MemoryType, size: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
@@ -215,7 +212,6 @@ pub fn allocate_pool(mem_ty: MemoryType, size: usize) -> Result<NonNull<u8>> {
 /// and that the memory at the allocation is not used after it is freed.
 ///
 /// # Errors
-///
 /// * [`Status::INVALID_PARAMETER`]: `ptr` is invalid.
 pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     let bt = boot_services_raw_panicking();
@@ -276,24 +272,21 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
 /// the right allocation size for the memory map to prevent
 /// [`Status::BUFFER_TOO_SMALL`].
 ///
-/// # Parameters
-///
-/// - `mt`: The memory type for the backing memory on the UEFI heap.
+/// # Arguments
+/// - `memory_type`: The memory type for the backing memory on the UEFI heap.
 ///   Usually, this is [`MemoryType::LOADER_DATA`]. You can also use a
 ///   custom type.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: Invalid [`MemoryType`]
-/// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
+/// * [`Status::INVALID_PARAMETER`] when the [`MemoryType`] is invalid.
+/// * [`Status::OUT_OF_RESOURCES`] when the allocation failed.
 ///
 /// # Panics
-///
 /// Panics if the memory map can't be retrieved because of
 /// [`Status::BUFFER_TOO_SMALL`]. This behaviour was chosen explicitly as
 /// callers can't do anything about it anyway.
-pub fn memory_map(mt: MemoryType) -> Result<MemoryMapOwned> {
-    let mut buffer = MemoryMapBackingMemory::new(mt)?;
+pub fn memory_map(memory_type: MemoryType) -> Result<MemoryMapOwned> {
+    let mut buffer = MemoryMapBackingMemory::new(memory_type)?;
 
     let meta = get_memory_map(buffer.as_mut_slice());
 
@@ -365,9 +358,9 @@ pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
 /// services correctly.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: an invalid combination of parameters was provided.
-/// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
+/// * [`Status::INVALID_PARAMETER`] when an invalid combination of parameters
+///   was provided.
+/// * [`Status::OUT_OF_RESOURCES`] when the event could not be allocated.
 pub unsafe fn create_event(
     event_ty: EventType,
     notify_tpl: Tpl,
@@ -428,13 +421,12 @@ pub unsafe fn create_event(
 /// will fail with [`Status::UNSUPPORTED`].
 ///
 /// # Safety
-///
 /// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: an invalid combination of parameters was provided.
-/// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
+/// * [`Status::INVALID_PARAMETER`] when an invalid combination of parameters
+///   was provided.
+/// * [`Status::OUT_OF_RESOURCES`] when the event could not be allocated.
 pub unsafe fn create_event_ex(
     event_type: EventType,
     notify_tpl: Tpl,
@@ -478,11 +470,10 @@ pub unsafe fn create_event_ex(
 /// if the event is not in the signaled state.
 ///
 /// # Errors
-///
 /// Note: Instead of returning [`Status::NOT_READY`] as listed in the UEFI
 /// Specification, this function will return `Ok(false)`.
 ///
-/// * [`Status::INVALID_PARAMETER`]: `event` is of type [`NOTIFY_SIGNAL`].
+/// * [`Status::INVALID_PARAMETER`] when `event` is of type [`NOTIFY_SIGNAL`].
 ///
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
 pub fn check_event(event: Event) -> Result<bool> {
@@ -511,7 +502,6 @@ pub fn check_event(event: Event) -> Result<bool> {
 /// group, signal it and then close the event to remove it from the group.
 ///
 /// # Errors
-///
 /// The specification does not list any errors.
 ///
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
@@ -529,7 +519,6 @@ pub fn signal_event(event: &Event) -> Result {
 /// corresponding notify function is allowed.
 ///
 /// # Errors
-///
 /// The specification does not list any errors, however implementations are
 /// allowed to return an error if needed.
 pub fn close_event(event: Event) -> Result {
@@ -542,8 +531,7 @@ pub fn close_event(event: Event) -> Result {
 /// Sets the trigger for an event of type [`TIMER`].
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: `event` is not valid.
+/// * [`Status::INVALID_PARAMETER`] when `event` is not valid.
 ///
 /// [`TIMER`]: EventType::TIMER
 pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
@@ -585,9 +573,8 @@ pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
 /// [`check_event`] interface may be used.
 ///
 /// # Errors
-///
 /// * [`Status::INVALID_PARAMETER`]: `events` is empty, or one of the events of
-///   of type [`NOTIFY_SIGNAL`].
+///   type [`NOTIFY_SIGNAL`].
 /// * [`Status::UNSUPPORTED`]: the current TPL is not [`Tpl::APPLICATION`].
 ///
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
@@ -618,10 +605,9 @@ pub fn wait_for_event(events: &mut [Event]) -> Result<usize, Option<usize>> {
 /// a block handle after your app modified disk partitions.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: there are no driver-binding protocol instances
+/// * [`Status::NOT_FOUND`] if there are no driver-binding protocol instances
 ///   present in the system, or no drivers are connected to `controller`.
-/// * [`Status::SECURITY_VIOLATION`]: the caller does not have permission to
+/// * [`Status::SECURITY_VIOLATION`] if the caller does not have permission to
 ///   start drivers associated with `controller`.
 pub fn connect_controller(
     controller: Handle,
@@ -651,14 +637,13 @@ pub fn connect_controller(
 /// See also [`connect_controller`].
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: `driver_image` is set but does not manage
+/// * [`Status::INVALID_PARAMETER`] if `driver_image` is set but does not manage
 ///   `controller`, or does not support the driver binding protocol, or one of
 ///   the handles is invalid.
-/// * [`Status::OUT_OF_RESOURCES`]: not enough resources available to disconnect
-///   drivers.
-/// * [`Status::DEVICE_ERROR`]: the controller could not be disconnected due to
-///   a device error.
+/// * [`Status::OUT_OF_RESOURCES`] if not enough resources available to
+///   disconnect drivers.
+/// * [`Status::DEVICE_ERROR`] if the controller could not be disconnected due
+///   to a device error.
 pub fn disconnect_controller(
     controller: Handle,
     driver_image: Option<Handle>,
@@ -689,9 +674,9 @@ pub fn disconnect_controller(
 /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
 ///
 /// # Errors
-///
-/// * [`Status::OUT_OF_RESOURCES`]: failed to allocate a new handle.
-/// * [`Status::INVALID_PARAMETER`]: this protocol is already installed on the handle.
+/// * [`Status::OUT_OF_RESOURCES`] if UEFI failed to allocate a new handle.
+/// * [`Status::INVALID_PARAMETER`] if this protocol is already installed on the
+///   `handle`.
 pub unsafe fn install_protocol_interface(
     handle: Option<Handle>,
     protocol: &Guid,
@@ -725,9 +710,9 @@ pub unsafe fn install_protocol_interface(
 /// removed.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: the old interface was not found on the handle.
-/// * [`Status::ACCESS_DENIED`]: the old interface is still in use and cannot be uninstalled.
+/// * [`Status::NOT_FOUND`] if the old interface was not found on the `handle`.
+/// * [`Status::ACCESS_DENIED`]: if the old interface is still in use and cannot
+///   be uninstalled.
 pub unsafe fn reinstall_protocol_interface(
     handle: Handle,
     protocol: &Guid,
@@ -755,9 +740,9 @@ pub unsafe fn reinstall_protocol_interface(
 /// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: the interface was not found on the handle.
-/// * [`Status::ACCESS_DENIED`]: the interface is still in use and cannot be uninstalled.
+/// * [`Status::NOT_FOUND`] if the interface was not found on the `handle`.
+/// * [`Status::ACCESS_DENIED`] if the interface is still in use and cannot be
+///   uninstalled.
 pub unsafe fn uninstall_protocol_interface(
     handle: Handle,
     protocol: &Guid,
@@ -779,8 +764,7 @@ pub unsafe fn uninstall_protocol_interface(
 /// Events can be unregistered from protocol interface notification by calling [`close_event`].
 ///
 /// # Errors
-///
-/// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
+/// * [`Status::OUT_OF_RESOURCES`] if the event could not be allocated.
 pub fn register_protocol_notify(
     protocol: &'static Guid,
     event: &Event,
@@ -801,9 +785,8 @@ pub fn register_protocol_notify(
 /// on a [`Handle`].
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: `handle` is invalid.
-/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+/// * [`Status::INVALID_PARAMETER`] if the `handle` is invalid.
+/// * [`Status::OUT_OF_RESOURCES`] if UEFI is out of memory.
 pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -831,8 +814,7 @@ pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
 /// multi-instance device path, the function will operate on the first instance.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: no matching handles.
+/// * [`Status::NOT_FOUND`] if no matching [`Handle`]s were found.
 pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
     device_path: &mut &DevicePath,
 ) -> Result<Handle> {
@@ -856,10 +838,10 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
 /// Enumerates all handles installed on the system which match a certain query.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: no matching handles found.
-/// * [`Status::BUFFER_TOO_SMALL`]: the buffer is not large enough. The required
-///   size (in number of handles, not bytes) will be returned in the error data.
+/// * [`Status::NOT_FOUND`] if no matching handles were found.
+/// * [`Status::BUFFER_TOO_SMALL`] if the buffer is not large enough. The
+///   required size (in number of handles, not bytes) will be returned in the
+///   error data.
 pub fn locate_handle<'buf>(
     search_ty: SearchType,
     buffer: &'buf mut [MaybeUninit<Handle>],
@@ -881,6 +863,7 @@ pub fn locate_handle<'buf>(
         unsafe { (bt.locate_handle)(ty, guid, key, &mut buffer_size, buffer.as_mut_ptr().cast()) };
 
     let num_handles = buffer_size / size_of::<Handle>();
+    assert_eq!(buffer_size % size_of::<Handle>(), 0);
 
     match status {
         Status::SUCCESS => {
@@ -900,9 +883,8 @@ pub fn locate_handle<'buf>(
 /// See [`SearchType`] for details of the available search operations.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: no matching handles.
-/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+/// * [`Status::NOT_FOUND`] if no matching handles were found.
+/// * [`Status::OUT_OF_RESOURCES`] if UEFI is out of memory.
 pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -928,8 +910,7 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
 /// Returns all the handles implementing a certain protocol.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: no matching handles.
+/// * [`Status::NOT_FOUND`] if no matching handles were found.
 #[cfg(feature = "alloc")]
 pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
     // Search by protocol.
@@ -994,9 +975,8 @@ pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
 /// ```
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: no matching handle.
-/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+/// * [`Status::NOT_FOUND`] if no matching handle were found.
+/// * [`Status::OUT_OF_RESOURCES`] if UEFI is out of memory.
 pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> {
     locate_handle_buffer(SearchType::ByProtocol(&P::GUID))?
         .first()
@@ -1030,12 +1010,11 @@ pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> 
 /// `ScopedProtocol` is dropped.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: an invalid combination of `params` and
+/// * [`Status::INVALID_PARAMETER`] if an invalid combination of `params` and
 ///   `attributes` was provided.
-/// * [`Status::UNSUPPORTED`]: the handle does not support the protocol.
-/// * [`Status::ACCESS_DENIED`] or [`Status::ALREADY_STARTED`]: the protocol is
-///   already open in a way that is incompatible with the new request.
+/// * [`Status::UNSUPPORTED`] if the handle does not support the protocol.
+/// * [`Status::ACCESS_DENIED`] or [`Status::ALREADY_STARTED`] if the protocol
+///   is already open in a way that is incompatible with the new request.
 pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
     params: OpenProtocolParams,
     attributes: OpenProtocolAttributes,
@@ -1073,9 +1052,8 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
 /// close the protocol interface when dropped.
 ///
 /// # Errors
-///
-/// * [`Status::UNSUPPORTED`]: the handle does not support the protocol.
-/// * [`Status::ACCESS_DENIED`]: the protocol is already open in a way that is
+/// * [`Status::UNSUPPORTED`] if the handle does not support the protocol.
+/// * [`Status::ACCESS_DENIED`] if the protocol is already open in a way that is
 ///   incompatible with the new request.
 pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
     handle: Handle,
@@ -1100,8 +1078,8 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
 /// Returns `Ok(true)` if the handle supports the protocol, `Ok(false)` if not.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: one of the handles in `params` is invalid.
+/// * [`Status::INVALID_PARAMETER`] if one of the handles in `params` is
+///   invalid.
 pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) -> Result<bool> {
     const TEST_PROTOCOL: u32 = 0x04;
 
@@ -1144,15 +1122,17 @@ pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) ->
 /// [`unload_image`].
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: `source` contains an invalid value.
-/// * [`Status::UNSUPPORTED`]: the image type is not supported.
-/// * [`Status::OUT_OF_RESOURCES`]: insufficient resources to load the image.
-/// * [`Status::LOAD_ERROR`]: the image is invalid.
-/// * [`Status::DEVICE_ERROR`]: failed to load image due to a read error.
-/// * [`Status::ACCESS_DENIED`]: failed to load image due to a security policy.
-/// * [`Status::SECURITY_VIOLATION`]: a security policy specifies that the image
-///   should not be started.
+/// * [`Status::INVALID_PARAMETER`] if `source` contains an invalid value.
+/// * [`Status::UNSUPPORTED`] if the image type is not supported.
+/// * [`Status::OUT_OF_RESOURCES`] if there are insufficient resources to load
+///   the image.
+/// * [`Status::LOAD_ERROR`] if the image is invalid.
+/// * [`Status::DEVICE_ERROR`] if a device error caused a failure to load the
+///   image.
+/// * [`Status::ACCESS_DENIED`] if failed to load image due to a security
+///   policy.
+/// * [`Status::SECURITY_VIOLATION`] if a security policy specifies that the
+///   image should not be started.
 pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Result<Handle> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -1179,9 +1159,9 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
 /// Unloads a UEFI image.
 ///
 /// # Errors
-///
-/// * [`Status::UNSUPPORTED`]: the image has been started, and does not support unload.
-/// * [`Status::INVALID_PARAMETER`]: `image_handle` is not valid.
+/// * [`Status::UNSUPPORTED`] if the image has been started, and does not
+///   support unload.
+/// * [`Status::INVALID_PARAMETER`] if `image_handle` is not valid.
 pub fn unload_image(image_handle: Handle) -> Result {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -1192,11 +1172,10 @@ pub fn unload_image(image_handle: Handle) -> Result {
 /// Transfers control to a loaded image's entry point.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: `image_handle` is not valid, or the image
+/// * [`Status::INVALID_PARAMETER`] if `image_handle` is not valid, or the image
 ///   has already been initialized with `start_image`.
-/// * [`Status::SECURITY_VIOLATION`]: a security policy specifies that the image
-///   should not be started.
+/// * [`Status::SECURITY_VIOLATION`] if a security policy specifies that the
+///   image should not be started.
 pub fn start_image(image_handle: Handle) -> Result {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -1294,7 +1273,6 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 ///   [`MemoryType::BOOT_SERVICES_DATA`] will become free memory.
 ///
 /// # Errors
-///
 /// This function will fail if it is unable to allocate memory for
 /// the memory map, if it fails to retrieve the memory map, or if
 /// exiting boot services fails (with up to one retry).
@@ -1347,9 +1325,8 @@ pub unsafe fn exit_boot_services(memory_type: MemoryType) -> MemoryMapOwned {
 /// [`RUNTIME_SERVICES_DATA`]: MemoryType::RUNTIME_SERVICES_DATA
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: tried to delete a nonexistent entry.
-/// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+/// * [`Status::NOT_FOUND`] if the caller tried to delete a nonexistent entry.
+/// * [`Status::OUT_OF_RESOURCES`] if UEFI is out of memory.
 pub unsafe fn install_configuration_table(
     guid_entry: &'static Guid,
     table_ptr: *const c_void,
@@ -1380,10 +1357,9 @@ pub unsafe fn install_configuration_table(
 /// followed by other binary data.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: `watchdog_code` is invalid.
-/// * [`Status::UNSUPPORTED`]: the system does not have a watchdog timer.
-/// * [`Status::DEVICE_ERROR`]: the watchdog timer could not be set due to a
+/// * [`Status::INVALID_PARAMETER`] if `watchdog_code` is invalid.
+/// * [`Status::UNSUPPORTED`] if the system does not have a watchdog timer.
+/// * [`Status::DEVICE_ERROR`] if the watchdog timer could not be set due to a
 ///   hardware error.
 pub fn set_watchdog_timer(
     timeout_in_seconds: usize,
@@ -1423,7 +1399,6 @@ pub fn stall(microseconds: usize) {
 /// image was loaded from.
 ///
 /// # Errors
-///
 /// This function can return errors from [`open_protocol_exclusive`] and
 /// [`locate_device_path`]. See those functions for more details.
 ///

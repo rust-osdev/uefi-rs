@@ -362,7 +362,6 @@ impl CStr16 {
     /// Creates a `&CStr16` from a u16 slice, stopping at the first nul character.
     ///
     /// # Errors
-    ///
     /// An error is returned if the slice contains invalid UCS-2 characters, or
     /// if the slice does not contain any nul character.
     pub fn from_u16_until_nul(codes: &[u16]) -> Result<&Self, FromSliceUntilNulError> {
@@ -411,7 +410,6 @@ impl CStr16 {
     /// Creates a `&CStr16` from a [`Char16`] slice, stopping at the first nul character.
     ///
     /// # Errors
-    ///
     /// An error is returned if the slice does not contain any nul character.
     pub fn from_char16_until_nul(chars: &[Char16]) -> Result<&Self, FromSliceUntilNulError> {
         // Find the index of the first null char.

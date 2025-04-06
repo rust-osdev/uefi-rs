@@ -68,10 +68,12 @@ unsafe impl GlobalAlloc for Allocator {
             // only guaranteed to provide eight-byte alignment. Allocate extra
             // space so that we can return an appropriately-aligned pointer
             // within the allocation.
-            let full_alloc_ptr = if let Ok(ptr) = boot::allocate_pool(memory_type, size + align) {
-                ptr.as_ptr()
-            } else {
-                return ptr::null_mut();
+            let full_alloc_ptr = match boot::allocate_pool(memory_type, size + align) {
+                Ok(ptr) => ptr.cast::<u8>().as_ptr(),
+                Err(e) => {
+                    log::error!("Failed to allocate pool: {:?}", e);
+                    return ptr::null_mut();
+                }
             };
 
             // Calculate the offset needed to get an aligned pointer within the
@@ -100,7 +102,8 @@ unsafe impl GlobalAlloc for Allocator {
             // `allocate_pool` always provides eight-byte alignment, so we can
             // use `allocate_pool` directly.
             boot::allocate_pool(memory_type, size)
-                .map(|ptr| ptr.as_ptr())
+                .map(|mut ptr: NonNull<[u8]>| unsafe { ptr.as_mut() })
+                .map(|ptr: &mut [u8]| ptr.as_mut_ptr())
                 .unwrap_or(ptr::null_mut())
         }
     }

@@ -281,7 +281,7 @@ impl MemoryMapBackingMemory {
     pub(crate) fn new(memory_type: MemoryType) -> crate::Result<Self> {
         let memory_map_meta = boot::memory_map_size();
         let len = Self::safe_allocation_size_hint(memory_map_meta);
-        let ptr = boot::allocate_pool(memory_type, len)?.as_ptr();
+        let ptr = boot::allocate_pool(memory_type, len)?.cast::<u8>().as_ptr();
 
         // Should be fine as UEFI always has  allocations with a guaranteed
         // alignment of 8 bytes.

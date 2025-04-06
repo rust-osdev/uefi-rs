@@ -44,6 +44,41 @@ fn get_memory_type() -> MemoryType {
     }
 }
 
+fn alloc_pool_aligned(memory_type: MemoryType, size: usize, align: usize) -> *mut u8 {
+    // The requested alignment is greater than 8, but `allocate_pool` is
+    // only guaranteed to provide eight-byte alignment. Allocate extra
+    // space so that we can return an appropriately-aligned pointer
+    // within the allocation.
+    let full_alloc_ptr = boot::allocate_pool(memory_type, size + align);
+    let full_alloc_ptr = if let Ok(ptr) = full_alloc_ptr {
+        ptr.as_ptr()
+    } else {
+        return ptr::null_mut();
+    };
+
+    // Calculate the offset needed to get an aligned pointer within the
+    // full allocation. If that offset is zero, increase it to `align`
+    // so that we still have space to store the extra pointer described
+    // below.
+    let mut offset = full_alloc_ptr.align_offset(align);
+    if offset == 0 {
+        offset = align;
+    }
+
+    // Before returning the aligned allocation, store a pointer to the
+    // full unaligned allocation in the bytes just before the aligned
+    // allocation. We know we have at least eight bytes there due to
+    // adding `align` to the memory allocation size. We also know the
+    // write is appropriately aligned for a `*mut u8` pointer because
+    // `align_ptr` is aligned, and alignments are always powers of two
+    // (as enforced by the `Layout` type).
+    unsafe {
+        let aligned_ptr = full_alloc_ptr.add(offset);
+        (aligned_ptr.cast::<*mut u8>()).sub(1).write(full_alloc_ptr);
+        aligned_ptr
+    }
+}
+
 /// Allocator which uses the UEFI pool allocation functions.
 ///
 /// The allocator can only be used as long as the UEFI boot services are
@@ -76,39 +111,7 @@ unsafe impl GlobalAlloc for Allocator {
                     .unwrap_or(ptr::null_mut())
             }
             9.. => {
-                // The requested alignment is greater than 8, but `allocate_pool` is
-                // only guaranteed to provide eight-byte alignment. Allocate extra
-                // space so that we can return an appropriately-aligned pointer
-                // within the allocation.
-                let full_alloc_ptr = boot::allocate_pool(memory_type, size + align);
-                let full_alloc_ptr = if let Ok(ptr) = full_alloc_ptr
-                {
-                    ptr.as_ptr()
-                } else {
-                    return ptr::null_mut();
-                };
-
-                // Calculate the offset needed to get an aligned pointer within the
-                // full allocation. If that offset is zero, increase it to `align`
-                // so that we still have space to store the extra pointer described
-                // below.
-                let mut offset = full_alloc_ptr.align_offset(align);
-                if offset == 0 {
-                    offset = align;
-                }
-
-                // Before returning the aligned allocation, store a pointer to the
-                // full unaligned allocation in the bytes just before the aligned
-                // allocation. We know we have at least eight bytes there due to
-                // adding `align` to the memory allocation size. We also know the
-                // write is appropriately aligned for a `*mut u8` pointer because
-                // `align_ptr` is aligned, and alignments are always powers of two
-                // (as enforced by the `Layout` type).
-                unsafe {
-                    let aligned_ptr = full_alloc_ptr.add(offset);
-                    (aligned_ptr.cast::<*mut u8>()).sub(1).write(full_alloc_ptr);
-                    aligned_ptr
-                }
+                alloc_pool_aligned(memory_type, size, align)
             }
         }
     }

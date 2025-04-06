@@ -1258,17 +1258,23 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
         .to_result_with_val(|| memory_map)
 }
 
-/// Exit UEFI boot services.
+/// Convenient wrapper to exit UEFI boot services along with corresponding
+/// essential steps to get the memory map.
+///
+/// Exiting UEFI boot services requires a **non-trivial sequence of steps**,
+/// including safe retrieval and finalization of the memory map. This wrapper
+/// ensures a safe and spec-compliant transition from UEFI boot services to
+/// runtime services by retrieving the system memory map and invoking
+/// `ExitBootServices()` with the correct memory map key, retrying if necessary.
 ///
 /// After this function completes, UEFI hands over control of the hardware
 /// to the executing OS loader, which implies that the UEFI boot services
 /// are shut down and cannot be used anymore. Only UEFI configuration tables
-/// and run-time services can be used.
+/// and runtime services can be used.
 ///
-/// The memory map at the time of exiting boot services returned. The map is
-/// backed by a pool allocation of the given `memory_type`. Since the boot
-/// services function to free that memory is no longer available after calling
-/// `exit_boot_services`, the allocation will not be freed on drop.
+/// Since the boot services function to free memory is no longer available after
+/// this function returns, the allocation will not be freed on drop. It will
+/// however be reflected by the memory map itself (self-contained).
 ///
 /// Note that once the boot services are exited, associated loggers and
 /// allocators can't use the boot services anymore. For the corresponding

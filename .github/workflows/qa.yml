@@ -8,3 +8,32 @@ jobs:
       - uses: actions/checkout@v4
       # Executes "typos ."
       - uses: crate-ci/typos@v1.30.2
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: Swatinem/rust-cache@v2
+      # Dedicated step to separate all the
+      # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
+      # messages from the actual build output.
+      - name: Prepare Nix Store
+        run: nix develop --command echo
+      # Executing this in a Nix shell ensures that all our checks run as all
+      # required tooling exists.
+      - name: Check formatting
+        run: |
+          CMD="cargo xtask fmt --check"
+          nix develop --command bash -c "$CMD"
+      - name: Run clippy
+        run: |
+          rustup component add clippy
+          cargo xtask clippy --warnings-as-errors
+      - name: Run cargo doc (without unstable)
+        run: cargo xtask doc --warnings-as-errors --document-private-items
+      - name: Verify generated code is up-to-date
+        run: cargo xtask gen-code --check
+      - name: Run additional checks on the uefi-raw package
+        run: cargo xtask check-raw

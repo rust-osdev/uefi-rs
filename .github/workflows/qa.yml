@@ -21,6 +21,9 @@ jobs:
       # messages from the actual build output.
       - name: Prepare Nix Store
         run: nix develop --command echo
+      # A dedicated step removes spam from the actual job.
+      - name: Build cargo xtask
+        run: cargo xtask help >/dev/null
       # Executing this in a Nix shell ensures that all our checks run as all
       # required tooling exists.
       - name: Check formatting

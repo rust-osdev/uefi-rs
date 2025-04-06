@@ -1283,6 +1283,13 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 /// `global_allocator` feature is enabled, attempting to use the allocator
 /// after exiting boot services will panic.
 ///
+/// # Arguments
+/// - `custom_memory_type`: The [`MemoryType`] for the UEFI allocation that will
+///   store the final memory map. If you pass `None`, this defaults to the
+///   recommended default value of [`MemoryType::LOADER_DATA`]. If you want a
+///   specific memory region for the memory map, you can pass the desired
+///   [`MemoryType`].
+///
 /// # Safety
 ///
 /// The caller is responsible for ensuring that no references to
@@ -1313,7 +1320,10 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 /// [`Output`]: crate::proto::console::text::Output
 /// [`PoolString`]: crate::proto::device_path::text::PoolString
 #[must_use]
-pub unsafe fn exit_boot_services(memory_type: MemoryType) -> MemoryMapOwned {
+pub unsafe fn exit_boot_services(custom_memory_type: Option<MemoryType>) -> MemoryMapOwned {
+    // LOADER_DATA is the default and also used by the Linux kernel:
+    // https://elixir.bootlin.com/linux/v6.13.7/source/drivers/firmware/efi/libstub/mem.c#L24
+    let memory_type = custom_memory_type.unwrap_or(MemoryType::LOADER_DATA);
     crate::helpers::exit();
 
     let mut buf = MemoryMapBackingMemory::new(memory_type).expect("Failed to allocate memory");

@@ -43,15 +43,17 @@ fn test_allocate_pages() {
 }
 
 fn test_allocate_pool() {
-    let ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
+    let mut ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
+    let buffer = unsafe { ptr.as_mut() };
 
     // Verify the allocation can be written to.
     {
-        let ptr = ptr.as_ptr();
-        unsafe { ptr.write_volatile(0xff) };
-        unsafe { ptr.add(9).write_volatile(0xff) };
+        buffer[0] = 0xff;
+        buffer[9] = 0xff;
+        assert_eq!(buffer[0], 0xff);
+        assert_eq!(buffer[9], 0xff);
     }
-    unsafe { boot::free_pool(ptr) }.unwrap();
+    unsafe { boot::free_pool(ptr.cast()) }.unwrap();
 }
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.

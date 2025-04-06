@@ -218,7 +218,8 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
     unsafe { (bt.free_pages)(addr, count) }.to_result()
 }
 
-/// Allocates from a memory pool. The pointer will be 8-byte aligned.
+/// Allocates a consecutive region of bytes using the UEFI allocator. The buffer
+/// will be 8-byte aligned.
 ///
 /// The caller is responsible to free the memory using [`free_pool`].
 ///
@@ -250,15 +251,20 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
 /// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
-pub fn allocate_pool(mem_ty: MemoryType, size: usize) -> Result<NonNull<u8>> {
+pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<[u8]>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
     let mut buffer = ptr::null_mut();
-    let ptr =
-        unsafe { (bt.allocate_pool)(mem_ty, size, &mut buffer) }.to_result_with_val(|| buffer)?;
+    let ptr = unsafe { (bt.allocate_pool)(memory_type, size, &mut buffer) }
+        .to_result_with_val(|| buffer)?;
 
-    Ok(NonNull::new(ptr).expect("allocate_pool must not return a null pointer if successful"))
+    if let Some(ptr) = NonNull::new(ptr) {
+        let slice = NonNull::slice_from_raw_parts(ptr, size);
+        Ok(slice)
+    } else {
+        Err(Status::OUT_OF_RESOURCES.into())
+    }
 }
 
 /// Frees memory allocated by [`allocate_pool`].

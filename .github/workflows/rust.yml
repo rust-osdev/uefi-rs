@@ -87,17 +87,19 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
       - uses: Swatinem/rust-cache@v2
-      - name: Install yamlfmt
-        env:
-          YFV: "0.13.0"
-          HASH: "043e96d754a8afa4f4c5c13ffb2f3e50c6be5a70bf53292d3025abc0b42fe4ae"
-        run: |
-          curl -L --fail --output /tmp/yamlfmt.tar.xz https://github.com/google/yamlfmt/releases/download/v${YFV}/yamlfmt_${YFV}_Linux_x86_64.tar.gz
-          echo "${HASH} /tmp/yamlfmt.tar.xz" | sha256sum --check
-          tar xf /tmp/yamlfmt.tar.xz -C /usr/local/bin yamlfmt
+      # Dedicated step to separate all the
+      # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
+      # messages from the actual build output.
+      - name: Prepare Nix Store
+        run: nix develop --command echo
+      # Executing this in a Nix shell ensures that all our checks run as all
+      # required tooling exists.
       - name: Check formatting
-        run: cargo xtask fmt --check
+        run: |
+          CMD="cargo xtask fmt --check"
+          nix develop --command bash -c "$CMD"
       - name: Run clippy
         run: |
           rustup component add clippy

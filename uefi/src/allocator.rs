@@ -12,11 +12,13 @@
 //! will panic.
 
 use crate::boot;
+use crate::boot::AllocateType;
 use crate::mem::memory_map::MemoryType;
 use crate::proto::loaded_image::LoadedImage;
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicU32, Ordering};
+use uefi_raw::table::boot::PAGE_SIZE;
 
 /// Get the memory type to use for allocation.
 ///
@@ -79,7 +81,7 @@ fn alloc_pool_aligned(memory_type: MemoryType, size: usize, align: usize) -> *mu
     }
 }
 
-/// Allocator which uses the UEFI pool allocation functions.
+/// Allocator which uses the UEFI allocation functions.
 ///
 /// The allocator can only be used as long as the UEFI boot services are
 /// available and have not been exited.
@@ -110,6 +112,20 @@ unsafe impl GlobalAlloc for Allocator {
                     .map(|ptr| ptr.as_ptr())
                     .unwrap_or(ptr::null_mut())
             }
+            // Allocating pages is actually very expected in UEFI OS loaders, so
+            // it makes sense to provide this optimization.
+            // In Rust, each allocation's size must be at least the alignment,
+            // as specified in the Rust type layout [0]. Therefore, we don't
+            // have a risk of wasting memory. Further, using page-alignment for
+            // small allocations is quiet unusual.
+            // [0]: https://doc.rust-lang.org/reference/type-layout.html
+            PAGE_SIZE => {
+                log::trace!("Taking PAGE_SIZE shortcut");
+                let count = size.div_ceil(PAGE_SIZE);
+                boot::allocate_pages(AllocateType::AnyPages, memory_type, count)
+                    .map(|ptr| ptr.as_ptr())
+                    .unwrap_or(ptr::null_mut())
+            }
             9.. => {
                 alloc_pool_aligned(memory_type, size, align)
             }
@@ -117,17 +133,30 @@ unsafe impl GlobalAlloc for Allocator {
     }
 
     /// Deallocate memory using [`boot::free_pool`].
-    unsafe fn dealloc(&self, mut ptr: *mut u8, layout: Layout) {
-        if layout.align() > 8 {
-            // Retrieve the pointer to the full allocation that was packed right
-            // before the aligned allocation in `alloc`.
-            ptr = unsafe { (ptr as *const *mut u8).sub(1).read() };
-        }
-
-        // OK to unwrap: `ptr` is required to be a valid allocation by the trait API.
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         let ptr = NonNull::new(ptr).unwrap();
-
-        // Warning: this will panic after exiting boot services.
-        unsafe { boot::free_pool(ptr) }.unwrap();
+        match layout.align() {
+            0..=8 /* UEFI default alignment */ => {
+                // Warning: this will panic after exiting boot services.
+                unsafe { boot::free_pool(ptr) }.unwrap();
+            }
+            /* Corresponds the the alloc() match arm. */
+            PAGE_SIZE => {
+                log::trace!("Taking PAGE_SIZE shortcut");
+                let count = layout.size().div_ceil(PAGE_SIZE);
+                unsafe {
+                    boot::free_pages(ptr, count).unwrap()
+                }
+            }
+            9.. => {
+                let ptr = ptr.as_ptr().cast::<*mut u8>();
+                // Retrieve the pointer to the full allocation that was packed right
+                // before the aligned allocation in `alloc`.
+                let actual_alloc_ptr = unsafe { ptr.sub(1).read() };
+                let ptr = NonNull::new(actual_alloc_ptr).unwrap();
+                // Warning: this will panic after exiting boot services.
+                unsafe { boot::free_pool(ptr) }.unwrap();
+            }
+        }
     }
 }

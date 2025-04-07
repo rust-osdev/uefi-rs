@@ -20,6 +20,9 @@ use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicU32, Ordering};
 use uefi_raw::table::boot::PAGE_SIZE;
 
+#[cfg(feature = "unstable")]
+use core::alloc as alloc_api;
+
 /// Get the memory type to use for allocation.
 ///
 /// The first time this is called, the data type of the loaded image will be
@@ -158,5 +161,19 @@ unsafe impl GlobalAlloc for Allocator {
                 unsafe { boot::free_pool(ptr) }.unwrap();
             }
         }
+    }
+}
+
+#[cfg(feature = "unstable")]
+unsafe impl alloc_api::Allocator for Allocator {
+    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, alloc_api::AllocError> {
+        let ptr = unsafe { <Allocator as GlobalAlloc>::alloc(self, layout) };
+        NonNull::new(ptr)
+            .ok_or(alloc_api::AllocError)
+            .map(|ptr| NonNull::slice_from_raw_parts(ptr, layout.size()))
+    }
+
+    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+        unsafe { <Allocator as GlobalAlloc>::dealloc(self, ptr.as_ptr(), layout) }
     }
 }

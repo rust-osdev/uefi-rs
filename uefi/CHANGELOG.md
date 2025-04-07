@@ -16,6 +16,12 @@
   `&self`.
 - **Breaking:** The `pxe::Mode` struct is now opaque. Use method calls to access
   mode data instead of direct field access.
+- **Breaking**: `allocate_pages` now returns `NonNull<[u8]>` to align it with
+  the Rust allocator API. There is an example in the documentation of that
+  function.
+- **Breaking**: `allocate_pool` now returns `NonNull<[u8]>` to align it with
+  the Rust allocator API. There is an example in the documentation of that
+  function.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

@@ -10,7 +10,7 @@ extern crate alloc;
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use uefi::mem::memory_map::{MemoryMap, MemoryType};
+use uefi::mem::memory_map::MemoryMap;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
@@ -209,7 +209,7 @@ fn shutdown() -> ! {
     info!("Testing complete, exiting boot services...");
 
     // Exit boot services as a proof that it works :)
-    let mmap = unsafe { uefi::boot::exit_boot_services(MemoryType::LOADER_DATA) };
+    let mmap = unsafe { uefi::boot::exit_boot_services(None) };
 
     info!("Memory Map:");
     for desc in mmap.entries() {

@@ -16,6 +16,8 @@
   `&self`.
 - **Breaking:** The `pxe::Mode` struct is now opaque. Use method calls to access
   mode data instead of direct field access.
+- **Breaking:** `exit_boot_services` now consumes a `Option<MemoryType>` which
+  defaults to the recommended value of `MemoryType::LOADER_DATA`.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

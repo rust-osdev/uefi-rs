@@ -2,8 +2,10 @@
   description = "uefi-rs";
 
   inputs = {
-    # We follow the latest stable release of nixpkgs
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    # Use freshest nixpkgs. We don't use master as packages in nixpkgs-unstable
+    # have already been build by the nixpkgs CI and are available from the
+    # nixos.org cache.
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 

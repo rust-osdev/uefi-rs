@@ -309,15 +309,23 @@ fn run_fmt_project(fmt_opt: &FmtOpt) -> Result<()> {
         eprintln!("Formatting: yml - SKIPPED");
     }
 
-    // fmt nix
-    if has_cmd("nixfmt") {
+    // fmt nix (by passing files as arguments)
+    // `find . -name "*.nix" -type f -exec nix fmt {} \+`
+    if has_cmd("find") && has_cmd("nixfmt") {
         eprintln!("Formatting: nix");
-        let mut command = Command::new("nixfmt");
+        let mut command = Command::new("find");
+        command.arg(".");
+        command.arg("-name");
+        command.arg("*.nix");
+        command.arg("-type");
+        command.arg("f");
+        command.arg("-exec");
+        command.arg("nixfmt");
         if fmt_opt.check {
             command.arg("--check");
         }
-        command.arg("nix");
-        command.arg("shell.nix");
+        command.arg("{}");
+        command.arg("+");
 
         match run_cmd(command) {
             Ok(_) => {

@@ -34,7 +34,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - uses: cachix/install-nix-action@v30
+      - uses: cachix/install-nix-action@v31
       # Dedicated step to separate all the
       # "copying path '/nix/store/...' from 'https://cache.nixos.org'."
       # messages from the actual build output.

@@ -169,3 +169,17 @@ unsafe impl GlobalAlloc for Allocator {
         }
     }
 }
+
+#[cfg(feature = "unstable")]
+unsafe impl core::alloc::Allocator for Allocator {
+    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, core::alloc::AllocError> {
+        let ptr = unsafe { <Allocator as GlobalAlloc>::alloc(self, layout) };
+        NonNull::new(ptr)
+            .ok_or(core::alloc::AllocError)
+            .map(|ptr| NonNull::slice_from_raw_parts(ptr, layout.size()))
+    }
+
+    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+        unsafe { <Allocator as GlobalAlloc>::dealloc(self, ptr.as_ptr(), layout) }
+    }
+}

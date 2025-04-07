@@ -41,8 +41,10 @@
 - The `Display` impl for `CStr8` now excludes the trailing null character.
 - `VariableKeys` initializes with a larger name buffer to work around firmware
   bugs on some devices.
-- The UEFI `allocator::Allocator` has been optimized for page-aligned 
+- The UEFI `allocator::Allocator` has been optimized for page-aligned
   allocations.
+- The UEFI `allocator::Allocator` now implements `core::alloc::Allocator`
+  (`allocator_api`), when the `unstable` feature is used.
 
 
 # uefi - 0.34.1 (2025-02-07)

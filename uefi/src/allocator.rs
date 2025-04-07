@@ -44,11 +44,11 @@ fn get_memory_type() -> MemoryType {
     }
 }
 
+/// The requested alignment is greater than 8, but `allocate_pool` is
+/// only guaranteed to provide eight-byte alignment. Allocate extra
+/// space so that we can return an appropriately-aligned pointer
+/// within the allocation
 fn alloc_pool_aligned(memory_type: MemoryType, size: usize, align: usize) -> *mut u8 {
-    // The requested alignment is greater than 8, but `allocate_pool` is
-    // only guaranteed to provide eight-byte alignment. Allocate extra
-    // space so that we can return an appropriately-aligned pointer
-    // within the allocation.
     let full_alloc_ptr = boot::allocate_pool(memory_type, size + align);
     let full_alloc_ptr = if let Ok(ptr) = full_alloc_ptr {
         ptr.as_ptr()

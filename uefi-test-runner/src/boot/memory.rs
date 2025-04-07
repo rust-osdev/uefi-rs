@@ -1,74 +1,88 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use alloc::vec::Vec;
-use uefi::boot::{self, AllocateType};
-use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
+use uefi::boot;
+use uefi::mem::memory_map::{MemoryMap, MemoryMapMut};
+use uefi_raw::table::boot::MemoryType;
 
 pub fn test() {
     info!("Testing memory functions");
 
-    test_allocate_pages();
-    test_allocate_pool();
+    bootservices::allocate_pages();
+    bootservices::allocate_pool();
 
-    vec_alloc();
-    alloc_alignment();
+    global::alloc_vec();
+    global::alloc_alignment();
 
     test_memory_map();
 }
 
-fn test_allocate_pages() {
-    let num_pages = 1;
-    let ptr =
-        boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, num_pages).unwrap();
-    let addr = ptr.as_ptr() as usize;
-    assert_eq!(addr % 4096, 0, "Page pointer is not page-aligned");
+/// Tests that directly use UEFI boot services to allocate memory.
+mod bootservices {
+    use uefi::boot;
+    use uefi::boot::AllocateType;
+    use uefi_raw::table::boot::MemoryType;
 
-    // Verify the page can be written to.
-    {
-        let ptr = ptr.as_ptr();
-        unsafe { ptr.write_volatile(0xff) };
-        unsafe { ptr.add(4095).write_volatile(0xff) };
+    /// Tests the `allocate_pages` boot service.
+    pub fn allocate_pages() {
+        let num_pages = 1;
+        let ptr = boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, num_pages)
+            .unwrap();
+        let addr = ptr.as_ptr() as usize;
+        assert_eq!(addr % 4096, 0, "Page pointer is not page-aligned");
+
+        // Verify the page can be written to.
+        {
+            let ptr = ptr.as_ptr();
+            unsafe { ptr.write_volatile(0xff) };
+            unsafe { ptr.add(4095).write_volatile(0xff) };
+        }
+
+        unsafe { boot::free_pages(ptr, num_pages) }.unwrap();
     }
 
-    unsafe { boot::free_pages(ptr, num_pages) }.unwrap();
-}
+    /// Tests the `allocate_pool` boot service.
+    pub fn allocate_pool() {
+        let ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
 
-fn test_allocate_pool() {
-    let ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
-
-    // Verify the allocation can be written to.
-    {
-        let ptr = ptr.as_ptr();
-        unsafe { ptr.write_volatile(0xff) };
-        unsafe { ptr.add(9).write_volatile(0xff) };
+        // Verify the allocation can be written to.
+        {
+            let ptr = ptr.as_ptr();
+            unsafe { ptr.write_volatile(0xff) };
+            unsafe { ptr.add(9).write_volatile(0xff) };
+        }
+        unsafe { boot::free_pool(ptr) }.unwrap();
     }
-    unsafe { boot::free_pool(ptr) }.unwrap();
 }
 
-// Simple test to ensure our custom allocator works with the `alloc` crate.
-fn vec_alloc() {
-    info!("Allocating a vector through the `alloc` crate");
+/// Tests that use [`uefi::allocator::Allocator`], which is configured as the
+/// global allocator.
+mod global {
+    /// Simple test to ensure our custom allocator works with the `alloc` crate.
+    pub fn alloc_vec() {
+        info!("Allocating a vector through the `alloc` crate");
 
-    #[allow(clippy::useless_vec)]
-    let mut values = vec![-5, 16, 23, 4, 0];
+        #[allow(clippy::useless_vec)]
+        let mut values = vec![-5, 16, 23, 4, 0];
 
-    values.sort_unstable();
+        values.sort_unstable();
 
-    assert_eq!(values[..], [-5, 0, 4, 16, 23], "Failed to sort vector");
-}
+        assert_eq!(values[..], [-5, 0, 4, 16, 23], "Failed to sort vector");
+    }
 
-// Simple test to ensure our custom allocator works with correct alignment.
-fn alloc_alignment() {
-    info!("Allocating a structure with alignment to 0x100");
+    /// Simple test to ensure our custom allocator works with correct alignment.
+    pub fn alloc_alignment() {
+        info!("Allocating a structure with alignment to 0x100");
 
-    #[repr(align(0x100))]
-    struct Block(
-        // Ignore warning due to field not being read.
-        #[allow(dead_code)] [u8; 0x100],
-    );
+        #[repr(align(0x100))]
+        struct Block(
+            // Ignore warning due to field not being read.
+            #[allow(dead_code)] [u8; 0x100],
+        );
 
-    let value = vec![Block([1; 0x100])];
-    assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
+        let value = vec![Block([1; 0x100])];
+        assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
+    }
 }
 
 fn test_memory_map() {

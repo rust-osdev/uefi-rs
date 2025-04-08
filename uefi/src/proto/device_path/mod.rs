@@ -77,6 +77,7 @@
 
 pub mod build;
 pub mod text;
+pub mod util;
 
 mod device_path_gen;
 pub use device_path_gen::{
@@ -84,6 +85,7 @@ pub use device_path_gen::{
 };
 pub use uefi_raw::protocol::device_path::{DeviceSubType, DeviceType};
 
+use crate::mem::PoolAllocation;
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
@@ -94,6 +96,7 @@ use ptr_meta::Pointee;
 use {
     crate::boot::{self, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, SearchType},
     crate::proto::device_path::text::{AllowShortcuts, DevicePathToText, DisplayOnly},
+    crate::proto::device_path::util::DevicePathUtilities,
     crate::{CString16, Identify},
     alloc::borrow::ToOwned,
     alloc::boxed::Box,
@@ -106,6 +109,30 @@ opaque_type! {
     /// type produces a thin pointer, unlike [`DevicePath`] and
     /// [`DevicePathNode`].
     pub struct FfiDevicePath;
+}
+
+/// Device path allocated from UEFI pool memory.
+#[derive(Debug)]
+pub struct PoolDevicePath(pub(crate) PoolAllocation);
+
+impl Deref for PoolDevicePath {
+    type Target = DevicePath;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { DevicePath::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
+    }
+}
+
+/// Device path node allocated from UEFI pool memory.
+#[derive(Debug)]
+pub struct PoolDevicePathNode(pub(crate) PoolAllocation);
+
+impl Deref for PoolDevicePathNode {
+    type Target = DevicePathNode;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { DevicePathNode::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
+    }
 }
 
 /// Header that appears at the start of every [`DevicePathNode`].
@@ -499,6 +526,25 @@ impl DevicePath {
             })
             .map_err(|_| DevicePathToTextError::OutOfMemory)
     }
+
+    /// Allocates and returns a new [`DevicePath`] by copying this one and appending the given `right` path.
+    #[cfg(feature = "alloc")]
+    pub fn append_path(&self, right: &Self) -> Result<PoolDevicePath, DevicePathUtilitiesError> {
+        open_utility_protocol()?
+            .append_path(self, right)
+            .map_err(|_| DevicePathUtilitiesError::OutOfMemory)
+    }
+
+    /// Allocates and returns a new [`DevicePath`] by copying this one and appending the given `right` node.
+    #[cfg(feature = "alloc")]
+    pub fn append_node(
+        &self,
+        right: &DevicePathNode,
+    ) -> Result<PoolDevicePath, DevicePathUtilitiesError> {
+        open_utility_protocol()?
+            .append_node(self, right)
+            .map_err(|_| DevicePathUtilitiesError::OutOfMemory)
+    }
 }
 
 impl Debug for DevicePath {
@@ -743,6 +789,63 @@ fn open_text_protocol() -> Result<ScopedProtocol<DevicePathToText>, DevicePathTo
         )
     }
     .map_err(DevicePathToTextError::CantOpenProtocol)
+}
+
+/// Errors that may occur when working with the [`DevicePathUtilities`] protocol.
+///
+/// These errors are typically encountered during operations involving device
+/// paths, such as appending or manipulating path segments.
+#[derive(Debug)]
+pub enum DevicePathUtilitiesError {
+    /// Can't locate a handle buffer with handles associated with the
+    /// [`DevicePathUtilities`] protocol.
+    CantLocateHandleBuffer(crate::Error),
+    /// No handle supporting the [`DevicePathUtilities`] protocol was found.
+    NoHandle,
+    /// The handle supporting the [`DevicePathUtilities`] protocol exists but
+    /// it could not be opened.
+    CantOpenProtocol(crate::Error),
+    /// Memory allocation failed during device path operations.
+    OutOfMemory,
+}
+
+impl Display for DevicePathUtilitiesError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl core::error::Error for DevicePathUtilitiesError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::CantLocateHandleBuffer(e) => Some(e),
+            Self::CantOpenProtocol(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+/// Helper function to open the [`DevicePathUtilities`] protocol using the boot
+/// services.
+#[cfg(feature = "alloc")]
+fn open_utility_protocol() -> Result<ScopedProtocol<DevicePathUtilities>, DevicePathUtilitiesError>
+{
+    let &handle = boot::locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))
+        .map_err(DevicePathUtilitiesError::CantLocateHandleBuffer)?
+        .first()
+        .ok_or(DevicePathUtilitiesError::NoHandle)?;
+
+    unsafe {
+        boot::open_protocol::<DevicePathUtilities>(
+            OpenProtocolParams {
+                handle,
+                agent: boot::image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+    }
+    .map_err(DevicePathUtilitiesError::CantOpenProtocol)
 }
 
 #[cfg(test)]

@@ -23,6 +23,8 @@ pub fn test() {
     test_convert_text_to_device_path();
     test_convert_text_to_device_node();
 
+    test_device_path_append();
+
     // Get the current executable's device path via the `LoadedImage` protocol.
     let loaded_image = boot::open_protocol_exclusive::<LoadedImage>(boot::image_handle()).unwrap();
     let device_path =
@@ -217,5 +219,32 @@ fn test_convert_text_to_device_node() {
             .convert_text_to_device_node(cstr16!("Ata(Primary,Master,0x1)"))
             .unwrap(),
         expected_node,
+    );
+}
+
+/// Test `DevicePath::DevicePath::append_path()` and `DevicePath::DevicePath::append_node()`
+fn test_device_path_append() {
+    let path = create_test_device_path();
+    let path2 = create_test_device_path();
+    let node = path.node_iter().next().unwrap();
+
+    assert_eq!(
+        path.to_string(DisplayOnly(false), AllowShortcuts(false))
+            .unwrap(),
+        cstr16!("Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)")
+    );
+    assert_eq!(
+        node.to_string(DisplayOnly(false), AllowShortcuts(false))
+            .unwrap(),
+        cstr16!("Ata(Primary,Master,0x1)")
+    );
+
+    assert_eq!(
+        path.append_path(&path2).unwrap().to_string(DisplayOnly(false), AllowShortcuts(false)).unwrap(),
+        cstr16!("Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)")
+    );
+    assert_eq!(
+        path.append_node(node).unwrap().to_string(DisplayOnly(false), AllowShortcuts(false)).unwrap(),
+        cstr16!("Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)")
     );
 }

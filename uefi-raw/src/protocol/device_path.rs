@@ -8,22 +8,29 @@ pub use device_path_gen::{acpi, bios_boot_spec, end, hardware, media, messaging}
 
 /// Device path protocol.
 ///
-/// A device path contains one or more device path instances made of up
+/// A device path contains one or more device path instances made up of
 /// variable-length nodes.
 ///
 /// Note that the fields in this struct define the header at the start of each
 /// node; a device path is typically larger than these four bytes.
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct DevicePathProtocol {
     pub major_type: DeviceType,
     pub sub_type: DeviceSubType,
+    /// Total length of the type including the fixed header as u16 in LE order.
     pub length: [u8; 2],
     // followed by payload (dynamically sized)
 }
 
 impl DevicePathProtocol {
     pub const GUID: Guid = guid!("09576e91-6d3f-11d2-8e39-00a0c969723b");
+
+    /// Returns the total length of the device path node.
+    #[must_use]
+    pub const fn length(&self) -> u16 {
+        u16::from_le_bytes(self.length)
+    }
 }
 
 newtype_enum! {
@@ -251,4 +258,18 @@ pub struct DevicePathUtilitiesProtocol {
 
 impl DevicePathUtilitiesProtocol {
     pub const GUID: Guid = guid!("0379be4e-d706-437d-b037-edb82fb772a4");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::mem;
+
+    /// Test that ensures the struct is packed. Thus, we don't need to
+    /// explicitly specify `packed`.
+    #[test]
+    fn abi() {
+        assert_eq!(mem::size_of::<DevicePathProtocol>(), 4);
+        assert_eq!(mem::align_of::<DevicePathProtocol>(), 1);
+    }
 }

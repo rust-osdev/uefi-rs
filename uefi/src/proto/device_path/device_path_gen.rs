@@ -3669,14 +3669,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::END, DeviceSubType::END_INSTANCE, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::END,
-                            sub_type: DeviceSubType::END_INSTANCE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                 }
             }
         }
@@ -3696,14 +3693,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::END, DeviceSubType::END_ENTIRE, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::END,
-                            sub_type: DeviceSubType::END_ENTIRE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                 }
             }
         }
@@ -3731,14 +3725,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::HARDWARE,
+                    DeviceSubType::HARDWARE_PCI,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::HARDWARE,
-                            sub_type: DeviceSubType::HARDWARE_PCI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -3768,14 +3762,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::HARDWARE,
+                    DeviceSubType::HARDWARE_PCCARD,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::HARDWARE,
-                            sub_type: DeviceSubType::HARDWARE_PCCARD,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -3805,14 +3799,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::HARDWARE,
+                    DeviceSubType::HARDWARE_MEMORY_MAPPED,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::HARDWARE,
-                            sub_type: DeviceSubType::HARDWARE_MEMORY_MAPPED,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<MemoryType>()
@@ -3848,14 +3842,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::HARDWARE,
+                    DeviceSubType::HARDWARE_VENDOR,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::HARDWARE,
-                            sub_type: DeviceSubType::HARDWARE_VENDOR,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<Guid>()
@@ -3888,14 +3882,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::HARDWARE,
+                    DeviceSubType::HARDWARE_CONTROLLER,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::HARDWARE,
-                            sub_type: DeviceSubType::HARDWARE_CONTROLLER,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u32>()
@@ -3926,14 +3920,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::HARDWARE,
+                    DeviceSubType::HARDWARE_BMC,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::HARDWARE,
-                            sub_type: DeviceSubType::HARDWARE_BMC,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<device_path::hardware::BmcInterfaceType>()
@@ -3971,14 +3965,10 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::ACPI,
-                            sub_type: DeviceSubType::ACPI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).cast::<u32>().write_unaligned(self.hid);
                     out_ptr.add(8usize).cast::<u32>().write_unaligned(self.uid);
                 }
@@ -4027,14 +4017,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI_EXPANDED, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::ACPI,
-                            sub_type: DeviceSubType::ACPI_EXPANDED,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     let mut dst_group_offset = 0;
                     out_ptr.add(4usize).cast::<u32>().write_unaligned(self.hid);
                     out_ptr.add(8usize).cast::<u32>().write_unaligned(self.uid);
@@ -4076,14 +4063,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI_ADR, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::ACPI,
-                            sub_type: DeviceSubType::ACPI_ADR,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.adr
                         .as_ptr()
                         .cast::<u8>()
@@ -4109,14 +4093,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI_NVDIMM, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::ACPI,
-                            sub_type: DeviceSubType::ACPI_NVDIMM,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u32>()
@@ -4173,14 +4154,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_ATAPI,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_ATAPI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<device_path::messaging::PrimarySecondary>()
@@ -4216,14 +4197,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_SCSI,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_SCSI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u16>()
@@ -4255,14 +4236,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_FIBRE_CHANNEL,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_FIBRE_CHANNEL,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
                     out_ptr
                         .add(8usize)
@@ -4295,14 +4276,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_FIBRE_CHANNEL_EX,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_FIBRE_CHANNEL_EX,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
                     out_ptr
                         .add(8usize)
@@ -4334,14 +4315,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_1394,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_1394,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
                     out_ptr
                         .add(8usize)
@@ -4370,14 +4351,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_USB,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_USB,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -4414,14 +4395,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_SATA,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_SATA,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u16>()
@@ -4461,14 +4442,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_USB_WWID,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_USB_WWID,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u16>()
@@ -4509,14 +4490,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_DEVICE_LOGICAL_UNIT,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_DEVICE_LOGICAL_UNIT,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -4550,14 +4531,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_USB_CLASS,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_USB_CLASS,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u16>()
@@ -4599,14 +4580,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_I2O,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_I2O,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u32>()
@@ -4635,14 +4616,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_MAC_ADDRESS,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_MAC_ADDRESS,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 32usize]>()
@@ -4687,14 +4668,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_IPV4,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_IPV4,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 4usize]>()
@@ -4763,14 +4744,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_IPV6,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_IPV6,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 16usize]>()
@@ -4824,14 +4805,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_VLAN,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_VLAN,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u16>()
@@ -4867,14 +4848,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_INFINIBAND,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_INFINIBAND,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<device_path::messaging::InfinibandResourceFlags>()
@@ -4922,14 +4903,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_UART,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_UART,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
                     out_ptr
                         .add(8usize)
@@ -4970,14 +4951,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_VENDOR,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_VENDOR,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<Guid>()
@@ -5016,14 +4997,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_SCSI_SAS_EX,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_SCSI_SAS_EX,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 8usize]>()
@@ -5074,14 +5055,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_ISCSI,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_ISCSI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<device_path::messaging::IscsiProtocol>()
@@ -5130,14 +5111,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_NVME_NAMESPACE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_NVME_NAMESPACE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u32>()
@@ -5167,14 +5148,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_URI,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_URI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.value
                         .as_ptr()
                         .cast::<u8>()
@@ -5202,14 +5183,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_UFS,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_UFS,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -5239,14 +5220,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_SD,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_SD,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -5272,14 +5253,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_BLUETOOTH,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_BLUETOOTH,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 6usize]>()
@@ -5305,14 +5286,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_WIFI,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_WIFI,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 32usize]>()
@@ -5338,14 +5319,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_EMMC,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_EMMC,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u8>()
@@ -5373,14 +5354,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_BLUETOOTH_LE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_BLUETOOTH_LE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 6usize]>()
@@ -5412,14 +5393,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_DNS,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_DNS,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<device_path::messaging::DnsAddressType>()
@@ -5449,14 +5430,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_NVDIMM_NAMESPACE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_NVDIMM_NAMESPACE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<[u8; 16usize]>()
@@ -5488,14 +5469,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_REST_SERVICE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_REST_SERVICE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<device_path::messaging::RestServiceType>()
@@ -5531,14 +5512,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MESSAGING,
+                    DeviceSubType::MESSAGING_NVME_OF_NAMESPACE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MESSAGING,
-                            sub_type: DeviceSubType::MESSAGING_NVME_OF_NAMESPACE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).cast::<u8>().write_unaligned(self.nidt);
                     out_ptr
                         .add(5usize)
@@ -5624,14 +5605,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MEDIA,
+                    DeviceSubType::MEDIA_HARD_DRIVE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_HARD_DRIVE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u32>()
@@ -5682,14 +5663,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_CD_ROM, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_CD_ROM,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u32>()
@@ -5725,14 +5703,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_VENDOR, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_VENDOR,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<Guid>()
@@ -5765,14 +5740,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MEDIA,
+                    DeviceSubType::MEDIA_FILE_PATH,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_FILE_PATH,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.path_name
                         .as_ptr()
                         .cast::<u8>()
@@ -5798,14 +5773,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_PROTOCOL, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_PROTOCOL,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<Guid>()
@@ -5831,14 +5803,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MEDIA,
+                    DeviceSubType::MEDIA_PIWG_FIRMWARE_FILE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_PIWG_FIRMWARE_FILE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.data
                         .as_ptr()
                         .cast::<u8>()
@@ -5864,14 +5836,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MEDIA,
+                    DeviceSubType::MEDIA_PIWG_FIRMWARE_VOLUME,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_PIWG_FIRMWARE_VOLUME,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.data
                         .as_ptr()
                         .cast::<u8>()
@@ -5899,14 +5871,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::MEDIA,
+                    DeviceSubType::MEDIA_RELATIVE_OFFSET_RANGE,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_RELATIVE_OFFSET_RANGE,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
                     out_ptr
                         .add(8usize)
@@ -5943,14 +5915,11 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header =
+                    DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_RAM_DISK, length);
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::MEDIA,
-                            sub_type: DeviceSubType::MEDIA_RAM_DISK,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u64>()
@@ -6024,14 +5993,14 @@ pub mod build {
                 let size = usize::from(self.size_in_bytes().unwrap());
                 assert_eq!(size, out.len());
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::BIOS_BOOT_SPEC,
+                    DeviceSubType::BIOS_BOOT_SPECIFICATION,
+                    length,
+                );
                 unsafe {
-                    out_ptr
-                        .cast::<DevicePathHeader>()
-                        .write_unaligned(DevicePathHeader {
-                            device_type: DeviceType::BIOS_BOOT_SPEC,
-                            sub_type: DeviceSubType::BIOS_BOOT_SPECIFICATION,
-                            length: u16::try_from(size).unwrap(),
-                        });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
                         .add(4usize)
                         .cast::<u16>()

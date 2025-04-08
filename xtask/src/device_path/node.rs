@@ -473,12 +473,14 @@ impl Node {
                 assert_eq!(size, out.len());
 
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+                let length = u16::try_from(size).unwrap();
+                let header = DevicePathHeader::new(
+                    DeviceType::#device_type,
+                    DeviceSubType::#sub_type,
+                    length,
+                );
                 unsafe {
-                    out_ptr.cast::<DevicePathHeader>().write_unaligned(DevicePathHeader {
-                        device_type: DeviceType::#device_type,
-                        sub_type: DeviceSubType::#sub_type,
-                        length: u16::try_from(size).unwrap(),
-                    });
+                    out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     #(#copy_stmts)*
                 }
             }

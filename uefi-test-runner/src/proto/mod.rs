@@ -13,6 +13,10 @@ pub fn test() {
     test_protocols_per_handle();
     test_test_protocol();
 
+    // disable the ATA test on aarch64 for now. The aarch64 UEFI Firmware does not yet seem
+    // to support SATA controllers (and providing an AtaPassThru protocol instance for them).
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    ata::test();
     debug::test();
     device_path::test();
     driver::test();
@@ -62,6 +66,8 @@ fn test_test_protocol() {
     .unwrap());
 }
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+mod ata;
 mod console;
 mod debug;
 mod device_path;

@@ -31,7 +31,7 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct AtaPassThruMode {
     pub attributes: AtaPassThruAttributes,
@@ -76,37 +76,37 @@ newtype_enum! {
 #[repr(C)]
 pub struct AtaStatusBlock {
     pub reserved1: [u8; 2],
-    pub ata_status: u8,
-    pub ata_error: u8,
-    pub ata_sector_number: u8,
-    pub ata_cylinder_low: u8,
-    pub ata_cylinder_high: u8,
-    pub ata_device_head: u8,
-    pub ata_sector_number_exp: u8,
-    pub ata_cylinder_low_exp: u8,
-    pub ata_cylinder_high_exp: u8,
+    pub status: u8,
+    pub error: u8,
+    pub sector_number: u8,
+    pub cylinder_low: u8,
+    pub cylinder_high: u8,
+    pub device_head: u8,
+    pub sector_number_exp: u8,
+    pub cylinder_low_exp: u8,
+    pub cylinder_high_exp: u8,
     pub reserved2: u8,
-    pub ata_sector_count: u8,
-    pub ata_sector_count_exp: u8,
+    pub sector_count: u8,
+    pub sector_count_exp: u8,
     pub reserved3: [u8; 6],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[repr(C)]
 pub struct AtaCommandBlock {
     pub reserved1: [u8; 2],
-    pub ata_command: u8,
-    pub ata_features: u8,
-    pub ata_sector_number: u8,
-    pub ata_cylinder_low: u8,
-    pub ata_cylinder_high: u8,
-    pub ata_device_head: u8,
-    pub ata_sector_number_exp: u8,
-    pub ata_cylinder_low_exp: u8,
-    pub ata_cylinder_high_exp: u8,
-    pub ata_features_exp: u8,
-    pub ata_sector_count: u8,
-    pub ata_sector_count_exp: u8,
+    pub command: u8,
+    pub features: u8,
+    pub sector_number: u8,
+    pub cylinder_low: u8,
+    pub cylinder_high: u8,
+    pub device_head: u8,
+    pub sector_number_exp: u8,
+    pub cylinder_low_exp: u8,
+    pub cylinder_high_exp: u8,
+    pub features_exp: u8,
+    pub sector_count: u8,
+    pub sector_count_exp: u8,
     pub reserved2: [u8; 6],
 }
 
@@ -118,6 +118,8 @@ pub struct AtaPassThruCommandPacket {
     pub timeout: u64,
     pub in_data_buffer: *mut c_void,
     pub out_data_buffer: *const c_void,
+    pub in_transfer_length: u32,
+    pub out_transfer_length: u32,
     pub protocol: AtaPassThruCommandProtocol,
     pub length: AtaPassThruLength,
 }
@@ -131,7 +133,7 @@ pub struct AtaPassThruProtocol {
         port: u16,
         port_multiplier_port: u16,
         packet: *mut AtaPassThruCommandPacket,
-        event: *mut Event,
+        event: Event,
     ) -> Status,
     pub get_next_port: unsafe extern "efiapi" fn(this: *const Self, port: *mut u16) -> Status,
     pub get_next_device: unsafe extern "efiapi" fn(
@@ -143,7 +145,7 @@ pub struct AtaPassThruProtocol {
         this: *const Self,
         port: u16,
         port_multiplier_port: u16,
-        device_path: *mut *mut DevicePathProtocol,
+        device_path: *mut *const DevicePathProtocol,
     ) -> Status,
     pub get_device: unsafe extern "efiapi" fn(
         this: *const Self,

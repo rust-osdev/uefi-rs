@@ -8,7 +8,9 @@ use core::ptr;
 
 pub use uefi_raw::protocol::rng::RngAlgorithmType;
 
-/// Rng protocol
+/// Random Number Generator [`Protocol`] (RNG).
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(uefi_raw::protocol::rng::RngProtocol::GUID)]

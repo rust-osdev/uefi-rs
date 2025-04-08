@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Protocol definitions.
-//!
-//! Protocols are sets of related functionality identified by a unique
-//! ID. They can be implemented by a UEFI driver or occasionally by a
-//! UEFI application.
+//! High-level wrappers for [UEFI protocols].
 //!
 //! See the [`boot`] documentation for details of how to open a protocol.
 //!
 //! [`boot`]: crate::boot#accessing-protocols
+//! [UEFI protocols]: uefi_raw::protocol
 
 pub mod console;
 pub mod debug;

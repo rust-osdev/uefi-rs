@@ -62,7 +62,7 @@ macro_rules! shim_function {
     (fn $args:tt -> $return_type:ty) => (extern "C" fn $args -> $return_type)
 }
 
-/// The Shim lock protocol.
+/// Shim Lock [`Protocol`].
 ///
 /// This protocol is not part of the UEFI specification, but is
 /// installed by the [Shim bootloader](https://github.com/rhboot/shim)
@@ -72,6 +72,8 @@ macro_rules! shim_function {
 /// application may itself be a bootloader that needs to validate
 /// another EFI application before running it, and the shim lock
 /// protocol exists to support that.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("605dab50-e046-4300-abb6-3dd810dd8b23")]

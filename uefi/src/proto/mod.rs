@@ -67,7 +67,7 @@ use core::ffi::c_void;
 #[cfg(doc)]
 use crate::boot;
 
-/// Marker trait for structures that represent UEFI protocols.
+/// Marker trait for structures that represent [UEFI protocols].
 ///
 /// Implementing this trait allows a protocol to be opened with
 /// [`boot::open_protocol`] or [`boot::open_protocol_exclusive`]. Note that
@@ -88,9 +88,11 @@ use crate::boot;
 ///
 /// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
 /// ```
+///
+/// [UEFI protocols]: uefi_raw::protocol
 pub trait Protocol: Identify {}
 
-/// Trait for creating a protocol pointer from a [`c_void`] pointer.
+/// Trait for creating a [`Protocol`] pointer from a [`c_void`] pointer.
 ///
 /// There is a blanket implementation for all [`Sized`] protocols that
 /// simply casts the pointer to the appropriate type. Protocols that

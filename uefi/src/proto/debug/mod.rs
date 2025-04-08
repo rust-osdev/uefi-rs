@@ -23,6 +23,8 @@ pub use exception::ExceptionType;
 mod context;
 mod exception;
 
+/// Debug support [`Protocol`].
+///
 /// The debugging support protocol allows debuggers to connect to a UEFI machine.
 /// It is expected that there will typically be two instances of the EFI Debug Support protocol in the system.
 /// One associated with the native processor instruction set (IA-32, x64, ARM, RISC-V, or Itanium processor
@@ -31,6 +33,8 @@ mod exception;
 /// one for any given instruction set.
 ///
 /// NOTE: OVMF only implements this protocol interface for the virtual EBC processor
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("2755590c-6f3c-42fa-9ea4-a3ba543cda25")]
@@ -178,8 +182,12 @@ pub enum ProcessorArch: u32 => {
     RISCV_128   = 0x5128,
 }}
 
+/// Debug Port [`Protocol`].
+///
 /// The debug port protocol abstracts the underlying debug port
 /// hardware, whether it is a regular Serial port or something else.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("eba4e8d2-3858-41ec-a281-2647ba9660d0")]

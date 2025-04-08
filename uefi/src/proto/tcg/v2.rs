@@ -556,12 +556,11 @@ impl<'a> Iterator for EventLogIter<'a> {
     }
 }
 
-/// Protocol for interacting with TPM devices.
-///
-/// This protocol can be used for interacting with older TPM 1.1/1.2
-/// devices, but most firmware only uses it for TPM 2.0.
+/// Trusted Computing Group [`Protocol`] (TCG) for TPM 2.0 devices.
 ///
 /// The corresponding C type is `EFI_TCG2_PROTOCOL`.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(Tcg2Protocol::GUID)]

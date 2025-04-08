@@ -7,9 +7,13 @@ use crate::{Result, StatusExt};
 use core::ops::Range;
 use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
 
+/// Memory Attribute [`Protocol`] for Memory Protection.
+///
 /// Protocol for getting and setting memory protection attributes.
 ///
 /// Corresponds to the C type `EFI_MEMORY_ATTRIBUTE_PROTOCOL`.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[repr(transparent)]
 #[derive(Debug)]
 #[unsafe_protocol(MemoryAttributeProtocol::GUID)]

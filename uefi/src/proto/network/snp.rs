@@ -18,7 +18,9 @@ use core::ffi::c_void;
 use core::ptr;
 use core::ptr::NonNull;
 
-/// The Simple Network Protocol
+/// Simple Network [`Protocol`].
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("a19832b9-ac25-11d3-9a2d-0090273fc14d")]

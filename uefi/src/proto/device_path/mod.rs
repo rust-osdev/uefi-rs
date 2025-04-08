@@ -374,17 +374,40 @@ impl ToOwned for DevicePathInstance {
 
 /// Device Path [`Protocol`].
 ///
-/// Can be used on any device handle to obtain generic path/location information
-/// concerning the physical device or logical device. If the handle does not
-/// logically map to a physical device, the handle may not necessarily support
-/// the device path protocol. The device path describes the location of the
-/// device the handle is for. The size of the Device Path can be determined from
-/// the structures that make up the Device Path.
+/// A UEFI device path is a structured sequence of binary nodes that describe a
+/// route from the UEFI root to a particular device, controller, or file. Each
+/// node represents a step in the path: PCI device, partition, filesystem, file
+/// path, etc.
+///
+/// This type implements [`DevicePathProtocol`] and therefore can be used on any
+/// device handle to obtain generic path/location information concerning the
+/// physical device or logical device. If the handle does not logically map to a
+/// physical device, the handle may not necessarily support the device path
+/// protocol. The device path describes the location of the device the handle is
+/// for. The size of the Device Path can be determined from the structures that
+/// make up the Device Path.
 ///
 /// See the [module-level documentation] for more details.
 ///
+/// # Example
+/// ```rust,no_run
+/// use uefi::Handle;
+/// use uefi::boot::{open_protocol_exclusive, ScopedProtocol};
+/// use uefi::proto::device_path::DevicePath;
+/// use uefi::proto::loaded_image::LoadedImage;
+///
+/// fn open_device_path(image_handle: Handle) {
+///     let loaded_image = open_protocol_exclusive::<LoadedImage>(image_handle).unwrap();
+///     let device_handle = loaded_image.device().unwrap();
+///     // We use `DevicePath` as protocol and also as return type.
+///     let device_path: ScopedProtocol<DevicePath>
+///         = open_protocol_exclusive::<DevicePath>(device_handle).unwrap();
+/// }
+/// ```
+///
 /// [module-level documentation]: crate::proto::device_path
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
+/// [`DevicePathProtocol`]: uefi_raw::protocol::device_path::DevicePathProtocol
 /// [`Protocol`]: uefi::proto::Protocol
 #[repr(C, packed)]
 #[unsafe_protocol(uefi_raw::protocol::device_path::DevicePathProtocol::GUID)]

@@ -225,7 +225,7 @@ pub unsafe trait BuildNode {
 
 unsafe impl BuildNode for &DevicePathNode {
     fn size_in_bytes(&self) -> Result<u16, BuildError> {
-        Ok(self.header.length)
+        Ok(self.header.length())
     }
 
     fn write_data(&self, out: &mut [MaybeUninit<u8>]) {

@@ -221,7 +221,11 @@ newtype_enum! {
     }
 }
 
+/// Partition Info [`Protocol`].
+///
 /// Protocol for accessing partition information.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[allow(missing_debug_implementations)]
 #[repr(C)]
 #[repr(packed)]

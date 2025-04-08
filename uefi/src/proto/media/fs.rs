@@ -8,7 +8,8 @@ use crate::{Result, StatusExt};
 use core::ptr;
 use uefi_raw::protocol::file_system::SimpleFileSystemProtocol;
 
-/// Allows access to a FAT-12/16/32 file system.
+/// Simple File System [`Protocol`]. Allows access to a FAT-12/16/32 file
+/// system.
 ///
 /// This interface is implemented by some storage devices
 /// to allow file access to the contained file systems.
@@ -22,6 +23,7 @@ use uefi_raw::protocol::file_system::SimpleFileSystemProtocol;
 ///
 /// [`boot::get_image_file_system`]: crate::boot::get_image_file_system
 /// [`boot`]: crate::boot#accessing-protocols
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleFileSystemProtocol::GUID)]

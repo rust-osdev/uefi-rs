@@ -9,10 +9,17 @@ use uefi_raw::protocol::misc::{
 use crate::proto::unsafe_protocol;
 use crate::{Result, StatusExt};
 
+/// Timestamp [`Protocol`].
+///
 /// Protocol for retrieving a high-resolution timestamp counter.
-/// **Note:**
-/// If your UEFI firmware not support timestamp protocol which first added at UEFI spec 2.4 2013.
-/// you also could use `RDTSC` in rust, here is a demo [Slint-UI](https://github.com/slint-ui/slint/blob/2c0ba2bc0f151eba8d1fa17839fa2ac58832ca80/examples/uefi-demo/main.rs#L28-L62) who use uefi-rs.
+///
+/// # Note
+/// If your UEFI firmware not support timestamp protocol which first added at
+/// UEFI spec 2.4 2013. you also could use `RDTSC` in rust, here is a demo
+/// [Slint-UI](https://github.com/slint-ui/slint/blob/2c0ba2bc0f151eba8d1fa17839fa2ac58832ca80/examples/uefi-demo/main.rs#L28-L62)
+/// who use uefi-rs.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(TimestampProtocol::GUID)]
@@ -32,7 +39,11 @@ impl Timestamp {
     }
 }
 
+/// Reset Notification [`Protocol`].
+///
 /// Protocol to register for a notification when ResetSystem is called.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(ResetNotificationProtocol::GUID)]

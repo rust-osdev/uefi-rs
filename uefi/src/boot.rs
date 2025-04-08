@@ -1258,17 +1258,23 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
         .to_result_with_val(|| memory_map)
 }
 
-/// Exit UEFI boot services.
+/// Convenient wrapper to exit UEFI boot services along with corresponding
+/// essential steps to get the memory map.
+///
+/// Exiting UEFI boot services requires a **non-trivial sequence of steps**,
+/// including safe retrieval and finalization of the memory map. This wrapper
+/// ensures a safe and spec-compliant transition from UEFI boot services to
+/// runtime services by retrieving the system memory map and invoking
+/// `ExitBootServices()` with the correct memory map key, retrying if necessary.
 ///
 /// After this function completes, UEFI hands over control of the hardware
 /// to the executing OS loader, which implies that the UEFI boot services
 /// are shut down and cannot be used anymore. Only UEFI configuration tables
-/// and run-time services can be used.
+/// and runtime services can be used.
 ///
-/// The memory map at the time of exiting boot services returned. The map is
-/// backed by a pool allocation of the given `memory_type`. Since the boot
-/// services function to free that memory is no longer available after calling
-/// `exit_boot_services`, the allocation will not be freed on drop.
+/// Since the boot services function to free memory is no longer available after
+/// this function returns, the allocation will not be freed on drop. It will
+/// however be reflected by the memory map itself (self-contained).
 ///
 /// Note that once the boot services are exited, associated loggers and
 /// allocators can't use the boot services anymore. For the corresponding
@@ -1276,6 +1282,13 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 /// invoking this function will automatically disable them. If the
 /// `global_allocator` feature is enabled, attempting to use the allocator
 /// after exiting boot services will panic.
+///
+/// # Arguments
+/// - `custom_memory_type`: The [`MemoryType`] for the UEFI allocation that will
+///   store the final memory map. If you pass `None`, this defaults to the
+///   recommended default value of [`MemoryType::LOADER_DATA`]. If you want a
+///   specific memory region for the memory map, you can pass the desired
+///   [`MemoryType`].
 ///
 /// # Safety
 ///
@@ -1307,7 +1320,10 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 /// [`Output`]: crate::proto::console::text::Output
 /// [`PoolString`]: crate::proto::device_path::text::PoolString
 #[must_use]
-pub unsafe fn exit_boot_services(memory_type: MemoryType) -> MemoryMapOwned {
+pub unsafe fn exit_boot_services(custom_memory_type: Option<MemoryType>) -> MemoryMapOwned {
+    // LOADER_DATA is the default and also used by the Linux kernel:
+    // https://elixir.bootlin.com/linux/v6.13.7/source/drivers/firmware/efi/libstub/mem.c#L24
+    let memory_type = custom_memory_type.unwrap_or(MemoryType::LOADER_DATA);
     crate::helpers::exit();
 
     let mut buf = MemoryMapBackingMemory::new(memory_type).expect("Failed to allocate memory");

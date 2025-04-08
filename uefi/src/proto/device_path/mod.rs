@@ -1,28 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Device Path protocol
-//!
-//! A UEFI device path is a very flexible structure for encoding a
-//! programmatic path such as a hard drive or console.
-//!
-//! A device path is made up of a packed list of variable-length nodes of
-//! various types. The entire device path is terminated with an
-//! [`END_ENTIRE`] node. A device path _may_ contain multiple device-path
-//! instances separated by [`END_INSTANCE`] nodes, but typical paths contain
-//! only a single instance (in which case no `END_INSTANCE` node is needed).
-//!
-//! Example of what a device path containing two instances (each comprised of
-//! three nodes) might look like:
-//!
-//! ```text
-//! ┌──────┬─────┬──────────────╥───────┬──────────┬────────────┐
-//! │ ACPI │ PCI │ END_INSTANCE ║ CDROM │ FILEPATH │ END_ENTIRE │
-//! └──────┴─────┴──────────────╨───────┴──────────┴────────────┘
-//! ↑                           ↑                               ↑
-//! ├─── DevicePathInstance ────╨────── DevicePathInstance ─────┤
-//! │                                                           │
-//! └─────────────────── Entire DevicePath ─────────────────────┘
-//! ```
+//! High-level wrappers for the UEFI device path [`Protocol`], i.e.,
+//! [UEFI device paths].
 //!
 //! # Types
 //!
@@ -74,6 +53,7 @@
 //! [`Protocol`]: crate::proto::Protocol
 //! [`device_type`]: DevicePathNode::device_type
 //! [`sub_type`]: DevicePathNode::sub_type
+//! [UEFI device paths]: uefi_raw::protocol::device_path
 
 pub mod build;
 pub mod text;
@@ -92,7 +72,6 @@ use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::ops::Deref;
 use ptr_meta::Pointee;
-
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 #[cfg(feature = "alloc")]
 use {
@@ -400,21 +379,49 @@ impl ToOwned for DevicePathInstance {
     }
 }
 
-/// Device path protocol.
+/// High-level representation of the UEFI [device path protocol].
 ///
-/// Can be used on any device handle to obtain generic path/location information
-/// concerning the physical device or logical device. If the handle does not
-/// logically map to a physical device, the handle may not necessarily support
-/// the device path protocol. The device path describes the location of the
-/// device the handle is for. The size of the Device Path can be determined from
-/// the structures that make up the Device Path.
+/// This type represents an entire device path, possibly consisting of multiple
+/// [`DevicePathInstance`]s and [`DevicePathNode`]s.
 ///
 /// See the [module-level documentation] for more details.
 ///
+/// # Usage
+/// This type implements [`Protocol`] and therefore can be used on any
+/// device handle to obtain generic path/location information concerning the
+/// physical device or logical device. If the handle does not logically map to a
+/// physical device, the handle may not necessarily support the device path
+/// protocol. The device path describes the location of the device the handle is
+/// for. The size of the Device Path can be determined from the structures that
+/// make up the Device Path.
+///
+/// # Example
+/// ```rust,no_run
+/// use uefi::Handle;
+/// use uefi::boot::{open_protocol_exclusive, ScopedProtocol};
+/// use uefi::proto::device_path::DevicePath;
+/// use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
+/// use uefi::proto::loaded_image::LoadedImage;
+///
+/// fn open_device_path(image_handle: Handle) {
+///     let loaded_image = open_protocol_exclusive::<LoadedImage>(image_handle).unwrap();
+///     let device_handle = loaded_image.device().unwrap();
+///     let device_path: ScopedProtocol<DevicePath>
+///         = open_protocol_exclusive::<DevicePath>(device_handle).unwrap();
+///     log::debug!(
+///         "Device path: {}",
+///         device_path.to_string(DisplayOnly(true), AllowShortcuts(true)).unwrap()
+///     );
+/// }
+/// ```
+///
 /// [module-level documentation]: crate::proto::device_path
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
+/// [`DevicePathProtocol`]: uefi_raw::protocol::device_path::DevicePathProtocol
+/// [`Protocol`]: uefi::proto::Protocol
+/// [device path protocol]: uefi_raw::protocol::device_path
 #[repr(C, packed)]
-#[unsafe_protocol(uefi_raw::protocol::device_path::DevicePathProtocol::GUID)]
+#[unsafe_protocol(DevicePathProtocol::GUID)]
 #[derive(Eq, Pointee)]
 pub struct DevicePath {
     data: [u8],

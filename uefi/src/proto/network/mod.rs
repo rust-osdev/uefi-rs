@@ -4,6 +4,7 @@
 //!
 //! These protocols can be used to interact with network resources.
 
+pub mod ip4config2;
 pub mod pxe;
 pub mod snp;
 

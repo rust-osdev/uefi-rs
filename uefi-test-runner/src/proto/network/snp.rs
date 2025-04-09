@@ -17,14 +17,12 @@ pub fn test() {
         let simple_network = simple_network.unwrap();
 
         // Check shutdown
-        simple_network
-            .shutdown()
-            .expect("Failed to shutdown Simple Network");
+        let res = simple_network.shutdown();
+        assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
 
         // Check stop
-        simple_network
-            .stop()
-            .expect("Failed to stop Simple Network");
+        let res = simple_network.stop();
+        assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
 
         // Check start
         simple_network

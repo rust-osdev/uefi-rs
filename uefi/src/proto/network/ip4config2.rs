@@ -1,3 +1,4 @@
+#![cfg(feature = "alloc")]
 
 //! IP4 Config2 Protocol.
 

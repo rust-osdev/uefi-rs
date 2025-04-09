@@ -45,7 +45,7 @@ pub fn test() {
         // Set receive filters
         simple_network
             .receive_filters(
-                ReceiveFlags::UNICAST | ReceiveFlags::MULTICAST | ReceiveFlags::BROADCAST,
+                ReceiveFlags::UNICAST | ReceiveFlags::BROADCAST,
                 ReceiveFlags::empty(),
                 false,
                 None,

@@ -34,7 +34,10 @@ pub fn test() {
             .initialize(0, 0)
             .expect("Failed to initialize Simple Network");
 
-        simple_network.reset_statistics().unwrap();
+        // edk2 virtio-net driver does not support statistics, so
+        // allow UNSUPPORTED (same for collect_statistics below).
+        let res = simple_network.reset_statistics();
+        assert!(res == Ok(()) || res == Err(Status::UNSUPPORTED.into()));
 
         // Reading the interrupt status clears it
         simple_network.get_interrupt_status().unwrap();
@@ -111,13 +114,22 @@ pub fn test() {
         assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
 
         // Get stats
-        let stats = simple_network
-            .collect_statistics()
-            .expect("Failed to collect statistics");
-        info!("Stats: {:?}", stats);
+        let res = simple_network.collect_statistics();
+        match res {
+            Ok(stats) => {
+                info!("Stats: {:?}", stats);
 
-        // One frame should have been transmitted and one received
-        assert_eq!(stats.tx_total_frames().unwrap(), 1);
-        assert_eq!(stats.rx_total_frames().unwrap(), 1);
+                // One frame should have been transmitted and one received
+                assert_eq!(stats.tx_total_frames().unwrap(), 1);
+                assert_eq!(stats.rx_total_frames().unwrap(), 1);
+            }
+            Err(e) => {
+                if e == Status::UNSUPPORTED.into() {
+                    info!("Stats: unsupported.");
+                } else {
+                    panic!("{e}");
+                }
+            }
+        }
     }
 }

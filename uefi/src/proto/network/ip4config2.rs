@@ -1,4 +1,3 @@
-#![cfg(target_os = "uefi")]
 
 //! IP4 Config2 Protocol.
 

@@ -18,6 +18,8 @@ pub mod loaded_image;
 pub mod media;
 pub mod misc;
 pub mod network;
+#[cfg(feature = "alloc")]
+pub mod nvme;
 pub mod pi;
 pub mod rng;
 #[cfg(feature = "alloc")]

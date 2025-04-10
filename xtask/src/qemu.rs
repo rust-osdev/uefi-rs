@@ -489,6 +489,16 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     cmd.arg("-device"); // attach disk to SCSI controller
     cmd.arg("scsi-hd,drive=scsidisk0,vendor=uefi-rs,product=ExtScsiPassThru");
 
+    // Fourth (NVMe) disk for NvmePassThru tests
+    let nvme_test_disk = tmp_dir.join("test_disk3.empty.img");
+    std::fs::File::create(&nvme_test_disk)?.set_len(1024 * 1024 * 10)?;
+    cmd.arg("-drive");
+    let mut drive_arg = OsString::from("if=none,id=nvmedisk0,format=raw,file=");
+    drive_arg.push(nvme_test_disk.clone());
+    cmd.arg(drive_arg);
+    cmd.arg("-device");
+    cmd.arg("nvme,drive=nvmedisk0,serial=uefi-rsNvmePassThru");
+
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
     let serial_pipe = Pipe::new(tmp_dir, "serial")?;
 

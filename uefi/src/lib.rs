@@ -212,7 +212,7 @@
 //! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
-#![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
+#![cfg_attr(feature = "unstable", feature(allocator_api))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![no_std]
 #![deny(

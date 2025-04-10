@@ -8,6 +8,7 @@
 - Added `mem::AlignedBuffer`.
 - Added `proto::device_path::DevicePath::append_path()`.
 - Added `proto::device_path::DevicePath::append_node()`.
+- Added `proto::ata::pass_thru::AtaPassThru`.
 
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no

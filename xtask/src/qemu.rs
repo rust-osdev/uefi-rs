@@ -503,8 +503,10 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // examples since it slows down the boot some.
     let echo_service = if !opt.disable_network && opt.example.is_none() {
         cmd.args([
-            "-nic",
-            "user,model=e1000,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
+            "-netdev",
+            "user,id=net0,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
+            "-device",
+            "virtio-net-pci,netdev=net0",
         ]);
         Some(net::EchoService::start())
     } else {

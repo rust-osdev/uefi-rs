@@ -14,12 +14,13 @@ pub struct Input(SimpleTextInputProtocol);
 impl Input {
     /// Resets the input device hardware.
     ///
-    /// The `extended_verification` parameter is used to request that UEFI
-    /// performs an extended check and reset of the input device.
+    /// # Arguments
+    /// - `extended_verification`: Request that UEFI performs an extended check
+    ///   and reset of the input device.
     ///
     /// # Errors
-    ///
-    /// - `DeviceError` if the device is malfunctioning and cannot be reset.
+    /// - [`Status::DEVICE_ERROR`] if the device is malfunctioning and cannot
+    ///   be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
@@ -33,7 +34,6 @@ impl Input {
     /// [`wait_for_key_event`]: Self::wait_for_key_event
     ///
     /// # Errors
-    ///
     /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device
     ///
     /// # Examples

@@ -153,9 +153,8 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
         features.push(Feature::DebugSupport);
     }
 
-    // Enable the PXE test unless networking is disabled or the arch doesn't
-    // support it.
-    if *opt.target == UefiArch::X86_64 && !opt.disable_network {
+    // Enable the PXE test unless networking is disabled
+    if !opt.disable_network {
         features.push(Feature::Pxe);
     }
 

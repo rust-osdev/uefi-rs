@@ -11,6 +11,8 @@ use uefi_raw::protocol::nvme::{
     NvmExpressCommand, NvmExpressCommandCdwValidity, NvmExpressPassThruCommandPacket,
 };
 
+pub mod pass_thru;
+
 /// Represents the completion status of an NVMe command.
 ///
 /// This structure contains various fields related to the status and results

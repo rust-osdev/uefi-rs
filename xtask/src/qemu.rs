@@ -531,6 +531,12 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         None
     };
 
+    // Pass CA certificate database to the edk2 firmware, for TLS support.
+    cmd.args([
+        "-fw_cfg",
+        "name=etc/edk2/https/cacerts,file=uefi-test-runner/https/cacerts.bin",
+    ]);
+
     // Set up a software TPM if requested.
     let _tpm = if let Some(tpm_version) = opt.tpm {
         let tpm = Swtpm::spawn(tpm_version)?;

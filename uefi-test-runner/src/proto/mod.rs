@@ -25,6 +25,7 @@ pub fn test() {
     shell_params::test();
     string::test();
     misc::test();
+    scsi::test();
 
     #[cfg(any(
         target_arch = "x86",
@@ -73,6 +74,7 @@ mod misc;
 mod network;
 mod pi;
 mod rng;
+mod scsi;
 mod shell_params;
 #[cfg(any(
     target_arch = "x86",

@@ -186,7 +186,7 @@ pub struct ExtScsiPassThruMode {
 pub struct ExtScsiPassThruProtocol {
     pub passthru_mode: *const ExtScsiPassThruMode,
     pub pass_thru: unsafe extern "efiapi" fn(
-        this: *const Self,
+        this: *mut Self,
         target: *const u8,
         lun: u64,
         packet: *mut ScsiIoScsiRequestPacket,

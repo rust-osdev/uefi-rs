@@ -12,6 +12,11 @@
 - Added `NvmExpressPassThruProtocol`.
 - Added `AtaPassThruProtocol`.
 - Added `DevicePathUtilitiesProtocol`.
+- Added `length()` to `DevicePathProtocol` properly constructing the `u16` value
+
+## Changed
+- `DevicePathHeader` now derives
+  `Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash`
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

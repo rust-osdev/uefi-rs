@@ -89,8 +89,9 @@ use crate::mem::PoolAllocation;
 use crate::proto::{unsafe_protocol, ProtocolPointer};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
-use core::ops::Deref;
+use core::ops::{Deref, DerefMut};
 use ptr_meta::Pointee;
+use uefi_raw::protocol::device_path::DevicePathProtocol;
 
 #[cfg(feature = "alloc")]
 use {
@@ -137,15 +138,8 @@ impl Deref for PoolDevicePathNode {
 
 /// Header that appears at the start of every [`DevicePathNode`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(C, packed)]
-pub struct DevicePathHeader {
-    /// Type of device
-    pub device_type: DeviceType,
-    /// Sub type of device
-    pub sub_type: DeviceSubType,
-    /// Size (in bytes) of the [`DevicePathNode`], including this header.
-    pub length: u16,
-}
+#[repr(transparent)]
+pub struct DevicePathHeader(DevicePathProtocol);
 
 impl<'a> TryFrom<&'a [u8]> for &'a DevicePathHeader {
     type Error = ByteConversionError;
@@ -156,6 +150,20 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathHeader {
         } else {
             Err(ByteConversionError::InvalidLength)
         }
+    }
+}
+
+impl Deref for DevicePathHeader {
+    type Target = DevicePathProtocol;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DevicePathHeader {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -202,7 +210,7 @@ impl DevicePathNode {
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
         let header = unsafe { *ptr.cast::<DevicePathHeader>() };
 
-        let data_len = usize::from(header.length) - size_of::<DevicePathHeader>();
+        let data_len = usize::from(header.length()) - size_of::<DevicePathHeader>();
         unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), data_len) }
     }
 
@@ -216,25 +224,25 @@ impl DevicePathNode {
     /// Type of device
     #[must_use]
     pub const fn device_type(&self) -> DeviceType {
-        self.header.device_type
+        self.header.0.major_type
     }
 
     /// Sub type of device
     #[must_use]
     pub const fn sub_type(&self) -> DeviceSubType {
-        self.header.sub_type
+        self.header.0.sub_type
     }
 
     /// Tuple of the node's type and subtype.
     #[must_use]
     pub const fn full_type(&self) -> (DeviceType, DeviceSubType) {
-        (self.header.device_type, self.header.sub_type)
+        (self.header.0.major_type, self.header.0.sub_type)
     }
 
     /// Size (in bytes) of the full [`DevicePathNode`], including the header.
     #[must_use]
     pub const fn length(&self) -> u16 {
-        self.header.length
+        self.header.0.length()
     }
 
     /// True if this node ends an entire [`DevicePath`].
@@ -297,7 +305,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathNode {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let dp = <&DevicePathHeader>::try_from(bytes)?;
-        if usize::from(dp.length) <= bytes.len() {
+        if usize::from(dp.length()) <= bytes.len() {
             unsafe { Ok(DevicePathNode::from_ffi_ptr(bytes.as_ptr().cast())) }
         } else {
             Err(ByteConversionError::InvalidLength)

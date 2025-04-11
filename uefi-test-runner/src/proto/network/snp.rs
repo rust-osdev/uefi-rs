@@ -149,7 +149,21 @@ pub fn test() {
         frame.set_ethertype(EthernetProtocol::Ipv4);
         frame.check_len().unwrap();
 
-        log::debug!("frame: {:#x?}", buffer);
+        // log::debug!("frame: {:#x?}", buffer);
+
+        let mut ipv4_parsed = smoltcp::wire::Ipv4Packet::new_checked(frame.payload_mut()).unwrap();
+        log::debug!("ipv4: {:x?}", ipv4_parsed.src_addr());
+        log::debug!("ipv4: {:x?}", ipv4_parsed.dst_addr());
+        log::debug!("ipv4: {:?}", ipv4_parsed.hop_limit());
+        log::debug!("ipv4: {:?}", ipv4_parsed.header_len());
+        log::debug!("ipv4: {:?}", ipv4_parsed.total_len());
+        let mut udp_parsed = smoltcp::wire::UdpPacket::new_checked(ipv4_parsed.payload_mut()).unwrap();
+        log::debug!("udp: {:x?}", udp_parsed.src_port());
+        log::debug!("udp: {:x?}", udp_parsed.dst_port());
+        log::debug!("udp: {:x?}", udp_parsed.len());
+        let actual_payload = udp_parsed.payload_mut();
+        log::debug!("actual_payload: {:x?}", actual_payload);
+
 
 
         // Send the frame to ourselves

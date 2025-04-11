@@ -57,7 +57,7 @@ pub fn build_ipv4_udp_packet_smoltcp(
     // --- Build IPv4 header ---
     let mut ip_packet = Ipv4Packet::new_unchecked(&mut buf[..total_len]);
     ip_packet.set_version(4);
-    ip_packet.set_header_len(5 /* octets: 5 * 4 = 20 bytes */); 
+    ip_packet.set_header_len(5 /* octets: 5 * 4 = 20 bytes */);
     ip_packet.set_dscp(0);
     ip_packet.set_ecn(0);
     ip_packet.set_total_len(total_len as u16);

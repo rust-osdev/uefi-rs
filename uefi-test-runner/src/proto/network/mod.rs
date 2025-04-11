@@ -36,7 +36,7 @@ pub fn build_ipv4_udp_packet_smoltcp(
         }
     }
 
-    let total_len = IPV4_HEADER_LEN + UDP_HEADER_LEN + payload.len() + 10 /* why additional space necessary? */;
+    let total_len = IPV4_HEADER_LEN + UDP_HEADER_LEN + payload.len();
     let mut buf = vec![0; total_len];
     assert!(buf.len() >= total_len, "buffer too small");
 
@@ -46,16 +46,18 @@ pub fn build_ipv4_udp_packet_smoltcp(
     buf[PAYLOAD_BEGIN..PAYLOAD_BEGIN + payload.len()].copy_from_slice(payload);
 
     // --- Build UDP packet ---
-    let mut udp_packet = UdpPacket::new_checked(&mut buf[IPV4_HEADER_LEN..udp_payload_start]).unwrap();
+    let mut udp_packet = UdpPacket::new_unchecked(&mut buf[IPV4_HEADER_LEN..udp_payload_start + payload.len()]);
     udp_packet.set_src_port(src_port);
     udp_packet.set_dst_port(dst_port);
     udp_packet.set_len((UDP_HEADER_LEN + payload.len()) as u16);
     udp_packet.fill_checksum(&src_ip, &dst_ip);
+    // Check length after length was written to header.
+    udp_packet.check_len().unwrap();
 
     // --- Build IPv4 header ---
-    let mut ip_packet = Ipv4Packet::new_checked(&mut buf[..IPV4_HEADER_LEN]).unwrap();
+    let mut ip_packet = Ipv4Packet::new_unchecked(&mut buf[..total_len]);
     ip_packet.set_version(4);
-    ip_packet.set_header_len(5); // 5 * 4 = 20 bytes
+    ip_packet.set_header_len(5 /* octets: 5 * 4 = 20 bytes */); 
     ip_packet.set_dscp(0);
     ip_packet.set_ecn(0);
     ip_packet.set_total_len(total_len as u16);
@@ -64,8 +66,10 @@ pub fn build_ipv4_udp_packet_smoltcp(
     ip_packet.set_hop_limit(64);
     ip_packet.set_next_header(IpProtocol::Udp);
     ip_packet.set_src_addr(extract_ipv4(src_ip));
-    ip_packet.set_dst_addr(extract_ipv4(src_ip));
+    ip_packet.set_dst_addr(extract_ipv4(dst_ip));
     ip_packet.fill_checksum();
+    // Check length after length was written to header.
+    ip_packet.check_len().unwrap();
 
     buf
 }

@@ -2,6 +2,7 @@
 
 use crate::proto::network::{ build_ipv4_udp_packet_smoltcp};
 use alloc::string::ToString;
+use alloc::vec::Vec;
 use core::net::Ipv4Addr;
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams};
 use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
@@ -134,13 +135,20 @@ pub fn test() {
         let src_port = 0x5445; // "TE"
         let dst_port = 0x5444; // "TD"
         let payload = 0x1337_u16.to_ne_bytes();
-        let packet = build_ipv4_udp_packet_smoltcp(src_ip.into(), dst_ip.into(), src_port, dst_port, &payload);
+        let ipv4packet = build_ipv4_udp_packet_smoltcp(src_ip.into(), dst_ip.into(), src_port, dst_port, &payload);
+        
+        let mut buffer = Vec::<u8>::new();
+        buffer.extend_from_slice(&[0; smoltcp::wire::ETHERNET_HEADER_LEN]);
+        buffer.extend_from_slice(ipv4packet.as_slice());
+        log::debug!("packet: {:#?}", ipv4packet);
+
 
         // Send the frame to ourselves
         simple_network
             .transmit(
                 simple_network.mode().media_header_size as usize,
-                &packet,
+                // We send: EthernetFrame(Ipv4Packet(UdpPacket(Payload)))
+                &buffer,
                 Some(src_addr),
                 Some(dest_addr),
                 Some(ETHER_TYPE_IPV4),

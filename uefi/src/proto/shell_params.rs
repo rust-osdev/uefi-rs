@@ -9,7 +9,9 @@ use uefi_raw::protocol::shell_params::ShellParametersProtocol;
 
 use crate::CStr16;
 
-/// The ShellParameters protocol.
+/// The ShellParameters [`Protocol`].
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(ShellParametersProtocol::GUID)]

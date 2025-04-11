@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Device Path protocol
+//! Helpers to work with UEFI Device Paths and the Device Path Protocol.
 //!
-//! A UEFI device path is a very flexible structure for encoding a
-//! programmatic path such as a hard drive or console.
+//! The main export of this module is [`DevicePath`].
 //!
 //! A device path is made up of a packed list of variable-length nodes of
 //! various types. The entire device path is terminated with an
@@ -373,19 +372,43 @@ impl ToOwned for DevicePathInstance {
     }
 }
 
-/// Device path protocol.
+/// Device Path [`Protocol`].
 ///
-/// Can be used on any device handle to obtain generic path/location information
-/// concerning the physical device or logical device. If the handle does not
-/// logically map to a physical device, the handle may not necessarily support
-/// the device path protocol. The device path describes the location of the
-/// device the handle is for. The size of the Device Path can be determined from
-/// the structures that make up the Device Path.
+/// A UEFI device path is a structured sequence of binary nodes that describe a
+/// route from the UEFI root to a particular device, controller, or file. Each
+/// node represents a step in the path: PCI device, partition, filesystem, file
+/// path, etc.
+///
+/// This type implements [`DevicePathProtocol`] and therefore can be used on any
+/// device handle to obtain generic path/location information concerning the
+/// physical device or logical device. If the handle does not logically map to a
+/// physical device, the handle may not necessarily support the device path
+/// protocol. The device path describes the location of the device the handle is
+/// for. The size of the Device Path can be determined from the structures that
+/// make up the Device Path.
 ///
 /// See the [module-level documentation] for more details.
 ///
+/// # Example
+/// ```rust,no_run
+/// use uefi::Handle;
+/// use uefi::boot::{open_protocol_exclusive, ScopedProtocol};
+/// use uefi::proto::device_path::DevicePath;
+/// use uefi::proto::loaded_image::LoadedImage;
+///
+/// fn open_device_path(image_handle: Handle) {
+///     let loaded_image = open_protocol_exclusive::<LoadedImage>(image_handle).unwrap();
+///     let device_handle = loaded_image.device().unwrap();
+///     // We use `DevicePath` as protocol and also as return type.
+///     let device_path: ScopedProtocol<DevicePath>
+///         = open_protocol_exclusive::<DevicePath>(device_handle).unwrap();
+/// }
+/// ```
+///
 /// [module-level documentation]: crate::proto::device_path
 /// [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
+/// [`DevicePathProtocol`]: uefi_raw::protocol::device_path::DevicePathProtocol
+/// [`Protocol`]: uefi::proto::Protocol
 #[repr(C, packed)]
 #[unsafe_protocol(uefi_raw::protocol::device_path::DevicePathProtocol::GUID)]
 #[derive(Eq, Pointee)]
@@ -702,12 +725,15 @@ pub enum NodeConversionError {
     UnsupportedType,
 }
 
+/// Loaded Image Device Path [`Protocol`].
+///
 /// Protocol for accessing the device path that was passed in to [`load_image`]
 /// when loading a PE/COFF image.
 ///
 /// The layout of this type is the same as a [`DevicePath`].
 ///
 /// [`load_image`]: crate::boot::load_image
+/// [`Protocol`]: uefi::proto::Protocol
 #[repr(transparent)]
 #[unsafe_protocol("bc62157e-3e33-4fec-9920-2d3b36d750df")]
 #[derive(Debug, Pointee)]

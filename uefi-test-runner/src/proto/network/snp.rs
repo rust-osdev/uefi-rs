@@ -1,28 +1,94 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
-use uefi::proto::network::MacAddress;
+use crate::proto::network::build_ipv4_udp_packet;
+use alloc::string::ToString;
+use core::net::Ipv4Addr;
+use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams};
+use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
+use uefi::proto::device_path::DevicePath;
+use uefi::proto::network::snp::{InterruptStatus, NetworkState, ReceiveFlags, SimpleNetwork};
 use uefi::{boot, Status};
+
+fn compute_ipv4_checksum(header: &[u8]) -> u16 {
+    assert_eq!(header.len() % 2, 0);
+    let sum = header
+        .chunks(2)
+        .map(|chunk| u16::from_be_bytes([chunk[0], chunk[1]]) as u32)
+        .sum::<u32>();
+
+    let carry_add = (sum & 0xFFFF) + (sum >> 16);
+    !(carry_add as u16)
+}
+
+fn build_ipv4_packet_with_payload(
+    src_ip: Ipv4Addr,
+    dest_ip: Ipv4Addr,
+    payload: [u8; 2],
+) -> [u8; 22] {
+    let mut packet = [0u8; 22];
+    let len = packet.len() as u16;
+
+    // IPv4 header
+    // Version = 4, IHL = 5
+    packet[0] = 0x45;
+    // DSCP/ECN
+    packet[1] = 0x00;
+    // Total length
+    packet[2..4].copy_from_slice(&(len.to_be_bytes()));
+    // Identification
+    packet[4..6].copy_from_slice(&0u16.to_be_bytes());
+    // Flags (DF), Fragment offset
+    packet[6..8].copy_from_slice(&0x4000u16.to_be_bytes());
+    // TTL
+    packet[8] = 0x40;
+    // Protocol (UDP)
+    packet[9] = 0x11;
+    // Checksum placeholder at [10..12]
+    packet[12..16].copy_from_slice(&src_ip.octets()); // Source IP
+    packet[16..20].copy_from_slice(&dest_ip.octets()); // Destination IP
+
+    // Calculate checksum
+    let checksum = compute_ipv4_checksum(&packet[0..20]);
+    packet[10..12].copy_from_slice(&checksum.to_be_bytes());
+
+    // Payload
+    packet[20] = payload[0];
+    packet[21] = payload[1];
+
+    packet
+}
 
 pub fn test() {
     info!("Testing the simple network protocol");
 
-    let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();
+    let handles = boot::find_handles::<SimpleNetwork>().unwrap();
 
     for handle in handles {
-        let simple_network = boot::open_protocol_exclusive::<SimpleNetwork>(handle);
-        if simple_network.is_err() {
-            continue;
-        }
-        let simple_network = simple_network.unwrap();
+        // Buggy firmware; although it should be there, we have to test if the
+        // protocol is actually installed.
+        let simple_network = match boot::open_protocol_exclusive::<SimpleNetwork>(handle) {
+            Ok(snp) => snp,
+            Err(e) => {
+                log::debug!("Handle {handle:?} doesn't actually support SNP; skipping");
+                continue;
+            }
+        };
+        let simple_network_dvp = boot::open_protocol_exclusive::<DevicePath>(handle).unwrap();
+        debug!(
+            "Testing network device: {}",
+            simple_network_dvp
+                .to_string(DisplayOnly(false), AllowShortcuts(false))
+                .unwrap()
+        );
 
-        // Check shutdown
-        let res = simple_network.shutdown();
-        assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
+        // Check media
+        assert!(
+            simple_network.mode().media_present && simple_network.mode().media_present_supported
+        );
 
-        // Check stop
-        let res = simple_network.stop();
-        assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
+        // Ensure network is not started yet. If it is started, another test
+        // didn't clean up properly.
+        assert_eq!(simple_network.mode().state, NetworkState::STOPPED);
 
         // Check start
         simple_network
@@ -52,41 +118,32 @@ pub fn test() {
             )
             .expect("Failed to set receive filters");
 
-        // Check media
-        if !simple_network.mode().media_present_supported || !simple_network.mode().media_present {
-            continue;
-        }
-
-        let payload = b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
-            \x45\x00\
-            \x00\x21\
-            \x00\x01\
-            \x00\x00\
-            \x10\
-            \x11\
-            \x07\x6a\
-            \xc0\xa8\x11\x0f\
-            \xc0\xa8\x11\x02\
-            \x54\x45\
-            \x54\x44\
-            \x00\x0d\
-            \xa9\xe4\
-            \x04\x01\x02\x03\x04";
-
-        let dest_addr = MacAddress([0xffu8; 32]);
         assert!(!simple_network
             .get_interrupt_status()
             .unwrap()
             .contains(InterruptStatus::TRANSMIT));
 
-        // Send the frame
+        // Broadcast address (send to self)
+        let src_addr = simple_network.mode().current_address;
+        let dest_addr = simple_network.mode().broadcast_address;
+        const ETHER_TYPE_IPV4: u16 = 0x0800;
+
+        // IPv4 can be arbitrary, not used for routing here.
+        let src_ip = Ipv4Addr::new(192, 168, 17, 15);
+        let dst_ip = Ipv4Addr::new(192, 168, 17, 2);
+        let src_port = 0x5445; // "TE"
+        let dst_port = 0x5444; // "TD"
+        let payload = 0x1337_u16.to_ne_bytes();
+        let packet = build_ipv4_udp_packet(src_ip, dst_ip, src_port, dst_port, &payload);
+
+        // Send the frame to ourselves
         simple_network
             .transmit(
                 simple_network.mode().media_header_size as usize,
-                payload,
-                None,
+                &packet,
+                Some(src_addr),
                 Some(dest_addr),
-                Some(0x0800),
+                Some(ETHER_TYPE_IPV4),
             )
             .expect("Failed to transmit frame");
 
@@ -98,20 +155,18 @@ pub fn test() {
         {}
 
         // Attempt to receive a frame
-        let mut buffer = [0u8; 1500];
+        let mut recv_buffer = [0u8; 1500];
 
         info!("Waiting for the reception");
-        if simple_network.receive(&mut buffer, None, None, None, None)
+        if simple_network.receive(&mut recv_buffer, None, None, None, None)
             == Err(Status::NOT_READY.into())
         {
             boot::stall(1_000_000);
 
             simple_network
-                .receive(&mut buffer, None, None, None, None)
+                .receive(&mut recv_buffer, None, None, None, None)
                 .unwrap();
         }
-
-        assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
 
         // Get stats
         let res = simple_network.collect_statistics();

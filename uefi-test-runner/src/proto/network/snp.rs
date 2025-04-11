@@ -138,6 +138,7 @@ pub fn test() {
         let ipv4packet = build_ipv4_udp_packet_smoltcp(src_ip.into(), dst_ip.into(), src_port, dst_port, &payload);
         
         let mut buffer = Vec::<u8>::new();
+        /* the implementation will fill the ethernet header correctly */
         buffer.extend_from_slice(&[0; smoltcp::wire::ETHERNET_HEADER_LEN]);
         buffer.extend_from_slice(ipv4packet.as_slice());
         log::debug!("packet: {:#?}", ipv4packet);

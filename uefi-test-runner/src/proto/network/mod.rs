@@ -2,6 +2,7 @@
 
 use alloc::vec::Vec;
 use core::net::Ipv4Addr;
+use smoltcp::wire::{IpAddress, IpProtocol, Ipv4Address, Ipv4Packet, UdpPacket, IPV4_HEADER_LEN, UDP_HEADER_LEN};
 
 pub fn test() {
     info!("Testing Network protocols");
@@ -18,92 +19,53 @@ pub fn test() {
 mod pxe;
 mod snp;
 
-/// Computes the standard IPv4 or UDP checksum (one's complement)
-fn compute_ipv4_checksum(data: &[u8]) -> u16 {
-    let mut sum = 0u32;
-
-    for chunk in data.chunks(2) {
-        let word = if chunk.len() == 2 {
-            u16::from_be_bytes([chunk[0], chunk[1]]) as u32
-        } else {
-            (chunk[0] as u32) << 8
-        };
-        sum = sum.wrapping_add(word);
-    }
-
-    // Fold carry
-    while (sum >> 16) != 0 {
-        sum = (sum & 0xFFFF) + (sum >> 16);
-    }
-
-    !sum as u16
-}
-
-/// Builds the UDP pseudo-header used for UDP checksum calculation
-fn build_udp_pseudo_header(src_ip: &Ipv4Addr, dst_ip: &Ipv4Addr, udp_segment: &[u8]) -> Vec<u8> {
-    let mut pseudo = Vec::with_capacity(12 + udp_segment.len());
-
-    // Pseudo-header: src IP, dst IP, zero, protocol, UDP length
-    pseudo.extend_from_slice(&src_ip.octets());
-    pseudo.extend_from_slice(&dst_ip.octets());
-    pseudo.push(0);
-    pseudo.push(0x11); // Protocol = UDP
-    pseudo.extend_from_slice(&(udp_segment.len() as u16).to_be_bytes());
-
-    pseudo.extend_from_slice(udp_segment);
-
-    if pseudo.len() % 2 != 0 {
-        pseudo.push(0); // Pad to even length
-    }
-
-    pseudo
-}
-
-fn build_ipv4_udp_packet(
-    src_ip: Ipv4Addr,
-    dst_ip: Ipv4Addr,
+/// Build an IPv4/UDP packet into a buffer. Must be large enough.
+///
+/// Returns the full length of the valid data in the buffer.
+pub fn build_ipv4_udp_packet_smoltcp(
+    src_ip: IpAddress,
+    dst_ip: IpAddress,
     src_port: u16,
     dst_port: u16,
     payload: &[u8],
 ) -> Vec<u8> {
-    let ip_header_len = 20;
-    let udp_header_len = 8;
-    let total_len = ip_header_len + udp_header_len + payload.len();
+    fn extract_ipv4(ip: IpAddress) -> Ipv4Address {
+        match ip {
+            IpAddress::Ipv4(v4) => v4,
+            //IpAddress::Ipv6(_) => panic!("IPv6 not supported"),
+        }
+    }
 
-    let mut packet = Vec::with_capacity(total_len);
+    let total_len = IPV4_HEADER_LEN + UDP_HEADER_LEN + payload.len() + 10 /* why additional space necessary? */;
+    let mut buf = vec![0; total_len];
+    assert!(buf.len() >= total_len, "buffer too small");
 
-    // === IPv4 Header ===
-    packet.push(0x45); // Version (4) + IHL (5)
-    packet.push(0x00); // DSCP/ECN
-    packet.extend_from_slice(&(total_len as u16).to_be_bytes()); // Total Length
-    packet.extend_from_slice(&0x0001u16.to_be_bytes()); // Identification
-    packet.extend_from_slice(&0x0000u16.to_be_bytes()); // Flags/Fragment offset
-    packet.push(0x40); // TTL
-    packet.push(0x11); // Protocol = UDP (17)
-    packet.extend_from_slice(&[0x00, 0x00]); // Checksum placeholder
-    packet.extend_from_slice(&src_ip.octets()); // Source IP
-    packet.extend_from_slice(&dst_ip.octets()); // Destination IP
+    // Write payload first (UDP requires it to be present for checksum)
+    let udp_payload_start = IPV4_HEADER_LEN + UDP_HEADER_LEN;
+    const PAYLOAD_BEGIN: usize = IPV4_HEADER_LEN + UDP_HEADER_LEN;
+    buf[PAYLOAD_BEGIN..PAYLOAD_BEGIN + payload.len()].copy_from_slice(payload);
 
-    // Compute IPv4 header checksum
-    let ip_checksum = compute_ipv4_checksum(&packet[..20]);
-    packet[10..12].copy_from_slice(&ip_checksum.to_be_bytes());
+    // --- Build UDP packet ---
+    let mut udp_packet = UdpPacket::new_checked(&mut buf[IPV4_HEADER_LEN..udp_payload_start]).unwrap();
+    udp_packet.set_src_port(src_port);
+    udp_packet.set_dst_port(dst_port);
+    udp_packet.set_len((UDP_HEADER_LEN + payload.len()) as u16);
+    udp_packet.fill_checksum(&src_ip, &dst_ip);
 
-    // === UDP Header ===
-    packet.extend_from_slice(&src_port.to_be_bytes()); // Source port
-    packet.extend_from_slice(&dst_port.to_be_bytes()); // Destination port
-    let udp_len = (udp_header_len + payload.len()) as u16;
-    packet.extend_from_slice(&udp_len.to_be_bytes()); // UDP length
-    packet.extend_from_slice(&[0x00, 0x00]); // UDP checksum placeholder
+    // --- Build IPv4 header ---
+    let mut ip_packet = Ipv4Packet::new_checked(&mut buf[..IPV4_HEADER_LEN]).unwrap();
+    ip_packet.set_version(4);
+    ip_packet.set_header_len(5); // 5 * 4 = 20 bytes
+    ip_packet.set_dscp(0);
+    ip_packet.set_ecn(0);
+    ip_packet.set_total_len(total_len as u16);
+    ip_packet.set_ident(0x1234);
+    ip_packet.set_dont_frag(true);
+    ip_packet.set_hop_limit(64);
+    ip_packet.set_next_header(IpProtocol::Udp);
+    ip_packet.set_src_addr(extract_ipv4(src_ip));
+    ip_packet.set_dst_addr(extract_ipv4(src_ip));
+    ip_packet.fill_checksum();
 
-    // === Payload ===
-    packet.extend_from_slice(payload);
-
-    // === UDP Checksum ===
-    let udp_offset = 20;
-    let udp_packet = &packet[udp_offset..];
-    let pseudo_header = build_udp_pseudo_header(&src_ip, &dst_ip, udp_packet);
-    let udp_checksum = compute_ipv4_checksum(&pseudo_header);
-    packet[udp_offset + 6..udp_offset + 8].copy_from_slice(&udp_checksum.to_be_bytes());
-
-    packet
+    buf
 }

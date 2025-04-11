@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::proto::network::build_ipv4_udp_packet;
+use crate::proto::network::{ build_ipv4_udp_packet_smoltcp};
 use alloc::string::ToString;
 use core::net::Ipv4Addr;
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams};
@@ -134,7 +134,7 @@ pub fn test() {
         let src_port = 0x5445; // "TE"
         let dst_port = 0x5444; // "TD"
         let payload = 0x1337_u16.to_ne_bytes();
-        let packet = build_ipv4_udp_packet(src_ip, dst_ip, src_port, dst_port, &payload);
+        let packet = build_ipv4_udp_packet_smoltcp(src_ip.into(), dst_ip.into(), src_port, dst_port, &payload);
 
         // Send the frame to ourselves
         simple_network

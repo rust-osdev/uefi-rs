@@ -214,6 +214,9 @@ impl SimpleNetwork {
     }
 
     /// Place a packet in the transmit queue of a network interface.
+    ///
+    /// # Arguments
+    /// - `protocol`: Ether Type as of RFC 3232. See https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml#ieee-802-numbers-1 for examples.
     pub fn transmit(
         &self,
         header_size: usize,

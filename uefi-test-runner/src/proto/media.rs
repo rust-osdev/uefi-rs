@@ -398,7 +398,15 @@ fn test_partition_info(disk_handle: Handle) {
 fn find_test_disk() -> (Handle, ScopedProtocol<SimpleFileSystem>) {
     let handles = boot::find_handles::<SimpleFileSystem>()
         .expect("Failed to get handles for `SimpleFileSystem` protocol");
+
+    // This branch is due to the qemu machine type we use based on the architecture.
+    // - *Q35* by default uses a SATA-Controller to connect disks.
+    // - *virt* by default uses virtio to connect disks.
+    // The aarch64 UEFI Firmware does not yet seem to support SATA-Controllers.
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
     assert_eq!(handles.len(), 2);
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    assert_eq!(handles.len(), 3);
 
     for handle in handles {
         let mut sfs = boot::open_protocol_exclusive::<SimpleFileSystem>(handle)

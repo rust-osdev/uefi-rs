@@ -459,6 +459,11 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Configure SCSI Controller
     cmd.arg("-device");
     cmd.arg("virtio-scsi-pci");
+    if arch != UefiArch::IA32 && arch != UefiArch::X86_64 {
+        // The "virt" qemu machine does not have SATA-Controller by default
+        cmd.arg("-device");
+        cmd.arg("ahci,id=ide");
+    }
 
     // Mount a local directory as a FAT partition.
     cmd.arg("-drive");
@@ -498,6 +503,16 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     cmd.arg(drive_arg);
     cmd.arg("-device");
     cmd.arg("nvme,drive=nvmedisk0,serial=uefi-rsNvmePassThru");
+
+    // Fifth (ATA) disk
+    let ata_test_disk = tmp_dir.join("test_disk4.empty.img");
+    create_mbr_test_disk(&ata_test_disk)?;
+    cmd.arg("-drive");
+    let mut drive_arg = OsString::from("if=none,format=raw,id=satadisk0,file=");
+    drive_arg.push(ata_test_disk.clone());
+    cmd.arg(drive_arg);
+    cmd.arg("-device");
+    cmd.arg("ide-hd,drive=satadisk0,bus=ide.2,serial=AtaPassThru,model=AtaPassThru");
 
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
     let serial_pipe = Pipe::new(tmp_dir, "serial")?;

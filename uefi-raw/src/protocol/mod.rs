@@ -26,3 +26,4 @@ pub mod scsi;
 pub mod shell_params;
 pub mod string;
 pub mod tcg;
+pub mod usb;

@@ -12,6 +12,7 @@
 - Added `NvmExpressPassThruProtocol`.
 - Added `AtaPassThruProtocol`.
 - Added `DevicePathUtilitiesProtocol`.
+- Added `UsbIoProtocol`.
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

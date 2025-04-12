@@ -3,6 +3,7 @@
 //! ATA Protocols.
 
 use crate::mem::{AlignedBuffer, AlignmentError};
+use crate::util::usize_from_u32;
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
 use core::ptr;
@@ -10,6 +11,8 @@ use core::time::Duration;
 use uefi_raw::protocol::ata::{
     AtaCommandBlock, AtaPassThruCommandPacket, AtaPassThruLength, AtaStatusBlock,
 };
+
+pub mod pass_thru;
 
 /// Represents the protocol for ATA Pass Thru command handling.
 ///
@@ -57,7 +60,7 @@ impl<'a> AtaRequestBuilder<'a> {
     ) -> Result<Self, LayoutError> {
         // status block has alignment requirements!
         let mut asb =
-            AlignedBuffer::from_size_align(size_of::<AtaStatusBlock>(), io_align as usize)?;
+            AlignedBuffer::from_size_align(size_of::<AtaStatusBlock>(), usize_from_u32(io_align))?;
         Ok(Self {
             req: AtaRequest {
                 io_align,

@@ -9,6 +9,7 @@
 - Added `proto::device_path::DevicePath::append_path()`.
 - Added `proto::device_path::DevicePath::append_node()`.
 - Added `proto::scsi::pass_thru::ExtScsiPassThru`.
+- Added `proto::nvme::pass_thru::NvmePassThru`.
 
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no

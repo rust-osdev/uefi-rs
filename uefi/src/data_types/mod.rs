@@ -169,7 +169,8 @@ mod opaque;
 
 mod strs;
 pub use strs::{
-    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, UnalignedCStr16Error,
+    CStr16, CStr8, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, PoolString,
+    UnalignedCStr16Error,
 };
 
 /// These functions are used in the implementation of the [`cstr8`] macro.

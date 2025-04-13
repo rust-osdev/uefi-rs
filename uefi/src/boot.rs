@@ -1318,7 +1318,7 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 ///
 /// [`helpers`]: crate::helpers
 /// [`Output`]: crate::proto::console::text::Output
-/// [`PoolString`]: crate::proto::device_path::text::PoolString
+/// [`PoolString`]: crate::data_types::PoolString
 #[must_use]
 pub unsafe fn exit_boot_services(custom_memory_type: Option<MemoryType>) -> MemoryMapOwned {
     // LOADER_DATA is the default and also used by the Linux kernel:

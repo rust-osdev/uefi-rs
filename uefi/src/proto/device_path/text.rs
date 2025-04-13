@@ -10,11 +10,11 @@
 // if there is insufficient memory. So we treat any NULL output as an
 // `OUT_OF_RESOURCES` error.
 
+use crate::data_types::PoolString;
 use crate::mem::PoolAllocation;
 use crate::proto::device_path::{DevicePath, DevicePathNode};
 use crate::proto::unsafe_protocol;
-use crate::{CStr16, Char16, Result, Status};
-use core::ops::Deref;
+use crate::{CStr16, Result, Status};
 use core::ptr::NonNull;
 use uefi_raw::protocol::device_path::{DevicePathFromTextProtocol, DevicePathToTextProtocol};
 
@@ -47,31 +47,6 @@ pub struct DisplayOnly(pub bool);
 #[derive(Clone, Copy, Debug)]
 pub struct AllowShortcuts(pub bool);
 
-/// UCS-2 string allocated from UEFI pool memory.
-///
-/// This is similar to a [`CString16`], but used for memory that was allocated
-/// internally by UEFI rather than the Rust allocator.
-///
-/// [`CString16`]: crate::CString16
-#[derive(Debug)]
-pub struct PoolString(PoolAllocation);
-
-impl PoolString {
-    fn new(text: *const Char16) -> Result<Self> {
-        NonNull::new(text.cast_mut())
-            .map(|p| Self(PoolAllocation::new(p.cast())))
-            .ok_or(Status::OUT_OF_RESOURCES.into())
-    }
-}
-
-impl Deref for PoolString {
-    type Target = CStr16;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { CStr16::from_ptr(self.0.as_ptr().as_ptr().cast()) }
-    }
-}
-
 /// Protocol for converting a [`DevicePath`] or `DevicePathNode`] to a string.
 #[derive(Debug)]
 #[repr(transparent)]
@@ -98,7 +73,7 @@ impl DevicePathToText {
                 allow_shortcuts.0.into(),
             )
         };
-        PoolString::new(text.cast())
+        unsafe { PoolString::new(text.cast()) }
     }
 
     /// Convert a [`DevicePath`] to a [`PoolString`].
@@ -120,7 +95,7 @@ impl DevicePathToText {
                 allow_shortcuts.0.into(),
             )
         };
-        PoolString::new(text.cast())
+        unsafe { PoolString::new(text.cast()) }
     }
 }
 

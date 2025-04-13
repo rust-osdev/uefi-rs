@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use uefi_raw::Status;
+
 use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
+use crate::mem::PoolAllocation;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
 use core::ffi::CStr;
 use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
+use core::ops::Deref;
+use core::ptr::NonNull;
 use core::{ptr, slice};
 
 #[cfg(feature = "alloc")]
@@ -715,6 +720,40 @@ impl fmt::Display for CStr16 {
 impl PartialEq<CString16> for &CStr16 {
     fn eq(&self, other: &CString16) -> bool {
         PartialEq::eq(*self, other.as_ref())
+    }
+}
+
+/// UCS-2 string allocated from UEFI pool memory.
+///
+/// This is similar to a [`CString16`], but used for memory that was allocated
+/// internally by UEFI rather than the Rust allocator.
+///
+/// [`CString16`]: crate::CString16
+#[derive(Debug)]
+pub struct PoolString(PoolAllocation);
+
+impl PoolString {
+    /// Create a [`PoolString`] from a [`CStr16`] residing in a buffer allocated
+    /// using [`allocate_pool()`][cbap].
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure that the buffer points to a valid [`CStr16`] and
+    /// resides in a buffer allocated using [`allocate_pool()`][cbap]
+    ///
+    /// [cbap]: crate::boot::allocate_pool()
+    pub unsafe fn new(text: *const Char16) -> crate::Result<Self> {
+        NonNull::new(text.cast_mut())
+            .map(|p| Self(PoolAllocation::new(p.cast())))
+            .ok_or(Status::OUT_OF_RESOURCES.into())
+    }
+}
+
+impl Deref for PoolString {
+    type Target = CStr16;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { CStr16::from_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
 

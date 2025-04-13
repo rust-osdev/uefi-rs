@@ -106,8 +106,8 @@ pub struct UsbIoProtocol {
         this: *mut Self,
         device_endpoint: u8,
         data: *mut ffi::c_void,
-        data_length: usize,
-        timeout: u32,
+        data_length: *mut usize,
+        timeout: usize,
         status: *mut UsbTransferStatus,
     ) -> Status,
     pub async_interrupt_transfer: unsafe extern "efiapi" fn(

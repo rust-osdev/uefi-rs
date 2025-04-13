@@ -12,7 +12,7 @@ newtype_enum! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct DeviceRequest {
     pub request_type: u8,
@@ -22,7 +22,7 @@ pub struct DeviceRequest {
     pub length: u16,
 }
 
-#[derive(Default, Debug)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct UsbTransferStatus(pub u32);
 
@@ -33,7 +33,7 @@ pub type AsyncUsbTransferCallback = unsafe extern "efiapi" fn(
     status: UsbTransferStatus,
 ) -> Status;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct DeviceDescriptor {
     pub length: u8,
@@ -52,7 +52,7 @@ pub struct DeviceDescriptor {
     pub num_configurations: u8,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct ConfigDescriptor {
     pub length: u8,
@@ -65,7 +65,7 @@ pub struct ConfigDescriptor {
     pub max_power: u8,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct InterfaceDescriptor {
     pub length: u8,
@@ -79,7 +79,7 @@ pub struct InterfaceDescriptor {
     pub interface: u8,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct EndpointDescriptor {
     pub length: u8,

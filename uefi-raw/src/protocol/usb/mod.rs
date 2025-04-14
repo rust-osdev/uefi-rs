@@ -4,6 +4,7 @@ use core::ffi;
 
 use crate::Status;
 
+pub mod host_controller;
 pub mod io;
 
 newtype_enum! {

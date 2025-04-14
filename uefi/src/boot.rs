@@ -120,9 +120,43 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
     }
 }
 
-/// Allocates memory pages from the system.
+/// Allocates a consecutive set of memory pages using the UEFI allocator.
+///
+/// The caller is responsible to free the memory using [`free_pages`].
 ///
 /// UEFI OS loaders should allocate memory of the type `LoaderData`.
+///
+/// # Example
+///```rust,no_run
+/// use uefi::boot::{self, AllocateType};
+/// use uefi_raw::table::boot::MemoryType;
+///
+/// let num_pages = 3;
+/// let mut ptr = boot::allocate_pages(
+///    AllocateType::AnyPages,
+///    MemoryType::LOADER_DATA,
+///    num_pages
+/// ).unwrap();
+///
+/// // ⚠️ Creating the reference is safe, but reading the uninitialized memory
+/// // causes Undefined Behavior (UB)! Please make sure to initialize the memory
+/// // first by:
+/// //   - using `core::ptr::write`,
+/// //   - directly writing to slice indices,
+/// //   - zeroing the memory,
+/// //   - using `.copy_from_slice()`,
+/// //   - or a similar operation.
+/// let buffer: &mut [u8] = unsafe { ptr.as_mut() };
+/// // Now initialize the content of the buffer, cast it, etc.
+/// // Please follow Rust guidelines on safety and UB! ⚠️
+///
+/// // free the allocation
+/// unsafe { boot::free_pages(ptr.cast(), num_pages) }.unwrap();
+/// ```
+///
+/// # Safety
+/// Using this function is safe but reading on initialized memory is not.
+/// Please look into the example code.
 ///
 /// # Errors
 ///
@@ -130,32 +164,39 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
 /// * [`Status::NOT_FOUND`]: the requested pages could not be found.
-pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Result<NonNull<u8>> {
+pub fn allocate_pages(
+    allocation_type: AllocateType,
+    memory_type: MemoryType,
+    count: usize,
+) -> Result<NonNull<[u8]>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    let (ty, initial_addr) = match ty {
+    let (allocation_type_efi, start_address) = match allocation_type {
         AllocateType::AnyPages => (0, 0),
         AllocateType::MaxAddress(addr) => (1, addr),
         AllocateType::Address(addr) => (2, addr),
     };
 
-    let mut addr1 = initial_addr;
-    unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr1) }.to_result()?;
+    let mut addr1 = start_address;
+    unsafe { (bt.allocate_pages)(allocation_type_efi, memory_type, count, &mut addr1) }
+        .to_result()?;
 
     // The UEFI spec allows `allocate_pages` to return a valid allocation at
     // address zero. Rust does not allow writes through a null pointer (which
     // Rust defines as address zero), so this is not very useful. Only return
     // the allocation if the address is non-null.
     if let Some(ptr) = NonNull::new(addr1 as *mut u8) {
-        return Ok(ptr);
+        let slice = NonNull::slice_from_raw_parts(ptr, count * PAGE_SIZE);
+        return Ok(slice);
     }
 
     // Attempt a second allocation. The first allocation (at address zero) has
     // not yet been freed, so if this allocation succeeds it should be at a
     // non-zero address.
-    let mut addr2 = initial_addr;
-    let r = unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr2) }.to_result();
+    let mut addr2 = start_address;
+    let r = unsafe { (bt.allocate_pages)(allocation_type_efi, memory_type, count, &mut addr2) }
+        .to_result();
 
     // Free the original allocation (ignoring errors).
     let _unused = unsafe { (bt.free_pages)(addr1, count) };
@@ -164,7 +205,8 @@ pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Res
     // address zero. Otherwise, return a pointer to the second allocation.
     r?;
     if let Some(ptr) = NonNull::new(addr2 as *mut u8) {
-        Ok(ptr)
+        let slice = NonNull::slice_from_raw_parts(ptr, count * PAGE_SIZE);
+        Ok(slice)
     } else {
         Err(Status::OUT_OF_RESOURCES.into())
     }

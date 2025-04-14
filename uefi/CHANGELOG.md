@@ -25,6 +25,9 @@
   `proto::device_path::text` to `proto::device_path`.
 - **Breaking:** `exit_boot_services` now consumes a `Option<MemoryType>` which
   defaults to the recommended value of `MemoryType::LOADER_DATA`.
+- **Breaking**: `allocate_pages` now returns `NonNull<[u8]>` to align it with
+  the Rust allocator API. There is an example in the documentation of that
+  function.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

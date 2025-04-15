@@ -1536,6 +1536,14 @@ pub struct ScopedProtocol<P: Protocol + ?Sized> {
     open_params: OpenProtocolParams,
 }
 
+impl<P: Protocol + ?Sized> ScopedProtocol<P> {
+    /// Returns the [`OpenProtocolParams`] used to open the [`ScopedProtocol`].
+    #[must_use]
+    pub const fn open_params(&self) -> OpenProtocolParams {
+        self.open_params
+    }
+}
+
 impl<P: Protocol + ?Sized> Drop for ScopedProtocol<P> {
     fn drop(&mut self) {
         let bt = boot_services_raw_panicking();
@@ -1596,6 +1604,14 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
 #[derive(Debug)]
 pub struct TplGuard {
     old_tpl: Tpl,
+}
+
+impl TplGuard {
+    /// Returns the previous [`Tpl`].
+    #[must_use]
+    pub const fn old_tpl(&self) -> Tpl {
+        self.old_tpl
+    }
 }
 
 impl Drop for TplGuard {
@@ -1659,7 +1675,7 @@ pub enum OpenProtocolAttributes {
 }
 
 /// Parameters passed to [`open_protocol`].
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct OpenProtocolParams {
     /// The handle for the protocol to open.
     pub handle: Handle,

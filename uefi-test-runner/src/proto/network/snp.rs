@@ -2,6 +2,8 @@
 
 use core::ops::DerefMut;
 use core::time::Duration;
+use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
+use uefi::proto::device_path::DevicePath;
 
 use uefi::proto::network::snp::{InterruptStatus, NetworkState, ReceiveFlags, SimpleNetwork};
 use uefi::proto::network::MacAddress;
@@ -41,11 +43,21 @@ pub fn test() {
     info!("Testing the simple network protocol");
 
     let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();
-
     for handle in handles {
         let Ok(mut simple_network) = boot::open_protocol_exclusive::<SimpleNetwork>(handle) else {
             continue;
         };
+        // Print device path
+        {
+            let simple_network_dvp = boot::open_protocol_exclusive::<DevicePath>(handle)
+                .expect("Should have device path");
+            log::info!(
+                "Network interface: {}",
+                simple_network_dvp
+                    .to_string(DisplayOnly(true), AllowShortcuts(true))
+                    .unwrap()
+            );
+        }
 
         assert_eq!(
             simple_network.mode().state,
@@ -138,28 +150,28 @@ pub fn test() {
         let n = receive(simple_network.deref_mut(), &mut buffer).unwrap();
         debug!("Reply has {n} bytes");
 
-            // Check payload in UDP packet that was reversed by our EchoService.
-            assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
+        // Check payload in UDP packet that was reversed by our EchoService.
+        assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
 
-            // Get stats
-            let res = simple_network.collect_statistics();
-            match res {
-                Ok(stats) => {
-                    info!("Stats: {:?}", stats);
+        // Get stats
+        let res = simple_network.collect_statistics();
+        match res {
+            Ok(stats) => {
+                info!("Stats: {:?}", stats);
 
-                    // One frame should have been transmitted and one received
-                    assert_eq!(stats.tx_total_frames().unwrap(), 1);
-                    assert_eq!(stats.rx_total_frames().unwrap(), 1);
-                }
-                Err(e) => {
-                    if e == Status::UNSUPPORTED.into() {
-                        info!("Stats: unsupported.");
-                    } else {
-                        panic!("{e}");
-                    }
+                // One frame should have been transmitted and one received
+                assert_eq!(stats.tx_total_frames().unwrap(), 1);
+                assert_eq!(stats.rx_total_frames().unwrap(), 1);
+            }
+            Err(e) => {
+                if e == Status::UNSUPPORTED.into() {
+                    info!("Stats: unsupported.");
+                } else {
+                    panic!("{e}");
                 }
             }
-
-            simple_network.shutdown().unwrap();
         }
+
+        simple_network.shutdown().unwrap();
     }
+}

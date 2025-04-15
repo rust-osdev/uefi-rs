@@ -1,18 +1,47 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use core::time::Duration;
-
+use core::ops::DerefMut;
 use uefi::proto::network::MacAddress;
 use uefi::proto::network::snp::{InterruptStatus, NetworkState, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
 
+const ETHERNET_PROTOCOL_IPV4: u16 = 0x0800;
+
+/// Receives the next IPv4 packet and prints corresponding metadata.
+fn receive(simple_network: &mut SimpleNetwork, buffer: &mut [u8]) -> uefi::Result<usize> {
+    let mut recv_src_mac = MacAddress([0; 32]);
+    let mut recv_dst_mac = MacAddress([0; 32]);
+    let mut recv_ethernet_protocol = 0;
+
+    let res = simple_network.receive(
+        buffer,
+        None,
+        Some(&mut recv_src_mac),
+        Some(&mut recv_dst_mac),
+        Some(&mut recv_ethernet_protocol),
+    );
+
+    res.inspect(|_| {
+        debug!("Received:");
+        debug!("  src_mac       =  {:x?}", recv_src_mac);
+        debug!("  dst_mac       =  {:x?}", recv_dst_mac);
+        debug!("  ethernet_proto=0x{:x?}", recv_ethernet_protocol);
+
+        // Ensure that we do not accidentally get an ARP packet, which we
+        // do not expect in this test.
+        assert_eq!(recv_ethernet_protocol, ETHERNET_PROTOCOL_IPV4);
+    })
+}
+
+/// This test sends a simple UDP/IP packet to the `EchoService` (created by
+/// `cargo xtask run`) and receives its message.
 pub fn test() {
     info!("Testing the simple network protocol");
 
     let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();
 
     for handle in handles {
-        let Ok(simple_network) = boot::open_protocol_exclusive::<SimpleNetwork>(handle) else {
+        let Ok(mut simple_network) = boot::open_protocol_exclusive::<SimpleNetwork>(handle) else {
             continue;
         };
 
@@ -55,6 +84,12 @@ pub fn test() {
             )
             .expect("Failed to set receive filters");
 
+        // EthernetFrame(IPv4Packet(UDPPacket(Payload))).
+        // The ethernet frame header will be filled by `transmit()`.
+        // The UDP packet contains the byte sequence `4, 4, 3, 2, 1`.
+        //
+        // The packet is sent to the `EchoService` created by
+        // `cargo xtask run`. It runs on UDP port 21572.
         let payload = b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
             \x45\x00\
             \x00\x21\
@@ -71,7 +106,6 @@ pub fn test() {
             \xa9\xe4\
             \x04\x01\x02\x03\x04";
 
-        let dest_addr = MacAddress([0xffu8; 32]);
         assert!(
             !simple_network
                 .get_interrupt_status()
@@ -85,8 +119,8 @@ pub fn test() {
                 simple_network.mode().media_header_size as usize,
                 payload,
                 None,
-                Some(dest_addr),
-                Some(0x0800),
+                Some(simple_network.mode().broadcast_address),
+                Some(ETHERNET_PROTOCOL_IPV4),
             )
             .expect("Failed to transmit frame");
 
@@ -101,16 +135,10 @@ pub fn test() {
         let mut buffer = [0u8; 1500];
 
         info!("Waiting for the reception");
-        if simple_network.receive(&mut buffer, None, None, None, None)
-            == Err(Status::NOT_READY.into())
-        {
-            boot::stall(Duration::from_secs(1));
+        let n = receive(simple_network.deref_mut(), &mut buffer).unwrap();
+        debug!("Reply has {n} bytes");
 
-            simple_network
-                .receive(&mut buffer, None, None, None, None)
-                .unwrap();
-        }
-
+        // Check payload in UDP packet that was reversed by our EchoService.
         assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
 
         // Get stats

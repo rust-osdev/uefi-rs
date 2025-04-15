@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! This module implements Rust's global allocator interface using UEFI's memory allocation functions.
+//! This module exports [`Allocator`].
 //!
-//! If the `global_allocator` feature is enabled, the [`Allocator`] will be used
-//! as the global Rust allocator.
+//! The allocator can be used as global Rust allocator using the
+//! `global_allocator` crate feature. See [`helpers`] for more info.
 //!
-//! This allocator can only be used while boot services are active. If boot
-//! services are not active, `alloc` will return a null pointer, and `dealloc`
-//! will panic.
+//! [`helpers`]: uefi::helpers
 
 use crate::boot;
 use crate::mem::memory_map::MemoryType;
@@ -42,9 +40,13 @@ fn get_memory_type() -> MemoryType {
     }
 }
 
-/// Allocator which uses the UEFI pool allocation functions.
+/// Allocator using UEFI boot services.
 ///
-/// Only valid for as long as the UEFI boot services are available.
+/// This type implements [`GlobalAlloc`] and can be marked with the
+/// `#[global_allocator]` attribute to be used as global Rust allocator.
+///
+/// Note that if boot services are not active (anymore), [`Allocator::alloc`]
+/// will return a null pointer and [`Allocator::dealloc`] will panic.
 #[derive(Debug)]
 pub struct Allocator;
 

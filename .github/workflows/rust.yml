@@ -200,7 +200,7 @@ jobs:
       - name: Generate code coverage
         run: cargo xtask cov --lcov
       - name: Upload code coverage
-        uses: codecov/codecov-action@v5.3.1
+        uses: codecov/codecov-action@v5.4.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:

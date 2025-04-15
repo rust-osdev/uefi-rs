@@ -3,7 +3,7 @@
 use core::time::Duration;
 
 use uefi::proto::network::MacAddress;
-use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
+use uefi::proto::network::snp::{InterruptStatus, NetworkState, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
 
 pub fn test() {
@@ -12,29 +12,30 @@ pub fn test() {
     let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();
 
     for handle in handles {
-        let simple_network = boot::open_protocol_exclusive::<SimpleNetwork>(handle);
-        if simple_network.is_err() {
+        let Ok(simple_network) = boot::open_protocol_exclusive::<SimpleNetwork>(handle) else {
+            continue;
+        };
+
+        assert_eq!(
+            simple_network.mode().state,
+            NetworkState::STOPPED,
+            "Should be in stopped state"
+        );
+
+        // Check media
+        if !bool::from(simple_network.mode().media_present_supported)
+            || !bool::from(simple_network.mode().media_present)
+        {
             continue;
         }
-        let simple_network = simple_network.unwrap();
 
-        // Check shutdown
-        let res = simple_network.shutdown();
-        assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
-
-        // Check stop
-        let res = simple_network.stop();
-        assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
-
-        // Check start
         simple_network
             .start()
-            .expect("Failed to start Simple Network");
+            .expect("Network should not be started yet");
 
-        // Check initialize
         simple_network
             .initialize(0, 0)
-            .expect("Failed to initialize Simple Network");
+            .expect("Network should not be initialized yet");
 
         // edk2 virtio-net driver does not support statistics, so
         // allow UNSUPPORTED (same for collect_statistics below).
@@ -53,13 +54,6 @@ pub fn test() {
                 None,
             )
             .expect("Failed to set receive filters");
-
-        // Check media
-        if !bool::from(simple_network.mode().media_present_supported)
-            || !bool::from(simple_network.mode().media_present)
-        {
-            continue;
-        }
 
         let payload = b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
             \x45\x00\
@@ -137,5 +131,7 @@ pub fn test() {
                 }
             }
         }
+
+        simple_network.shutdown().unwrap();
     }
 }

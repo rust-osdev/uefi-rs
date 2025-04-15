@@ -267,7 +267,7 @@ impl SimpleNetwork {
         unsafe { &*(ptr::from_ref(&self.0.wait_for_packet).cast::<Event>()) }
     }
 
-    /// Returns a reference to the Simple Network mode.
+    /// Returns a reference to the [`NetworkMode`].
     #[must_use]
     pub fn mode(&self) -> &NetworkMode {
         unsafe { &*self.0.mode }

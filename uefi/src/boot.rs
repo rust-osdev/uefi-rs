@@ -1598,6 +1598,14 @@ pub struct TplGuard {
     old_tpl: Tpl,
 }
 
+impl TplGuard {
+    /// Returns the previous [`Tpl`].
+    #[must_use]
+    pub const fn old_tpl(&self) -> Tpl {
+        self.old_tpl
+    }
+}
+
 impl Drop for TplGuard {
     fn drop(&mut self) {
         let bt = boot_services_raw_panicking();

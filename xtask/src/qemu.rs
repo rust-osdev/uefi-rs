@@ -359,6 +359,8 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     if arch == UefiArch::IA32 || arch == UefiArch::X86_64 {
         cmd.args(["-debugcon", "file:./integration-test-debugcon.log"]);
+        cmd.args(["-chardev", "file,id=fw,path=./ovmf-firmware-debugcon.log"]);
+        cmd.args(["-device", "isa-debugcon,chardev=fw,iobase=0x402"]);
     }
 
     // Set the boot menu timeout to zero. On aarch64 in particular this speeds

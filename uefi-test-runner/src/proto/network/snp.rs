@@ -53,7 +53,9 @@ pub fn test() {
             .expect("Failed to set receive filters");
 
         // Check media
-        if !simple_network.mode().media_present_supported || !simple_network.mode().media_present {
+        if !bool::from(simple_network.mode().media_present_supported)
+            || !bool::from(simple_network.mode().media_present)
+        {
             continue;
         }
 

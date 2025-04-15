@@ -11,6 +11,8 @@
 - Added `proto::scsi::pass_thru::ExtScsiPassThru`.
 - Added `proto::nvme::pass_thru::NvmePassThru`.
 - Added `proto::ata::pass_thru::AtaPassThru`.
+- Added `boot::ScopedProtocol::open_params()`.
+- Added `boot::TplGuard::old_tpl()`.
 
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no

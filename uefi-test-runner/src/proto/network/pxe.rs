@@ -5,11 +5,6 @@ use uefi::proto::network::pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, Udp
 use uefi::{CStr8, boot};
 
 pub fn test() {
-    // Skip the test if the `pxe` feature is not enabled.
-    if cfg!(not(feature = "pxe")) {
-        return;
-    }
-
     info!("Testing The PXE base code protocol");
 
     let handles = boot::find_handles::<BaseCode>().expect("failed to get PXE base code handles");

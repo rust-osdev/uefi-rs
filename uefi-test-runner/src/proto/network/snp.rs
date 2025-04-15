@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use core::ops::DerefMut;
+use uefi::proto::device_path::DevicePath;
+use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::network::MacAddress;
 use uefi::proto::network::snp::{InterruptStatus, NetworkState, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
@@ -39,11 +41,21 @@ pub fn test() {
     info!("Testing the simple network protocol");
 
     let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();
-
     for handle in handles {
         let Ok(mut simple_network) = boot::open_protocol_exclusive::<SimpleNetwork>(handle) else {
             continue;
         };
+        // Print device path
+        {
+            let simple_network_dvp = boot::open_protocol_exclusive::<DevicePath>(handle)
+                .expect("Should have device path");
+            log::info!(
+                "Network interface: {}",
+                simple_network_dvp
+                    .to_string(DisplayOnly(true), AllowShortcuts(true))
+                    .unwrap()
+            );
+        }
 
         assert_eq!(
             simple_network.mode().state,

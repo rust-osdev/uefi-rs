@@ -3,6 +3,7 @@
 use alloc::vec::Vec;
 use uefi::boot::{self, AllocateType};
 use uefi::mem::memory_map::{MemoryMap, MemoryMapMut, MemoryType};
+use uefi_raw::table::boot::PAGE_SIZE;
 
 pub fn test() {
     info!("Testing memory functions");
@@ -17,32 +18,42 @@ pub fn test() {
 }
 
 fn test_allocate_pages() {
-    let num_pages = 1;
-    let ptr =
+    let num_pages = 3;
+    let mut ptr =
         boot::allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, num_pages).unwrap();
-    let addr = ptr.as_ptr() as usize;
-    assert_eq!(addr % 4096, 0, "Page pointer is not page-aligned");
+
+    let buffer = unsafe { ptr.as_mut() };
+    assert_eq!(
+        buffer.as_ptr().align_offset(PAGE_SIZE),
+        0,
+        "Page pointer is not page-aligned"
+    );
 
     // Verify the page can be written to.
     {
-        let ptr = ptr.as_ptr();
-        unsafe { ptr.write_volatile(0xff) };
-        unsafe { ptr.add(4095).write_volatile(0xff) };
+        buffer[0] = 0xff;
+        buffer[4095] = 0xff;
+        buffer[5095] = 0xff;
+        assert_eq!(buffer[0], 0xff);
+        assert_eq!(buffer[4095], 0xff);
+        assert_eq!(buffer[5095], 0xff);
     }
 
-    unsafe { boot::free_pages(ptr, num_pages) }.unwrap();
+    unsafe { boot::free_pages(ptr.cast(), num_pages) }.unwrap();
 }
 
 fn test_allocate_pool() {
-    let ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
+    let mut ptr = boot::allocate_pool(MemoryType::LOADER_DATA, 10).unwrap();
+    let buffer = unsafe { ptr.as_mut() };
 
     // Verify the allocation can be written to.
     {
-        let ptr = ptr.as_ptr();
-        unsafe { ptr.write_volatile(0xff) };
-        unsafe { ptr.add(9).write_volatile(0xff) };
+        buffer[0] = 0xff;
+        buffer[9] = 0xff;
+        assert_eq!(buffer[0], 0xff);
+        assert_eq!(buffer[9], 0xff);
     }
-    unsafe { boot::free_pool(ptr) }.unwrap();
+    unsafe { boot::free_pool(ptr.cast()) }.unwrap();
 }
 
 // Simple test to ensure our custom allocator works with the `alloc` crate.

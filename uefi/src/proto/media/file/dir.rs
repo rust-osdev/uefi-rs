@@ -38,10 +38,9 @@ impl Directory {
     /// alignment through the `Align` trait (`<FileInfo as Align>::alignment()`).
     ///
     /// # Arguments
-    /// * `buffer`  The target buffer of the read operation
+    /// * `buffer`: The target buffer of the read operation
     ///
     /// # Errors
-    ///
     /// All errors come from calls to [`RegularFile::read`].
     pub fn read_entry<'buf>(
         &mut self,

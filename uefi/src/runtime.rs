@@ -84,11 +84,11 @@ pub unsafe fn set_time(time: &Time) -> Result {
 /// not exist, or `Err` if the existence of the variable could not be determined.
 ///
 /// # Errors
-///
-/// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
-/// * [`Status::SECURITY_VIOLATION`]: variable could not be read due to an
+/// * [`Status::DEVICE_ERROR`] if the variable could not be read due to
+///   hardware error.
+/// * [`Status::SECURITY_VIOLATION`] if the variable could not be read due to an
 ///   authentication error.
-/// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
+/// * [`Status::UNSUPPORTED`] if this platform does not support variable storage
 ///   after exiting boot services.
 pub fn variable_exists(name: &CStr16, vendor: &VariableVendor) -> Result<bool> {
     let rt = runtime_services_raw_panicking();
@@ -126,14 +126,14 @@ pub fn variable_exists(name: &CStr16, vendor: &VariableVendor) -> Result<bool> {
 /// `buf`) and the variable's attributes.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: variable was not found.
-/// * [`Status::BUFFER_TOO_SMALL`]: `buf` is not large enough. The required size
-///   will be returned in the error data.
-/// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
-/// * [`Status::SECURITY_VIOLATION`]: variable could not be read due to an
+/// * [`Status::NOT_FOUND`] if the variable was not found.
+/// * [`Status::BUFFER_TOO_SMALL`] if `buf` is not large enough. The required
+///   size will be returned in the error data.
+/// * [`Status::DEVICE_ERROR`] if the variable could not be read due to a
+///   hardware error.
+/// * [`Status::SECURITY_VIOLATION`] if the variable could not be read due to an
 ///   authentication error.
-/// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
+/// * [`Status::UNSUPPORTED`] if this platform does not support variable storage
 ///   after exiting boot services.
 pub fn get_variable<'buf>(
     name: &CStr16,
@@ -165,12 +165,12 @@ pub fn get_variable<'buf>(
 /// Gets the contents and attributes of a variable.
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: variable was not found.
-/// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
-/// * [`Status::SECURITY_VIOLATION`]: variable could not be read due to an
+/// * [`Status::NOT_FOUND`] if the variable was not found.
+/// * [`Status::DEVICE_ERROR`] if the variable could not be read due to a
+///   hardware error.
+/// * [`Status::SECURITY_VIOLATION`] if the variable could not be read due to an
 ///   authentication error.
-/// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
+/// * [`Status::UNSUPPORTED`] if this platform does not support variable storage
 ///   after exiting boot services.
 #[cfg(feature = "alloc")]
 pub fn get_variable_boxed(
@@ -213,9 +213,7 @@ pub fn get_variable_boxed(
 /// [`CStr16::from_u16_with_nul`].
 ///
 /// # Errors
-///
-/// * [`Status::NOT_FOUND`]: indicates end of iteration, the last variable keys
-///   was retrieved by the previous call to `get_next_variable_key`.
+/// * [`Status::NOT_FOUND`] if no further variables are found.
 /// * [`Status::BUFFER_TOO_SMALL`]: `name` is not large enough. The required
 ///   size (in `u16` characters, not bytes) will be returned in the error data.
 /// * [`Status::INVALID_PARAMETER`]: `name` does not contain a null character, or
@@ -347,15 +345,14 @@ impl Iterator for VariableKeys {
 /// mode if the firmware requires a reboot for that operation.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: invalid attributes, name, or vendor.
-/// * [`Status::OUT_OF_RESOURCES`]: not enough storage is available to hold
+/// * [`Status::INVALID_PARAMETER`] if `name` or `vendor` are invalid.
+/// * [`Status::OUT_OF_RESOURCES`] if not enough storage is available to hold
 ///   the variable.
-/// * [`Status::WRITE_PROTECTED`]: variable is read-only.
-/// * [`Status::SECURITY_VIOLATION`]: variable could not be written due to an
-///   authentication error.
-/// * [`Status::NOT_FOUND`]: attempted to update a non-existent variable.
-/// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
+/// * [`Status::WRITE_PROTECTED`] if the variable is read-only.
+/// * [`Status::SECURITY_VIOLATION`] if the variable could not be written due to
+///   an authentication error.
+/// * [`Status::NOT_FOUND`] if the variable is non-existent.
+/// * [`Status::UNSUPPORTED`] if this platform does not support variable storage
 ///   after exiting boot services.
 pub fn set_variable(
     name: &CStr16,
@@ -381,13 +378,12 @@ pub fn set_variable(
 /// Deletes a UEFI variable.
 ///
 /// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: invalid name or vendor.
-/// * [`Status::WRITE_PROTECTED`]: variable is read-only.
-/// * [`Status::SECURITY_VIOLATION`]: variable could not be deleted due to an
-///   authentication error.
-/// * [`Status::NOT_FOUND`]: attempted to delete a non-existent variable.
-/// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
+/// * [`Status::INVALID_PARAMETER`] if `name` or `vendor` are invalid.
+/// * [`Status::WRITE_PROTECTED`] if the variable is read-only.
+/// * [`Status::SECURITY_VIOLATION`] if the variable could not be written due to
+///   an authentication error.
+/// * [`Status::NOT_FOUND`] if the variable is non-existent.
+/// * [`Status::UNSUPPORTED`] if this platform does not support variable storage
 ///   after exiting boot services.
 pub fn delete_variable(name: &CStr16, vendor: &VariableVendor) -> Result {
     set_variable(name, vendor, VariableAttributes::empty(), &[])
@@ -429,18 +425,17 @@ pub fn query_variable_info(attributes: VariableAttributes) -> Result<VariableSto
 ///
 /// Capsules are most commonly used to update system firmware.
 ///
-/// # Errors
-///
-/// * [`Status::INVALID_PARAMETER`]: zero capsules were provided, or the
+/// # Errors///
+/// * [`Status::INVALID_PARAMETER`] if zero capsules were provided, or the
 ///   capsules are invalid.
-/// * [`Status::DEVICE_ERROR`]: the capsule update was started but failed to a
-///   device error.
-/// * [`Status::OUT_OF_RESOURCES`]: before exiting boot services, indicates the
+/// * [`Status::DEVICE_ERROR`] if the capsule update was started but failed due
+///   to a device error.
+/// * [`Status::OUT_OF_RESOURCES`] if before exiting boot services, the
 ///   capsule is compatible with the platform but there are insufficient
 ///   resources to complete the update. After exiting boot services, indicates
 ///   the capsule is compatible with the platform but can only be processed
 ///   before exiting boot services.
-/// * [`Status::UNSUPPORTED`]: this platform does not support capsule updates
+/// * [`Status::UNSUPPORTED`] if this platform does not support capsule updates
 ///   after exiting boot services.
 pub fn update_capsule(
     capsule_header_array: &[&CapsuleHeader],
@@ -464,15 +459,14 @@ pub fn update_capsule(
 /// See [`CapsuleInfo`] for details of the information returned.
 ///
 /// # Errors
-///
-/// * [`Status::OUT_OF_RESOURCES`]: before exiting boot services, indicates the
+/// * [`Status::OUT_OF_RESOURCES`] if before exiting boot services, the
 ///   capsule is compatible with the platform but there are insufficient
 ///   resources to complete the update. After exiting boot services, indicates
 ///   the capsule is compatible with the platform but can only be processed
 ///   before exiting boot services.
-/// * [`Status::UNSUPPORTED`]: either the capsule type is not supported by this
-///   platform, or the platform does not support capsule updates after exiting
-///   boot services.
+/// * [`Status::UNSUPPORTED`] if either the capsule type is not supported by
+///   this platform, or the platform does not support capsule updates after
+///   exiting boot services.
 pub fn query_capsule_capabilities(capsule_header_array: &[&CapsuleHeader]) -> Result<CapsuleInfo> {
     let rt = runtime_services_raw_panicking();
     let rt = unsafe { rt.as_ref() };
@@ -527,12 +521,11 @@ pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
 /// The caller must ensure the memory map is valid.
 ///
 /// # Errors
-///
-/// * [`Status::UNSUPPORTED`]: either boot services haven't been exited, the
+/// * [`Status::UNSUPPORTED`] if either boot services haven't been exited, the
 ///   firmware's addressing mode is already virtual, or the firmware does not
 ///   support this operation.
-/// * [`Status::NO_MAPPING`]: `map` is missing a required range.
-/// * [`Status::NOT_FOUND`]: `map` contains an address that is not in the
+/// * [`Status::NO_MAPPING`] if `map` is missing a required range.
+/// * [`Status::NOT_FOUND`] if `map` contains an address that is not in the
 ///   current memory map.
 pub unsafe fn set_virtual_address_map(
     map: &mut [MemoryDescriptor],

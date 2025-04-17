@@ -20,11 +20,8 @@ use tempfile::TempDir;
 #[cfg(target_os = "linux")]
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
-/// Name of the ovmf-prebuilt release tag.
-const OVMF_PREBUILT_TAG: &str = "edk2-stable202402-r1";
-
-/// SHA-256 hash of the release tarball.
-const OVMF_PREBUILT_HASH: &str = "91f3148ef146794241c77810a49cfa3e925c83eb55c5cc90f34718cc1b10e9eb";
+/// Name of the ovmf-prebuilt release to use by default.
+const OVMF_PREBUILT_SOURCE: Source = Source::EDK2_STABLE202502_R2;
 
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";
@@ -104,13 +101,7 @@ impl OvmfPaths {
                 );
             }
         } else {
-            let prebuilt = Prebuilt::fetch(
-                Source {
-                    tag: OVMF_PREBUILT_TAG,
-                    sha256: OVMF_PREBUILT_HASH,
-                },
-                OVMF_PREBUILT_DIR,
-            )?;
+            let prebuilt = Prebuilt::fetch(OVMF_PREBUILT_SOURCE, OVMF_PREBUILT_DIR)?;
 
             Ok(prebuilt.get_file(arch.into(), file_type))
         }

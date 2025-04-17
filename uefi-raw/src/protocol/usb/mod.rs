@@ -2,6 +2,8 @@
 
 use core::ffi;
 
+use bitflags::bitflags;
+
 use crate::Status;
 
 pub mod host_controller;
@@ -25,9 +27,25 @@ pub struct DeviceRequest {
     pub length: u16,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct UsbTransferStatus(pub u32);
+bitflags! {
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    #[repr(transparent)]
+    pub struct UsbTransferStatus: u32 {
+        const NOT_EXECUTE = 0x0001;
+        const STALL = 0x0002;
+        const BUFFER = 0x0004;
+        const BABBLE = 0x0008;
+        const NAK = 0x0010;
+        const CRC = 0x0020;
+        const TIMEOUT = 0x0040;
+        const BIT_STUFF = 0x0080;
+        const SYSTEM = 0x0100;
+    }
+}
+
+impl UsbTransferStatus {
+    pub const SUCCESS: Self = Self::empty();
+}
 
 pub type AsyncUsbTransferCallback = unsafe extern "efiapi" fn(
     data: *mut ffi::c_void,

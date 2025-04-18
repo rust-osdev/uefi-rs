@@ -55,9 +55,38 @@ pub struct TransactionTranslator {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub struct PortStatus {
-    pub port_status: u16,
-    pub port_change_status: u16,
+pub struct UsbPortStatus {
+    pub port_status: PortStatus,
+    pub port_change_status: PortChangeStatus,
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct PortStatus: u16 {
+        const CONNECTION = 0x0001;
+        const ENABLE = 0x0002;
+        const SUSPEND = 0x0004;
+        const OVER_CURRENT = 0x0008;
+        const RESET = 0x0010;
+        const POWER = 0x0100;
+        const LOW_SPEED = 0x0200;
+        const HIGH_SPEED = 0x0400;
+        const SUPER_SPEED = 0x0800;
+        const OWNER = 0x2000;
+    }
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct PortChangeStatus: u16 {
+        const CONNECTION = 0x0001;
+        const ENABLE = 0x0002;
+        const SUSPEND = 0x0004;
+        const OVER_CURRENT = 0x0008;
+        const RESET = 0x0010;
+    }
 }
 
 newtype_enum! {
@@ -170,7 +199,7 @@ pub struct Usb2HostControllerProtocol {
     pub get_root_hub_port_status: unsafe extern "efiapi" fn(
         this: *mut Self,
         port_number: u8,
-        port_status: *mut PortStatus,
+        port_status: *mut UsbPortStatus,
     ) -> Status,
     pub set_root_hub_port_feature: unsafe extern "efiapi" fn(
         this: *mut Self,

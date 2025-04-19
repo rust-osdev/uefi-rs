@@ -6,3 +6,4 @@
 
 # Integration test output by QEMU.
 integration-test-debugcon.log
+ovmf-firmware-debugcon.log

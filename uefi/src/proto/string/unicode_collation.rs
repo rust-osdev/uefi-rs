@@ -11,9 +11,11 @@ use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
 use uefi_raw::protocol::string::UnicodeCollationProtocol;
 
-/// The Unicode Collation Protocol.
+/// Unicode Collation [`Protocol`].
 ///
 /// Used to perform case-insensitive comparisons of strings.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(UnicodeCollationProtocol::GUID)]

@@ -23,7 +23,9 @@ pub use uefi_raw::protocol::network::snp::{
     InterruptStatus, NetworkMode, NetworkState, NetworkStatistics, ReceiveFlags,
 };
 
-/// The Simple Network Protocol
+/// Simple Network [`Protocol`].
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleNetworkProtocol::GUID)]

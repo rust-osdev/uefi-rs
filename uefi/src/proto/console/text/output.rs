@@ -5,7 +5,7 @@ use crate::{CStr16, Result, ResultExt, Status, StatusExt};
 use core::fmt;
 use uefi_raw::protocol::console::{SimpleTextOutputMode, SimpleTextOutputProtocol};
 
-/// Interface for text-based output devices.
+/// Simple Text Output [`Protocol`]. Interface for text-based output devices.
 ///
 /// It implements the fmt::Write trait, so you can use it to print text with
 /// standard Rust constructs like the `write!()` and `writeln!()` macros.
@@ -22,6 +22,7 @@ use uefi_raw::protocol::console::{SimpleTextOutputMode, SimpleTextOutputProtocol
 /// [`system::stdout`]: crate::system::with_stdout
 /// [`system::stderr`]: crate::system::with_stderr
 /// [`boot`]: crate::boot#accessing-protocols
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleTextOutputProtocol::GUID)]

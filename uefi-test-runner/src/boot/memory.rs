@@ -10,7 +10,11 @@ pub fn test() {
     global::alloc_vec();
     global::alloc_alignment();
 
-    test_memory_map();
+    #[cfg(feature = "unstable")]
+    {
+        allocator_api::alloc_zst();
+        allocator_api::alloc_normal();
+    }
 }
 
 /// Tests that directly use UEFI boot services to allocate memory.
@@ -130,6 +134,41 @@ mod global {
                 0,
                 "Wrong alignment"
             );
+        }
+    }
+}
+
+/// Tests the `allocator_api` on the UEFI allocator.
+#[cfg(feature = "unstable")]
+mod allocator_api {
+    use core::alloc::Layout;
+    use uefi::allocator::Allocator;
+
+    pub fn alloc_zst() {
+        let layout = Layout::from_size_align(0, 1024).unwrap();
+        let ptr = <Allocator as core::alloc::Allocator>::allocate(&Allocator, layout).unwrap();
+        assert_eq!(ptr.len(), 0);
+        assert_eq!(ptr.as_ptr().cast::<u8>().align_offset(layout.align()), 0);
+    }
+
+    pub fn alloc_normal() {
+        let layout = Layout::from_size_align(64, 64).unwrap();
+        let allocation =
+            <Allocator as core::alloc::Allocator>::allocate(&Allocator, layout).unwrap();
+        assert_eq!(allocation.len(), 64);
+        assert_eq!(
+            allocation
+                .as_ptr()
+                .cast::<u8>()
+                .align_offset(layout.align()),
+            0
+        );
+
+        unsafe {
+            core::ptr::write_bytes(allocation.as_ptr().cast::<u8>(), 42, allocation.len());
+        }
+        unsafe {
+            assert_eq!(allocation.as_ref()[42], 42);
         }
     }
 }

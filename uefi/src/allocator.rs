@@ -173,13 +173,34 @@ unsafe impl GlobalAlloc for Allocator {
 #[cfg(feature = "unstable")]
 unsafe impl core::alloc::Allocator for Allocator {
     fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, core::alloc::AllocError> {
-        let ptr = unsafe { <Allocator as GlobalAlloc>::alloc(self, layout) };
-        NonNull::new(ptr)
-            .ok_or(core::alloc::AllocError)
-            .map(|ptr| NonNull::slice_from_raw_parts(ptr, layout.size()))
+        // Stable alternative for Layout::dangling()
+        fn dangling_for_layout(layout: Layout) -> NonNull<u8> {
+            let align = layout.align();
+            // SAFETY: align is non-zero, so align as usize is a valid address for a NonNull.
+            unsafe {
+                let ptr = align as *mut u8;
+                NonNull::new_unchecked(ptr)
+            }
+        }
+
+        match layout.size() {
+            0 => Ok(NonNull::slice_from_raw_parts(
+                dangling_for_layout(layout),
+                0,
+            )),
+            // SAFETY: `layout` is non-zero in size,
+            size => {
+                let ptr = unsafe { <Allocator as GlobalAlloc>::alloc(self, layout) };
+                NonNull::new(ptr)
+                    .ok_or(core::alloc::AllocError)
+                    .map(|ptr| NonNull::slice_from_raw_parts(ptr, size))
+            }
+        }
     }
 
     unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
-        unsafe { <Allocator as GlobalAlloc>::dealloc(self, ptr.as_ptr(), layout) }
+        if layout.size() != 0 {
+            unsafe { <Allocator as GlobalAlloc>::dealloc(self, ptr.as_ptr(), layout) }
+        }
     }
 }

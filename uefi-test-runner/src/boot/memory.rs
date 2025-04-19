@@ -1,26 +1,28 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use alloc::vec::Vec;
-use uefi::boot;
-use uefi::mem::memory_map::{MemoryMap, MemoryMapMut};
-use uefi_raw::table::boot::MemoryType;
-
 pub fn test() {
     info!("Testing memory functions");
 
     bootservices::allocate_pages();
     bootservices::allocate_pool();
+    bootservices::test_memory_map();
 
     global::alloc_vec();
     global::alloc_alignment();
 
-    test_memory_map();
+    #[cfg(feature = "unstable")]
+    {
+        allocator_api::alloc_zst();
+        allocator_api::alloc_normal();
+    }
 }
 
 /// Tests that directly use UEFI boot services to allocate memory.
 mod bootservices {
+    use alloc::vec::Vec;
     use uefi::boot;
     use uefi::boot::AllocateType;
+    use uefi::mem::memory_map::{MemoryMap, MemoryMapMut};
     use uefi_raw::table::boot::MemoryType;
 
     /// Tests the `allocate_pages` boot service.
@@ -52,6 +54,44 @@ mod bootservices {
             unsafe { ptr.add(9).write_volatile(0xff) };
         }
         unsafe { boot::free_pool(ptr) }.unwrap();
+    }
+
+    /// Tests getting the memory map.
+    pub fn test_memory_map() {
+        info!("Testing memory map functions");
+
+        let mut memory_map =
+            boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to retrieve UEFI memory map");
+
+        memory_map.sort();
+
+        // Collect the descriptors into a vector
+        let descriptors = memory_map.entries().copied().collect::<Vec<_>>();
+
+        // Ensured we have at least one entry.
+        // Real memory maps usually have dozens of entries.
+        assert!(!descriptors.is_empty(), "Memory map is empty");
+
+        let mut curr_value = descriptors[0];
+
+        for value in descriptors.iter().skip(1) {
+            if value.phys_start <= curr_value.phys_start {
+                panic!("memory map sorting failed");
+            }
+            curr_value = *value;
+        }
+
+        // This is pretty much a basic sanity test to ensure returned memory
+        // isn't filled with random values.
+        let first_desc = descriptors[0];
+
+        #[cfg(target_arch = "x86_64")]
+        {
+            let phys_start = first_desc.phys_start;
+            assert_eq!(phys_start, 0, "Memory does not start at address 0");
+        }
+        let page_count = first_desc.page_count;
+        assert!(page_count != 0, "Memory map entry has size zero");
     }
 }
 
@@ -98,39 +138,37 @@ mod global {
     }
 }
 
-fn test_memory_map() {
-    info!("Testing memory map functions");
+/// Tests the `allocator_api` on the UEFI allocator.
+#[cfg(feature = "unstable")]
+mod allocator_api {
+    use core::alloc::Layout;
+    use uefi::allocator::Allocator;
 
-    let mut memory_map =
-        boot::memory_map(MemoryType::LOADER_DATA).expect("Failed to retrieve UEFI memory map");
+    pub fn alloc_zst() {
+        let layout = Layout::from_size_align(0, 1024).unwrap();
+        let ptr = <Allocator as core::alloc::Allocator>::allocate(&Allocator, layout).unwrap();
+        assert_eq!(ptr.len(), 0);
+        assert_eq!(ptr.as_ptr().cast::<u8>().align_offset(layout.align()), 0);
+    }
 
-    memory_map.sort();
+    pub fn alloc_normal() {
+        let layout = Layout::from_size_align(64, 64).unwrap();
+        let allocation =
+            <Allocator as core::alloc::Allocator>::allocate(&Allocator, layout).unwrap();
+        assert_eq!(allocation.len(), 64);
+        assert_eq!(
+            allocation
+                .as_ptr()
+                .cast::<u8>()
+                .align_offset(layout.align()),
+            0
+        );
 
-    // Collect the descriptors into a vector
-    let descriptors = memory_map.entries().copied().collect::<Vec<_>>();
-
-    // Ensured we have at least one entry.
-    // Real memory maps usually have dozens of entries.
-    assert!(!descriptors.is_empty(), "Memory map is empty");
-
-    let mut curr_value = descriptors[0];
-
-    for value in descriptors.iter().skip(1) {
-        if value.phys_start <= curr_value.phys_start {
-            panic!("memory map sorting failed");
+        unsafe {
+            core::ptr::write_bytes(allocation.as_ptr().cast::<u8>(), 42, allocation.len());
         }
-        curr_value = *value;
+        unsafe {
+            assert_eq!(allocation.as_ref()[42], 42);
+        }
     }
-
-    // This is pretty much a basic sanity test to ensure returned memory
-    // isn't filled with random values.
-    let first_desc = descriptors[0];
-
-    #[cfg(target_arch = "x86_64")]
-    {
-        let phys_start = first_desc.phys_start;
-        assert_eq!(phys_start, 0, "Memory does not start at address 0");
-    }
-    let page_count = first_desc.page_count;
-    assert!(page_count != 0, "Memory map entry has size zero");
 }

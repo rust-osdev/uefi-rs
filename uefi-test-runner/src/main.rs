@@ -2,6 +2,7 @@
 
 #![no_std]
 #![no_main]
+#![cfg_attr(feature = "unstable", feature(allocator_api))]
 
 #[macro_use]
 extern crate log;

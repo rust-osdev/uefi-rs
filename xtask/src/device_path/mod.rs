@@ -79,11 +79,11 @@ fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
             self, DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType,
             NodeConversionError,
         };
-        use crate::proto::network::IpAddress;
         use crate::mem::memory_map::MemoryType;
         use core::ptr::addr_of;
         use core::{fmt, slice};
         use ptr_meta::Pointee;
+        use uefi_raw::IpAddress;
 
         #(#packed_modules)*
 

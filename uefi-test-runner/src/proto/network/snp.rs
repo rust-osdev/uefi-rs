@@ -6,7 +6,7 @@ use smoltcp::wire::{
     ETHERNET_HEADER_LEN, EthernetFrame, IPV4_HEADER_LEN, Ipv4Packet, UDP_HEADER_LEN, UdpPacket,
 };
 use uefi::boot::ScopedProtocol;
-use uefi::proto::network::MacAddress;
+use uefi::proto::network::EfiMacAddr;
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
 use uefi_raw::protocol::network::snp::NetworkState;
@@ -53,8 +53,8 @@ fn receive(simple_network: &mut SimpleNetwork, buffer: &mut [u8]) -> uefi::Resul
     // Wait for a bit to ensure that the previous packet has been processed.
     boot::stall(Duration::from_millis(500));
 
-    let mut recv_src_mac = MacAddress([0; 32]);
-    let mut recv_dst_mac = MacAddress([0; 32]);
+    let mut recv_src_mac = EfiMacAddr([0; 32]);
+    let mut recv_dst_mac = EfiMacAddr([0; 32]);
     let mut recv_ethernet_protocol = 0;
 
     let res = simple_network.receive(

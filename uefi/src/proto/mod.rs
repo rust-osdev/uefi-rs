@@ -1,11 +1,35 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! High-level wrappers for [UEFI protocols].
+//! High-level wrappers for UEFI protocols.
 //!
-//! See the [`boot`] documentation for details of how to open a protocol.
+//! # TL;DR
+//! Technically, a protocol is a `C` struct holding functions and/or data, with
+//! an associated [`GUID`].
+//!
+//! # About
+//! UEFI protocols are a structured collection of functions and/or data,
+//! identified by a [`GUID`], which defines an interface between components in
+//! the UEFI environment, such as between drivers, applications, or firmware
+//! services.
+//!
+//! Protocols are central to UEFI’s handle-based object model, and they provide
+//! a clean, extensible way for components to discover and use services from one
+//! another.
+//!
+//! Implementation-wise, a protocol is a `C` struct holding function pointers
+//! and/or data. Please note that some protocols may use [`core::ptr::null`] as
+//! interface. For example, the device path protocol can be implemented but
+//! return `null`.
+//!
+//! [`GUID`]: crate::Guid
+//!
+//! # More Info
+//! - See the [`boot`] documentation for details of how to open a protocol.
+//! - Please find additional low-level information in the
+//!   [protocol section of `uefi-raw`].
 //!
 //! [`boot`]: crate::boot#accessing-protocols
-//! [UEFI protocols]: uefi_raw::protocol
+//! [protocol section of `uefi-raw`]: uefi_raw::protocol
 
 #[cfg(feature = "alloc")]
 pub mod ata;

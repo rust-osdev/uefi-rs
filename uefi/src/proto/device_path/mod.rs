@@ -1,7 +1,39 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! High-level wrappers for the UEFI device path [`Protocol`], i.e.,
-//! [UEFI device paths].
+//! The UEFI device path [`Protocol`], i.e., UEFI device paths.
+//!
+//! This module provides high-level wrappers to work with UEFI device paths.
+//! Please find additional low-level information in the
+//! [device path section of `uefi-raw`].
+//!
+//! # Terminology: Device Paths, Device Path Instances, and Device Path Nodes
+//! An open UEFI device path [`Protocol`], also called _device path_, is a
+//! flexible and structured sequence of binary nodes that describe a route from
+//! the UEFI root to a particular device, controller, or file.
+//!
+//! An entire device path can be made up of multiple device path instances,
+//! and each instance is made up of multiple device path nodes. A device path
+//! _may_ contain multiple device-path instances, but typical paths contain only
+//! a single instance.
+//!
+//! Each node represents a step in the path: PCI device, partition, filesystem,
+//! file path, etc. Each node represents a step in the path: PCI device,
+//! partition, filesystem, file path, etc.
+//!
+//! Example of what a device path containing two instances (each comprised of
+//! three nodes) might look like:
+//!
+//! ```text
+//! ┌──────┬──────┬──────────────╥───────┬──────────┬────────────┐
+//! │ ACPI │ PCI  │ END_INSTANCE ║ CDROM │ FILEPATH │ END_ENTIRE │
+//! └──────┴──────┴──────────────╨───────┴──────────┴────────────┘
+//! ↑      ↑      ↑              ↑       ↑          ↑            ↑
+//! ├─Node─╨─Node─╨─────Node─────╨─Node──╨───Node───╨────Node────┤
+//! ↑                            ↑                               ↑
+//! ├─── DevicePathInstance ─────╨────── DevicePathInstance ─────┤
+//! │                                                            │
+//! └──────────────────── Entire DevicePath ─────────────────────┘
+//! ```
 //!
 //! # Types
 //!
@@ -53,7 +85,7 @@
 //! [`Protocol`]: crate::proto::Protocol
 //! [`device_type`]: DevicePathNode::device_type
 //! [`sub_type`]: DevicePathNode::sub_type
-//! [UEFI device paths]: uefi_raw::protocol::device_path
+//! [device path section of `uefi-raw`]: uefi_raw::protocol::device_path
 
 pub mod build;
 pub mod text;

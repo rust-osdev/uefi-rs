@@ -1461,6 +1461,19 @@ pub fn get_image_file_system(image_handle: Handle) -> Result<ScopedProtocol<Simp
     open_protocol_exclusive(device_handle)
 }
 
+/// Calculates the 32-bit CRC32 for the provided slice.
+///
+/// # Errors
+/// * [`Status::INVALID_PARAMETER`]
+pub fn calculate_crc32(data: &[u8]) -> Result<u32> {
+    let bt = boot_services_raw_panicking();
+    let bt = unsafe { bt.as_ref() };
+    let mut crc = 0u32;
+
+    unsafe { (bt.calculate_crc32)(data.as_ptr().cast(), data.len(), &mut crc) }
+        .to_result_with_val(|| crc)
+}
+
 /// Protocol interface [`Guids`][Guid] that are installed on a [`Handle`] as
 /// returned by [`protocols_per_handle`].
 #[derive(Debug)]

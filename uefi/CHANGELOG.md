@@ -13,6 +13,7 @@
 - Added `proto::ata::pass_thru::AtaPassThru`.
 - Added `boot::ScopedProtocol::open_params()`.
 - Added `boot::TplGuard::old_tpl()`.
+- Added `boot::calculate_crc32()`.
 
 ## Changed
 - **Breaking:** Removed `BootPolicyError` as `BootPolicy` construction is no

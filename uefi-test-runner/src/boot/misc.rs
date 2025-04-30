@@ -26,6 +26,8 @@ pub fn test() {
     test_reinstall_protocol_interface();
     test_uninstall_protocol_interface();
     test_install_configuration_table();
+    info!("Testing crc32...");
+    test_calculate_crc32();
 }
 
 fn test_tpl() {
@@ -246,4 +248,12 @@ fn test_install_configuration_table() {
         boot::install_configuration_table(&TABLE_GUID, ptr::null()).unwrap();
         boot::free_pool(config).unwrap();
     }
+}
+
+fn test_calculate_crc32() {
+    let data = "uefi-rs";
+
+    let crc = boot::calculate_crc32(data.as_bytes()).unwrap();
+
+    assert_eq!(crc, 0xcfc96a3e);
 }

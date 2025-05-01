@@ -1,14 +1,14 @@
-use uefi::CStr16;
 use uefi::boot;
 use uefi::proto::shell::Shell;
+use uefi::CStr16;
 
 pub fn test() {
     info!("Running shell protocol tests");
 
     let handle = boot::get_handle_for_protocol::<Shell>().expect("No Shell handles");
 
-    let mut shell = boot::open_protocol_exclusive::<Shell>(handle)
-        .expect("Failed to open Shell protocol");
+    let mut shell =
+        boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
 
     // create some files
     let mut test_buf = [0u16; 12];

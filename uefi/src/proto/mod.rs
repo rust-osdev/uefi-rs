@@ -28,6 +28,7 @@ pub mod rng;
 #[cfg(feature = "alloc")]
 pub mod scsi;
 pub mod security;
+pub mod shell;
 pub mod shell_params;
 pub mod shim;
 pub mod string;
@@ -101,4 +102,3 @@ where
         ptr.cast::<Self>()
     }
 }
-

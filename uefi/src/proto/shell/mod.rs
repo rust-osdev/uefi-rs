@@ -82,7 +82,7 @@ pub struct Shell {
 }
 
 impl core::fmt::Debug for Shell {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         todo!()
     }
 }
@@ -175,7 +175,7 @@ impl Shell {
     /// TODO
     pub fn find_files(&self, file_pattern: &CStr16) -> Result<Option<FileList>> {
         let mut out_list: MaybeUninit<*mut ShellFileInfo> = MaybeUninit::uninit();
-        let mut out_ptr = out_list.as_mut_ptr();
+        let out_ptr = out_list.as_mut_ptr();
         if out_ptr.is_null() {
             panic!("outptr null");
         }
@@ -347,7 +347,7 @@ impl<'a> FileList<'a> {
     /// Returns an iterator over the file list.
     #[must_use]
     #[inline]
-    pub fn iter(&'a self) -> FileListIter {
+    pub fn iter(&'a self) -> FileListIter<'a> {
         if self.end.is_null() {
             // generate `self.end`
             let _ = self.last();

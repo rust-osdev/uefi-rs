@@ -1,6 +1,6 @@
 [package]
 name = "uefi-raw"
-version = "0.10.0"
+version = "0.11.0"
 readme = "README.md"
 description = """
 Raw UEFI types and bindings for protocols, boot, and runtime services. This can

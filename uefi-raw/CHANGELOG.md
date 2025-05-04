@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+
+# uefi-raw - 0.11.0 (2025-05-04)
+
 ## Added
 - MSRV increased to 1.77.
 - Added `Boolean` type

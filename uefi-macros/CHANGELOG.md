@@ -1,6 +1,11 @@
 # uefi-macros - [Unreleased]
 
 
+# uefi-macros - 0.18.1 (2025-05-04)
+
+Minor documentation updates.
+
+
 # uefi-macros - 0.18.0 (2025-02-07)
 
 As of this release, the project has been relicensed from MPL-2.0 to

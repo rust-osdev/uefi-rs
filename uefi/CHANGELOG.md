@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+
+# uefi - 0.35.0 (2025-05-04)
+
 ## Added
 - Added `boot::signal_event`.
 - Added conversions between `proto::network::IpAddress` and `core::net` types.
@@ -42,7 +45,7 @@
 - The `Display` impl for `CStr8` now excludes the trailing null character.
 - `VariableKeys` initializes with a larger name buffer to work around firmware
   bugs on some devices.
-- The UEFI `allocator::Allocator` has been optimized for page-aligned 
+- The UEFI `allocator::Allocator` has been optimized for page-aligned
   allocations.
 
 

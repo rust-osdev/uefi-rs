@@ -24,7 +24,7 @@ to your `Cargo.toml`. The resulting `Cargo.toml` should look like that:
 ```toml
 [dependencies]
 log = "0.4.21"
-uefi = { version = "0.34.0", features = [ "panic_handler", "logger" ] }
+uefi = { version = "0.35.0", features = [ "panic_handler", "logger" ] }
 ```
 
 Replace the contents of `src/main.rs` with this:

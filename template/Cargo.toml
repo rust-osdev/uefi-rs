@@ -5,4 +5,4 @@ edition = "2021"
 publish = false
 
 [dependencies]
-uefi = { version = "0.34.1", features = ["panic_handler"] }
+uefi = { version = "0.35", features = ["panic_handler"] }

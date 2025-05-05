@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Executes "typos ."
-      - uses: crate-ci/typos@v1.31.1
+      - uses: crate-ci/typos@v1.32.0
   lints:
     name: Lints
     runs-on: ubuntu-latest

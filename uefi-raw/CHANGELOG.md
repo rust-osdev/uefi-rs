@@ -2,6 +2,7 @@
 
 ## Added
 - Added `AllocateType`.
+- Added `PciRootBridgeIoProtocol`.
 
 
 # uefi-raw - 0.11.0 (2025-05-04)

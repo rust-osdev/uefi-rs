@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Boolean, Char16, Char8, Event, Guid, Ipv4Address, Ipv6Address, Status};
+use crate::{guid, Boolean, Char16, Char8, Event, Guid, Status};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};
+use core::net::{Ipv4Addr, Ipv6Addr};
 use core::ptr;
 
 #[derive(Debug, Default)]
@@ -23,19 +24,30 @@ newtype_enum! {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct HttpV4AccessPoint {
     pub use_default_addr: Boolean,
-    pub local_address: Ipv4Address,
-    pub local_subnet: Ipv4Address,
+    pub local_address: Ipv4Addr,
+    pub local_subnet: Ipv4Addr,
     pub local_port: u16,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+impl Default for HttpV4AccessPoint {
+    fn default() -> Self {
+        Self {
+            use_default_addr: Default::default(),
+            local_address: Ipv4Addr::from([0; 4]),
+            local_subnet: Ipv4Addr::from([0; 4]),
+            local_port: 0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct HttpV6AccessPoint {
-    pub local_address: Ipv6Address,
+    pub local_address: Ipv6Addr,
     pub local_port: u16,
 }
 

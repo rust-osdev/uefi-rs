@@ -18,8 +18,13 @@
 - Added `UsbIoProtocol`.
 - Added `Usb2HostControllerProtocol`.
 - Added  `DevicePathProtocol::length()` properly constructing the `u16` value
+- Type `IpAddress` is now tightly integrated with `core::net::IpAddr`, e.g.,
+  various `From` implementations are available.
 
 ## Changed
+- **Breaking:** Types `Ipv4Address` and `Ipv6Address` have been removed. They
+  were replaced by `core::net::Ipv4Addr` and `core::net::Ipv6Addr`, as they are
+  ABI compatible. This mainly affects the `IpAddress` wrapper type.
 - `DevicePathProtocol` now derives
   `Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash`
 

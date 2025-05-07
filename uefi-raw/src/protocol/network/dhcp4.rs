@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Boolean, Char8, Event, Guid, Ipv4Address, MacAddress, Status};
+use crate::{guid, Boolean, Char8, Event, Guid, MacAddress, Status};
 use core::ffi::c_void;
+use core::net::Ipv4Addr;
 
 newtype_enum! {
     pub enum Dhcp4Event: i32 => {
@@ -58,10 +59,10 @@ pub struct Dhcp4Header {
     pub xid: u32,
     pub seconds: u16,
     pub reserved: u16,
-    pub client_addr: Ipv4Address,
-    pub your_addr: Ipv4Address,
-    pub server_addr: Ipv4Address,
-    pub gateway_addr: Ipv4Address,
+    pub client_addr: Ipv4Addr,
+    pub your_addr: Ipv4Addr,
+    pub server_addr: Ipv4Addr,
+    pub gateway_addr: Ipv4Addr,
     pub client_hw_addr: [u8; 16],
     pub server_name: [Char8; 64],
     pub boot_file_name: [Char8; 128],
@@ -86,7 +87,7 @@ pub struct Dhcp4ConfigData {
     pub discover_timeout: *mut u32,
     pub request_try_count: u32,
     pub request_timeout: *mut u32,
-    pub client_address: Ipv4Address,
+    pub client_address: Ipv4Addr,
     pub callback: Option<
         unsafe extern "efiapi" fn(
             this: *mut Dhcp4Protocol,
@@ -107,11 +108,11 @@ pub struct Dhcp4ConfigData {
 pub struct Dhcp4ModeData {
     pub state: Dhcp4State,
     pub config_data: Dhcp4ConfigData,
-    pub client_address: Ipv4Address,
+    pub client_address: Ipv4Addr,
     pub client_mac_address: MacAddress,
-    pub server_address: Ipv4Address,
-    pub router_address: Ipv4Address,
-    pub subnet_mask: Ipv4Address,
+    pub server_address: Ipv4Addr,
+    pub router_address: Ipv4Addr,
+    pub subnet_mask: Ipv4Addr,
     pub lease_time: u32,
     pub reply_packet: *const Dhcp4Packet,
 }
@@ -119,8 +120,8 @@ pub struct Dhcp4ModeData {
 #[derive(Debug)]
 #[repr(C)]
 pub struct Dhcp4ListenPoint {
-    pub listen_address: Ipv4Address,
-    pub subnet_mask: Ipv4Address,
+    pub listen_address: Ipv4Addr,
+    pub subnet_mask: Ipv4Addr,
     pub listen_port: u16,
 }
 
@@ -129,9 +130,9 @@ pub struct Dhcp4ListenPoint {
 pub struct Dhcp4TransmitReceiveToken {
     pub status: Status,
     pub completion_event: Event,
-    pub remote_address: Ipv4Address,
+    pub remote_address: Ipv4Addr,
     pub remote_port: u16,
-    pub gateway_address: Ipv4Address,
+    pub gateway_address: Ipv4Addr,
     pub listen_point_count: u32,
     pub listen_points: *mut Dhcp4ListenPoint,
     pub timeout_value: u32,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use uefi::proto::network::pxe::{BaseCode, DhcpV4Packet, IpFilter, IpFilters, UdpOpFlags};
-use uefi::proto::network::IpAddress;
+use uefi::proto::network::EfiIpAddr;
 use uefi::{boot, CStr8};
 
 pub fn test() {
@@ -27,7 +27,7 @@ pub fn test() {
         assert!(base_code.mode().dhcp_ack_received());
         let dhcp_ack: &DhcpV4Packet = base_code.mode().dhcp_ack().as_ref();
         let server_ip = dhcp_ack.bootp_si_addr;
-        let server_ip = IpAddress::new_v4(server_ip);
+        let server_ip = EfiIpAddr::new_v4(server_ip);
 
         const EXAMPLE_FILE_NAME: &[u8] = b"example-file.txt\0";
         const EXAMPLE_FILE_CONTENT: &[u8] = b"Hello world!";

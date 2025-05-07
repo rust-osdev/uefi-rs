@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
-use uefi::proto::network::MacAddress;
+use uefi::proto::network::EfiMacAddr;
 use uefi::{boot, Status};
 
 pub fn test() {
@@ -75,7 +75,7 @@ pub fn test() {
             \xa9\xe4\
             \x04\x01\x02\x03\x04";
 
-        let dest_addr = MacAddress([0xffu8; 32]);
+        let dest_addr = EfiMacAddr([0xffu8; 32]);
         assert!(!simple_network
             .get_interrupt_status()
             .unwrap()

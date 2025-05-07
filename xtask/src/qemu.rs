@@ -26,15 +26,6 @@ const OVMF_PREBUILT_SOURCE: Source = Source::EDK2_STABLE202502_R2;
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";
 
-/// Environment variable for overriding the path of the OVMF code file.
-const ENV_VAR_OVMF_CODE: &str = "OVMF_CODE";
-
-/// Environment variable for overriding the path of the OVMF vars file.
-const ENV_VAR_OVMF_VARS: &str = "OVMF_VARS";
-
-/// Environment variable for overriding the path of the OVMF shell file.
-const ENV_VAR_OVMF_SHELL: &str = "OVMF_SHELL";
-
 impl From<UefiArch> for ovmf_prebuilt::Arch {
     fn from(arch: UefiArch) -> Self {
         match arch {
@@ -47,29 +38,13 @@ impl From<UefiArch> for ovmf_prebuilt::Arch {
 
 /// Get a user-provided path for the given OVMF file type.
 ///
-/// This uses the command-line arg if present, otherwise it falls back to an
-/// environment variable. If neither is present, returns `None`.
+/// This can come from an explicit CLI arg or an environment variable, depending
+/// on how clap received and parsed the value.
 fn get_user_provided_path(file_type: FileType, opt: &QemuOpt) -> Option<PathBuf> {
-    let opt_path;
-    let var_name;
     match file_type {
-        FileType::Code => {
-            opt_path = &opt.ovmf_code;
-            var_name = ENV_VAR_OVMF_CODE;
-        }
-        FileType::Vars => {
-            opt_path = &opt.ovmf_vars;
-            var_name = ENV_VAR_OVMF_VARS;
-        }
-        FileType::Shell => {
-            opt_path = &opt.ovmf_shell;
-            var_name = ENV_VAR_OVMF_SHELL;
-        }
-    }
-    if let Some(path) = opt_path {
-        Some(path.clone())
-    } else {
-        env::var_os(var_name).map(PathBuf::from)
+        FileType::Code => opt.ovmf_code.clone(),
+        FileType::Vars => opt.ovmf_vars.clone(),
+        FileType::Shell => opt.ovmf_shell.clone(),
     }
 }
 

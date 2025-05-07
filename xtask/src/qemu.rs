@@ -62,7 +62,7 @@ fn get_user_provided_path(file_type: FileType, opt: &QemuOpt) -> Option<PathBuf>
             var_name = ENV_VAR_OVMF_VARS;
         }
         FileType::Shell => {
-            opt_path = &None;
+            opt_path = &opt.ovmf_shell;
             var_name = ENV_VAR_OVMF_SHELL;
         }
     }

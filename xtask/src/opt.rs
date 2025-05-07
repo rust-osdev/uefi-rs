@@ -194,6 +194,10 @@ pub struct QemuOpt {
     #[clap(long, action)]
     pub ovmf_vars: Option<PathBuf>,
 
+    /// Path of an OVMF shell application.
+    #[clap(long, action)]
+    pub ovmf_shell: Option<PathBuf>,
+
     /// Run an example instead of the main binary.
     #[clap(long, action)]
     pub example: Option<String>,

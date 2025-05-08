@@ -51,9 +51,9 @@ pub fn uefi_revision() -> Revision {
 
 /// Call `f` with a slice of [`ConfigTableEntry`]. Each entry provides access to
 /// a vendor-specific table.
-pub fn with_config_table<F, R>(f: F) -> R
+pub fn with_config_table<F, R>(mut f: F) -> R
 where
-    F: Fn(&[ConfigTableEntry]) -> R,
+    F: FnMut(&[ConfigTableEntry]) -> R,
 {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.
@@ -75,9 +75,9 @@ where
 ///
 /// This function will panic if called after exiting boot services, or if stdin
 /// is not available.
-pub fn with_stdin<F, R>(f: F) -> R
+pub fn with_stdin<F, R>(mut f: F) -> R
 where
-    F: Fn(&mut Input) -> R,
+    F: FnMut(&mut Input) -> R,
 {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.
@@ -101,9 +101,9 @@ where
 ///
 /// This function will panic if called after exiting boot services, or if stdout
 /// is not available.
-pub fn with_stdout<F, R>(f: F) -> R
+pub fn with_stdout<F, R>(mut f: F) -> R
 where
-    F: Fn(&mut Output) -> R,
+    F: FnMut(&mut Output) -> R,
 {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.
@@ -127,9 +127,9 @@ where
 ///
 /// This function will panic if called after exiting boot services, or if stderr
 /// is not available.
-pub fn with_stderr<F, R>(f: F) -> R
+pub fn with_stderr<F, R>(mut f: F) -> R
 where
-    F: Fn(&mut Output) -> R,
+    F: FnMut(&mut Output) -> R,
 {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.

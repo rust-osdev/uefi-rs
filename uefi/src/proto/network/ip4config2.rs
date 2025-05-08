@@ -7,6 +7,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::time::Duration;
 
 use uefi::boot::ScopedProtocol;
 use uefi::prelude::*;
@@ -137,7 +138,7 @@ impl Ip4Config2 {
             if verbose {
                 print!(".");
             }
-            boot::stall(1_000_000);
+            boot::stall(Duration::from_secs(1));
             let info = self.get_interface_info()?;
             if info.station_addr != no_address {
                 if verbose {

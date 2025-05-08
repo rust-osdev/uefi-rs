@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use core::time::Duration;
+
 use crate::{boot, println};
 use cfg_if::cfg_if;
 
@@ -9,7 +11,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
 
     // Give the user some time to read the message
     if boot::are_boot_services_active() {
-        boot::stall(10_000_000);
+        boot::stall(Duration::from_secs(10));
     } else {
         let mut dummy = 0u64;
         // FIXME: May need different counter values in debug & release builds

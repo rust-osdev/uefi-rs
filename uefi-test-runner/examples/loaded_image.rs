@@ -4,6 +4,7 @@
 #![no_main]
 #![no_std]
 
+use core::time::Duration;
 use log::info;
 use uefi::boot::{self, SearchType};
 use uefi::prelude::*;
@@ -20,7 +21,7 @@ fn main() -> Status {
 
     print_image_path().unwrap();
 
-    boot::stall(10_000_000);
+    boot::stall(Duration::from_secs(10));
     Status::SUCCESS
 }
 // ANCHOR_END: main

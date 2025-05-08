@@ -43,6 +43,7 @@ use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
+use core::time::Duration;
 use core::{mem, slice};
 use uefi_raw::table::boot::{InterfaceType, TimerDelay};
 #[cfg(feature = "alloc")]
@@ -1423,10 +1424,12 @@ pub fn set_watchdog_timer(
         .to_result()
 }
 
-/// Stalls execution for the given number of microseconds.
-pub fn stall(microseconds: usize) {
+/// Stalls execution for the given duration.
+pub fn stall(duration: Duration) {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
+
+    let microseconds = duration.as_micros() as usize;
 
     unsafe {
         // No error conditions are defined in the spec for this function, so

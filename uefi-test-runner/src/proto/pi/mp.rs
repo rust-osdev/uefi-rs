@@ -76,7 +76,7 @@ extern "efiapi" fn proc_increment_atomic(arg: *mut c_void) {
 }
 
 extern "efiapi" fn proc_wait_100ms(_: *mut c_void) {
-    boot::stall(100_000);
+    boot::stall(Duration::from_millis(100));
 }
 
 fn test_startup_all_aps(mps: &MpServices) {

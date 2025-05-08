@@ -68,7 +68,6 @@ pub fn uefi_revision() -> Revision {
 ///     }
 /// });
 /// ```
-pub fn with_config_table<F, R>(f: F) -> R
 pub fn with_config_table<F, R>(mut f: F) -> R
 where
     F: FnMut(&[ConfigTableEntry]) -> R,
@@ -170,14 +169,18 @@ mod tests {
     use super::*;
     use crate::table::cfg::ACPI2_GUID;
 
-    // compile test only
     #[allow(dead_code)]
+    #[allow(clippy::assertions_on_constants)]
     fn with_config_table_compile_test() {
-        let mut address_acpi2 = None;
+        assert!(false, "compile test only");
+        let mut acpi2_address = None;
         with_config_table(|slice| {
             for i in slice {
                 match i.guid {
-                    ACPI2_GUID => address_acpi2 = Some(i.address),
+                    ACPI2_GUID => {
+                        acpi2_address = Some(i.address);
+                        break;
+                    }
                     _ => {}
                 }
             }

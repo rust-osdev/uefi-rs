@@ -8,6 +8,8 @@
 //!
 //! This module contains the actual entries of the configuration table,
 //! as well as GUIDs for many known vendor tables.
+//! 
+//! https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-configuration-table-properties-table
 
 use crate::{guid, Guid};
 use bitflags::bitflags;
@@ -16,6 +18,8 @@ use core::ffi::c_void;
 /// Contains a set of GUID / pointer for a vendor-specific table.
 ///
 /// The UEFI standard guarantees each entry is unique.
+/// 
+/// https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-configuration-table
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct ConfigTableEntry {

@@ -8,7 +8,7 @@
 //!
 //! This module contains the actual entries of the configuration table,
 //! as well as GUIDs for many known vendor tables.
-//! 
+//!
 //! https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-configuration-table-properties-table
 
 use crate::{guid, Guid};
@@ -18,7 +18,7 @@ use core::ffi::c_void;
 /// Contains a set of GUID / pointer for a vendor-specific table.
 ///
 /// The UEFI standard guarantees each entry is unique.
-/// 
+///
 /// https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-configuration-table
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
@@ -60,12 +60,12 @@ impl ConfigTableEntry {
     pub const MEMORY_STATUS_CODE_RECORD_GUID: Guid = guid!("060cc026-4c0d-4dda-8f41-595fef00a502");
 
     /// Provides additional information about regions within the run-time memory blocks.
-    /// 
+    ///
     /// https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-memory-attributes-table
     pub const MEMORY_ATTRIBUTES_GUID: Guid = guid!("dcfa911d-26eb-469f-a220-38b7dc461220");
 
     /// Constants used for UEFI signature database variable access.
-    /// 
+    ///
     /// https://uefi.org/specs/UEFI/2.11/32_Secure_Boot_and_Driver_Signing.html#uefi-image-variable-guid-variable-name
     pub const IMAGE_SECURITY_DATABASE_GUID: Guid = guid!("d719b2cb-3d3a-4596-a3bc-dad00e67656f");
 

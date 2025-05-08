@@ -55,6 +55,16 @@ impl ConfigTableEntry {
     /// status codes reported during the pre-UEFI environment.
     pub const MEMORY_STATUS_CODE_RECORD_GUID: Guid = guid!("060cc026-4c0d-4dda-8f41-595fef00a502");
 
+    /// Provides additional information about regions within the run-time memory blocks.
+    /// 
+    /// https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-memory-attributes-table
+    pub const MEMORY_ATTRIBUTES_GUID: Guid = guid!("dcfa911d-26eb-469f-a220-38b7dc461220");
+
+    /// Constants used for UEFI signature database variable access.
+    /// 
+    /// https://uefi.org/specs/UEFI/2.11/32_Secure_Boot_and_Driver_Signing.html#uefi-image-variable-guid-variable-name
+    pub const IMAGE_SECURITY_DATABASE_GUID: Guid = guid!("d719b2cb-3d3a-4596-a3bc-dad00e67656f");
+
     /// Table which provides Driver eXecution Environment services.
     pub const DXE_SERVICES_GUID: Guid = guid!("05ad34ba-6f02-4214-952e-4da0398e2bb9");
 

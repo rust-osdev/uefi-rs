@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use core::time::Duration;
+
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::proto::network::MacAddress;
 use uefi::{boot, Status};
@@ -106,7 +108,7 @@ pub fn test() {
         if simple_network.receive(&mut buffer, None, None, None, None)
             == Err(Status::NOT_READY.into())
         {
-            boot::stall(1_000_000);
+            boot::stall(Duration::from_secs(1));
 
             simple_network
                 .receive(&mut buffer, None, None, None, None)

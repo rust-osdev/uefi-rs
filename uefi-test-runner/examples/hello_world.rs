@@ -7,6 +7,7 @@
 // ANCHOR_END: features
 
 // ANCHOR: use
+use core::time::Duration;
 use log::info;
 use uefi::prelude::*;
 // ANCHOR_END: use
@@ -20,7 +21,7 @@ fn main() -> Status {
     // ANCHOR_END: services
     // ANCHOR: log
     info!("Hello world!");
-    boot::stall(10_000_000);
+    boot::stall(Duration::from_secs(10));
     // ANCHOR_END: log
     // ANCHOR: return
     Status::SUCCESS

@@ -1,5 +1,9 @@
 # uefi - [Unreleased]
 
+## Changed
+- **Breaking:** `boot::stall` now take `Duration` instead of
+  `usize`.
+
 
 # uefi - 0.35.0 (2025-05-04)
 

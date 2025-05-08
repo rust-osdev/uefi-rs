@@ -8,13 +8,12 @@
 
 extern crate alloc;
 
-use log::{info, warn};
-
 // ANCHOR: use
+use core::time::Duration;
+use log::{info, warn};
 use uefi::boot;
 use uefi::prelude::*;
 use uefi::proto::misc::Timestamp;
-
 // ANCHOR_END: use
 
 // ANCHOR: entry
@@ -30,7 +29,7 @@ fn main() -> Status {
     // ANCHOR_END: params
 
     // ANCHOR: stall
-    boot::stall(10_000_000);
+    boot::stall(Duration::from_secs(10));
     // ANCHOR_END: stall
 
     // ANCHOR: return

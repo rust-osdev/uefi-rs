@@ -153,6 +153,7 @@ mod tests {
     use crate::table::cfg::ACPI2_GUID;
 
     // compile test only
+    #[allow(dead_code)]
     fn with_config_table_compile_test() {
         let mut address_acpi2 = None;
         with_config_table(|slice| {

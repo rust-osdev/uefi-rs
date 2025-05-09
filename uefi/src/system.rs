@@ -146,3 +146,22 @@ where
 
     f(stderr)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::table::cfg::ACPI2_GUID;
+
+    #[test]
+    fn with_config_table_compile_test() {
+        let mut address_acpi2 = None;
+        with_config_table(|slice| {
+            for i in slice {
+                match i.guid {
+                    ACPI2_GUID => address_acpi2 = Some(i.address),
+                    _ => {}
+                }
+            }
+        });
+    }
+}

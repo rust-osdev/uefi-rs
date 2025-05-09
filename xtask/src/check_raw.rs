@@ -23,12 +23,28 @@ use syn::{
 };
 use walkdir::WalkDir;
 
+/// Type of an `Item`.
+#[derive(Debug, Eq, PartialEq)]
+enum ItemKind {
+    Enum,
+    Other,
+}
+
+impl From<&Item> for ItemKind {
+    fn from(item: &Item) -> Self {
+        match item {
+            Item::Enum(_) => Self::Enum,
+            _ => Self::Other,
+        }
+    }
+}
+
 /// All possible validation error kinds.
 #[derive(Debug, Eq, PartialEq)]
 enum ErrorKind {
     ForbiddenAbi,
     ForbiddenAttr,
-    ForbiddenItemKind,
+    ForbiddenItemKind(ItemKind),
     ForbiddenRepr,
     ForbiddenType,
     MalformedAttrs,
@@ -47,7 +63,9 @@ impl Display for ErrorKind {
             match self {
                 Self::ForbiddenAbi => "forbidden ABI",
                 Self::ForbiddenAttr => "forbidden attribute",
-                Self::ForbiddenItemKind => "forbidden type of item",
+                Self::ForbiddenItemKind(ItemKind::Enum) =>
+                    "forbidden use of enum; use the `newtype_enum!` macro instead",
+                Self::ForbiddenItemKind(_) => "forbidden type of item",
                 Self::ForbiddenRepr => "forbidden repr",
                 Self::ForbiddenType => "forbidden type",
                 Self::MalformedAttrs => "malformed attribute contents",
@@ -364,7 +382,11 @@ fn check_item(item: &Item, src: &Path) -> Result<(), Error> {
             // Allow.
         }
         item => {
-            return Err(Error::new(ErrorKind::ForbiddenItemKind, src, item));
+            return Err(Error::new(
+                ErrorKind::ForbiddenItemKind(item.into()),
+                src,
+                item,
+            ));
         }
     }
 
@@ -424,7 +446,7 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_item() {
+    fn test_invalid_item_enum() {
         // Rust enums are not allowed.
         check_item_err(
             parse_quote! {
@@ -432,7 +454,18 @@ mod tests {
                     A
                 }
             },
-            ErrorKind::ForbiddenItemKind,
+            ErrorKind::ForbiddenItemKind(ItemKind::Enum),
+        );
+    }
+
+    #[test]
+    fn test_invalid_item_other() {
+        // Top-level functions are not allowed.
+        check_item_err(
+            parse_quote! {
+                pub fn x() {}
+            },
+            ErrorKind::ForbiddenItemKind(ItemKind::Other),
         );
     }
 

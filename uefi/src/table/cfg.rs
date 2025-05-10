@@ -86,6 +86,51 @@ impl ConfigTableEntry {
     pub const PROPERTIES_TABLE_GUID: Guid = guid!("880aaca3-4adc-4a04-9079-b747340825e5");
 }
 
+/// Entry pointing to the old ACPI 1 RSDP.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::ACPI_GUID` instead"
+)]
+pub const ACPI_GUID: Guid = ConfigTableEntry::ACPI_GUID;
+
+/// Entry pointing to the ACPI 2 RSDP.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::ACPI2_GUID` instead"
+)]
+pub const ACPI2_GUID: Guid = ConfigTableEntry::ACPI2_GUID;
+
+/// Entry pointing to the SMBIOS 1.0 table.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::SMBIOS_GUID` instead"
+)]
+pub const SMBIOS_GUID: Guid = ConfigTableEntry::SMBIOS_GUID;
+
+/// Entry pointing to the SMBIOS 3.0 table.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::SMBIOS3_GUID` instead"
+)]
+pub const SMBIOS3_GUID: Guid = ConfigTableEntry::SMBIOS3_GUID;
+
+/// Entry pointing to the EFI System Resource table (ESRT).
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::ESRT_GUID` instead"
+)]
+pub const ESRT_GUID: Guid = ConfigTableEntry::ESRT_GUID;
+
+/// GUID of the UEFI properties table.
+///
+/// The properties table is used to provide additional info
+/// about the UEFI implementation.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::PROPERTIES_TABLE_GUID` instead"
+)]
+pub const PROPERTIES_TABLE_GUID: Guid = ConfigTableEntry::PROPERTIES_TABLE_GUID;
+
 /// This table contains additional information about the UEFI implementation.
 #[repr(C)]
 #[derive(Debug)]
@@ -112,3 +157,54 @@ bitflags! {
         const NON_EXECUTABLE_DATA = 1;
     }
 }
+
+/// Hand-off Blocks are used to pass data from the early pre-UEFI environment to the UEFI drivers.
+///
+/// Most OS loaders or applications should not mess with this.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::HAND_OFF_BLOCK_LIST_GUID` instead"
+)]
+pub const HAND_OFF_BLOCK_LIST_GUID: Guid = ConfigTableEntry::HAND_OFF_BLOCK_LIST_GUID;
+
+/// Table used in the early boot environment to record memory ranges.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::MEMORY_TYPE_INFORMATION_GUID` instead"
+)]
+pub const MEMORY_TYPE_INFORMATION_GUID: Guid = ConfigTableEntry::MEMORY_TYPE_INFORMATION_GUID;
+
+/// Used to identify Hand-off Blocks which store
+/// status codes reported during the pre-UEFI environment.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::MEMORY_STATUS_CODE_RECORD_GUID` instead"
+)]
+pub const MEMORY_STATUS_CODE_RECORD_GUID: Guid = ConfigTableEntry::MEMORY_STATUS_CODE_RECORD_GUID;
+
+/// Table which provides Driver eXecution Environment services.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::DXE_SERVICES_GUID` instead"
+)]
+pub const DXE_SERVICES_GUID: Guid = ConfigTableEntry::DXE_SERVICES_GUID;
+
+/// LZMA-compressed filesystem.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::LZMA_COMPRESS_GUID` instead"
+)]
+pub const LZMA_COMPRESS_GUID: Guid = ConfigTableEntry::LZMA_COMPRESS_GUID;
+
+/// A custom compressed filesystem used by the Tiano UEFI implementation.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::TIANO_COMPRESS_GUID` instead"
+)]
+pub const TIANO_COMPRESS_GUID: Guid = ConfigTableEntry::TIANO_COMPRESS_GUID;
+/// Pointer to the debug image info table.
+#[deprecated(
+    since = "0.35.1",
+    note = "please use `ConfigTableEntry::DEBUG_IMAGE_INFO_GUID` instead"
+)]
+pub const DEBUG_IMAGE_INFO_GUID: Guid = ConfigTableEntry::DEBUG_IMAGE_INFO_GUID;

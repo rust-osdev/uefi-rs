@@ -61,9 +61,9 @@ pub fn uefi_revision() -> Revision {
 /// with_config_table(|slice| {
 ///     for i in slice {
 ///         match i.guid {
-///             ConfigTableEntry::ACPI_GUID => println!("ACPI"),
-///             ConfigTableEntry::ACPI2_GUID => println!("ACPI2"),
-///             guid => println!("GUID: {}", guid),
+///             ConfigTableEntry::ACPI_GUID => println!("Found ACPI1"),
+///             ConfigTableEntry::ACPI2_GUID => println!("Found ACPI2"),
+///             guid => println!("Found {}", guid),
 ///         }
 ///     }
 /// });

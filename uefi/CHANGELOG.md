@@ -1,8 +1,11 @@
 # uefi - [Unreleased]
 
+## Added
+- Added `ConfigTableEntry::MEMORY_ATTRIBUTES_GUID` and `ConfigTableEntry::IMAGE_SECURITY_DATABASE_GUID`.
+
 ## Changed
-- **Breaking:** `boot::stall` now take `Duration` instead of
-  `usize`.
+- **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.
+- `table::cfg::*_GUID` constants now deprecated. Use `ConfigTableEntry::*_GUID` instead.
 
 
 # uefi - 0.35.0 (2025-05-04)

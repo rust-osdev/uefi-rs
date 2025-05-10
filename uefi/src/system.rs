@@ -51,6 +51,23 @@ pub fn uefi_revision() -> Revision {
 
 /// Call `f` with a slice of [`ConfigTableEntry`]. Each entry provides access to
 /// a vendor-specific table.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use uefi::system::with_config_table;
+/// use uefi::table::cfg::ConfigTableEntry;
+///
+/// with_config_table(|slice| {
+///     for i in slice {
+///         match i.guid {
+///             ConfigTableEntry::ACPI_GUID => println!("Found ACPI1"),
+///             ConfigTableEntry::ACPI2_GUID => println!("Found ACPI2"),
+///             guid => println!("Found {}", guid),
+///         }
+///     }
+/// });
+/// ```
 pub fn with_config_table<F, R>(f: F) -> R
 where
     F: Fn(&[ConfigTableEntry]) -> R,

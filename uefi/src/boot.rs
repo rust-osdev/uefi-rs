@@ -121,9 +121,23 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
     }
 }
 
-/// Allocates memory pages from the system.
+/// Allocates a consecutive set of memory pages using the UEFI allocator.
 ///
-/// UEFI OS loaders should allocate memory of the type `LoaderData`.
+/// The buffer will be [`PAGE_SIZE`] aligned. Callers are responsible for
+/// freeing the memory using [`free_pages`].
+///
+/// # Arguments
+/// - `allocation_type`: The [`AllocateType`] to choose the allocation strategy.
+/// - `memory_type`: The [`MemoryType`] used to persist the allocation in the
+///   UEFI memory map. Typically, UEFI OS loaders should allocate memory of
+///   type [`MemoryType::LOADER_DATA`].
+///- `count`: Number of bytes to allocate.
+///
+/// # Safety
+///
+/// Using this function is safe, but it returns a raw pointer to uninitialized
+/// memory. The memory must be initialized before creating a reference to it
+/// or reading from it eventually.
 ///
 /// # Errors
 ///
@@ -131,18 +145,22 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
 /// * [`Status::NOT_FOUND`]: the requested pages could not be found.
-pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Result<NonNull<u8>> {
+pub fn allocate_pages(
+    allocation_type: AllocateType,
+    memory_type: MemoryType,
+    count: usize,
+) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    let (ty, initial_addr) = match ty {
+    let (ty, initial_addr) = match allocation_type {
         AllocateType::AnyPages => (0, 0),
         AllocateType::MaxAddress(addr) => (1, addr),
         AllocateType::Address(addr) => (2, addr),
     };
 
     let mut addr1 = initial_addr;
-    unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr1) }.to_result()?;
+    unsafe { (bt.allocate_pages)(ty, memory_type, count, &mut addr1) }.to_result()?;
 
     // The UEFI spec allows `allocate_pages` to return a valid allocation at
     // address zero. Rust does not allow writes through a null pointer (which
@@ -156,7 +174,7 @@ pub fn allocate_pages(ty: AllocateType, mem_ty: MemoryType, count: usize) -> Res
     // not yet been freed, so if this allocation succeeds it should be at a
     // non-zero address.
     let mut addr2 = initial_addr;
-    let r = unsafe { (bt.allocate_pages)(ty, mem_ty, count, &mut addr2) }.to_result();
+    let r = unsafe { (bt.allocate_pages)(ty, memory_type, count, &mut addr2) }.to_result();
 
     // Free the original allocation (ignoring errors).
     let _unused = unsafe { (bt.free_pages)(addr1, count) };
@@ -190,22 +208,37 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
     unsafe { (bt.free_pages)(addr, count) }.to_result()
 }
 
-/// Allocates from a memory pool. The pointer will be 8-byte aligned.
+/// Allocates a consecutive region of bytes using the UEFI allocator.
+///
+/// The buffer will be 8-byte aligned. Callers are responsible for freeing the
+/// memory using [`free_pool`].
+///
+/// # Arguments
+/// - `memory_type`: The [`MemoryType`] used to persist the allocation in the
+///   UEFI memory map. Typically, UEFI OS loaders should allocate memory of
+///   type [`MemoryType::LOADER_DATA`].
+///- `size`: Number of bytes to allocate.
+///
+/// # Safety
+///
+/// Using this function is safe, but it returns a raw pointer to uninitialized
+/// memory. The memory must be initialized before creating a reference to it
+/// or reading from it eventually.
 ///
 /// # Errors
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
-pub fn allocate_pool(mem_ty: MemoryType, size: usize) -> Result<NonNull<u8>> {
+pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
     let mut buffer = ptr::null_mut();
-    let ptr =
-        unsafe { (bt.allocate_pool)(mem_ty, size, &mut buffer) }.to_result_with_val(|| buffer)?;
+    let ptr = unsafe { (bt.allocate_pool)(memory_type, size, &mut buffer) }
+        .to_result_with_val(|| buffer)?;
 
-    Ok(NonNull::new(ptr).expect("allocate_pool must not return a null pointer if successful"))
+    NonNull::new(ptr).ok_or(Status::OUT_OF_RESOURCES.into())
 }
 
 /// Frees memory allocated by [`allocate_pool`].

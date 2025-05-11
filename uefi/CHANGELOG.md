@@ -6,6 +6,8 @@
 ## Changed
 - **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.
 - `table::cfg::*_GUID` constants now deprecated. Use `ConfigTableEntry::*_GUID` instead.
+- `system::with_config_table`, `system::with_stdin`, `system::with_stdout` and `system::with_stderr`
+  now take mutably closure.
 
 
 # uefi - 0.35.0 (2025-05-04)

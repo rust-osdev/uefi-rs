@@ -499,7 +499,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             "-netdev",
             "user,id=net0,net=192.168.17.0/24,tftp=uefi-test-runner/tftp/,bootfile=fake-boot-file",
             "-device",
-            "virtio-net-pci,netdev=net0",
+            "virtio-net-pci,netdev=net0,mac=52:54:00:00:00:01",
         ]);
         Some(net::EchoService::start())
     } else {

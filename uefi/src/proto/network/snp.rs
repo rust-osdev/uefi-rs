@@ -186,13 +186,36 @@ impl SimpleNetwork {
         status.to_result_with_val(|| NonNull::new(tx_buf.cast()))
     }
 
-    /// Place a packet in the transmit queue of a network interface.
+    /// Place a packet in the transmit queue of the network interface.
+    ///
+    /// The packet structure depends on the type of network interface, but
+    /// effectively this is always a (wired) ethernet interface. In these cases,
+    /// this function transmits ethernet frames.
+    ///
+    /// The header of the packet can be filled by the function with the given
+    /// parameters, but the buffer must already reserve the space for the
+    /// header.
+    ///
+    /// # Arguments
+    /// - `header_size`: The size in bytes of the media header to be filled by
+    ///   the `transmit()` function. If this is `0`, the (ethernet frame) header
+    ///   will not be filled by the function and taken as-is from the buffer.
+    ///   If it is nonzero, then it must be equal to `media_header_size` of
+    ///   the corresponding [`NetworkMode`] and the `dst_addr` and `protocol`
+    ///   parameters must not be `None`.
+    /// - `buffer`: The buffer containing the whole network packet with all
+    ///   its payload including the header for the medium.
+    /// - `src_addr`: The optional source address.
+    /// - `dst_addr`: The optional destination address.
+    /// - `protocol`: Ether Type as of RFC 3232. See
+    ///   <https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml#ieee-802-numbers-1>
+    ///   for examples. Typically, this is `0x0800` (IPv4) or `0x0806` (ARP).
     pub fn transmit(
         &self,
         header_size: usize,
         buffer: &[u8],
         src_addr: Option<MacAddress>,
-        dest_addr: Option<MacAddress>,
+        dst_addr: Option<MacAddress>,
         protocol: Option<u16>,
     ) -> Result {
         unsafe {
@@ -202,7 +225,7 @@ impl SimpleNetwork {
                 buffer.len(),
                 buffer.as_ptr().cast(),
                 src_addr.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),
-                dest_addr.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),
+                dst_addr.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),
                 protocol.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),
             )
         }
@@ -244,7 +267,7 @@ impl SimpleNetwork {
         unsafe { &*(ptr::from_ref(&self.0.wait_for_packet).cast::<Event>()) }
     }
 
-    /// Returns a reference to the Simple Network mode.
+    /// Returns a reference to the [`NetworkMode`].
     #[must_use]
     pub fn mode(&self) -> &NetworkMode {
         unsafe { &*self.0.mode }

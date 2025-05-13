@@ -23,6 +23,7 @@
 - Added `proto::scsi::pass_thru::ExtScsiPassThru`.
 - Added `proto::nvme::pass_thru::NvmePassThru`.
 - Added `proto::ata::pass_thru::AtaPassThru`.
+- Added `proto::usb::io::UsbIo`.
 - Added `boot::ScopedProtocol::open_params()`.
 - Added `boot::TplGuard::old_tpl()`.
 - Added `boot::calculate_crc32()`.

@@ -56,6 +56,7 @@
   bugs on some devices.
 - The UEFI `allocator::Allocator` has been optimized for page-aligned
   allocations.
+- Improved documentation for device paths and their usages
 
 
 # uefi - 0.34.1 (2025-02-07)

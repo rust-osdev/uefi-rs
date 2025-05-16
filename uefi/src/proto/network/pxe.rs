@@ -25,7 +25,9 @@ pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
-/// PXE Base Code protocol
+/// PXE Base Code [`Protocol`].
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(PxeBaseCodeProtocol::GUID)]

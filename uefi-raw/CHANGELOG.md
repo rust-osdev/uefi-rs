@@ -22,6 +22,7 @@
 ## Changed
 - `DevicePathProtocol` now derives
   `Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash`
+- Improved documentation for device paths and their usages
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

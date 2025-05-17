@@ -569,7 +569,7 @@ impl FrameBuffer<'_> {
     ///
     /// On some implementations this framebuffer pointer can be used after
     /// exiting boot services, but that is not guaranteed by the UEFI Specification.
-    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+    pub const fn as_mut_ptr(&mut self) -> *mut u8 {
         self.base
     }
 

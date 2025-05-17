@@ -119,7 +119,7 @@ pub struct NvmeNamespace<'a> {
 }
 
 impl NvmeNamespace<'_> {
-    fn proto_mut(&mut self) -> *mut NvmExpressPassThruProtocol {
+    const fn proto_mut(&mut self) -> *mut NvmExpressPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }
 

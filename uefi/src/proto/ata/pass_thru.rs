@@ -105,7 +105,7 @@ pub struct AtaDevice<'a> {
 }
 
 impl AtaDevice<'_> {
-    fn proto_mut(&mut self) -> *mut AtaPassThruProtocol {
+    const fn proto_mut(&mut self) -> *mut AtaPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }
 

@@ -335,7 +335,7 @@ impl MemoryMapBackingMemory {
 
     /// Returns a mutable slice to the underlying memory.
     #[must_use]
-    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub const fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { self.0.as_mut() }
     }
 }

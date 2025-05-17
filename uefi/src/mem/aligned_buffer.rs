@@ -47,7 +47,7 @@ impl AlignedBuffer {
 
     /// Get a mutable pointer to the aligned memory region managed by this instance.
     #[must_use]
-    pub fn ptr_mut(&mut self) -> *mut u8 {
+    pub const fn ptr_mut(&mut self) -> *mut u8 {
         self.ptr.as_ptr()
     }
 

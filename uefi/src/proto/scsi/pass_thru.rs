@@ -130,7 +130,7 @@ pub struct ScsiDevice<'a> {
     target_lun: ScsiTargetLun,
 }
 impl ScsiDevice<'_> {
-    fn proto_mut(&mut self) -> *mut ExtScsiPassThruProtocol {
+    const fn proto_mut(&mut self) -> *mut ExtScsiPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }
 

@@ -79,7 +79,7 @@ pub struct DevicePathBuilder<'a> {
 
 impl<'a> DevicePathBuilder<'a> {
     /// Create a builder backed by a statically-sized buffer.
-    pub fn with_buf(buf: &'a mut [MaybeUninit<u8>]) -> Self {
+    pub const fn with_buf(buf: &'a mut [MaybeUninit<u8>]) -> Self {
         Self {
             storage: BuilderStorage::Buf { buf, offset: 0 },
         }

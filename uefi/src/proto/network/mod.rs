@@ -58,7 +58,7 @@ impl IpAddress {
     }
 
     #[must_use]
-    fn as_raw_ptr_mut(&mut self) -> *mut uefi_raw::IpAddress {
+    const fn as_raw_ptr_mut(&mut self) -> *mut uefi_raw::IpAddress {
         // The uefi-raw type is defined differently, but the layout is
         // compatible.
         self.0.as_mut_ptr().cast()

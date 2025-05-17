@@ -110,7 +110,7 @@ mod tests_mmap_artificial {
     fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMapRefMut {
         let mmap_len = size_of_val(buffer);
         let mmap = {
-            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr() as *mut u8, mmap_len) }
+            unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr().cast::<u8>(), mmap_len) }
         };
 
         MemoryMapRefMut::new(

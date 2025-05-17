@@ -5,7 +5,7 @@ use core::ptr;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use core::time::Duration;
 use uefi::proto::pi::mp::MpServices;
-use uefi::{boot, Status};
+use uefi::{Status, boot};
 
 /// Number of cores qemu is configured to have
 const NUM_CPUS: usize = 4;

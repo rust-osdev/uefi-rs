@@ -210,7 +210,7 @@ mod tests {
 
         let mut buf: Align16<[u8; 16]> = Align16([0; 16]);
         let data: &mut SomeDataAlign16 = uefi_function_stub_read(&mut buf.0).unwrap();
-        assert_eq!(&data.0 .0, &[1, 2, 3, 4]);
+        assert_eq!(&data.0.0, &[1, 2, 3, 4]);
     }
 
     /// This unit tests checks the [`make_boxed`] utility. The test has different code and behavior
@@ -234,6 +234,6 @@ mod tests {
         #[cfg(feature = "unstable")]
         let data: Box<SomeDataAlign16> = make_boxed(fetch_data_fn, Global).unwrap();
 
-        assert_eq!(&data.0 .0, &[1, 2, 3, 4]);
+        assert_eq!(&data.0.0, &[1, 2, 3, 4]);
     }
 }

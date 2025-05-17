@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use alloc::alloc::{alloc, dealloc, Layout, LayoutError};
+use alloc::alloc::{Layout, LayoutError, alloc, dealloc};
 use core::error::Error;
 use core::fmt;
 use core::ptr::NonNull;
@@ -47,7 +47,7 @@ impl AlignedBuffer {
 
     /// Get a mutable pointer to the aligned memory region managed by this instance.
     #[must_use]
-    pub fn ptr_mut(&mut self) -> *mut u8 {
+    pub const fn ptr_mut(&mut self) -> *mut u8 {
         self.ptr.as_ptr()
     }
 
@@ -112,7 +112,7 @@ mod tests {
     #[test]
     fn test_allocation_alignment() {
         for request_alignment in [1, 2, 4, 8, 16, 32, 64, 128] {
-            for request_len in [1 as usize, 32, 64, 128, 1024] {
+            for request_len in [1_usize, 32, 64, 128, 1024] {
                 let buffer =
                     AlignedBuffer::from_size_align(request_len, request_alignment).unwrap();
                 assert_eq!(buffer.ptr() as usize % request_alignment, 0);

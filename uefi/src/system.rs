@@ -178,12 +178,9 @@ mod tests {
 
         with_config_table(|slice| {
             for i in slice {
-                match i.guid {
-                    ConfigTableEntry::ACPI2_GUID => {
-                        acpi2_address = Some(i.address);
-                        break;
-                    }
-                    _ => {}
+                if i.guid == ConfigTableEntry::ACPI2_GUID {
+                    acpi2_address = Some(i.address);
+                    break;
                 }
             }
         });

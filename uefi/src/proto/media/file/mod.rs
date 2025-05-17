@@ -414,7 +414,11 @@ mod tests {
             Status::BUFFER_TOO_SMALL
         } else {
             unsafe {
-                ptr::copy_nonoverlapping((info as *const FileInfo).cast(), buffer, required_size);
+                ptr::copy_nonoverlapping(
+                    core::ptr::from_ref::<FileInfo>(info).cast(),
+                    buffer,
+                    required_size,
+                );
             }
             unsafe {
                 *buffer_size = required_size;
@@ -423,7 +427,7 @@ mod tests {
         }
     }
 
-    extern "efiapi" fn stub_open(
+    const extern "efiapi" fn stub_open(
         _this: *mut FileProtocolV1,
         _new_handle: *mut *mut FileProtocolV1,
         _filename: *const uefi_raw::Char16,
@@ -433,15 +437,15 @@ mod tests {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_close(_this: *mut FileProtocolV1) -> Status {
+    const extern "efiapi" fn stub_close(_this: *mut FileProtocolV1) -> Status {
         Status::SUCCESS
     }
 
-    extern "efiapi" fn stub_delete(_this: *mut FileProtocolV1) -> Status {
+    const extern "efiapi" fn stub_delete(_this: *mut FileProtocolV1) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_read(
+    const extern "efiapi" fn stub_read(
         _this: *mut FileProtocolV1,
         _buffer_size: *mut usize,
         _buffer: *mut c_void,
@@ -449,7 +453,7 @@ mod tests {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_write(
+    const extern "efiapi" fn stub_write(
         _this: *mut FileProtocolV1,
         _buffer_size: *mut usize,
         _buffer: *const c_void,
@@ -457,18 +461,21 @@ mod tests {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_get_position(
+    const extern "efiapi" fn stub_get_position(
         _this: *const FileProtocolV1,
         _position: *mut u64,
     ) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_set_position(_this: *mut FileProtocolV1, _position: u64) -> Status {
+    const extern "efiapi" fn stub_set_position(
+        _this: *mut FileProtocolV1,
+        _position: u64,
+    ) -> Status {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_set_info(
+    const extern "efiapi" fn stub_set_info(
         _this: *mut FileProtocolV1,
         _information_type: *const Guid,
         _buffer_size: usize,
@@ -477,7 +484,7 @@ mod tests {
         Status::UNSUPPORTED
     }
 
-    extern "efiapi" fn stub_flush(_this: *mut FileProtocolV1) -> Status {
+    const extern "efiapi" fn stub_flush(_this: *mut FileProtocolV1) -> Status {
         Status::UNSUPPORTED
     }
 }

@@ -34,7 +34,7 @@ pub mod time;
 mod status;
 
 pub use status::Status;
-pub use uguid::{guid, Guid};
+pub use uguid::{Guid, guid};
 
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};

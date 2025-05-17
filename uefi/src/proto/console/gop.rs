@@ -54,7 +54,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{boot, Result, StatusExt};
+use crate::{Result, StatusExt, boot};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
@@ -569,7 +569,7 @@ impl FrameBuffer<'_> {
     ///
     /// On some implementations this framebuffer pointer can be used after
     /// exiting boot services, but that is not guaranteed by the UEFI Specification.
-    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+    pub const fn as_mut_ptr(&mut self) -> *mut u8 {
         self.base
     }
 

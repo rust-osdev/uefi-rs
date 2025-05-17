@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::table::boot::MemoryAttribute;
-use crate::{guid, Guid, PhysicalAddress, Status};
+use crate::{Guid, PhysicalAddress, Status, guid};
 
 #[derive(Debug)]
 #[repr(C)]

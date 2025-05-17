@@ -11,7 +11,7 @@
 //!
 //! See <https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#efi-configuration-table-properties-table>.
 
-use crate::{guid, Guid};
+use crate::{Guid, guid};
 use bitflags::bitflags;
 use core::ffi::c_void;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::protocol::device_path::DevicePathProtocol;
-use crate::{guid, Guid, Handle, Status};
+use crate::{Guid, Handle, Status, guid};
 
 #[derive(Debug)]
 #[repr(C)]

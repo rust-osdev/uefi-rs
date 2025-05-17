@@ -294,7 +294,7 @@ impl<'a> AtaResponse<'a> {
     /// # Returns
     /// A reference to the [`AtaStatusBlock`] containing details about the status of the executed operation.
     #[must_use]
-    pub fn status(&self) -> &'a AtaStatusBlock {
+    pub const fn status(&self) -> &'a AtaStatusBlock {
         unsafe {
             self.req
                 .asb
@@ -310,7 +310,7 @@ impl<'a> AtaResponse<'a> {
     /// # Returns
     /// `Option<&[u8]>`: A slice of the data read from the device, or `None` if no read buffer was used.
     #[must_use]
-    pub fn read_buffer(&self) -> Option<&'a [u8]> {
+    pub const fn read_buffer(&self) -> Option<&'a [u8]> {
         if self.req.packet.in_data_buffer.is_null() {
             return None;
         }

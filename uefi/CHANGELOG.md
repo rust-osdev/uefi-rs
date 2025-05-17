@@ -8,7 +8,7 @@
 - `table::cfg::*_GUID` constants now deprecated. Use `ConfigTableEntry::*_GUID` instead.
 - `system::with_config_table`, `system::with_stdin`, `system::with_stdout` and `system::with_stderr`
   now take mutably closure.
-
+- **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
 
 # uefi - 0.35.0 (2025-05-04)
 

@@ -72,7 +72,7 @@ impl Output {
 
     /// Returns an iterator of all supported text modes.
     // TODO: Bring back impl Trait once the story around bounds improves
-    pub fn modes(&mut self) -> OutputModeIter<'_> {
+    pub const fn modes(&mut self) -> OutputModeIter<'_> {
         let max = self.data().max_mode as usize;
         OutputModeIter {
             output: self,

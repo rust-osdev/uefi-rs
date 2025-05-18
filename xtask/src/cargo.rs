@@ -113,9 +113,10 @@ impl Feature {
     }
 
     /// Set of features that enables more code in the root uefi crate.
-    /// # Parameters
-    /// - `include_unstable` - add all functionality behind the `unstable` feature
-    /// - `runtime_features` - add all functionality that effect the runtime of Rust
+    ///
+    /// # Arguments
+    /// - `include_unstable`: add all functionality behind the `unstable` feature
+    /// - `runtime_features`: add all functionality that effect the runtime of Rust
     pub fn more_code(include_unstable: bool, runtime_features: bool) -> Vec<Self> {
         let mut base_features = vec![Self::Alloc, Self::LogDebugcon, Self::Logger];
         if include_unstable {

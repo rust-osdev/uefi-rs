@@ -3,6 +3,8 @@
 //! Block I/O protocols.
 
 use crate::proto::unsafe_protocol;
+#[cfg(doc)]
+use crate::Status;
 use crate::{Result, StatusExt};
 
 pub use uefi_raw::protocol::block::{BlockIoProtocol, Lba};
@@ -23,11 +25,11 @@ impl BlockIO {
     /// Resets the block device hardware.
     ///
     /// # Arguments
-    /// * `extended_verification` Indicates that the driver may perform a more
-    ///   exhaustive verification operation of the device during reset.
+    /// * `extended_verification`: Request that UEFI performs an extended check
+    ///   and reset of the input device.
     ///
     /// # Errors
-    /// * `uefi::Status::DEVICE_ERROR`  The block device is not functioning
+    /// * [`Status::DEVICE_ERROR`] if the block device is not functioning
     ///   correctly and could not be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
@@ -36,18 +38,20 @@ impl BlockIO {
     /// Read the requested number of blocks from the device.
     ///
     /// # Arguments
-    /// * `media_id` - The media ID that the read request is for.
-    /// * `lba` - The starting logical block address to read from on the device.
-    /// * `buffer` - The target buffer of the read operation
+    /// * `media_id`: The media ID that the read request is for.
+    /// * `lba`: The starting logical block address to read from on the device.
+    /// * `buffer`: The target buffer of the read operation
     ///
     /// # Errors
-    /// * `uefi::Status::DEVICE_ERROR`       The device reported an error while attempting to perform the read
-    ///   operation.
-    /// * `uefi::Status::NO_MEDIA`           There is no media in the device.
-    /// * `uefi::Status::MEDIA_CHANGED`      The `media_id` is not for the current media.
-    /// * `uefi::Status::BAD_BUFFER_SIZE`    The buffer size parameter is not a multiple of the intrinsic block size of
-    ///   the device.
-    /// * `uefi::Status::INVALID_PARAMETER`  The read request contains LBAs that are not valid, or the buffer is not on
+    /// * [`Status::DEVICE_ERROR`] when the device reported an error while
+    ///   attempting to perform the read operation.
+    /// * [`Status::NO_MEDIA`] when there is no media in the device.
+    /// * [`Status::MEDIA_CHANGED`] when `media_id` is not for the current
+    ///   media.
+    /// * [`Status::BAD_BUFFER_SIZE`] when the buffer size parameter is not
+    ///   a multiple of the intrinsic block size of the device.
+    /// * [`Status::INVALID_PARAMETER`] when the read request contains LBAs
+    ///   that are not valid, or the buffer is not on
     ///   proper alignment.
     pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
         let buffer_size = buffer.len();
@@ -66,20 +70,21 @@ impl BlockIO {
     /// Writes the requested number of blocks to the device.
     ///
     /// # Arguments
-    /// * `media_id`    The media ID that the write request is for.
-    /// * `lba`         The starting logical block address to be written.
-    /// * `buffer`      Buffer to be written
+    /// * `media_id`: The media ID that the write request is for.
+    /// * `lba`: The starting logical block address to be written.
+    /// * `buffer`: Buffer to be written
     ///
     /// # Errors
-    /// * `uefi::Status::WRITE_PROTECTED`       The device cannot be written to.
-    /// * `uefi::Status::NO_MEDIA`              There is no media in the device.
-    /// * `uefi::Status::MEDIA_CHANGED`         The `media_id` is not for the current media.
-    /// * `uefi::Status::DEVICE_ERROR`          The device reported an error while attempting to perform the write
-    ///   operation.
-    /// * `uefi::Status::BAD_BUFFER_SIZE`       The buffer size parameter is not a multiple of the intrinsic block size
-    ///   of the device.
-    /// * `uefi::Status::INVALID_PARAMETER`     The write request contains LBAs that are not valid, or the buffer is not
-    ///   on proper alignment.
+    /// * [`Status::WRITE_PROTECTED`] when the device cannot be written to.
+    /// * [`Status::NO_MEDIA`] when there is no media in the device.
+    /// * [`Status::MEDIA_CHANGED`] when the `media_id` is not for the
+    ///   current media.
+    /// * [`Status::DEVICE_ERROR`] when the device reported an error while
+    ///   attempting to perform the write operation.
+    /// * [`Status::BAD_BUFFER_SIZE`] when the buffer size parameter is not
+    ///   a multiple of the intrinsic block size of the device.
+    /// * [`Status::INVALID_PARAMETER`] The write request contains LBAs that
+    ///   are not valid, or the buffer is not on proper alignment.
     pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
         let buffer_size = buffer.len();
         unsafe {

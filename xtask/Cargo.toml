@@ -13,7 +13,7 @@ fs-err = "3.0.0"
 heck = "0.5.0"
 itertools = "0.14.0"
 log.workspace = true
-mbrman = "0.5.1"
+mbrman = "0.6.0"
 nix = { version = "0.30.0", default-features = false, features = ["fs"] }
 ovmf-prebuilt = "0.2.3"
 proc-macro2 = { version = "1.0.46", features = ["span-locations"] }

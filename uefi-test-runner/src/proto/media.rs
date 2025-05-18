@@ -175,9 +175,11 @@ fn test_existing_file(directory: &mut Directory) {
     file.delete().unwrap();
 
     // Verify the file is gone.
-    assert!(directory
-        .open(input_file_path, FileMode::Read, FileAttribute::empty())
-        .is_err());
+    assert!(
+        directory
+            .open(input_file_path, FileMode::Read, FileAttribute::empty())
+            .is_err()
+    );
 }
 
 /// Test file creation.

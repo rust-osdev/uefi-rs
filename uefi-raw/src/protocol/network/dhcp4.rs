@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Boolean, Char8, Event, Guid, Ipv4Address, MacAddress, Status};
+use crate::{Boolean, Char8, Event, Guid, Ipv4Address, MacAddress, Status, guid};
 use core::ffi::c_void;
 
 newtype_enum! {

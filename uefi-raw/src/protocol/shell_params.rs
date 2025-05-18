@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Char16, Guid};
+use crate::{Char16, Guid, guid};
 use core::ffi::c_void;
 
 pub type ShellFileHandle = *const c_void;

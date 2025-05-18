@@ -5,5 +5,5 @@
 //! This includes the system table modules, `Status` codes, etc.
 
 pub use crate::{
-    boot, cstr16, cstr8, entry, runtime, system, Handle, ResultExt, Status, StatusExt,
+    Handle, ResultExt, Status, StatusExt, boot, cstr8, cstr16, entry, runtime, system,
 };

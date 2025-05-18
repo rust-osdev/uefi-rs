@@ -17,10 +17,10 @@ use alloc::vec::Vec;
 use log::info;
 use uefi::boot::{self, LoadImageSource};
 use uefi::prelude::*;
+use uefi::proto::BootPolicy;
 use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::{DevicePath, DeviceSubType, DeviceType, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::proto::BootPolicy;
 
 /// Get the device path of the shell app. This is the same as the
 /// currently-loaded image's device path, but with the file path part changed.

@@ -3,7 +3,7 @@
 use log::info;
 use uefi::prelude::*;
 use uefi::runtime::{VariableAttributes, VariableVendor};
-use uefi::{guid, runtime, CStr16, Error};
+use uefi::{CStr16, Error, guid, runtime};
 
 /// Test variable name.
 const NAME: &CStr16 = cstr16!("UefiRsTestVar");

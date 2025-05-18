@@ -23,9 +23,9 @@ pub use path::{Components, Path};
 pub use pathbuf::PathBuf;
 
 use crate::data_types::chars::NUL_16;
-use crate::{cstr16, CStr16, Char16};
-pub(super) use validation::validate_path;
+use crate::{CStr16, Char16, cstr16};
 pub use validation::PathError;
+pub(super) use validation::validate_path;
 
 /// The default separator for paths.
 pub const SEPARATOR: Char16 = unsafe { Char16::from_u16_unchecked('\\' as u16) };

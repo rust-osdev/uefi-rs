@@ -92,7 +92,7 @@ impl MemoryProtection {
 }
 
 /// Convert a byte `Range` to `(base_address, length)`.
-fn range_to_base_and_len(r: Range<PhysicalAddress>) -> (PhysicalAddress, PhysicalAddress) {
+const fn range_to_base_and_len(r: Range<PhysicalAddress>) -> (PhysicalAddress, PhysicalAddress) {
     (r.start, r.end.checked_sub(r.start).unwrap())
 }
 

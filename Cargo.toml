@@ -13,11 +13,11 @@ members = [
 [workspace.package]
 authors = ["The Rust OSDev team"]
 categories = ["embedded", "no-std", "api-bindings"]
-edition = "2021"
+edition = "2024"
 keywords = ["uefi", "efi"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rust-osdev/uefi-rs"
-rust-version = "1.81"
+rust-version = "1.85.1"
 
 [workspace.dependencies]
 bitflags = "2.0.0"

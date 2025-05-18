@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use uefi::proto::scsi::pass_thru::ExtScsiPassThru;
 use uefi::proto::scsi::ScsiRequestBuilder;
+use uefi::proto::scsi::pass_thru::ExtScsiPassThru;
 
 pub fn test() {
     info!("Running extended SCSI Pass Thru tests");

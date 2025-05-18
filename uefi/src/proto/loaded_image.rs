@@ -95,7 +95,7 @@ impl LoadedImage {
     ///
     /// [`load_options_as_cstr16`]: `Self::load_options_as_cstr16`
     #[must_use]
-    pub fn load_options_as_bytes(&self) -> Option<&[u8]> {
+    pub const fn load_options_as_bytes(&self) -> Option<&[u8]> {
         if self.0.load_options.is_null() {
             None
         } else {
@@ -131,7 +131,7 @@ impl LoadedImage {
     /// long enough.
     ///
     /// [shim]: https://github.com/rhboot/shim/blob/4d64389c6c941d21548b06423b8131c872e3c3c7/pe.c#L1143
-    pub unsafe fn set_image(&mut self, data: *const c_void, size: u64) {
+    pub const unsafe fn set_image(&mut self, data: *const c_void, size: u64) {
         self.0.image_base = data;
         self.0.image_size = size;
     }
@@ -167,7 +167,7 @@ impl LoadedImage {
     /// must ensure that the memory lives long enough.
     ///
     /// [`boot::start_image`]: crate::boot::start_image
-    pub unsafe fn set_load_options(&mut self, options: *const u8, size: u32) {
+    pub const unsafe fn set_load_options(&mut self, options: *const u8, size: u32) {
         self.0.load_options = options.cast();
         self.0.load_options_size = size;
     }

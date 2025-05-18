@@ -8,8 +8,8 @@
 //! [`fs`]: crate::fs
 
 use super::Path;
-use crate::fs::CHARACTER_DENY_LIST;
 use crate::Char16;
+use crate::fs::CHARACTER_DENY_LIST;
 use core::fmt::{self, Display, Formatter};
 
 /// Errors related to file paths.
@@ -68,7 +68,7 @@ pub fn validate_path<P: AsRef<Path>>(path: P) -> Result<(), PathError> {
 mod tests {
     use super::*;
     use crate::fs::PathBuf;
-    use crate::{cstr16, CString16};
+    use crate::{CString16, cstr16};
 
     #[test]
     fn test_validate_path() {

@@ -95,9 +95,11 @@ mod tests {
         assert!(Status::BUFFER_TOO_SMALL.to_result().is_err());
 
         assert_eq!(Status::SUCCESS.to_result_with_val(|| 123).unwrap(), 123);
-        assert!(Status::WARN_DELETE_FAILURE
-            .to_result_with_val(|| 123)
-            .is_err());
+        assert!(
+            Status::WARN_DELETE_FAILURE
+                .to_result_with_val(|| 123)
+                .is_err()
+        );
         assert!(Status::BUFFER_TOO_SMALL.to_result_with_val(|| 123).is_err());
 
         assert!(Status::SUCCESS.to_result_with_err(|_| 123).is_ok());

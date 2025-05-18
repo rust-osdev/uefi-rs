@@ -2,7 +2,7 @@
 
 mod device_path_gen;
 
-use crate::{guid, Boolean, Char16, Guid};
+use crate::{Boolean, Char16, Guid, guid};
 
 pub use device_path_gen::{acpi, bios_boot_spec, end, hardware, media, messaging};
 

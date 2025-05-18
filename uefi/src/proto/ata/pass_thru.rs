@@ -3,15 +3,15 @@
 //! ATA Pass Thru Protocol.
 
 use super::{AtaRequest, AtaResponse};
+use crate::StatusExt;
 use crate::mem::{AlignedBuffer, PoolAllocation};
 use crate::proto::device_path::PoolDevicePathNode;
-use crate::StatusExt;
 use core::alloc::LayoutError;
 use core::ptr::{self, NonNull};
 use uefi_macros::unsafe_protocol;
+use uefi_raw::Status;
 use uefi_raw::protocol::ata::AtaPassThruProtocol;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
-use uefi_raw::Status;
 
 /// Mode structure with controller-specific information.
 pub type AtaPassThruMode = uefi_raw::protocol::ata::AtaPassThruMode;
@@ -105,7 +105,7 @@ pub struct AtaDevice<'a> {
 }
 
 impl AtaDevice<'_> {
-    fn proto_mut(&mut self) -> *mut AtaPassThruProtocol {
+    const fn proto_mut(&mut self) -> *mut AtaPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }
 

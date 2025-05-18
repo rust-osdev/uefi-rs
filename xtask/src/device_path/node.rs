@@ -208,11 +208,11 @@ impl Node {
                     // It's not trivial to nicely format the DST data since
                     // the slice might be unaligned. Treat it as a byte
                     // slice instead.
-                    quote!({
+                    quote!(&{
                         let ptr = addr_of!(#field_val);
                         let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                         let byte_len = size_of::<#slice_elem_ty>() * len;
-                        unsafe { &slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                        unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                     })
                 } else {
                     // Wrap in `{...}` to make a copy of the (potentially

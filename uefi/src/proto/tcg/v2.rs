@@ -12,7 +12,7 @@
 //! [TCG]: https://trustedcomputinggroup.org/
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
-use super::{v1, AlgorithmId, EventType, HashAlgorithm, PcrIndex};
+use super::{AlgorithmId, EventType, HashAlgorithm, PcrIndex, v1};
 use crate::data_types::{Align, PhysicalAddress, UnalignedSlice};
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};

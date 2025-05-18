@@ -2,8 +2,8 @@
 
 use uefi::boot;
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams};
-use uefi::proto::ata::pass_thru::AtaPassThru;
 use uefi::proto::ata::AtaRequestBuilder;
+use uefi::proto::ata::pass_thru::AtaPassThru;
 
 pub fn test() {
     info!("Running ATA PassThru tests");

@@ -2,11 +2,11 @@
 
 use alloc::vec::Vec;
 
-use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::device_path::DevicePath;
+use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::network::http::{HttpBinding, HttpHelper};
 use uefi::proto::network::ip4config2::Ip4Config2;
-use uefi::{boot, Handle};
+use uefi::{Handle, boot};
 
 use uefi_raw::protocol::network::http::HttpStatusCode;
 

@@ -347,17 +347,19 @@ fn language_to_cstr(language: &str) -> Result<LanguageCStr> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec::Vec;
     use LanguageIterKind::{V1, V2};
+    use alloc::vec::Vec;
 
     #[test]
     fn test_language_iter_v1() {
         // Empty string.
         let data = "\0";
-        assert!(LanguageIter::new(data.as_ptr(), V1)
-            .unwrap()
-            .next()
-            .is_none());
+        assert!(
+            LanguageIter::new(data.as_ptr(), V1)
+                .unwrap()
+                .next()
+                .is_none()
+        );
 
         // Two languages.
         let data = "engfra\0";
@@ -389,10 +391,12 @@ mod tests {
     fn test_language_iter_v2() {
         // Empty string.
         let data = "\0";
-        assert!(LanguageIter::new(data.as_ptr(), V2)
-            .unwrap()
-            .next()
-            .is_none());
+        assert!(
+            LanguageIter::new(data.as_ptr(), V2)
+                .unwrap()
+                .next()
+                .is_none()
+        );
 
         // Two languages.
         let data = "en;fr\0";

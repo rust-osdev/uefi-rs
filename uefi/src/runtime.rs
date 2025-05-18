@@ -16,9 +16,9 @@ use uefi_raw::table::boot::MemoryDescriptor;
 
 #[cfg(feature = "alloc")]
 use {
-    crate::mem::make_boxed,
     crate::CString16,
     crate::Guid,
+    crate::mem::make_boxed,
     alloc::borrow::ToOwned,
     alloc::boxed::Box,
     alloc::{vec, vec::Vec},

@@ -2,8 +2,8 @@
 
 use uefi_raw::Status;
 
-use super::chars::{Char16, Char8, NUL_16, NUL_8};
 use super::UnalignedSlice;
+use super::chars::{Char8, Char16, NUL_8, NUL_16};
 use crate::mem::PoolAllocation;
 use crate::polyfill::maybe_uninit_slice_assume_init_ref;
 use core::borrow::Borrow;
@@ -801,7 +801,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{cstr16, cstr8};
+    use crate::{cstr8, cstr16};
     use alloc::format;
     use alloc::string::String;
 
@@ -993,10 +993,10 @@ mod tests {
     fn test_unaligned_cstr16() {
         let mut buf = [0u16; 6];
         let us = unsafe {
-            let ptr = buf.as_mut_ptr() as *mut u8;
+            let ptr = buf.as_mut_ptr().cast::<u8>();
             // Intentionally create an unaligned u16 pointer. This
             // leaves room for five u16 characters.
-            let ptr = ptr.add(1) as *mut u16;
+            let ptr = ptr.add(1).cast::<u16>();
             // Write out the "test" string.
             ptr.add(0).write_unaligned(b't'.into());
             ptr.add(1).write_unaligned(b'e'.into());

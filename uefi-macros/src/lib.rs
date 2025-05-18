@@ -7,11 +7,11 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{quote, quote_spanned, TokenStreamExt};
+use quote::{TokenStreamExt, quote, quote_spanned};
 use syn::spanned::Spanned;
 use syn::{
-    parse_macro_input, parse_quote, parse_quote_spanned, Error, Expr, ExprLit, ExprPath, ItemFn,
-    ItemStruct, Lit, Visibility,
+    Error, Expr, ExprLit, ExprPath, ItemFn, ItemStruct, Lit, Visibility, parse_macro_input,
+    parse_quote, parse_quote_spanned,
 };
 
 macro_rules! err {
@@ -69,13 +69,10 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
             quote!(::uefi::guid!(#lit))
         }
         Expr::Path(ExprPath { path, .. }) => quote!(#path),
-        _ => {
-            return err!(
-                expr,
-                "macro input must be either a string literal or path to a constant"
-            )
-            .into()
-        }
+        _ => err!(
+            expr,
+            "macro input must be either a string literal or path to a constant"
+        ),
     };
 
     let item_struct = parse_macro_input!(input as ItemStruct);
@@ -215,7 +212,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     let result = quote! {
         #fn_type_check
 
-        #[export_name = "efi_main"]
+        #[unsafe(export_name = "efi_main")]
         #f
 
     };

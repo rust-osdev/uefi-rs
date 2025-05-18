@@ -3,7 +3,7 @@
 //! Bindings for HII Database Protocol
 
 use super::{HiiHandle, HiiPackageHeader, HiiPackageListHeader, KeyDescriptor};
-use crate::{guid, Guid, Handle, Status};
+use crate::{Guid, Handle, Status, guid};
 
 /// EFI_HII_KEYBOARD_LAYOUT
 #[derive(Debug)]

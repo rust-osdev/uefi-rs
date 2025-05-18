@@ -247,7 +247,7 @@ impl<'buffers> NvmeResponse<'buffers> {
     /// # Returns
     /// `Option<&[u8]>`: A slice of the transfer buffer, or `None` if the request was started without.
     #[must_use]
-    pub fn transfer_buffer(&self) -> Option<&'buffers [u8]> {
+    pub const fn transfer_buffer(&self) -> Option<&'buffers [u8]> {
         if self.req.packet.transfer_buffer.is_null() {
             return None;
         }
@@ -264,7 +264,7 @@ impl<'buffers> NvmeResponse<'buffers> {
     /// # Returns
     /// `Option<&[u8]>`: A slice of the metadata buffer, or `None` if the request was started without.
     #[must_use]
-    pub fn metadata_buffer(&self) -> Option<&'buffers [u8]> {
+    pub const fn metadata_buffer(&self) -> Option<&'buffers [u8]> {
         if self.req.packet.meta_data_buffer.is_null() {
             return None;
         }

@@ -13,7 +13,7 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::EventType;
-use crate::{guid, Guid, PhysicalAddress, Status};
+use crate::{Guid, PhysicalAddress, Status, guid};
 use bitflags::bitflags;
 use core::ffi::c_void;
 

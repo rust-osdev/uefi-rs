@@ -9,7 +9,7 @@
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::ffi::{c_char, c_void, CStr};
+use core::ffi::{CStr, c_char, c_void};
 use core::ptr;
 use log::debug;
 

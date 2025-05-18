@@ -51,14 +51,8 @@ mod tests {
 
     #[test]
     fn boot_policy() {
-        assert_eq!(
-            BootPolicy::try_from(Boolean::TRUE).unwrap(),
-            BootPolicy::BootSelection
-        );
-        assert_eq!(
-            BootPolicy::try_from(Boolean::FALSE).unwrap(),
-            BootPolicy::ExactMatch
-        );
+        assert_eq!(BootPolicy::from(Boolean::TRUE), BootPolicy::BootSelection);
+        assert_eq!(BootPolicy::from(Boolean::FALSE), BootPolicy::ExactMatch);
         assert_eq!(Boolean::from(BootPolicy::BootSelection), Boolean::TRUE);
         assert_eq!(Boolean::from(BootPolicy::ExactMatch), Boolean::FALSE);
     }

@@ -132,8 +132,7 @@ impl Display for FileInfoCreationError {
         match self {
             Self::InsufficientStorage(bytes) => write!(
                 f,
-                "provided buffer was too small. need at least {} bytes",
-                bytes
+                "provided buffer was too small. need at least {bytes} bytes"
             ),
         }
     }

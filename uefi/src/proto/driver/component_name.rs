@@ -246,7 +246,7 @@ pub enum LanguageError {
 impl Display for LanguageError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Ascii { index } => write!(f, "invalid character at index: {}", index),
+            Self::Ascii { index } => write!(f, "invalid character at index: {index}"),
         }
     }
 }

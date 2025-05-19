@@ -31,7 +31,7 @@ pub enum FromSliceUntilNulError {
 impl Display for FromSliceUntilNulError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {usize}"),
             Self::NoNul => write!(f, "no nul character"),
         }
     }
@@ -56,8 +56,8 @@ pub enum FromSliceWithNulError {
 impl Display for FromSliceWithNulError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
-            Self::InteriorNul(usize) => write!(f, "interior null character at index {}", usize),
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {usize}"),
+            Self::InteriorNul(usize) => write!(f, "interior null character at index {usize}"),
             Self::NotNulTerminated => write!(f, "not null-terminated"),
         }
     }
@@ -85,8 +85,8 @@ pub enum UnalignedCStr16Error {
 impl Display for UnalignedCStr16Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
-            Self::InteriorNul(usize) => write!(f, "interior null character at index {}", usize),
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {usize}"),
+            Self::InteriorNul(usize) => write!(f, "interior null character at index {usize}"),
             Self::NotNulTerminated => write!(f, "not null-terminated"),
             Self::BufferTooSmall => write!(f, "buffer too small"),
         }
@@ -112,8 +112,8 @@ pub enum FromStrWithBufError {
 impl Display for FromStrWithBufError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidChar(usize) => write!(f, "invalid character at index {}", usize),
-            Self::InteriorNul(usize) => write!(f, "interior null character at index {}", usize),
+            Self::InvalidChar(usize) => write!(f, "invalid character at index {usize}"),
+            Self::InteriorNul(usize) => write!(f, "interior null character at index {usize}"),
             Self::BufferTooSmall => write!(f, "buffer too small"),
         }
     }

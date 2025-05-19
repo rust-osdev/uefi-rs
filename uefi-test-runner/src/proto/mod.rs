@@ -20,6 +20,7 @@ pub fn test() {
     loaded_image::test();
     media::test();
     network::test();
+    pci::test();
     pi::test();
     rng::test();
     shell_params::test();
@@ -84,6 +85,7 @@ mod media;
 mod misc;
 mod network;
 mod nvme;
+mod pci;
 mod pi;
 mod rng;
 mod scsi;

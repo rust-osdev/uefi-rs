@@ -23,8 +23,7 @@ rust-version = "1.85.1"
 bitflags = "2.0.0"
 log = { version = "0.4.5", default-features = false }
 ptr_meta = { version = "0.3.0", default-features = false, features = ["derive"] }
-# Pinned to keep uefi-raw's MSRV.
-uguid = "=2.2.1"
+uguid = "2.2.1"
 
 [patch.crates-io]
 uefi = { path = "uefi" }

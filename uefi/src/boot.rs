@@ -45,7 +45,7 @@ use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::time::Duration;
 use core::{mem, slice};
-use uefi_raw::table::boot::{InterfaceType, TimerDelay};
+use uefi_raw::table::boot::{AllocateType as RawAllocateType, InterfaceType, TimerDelay};
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
 
@@ -154,9 +154,9 @@ pub fn allocate_pages(
     let bt = unsafe { bt.as_ref() };
 
     let (ty, initial_addr) = match allocation_type {
-        AllocateType::AnyPages => (0, 0),
-        AllocateType::MaxAddress(addr) => (1, addr),
-        AllocateType::Address(addr) => (2, addr),
+        AllocateType::AnyPages => (RawAllocateType::ANY_PAGES, 0),
+        AllocateType::MaxAddress(addr) => (RawAllocateType::MAX_ADDRESS, addr),
+        AllocateType::Address(addr) => (RawAllocateType::ADDRESS, addr),
     };
 
     let mut addr1 = initial_addr;

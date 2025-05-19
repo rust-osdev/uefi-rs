@@ -9,6 +9,15 @@ use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ops::RangeInclusive;
 
+newtype_enum! {
+    pub enum AllocateType: u32 => {
+        ANY_PAGES = 0,
+        MAX_ADDRESS = 1,
+        ADDRESS = 2,
+        MAX_ALLOCATE_TYPE = 3,
+    }
+}
+
 /// Table of pointers to all the boot services.
 #[derive(Debug)]
 #[repr(C)]
@@ -21,7 +30,7 @@ pub struct BootServices {
 
     // Memory allocation functions
     pub allocate_pages: unsafe extern "efiapi" fn(
-        alloc_ty: u32,
+        alloc_ty: AllocateType,
         mem_ty: MemoryType,
         count: usize,
         addr: *mut PhysicalAddress,

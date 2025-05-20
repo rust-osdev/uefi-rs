@@ -9,6 +9,12 @@
 - `system::with_config_table`, `system::with_stdin`, `system::with_stdout` and `system::with_stderr`
   now take mutably closure.
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
+- The documentation in `lib.rs` now provides guidance on how to select features
+  tailored to your use case.
+- Feature `log-debugcon` is no longer a default feature. You only need to add
+  it in case you are also using the `logger` feature and if you run your UEFI
+  image in QEMU or Cloud Hypervisor, when the debugcon/debug-console device is
+  available.
 
 # uefi - 0.35.0 (2025-05-04)
 

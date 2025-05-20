@@ -7,7 +7,7 @@ edition = "2024"
 
 [dependencies]
 uefi-raw = { path = "../uefi-raw" }
-uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu"] }
+uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu", "log-debugcon"] }
 
 log.workspace = true
 

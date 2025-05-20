@@ -120,6 +120,10 @@
 //!
 //! ## Optional Cargo crate features
 //!
+//! A list of recommended default features follows below.
+//!
+//! ### Feature List
+//!
 //! - `alloc`: Enable functionality requiring the [`alloc`] crate from
 //!   the Rust standard library. For example, methods that return a
 //!   `Vec` rather than filling a statically-sized array. This requires
@@ -130,10 +134,13 @@
 //!   allocator. This is a simple allocator that relies on the UEFI pool
 //!   allocator. You can choose to provide your own allocator instead of
 //!   using this feature, or no allocator at all if you don't need to
-//!   dynamically allocate any memory.
+//!   dynamically allocate any memory. Note that even without that feature,
+//!   some code might use the internal UEFI allocator.
 //! - `logger`: Logging implementation for the standard [`log`] crate
 //!   that prints output to the UEFI console. No buffering is done; this
 //!   is not a high-performance logger.
+//! - `log-debugcon`: Whether the logger set up by `logger` should also log
+//!   to the debugcon device (available in QEMU or Cloud Hypervisor on x86).
 //! - `panic_handler`: Add a default panic handler that logs to `stdout`.
 //! - `unstable`: Enable functionality that depends on [unstable
 //!   features] in the nightly compiler.
@@ -146,6 +153,16 @@
 //! Some of these features, such as the `logger` or `panic_handler` features,
 //! only unfold their potential when you invoke `uefi::helpers::init` as soon
 //! as possible in your application.
+//!
+//! ### Recommended Default Features
+//!
+//! In typical use-cases, the following features are useful for you:
+//! - Building a UEFI image:
+//!   - Recommended: `alloc`, `global_allocator`, `logger`, `panic_handler`
+//!   - Optional: `log-debugcon`, `qemu`, `unstable`
+//! - Building another application/library:
+//!   - Recommended: `alloc`
+//!   - Optional: `unstable`
 //!
 //! # Discuss and Contribute
 //!

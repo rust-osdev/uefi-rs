@@ -2,6 +2,7 @@
 
 ## Added
 - Added `ConfigTableEntry::MEMORY_ATTRIBUTES_GUID` and `ConfigTableEntry::IMAGE_SECURITY_DATABASE_GUID`.
+- Added `proto::pci::PciRootBridgeIo`.
 
 ## Changed
 - **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.

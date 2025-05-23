@@ -24,6 +24,7 @@ pub fn test() {
     rng::test();
     shell_params::test();
     string::test();
+    usb::test();
     misc::test();
 
     // disable the ATA test on aarch64 for now. The aarch64 UEFI Firmware does not yet seem
@@ -96,3 +97,4 @@ mod shell_params;
 mod shim;
 mod string;
 mod tcg;
+mod usb;

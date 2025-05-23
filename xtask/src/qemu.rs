@@ -438,6 +438,11 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         cmd.args(["-display", "none"]);
     }
 
+    // Configure USB
+    cmd.args(["-device", "qemu-xhci"]);
+
+    cmd.args(["-device", "usb-net"]);
+
     // Second (FAT) disk
     let test_disk = tmp_dir.join("test_disk.fat.img");
     create_mbr_test_disk(&test_disk)?;

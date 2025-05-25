@@ -35,7 +35,7 @@ pub struct Shell {
     set_map: usize,
 
     get_cur_dir: extern "efiapi" fn(file_system_mapping: *const Char16) -> *const Char16,
-    set_cur_dir: usize,
+    set_cur_dir: extern "efiapi" fn(file_system: *const Char16, directory: *const Char16) -> Status,
     open_file_list: usize,
     free_file_list: extern "efiapi" fn(file_list: *mut *mut ShellFileInfo),
     remove_dup_in_file_list: usize,
@@ -221,17 +221,46 @@ impl Shell {
         (self.set_env)(name_ptr, value_ptr, volatile)
     }
 
-    /// TODO
+    /// Returns the current directory on the specified device
+    ///
+    /// # Arguments
+    ///
+    /// * `file_system_mapping` - The file system mapping for which to get
+    ///                           the current directory
+    /// # Returns
+    ///
+    /// * `Some(cwd)` - CStr16 containing the current working directory
+    /// * `None` - Could not retrieve current directory
     #[must_use]
     pub fn get_cur_dir<'a>(&'a self, file_system_mapping: Option<&CStr16>) -> Option<&'a CStr16> {
         let mapping_ptr: *const Char16 =
-            file_system_mapping.map_or(core::ptr::null(), |x| (x as *const CStr16).cast());
+            file_system_mapping.map_or(ptr::null(), |x| (x.as_ptr()));
         let cur_dir = (self.get_cur_dir)(mapping_ptr);
         if cur_dir.is_null() {
             None
         } else {
             unsafe { Some(CStr16::from_ptr(cur_dir)) }
         }
+    }
+
+    /// Changes the current directory on the specified device
+    ///
+    /// # Arguments
+    ///
+    /// * `file_system` - Pointer to the file system's mapped name.
+    /// * `directory` - Points to the directory on the device specified by
+    ///                 `file_system`.
+    /// # Returns
+    ///
+    /// * `Status::SUCCESS` The directory was successfully set
+    ///
+    /// # Errors
+    ///
+    /// * `Status::EFI_NOT_FOUND` The directory does not exist
+    pub fn set_cur_dir(&self, file_system: Option<&CStr16>, directory: Option<&CStr16>) -> Status {
+        let fs_ptr: *const Char16 = file_system.map_or(ptr::null(), |x| (x.as_ptr()));
+        let dir_ptr: *const Char16 = directory.map_or(ptr::null(), |x| (x.as_ptr()));
+        (self.set_cur_dir)(fs_ptr, dir_ptr)
     }
 
     /// Returns `true` if any script files are currently being processed.

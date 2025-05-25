@@ -1,7 +1,7 @@
 use uefi::boot;
-use uefi::data_types::Char16;
-use uefi::proto::shell::{Shell, ShellFileHandle};
+use uefi::proto::shell::Shell;
 use uefi::CStr16;
+use uefi_raw::Status;
 
 pub fn test() {
     info!("Running shell protocol tests");
@@ -15,13 +15,14 @@ pub fn test() {
     // let mut test_buf = [0u16; 12];
     // let test_str = CStr16::from_str_with_buf("test", &mut test_buf).unwrap();
 
+    let mut test_buf = [0u16; 128];
+
     /* Test retrieving list of environment variable names (null input) */
     let cur_env_vec = shell
         .get_env(None)
         .expect("Could not get environment variable")
         .vec()
         .unwrap();
-    let mut test_buf = [0u16; 128];
     assert_eq!(
         *cur_env_vec.get(0).unwrap(),
         CStr16::from_str_with_buf("path", &mut test_buf).unwrap()
@@ -52,23 +53,18 @@ pub fn test() {
         .unwrap();
     assert_eq!(cur_env_str, test_val);
 
-    // let mut cur_fs_buf = [0u16; 32];
-    // let cur_fs_str = CStr16::from_str_with_buf("", &mut cur_fs_buf).unwrap();
-    // info!("cur_fs_str size 1: {}", cur_fs_str.num_chars());
+    /* Test setting and getting current directory */
+    let mut fs_buf = [0u16; 16];
+    let fs_var = CStr16::from_str_with_buf("fs0:", &mut fs_buf).unwrap();
+    let mut dir_buf = [0u16; 32];
+    let dir_var = CStr16::from_str_with_buf("/", &mut dir_buf).unwrap();
+    let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
+    assert_eq!(status, Status::SUCCESS);
 
-    // let cur_fs_str = shell.get_cur_dir(None).expect("Could not get the current file system mapping");
-    // info!("cur_fs_str size: {}", cur_fs_str.num_chars());
-    // info!("cur_fs_str: {}", cur_fs_str);
+    let cur_fs_str = shell.get_cur_dir(Some(fs_var)).expect("Could not get the current file system mapping");
+    let expected_fs_str = CStr16::from_str_with_buf("FS0:\\", &mut test_buf).unwrap();
+    assert_eq!(cur_fs_str, expected_fs_str);
 
-    // for (i, c) in cur_fs_str.iter().enumerate() {
-    //     info!("cur_fs_str: i: {}, c: {}", i, c);
-    // }
-
-    // unsafe {
-    // info!("cur_fs_str: {}", cur_fs_str);
-    // let mut expected_fs_str_buf = [0u16; 32];
-    // assert_eq!(cur_fs_str, CStr16::from_str_with_buf("", &mut expected_fs_str_buf).unwrap());
-    // //
     // Create a file
     // let status = shell.create_file(test_str, 0).expect("Could not create file");
     // let mut size: u64 = 0;

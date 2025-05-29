@@ -18,8 +18,8 @@ use super::media::file::FileInfo;
 pub struct Shell {
     execute: extern "efiapi" fn(
         parent_image_handle: *const Handle,
-        commandline: *const CStr16,
-        environment: *const *const CStr16,
+        commandline: *const Char16,
+        environment: *const *const Char16,
         out_status: *mut Status,
     ) -> Status,
     get_env: extern "efiapi" fn(name: *const Char16) -> *const Char16,
@@ -52,19 +52,19 @@ pub struct Shell {
     open_file_by_name: usize,
     close_file: extern "efiapi" fn(file_handle: ShellFileHandle) -> Status,
     create_file: extern "efiapi" fn(
-        file_name: &CStr16,
+        file_name: *const Char16,
         file_attribs: u64,
         out_file_handle: ShellFileHandle,
     ) -> Status,
     read_file: usize,
     write_file: usize,
     delete_file: extern "efiapi" fn(file_handle: ShellFileHandle) -> Status,
-    delete_file_by_name: extern "efiapi" fn(file_name: &CStr16) -> Status,
+    delete_file_by_name: extern "efiapi" fn(file_name: *const Char16) -> Status,
     get_file_position: usize,
     set_file_position: usize,
     flush_file: extern "efiapi" fn(file_handle: ShellFileHandle) -> Status,
     find_files: extern "efiapi" fn(
-        file_pattern: *const CStr16,
+        file_pattern: *const Char16,
         out_file_list: *mut *mut ShellFileInfo,
     ) -> Status,
     find_files_in_dir: extern "efiapi" fn(
@@ -132,16 +132,16 @@ impl Shell {
     ) -> Result<Status> {
         let mut out_status: MaybeUninit<Status> = MaybeUninit::uninit();
         // We have to do this in two parts, an `as` cast straight to *const *const CStr16 doesn't compile
-        let environment = environment.as_ptr();
-        let environment = environment.cast::<*const CStr16>();
+        // let environment = environment.as_ptr();
+        // let environment = environment.cast::<*const CStr16>();
 
-        (self.execute)(
-            &parent_image,
-            command_line,
-            environment,
-            out_status.as_mut_ptr(),
-        )
-        .to_result_with_val(|| unsafe { out_status.assume_init() })
+        let cl_ptr = command_line.as_ptr();
+        unsafe {
+            let env_ptr: *const *const Char16 = (&(*environment.as_ptr()).as_ptr()).cast();
+
+            (self.execute)(&parent_image, cl_ptr, env_ptr, out_status.as_mut_ptr())
+                .to_result_with_val(|| out_status.assume_init())
+        }
     }
 
     /// Gets the environment variable or list of environment variables
@@ -300,8 +300,10 @@ impl Shell {
         //let mut out_file_handle: MaybeUninit<Option<ShellFileHandle>> = MaybeUninit::zeroed();
         // let mut file_handle: ShellFileHandle;
         let file_handle = ptr::null();
+        let file_name_ptr = file_name.as_ptr();
 
-        (self.create_file)(file_name, file_attribs, file_handle).to_result_with_val(|| file_handle)
+        (self.create_file)(file_name_ptr, file_attribs, file_handle)
+            .to_result_with_val(|| file_handle)
         // Safety: if this call is successful, `out_file_handle`
         // will always be initialized and valid.
         // .to_result_with_val(|| unsafe { out_file_handle.assume_init() })
@@ -314,7 +316,7 @@ impl Shell {
 
     /// TODO
     pub fn delete_file_by_name(&self, file_name: &CStr16) -> Result<()> {
-        (self.delete_file_by_name)(file_name).to_result()
+        (self.delete_file_by_name)(file_name.as_ptr()).to_result()
     }
 
     /// TODO
@@ -324,7 +326,8 @@ impl Shell {
         if out_ptr.is_null() {
             panic!("outptr null");
         }
-        (self.find_files)(file_pattern, out_ptr).to_result_with_val(|| {
+        let fp_ptr = file_pattern.as_ptr();
+        (self.find_files)(fp_ptr, out_ptr).to_result_with_val(|| {
             // safety: if we're here, out_list is valid, but maybe null
             let out_list = unsafe { out_list.assume_init() };
             if out_list.is_null() {

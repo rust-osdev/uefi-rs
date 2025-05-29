@@ -399,7 +399,7 @@ impl Shell {
     ///
     /// # Errors
     ///
-    /// * [`STATUS::EFI_DEVICE_ERROR] The file could not be accessed
+    /// * [`uefi::Status::DEVICE_ERROR`] The file could not be accessed
     pub fn get_file_size(&self, file_handle: ShellFileHandle, size: *mut u64) -> Result<()> {
         (self.get_file_size)(file_handle, size).to_result()
     }

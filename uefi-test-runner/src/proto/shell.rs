@@ -1,21 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use uefi::boot::ScopedProtocol;
 use uefi::proto::shell::Shell;
 use uefi::{CStr16, boot};
 use uefi_raw::Status;
 
-pub fn test() {
-    info!("Running shell protocol tests");
-
-    let handle = boot::get_handle_for_protocol::<Shell>().expect("No Shell handles");
-
-    let shell =
-        boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
-
-    // create some files
-    // let mut test_buf = [0u16; 12];
-    // let test_str = CStr16::from_str_with_buf("test", &mut test_buf).unwrap();
-
+/// Test ``get_cur_dir()`` and ``set_cur_dir()``
+pub fn test_cur_dir(shell: &ScopedProtocol<Shell>) {
     let mut test_buf = [0u16; 128];
 
     /* Test retrieving list of environment variable names (null input) */
@@ -151,6 +142,21 @@ pub fn test() {
         .get_cur_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     assert_eq!(cur_fs_str, expected_fs_str);
+}
+
+pub fn test() {
+    info!("Running shell protocol tests");
+
+    let handle = boot::get_handle_for_protocol::<Shell>().expect("No Shell handles");
+
+    let shell =
+        boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
+
+    test_cur_dir(&shell);
+
+    // create some files
+    // let mut test_buf = [0u16; 12];
+    // let test_str = CStr16::from_str_with_buf("test", &mut test_buf).unwrap();
 
     // Create a file
     // let status = shell.create_file(test_str, 0).expect("Could not create file");

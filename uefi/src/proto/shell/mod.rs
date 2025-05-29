@@ -4,7 +4,10 @@
 
 use alloc::vec::Vec;
 
-use core::{ffi::c_void, marker::PhantomData, mem::MaybeUninit, ptr};
+use core::ffi::c_void;
+use core::marker::PhantomData;
+use core::mem::MaybeUninit;
+use core::ptr;
 
 use uefi_macros::unsafe_protocol;
 

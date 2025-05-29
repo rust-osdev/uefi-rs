@@ -1,6 +1,5 @@
-use uefi::CStr16;
-use uefi::boot;
 use uefi::proto::shell::Shell;
+use uefi::{CStr16, boot};
 use uefi_raw::Status;
 
 pub fn test() {

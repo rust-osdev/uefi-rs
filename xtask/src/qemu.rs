@@ -7,10 +7,10 @@ use crate::pipe::Pipe;
 use crate::tpm::Swtpm;
 use crate::util::command_to_string;
 use crate::{net, platform};
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use ovmf_prebuilt::{FileType, Prebuilt, Source};
 use regex::bytes::Regex;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::env;
 use std::ffi::OsString;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -332,12 +332,6 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     cmd.args(["-device", "virtio-rng-pci"]);
 
-    if arch == UefiArch::IA32 || arch == UefiArch::X86_64 {
-        cmd.args(["-debugcon", "file:./integration-test-debugcon.log"]);
-        cmd.args(["-chardev", "file,id=fw,path=./ovmf-firmware-debugcon.log"]);
-        cmd.args(["-device", "isa-debugcon,chardev=fw,iobase=0x402"]);
-    }
-
     // Set the boot menu timeout to zero. On aarch64 in particular this speeds
     // up the boot a lot. Note that we have to enable the menu here even though
     // we are skipping right past it, otherwise `splash-time` is ignored in
@@ -394,14 +388,14 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             // Map the QEMU exit signal to port f4.
             cmd.args(["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]);
 
-            // OVMF debug builds can output information to a serial `debugcon`.
-            // Only enable when debugging UEFI boot.
-            // cmd.args([
-            //     "-debugcon",
-            //     "file:debug.log",
-            //     "-global",
-            //     "isa-debugcon.iobase=0x402",
-            // ]);
+            // We also add a debugcon logger next to the serial one, as
+            // it simplifies debugging in some cases.
+            cmd.args(["-debugcon", "file:./integration-test-debugcon.log"]);
+
+            // Debugging messages from the OVMF firmware.
+            // More info: https://github.com/tianocore/edk2/blob/62390a89c5eb477594b74b5e1911d65998a8abe2/OvmfPkg/README#L90
+            cmd.args(["-chardev", "file,id=fw,path=./ovmf-firmware-debugcon.log"]);
+            cmd.args(["-device", "isa-debugcon,chardev=fw,iobase=0x402"]);
         }
     }
 
@@ -443,6 +437,11 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     if opt.headless {
         cmd.args(["-display", "none"]);
     }
+
+    // Configure USB
+    cmd.args(["-device", "qemu-xhci"]);
+
+    cmd.args(["-device", "usb-net"]);
 
     // Second (FAT) disk
     let test_disk = tmp_dir.join("test_disk.fat.img");

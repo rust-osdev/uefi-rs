@@ -300,7 +300,7 @@ impl<'a> ScsiResponse<'a> {
     /// # Safety
     /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
     #[must_use]
-    pub fn read_buffer(&self) -> Option<&'a [u8]> {
+    pub const fn read_buffer(&self) -> Option<&'a [u8]> {
         if self.0.packet.in_data_buffer.is_null() {
             return None;
         }
@@ -320,7 +320,7 @@ impl<'a> ScsiResponse<'a> {
     /// # Safety
     /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
     #[must_use]
-    pub fn sense_data(&self) -> Option<&'a [u8]> {
+    pub const fn sense_data(&self) -> Option<&'a [u8]> {
         if self.0.packet.sense_data.is_null() {
             return None;
         }

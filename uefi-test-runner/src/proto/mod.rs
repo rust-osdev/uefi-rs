@@ -2,7 +2,7 @@
 
 use uefi::boot::{self, OpenProtocolParams};
 use uefi::proto::loaded_image::LoadedImage;
-use uefi::{proto, Identify};
+use uefi::{Identify, proto};
 
 pub fn test() {
     info!("Testing various protocols");
@@ -24,6 +24,7 @@ pub fn test() {
     rng::test();
     shell_params::test();
     string::test();
+    usb::test();
     misc::test();
 
     // disable the ATA test on aarch64 for now. The aarch64 UEFI Firmware does not yet seem
@@ -62,12 +63,14 @@ fn test_protocols_per_handle() {
 }
 
 fn test_test_protocol() {
-    assert!(boot::test_protocol::<LoadedImage>(OpenProtocolParams {
-        handle: boot::image_handle(),
-        agent: boot::image_handle(),
-        controller: None,
-    })
-    .unwrap());
+    assert!(
+        boot::test_protocol::<LoadedImage>(OpenProtocolParams {
+            handle: boot::image_handle(),
+            agent: boot::image_handle(),
+            controller: None,
+        })
+        .unwrap()
+    );
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -96,3 +99,4 @@ mod shell_params;
 mod shim;
 mod string;
 mod tcg;
+mod usb;

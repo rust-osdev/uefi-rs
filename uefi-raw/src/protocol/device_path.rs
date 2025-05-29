@@ -1,18 +1,59 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! The UEFI device path protocol, i.e., UEFI device paths.
+//!
+//! This module provides (generated) ABI-compatible bindings to all known device
+//! path node types.
+//!
+//! # Terminology: Device Paths, Device Path Instances, and Device Path Nodes
+//! An open UEFI device path [protocol], also called _device path_, is a
+//! flexible and structured sequence of binary nodes that describe a route from
+//! the UEFI root to a particular device, controller, or file.
+//!
+//! An entire device path can be made up of multiple device path instances,
+//! and each instance is made up of multiple device path nodes. A device path
+//! _may_ contain multiple device-path instances separated by [`END_INSTANCE`]
+//! nodes, but typical paths contain only a single instance (in which case no
+//! [`END_INSTANCE`] node is needed). The entire device path is terminated with
+//! an [`END_ENTIRE`] node.
+//!
+//! Each node represents a step in the path: PCI device, partition, filesystem,
+//! file path, etc. Each node represents a step in the path: PCI device,
+//! partition, filesystem, file path, etc.
+//!
+//! Example of what a device path containing two instances (each comprised of
+//! three nodes) might look like:
+//!
+//! ```text
+//! ┌──────┬──────┬──────────────╥───────┬──────────┬────────────┐
+//! │ ACPI │ PCI  │ END_INSTANCE ║ CDROM │ FILEPATH │ END_ENTIRE │
+//! └──────┴──────┴──────────────╨───────┴──────────┴────────────┘
+//! ↑      ↑      ↑              ↑       ↑          ↑            ↑
+//! ├─Node─╨─Node─╨─────Node─────╨─Node──╨───Node───╨────Node────┤
+//! ↑                            ↑                               ↑
+//! ├─── DevicePathInstance ─────╨────── DevicePathInstance ─────┤
+//! │                                                            │
+//! └──────────────────── Entire DevicePath ─────────────────────┘
+//! ```
+//!
+//! [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
+//! [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
+//! [protocol]: crate::protocol
+
 mod device_path_gen;
 
-use crate::{guid, Boolean, Char16, Guid};
+use crate::{Boolean, Char16, Guid, guid};
 
 pub use device_path_gen::{acpi, bios_boot_spec, end, hardware, media, messaging};
 
 /// Device path protocol.
 ///
-/// A device path contains one or more device path instances made up of
-/// variable-length nodes.
+/// Note that the fields in this struct define the fixed header at the start of
+/// each node; a device path is typically larger than these four bytes.
 ///
-/// Note that the fields in this struct define the header at the start of each
-/// node; a device path is typically larger than these four bytes.
+/// See the [module-level documentation] for more details.
+///
+/// [module-level documentation]: self
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(C)]
 pub struct DevicePathProtocol {

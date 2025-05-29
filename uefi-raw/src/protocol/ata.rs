@@ -3,7 +3,7 @@
 use super::device_path::DevicePathProtocol;
 use crate::{Event, Status};
 use core::ffi::c_void;
-use uguid::{guid, Guid};
+use uguid::{Guid, guid};
 
 bitflags::bitflags! {
     /// ATA Controller attributes.

@@ -335,7 +335,7 @@ impl MemoryMapBackingMemory {
 
     /// Returns a mutable slice to the underlying memory.
     #[must_use]
-    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub const fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { self.0.as_mut() }
     }
 }
@@ -349,7 +349,9 @@ impl Drop for MemoryMapBackingMemory {
                 log::error!("Failed to deallocate memory map: {e:?}");
             }
         } else {
-            log::debug!("Boot services are exited. Memory map won't be freed using the UEFI boot services allocator.");
+            log::debug!(
+                "Boot services are exited. Memory map won't be freed using the UEFI boot services allocator."
+            );
         }
     }
 }
@@ -459,13 +461,13 @@ mod tests {
     ];
 
     /// Returns a copy of [`BASE_MMAP_UNSORTED`] owned on the stack.
-    fn new_mmap_memory() -> [MemoryDescriptor; 3] {
+    const fn new_mmap_memory() -> [MemoryDescriptor; 3] {
         BASE_MMAP_UNSORTED
     }
 
     fn mmap_raw<'a>(memory: &mut [MemoryDescriptor]) -> (&'a mut [u8], MemoryMapMeta) {
         let desc_size = size_of::<MemoryDescriptor>();
-        let len = memory.len() * desc_size;
+        let len = core::mem::size_of_val(memory);
         let ptr = memory.as_mut_ptr().cast::<u8>();
         let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
         let meta = MemoryMapMeta {

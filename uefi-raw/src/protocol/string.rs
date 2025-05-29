@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{guid, Char16, Char8, Guid};
+use crate::{Char8, Char16, Guid, guid};
 
 #[derive(Debug)]
 #[repr(C)]

@@ -2,7 +2,7 @@
 
 use core::cmp::Ordering;
 use uefi::proto::string::unicode_collation::{StrConversionError, UnicodeCollation};
-use uefi::{boot, CStr16, CStr8};
+use uefi::{CStr8, CStr16, boot};
 
 pub fn test() {
     info!("Testing the Unicode Collation protocol");

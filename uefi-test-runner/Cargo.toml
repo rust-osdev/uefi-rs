@@ -3,11 +3,11 @@ name = "uefi-test-runner"
 version = "0.2.0"
 authors = ["The Rust OSDev team"]
 publish = false
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 uefi-raw = { path = "../uefi-raw" }
-uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu"] }
+uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu", "log-debugcon"] }
 
 log.workspace = true
 

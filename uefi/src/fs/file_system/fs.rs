@@ -2,8 +2,8 @@
 
 //! Module for [`FileSystem`].
 
-use crate::fs::*;
 use crate::Status;
+use crate::fs::*;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec;

@@ -3,7 +3,7 @@
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::table::boot::MemoryType;
 use crate::table::system::SystemTable;
-use crate::{guid, Guid, Handle, Status};
+use crate::{Guid, Handle, Status, guid};
 use core::ffi::c_void;
 
 #[derive(Clone, Copy, Debug)]

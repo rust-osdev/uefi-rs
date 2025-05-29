@@ -3,7 +3,7 @@
 use super::device_path::DevicePathProtocol;
 use crate::Status;
 use core::ffi::c_void;
-use uguid::{guid, Guid};
+use uguid::{Guid, guid};
 
 bitflags::bitflags! {
     /// In an NVMe command, the `flags` field specifies which cdw (command specific word)

@@ -3,11 +3,11 @@
 use alloc::string::ToString;
 use uefi::boot::{LoadImageSource, SearchType};
 use uefi::fs::FileSystem;
+use uefi::proto::BootPolicy;
 use uefi::proto::console::text::Output;
 use uefi::proto::device_path::media::FilePath;
 use uefi::proto::device_path::{DevicePath, LoadedImageDevicePath};
-use uefi::proto::BootPolicy;
-use uefi::{boot, CString16, Identify};
+use uefi::{CString16, Identify, boot};
 
 mod memory;
 mod misc;

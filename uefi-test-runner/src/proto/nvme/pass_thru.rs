@@ -2,8 +2,8 @@
 
 use core::time::Duration;
 use uefi::boot;
-use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::device_path::DevicePath;
+use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::media::block::BlockIO;
 use uefi::proto::nvme::pass_thru::NvmePassThru;
 use uefi::proto::nvme::{NvmeQueueType, NvmeRequestBuilder};

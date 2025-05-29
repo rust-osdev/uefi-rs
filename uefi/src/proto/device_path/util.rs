@@ -6,8 +6,8 @@ use super::{DevicePath, DevicePathNode, PoolDevicePath};
 use crate::mem::PoolAllocation;
 use core::ptr::NonNull;
 use uefi_macros::unsafe_protocol;
-use uefi_raw::protocol::device_path::DevicePathUtilitiesProtocol;
 use uefi_raw::Status;
+use uefi_raw::protocol::device_path::DevicePathUtilitiesProtocol;
 
 /// Protocol with utility functions for working with device paths.
 #[derive(Debug)]

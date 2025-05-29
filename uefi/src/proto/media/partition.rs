@@ -3,7 +3,7 @@
 //! Partition information protocol.
 
 use crate::proto::unsafe_protocol;
-use crate::{guid, Char16, Guid};
+use crate::{Char16, Guid, guid};
 
 newtype_enum! {
     /// MBR OS type.

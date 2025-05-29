@@ -11,7 +11,7 @@ use alloc::vec::Vec;
 use uefi::prelude::*;
 use uefi::proto::console::gop::{BltOp, BltPixel, BltRegion, GraphicsOutput};
 use uefi::proto::rng::Rng;
-use uefi::{boot, Result};
+use uefi::{Result, boot};
 
 #[derive(Clone, Copy)]
 struct Point {

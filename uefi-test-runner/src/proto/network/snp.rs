@@ -2,9 +2,9 @@
 
 use core::time::Duration;
 
-use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::proto::network::MacAddress;
-use uefi::{boot, Status};
+use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
+use uefi::{Status, boot};
 
 pub fn test() {
     info!("Testing the simple network protocol");
@@ -78,10 +78,12 @@ pub fn test() {
             \x04\x01\x02\x03\x04";
 
         let dest_addr = MacAddress([0xffu8; 32]);
-        assert!(!simple_network
-            .get_interrupt_status()
-            .unwrap()
-            .contains(InterruptStatus::TRANSMIT));
+        assert!(
+            !simple_network
+                .get_interrupt_status()
+                .unwrap()
+                .contains(InterruptStatus::TRANSMIT)
+        );
 
         // Send the frame
         simple_network

@@ -2,7 +2,7 @@
 
 use core::ffi;
 
-use crate::{guid, Boolean, Char16, Guid, Status};
+use crate::{Boolean, Char16, Guid, Status, guid};
 
 use super::{
     AsyncUsbTransferCallback, ConfigDescriptor, DataDirection, DeviceDescriptor, DeviceRequest,

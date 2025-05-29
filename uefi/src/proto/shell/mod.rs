@@ -233,8 +233,7 @@ impl Shell {
     /// * `None` - Could not retrieve current directory
     #[must_use]
     pub fn get_cur_dir<'a>(&'a self, file_system_mapping: Option<&CStr16>) -> Option<&'a CStr16> {
-        let mapping_ptr: *const Char16 =
-            file_system_mapping.map_or(ptr::null(), |x| (x.as_ptr()));
+        let mapping_ptr: *const Char16 = file_system_mapping.map_or(ptr::null(), |x| (x.as_ptr()));
         let cur_dir = (self.get_cur_dir)(mapping_ptr);
         if cur_dir.is_null() {
             None

@@ -1,6 +1,6 @@
+use uefi::CStr16;
 use uefi::boot;
 use uefi::proto::shell::Shell;
-use uefi::CStr16;
 use uefi_raw::Status;
 
 pub fn test() {
@@ -68,7 +68,9 @@ pub fn test() {
     let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
 
-    let cur_fs_str = shell.get_cur_dir(Some(fs_var)).expect("Could not get the current file system mapping");
+    let cur_fs_str = shell
+        .get_cur_dir(Some(fs_var))
+        .expect("Could not get the current file system mapping");
     let expected_fs_str = CStr16::from_str_with_buf("FS0:\\", &mut test_buf).unwrap();
     assert_eq!(cur_fs_str, expected_fs_str);
 
@@ -77,7 +79,9 @@ pub fn test() {
     let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
 
-    let cur_fs_str = shell.get_cur_dir(Some(fs_var)).expect("Could not get the current file system mapping");
+    let cur_fs_str = shell
+        .get_cur_dir(Some(fs_var))
+        .expect("Could not get the current file system mapping");
     assert_ne!(cur_fs_str, expected_fs_str);
     let expected_fs_str = CStr16::from_str_with_buf("FS1:\\", &mut test_buf).unwrap();
     assert_eq!(cur_fs_str, expected_fs_str);
@@ -87,7 +91,9 @@ pub fn test() {
     let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
 
-    let cur_fs_str = shell.get_cur_dir(Some(fs_var)).expect("Could not get the current file system mapping");
+    let cur_fs_str = shell
+        .get_cur_dir(Some(fs_var))
+        .expect("Could not get the current file system mapping");
     assert_ne!(cur_fs_str, expected_fs_str);
     let expected_fs_str = CStr16::from_str_with_buf("FS0:\\efi", &mut test_buf).unwrap();
     assert_eq!(cur_fs_str, expected_fs_str);
@@ -96,17 +102,23 @@ pub fn test() {
     let dir_var = CStr16::from_str_with_buf("fs0:/", &mut dir_buf).unwrap();
     let status = shell.set_cur_dir(None, Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
-    let cur_fs_str = shell.get_cur_dir(Some(fs_var)).expect("Could not get the current file system mapping");
+    let cur_fs_str = shell
+        .get_cur_dir(Some(fs_var))
+        .expect("Could not get the current file system mapping");
     let expected_fs_str = CStr16::from_str_with_buf("FS0:", &mut test_buf).unwrap();
     assert_eq!(cur_fs_str, expected_fs_str);
 
-    let cur_fs_str = shell.get_cur_dir(None).expect("Could not get the current file system mapping");
+    let cur_fs_str = shell
+        .get_cur_dir(None)
+        .expect("Could not get the current file system mapping");
     assert_eq!(cur_fs_str, expected_fs_str);
 
     let dir_var = CStr16::from_str_with_buf("/efi", &mut dir_buf).unwrap();
     let status = shell.set_cur_dir(None, Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
-    let cur_fs_str = shell.get_cur_dir(Some(fs_var)).expect("Could not get the current file system mapping");
+    let cur_fs_str = shell
+        .get_cur_dir(Some(fs_var))
+        .expect("Could not get the current file system mapping");
     let expected_fs_str = CStr16::from_str_with_buf("FS0:\\efi", &mut test_buf).unwrap();
     assert_eq!(cur_fs_str, expected_fs_str);
 

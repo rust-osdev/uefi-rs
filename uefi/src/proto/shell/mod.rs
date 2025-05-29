@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 //! EFI Shell Protocol v2.2
 
 #![cfg(feature = "alloc")]
@@ -109,6 +111,7 @@ pub enum EnvOutput<'a> {
 
 impl<'a> EnvOutput<'a> {
     /// Extracts the env var value from EnvOutput
+    #[must_use]
     pub fn val(self) -> Option<&'a CStr16> {
         match self {
             EnvOutput::Val(v) => Some(v),
@@ -117,6 +120,7 @@ impl<'a> EnvOutput<'a> {
     }
 
     /// Extracts the vector of variable names from EnvOutput
+    #[must_use]
     pub fn vec(self) -> Option<Vec<&'a CStr16>> {
         match self {
             EnvOutput::Vec(v) => Some(v),
@@ -140,7 +144,7 @@ impl Shell {
 
         let cl_ptr = command_line.as_ptr();
         unsafe {
-            let env_ptr: *const *const Char16 = (&(*environment.as_ptr()).as_ptr()).cast();
+            let env_ptr: *const *const Char16 = (*environment.as_ptr()).as_ptr().cast();
 
             (self.execute)(&parent_image, cl_ptr, env_ptr, out_status.as_mut_ptr())
                 .to_result_with_val(|| out_status.assume_init())
@@ -152,19 +156,20 @@ impl Shell {
     /// # Arguments
     ///
     /// * `name` - The environment variable name of which to retrieve the
-    ///            value
-    ///            If None, will return all defined shell environment
-    ///            variables
+    ///   value
+    ///   If None, will return all defined shell environment
+    ///   variables
     ///
     /// # Returns
     ///
     /// * `Some(env_value)` - Value of the environment variable
     /// * `Some(Vec<env_names>)` - Vector of environment variable names
     /// * `None` - Environment variable doesn't exist
+    #[must_use]
     pub fn get_env<'a>(&'a self, name: Option<&CStr16>) -> Option<EnvOutput<'a>> {
         match name {
             Some(n) => {
-                let name_ptr: *const Char16 = (n as *const CStr16).cast();
+                let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(n).cast();
                 let var_val = (self.get_env)(name_ptr);
                 if var_val.is_null() {
                     None
@@ -213,14 +218,14 @@ impl Shell {
     /// * `name` - The environment variable for which to set the value
     /// * `value` - The new value of the environment variable
     /// * `volatile` - Indicates whether or not the variable is volatile or
-    ///                not
+    ///   not
     ///
     /// # Returns
     ///
     /// * `Status::SUCCESS` The variable was successfully set
     pub fn set_env(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Status {
-        let name_ptr: *const Char16 = (name as *const CStr16).cast();
-        let value_ptr: *const Char16 = (value as *const CStr16).cast();
+        let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(name).cast();
+        let value_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(value).cast();
         (self.set_env)(name_ptr, value_ptr, volatile)
     }
 
@@ -229,7 +234,7 @@ impl Shell {
     /// # Arguments
     ///
     /// * `file_system_mapping` - The file system mapping for which to get
-    ///                           the current directory
+    ///   the current directory
     /// # Returns
     ///
     /// * `Some(cwd)` - CStr16 containing the current working directory
@@ -251,7 +256,7 @@ impl Shell {
     ///
     /// * `file_system` - Pointer to the file system's mapped name.
     /// * `directory` - Points to the directory on the device specified by
-    ///                 `file_system`.
+    ///   `file_system`.
     /// # Returns
     ///
     /// * `Status::SUCCESS` The directory was successfully set
@@ -296,7 +301,7 @@ impl Shell {
     /// * `file_name` - Name of the file to be created (null terminated)
     /// * `file_attribs` - Attributes of the new file
     /// * `file_handle` - On return, points to the created file/directory's
-    /// handle
+    ///   handle
     pub fn create_file(&self, file_name: &CStr16, file_attribs: u64) -> Result<ShellFileHandle> {
         // TODO: Find out how we could take a &str instead, or maybe AsRef<str>, though I think it needs `alloc`
         // the returned handle can possibly be NULL, so we need to wrap `ShellFileHandle` in an `Option`
@@ -362,10 +367,10 @@ impl Shell {
     /// # Returns
     ///
     /// * `Ok(Some(file_iter))` - if one or more files were found that match the given pattern,
-    ///                           where `file_iter` is an iterator over the matching files.
+    ///   where `file_iter` is an iterator over the matching files.
     /// * `Ok(None)` - if no files were found that match the given pattern.
     /// * `Err(e)` - if an error occurred while searching for files. The specific error variants
-    ///              are described below.
+    ///   are described below.
     ///
     /// # Errors
     ///
@@ -428,7 +433,7 @@ pub struct ShellFileInfo {
 impl ShellFileInfo {
     /// TODO
     #[must_use]
-    pub fn file_name(&self) -> &CStr16 {
+    pub const fn file_name(&self) -> &CStr16 {
         unsafe { &*self.file_name }
     }
 }
@@ -480,7 +485,7 @@ impl<'l> Iterator for FileListIter<'l> {
     }
 }
 
-impl<'l> DoubleEndedIterator for FileListIter<'l> {
+impl DoubleEndedIterator for FileListIter<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.current_node == self.current_node_back {
             None
@@ -532,7 +537,7 @@ impl<'a> FileList<'a> {
     /// Returns the first element of the file list
     #[must_use]
     #[inline]
-    pub fn first(&'a self) -> &'a ShellFileInfo {
+    pub const fn first(&'a self) -> &'a ShellFileInfo {
         // safety: once `self` is created, start is valid
         unsafe { &*self.start.cast() }
     }
@@ -549,7 +554,7 @@ impl<'a> FileList<'a> {
     /// The end position is lazily generated on the first call to this function.
     #[must_use]
     #[inline]
-    pub fn last(&'a self) -> &'a ShellFileInfo {
+    pub const fn last(&'a self) -> &'a ShellFileInfo {
         if !self.end.is_null() {
             unsafe { &*self.end.cast() }
         } else {
@@ -569,7 +574,7 @@ impl<'a> FileList<'a> {
     }
 }
 
-impl<'a> Drop for FileList<'a> {
+impl Drop for FileList<'_> {
     fn drop(&mut self) {
         let mut root = self.start as *mut ListEntry;
         let file_list_ptr = &mut root as *mut *mut ListEntry;

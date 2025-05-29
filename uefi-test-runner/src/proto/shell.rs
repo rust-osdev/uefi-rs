@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use uefi::proto::shell::Shell;
 use uefi::{CStr16, boot};
 use uefi_raw::Status;
@@ -7,7 +9,7 @@ pub fn test() {
 
     let handle = boot::get_handle_for_protocol::<Shell>().expect("No Shell handles");
 
-    let mut shell =
+    let shell =
         boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
 
     // create some files
@@ -23,7 +25,7 @@ pub fn test() {
         .vec()
         .unwrap();
     assert_eq!(
-        *cur_env_vec.get(0).unwrap(),
+        *cur_env_vec.first().unwrap(),
         CStr16::from_str_with_buf("path", &mut test_buf).unwrap()
     );
     assert_eq!(
@@ -32,7 +34,7 @@ pub fn test() {
     );
 
     let path_val = shell
-        .get_env(Some(cur_env_vec.get(0).unwrap()))
+        .get_env(Some(cur_env_vec.first().unwrap()))
         .expect("Could not get path")
         .val()
         .unwrap();

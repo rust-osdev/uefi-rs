@@ -2,7 +2,7 @@
 
 //! EFI Shell Protocol v2.2
 
-use crate::{guid, Event, Guid};
+use crate::{Event, Guid, guid};
 
 /// Shell Protocol
 #[derive(Debug)]

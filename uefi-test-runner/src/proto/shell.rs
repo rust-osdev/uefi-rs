@@ -2,7 +2,7 @@
 
 use uefi::boot::ScopedProtocol;
 use uefi::proto::shell::Shell;
-use uefi::{Error, Status, boot, cstr16};
+use uefi::{Error, Status, boot, cstr16, CStr16};
 
 /// Test `current_dir()` and `set_current_dir()`
 pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
@@ -100,6 +100,45 @@ pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
     assert_eq!(cur_fs_str, expected_fs_str);
 }
 
+/// Test ``get_env()`` and ``set_env()``
+pub fn test_env(shell: &ScopedProtocol<Shell>) {
+    let mut test_buf = [0u16; 128];
+
+    /* Test retrieving list of environment variable names (null input) */
+    let cur_env_vec = shell
+        .get_env(None)
+        .expect("Could not get environment variable");
+    assert_eq!(
+        *cur_env_vec.first().unwrap(),
+        CStr16::from_str_with_buf("path", &mut test_buf).unwrap()
+    );
+    assert_eq!(
+        *cur_env_vec.get(1).unwrap(),
+        CStr16::from_str_with_buf("nonesting", &mut test_buf).unwrap()
+    );
+
+    /* Test setting and getting a specific environment variable */
+    let mut test_env_buf = [0u16; 32];
+    let test_var = CStr16::from_str_with_buf("test_var", &mut test_env_buf).unwrap();
+    let mut test_val_buf = [0u16; 32];
+    let test_val = CStr16::from_str_with_buf("test_val", &mut test_val_buf).unwrap();
+    assert!(shell.get_env(Some(test_var)).is_none());
+    let status = shell.set_env(test_var, test_val, false);
+    assert_eq!(status, Status::SUCCESS);
+    let cur_env_str = *shell
+        .get_env(Some(test_var))
+        .expect("Could not get environment variable")
+        .first()
+        .unwrap();
+    assert_eq!(cur_env_str, test_val);
+
+    /* Test deleting environment variable */
+    let test_val = CStr16::from_str_with_buf("", &mut test_val_buf).unwrap();
+    let status = shell.set_env(test_var, test_val, false);
+    assert_eq!(status, Status::SUCCESS);
+    assert!(shell.get_env(Some(test_var)).is_none());
+}
+
 pub fn test() {
     info!("Running shell protocol tests");
 
@@ -109,4 +148,5 @@ pub fn test() {
         boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
 
     test_current_dir(&shell);
+    test_env(&shell);
 }

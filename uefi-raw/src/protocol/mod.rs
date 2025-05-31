@@ -24,6 +24,7 @@ pub mod nvme;
 pub mod pci;
 pub mod rng;
 pub mod scsi;
+pub mod shell;
 pub mod shell_params;
 pub mod string;
 pub mod tcg;

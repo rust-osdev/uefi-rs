@@ -7,6 +7,11 @@ use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
 
 pub fn test() {
+    // This test currently depends on the PXE test running first.
+    if cfg!(not(feature = "pxe")) {
+        return;
+    }
+
     info!("Testing the simple network protocol");
 
     let handles = boot::find_handles::<SimpleNetwork>().unwrap_or_default();

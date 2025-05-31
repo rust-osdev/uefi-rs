@@ -77,6 +77,13 @@ fn receive(simple_network: &mut SimpleNetwork, buffer: &mut [u8]) -> uefi::Resul
         {
             // UEFI reports proper DST MAC
             assert_eq!(recv_dst_mac.0[0..6], EXPECTED_MAC);
+
+            // Ethernet frame header reports proper DST MAC
+            let recv_frame = smoltcp::wire::EthernetFrame::new_checked(&buffer).unwrap();
+            assert_eq!(
+                recv_frame.dst_addr(),
+                smoltcp::wire::EthernetAddress::from_bytes(&EXPECTED_MAC)
+            );
         }
 
         // Ensure that we do not accidentally get an ARP packet, which we
@@ -194,7 +201,12 @@ pub fn test() {
     debug!("Reply has {n} bytes");
 
     // Check payload in UDP packet that was reversed by our EchoService.
-    assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
+    {
+        let recv_frame = smoltcp::wire::EthernetFrame::new_checked(&buffer).unwrap();
+        let recv_ipv4 = smoltcp::wire::Ipv4Packet::new_checked(recv_frame.payload()).unwrap();
+        let udp_packet = smoltcp::wire::UdpPacket::new_checked(recv_ipv4.payload()).unwrap();
+        assert_eq!(udp_packet.payload(), &[4, 4, 3, 2, 1]);
+    }
 
     // Get stats
     let res = simple_network.collect_statistics();

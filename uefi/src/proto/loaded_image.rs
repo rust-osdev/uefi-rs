@@ -12,7 +12,13 @@ use core::ffi::c_void;
 use core::{mem, slice};
 use uefi_raw::protocol::loaded_image::LoadedImageProtocol;
 
-/// The LoadedImage protocol. This can be opened on any image handle using the `HandleProtocol` boot service.
+/// The Loaded Image [`Protocol`].
+///
+/// This can be opened on any image handle using [`boot::open_protocol`],
+/// for example.
+///
+/// [`Protocol`]: uefi::proto::Protocol
+/// [`boot::open_protocol`]: uefi::boot::open_protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(LoadedImageProtocol::GUID)]

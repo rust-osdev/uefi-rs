@@ -853,12 +853,14 @@ pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
         })
 }
 
-/// Locates the handle of a device on the device path that supports the specified protocol.
+/// Locates the handle of a device on the [`DevicePath`] that supports the
+/// specified [`Protocol`].
 ///
-/// The `device_path` is updated to point at the remaining part of the [`DevicePath`] after
-/// the part that matched the protocol. For example, it can be used with a device path
-/// that contains a file path to strip off the file system portion of the device path,
-/// leaving the file path and handle to the file system driver needed to access the file.
+/// The `device_path` is updated to point at the remaining part that matched the
+/// protocol. For example, this function can be used with a device path that
+/// contains a file path to strip off the file system portion of the device
+/// path, leaving the file path and handle to the file system driver needed to
+/// access the file.
 ///
 /// If the first node of `device_path` matches the protocol, the `device_path`
 /// is advanced to the device path terminator node. If `device_path` is a
@@ -959,7 +961,7 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
         })
 }
 
-/// Returns all the handles implementing a certain protocol.
+/// Returns all the handles implementing a certain [`Protocol`].
 ///
 /// # Errors
 ///
@@ -1038,7 +1040,7 @@ pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> 
         .ok_or_else(|| Status::NOT_FOUND.into())
 }
 
-/// Opens a protocol interface for a handle.
+/// Opens a [`Protocol`] interface for a handle.
 ///
 /// See also [`open_protocol_exclusive`], which provides a safe subset of this
 /// functionality.
@@ -1101,7 +1103,7 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
     })
 }
 
-/// Opens a protocol interface for a handle in exclusive mode.
+/// Opens a [`Protocol`] interface for a handle in exclusive mode.
 ///
 /// If successful, a [`ScopedProtocol`] is returned that will automatically
 /// close the protocol interface when dropped.
@@ -1129,7 +1131,7 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
     }
 }
 
-/// Tests whether a handle supports a protocol.
+/// Tests whether a handle supports a [`Protocol`].
 ///
 /// Returns `Ok(true)` if the handle supports the protocol, `Ok(false)` if not.
 ///
@@ -1543,7 +1545,7 @@ impl Deref for ProtocolsPerHandle {
 }
 
 /// A buffer returned by [`locate_handle_buffer`] that contains an array of
-/// [`Handle`]s that support the requested protocol.
+/// [`Handle`]s that support the requested [`Protocol`].
 #[derive(Debug, Eq, PartialEq)]
 pub struct HandleBuffer {
     count: usize,
@@ -1564,7 +1566,7 @@ impl Deref for HandleBuffer {
     }
 }
 
-/// An open protocol interface. Automatically closes the protocol
+/// An open [`Protocol`] interface. Automatically closes the protocol
 /// interface on drop.
 ///
 /// Most protocols have interface data associated with them. `ScopedProtocol`

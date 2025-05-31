@@ -102,4 +102,3 @@ where
         ptr.cast::<Self>()
     }
 }
-

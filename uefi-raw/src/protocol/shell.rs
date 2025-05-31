@@ -14,26 +14,26 @@ use super::shell_params::ShellFileHandle;
 #[derive(Debug)]
 #[repr(C)]
 pub struct ListEntry<'a> {
-    f_link: *mut ListEntry<'a>,
-    b_link: *mut ListEntry<'a>,
+    pub f_link: *mut ListEntry<'a>,
+    pub b_link: *mut ListEntry<'a>,
 }
 
 /// ShellFileInfo for File Lists
 #[derive(Debug)]
 #[repr(C)]
 pub struct ShellFileInfo<'a> {
-    link: ListEntry<'a>,
-    status: Status,
-    full_name: *mut Char16,
-    file_name: *mut Char16,
-    shell_file_handle: Handle,
-    file_info: FileInfo,
+    pub link: ListEntry<'a>,
+    pub status: Status,
+    pub full_name: *mut Char16,
+    pub file_name: *mut Char16,
+    pub shell_file_handle: Handle,
+    pub file_info: FileInfo,
 }
 
 /// Used to specify where component names should be taken from
 pub type ShellDeviceNameFlags = u32;
-pub static DEVICE_NAME_USE_COMPONENT_NAME: u32 = 0x0000001;
-pub static DEVICE_NAME_USE_DEVICE_PATH: u32 = 0x0000002;
+pub const DEVICE_NAME_USE_COMPONENT_NAME: u32 = 0x0000001;
+pub const DEVICE_NAME_USE_DEVICE_PATH: u32 = 0x0000002;
 
 /// Shell Protocol
 #[derive(Debug)]

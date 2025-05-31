@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use core::ops::DerefMut;
 use core::time::Duration;
 
 use uefi::boot::ScopedProtocol;
@@ -43,6 +44,47 @@ fn find_network_device() -> Option<ScopedProtocol<SimpleNetwork>> {
     maybe_handle
 }
 
+/// Receives the next IPv4 packet and prints corresponding metadata.
+///
+/// Returns the length of the response.
+fn receive(simple_network: &mut SimpleNetwork, buffer: &mut [u8]) -> uefi::Result<usize> {
+    // Wait for a bit to ensure that the previous packet has been processed.
+    boot::stall(Duration::from_millis(500));
+
+    let mut recv_src_mac = MacAddress([0; 32]);
+    let mut recv_dst_mac = MacAddress([0; 32]);
+    let mut recv_ethernet_protocol = 0;
+
+    let res = simple_network.receive(
+        buffer,
+        None,
+        Some(&mut recv_src_mac),
+        Some(&mut recv_dst_mac),
+        Some(&mut recv_ethernet_protocol),
+    );
+
+    // To simplify debugging when receive an unexpected packet, we print the
+    // necessary info. This is especially useful if an unexpected IPv4 or ARP
+    // packet is received, which can easily happen when fiddling around with
+    // this test.
+    res.inspect(|_| {
+        debug!("Received:");
+        debug!("  src_mac       =  {:x?}", &recv_src_mac.0[0..6]);
+        debug!("  dst_mac       =  {:x?}", &recv_dst_mac.0[0..6]);
+        debug!("  ethernet_proto=0x{:x?}", recv_ethernet_protocol);
+
+        // Assert the ethernet frame was sent to the expected interface.
+        {
+            // UEFI reports proper DST MAC
+            assert_eq!(recv_dst_mac.0[0..6], EXPECTED_MAC);
+        }
+
+        // Ensure that we do not accidentally get an ARP packet, which we
+        // do not expect in this test.
+        assert_eq!(recv_ethernet_protocol, ETHERNET_PROTOCOL_IPV4)
+    })
+}
+
 /// This test sends a simple UDP/IP packet to the `EchoService` (created by
 /// `cargo xtask run`) and receives its response.
 pub fn test() {
@@ -55,7 +97,7 @@ pub fn test() {
 
     // The handle to our specific network device, as the test requires also a
     // specific environment. We do not test all possible handles.
-    let simple_network = find_network_device().unwrap_or_else(|| panic!(
+    let mut simple_network = find_network_device().unwrap_or_else(|| panic!(
         "Failed to find SNP handle for network device with MAC address {:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
         EXPECTED_MAC[0],
         EXPECTED_MAC[1],
@@ -148,14 +190,8 @@ pub fn test() {
     let mut buffer = [0u8; 1500];
 
     info!("Waiting for the reception");
-    if simple_network.receive(&mut buffer, None, None, None, None) == Err(Status::NOT_READY.into())
-    {
-        boot::stall(Duration::from_secs(1));
-
-        simple_network
-            .receive(&mut buffer, None, None, None, None)
-            .unwrap();
-    }
+    let n = receive(simple_network.deref_mut(), &mut buffer).unwrap();
+    debug!("Reply has {n} bytes");
 
     // Check payload in UDP packet that was reversed by our EchoService.
     assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);

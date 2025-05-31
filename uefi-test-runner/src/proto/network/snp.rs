@@ -41,6 +41,8 @@ fn find_network_device() -> Option<ScopedProtocol<SimpleNetwork>> {
     maybe_handle
 }
 
+/// This test sends a simple UDP/IP packet to the `EchoService` (created by
+/// `cargo xtask run`) and receives its response.
 pub fn test() {
     // This test currently depends on the PXE test running first.
     if cfg!(not(feature = "pxe")) {
@@ -74,7 +76,6 @@ pub fn test() {
         .start()
         .expect("Failed to start Simple Network");
 
-    // Check initialize
     simple_network
         .initialize(0, 0)
         .expect("Failed to initialize Simple Network");
@@ -97,6 +98,12 @@ pub fn test() {
         )
         .expect("Failed to set receive filters");
 
+    // EthernetFrame(IPv4Packet(UDPPacket(Payload))).
+    // The ethernet frame header will be filled by `transmit()`.
+    // The UDP packet contains the byte sequence `4, 4, 3, 2, 1`.
+    //
+    // The packet is sent to the `EchoService` created by
+    // `cargo xtask run`. It runs on UDP port 21572.
     let payload = b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
             \x45\x00\
             \x00\x21\
@@ -152,6 +159,7 @@ pub fn test() {
             .unwrap();
     }
 
+    // Check payload in UDP packet that was reversed by our EchoService.
     assert_eq!(buffer[42..47], [4, 4, 3, 2, 1]);
 
     // Get stats

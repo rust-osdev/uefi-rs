@@ -10,6 +10,7 @@ use uefi_raw::protocol::network::snp::NetworkState;
 
 /// The MAC address configured for the interface.
 const EXPECTED_MAC: [u8; 6] = [0x52, 0x54, 0, 0, 0, 0x1];
+const ETHERNET_PROTOCOL_IPV4: u16 = 0x0800;
 
 fn find_network_device() -> Option<ScopedProtocol<SimpleNetwork>> {
     let mut maybe_handle = None;
@@ -118,7 +119,6 @@ pub fn test() {
             \xa9\xe4\
             \x04\x01\x02\x03\x04";
 
-    let dest_addr = MacAddress([0xffu8; 32]);
     assert!(
         !simple_network
             .get_interrupt_status()
@@ -132,8 +132,8 @@ pub fn test() {
             simple_network.mode().media_header_size as usize,
             payload,
             None,
-            Some(dest_addr),
-            Some(0x0800),
+            Some(simple_network.mode().broadcast_address),
+            Some(ETHERNET_PROTOCOL_IPV4),
         )
         .expect("Failed to transmit frame");
 

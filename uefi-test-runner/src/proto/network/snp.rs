@@ -6,6 +6,7 @@ use uefi::boot::ScopedProtocol;
 use uefi::proto::network::MacAddress;
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
+use uefi_raw::protocol::network::snp::NetworkState;
 
 /// The MAC address configured for the interface.
 const EXPECTED_MAC: [u8; 6] = [0x52, 0x54, 0, 0, 0, 0x1];
@@ -63,15 +64,12 @@ pub fn test() {
         EXPECTED_MAC[5]
     ));
 
-    // Check shutdown
-    let res = simple_network.shutdown();
-    assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
+    assert_eq!(
+        simple_network.mode().state,
+        NetworkState::STOPPED,
+        "Should be in stopped state"
+    );
 
-    // Check stop
-    let res = simple_network.stop();
-    assert!(res == Ok(()) || res == Err(Status::NOT_STARTED.into()));
-
-    // Check start
     simple_network
         .start()
         .expect("Failed to start Simple Network");
@@ -180,4 +178,7 @@ pub fn test() {
             }
         }
     }
+
+    simple_network.stop().unwrap();
+    simple_network.shutdown().unwrap();
 }

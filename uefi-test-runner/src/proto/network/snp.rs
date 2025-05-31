@@ -2,7 +2,9 @@
 
 use core::ops::DerefMut;
 use core::time::Duration;
-
+use smoltcp::wire::{
+    ETHERNET_HEADER_LEN, EthernetFrame, IPV4_HEADER_LEN, Ipv4Packet, UDP_HEADER_LEN, UdpPacket,
+};
 use uefi::boot::ScopedProtocol;
 use uefi::proto::network::MacAddress;
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
@@ -146,27 +148,52 @@ pub fn test() {
         )
         .expect("Failed to set receive filters");
 
-    // EthernetFrame(IPv4Packet(UDPPacket(Payload))).
-    // The ethernet frame header will be filled by `transmit()`.
-    // The UDP packet contains the byte sequence `4, 4, 3, 2, 1`.
-    //
-    // The packet is sent to the `EchoService` created by
-    // `cargo xtask run`. It runs on UDP port 21572.
-    let payload = b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
-            \x45\x00\
-            \x00\x21\
-            \x00\x01\
-            \x00\x00\
-            \x10\
-            \x11\
-            \x07\x6a\
-            \xc0\xa8\x11\x0f\
-            \xc0\xa8\x11\x02\
-            \x54\x45\
-            \x54\x44\
-            \x00\x0d\
-            \xa9\xe4\
-            \x04\x01\x02\x03\x04";
+    // High-level payload to send to destination
+    let payload = [
+        4_u8, /* Number of elements for echo service */
+        1, 2, 3, 4,
+    ];
+    let frame = {
+        // IP that was obtained by PXE test running earlier
+        // TODO we should make these tests not depend on each other.
+        let src_ip = smoltcp::wire::Ipv4Address::new(192, 168, 17, 15);
+        let dst_ip = smoltcp::wire::Ipv4Address::new(192, 168, 17, 2);
+
+        let udp_packet_len = UDP_HEADER_LEN + payload.len();
+        let ipv4_packet_len = IPV4_HEADER_LEN + udp_packet_len;
+        let frame_len = ETHERNET_HEADER_LEN + ipv4_packet_len;
+
+        let mut buffer = vec![0u8; frame_len];
+
+        let mut frame = EthernetFrame::new_unchecked(buffer.as_mut_slice());
+        // Ethertype, SRC MAC, and DST MAC will be set by SNP's transmit().
+
+        let ipv4_packet_buffer = &mut frame.payload_mut()[0..ipv4_packet_len];
+        let mut ipv4_packet = Ipv4Packet::new_unchecked(ipv4_packet_buffer);
+        ipv4_packet.set_header_len(IPV4_HEADER_LEN as u8 /* no extensions */);
+        ipv4_packet.set_total_len(ipv4_packet_len as u16);
+        ipv4_packet.set_hop_limit(16);
+        ipv4_packet.set_next_header(smoltcp::wire::IpProtocol::Udp);
+        ipv4_packet.set_dont_frag(true);
+        ipv4_packet.set_ident(0x1337);
+        ipv4_packet.set_version(4);
+        ipv4_packet.set_src_addr(src_ip);
+        ipv4_packet.set_dst_addr(dst_ip);
+
+        let mut udp_packet = UdpPacket::new_unchecked(ipv4_packet.payload_mut());
+        udp_packet.set_len(udp_packet_len as u16);
+        udp_packet.set_src_port(21573);
+        udp_packet.set_dst_port(21572);
+        udp_packet.payload_mut().copy_from_slice(&payload);
+        assert!(udp_packet.check_len().is_ok());
+
+        udp_packet.fill_checksum(&src_ip.into(), &dst_ip.into());
+        // Do this last, as it depends on the other checksum.
+        ipv4_packet.fill_checksum();
+        assert!(ipv4_packet.check_len().is_ok());
+
+        buffer
+    };
 
     assert!(
         !simple_network
@@ -179,7 +206,7 @@ pub fn test() {
     simple_network
         .transmit(
             simple_network.mode().media_header_size as usize,
-            payload,
+            &frame,
             None,
             Some(simple_network.mode().broadcast_address),
             Some(ETHERNET_PROTOCOL_IPV4),
@@ -202,9 +229,9 @@ pub fn test() {
 
     // Check payload in UDP packet that was reversed by our EchoService.
     {
-        let recv_frame = smoltcp::wire::EthernetFrame::new_checked(&buffer).unwrap();
-        let recv_ipv4 = smoltcp::wire::Ipv4Packet::new_checked(recv_frame.payload()).unwrap();
-        let udp_packet = smoltcp::wire::UdpPacket::new_checked(recv_ipv4.payload()).unwrap();
+        let recv_frame = EthernetFrame::new_checked(&buffer).unwrap();
+        let recv_ipv4 = Ipv4Packet::new_checked(recv_frame.payload()).unwrap();
+        let udp_packet = UdpPacket::new_checked(recv_ipv4.payload()).unwrap();
         assert_eq!(udp_packet.payload(), &[4, 4, 3, 2, 1]);
     }
 

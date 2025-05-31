@@ -254,6 +254,10 @@ pub fn test() {
         }
     }
 
-    simple_network.stop().unwrap();
+    // Workaround for OVMF firmware. `stop()` works in CI on x86_64, but not
+    // x86 or aarch64.
+    if simple_network.mode().state == NetworkState::STARTED {
+        simple_network.stop().unwrap();
+    }
     simple_network.shutdown().unwrap();
 }

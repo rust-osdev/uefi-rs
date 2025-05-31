@@ -26,8 +26,11 @@ pub fn test() {
 
         assert!(base_code.mode().dhcp_ack_received());
         let dhcp_ack: &DhcpV4Packet = base_code.mode().dhcp_ack().as_ref();
-        let server_ip = dhcp_ack.bootp_si_addr;
-        let server_ip = IpAddress::new_v4(server_ip);
+
+        info!("DHCP: Server IP: {:?}", dhcp_ack.bootp_si_addr);
+        info!("DHCP: Client IP: {:?}", dhcp_ack.bootp_yi_addr);
+
+        let server_ip = IpAddress::new_v4(dhcp_ack.bootp_si_addr);
 
         const EXAMPLE_FILE_NAME: &[u8] = b"example-file.txt\0";
         const EXAMPLE_FILE_CONTENT: &[u8] = b"Hello world!";

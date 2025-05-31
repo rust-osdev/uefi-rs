@@ -11,5 +11,4 @@ pub fn test() {
     let mut _shell =
         boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
 
-    info!("filetree test successful")
 }

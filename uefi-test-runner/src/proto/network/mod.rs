@@ -5,6 +5,9 @@ pub fn test() {
 
     http::test();
     pxe::test();
+    // Currently, we are in the unfortunate situation that the SNP test
+    // depends on the PXE test, as it assigns an IPv4 address to the
+    // interface via DHCP.
     snp::test();
 }
 

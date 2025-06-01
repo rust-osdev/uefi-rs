@@ -10,30 +10,42 @@ use super::device_path::DevicePathProtocol;
 use super::file_system::FileInfo;
 use super::shell_params::ShellFileHandle;
 
+use bitflags::bitflags;
+
 /// List Entry for File Lists
 #[derive(Debug)]
 #[repr(C)]
-pub struct ListEntry<'a> {
-    pub f_link: *mut ListEntry<'a>,
-    pub b_link: *mut ListEntry<'a>,
+pub struct ListEntry {
+    pub f_link: *mut ListEntry,
+    pub b_link: *mut ListEntry,
 }
 
 /// ShellFileInfo for File Lists
 #[derive(Debug)]
 #[repr(C)]
-pub struct ShellFileInfo<'a> {
-    pub link: ListEntry<'a>,
+pub struct ShellFileInfo {
+    pub link: ListEntry,
     pub status: Status,
     pub full_name: *mut Char16,
     pub file_name: *mut Char16,
-    pub shell_file_handle: Handle,
-    pub file_info: FileInfo,
+    pub handle: ShellFileHandle,
+    pub info: FileInfo,
 }
 
 /// Used to specify where component names should be taken from
 pub type ShellDeviceNameFlags = u32;
-pub const DEVICE_NAME_USE_COMPONENT_NAME: u32 = 0x0000001;
-pub const DEVICE_NAME_USE_DEVICE_PATH: u32 = 0x0000002;
+
+bitflags! {
+    /// Specifies the source of the component name
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct DeviceName: u32 {
+        /// Use Component Name
+        const DEVICE_NAME_USE_COMPONENT_NAME = 0x0000001;
+        /// Use Device Path
+        const DEVICE_NAME_USE_DEVICE_PATH = 0x0000002;
+    }
+}
 
 /// Shell Protocol
 #[derive(Debug)]
@@ -64,15 +76,15 @@ pub struct ShellProtocol {
         help_text: *mut *mut Char16,
     ) -> Status,
     pub get_device_path_from_map:
-        unsafe extern "efiapi" fn(mapping: *const Char16) -> DevicePathProtocol,
+        unsafe extern "efiapi" fn(mapping: *const Char16) -> *const DevicePathProtocol,
     pub get_map_from_device_path:
         unsafe extern "efiapi" fn(device_path: *mut *mut DevicePathProtocol) -> *const Char16,
     pub get_device_path_from_file_path:
-        unsafe extern "efiapi" fn(path: *const Char16) -> DevicePathProtocol,
+        unsafe extern "efiapi" fn(path: *const Char16) -> *const DevicePathProtocol,
     pub get_file_path_from_device_path:
         unsafe extern "efiapi" fn(path: *const DevicePathProtocol) -> *const Char16,
     pub set_map: unsafe extern "efiapi" fn(
-        device_path: DevicePathProtocol,
+        device_path: *const DevicePathProtocol,
         mapping: *const Char16,
     ) -> Status,
 
@@ -80,7 +92,7 @@ pub struct ShellProtocol {
     pub set_cur_dir:
         unsafe extern "efiapi" fn(file_system: *const Char16, dir: *const Char16) -> Status,
     pub open_file_list: unsafe extern "efiapi" fn(
-        path: Char16,
+        path: *const Char16,
         open_mode: u64,
         file_list: *mut *mut ShellFileInfo,
     ) -> Status,
@@ -100,7 +112,7 @@ pub struct ShellProtocol {
         best_device_name: *mut *mut Char16,
     ) -> Status,
 
-    pub get_file_info: unsafe extern "efiapi" fn(file_handle: ShellFileHandle) -> FileInfo,
+    pub get_file_info: unsafe extern "efiapi" fn(file_handle: ShellFileHandle) -> *const FileInfo,
     pub set_file_info: unsafe extern "efiapi" fn(
         file_handle: ShellFileHandle,
         file_info: *const FileInfo,
@@ -126,7 +138,7 @@ pub struct ShellProtocol {
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status,
-    pub delete_file: unsafe extern "efiapi" fn(file_name: *const Char16) -> Status,
+    pub delete_file: unsafe extern "efiapi" fn(file_handle: ShellFileHandle) -> Status,
     pub delete_file_by_name: unsafe extern "efiapi" fn(file_name: *const Char16) -> Status,
     pub get_file_position:
         unsafe extern "efiapi" fn(file_handle: ShellFileHandle, position: *mut u64) -> Status,

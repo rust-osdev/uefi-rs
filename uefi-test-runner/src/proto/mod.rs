@@ -42,6 +42,7 @@ pub fn test() {
         target_arch = "aarch64"
     ))]
     shim::test();
+    shell::test();
     tcg::test();
 }
 
@@ -89,13 +90,14 @@ mod pci;
 mod pi;
 mod rng;
 mod scsi;
-mod shell_params;
 #[cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     target_arch = "arm",
     target_arch = "aarch64"
 ))]
+mod shell;
+mod shell_params;
 mod shim;
 mod string;
 mod tcg;

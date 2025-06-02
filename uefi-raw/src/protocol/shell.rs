@@ -32,18 +32,15 @@ pub struct ShellFileInfo {
     pub info: FileInfo,
 }
 
-/// Used to specify where component names should be taken from
-pub type ShellDeviceNameFlags = u32;
-
 bitflags! {
     /// Specifies the source of the component name
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-    pub struct DeviceName: u32 {
+    pub struct ShellDeviceNameFlags: u32 {
         /// Use Component Name
-        const DEVICE_NAME_USE_COMPONENT_NAME = 0x0000001;
+        const USE_COMPONENT_NAME = 0x0000001;
         /// Use Device Path
-        const DEVICE_NAME_USE_DEVICE_PATH = 0x0000002;
+        const USE_DEVICE_PATH = 0x0000002;
     }
 }
 

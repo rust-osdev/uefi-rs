@@ -1,14 +1,35 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Protocol definitions.
+//! High-level wrappers for [UEFI protocols].
 //!
-//! Protocols are sets of related functionality identified by a unique
-//! ID. They can be implemented by a UEFI driver or occasionally by a
-//! UEFI application.
+//! # TL;DR
+//! Technically, a protocol is a `C` struct holding functions and/or data, with
+//! an associated [`GUID`].
 //!
-//! See the [`boot`] documentation for details of how to open a protocol.
+//! # About
+//! UEFI protocols are a structured collection of functions and/or data,
+//! identified by a [`GUID`], which defines an interface between components in
+//! the UEFI environment, such as between drivers, applications, or firmware
+//! services.
+//!
+//! Protocols are central to UEFI’s handle-based object model, and they provide
+//! a clean, extensible way for components to discover and use services from one
+//! another.
+//!
+//! Implementation-wise, a protocol is a `C` struct holding function pointers
+//! and/or data. Please note that some protocols may use [`core::ptr::null`] as
+//! interface. For example, the device path protocol can be implemented but
+//! return `null`.
+//!
+//! [`GUID`]: crate::Guid
+//!
+//! # More Info
+//! - See the [`boot`] documentation for details of how to open a protocol.
+//! - Please find additional low-level information in the
+//!   [protocol section of `uefi-raw`][[UEFI protocols]].
 //!
 //! [`boot`]: crate::boot#accessing-protocols
+//! [UEFI protocols]: uefi_raw::protocol
 
 #[cfg(feature = "alloc")]
 pub mod ata;
@@ -46,7 +67,7 @@ use core::ffi::c_void;
 #[cfg(doc)]
 use crate::boot;
 
-/// Marker trait for structures that represent UEFI protocols.
+/// Marker trait for structures that represent [UEFI protocols].
 ///
 /// Implementing this trait allows a protocol to be opened with
 /// [`boot::open_protocol`] or [`boot::open_protocol_exclusive`]. Note that
@@ -67,9 +88,11 @@ use crate::boot;
 ///
 /// assert_eq!(ExampleProtocol::GUID, guid!("12345678-9abc-def0-1234-56789abcdef0"));
 /// ```
+///
+/// [UEFI protocols]: uefi_raw::protocol
 pub trait Protocol: Identify {}
 
-/// Trait for creating a protocol pointer from a [`c_void`] pointer.
+/// Trait for creating a [`Protocol`] pointer from a [`c_void`] pointer.
 ///
 /// There is a blanket implementation for all [`Sized`] protocols that
 /// simply casts the pointer to the appropriate type. Protocols that

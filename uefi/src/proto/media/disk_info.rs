@@ -52,7 +52,7 @@ pub struct DeviceLocationInfo {
     pub device: u32,
 }
 
-/// DiskInfo protocol.
+/// Disk Info [`Protocol`].
 ///
 /// This allows querying hardware information for detected disks in a simple way.
 /// Originally, this was designed for IDE and it shows.
@@ -64,6 +64,8 @@ pub struct DeviceLocationInfo {
 ///
 /// # UEFI Spec Description
 /// Provides the basic interfaces to abstract platform information regarding an IDE controller.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(DiskInfoProtocol::GUID)]

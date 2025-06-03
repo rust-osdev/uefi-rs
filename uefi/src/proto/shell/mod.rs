@@ -10,15 +10,15 @@ use uefi_raw::Status;
 
 use core::ptr;
 
-pub use uefi_raw::protocol::shell::ShellProtocol;
+use uefi_raw::protocol::shell::ShellProtocol;
 
 use crate::{CStr16, Char16};
 
 /// Shell Protocol
 #[derive(Debug)]
 #[repr(transparent)]
-#[unsafe_protocol(uefi_raw::protocol::shell::ShellProtocol::GUID)]
-pub struct Shell(uefi_raw::protocol::shell::ShellProtocol);
+#[unsafe_protocol(ShellProtocol::GUID)]
+pub struct Shell(ShellProtocol);
 
 impl Shell {
     /// Gets the environment variable or list of environment variables
@@ -27,16 +27,19 @@ impl Shell {
     ///
     /// * `name` - The environment variable name of which to retrieve the
     ///   value
+    ///   If specified and exists, will return a vector of length 1 containing
+    ///   the value of the specified environment variable
     ///   If None, will return all defined shell environment
     ///   variables
     ///
     /// # Returns
     ///
-    /// * `Some(Vec<env_value>)` - Value of the environment variable
+    /// * `Some(Vec<env_value>)` - Vector of length 1 containing the value of
+    ///   the environment variable
     /// * `Some(Vec<env_names>)` - Vector of environment variable names
     /// * `None` - Environment variable doesn't exist
     #[must_use]
-    pub fn get_env<'a>(&'a self, name: Option<&CStr16>) -> Option<Vec<&'a CStr16>> {
+    pub fn get_env(&self, name: Option<&CStr16>) -> Option<Vec<&CStr16>> {
         let mut env_vec = Vec::new();
         match name {
             Some(n) => {
@@ -92,7 +95,7 @@ impl Shell {
     ///
     /// # Returns
     ///
-    /// * `Status::SUCCESS` The variable was successfully set
+    /// * `Status::SUCCESS` - The variable was successfully set
     pub fn set_env(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Status {
         let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(name).cast();
         let value_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(value).cast();
@@ -105,12 +108,13 @@ impl Shell {
     ///
     /// * `file_system_mapping` - The file system mapping for which to get
     ///   the current directory
+    ///
     /// # Returns
     ///
     /// * `Some(cwd)` - CStr16 containing the current working directory
     /// * `None` - Could not retrieve current directory
     #[must_use]
-    pub fn get_cur_dir<'a>(&'a self, file_system_mapping: Option<&CStr16>) -> Option<&'a CStr16> {
+    pub fn get_cur_dir(&self, file_system_mapping: Option<&CStr16>) -> Option<&CStr16> {
         let mapping_ptr: *const Char16 = file_system_mapping.map_or(ptr::null(), |x| (x.as_ptr()));
         let cur_dir = unsafe { (self.0.get_cur_dir)(mapping_ptr.cast()) };
         if cur_dir.is_null() {
@@ -127,13 +131,14 @@ impl Shell {
     /// * `file_system` - Pointer to the file system's mapped name.
     /// * `directory` - Points to the directory on the device specified by
     ///   `file_system`.
+    ///
     /// # Returns
     ///
-    /// * `Status::SUCCESS` The directory was successfully set
+    /// * `Status::SUCCESS` - The directory was successfully set
     ///
     /// # Errors
     ///
-    /// * `Status::EFI_NOT_FOUND` The directory does not exist
+    /// * `Status::EFI_NOT_FOUND` - The directory does not exist
     pub fn set_cur_dir(&self, file_system: Option<&CStr16>, directory: Option<&CStr16>) -> Status {
         let fs_ptr: *const Char16 = file_system.map_or(ptr::null(), |x| (x.as_ptr()));
         let dir_ptr: *const Char16 = directory.map_or(ptr::null(), |x| (x.as_ptr()));

@@ -2,6 +2,7 @@
 
 //! HII Protocols
 
+pub mod config;
 pub mod database;
 
 use crate::{Char16, Guid};

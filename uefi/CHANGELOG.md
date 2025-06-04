@@ -6,6 +6,7 @@
 - Added `proto::pci::PciRootBridgeIo`.
 - Added `proto::hii::config::ConfigKeywordHandler`.
 - Added `proto::hii::config::HiiConfigAccess`.
+- Added `proto::hii::config_str::ConfigurationString`.
 
 ## Changed
 - **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.

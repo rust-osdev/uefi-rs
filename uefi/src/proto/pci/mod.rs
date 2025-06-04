@@ -2,13 +2,15 @@
 
 //! PCI Bus specific protocols.
 
+use core::cmp::Ordering;
+
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PciIoAddress {
     /// Register number within the PCI device.
     pub reg: u8,
@@ -54,9 +56,37 @@ impl PciIoAddress {
     }
 }
 
+impl From<u64> for PciIoAddress {
+    fn from(value: u64) -> Self {
+        let raw = value.to_ne_bytes();
+        Self {
+            reg: raw[0],
+            fun: raw[1],
+            dev: raw[2],
+            bus: raw[3],
+            ext_reg: u32::from_ne_bytes([raw[4], raw[5], raw[6], raw[7]]),
+        }
+    }
+}
+
 impl From<PciIoAddress> for u64 {
     fn from(value: PciIoAddress) -> Self {
-        unsafe { core::mem::transmute(value) }
+        let ereg = value.ext_reg.to_ne_bytes();
+        Self::from_ne_bytes([
+            value.reg, value.fun, value.dev, value.bus, ereg[0], ereg[1], ereg[2], ereg[3],
+        ])
+    }
+}
+
+impl PartialOrd for PciIoAddress {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PciIoAddress {
+    fn cmp(&self, other: &Self) -> Ordering {
+        u64::from(*self).cmp(&u64::from(*other))
     }
 }
 
@@ -93,5 +123,27 @@ fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProt
         (PciIoMode::Fill, 8) => PciRootBridgeIoProtocolWidth::FILL_UINT64,
 
         _ => unreachable!("Illegal PCI IO-Mode / Unit combination"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PciIoAddress;
+    use core::mem;
+
+    #[test]
+    fn test_pci_ioaddr_raw_conversion() {
+        assert_eq!(mem::size_of::<u64>(), mem::size_of::<PciIoAddress>());
+        let srcaddr = PciIoAddress {
+            reg: 0x11,
+            fun: 0x33,
+            dev: 0x55,
+            bus: 0x77,
+            ext_reg: 0x99bbddff,
+        };
+        let rawaddr: u64 = srcaddr.into();
+        let dstaddr = PciIoAddress::from(rawaddr);
+        assert_eq!(rawaddr, 0x99_bb_dd_ff_7755_3311);
+        assert_eq!(srcaddr, dstaddr);
     }
 }

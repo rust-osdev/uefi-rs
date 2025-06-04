@@ -3,3 +3,5 @@
 //! HII Protocols
 
 pub mod config;
+#[cfg(feature = "alloc")]
+pub mod config_str;

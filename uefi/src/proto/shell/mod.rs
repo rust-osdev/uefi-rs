@@ -21,67 +21,65 @@ use crate::{CStr16, Char16};
 pub struct Shell(ShellProtocol);
 
 impl Shell {
-    /// Gets the environment variable or list of environment variables
+    /// Gets the value of the specified environment variable
     ///
     /// # Arguments
     ///
     /// * `name` - The environment variable name of which to retrieve the
-    ///   value
-    ///   If specified and exists, will return a vector of length 1 containing
-    ///   the value of the specified environment variable
-    ///   If None, will return all defined shell environment
-    ///   variables
+    ///   value.
     ///
     /// # Returns
     ///
-    /// * `Some(Vec<env_value>)` - Vector of length 1 containing the value of
-    ///   the environment variable
-    /// * `Some(Vec<env_names>)` - Vector of environment variable names
-    /// * `None` - Environment variable doesn't exist
+    /// * `Some(<env_value>)` - &CStr16 containing the value of the
+    ///   environment variable
+    /// * `None` - If environment variable does not exist
     #[must_use]
-    pub fn get_env(&self, name: Option<&CStr16>) -> Option<Vec<&CStr16>> {
-        let mut env_vec = Vec::new();
-        match name {
-            Some(n) => {
-                let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(n).cast();
-                let var_val = unsafe { (self.0.get_env)(name_ptr.cast()) };
-                if var_val.is_null() {
-                    return None;
-                } else {
-                    unsafe { env_vec.push(CStr16::from_ptr(var_val.cast())) };
-                }
-            }
-            None => {
-                let cur_env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
+    pub fn get_env(&self, name: &CStr16) -> Option<&CStr16> {
+        let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(name).cast();
+        let var_val = unsafe { (self.0.get_env)(name_ptr.cast()) };
+        if var_val.is_null() {
+            None
+        } else {
+            unsafe { Some(CStr16::from_ptr(var_val.cast())) }
+        }
+    }
 
-                let mut cur_start = cur_env_ptr;
-                let mut cur_len = 0;
+    /// Gets the list of environment variables
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<env_names>` - Vector of environment variable names
+    #[must_use]
+    pub fn get_envs(&self) -> Vec<&CStr16> {
+        let mut env_vec: Vec<&CStr16> = Vec::new();
+        let cur_env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
 
-                let mut i = 0;
-                let mut null_count = 0;
-                unsafe {
-                    while null_count <= 1 {
-                        if (*(cur_env_ptr.add(i))) == Char16::from_u16_unchecked(0).into() {
-                            if cur_len > 0 {
-                                env_vec.push(CStr16::from_char16_with_nul_unchecked(
-                                    &(*ptr::slice_from_raw_parts(cur_start.cast(), cur_len + 1)),
-                                ));
-                            }
-                            cur_len = 0;
-                            null_count += 1;
-                        } else {
-                            if null_count > 0 {
-                                cur_start = cur_env_ptr.add(i);
-                            }
-                            null_count = 0;
-                            cur_len += 1;
-                        }
-                        i += 1;
+        let mut cur_start = cur_env_ptr;
+        let mut cur_len = 0;
+
+        let mut i = 0;
+        let mut null_count = 0;
+        unsafe {
+            while null_count <= 1 {
+                if (*(cur_env_ptr.add(i))) == Char16::from_u16_unchecked(0).into() {
+                    if cur_len > 0 {
+                        env_vec.push(CStr16::from_char16_with_nul_unchecked(
+                            &(*ptr::slice_from_raw_parts(cur_start.cast(), cur_len + 1)),
+                        ));
                     }
+                    cur_len = 0;
+                    null_count += 1;
+                } else {
+                    if null_count > 0 {
+                        cur_start = cur_env_ptr.add(i);
+                    }
+                    null_count = 0;
+                    cur_len += 1;
                 }
+                i += 1;
             }
         }
-        Some(env_vec)
+        env_vec
     }
 
     /// Sets the environment variable

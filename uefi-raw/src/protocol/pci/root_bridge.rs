@@ -2,6 +2,7 @@
 
 use crate::table::boot::{AllocateType, MemoryType};
 use crate::{Handle, PhysicalAddress, Status};
+use bitflags::bitflags;
 use core::ffi::c_void;
 use uguid::{Guid, guid};
 
@@ -34,6 +35,28 @@ newtype_enum! {
         BUS_MASTER_WRITE64 = 4,
         BUS_MASTER_COMMON_BUFFER64 = 5,
         MAXIMUM = 6,
+    }
+}
+
+bitflags! {
+    /// Describes PCI I/O Protocol Attribute bitflags specified in UEFI specification.
+    ///. https://uefi.org/specs/UEFI/2.10_A/14_Protocols_PCI_Bus_Support.html
+    #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+    pub struct PciRootBridgeIoProtocolAttribute: u64 {
+        const PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO     = 0x0001;
+        const PCI_ATTRIBUTE_ISA_IO                 = 0x0002;
+        const PCI_ATTRIBUTE_VGA_PALETTE_IO         = 0x0004;
+        const PCI_ATTRIBUTE_VGA_MEMORY             = 0x0008;
+        const PCI_ATTRIBUTE_VGA_IO                 = 0x0010;
+        const PCI_ATTRIBUTE_IDE_PRIMARY_IO         = 0x0020;
+        const PCI_ATTRIBUTE_IDE_SECONDARY_IO       = 0x0040;
+        const PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE   = 0x0080;
+        const PCI_ATTRIBUTE_MEMORY_CACHED          = 0x0800;
+        const PCI_ATTRIBUTE_MEMORY_DISABLE         = 0x1000;
+        const PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE     = 0x8000;
+        const PCI_ATTRIBUTE_ISA_IO_16              = 0x10000;
+        const PCI_ATTRIBUTE_VGA_PALETTE_IO_16      = 0x20000;
+        const PCI_ATTRIBUTE_VGA_IO_16              = 0x40000;
     }
 }
 

@@ -6,6 +6,8 @@ use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, ima
 use uefi::proto::ProtocolPointer;
 use uefi::proto::pci::PciIoAddress;
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
+use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolAttribute;
+use uefi_raw::table::boot::MemoryType;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
@@ -13,7 +15,7 @@ const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
 
 const REG_SIZE: u8 = mem::size_of::<u32>() as u8;
 
-pub fn test() {
+pub fn test_io() {
     let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
 
     let mut red_hat_dev_cnt = 0;
@@ -65,6 +67,27 @@ pub fn test() {
     assert!(red_hat_dev_cnt > 0);
     assert!(mass_storage_ctrl_cnt > 0);
     assert!(sata_ctrl_cnt > 0);
+}
+
+pub fn test_buffer() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+
+        let mut buffer = pci_proto
+            .allocate_buffer::<[u8; 4096]>(
+                MemoryType::BOOT_SERVICES_DATA,
+                None,
+                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+            )
+            .unwrap();
+        let buffer = unsafe {
+            buffer.assume_init_mut().fill(0);
+            buffer.assume_init()
+        };
+        assert_eq!(buffer.as_ptr().addr() % 4096, 0);
+    }
 }
 
 fn get_open_protocol<P: ProtocolPointer + ?Sized>(handle: Handle) -> ScopedProtocol<P> {

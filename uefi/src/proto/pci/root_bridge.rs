@@ -2,12 +2,23 @@
 
 //! PCI Root Bridge protocol.
 
-use core::ptr;
-
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
+use crate::proto::pci::buffer::PciBuffer;
+use crate::proto::pci::mapped_region::PciMappedRegion;
+use core::ffi::c_void;
+use core::mem::MaybeUninit;
+use core::num::NonZeroUsize;
+use core::ptr;
+use core::ptr::NonNull;
+use log::debug;
 use uefi_macros::unsafe_protocol;
-use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
+use uefi_raw::Status;
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
+    PciRootBridgeIoProtocolOperation,
+};
+use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 #[cfg(doc)]
 use crate::Status;
@@ -46,11 +57,111 @@ impl PciRootBridgeIo {
         unsafe { (self.0.flush)(&mut self.0).to_result() }
     }
 
+    /// Allocates pages suitable for communicating with PCI devices.
+    ///
+    /// # Errors
+    /// - [`crate::Status::INVALID_PARAMETER`] MemoryType is invalid.
+    /// - [`crate::Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
+    /// - [`crate::Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
+    pub fn allocate_buffer<T>(
+        &self,
+        memory_type: MemoryType,
+        pages: Option<NonZeroUsize>,
+        attributes: PciRootBridgeIoProtocolAttribute,
+    ) -> crate::Result<PciBuffer<MaybeUninit<T>>> {
+        let mut address = 0usize;
+        let original_alignment = align_of::<T>();
+        assert_ne!(original_alignment, 0);
+        assert!(PAGE_SIZE >= original_alignment);
+        assert_eq!(PAGE_SIZE % original_alignment, 0);
+
+        let alignment = PAGE_SIZE;
+
+        let pages = if let Some(pages) = pages {
+            pages
+        } else {
+            let size = size_of::<T>();
+            assert_ne!(size, 0);
+
+            NonZeroUsize::new(size.div_ceil(alignment)).unwrap()
+        };
+
+        let status = unsafe {
+            (self.0.allocate_buffer)(
+                &self.0,
+                AllocateType(0),
+                memory_type,
+                pages.get(),
+                ptr::from_mut(&mut address).cast(),
+                attributes.bits(),
+            )
+        };
+
+        match status {
+            Status::SUCCESS => {
+                let base = NonNull::new(address as *mut MaybeUninit<T>).unwrap();
+                debug!("Allocated {} pages at 0x{:X}", pages.get(), address);
+                Ok(PciBuffer {
+                    base,
+                    pages,
+                    proto: &self.0,
+                })
+            }
+            error
+            @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
+                Err(error.into())
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    /// Map given variable's address into PCI Controller-specific address
+    /// required to access it from a DMA bus master.
+    /// # Arguments
+    /// - `operation` - Indicates if bus master is going to read, write or do both to given variable.
+    /// - `to_map` - Variable to map.
+    ///
+    /// # Returns
+    /// - PciMappedRegion capturing lifetime of passed variable
+    pub fn map<'p, 'r, T>(
+        &'p self,
+        operation: PciRootBridgeIoProtocolOperation,
+        to_map: &'r T,
+    ) -> PciMappedRegion<'p, 'r>
+    where
+        'p: 'r,
+    {
+        let host_address = ptr::from_ref(to_map);
+        let mut bytes = size_of_val(to_map);
+        let mut mapped_address = 0u64;
+        let mut mapping: *mut c_void = ptr::null_mut();
+
+        let status = unsafe {
+            (self.0.map)(
+                &self.0,
+                operation,
+                host_address.cast(),
+                ptr::from_mut(&mut bytes),
+                ptr::from_mut(&mut mapped_address).cast(),
+                ptr::from_mut(&mut mapping),
+            )
+        };
+
+        match status {
+            Status::SUCCESS => {
+                PciMappedRegion::new(mapped_address, bytes, mapping, to_map, &self.0)
+            }
+            _ => unreachable!(),
+        }
+    }
+
     // TODO: poll I/O
     // TODO: mem I/O access
     // TODO: io I/O access
-    // TODO: map & unmap & copy memory
-    // TODO: buffer management
+    // TODO: copy memory
     // TODO: get/set attributes
     // TODO: configuration / resource settings
 }

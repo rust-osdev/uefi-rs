@@ -6,7 +6,7 @@ use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, ima
 use uefi::proto::ProtocolPointer;
 use uefi::proto::pci::PciIoAddress;
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
-use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolAttribute;
+use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation};
 use uefi_raw::table::boot::MemoryType;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
@@ -87,6 +87,32 @@ pub fn test_buffer() {
             buffer.assume_init()
         };
         assert_eq!(buffer.as_ptr().addr() % 4096, 0);
+    }
+}
+
+pub fn test_mapping() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+
+        let mut buffer = pci_proto
+            .allocate_buffer::<[u8; 4096]>(
+                MemoryType::BOOT_SERVICES_DATA,
+                None,
+                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+            )
+            .unwrap();
+        let buffer = unsafe {
+            buffer.assume_init_mut().fill(0);
+            buffer.assume_init()
+        };
+        let mapped = pci_proto.map(PciRootBridgeIoProtocolOperation::BUS_MASTER_COMMON_BUFFER64, buffer.as_ref());
+        if mapped.region().0 == buffer.as_ptr().addr() as u64 {
+            info!("This PCI device uses identity mapping");
+        } else {
+            info!("This PCI device uses different mapping from CPU");
+        }
     }
 }
 

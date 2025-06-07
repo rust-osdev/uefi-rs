@@ -2,6 +2,8 @@
 
 #![no_std]
 #![no_main]
+// TODO: https://github.com/rust-osdev/uefi-rs/issues/1687
+#![expect(clippy::uninlined_format_args, mismatched_lifetime_syntaxes)]
 
 #[macro_use]
 extern crate log;

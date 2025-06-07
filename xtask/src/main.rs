@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+// TODO: https://github.com/rust-osdev/uefi-rs/issues/1687
+#![expect(clippy::collapsible_if)]
+
 mod arch;
 mod cargo;
 mod check_raw;

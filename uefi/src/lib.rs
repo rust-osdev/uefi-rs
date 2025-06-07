@@ -244,6 +244,12 @@
     unsafe_op_in_unsafe_fn,
     unused
 )]
+// TODO: https://github.com/rust-osdev/uefi-rs/issues/1687
+#![expect(
+    clippy::uninlined_format_args,
+    clippy::unnecessary_unwrap,
+    mismatched_lifetime_syntaxes
+)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

@@ -187,7 +187,7 @@ jobs:
         run: cp .github/workflows/nightly_toolchain.toml rust-toolchain.toml
       - uses: Swatinem/rust-cache@v2
       - name: Build
-        run: cargo +nightly build --target x86_64-unknown-uefi --verbose -p uefi-std-example
+        run: cargo build --target x86_64-unknown-uefi --verbose -p uefi-std-example
   coverage:
     name: Test Coverage
     runs-on: ubuntu-latest

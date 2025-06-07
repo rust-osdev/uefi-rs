@@ -96,7 +96,7 @@
 //! Rust string literals are UTF-8 encoded and thus, not compatible with most
 //! UEFI interfaces. We provide [`CStr16`] and [`CString16`] for proper working
 //! with UCS-2 strings, including various transformation functions from standard
-//! Rust strings. You can use [`ctr16!`] to create UCS-2 string literals at
+//! Rust strings. You can use [`cstr16!`] to create UCS-2 string literals at
 //! compile time.
 //!
 //! ## Tables
@@ -215,7 +215,7 @@
 //! [UEFI]: https://uefi.org/
 //! [Zulip]: https://rust-osdev.zulipchat.com
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
-//! [`ctr16!`]: crate::cstr16
+//! [`cstr16!`]: crate::cstr16
 //! [`entry-macro`]: uefi_macros::entry
 //! [`r-efi`]: https://crates.io/crates/r-efi
 //! [`unsafe_protocol`]: proto::unsafe_protocol

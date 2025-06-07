@@ -51,14 +51,14 @@ pub fn test_timestamp() {
                     .expect("Founded Timestamp Protocol but open failed");
             // ANCHOR: text
             let timestamp = timestamp_proto.get_timestamp();
-            info!("Timestamp Protocol's timestamp: {:?}", timestamp);
+            info!("Timestamp Protocol's timestamp: {timestamp:?}");
 
             let properties = timestamp_proto.get_properties();
-            info!("Timestamp Protocol's properties: {:?}", properties);
+            info!("Timestamp Protocol's properties: {properties:?}");
             // ANCHOR_END: text
         }
         Err(err) => {
-            warn!("Failed to found Timestamp Protocol: {:?}", err);
+            warn!("Failed to found Timestamp Protocol: {err}");
         }
     }
 }

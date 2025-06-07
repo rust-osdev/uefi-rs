@@ -570,7 +570,7 @@ pub mod acpi {
         /// comes from Table B-2 ACPI 3.0 specification. At least one
         /// ADR value is required.
         #[must_use]
-        pub fn adr(&self) -> UnalignedSlice<u32> {
+        pub fn adr(&self) -> UnalignedSlice<'_, u32> {
             let ptr: *const [u32] = addr_of!(self.adr);
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u32>(), len) }
@@ -1174,7 +1174,7 @@ pub mod messaging {
 
         /// Last 64 (or fewer) characters of the USB Serial number.
         #[must_use]
-        pub fn serial_number(&self) -> UnalignedSlice<u16> {
+        pub fn serial_number(&self) -> UnalignedSlice<'_, u16> {
             let ptr: *const [u16] = addr_of!(self.serial_number);
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
@@ -2424,7 +2424,7 @@ pub mod messaging {
 
         /// One or more instances of the DNS server address.
         #[must_use]
-        pub fn addresses(&self) -> UnalignedSlice<IpAddress> {
+        pub fn addresses(&self) -> UnalignedSlice<'_, IpAddress> {
             let ptr: *const [IpAddress] = addr_of!(self.addresses);
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<IpAddress>(), len) }
@@ -2933,7 +2933,7 @@ pub mod media {
     impl FilePath {
         /// Null-terminated path.
         #[must_use]
-        pub fn path_name(&self) -> UnalignedSlice<u16> {
+        pub fn path_name(&self) -> UnalignedSlice<'_, u16> {
             let ptr: *const [u16] = addr_of!(self.path_name);
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }

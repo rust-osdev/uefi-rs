@@ -48,7 +48,7 @@ fn is_testdrive_present() -> bool {
                     });
                 let serial = core::str::from_utf8(&serial_bfr).unwrap().trim();
                 if serial == "AtaPassThru" {
-                    info!("Found Testdisk at handle: {:?}", handle);
+                    info!("Found Testdisk at handle: {handle:?}");
                     return true; // found our testdrive!
                 }
             }

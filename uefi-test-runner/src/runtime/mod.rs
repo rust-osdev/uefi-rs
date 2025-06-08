@@ -34,6 +34,6 @@ fn test_time() {
 
     // Print the new time and check that the year was successfully changed.
     let now = runtime::get_time().unwrap();
-    info!("After setting time: {}", now);
+    info!("After setting time: {now}");
     assert_eq!(now.year(), 2020);
 }

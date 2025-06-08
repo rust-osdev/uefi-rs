@@ -25,20 +25,14 @@ pub fn test_reset_notification() {
         data: *const u8,
     ) {
         info!("Inside the event callback, hi, efi_reset_fn");
-        info!("rt: {:?} status: {:?}", rt, status);
-        info!("size: {:?} data: {:?}", data_size, data);
+        info!("rt: {rt:?} status: {status:?}");
+        info!("size: {data_size:?} data: {data:?}");
         // do what you want
     }
 
     let result = reset_notif_proto.register_reset_notify(efi_reset_fn);
-    info!(
-        "ResetNotification Protocol register efi_reset_fn test: {:?}",
-        result
-    );
+    info!("ResetNotification Protocol register efi_reset_fn test: {result:?}");
 
     let result = reset_notif_proto.unregister_reset_notify(efi_reset_fn);
-    info!(
-        "ResetNotification Protocol unregister efi_reset_fn test: {:?}",
-        result
-    );
+    info!("ResetNotification Protocol unregister efi_reset_fn test: {result:?}");
 }

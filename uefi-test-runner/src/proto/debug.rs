@@ -86,7 +86,7 @@ fn test_debug_support() {
             );
 
             info!("- Architecture: {:?}", debug_support.arch());
-            info!("- Maximum Processor Index: {:?}", maximum_processor_index);
+            info!("- Maximum Processor Index: {maximum_processor_index:?}");
 
             match debug_support.arch() {
                 // This arm is the only match when testing on QEMU w/ OVMF, regardless of the machine arch.

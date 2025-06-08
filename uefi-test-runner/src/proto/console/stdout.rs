@@ -28,7 +28,7 @@ pub fn test(stdout: &mut Output) {
 // Retrieves and prints the current output mode.
 fn get_current_mode(stdout: &mut Output) {
     let current_mode = stdout.current_mode().unwrap();
-    info!("UEFI standard output current mode: {:?}", current_mode);
+    info!("UEFI standard output current mode: {current_mode:?}");
 }
 
 // Switch to the maximum supported text mode.

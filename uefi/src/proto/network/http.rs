@@ -210,7 +210,7 @@ impl HttpHelper {
         };
         let mut c_hostname = String::from(hostname);
         c_hostname.push('\0');
-        debug!("http: host: {}", hostname);
+        debug!("http: host: {hostname}");
 
         let mut tx_req = HttpRequestData {
             method,

@@ -276,7 +276,7 @@ impl EventLog<'_> {
 
     /// Iterator of events in the log.
     #[must_use]
-    pub const fn iter(&self) -> EventLogIter {
+    pub const fn iter(&self) -> EventLogIter<'_> {
         EventLogIter {
             log: self,
             location: self.location,
@@ -356,7 +356,7 @@ pub struct StatusCheck<'a> {
 impl Tcg {
     /// Get information about the protocol and TPM device, as well as
     /// the TPM event log.
-    pub fn status_check(&mut self) -> Result<StatusCheck> {
+    pub fn status_check(&mut self) -> Result<StatusCheck<'_>> {
         let mut protocol_capability = TcgBootServiceCapability::default();
         let mut feature_flags = 0;
         let mut event_log_location = 0;

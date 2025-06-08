@@ -569,7 +569,7 @@ impl CStr16 {
 
     /// Returns an iterator over this C string
     #[must_use]
-    pub const fn iter(&self) -> CStr16Iter {
+    pub const fn iter(&self) -> CStr16Iter<'_> {
         CStr16Iter {
             inner: self,
             pos: 0,

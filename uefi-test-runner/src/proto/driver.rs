@@ -28,7 +28,7 @@ impl ComponentNameInterface for ScopedProtocol<ComponentName1> {
         boot::open_protocol_exclusive::<ComponentName1>(handle)
     }
 
-    fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
+    fn supported_languages(&self) -> core::result::Result<LanguageIter<'_>, LanguageError> {
         (**self).supported_languages()
     }
 
@@ -51,7 +51,7 @@ impl ComponentNameInterface for ScopedProtocol<ComponentName2> {
         boot::open_protocol_exclusive::<ComponentName2>(handle)
     }
 
-    fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
+    fn supported_languages(&self) -> core::result::Result<LanguageIter<'_>, LanguageError> {
         (**self).supported_languages()
     }
 
@@ -74,7 +74,7 @@ impl ComponentNameInterface for ComponentName {
         Self::open(handle)
     }
 
-    fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError> {
+    fn supported_languages(&self) -> core::result::Result<LanguageIter<'_>, LanguageError> {
         self.supported_languages()
     }
 

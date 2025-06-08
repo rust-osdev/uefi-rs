@@ -227,10 +227,9 @@ impl HttpHelper {
         tx_msg.data.request = &mut tx_req;
         tx_msg.header_count = tx_hdr.len();
         tx_msg.header = tx_hdr.as_mut_ptr();
-        if body.is_some() {
-            let b = body.unwrap();
-            tx_msg.body_length = b.len();
-            tx_msg.body = b.as_mut_ptr().cast::<c_void>();
+        if let Some(body) = body {
+            tx_msg.body_length = body.len();
+            tx_msg.body = body.as_mut_ptr().cast::<c_void>();
         }
 
         let mut tx_token = HttpToken {

@@ -11,13 +11,15 @@ pub use uefi_raw::protocol::console::serial::{
     ControlBits, Parity, SerialIoMode as IoMode, StopBits,
 };
 
-/// Provides access to a serial I/O device.
+/// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
 /// This can include standard UART devices, serial ports over a USB interface,
 /// or any other character-based communication device.
 ///
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SerialIoProtocol::GUID)]

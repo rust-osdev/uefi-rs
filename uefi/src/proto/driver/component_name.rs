@@ -13,6 +13,8 @@ use core::fmt::{self, Debug, Display, Formatter};
 use core::{ptr, slice};
 use uefi_raw::protocol::driver::ComponentName2Protocol;
 
+/// Component Name1 [`Protocol`].
+///
 /// Protocol that provides human-readable names for a driver and for each of the
 /// controllers that the driver is managing.
 ///
@@ -27,6 +29,7 @@ use uefi_raw::protocol::driver::ComponentName2Protocol;
 ///
 /// [ISO 639-2]: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
+/// [`Protocol`]: uefi::proto::Protocol
 #[deprecated = "deprecated in UEFI 2.1; use ComponentName2 where possible"]
 #[unsafe_protocol(ComponentName2Protocol::DEPRECATED_COMPONENT_NAME_GUID)]
 #[derive(Debug)]
@@ -87,6 +90,8 @@ impl ComponentName1 {
     }
 }
 
+/// Component Name2 [`Protocol`].
+///
 /// Protocol that provides human-readable names for a driver and for each of the
 /// controllers that the driver is managing.
 ///
@@ -101,6 +106,7 @@ impl ComponentName1 {
 ///
 /// [ISO 639-2]: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
+/// [`Protocol`]: uefi::proto::Protocol
 #[unsafe_protocol(ComponentName2Protocol::GUID)]
 #[derive(Debug)]
 #[repr(transparent)]

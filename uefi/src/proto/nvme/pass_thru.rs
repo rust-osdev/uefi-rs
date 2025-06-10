@@ -49,7 +49,9 @@ impl NvmePassThru {
     /// An instance of [`NvmePassThruMode`] describing the NVMe controller's capabilities.
     #[must_use]
     pub fn mode(&self) -> NvmePassThruMode {
-        unsafe { (*self.0.mode).clone() }
+        let mut mode = unsafe { (*self.0.mode).clone() };
+        mode.io_align = mode.io_align.max(1); // 0 and 1 is the same, says UEFI spec
+        mode
     }
 
     /// Retrieves the alignment requirements for I/O buffers.

@@ -264,7 +264,7 @@ impl NodeField {
                 // In the general case we can't safely return a
                 // reference to the slice since it might be
                 // unaligned, so use `UnalignedSlice`.
-                ret_type = quote!(UnalignedSlice<#slice_elem>);
+                ret_type = quote!(UnalignedSlice<'_, #slice_elem>);
                 ret_val = quote!(
                     let ptr: *const [#slice_elem] = addr_of!(self.#field_name);
                     let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);

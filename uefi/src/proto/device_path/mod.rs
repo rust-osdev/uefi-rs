@@ -289,7 +289,7 @@ impl DevicePathNode {
 
     /// Convert from a generic [`DevicePathNode`] reference to an enum
     /// of more specific node types.
-    pub fn as_enum(&self) -> Result<DevicePathNodeEnum, NodeConversionError> {
+    pub fn as_enum(&self) -> Result<DevicePathNodeEnum<'_>, NodeConversionError> {
         DevicePathNodeEnum::try_from(self)
     }
 
@@ -365,7 +365,7 @@ impl DevicePathInstance {
     ///
     /// [`DevicePathNodes`]: DevicePathNode
     #[must_use]
-    pub const fn node_iter(&self) -> DevicePathNodeIterator {
+    pub const fn node_iter(&self) -> DevicePathNodeIterator<'_> {
         DevicePathNodeIterator {
             nodes: &self.data,
             stop_condition: StopCondition::AnyEndNode,
@@ -539,7 +539,7 @@ impl DevicePath {
 
     /// Get an iterator over the [`DevicePathInstance`]s in this path.
     #[must_use]
-    pub const fn instance_iter(&self) -> DevicePathInstanceIterator {
+    pub const fn instance_iter(&self) -> DevicePathInstanceIterator<'_> {
         DevicePathInstanceIterator {
             remaining_path: Some(self),
         }
@@ -550,7 +550,7 @@ impl DevicePath {
     /// [`is_end_entire`][DevicePathNode::is_end_entire] is true. That ending
     /// path is not returned by the iterator.
     #[must_use]
-    pub const fn node_iter(&self) -> DevicePathNodeIterator {
+    pub const fn node_iter(&self) -> DevicePathNodeIterator<'_> {
         DevicePathNodeIterator {
             nodes: &self.data,
             stop_condition: StopCondition::EndEntireNode,

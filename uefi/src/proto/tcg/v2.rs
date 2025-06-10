@@ -336,7 +336,7 @@ pub struct EventLog<'a> {
 impl EventLog<'_> {
     /// Iterator of events in the log.
     #[must_use]
-    pub fn iter(&self) -> EventLogIter {
+    pub fn iter(&self) -> EventLogIter<'_> {
         if let Some(header) = self.header() {
             // Advance past the header
             let location = unsafe { self.location.add(header.size_in_bytes) };
@@ -356,7 +356,7 @@ impl EventLog<'_> {
     }
 
     /// Header at the beginning of the event log.
-    fn header(&self) -> Option<EventLogHeader> {
+    fn header(&self) -> Option<EventLogHeader<'_>> {
         // The spec is unclear if the header is present when there are
         // no entries, so lets assume that `self.location` will be null
         // if there's no header, and otherwise valid.
@@ -513,7 +513,7 @@ impl<'a> PcrEvent<'a> {
 
     /// Digests of the data hashed for this event.
     #[must_use]
-    pub fn digests(&self) -> PcrEventDigests {
+    pub fn digests(&self) -> PcrEventDigests<'_> {
         PcrEventDigests {
             data: self.digests,
             algorithm_digest_sizes: self.algorithm_digest_sizes.clone(),
@@ -579,7 +579,7 @@ impl Tcg {
 
     /// Get the V1 event log. This provides events in the same format as a V1
     /// TPM, so all events use SHA-1 hashes.
-    pub fn get_event_log_v1(&mut self) -> Result<v1::EventLog> {
+    pub fn get_event_log_v1(&mut self) -> Result<v1::EventLog<'_>> {
         let mut location = 0;
         let mut last_entry = 0;
         let mut truncated = 0;
@@ -608,7 +608,7 @@ impl Tcg {
     }
 
     /// Get the V2 event log. This format allows for a flexible list of hash types.
-    pub fn get_event_log_v2(&mut self) -> Result<EventLog> {
+    pub fn get_event_log_v2(&mut self) -> Result<EventLog<'_>> {
         let mut location = 0;
         let mut last_entry = 0;
         let mut truncated = 0;

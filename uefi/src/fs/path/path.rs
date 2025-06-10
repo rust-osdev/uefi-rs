@@ -37,7 +37,7 @@ impl Path {
 
     /// Iterator over the components of a path.
     #[must_use]
-    pub fn components(&self) -> Components {
+    pub fn components(&self) -> Components<'_> {
         Components {
             path: self.as_ref(),
             i: 0,

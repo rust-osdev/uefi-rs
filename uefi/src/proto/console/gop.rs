@@ -104,7 +104,7 @@ impl GraphicsOutput {
 
     /// Returns a [`ModeIter`].
     #[must_use]
-    pub const fn modes(&self) -> ModeIter {
+    pub const fn modes(&self) -> ModeIter<'_> {
         ModeIter {
             gop: self,
             current: 0,
@@ -295,7 +295,7 @@ impl GraphicsOutput {
     }
 
     /// Access the frame buffer directly
-    pub fn frame_buffer(&mut self) -> FrameBuffer {
+    pub fn frame_buffer(&mut self) -> FrameBuffer<'_> {
         assert!(
             self.current_mode_info().pixel_format() != PixelFormat::BltOnly,
             "Cannot access the framebuffer in a Blt-only mode"

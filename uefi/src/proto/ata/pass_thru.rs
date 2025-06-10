@@ -42,7 +42,9 @@ impl AtaPassThru {
     /// The [`AtaPassThruMode`] structure containing configuration details of the protocol.
     #[must_use]
     pub fn mode(&self) -> AtaPassThruMode {
-        unsafe { (*self.0.mode).clone() }
+        let mut mode = unsafe { (*self.0.mode).clone() };
+        mode.io_align = mode.io_align.max(1); // 0 and 1 is the same, says UEFI spec
+        mode
     }
 
     /// Retrieves the I/O buffer alignment required by this SCSI channel.

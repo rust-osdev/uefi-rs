@@ -12,39 +12,39 @@ use uefi_raw::protocol::network::http::HttpStatusCode;
 
 pub fn print_handle_devpath(prefix: &str, handle: &Handle) {
     let Ok(dp) = boot::open_protocol_exclusive::<DevicePath>(*handle) else {
-        info!("{}no device path for handle", prefix);
+        info!("{prefix}no device path for handle");
         return;
     };
     if let Ok(string) = dp.to_string(DisplayOnly(true), AllowShortcuts(true)) {
-        info!("{}{}", prefix, string);
+        info!("{prefix}{string}");
     }
 }
 
 fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
-    info!("http: fetching {} ...", url);
+    info!("http: fetching {url} ...");
 
     let http_res = HttpHelper::new(handle);
     if let Err(e) = http_res {
-        error!("http new: {}", e);
+        error!("http new: {e}");
         return None;
     }
     let mut http = http_res.unwrap();
 
     let res = http.configure();
     if let Err(e) = res {
-        error!("http configure: {}", e);
+        error!("http configure: {e}");
         return None;
     }
 
     let res = http.request_get(url);
     if let Err(e) = res {
-        error!("http request: {}", e);
+        error!("http request: {e}");
         return None;
     }
 
     let res = http.response_first(true);
     if let Err(e) = res {
-        error!("http response: {}", e);
+        error!("http response: {e}");
         return None;
     }
 
@@ -64,7 +64,7 @@ fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
         error!("parse content length ({})", cl_hdr.1);
         return None;
     };
-    info!("http: size is {} bytes", cl);
+    info!("http: size is {cl} bytes");
 
     let mut data = rsp.body;
     loop {
@@ -74,7 +74,7 @@ fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
 
         let res = http.response_more();
         if let Err(e) = res {
-            error!("read response: {}", e);
+            error!("read response: {e}");
             return None;
         }
 

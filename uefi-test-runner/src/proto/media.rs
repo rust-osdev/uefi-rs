@@ -124,7 +124,7 @@ fn test_existing_file(directory: &mut Directory) {
     let mut buffer = vec![0; 128];
     let size = file.read(&mut buffer).expect("failed to read file");
     let buffer = &buffer[..size];
-    info!("Successfully read {}", input_file_path);
+    info!("Successfully read {input_file_path}");
     assert_eq!(buffer, b"test input data");
 
     // Check file metadata.
@@ -370,7 +370,7 @@ fn test_disk_info() {
         let vendor_id = core::str::from_utf8(&inquiry_bfr[8..16]).unwrap().trim();
         let product_id = core::str::from_utf8(&inquiry_bfr[16..32]).unwrap().trim();
         if vendor_id == "uefi-rs" && product_id == "ExtScsiPassThru" {
-            info!("Found Testdisk at Handle: {:?}", handle);
+            info!("Found Testdisk at Handle: {handle:?}");
             found_drive = true;
         }
     }
@@ -385,7 +385,7 @@ fn test_partition_info(disk_handle: Handle) {
 
     let mbr = pi.mbr_partition_record().expect("Not an MBR disk");
 
-    info!("MBR partition: {:?}", mbr);
+    info!("MBR partition: {mbr:?}");
 
     assert_eq!(mbr.boot_indicator, 0);
     assert_eq!({ mbr.starting_lba }, 1);

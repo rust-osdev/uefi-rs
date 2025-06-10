@@ -10,11 +10,8 @@ pub fn test() {
         .expect("Failed to open LoadedImage protocol");
 
     let load_options = loaded_image.load_options_as_bytes();
-    info!("LoadedImage options: {:?}", load_options);
+    info!("LoadedImage options: {load_options:?}");
 
     let (image_base, image_size) = loaded_image.info();
-    info!(
-        "LoadedImage image address: {:?}, image size: {} bytes",
-        image_base, image_size
-    );
+    info!("LoadedImage image address: {image_base:?}, image size: {image_size} bytes");
 }

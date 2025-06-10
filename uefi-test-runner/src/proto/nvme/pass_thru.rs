@@ -29,7 +29,7 @@ fn has_nvme_drive() -> bool {
         let device_path_str = device_path
             .to_string(DisplayOnly(true), AllowShortcuts(false))
             .unwrap();
-        info!("- Successfully opened NVMe: {}", device_path_str);
+        info!("- Successfully opened NVMe: {device_path_str}");
         let mut nvme_ctrl = nvme_pt.controller();
 
         let request = NvmeRequestBuilder::new(nvme_pt.io_align(), 0x06, NvmeQueueType::ADMIN)
@@ -42,7 +42,7 @@ fn has_nvme_drive() -> bool {
         if let Ok(result) = result {
             let bfr = result.transfer_buffer().unwrap();
             let serial = core::str::from_utf8(&bfr[4..24]).unwrap().trim();
-            info!("Found NVMe with serial: '{}'", serial);
+            info!("Found NVMe with serial: '{serial}'");
             if serial == "uefi-rsNvmePassThru" {
                 return true;
             }

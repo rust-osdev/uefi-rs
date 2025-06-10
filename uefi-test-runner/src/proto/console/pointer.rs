@@ -18,7 +18,7 @@ pub fn test() {
         .expect("Failed to retrieve pointer state");
 
     if let Some(state) = state {
-        info!("New pointer State: {:#?}", state);
+        info!("New pointer State: {state:#?}");
     } else {
         info!("Pointer state has not changed since the last query");
     }

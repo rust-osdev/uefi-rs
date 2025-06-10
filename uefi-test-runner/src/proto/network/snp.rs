@@ -73,7 +73,7 @@ fn receive(simple_network: &mut SimpleNetwork, buffer: &mut [u8]) -> uefi::Resul
         debug!("Received:");
         debug!("  src_mac       =  {:x?}", &recv_src_mac.0[0..6]);
         debug!("  dst_mac       =  {:x?}", &recv_dst_mac.0[0..6]);
-        debug!("  ethernet_proto=0x{:x?}", recv_ethernet_protocol);
+        debug!("  ethernet_proto=0x{recv_ethernet_protocol:x?}");
 
         // Assert the ethernet frame was sent to the expected interface.
         {
@@ -239,7 +239,7 @@ pub fn test() {
     let res = simple_network.collect_statistics();
     match res {
         Ok(stats) => {
-            info!("Stats: {:?}", stats);
+            info!("Stats: {stats:?}");
 
             // One frame should have been transmitted and one received
             assert_eq!(stats.tx_total_frames().unwrap(), 1);

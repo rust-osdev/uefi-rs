@@ -55,14 +55,7 @@ pub fn test() {
                     }
 
                     log::info!(
-                        "PCI Device: [{}, {}, {}]: vendor={:04X}, device={:04X}, class={:02X}, subclass={:02X}",
-                        bus,
-                        dev,
-                        fun,
-                        vendor_id,
-                        device_id,
-                        class_code,
-                        subclass_code
+                        "PCI Device: [{bus}, {dev}, {fun}]: vendor={vendor_id:04X}, device={device_id:04X}, class={class_code:02X}, subclass={subclass_code:02X}"
                     );
                 }
             }

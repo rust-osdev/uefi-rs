@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![allow(clippy::collapsible_if)]
+
 mod arch;
 mod cargo;
 mod check_raw;

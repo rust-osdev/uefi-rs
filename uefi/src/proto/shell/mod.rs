@@ -2,12 +2,10 @@
 
 //! EFI Shell Protocol v2.2
 
-#![cfg(feature = "alloc")]
-
-use alloc::vec::Vec;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
 
+use core::marker::PhantomData;
 use core::ptr;
 
 use uefi_raw::protocol::shell::ShellProtocol;
@@ -19,6 +17,35 @@ use crate::{CStr16, Char16};
 #[repr(transparent)]
 #[unsafe_protocol(ShellProtocol::GUID)]
 pub struct Shell(ShellProtocol);
+
+/// Iterator over the names of environmental variables obtained from the Shell protocol.
+#[derive(Debug)]
+pub struct Vars<'a> {
+    /// Char16 containing names of environment variables
+    inner: *const Char16,
+    /// Placeholder to attach a lifetime to `Vars`
+    placeholder: PhantomData<&'a CStr16>,
+}
+
+impl<'a> Iterator for Vars<'a> {
+    type Item = &'a CStr16;
+    // We iterate a list of NUL terminated CStr16s.
+    // The list is terminated with a double NUL.
+    fn next(&mut self) -> Option<Self::Item> {
+        let cur_start = self.inner;
+        let mut cur_len = 0;
+        unsafe {
+            if *(cur_start) == Char16::from_u16_unchecked(0) {
+                return None;
+            }
+            while *(cur_start.add(cur_len)) != Char16::from_u16_unchecked(0) {
+                cur_len += 1;
+            }
+            self.inner = self.inner.add(cur_len + 1);
+            Some(CStr16::from_ptr(cur_start))
+        }
+    }
+}
 
 impl Shell {
     /// Gets the value of the specified environment variable
@@ -50,36 +77,12 @@ impl Shell {
     ///
     /// * `Vec<env_names>` - Vector of environment variable names
     #[must_use]
-    pub fn get_envs(&self) -> Vec<&CStr16> {
-        let mut env_vec: Vec<&CStr16> = Vec::new();
-        let cur_env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
-
-        let mut cur_start = cur_env_ptr;
-        let mut cur_len = 0;
-
-        let mut i = 0;
-        let mut null_count = 0;
-        unsafe {
-            while null_count <= 1 {
-                if (*(cur_env_ptr.add(i))) == Char16::from_u16_unchecked(0).into() {
-                    if cur_len > 0 {
-                        env_vec.push(CStr16::from_char16_with_nul(
-                            &(*ptr::slice_from_raw_parts(cur_start.cast(), cur_len + 1)),
-                        ).unwrap());
-                    }
-                    cur_len = 0;
-                    null_count += 1;
-                } else {
-                    if null_count > 0 {
-                        cur_start = cur_env_ptr.add(i);
-                    }
-                    null_count = 0;
-                    cur_len += 1;
-                }
-                i += 1;
-            }
+    pub fn get_envs(&self) -> Vars {
+        let env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
+        Vars {
+            inner: env_ptr.cast::<Char16>(),
+            placeholder: PhantomData,
         }
-        env_vec
     }
 
     /// Sets the environment variable
@@ -141,5 +144,66 @@ impl Shell {
         let fs_ptr: *const Char16 = file_system.map_or(ptr::null(), |x| (x.as_ptr()));
         let dir_ptr: *const Char16 = directory.map_or(ptr::null(), |x| (x.as_ptr()));
         unsafe { (self.0.set_cur_dir)(fs_ptr.cast(), dir_ptr.cast()) }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec::Vec;
+    use uefi::cstr16;
+
+    /// Testing Vars struct
+    #[test]
+    fn test_vars() {
+        // Empty Vars
+        let mut vars_mock = Vec::<u16>::new();
+        vars_mock.push(0);
+        vars_mock.push(0);
+        let mut vars = Vars {
+            inner: vars_mock.as_ptr().cast(),
+            placeholder: PhantomData,
+        };
+        assert!(vars.next().is_none());
+
+        // One environment variable in Vars
+        let mut vars_mock = Vec::<u16>::new();
+        vars_mock.push(b'f' as u16);
+        vars_mock.push(b'o' as u16);
+        vars_mock.push(b'o' as u16);
+        vars_mock.push(0);
+        vars_mock.push(0);
+        let vars = Vars {
+            inner: vars_mock.as_ptr().cast(),
+            placeholder: PhantomData,
+        };
+        assert_eq!(vars.collect::<Vec<_>>(), Vec::from([cstr16!("foo")]));
+
+        // Multiple environment variables in Vars
+        let mut vars_mock = Vec::<u16>::new();
+        vars_mock.push(b'f' as u16);
+        vars_mock.push(b'o' as u16);
+        vars_mock.push(b'o' as u16);
+        vars_mock.push(b'1' as u16);
+        vars_mock.push(0);
+        vars_mock.push(b'b' as u16);
+        vars_mock.push(b'a' as u16);
+        vars_mock.push(b'r' as u16);
+        vars_mock.push(0);
+        vars_mock.push(b'b' as u16);
+        vars_mock.push(b'a' as u16);
+        vars_mock.push(b'z' as u16);
+        vars_mock.push(b'2' as u16);
+        vars_mock.push(0);
+        vars_mock.push(0);
+
+        let vars = Vars {
+            inner: vars_mock.as_ptr().cast(),
+            placeholder: PhantomData,
+        };
+        assert_eq!(
+            vars.collect::<Vec<_>>(),
+            Vec::from([cstr16!("foo1"), cstr16!("bar"), cstr16!("baz2")])
+        );
     }
 }

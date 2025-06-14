@@ -8,9 +8,10 @@
 // See `/xtask/src/device_path/README.md` for more details.
 #![allow(clippy::missing_const_for_fn)]
 #![allow(missing_debug_implementations)]
+use crate::net::IpAddress;
 use crate::protocol::device_path;
 use crate::table::boot::MemoryType;
-use crate::{Guid, IpAddress, guid};
+use crate::{Guid, guid};
 use bitflags::bitflags;
 use device_path::DevicePathProtocol as DevicePathHeader;
 #[cfg(doc)]

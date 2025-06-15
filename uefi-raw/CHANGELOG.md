@@ -5,7 +5,14 @@
 - Added `PciRootBridgeIoProtocol`.
 - Added `ConfigKeywordHandlerProtocol`.
 - Added `HiiConfigAccessProtocol`.
+- Added lots of convenient methods and `From` implementations to better
+  integrate the `uefi_raw::net::*` types with the types from `core::net::*`.
+  Further, more associated functions for an improved convenience have been
+  added to the types of that module.
 
+## Changed
+- Types `MacAddress`, `IpAddress`, `Ipv4Address`, and `Ipv6Address` were moved
+  from `uefi_raw::*` to `uefi_raw::net::*`.
 
 # uefi-raw - 0.11.0 (2025-05-04)
 

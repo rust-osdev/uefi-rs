@@ -9,7 +9,7 @@ pub mod ip4config2;
 pub mod pxe;
 pub mod snp;
 
-pub use uefi_raw::MacAddress;
+pub use uefi_raw::net::MacAddress;
 
 /// Represents an IPv4/v6 address.
 ///
@@ -42,23 +42,23 @@ impl IpAddress {
     ///
     /// `is_ipv6` must accurately reflect how the union was initialized.
     #[must_use]
-    const unsafe fn from_raw(ip_addr: uefi_raw::IpAddress, is_ipv6: bool) -> Self {
+    const unsafe fn from_raw(ip_addr: uefi_raw::net::IpAddress, is_ipv6: bool) -> Self {
         if is_ipv6 {
-            Self::new_v6(unsafe { ip_addr.v6.0 })
+            Self::new_v6(ip_addr.0)
         } else {
-            Self::new_v4(unsafe { ip_addr.v4.0 })
+            Self::new_v4([ip_addr.0[0], ip_addr.0[1], ip_addr.0[2], ip_addr.0[3]])
         }
     }
 
     #[must_use]
-    const fn as_raw_ptr(&self) -> *const uefi_raw::IpAddress {
+    const fn as_raw_ptr(&self) -> *const uefi_raw::net::IpAddress {
         // The uefi-raw type is defined differently, but the layout is
         // compatible.
         self.0.as_ptr().cast()
     }
 
     #[must_use]
-    const fn as_raw_ptr_mut(&mut self) -> *mut uefi_raw::IpAddress {
+    const fn as_raw_ptr_mut(&mut self) -> *mut uefi_raw::net::IpAddress {
         // The uefi-raw type is defined differently, but the layout is
         // compatible.
         self.0.as_mut_ptr().cast()

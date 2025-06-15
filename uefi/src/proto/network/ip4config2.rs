@@ -13,7 +13,7 @@ use uefi::boot::ScopedProtocol;
 use uefi::prelude::*;
 use uefi::proto::unsafe_protocol;
 use uefi::{print, println};
-use uefi_raw::Ipv4Address;
+use uefi_raw::net::Ipv4Address;
 use uefi_raw::protocol::network::ip4_config2::{
     Ip4Config2DataType, Ip4Config2InterfaceInfo, Ip4Config2Policy, Ip4Config2Protocol,
 };

@@ -280,7 +280,12 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
 }
 
 /// List with allowed combinations of representations (see [`Repr`]).
-const ALLOWED_REPRS: &[&[Repr]] = &[&[Repr::C], &[Repr::C, Repr::Packed], &[Repr::Transparent]];
+const ALLOWED_REPRS: &[&[Repr]] = &[
+    &[Repr::C],
+    &[Repr::C, Repr::Packed],
+    &[Repr::Transparent],
+    &[Repr::Align(4), Repr::C],
+];
 
 fn check_type_attrs(attrs: &[Attribute], spanned: &dyn Spanned, src: &Path) -> Result<(), Error> {
     let attrs = parse_attrs(attrs, src)?;
@@ -482,7 +487,7 @@ mod tests {
                     }
                 }
             },
-            ErrorKind::ForbiddenRepr,
+            ErrorKind::ForbiddenRepr(vec![Repr::C]),
         );
     }
 
@@ -614,7 +619,7 @@ mod tests {
                     pub f: u32,
                 }
             },
-            ErrorKind::ForbiddenRepr,
+            ErrorKind::ForbiddenRepr(vec![Repr::Rust]),
         );
 
         // Forbidden attr.

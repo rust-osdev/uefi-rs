@@ -16,7 +16,7 @@ use {
     uefi_raw::Boolean,
 };
 
-/// Load File Protocol.
+/// Load File [`Protocol`].
 ///
 /// Used to obtain files, that are primarily boot options, from arbitrary
 /// devices.
@@ -33,6 +33,8 @@ use {
 /// EFI_LOAD_FILE_PROTOCOL and the LoadFile() function. In this case the
 /// LoadFile() function implements the policy of interpreting the File Path
 /// value.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(LoadFileProtocol::GUID)]
@@ -98,7 +100,7 @@ impl LoadFile {
     }
 }
 
-/// Load File2 Protocol.
+/// Load File2 [`Protocol`].
 ///
 /// The Load File2 protocol is used to obtain files from arbitrary devices that
 /// are not boot options.
@@ -109,6 +111,8 @@ impl LoadFile {
 /// arbitrary devices that are not boot options. It is used by LoadImage() when
 /// its BootOption parameter is FALSE and the FilePath does not have an instance
 /// of the EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(LoadFile2Protocol::GUID)]

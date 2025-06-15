@@ -6,6 +6,8 @@
 - Added `ConfigKeywordHandlerProtocol`.
 - Added `HiiConfigAccessProtocol`.
 
+## Changed
+- The documentation for UEFI protocols has been streamlined and improved.
 
 # uefi-raw - 0.11.0 (2025-05-04)
 
@@ -28,11 +30,6 @@
 ## Changed
 - `DevicePathProtocol` now derives
   `Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash`
-- The documentation for UEFI device paths has been streamlined and improved.
-
-## Changed
-
-- **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
 
 
 # uefi-raw - 0.10.0 (2025-02-07)

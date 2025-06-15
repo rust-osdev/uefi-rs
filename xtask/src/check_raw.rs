@@ -45,7 +45,7 @@ enum ErrorKind {
     ForbiddenAbi,
     ForbiddenAttr,
     ForbiddenItemKind(ItemKind),
-    ForbiddenRepr,
+    ForbiddenRepr(Vec<Repr>),
     ForbiddenType,
     MalformedAttrs,
     MissingPub,
@@ -57,25 +57,26 @@ enum ErrorKind {
 
 impl Display for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::ForbiddenAbi => "forbidden ABI",
-                Self::ForbiddenAttr => "forbidden attribute",
-                Self::ForbiddenItemKind(ItemKind::Enum) =>
-                    "forbidden use of enum; use the `newtype_enum!` macro instead",
-                Self::ForbiddenItemKind(_) => "forbidden type of item",
-                Self::ForbiddenRepr => "forbidden repr",
-                Self::ForbiddenType => "forbidden type",
-                Self::MalformedAttrs => "malformed attribute contents",
-                Self::MissingPub => "missing pub",
-                Self::MissingRepr => "missing repr",
-                Self::MissingUnsafe => "missing unsafe",
-                Self::UnderscoreField => "field name starts with `_`",
-                Self::UnknownRepr => "unknown repr",
-            }
-        )
+        match self {
+            Self::ForbiddenAbi => write!(f, "forbidden ABI"),
+            Self::ForbiddenAttr => write!(f, "forbidden attribute"),
+            Self::ForbiddenItemKind(ItemKind::Enum) => write!(
+                f,
+                "forbidden use of enum; use the `newtype_enum!` macro instead"
+            ),
+            Self::ForbiddenItemKind(_) => write!(f, "forbidden type of item"),
+            Self::ForbiddenRepr(reprs) => write!(
+                f,
+                "the following combination of repr attributes is forbidden: {reprs:?}"
+            ),
+            Self::ForbiddenType => write!(f, "forbidden type"),
+            Self::MalformedAttrs => write!(f, "malformed attribute contents"),
+            Self::MissingPub => write!(f, "missing pub"),
+            Self::MissingRepr => write!(f, "missing repr"),
+            Self::MissingUnsafe => write!(f, "missing unsafe"),
+            Self::UnderscoreField => write!(f, "field name starts with `_`"),
+            Self::UnknownRepr => write!(f, "unknown repr"),
+        }
     }
 }
 
@@ -290,7 +291,7 @@ fn check_type_attrs(attrs: &[Attribute], spanned: &dyn Spanned, src: &Path) -> R
     } else if ALLOWED_REPRS.contains(&reprs.as_slice()) {
         Ok(())
     } else {
-        Err(Error::new(ErrorKind::ForbiddenRepr, src, spanned))
+        Err(Error::new(ErrorKind::ForbiddenRepr(reprs), src, spanned))
     }
 }
 
@@ -347,7 +348,7 @@ fn check_macro(item: &ItemMacro, src: &Path) -> Result<(), Error> {
         let reprs = get_reprs(&attrs);
         let allowed_reprs: &[&[Repr]] = &[&[Repr::Transparent]];
         if !allowed_reprs.contains(&reprs.as_slice()) {
-            return Err(Error::new(ErrorKind::ForbiddenRepr, src, mac));
+            return Err(Error::new(ErrorKind::ForbiddenRepr(reprs), src, mac));
         }
     }
 

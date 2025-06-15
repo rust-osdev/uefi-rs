@@ -44,9 +44,9 @@ impl IpAddress {
     #[must_use]
     const unsafe fn from_raw(ip_addr: uefi_raw::net::IpAddress, is_ipv6: bool) -> Self {
         if is_ipv6 {
-            Self::new_v6(unsafe { ip_addr.v6.0 })
+            Self::new_v6(ip_addr.0)
         } else {
-            Self::new_v4(unsafe { ip_addr.v4.0 })
+            Self::new_v4([ip_addr.0[0], ip_addr.0[1], ip_addr.0[2], ip_addr.0[3]])
         }
     }
 

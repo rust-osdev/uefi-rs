@@ -28,9 +28,7 @@
 //! - `[u8; 6]` -> [`MacAddress`]
 //! - `[u8; 32]` -> [`MacAddress`]
 
-use core::fmt::{Debug, Formatter};
 use core::net::{IpAddr as StdIpAddr, Ipv4Addr as StdIpv4Addr, Ipv6Addr as StdIpv6Addr};
-use core::{fmt, mem};
 
 /// An IPv4 internet protocol address.
 ///
@@ -92,38 +90,27 @@ impl From<Ipv6Address> for StdIpv6Addr {
     }
 }
 
-/// EFI ABI-compatible union of an IPv4 or IPv6 internet protocol address.
-///
-/// Corresponds to the `EFI_IP_ADDRESS` type in the UEFI specification. This
-/// type is defined in the same way as edk2 for compatibility with C code. Note
-/// that this is an **untagged union**, so there's no way to tell which type of
-/// address an `IpAddress` value contains without additional context.
+/// EFI ABI-compatible union of an IPv4 or IPv6 internet protocol address,
+/// corresponding to `EFI_IP_ADDRESS` type in the UEFI specification.
 ///
 /// See the [module documentation] to get an overview over the relation to the
 /// types from [`core::net`].
 ///
+/// # UEFI Information
+/// Corresponds to the `EFI_IP_ADDRESS` type in the UEFI specification. Instead
+/// of using an untagged C union, we use this more rusty type. ABI-wise it is
+/// the same but less cumbersome to work with in Rust.
+///
 /// [module documentation]: self
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub union IpAddress {
-    /// An IPv4 internet protocol address.
-    pub v4: Ipv4Address,
-
-    /// An IPv6 internet protocol address.
-    pub v6: Ipv6Address,
-
-    /// This member serves to align the whole type to 4 bytes as required by
-    /// the spec. Note that this is slightly different from `repr(align(4))`,
-    /// which would prevent placing this type in a packed structure.
-    align_helper: [u32; 4],
-}
+#[derive(Debug, Clone, Copy)]
+#[repr(C, align(4))]
+pub struct IpAddress(pub [u8; 16]);
 
 impl IpAddress {
     /// Construct a new zeroed address.
     #[must_use]
     pub const fn new_zeroed() -> Self {
-        // SAFETY: All bit patterns are valid.
-        unsafe { mem::zeroed() }
+        Self([0; 16])
     }
 
     /// Construct a new IPv4 address.
@@ -132,10 +119,9 @@ impl IpAddress {
     /// is needed.
     #[must_use]
     pub const fn new_v4(octets: [u8; 4]) -> Self {
-        // Initialize all bytes to zero first.
-        let mut obj = Self::new_zeroed();
-        obj.v4 = Ipv4Address(octets);
-        obj
+        Self([
+            octets[0], octets[1], octets[2], octets[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ])
     }
 
     /// Construct a new IPv6 address.
@@ -144,17 +130,14 @@ impl IpAddress {
     /// is needed.
     #[must_use]
     pub const fn new_v6(octets: [u8; 16]) -> Self {
-        // Initialize all bytes to zero first.
-        let mut obj = Self::new_zeroed();
-        obj.v6 = Ipv6Address(octets);
-        obj
+        Self(octets)
     }
 
     /// Returns the octets of the union. Without additional context, it is not
     /// clear whether the octets represent an IPv4 or IPv6 address.
     #[must_use]
     pub const fn octets(&self) -> [u8; 16] {
-        unsafe { self.v6.octets() }
+        self.0
     }
 
     /// Returns a raw pointer to the IP address.
@@ -181,11 +164,12 @@ impl IpAddress {
     #[must_use]
     pub fn to_std_ip_addr(self, is_ipv6: bool) -> StdIpAddr {
         if is_ipv6 {
-            StdIpAddr::V6(StdIpv6Addr::from(unsafe { self.v6.octets() }))
+            StdIpAddr::V6(StdIpv6Addr::from(self.octets()))
         } else {
             let has_extra_bytes = self.octets()[4..].iter().any(|&x| x != 0);
             assert!(!has_extra_bytes);
-            StdIpAddr::V4(StdIpv4Addr::from(unsafe { self.v4.octets() }))
+            let octets: [u8; 4] = self.octets()[..4].try_into().unwrap();
+            StdIpAddr::V4(StdIpv4Addr::from(octets))
         }
     }
 
@@ -212,20 +196,7 @@ impl IpAddress {
     /// additional context that the IP is indeed an IPv6 address.
     #[must_use]
     pub unsafe fn as_ipv6(&self) -> Ipv6Address {
-        Ipv6Address::from(unsafe { self.v6.octets() })
-    }
-}
-
-impl Debug for IpAddress {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("IpAddress")
-            // SAFETY: All constructors ensure that all bytes are always
-            // initialized.
-            .field("v4", &unsafe { self.v4 })
-            // SAFETY: All constructors ensure that all bytes are always
-            // initialized.
-            .field("v6", &unsafe { self.v6 })
-            .finish()
+        Ipv6Address::from(self.octets())
     }
 }
 
@@ -335,6 +306,18 @@ mod tests {
         101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
     ];
 
+    /// Ensures ABI-compatibility, as described here:
+    /// <https://github.com/tianocore/edk2/blob/b1887152024c7eb0cc7de735b0b57febd6099bf9/MdePkg/Include/Uefi/UefiBaseType.h#L100>
+    #[test]
+    fn test_abi() {
+        assert_eq!(size_of::<IpAddress>(), 16);
+        assert_eq!(align_of::<IpAddress>(), 4);
+        assert_eq!(size_of::<Ipv4Address>(), 4);
+        assert_eq!(align_of::<Ipv6Address>(), 1);
+        assert_eq!(size_of::<Ipv6Address>(), 16);
+        assert_eq!(align_of::<Ipv6Address>(), 1);
+    }
+
     /// Test round-trip conversion between `Ipv4Address` and `StdIpv4Addr`.
     #[test]
     fn test_ip_addr4_conversion() {
@@ -358,11 +341,14 @@ mod tests {
     fn test_ip_addr_conversion() {
         let core_addr = StdIpAddr::V4(StdIpv4Addr::from(TEST_IPV4));
         let uefi_addr = IpAddress::from(core_addr);
-        assert_eq!(unsafe { uefi_addr.v4.0 }, TEST_IPV4);
+        assert_eq!(
+            unsafe { uefi_addr.try_as_ipv4().unwrap() }.octets(),
+            TEST_IPV4
+        );
 
         let core_addr = StdIpAddr::V6(StdIpv6Addr::from(TEST_IPV6));
         let uefi_addr = IpAddress::from(core_addr);
-        assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
+        assert_eq!(unsafe { uefi_addr.as_ipv6() }.octets(), TEST_IPV6);
     }
 
     /// Tests the From-impls as described in the module description.
@@ -412,30 +398,18 @@ mod tests {
         }
     }
 
-    /// Tests that all bytes are initialized and that the Debug print doesn't
-    /// produce errors, when Miri executes this.
-    #[test]
-    fn test_ip_address_debug_memory_safe() {
-        let uefi_addr = IpAddress::new_v6(TEST_IPV6);
-        std::eprintln!("{uefi_addr:#?}");
-    }
-
     /// Tests the expected flow of types in a higher-level UEFI API.
     #[test]
     fn test_uefi_flow() {
         fn efi_retrieve_efi_ip_addr(addr: &mut IpAddress, is_ipv6: bool) {
-            // SAFETY: Alignment is guaranteed and memory is initialized.
-            unsafe {
-                addr.v4.0[0] = 42;
-                addr.v4.0[1] = 42;
-                addr.v4.0[2] = 42;
-                addr.v4.0[3] = 42;
-            }
+            addr.0[0] = 42;
+            addr.0[1] = 42;
+            addr.0[2] = 42;
+            addr.0[3] = 42;
+
             if is_ipv6 {
-                unsafe {
-                    addr.v6.0[14] = 42;
-                    addr.v6.0[15] = 42;
-                }
+                addr.0[14] = 42;
+                addr.0[15] = 42;
             }
         }
 

@@ -559,12 +559,12 @@ fn opt_bool_to_ptr(arg: &Option<bool>) -> *const Boolean {
 }
 
 /// Convert an `Option<&IpAddress>` to a `*const uefi_raw::IpAddress`.
-fn opt_ip_addr_to_ptr(arg: Option<&IpAddress>) -> *const uefi_raw::IpAddress {
+fn opt_ip_addr_to_ptr(arg: Option<&IpAddress>) -> *const uefi_raw::net::IpAddress {
     arg.map(|arg| arg.as_raw_ptr()).unwrap_or_else(null)
 }
 
 /// Convert an `Option<&mut IpAddress>` to a `*mut uefi_raw::IpAddress`.
-fn opt_ip_addr_to_ptr_mut(arg: Option<&mut IpAddress>) -> *mut uefi_raw::IpAddress {
+fn opt_ip_addr_to_ptr_mut(arg: Option<&mut IpAddress>) -> *mut uefi_raw::net::IpAddress {
     arg.map(|arg| arg.as_raw_ptr_mut()).unwrap_or_else(null_mut)
 }
 

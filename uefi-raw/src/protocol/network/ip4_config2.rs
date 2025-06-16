@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use crate::net::{Ipv4Address, MacAddress};
 use crate::protocol::network::ip4::Ip4RouteTable;
-use crate::{Char16, Event, Guid, Ipv4Address, MacAddress, Status, guid};
+use crate::{Char16, Event, Guid, Status, guid};
 use core::ffi::c_void;
 
 newtype_enum! {

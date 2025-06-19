@@ -95,7 +95,11 @@ pub struct CpuPhysicalLocation {
     pub thread: u32,
 }
 
+/// MP Services [`Protocol`].
+///
 /// Protocol that provides services needed for multi-processor management.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(C)]
 #[unsafe_protocol("3fdda605-a76e-4f46-ad29-12f4531b3d08")]

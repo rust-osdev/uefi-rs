@@ -17,6 +17,7 @@
   it in case you are also using the `logger` feature and if you run your UEFI
   image in QEMU or Cloud Hypervisor, when the debugcon/debug-console device is
   available.
+- The documentation for UEFI protocols has been streamlined and improved.
 
 # uefi - 0.35.0 (2025-05-04)
 
@@ -64,7 +65,6 @@
   bugs on some devices.
 - The UEFI `allocator::Allocator` has been optimized for page-aligned
   allocations.
-- The documentation for UEFI device paths has been streamlined and improved.
 
 
 # uefi - 0.34.1 (2025-02-07)

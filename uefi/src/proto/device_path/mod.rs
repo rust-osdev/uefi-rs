@@ -8,7 +8,7 @@
 //!
 //! # Terminology: Device Paths, Device Path Instances, and Device Path Nodes
 //! An open UEFI device path [`Protocol`], also called _device path_, is a
-//! flexible and structured sequence of binary nodes that describe a route from
+//! flexible and structured sequence of binary nodes that describes a route from
 //! the UEFI root to a particular device, controller, or file.
 //!
 //! An entire device path can be made up of multiple device path instances,
@@ -768,12 +768,15 @@ pub enum NodeConversionError {
     UnsupportedType,
 }
 
+/// Loaded Image Device Path [`Protocol`].
+///
 /// Protocol for accessing the device path that was passed in to [`load_image`]
 /// when loading a PE/COFF image.
 ///
 /// The layout of this type is the same as a [`DevicePath`].
 ///
 /// [`load_image`]: crate::boot::load_image
+/// [`Protocol`]: uefi::proto::Protocol
 #[repr(transparent)]
 #[unsafe_protocol("bc62157e-3e33-4fec-9920-2d3b36d750df")]
 #[derive(Debug, Pointee)]

@@ -5,7 +5,9 @@ use crate::{Char16, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
 use uefi_raw::protocol::console::{InputKey, SimpleTextInputProtocol};
 
-/// Interface for text-based input devices.
+/// Simple Text Input [`Protocol`]. Interface for text-based input devices.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimpleTextInputProtocol::GUID)]

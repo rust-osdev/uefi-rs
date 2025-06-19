@@ -1,5 +1,14 @@
 # Using Protocols
 
+## About UEFI Protocols
+
+UEFI protocols are a structured collection of functions and/or data. Please
+head to the module documentation in [uefi] for more technical information.
+
+[uefi]: https://docs.rs/uefi/latest/uefi/proto/index.html
+
+## Usage in uefi-rs
+
 To open a protocol, you must first get a handle, then open a protocol
 on that handle. See [Handles and Protocols] for an overview of what
 these terms mean.

@@ -65,10 +65,13 @@ use uefi_raw::protocol::console::{
 
 pub use uefi_raw::protocol::console::PixelBitmask;
 
-/// Provides access to the video hardware's frame buffer.
+/// Graphics Output [`Protocol`] (GOP). Provides access to the video hardware's
+/// frame buffer.
 ///
-/// The GOP can be used to set the properties of the frame buffer,
-/// and also allows the app to access the in-memory buffer.
+/// The GOP can be used to set the properties of the framebuffer, and also
+/// allows the app to access the in-memory buffer.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(GraphicsOutputProtocol::GUID)]

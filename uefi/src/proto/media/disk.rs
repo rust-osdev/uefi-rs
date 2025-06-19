@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Disk I/O protocols.
+//! Disk I/O protocols [`DiskIo`] and [`DiskIo2`].
 
 use crate::proto::unsafe_protocol;
 use crate::util::opt_nonnull_to_ptr;
@@ -8,12 +8,14 @@ use crate::{Event, Result, Status, StatusExt};
 use core::ptr::NonNull;
 use uefi_raw::protocol::disk::{DiskIo2Protocol, DiskIoProtocol};
 
-/// The disk I/O protocol.
+/// Disk I/O [`Protocol`].
 ///
 /// This protocol is used to abstract the block accesses of the block I/O
 /// protocol to a more general offset-length protocol. Firmware is
 /// responsible for adding this protocol to any block I/O interface that
 /// appears in the system that does not already have a disk I/O protocol.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(DiskIoProtocol::GUID)]
@@ -82,10 +84,12 @@ pub struct DiskIo2Token {
     pub transaction_status: Status,
 }
 
-/// The disk I/O 2 protocol.
+/// Disk I/O 2 [`Protocol`].
 ///
 /// This protocol provides an extension to the disk I/O protocol to enable
 /// non-blocking / asynchronous byte-oriented disk operation.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(DiskIo2Protocol::GUID)]

@@ -331,9 +331,11 @@ impl<'a> Iterator for EventLogIter<'a> {
     }
 }
 
-/// Protocol for interacting with TPM 1.1 and 1.2 devices.
+/// Trusted Computing Group [`Protocol`] (TCG) for TPM 1.1 and 1.2 devices.
 ///
 /// The corresponding C type is `EFI_TCG_PROTOCOL`.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(TcgProtocol::GUID)]

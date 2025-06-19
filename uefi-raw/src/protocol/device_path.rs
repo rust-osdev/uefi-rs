@@ -7,7 +7,7 @@
 //!
 //! # Terminology: Device Paths, Device Path Instances, and Device Path Nodes
 //! An open UEFI device path [protocol], also called _device path_, is a
-//! flexible and structured sequence of binary nodes that describe a route from
+//! flexible and structured sequence of binary nodes that describes a route from
 //! the UEFI root to a particular device, controller, or file.
 //!
 //! An entire device path can be made up of multiple device path instances,

@@ -6,7 +6,11 @@ use crate::proto::unsafe_protocol;
 use crate::{Event, Result, Status, StatusExt};
 use uefi_raw::protocol::console::SimplePointerProtocol;
 
-/// Provides information about a pointer device.
+/// Simple Pointer [`Protocol`]. Provides information about a pointer device.
+///
+/// Pointer devices are mouses, touchpads, and touchscreens.
+///
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(SimplePointerProtocol::GUID)]

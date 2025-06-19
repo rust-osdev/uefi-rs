@@ -12,7 +12,7 @@ use uefi::proto::driver::ComponentName1;
 /// `ComponentName`.
 trait ComponentNameInterface: Sized {
     fn open(handle: Handle) -> Result<Self>;
-    fn supported_languages(&self) -> core::result::Result<LanguageIter, LanguageError>;
+    fn supported_languages(&self) -> core::result::Result<LanguageIter<'_>, LanguageError>;
     fn driver_name(&self, language: &str) -> Result<&CStr16>;
     fn controller_name(
         &self,

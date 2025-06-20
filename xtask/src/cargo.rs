@@ -322,6 +322,16 @@ impl Cargo {
                     rustflags.push_str(" --verbose");
                     cmd.env("RUSTFLAGS", rustflags);
                 }
+
+                // Skip the uefi-macros compilation "ui" tests on the nightly
+                // toolchain. These tests are sensitive to compiler version, and
+                // sometimes the output on nightly doesn't match the stable
+                // toolchain.
+                let toolchain = env::var("RUSTUP_TOOLCHAIN").unwrap_or_default();
+                if toolchain.starts_with("nightly-") {
+                    println!("skipping uefi-macros ui tests for toolchain {toolchain}");
+                    tool_args.extend(["--skip", "ui"]);
+                }
             }
         };
         cmd.arg(action);

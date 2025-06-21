@@ -6,4 +6,5 @@ pub fn test() {
     root_bridge::test_io();
     root_bridge::test_buffer();
     root_bridge::test_mapping();
+    root_bridge::test_copy();
 }

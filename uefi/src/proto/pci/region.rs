@@ -2,11 +2,14 @@
 
 //! Defines wrapper for region mapped by PCI Root Bridge I/O protocol.
 
+use core::cell::RefCell;
 use core::ffi::c_void;
+use core::marker::PhantomData;
 use core::ptr;
 use log::debug;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocol;
+use crate::boot::ScopedProtocol;
+use crate::proto::pci::root_bridge::PciRootBridgeIo;
 
 /// Represents a region of memory mapped by PCI Root Bridge I/O protocol.
 /// The region will be unmapped automatically when it is dropped.
@@ -22,9 +25,9 @@ where
     'p: 'r,
 {
     region: PciRegion,
-    _lifetime_holder: &'r (),
+    _lifetime_holder: PhantomData<&'r ()>,
     key: *const c_void,
-    proto: &'p PciRootBridgeIoProtocol,
+    proto: &'p RefCell<ScopedProtocol<PciRootBridgeIo>>,
 }
 
 /// Represents a region of memory in PCI root bridge memory space.
@@ -45,14 +48,9 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
         device_address: u64,
         length: usize,
         key: *const c_void,
-        to_map: &'r T,
-        proto: &'p PciRootBridgeIoProtocol,
+        _to_map: &'r T,
+        proto: &'p RefCell<ScopedProtocol<PciRootBridgeIo>>,
     ) -> Self {
-        let _lifetime_holder: &'r () = unsafe {
-            let ptr = ptr::from_ref(to_map);
-            ptr.cast::<()>().as_ref().unwrap()
-        };
-
         let end = device_address + length as u64;
         debug!("Mapped new region [0x{:X}..0x{:X}]", device_address, end);
         Self {
@@ -60,7 +58,7 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
                 device_address,
                 length,
             },
-            _lifetime_holder,
+            _lifetime_holder: PhantomData,
             key,
             proto,
         }
@@ -79,7 +77,7 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
 
 impl<'p, 'r> Drop for PciMappedRegion<'p, 'r> {
     fn drop(&mut self) {
-        let status = unsafe { (self.proto.unmap)(self.proto, self.key) };
+        let status = PciRootBridgeIo::unmap(self.proto, self.key);
         match status {
             Status::SUCCESS => {
                 let end = self.region.device_address + self.region.length as u64;

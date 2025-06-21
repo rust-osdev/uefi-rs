@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use core::cell::RefCell;
 use core::mem;
-use uefi::Handle;
-use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, image_handle};
-use uefi::proto::ProtocolPointer;
-use uefi::proto::pci::PciIoAddress;
+use uefi::boot::{image_handle, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol};
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
+use uefi::proto::pci::PciIoAddress;
+use uefi::proto::ProtocolPointer;
+use uefi::Handle;
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,
+    PciRootBridgeIoProtocolWidth,
+};
+use uefi_raw::table::boot::{MemoryType, PAGE_SIZE};
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
@@ -13,7 +19,7 @@ const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
 
 const REG_SIZE: u8 = mem::size_of::<u32>() as u8;
 
-pub fn test() {
+pub fn test_io() {
     let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
 
     let mut red_hat_dev_cnt = 0;
@@ -65,6 +71,113 @@ pub fn test() {
     assert!(red_hat_dev_cnt > 0);
     assert!(mass_storage_ctrl_cnt > 0);
     assert!(sata_ctrl_cnt > 0);
+}
+
+pub fn test_buffer() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+        let pci_proto: RefCell<_> = pci_proto.into();
+
+        let mut buffer = PciRootBridgeIo::allocate_buffer::<[u8; 4096]>(
+            &pci_proto,
+            MemoryType::BOOT_SERVICES_DATA,
+            None,
+            PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+        )
+        .unwrap();
+        let buffer = unsafe {
+            buffer.assume_init_mut().fill(0);
+            buffer.assume_init()
+        };
+        assert_eq!(buffer.as_ptr().addr() % 4096, 0);
+    }
+}
+
+pub fn test_mapping() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+        let pci_proto: RefCell<_> = pci_proto.into();
+
+        let mut buffer = PciRootBridgeIo::allocate_buffer::<[u8; 4096]>(
+            &pci_proto,
+            MemoryType::BOOT_SERVICES_DATA,
+            None,
+            PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+        )
+        .unwrap();
+        let buffer = unsafe {
+            buffer.assume_init_mut().fill(0);
+            buffer.assume_init()
+        };
+
+        let mapped = PciRootBridgeIo::map(
+            &pci_proto,
+            PciRootBridgeIoProtocolOperation::BUS_MASTER_COMMON_BUFFER64,
+            buffer.as_ref(),
+        );
+        if mapped.region().device_address == buffer.as_ptr().addr() as u64 {
+            info!("This PCI device uses identity mapping");
+        } else {
+            info!("This PCI device uses different mapping from CPU");
+        }
+    }
+}
+
+pub fn test_copy() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+        let pci_proto: RefCell<_> = pci_proto.into();
+
+        let mut src = PciRootBridgeIo::allocate_buffer::<[u32; 4096 / 4]>(
+            &pci_proto,
+            MemoryType::BOOT_SERVICES_DATA,
+            None,
+            PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+        )
+        .unwrap();
+        assert_eq!(size_of_val(src.as_ref()), size_of::<[u8; PAGE_SIZE]>());
+        let src = unsafe {
+            src.assume_init_mut().fill(0xDEADBEEF);
+            src.assume_init()
+        };
+        let src_mapped = PciRootBridgeIo::map(
+            &pci_proto,
+            PciRootBridgeIoProtocolOperation::BUS_MASTER_READ,
+            src.as_ref(),
+        );
+
+        let dst = PciRootBridgeIo::allocate_buffer::<[u32; 4096 / 4]>(
+            &pci_proto,
+            MemoryType::BOOT_SERVICES_DATA,
+            None,
+            PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+        )
+        .unwrap();
+        assert_eq!(size_of_val(dst.as_ref()), size_of::<[u8; PAGE_SIZE]>());
+        let dst_mapped = PciRootBridgeIo::map(
+            &pci_proto,
+            PciRootBridgeIoProtocolOperation::BUS_MASTER_WRITE,
+            dst.as_ref(),
+        );
+
+        PciRootBridgeIo::copy(
+            &pci_proto,
+            PciRootBridgeIoProtocolWidth::UINT32,
+            dst_mapped.region(),
+            src_mapped.region(),
+        )
+        .unwrap();
+        drop(dst_mapped);
+        let dst = unsafe { dst.assume_init() };
+
+        assert!(dst.iter().all(|&b| b == 0xDEADBEEF));
+    }
 }
 
 fn get_open_protocol<P: ProtocolPointer + ?Sized>(handle: Handle) -> ScopedProtocol<P> {

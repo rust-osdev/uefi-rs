@@ -7,7 +7,7 @@ use core::cmp::Ordering;
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
 pub mod buffer;
-pub mod mapped_region;
+pub mod region;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations

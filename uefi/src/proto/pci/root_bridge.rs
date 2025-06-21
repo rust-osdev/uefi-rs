@@ -5,7 +5,7 @@
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
-use crate::proto::pci::mapped_region::PciMappedRegion;
+use crate::proto::pci::region::{PciMappedRegion, PciRegion};
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
@@ -14,10 +14,7 @@ use core::ptr::NonNull;
 use log::debug;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::{
-    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
-    PciRootBridgeIoProtocolOperation,
-};
+use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
@@ -48,7 +45,7 @@ impl PciRootBridgeIo {
     /// Flush all PCI posted write transactions from a PCI host bridge to system memory.
     ///
     /// # Errors
-    /// - [`crate::Status::DEVICE_ERROR`] The PCI posted write transactions were not flushed from the PCI host bridge
+    /// - [`Status::DEVICE_ERROR`] The PCI posted write transactions were not flushed from the PCI host bridge
     ///   due to a hardware error.
     pub fn flush(&mut self) -> crate::Result<()> {
         unsafe { (self.0.flush)(&mut self.0).to_result() }
@@ -57,12 +54,12 @@ impl PciRootBridgeIo {
     /// Allocates pages suitable for communicating with PCI devices.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] MemoryType is invalid.
-    /// - [`crate::Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
+    /// - [`Status::INVALID_PARAMETER`] MemoryType is invalid.
+    /// - [`Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE`]
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
+    /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
     pub fn allocate_buffer<T>(
         &self,
         memory_type: MemoryType,
@@ -101,11 +98,7 @@ impl PciRootBridgeIo {
             Status::SUCCESS => {
                 let base = NonNull::new(address as *mut MaybeUninit<T>).unwrap();
                 debug!("Allocated {} pages at 0x{:X}", pages.get(), address);
-                Ok(PciBuffer {
-                    base,
-                    pages,
-                    proto: &self.0,
-                })
+                Ok(PciBuffer::new(base, pages, &self.0))
             }
             error
             @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
@@ -155,10 +148,37 @@ impl PciRootBridgeIo {
         }
     }
 
+    /// Copies a region in PCI root bridge memory space onto the other.
+    /// Two regions must have same length. Functionally, this is the same as
+    /// `<[T]>::copy_from_slice` which is effectively memcpy.
+    /// And the same safety requirements as the above method apply.
+    pub fn copy(
+        &mut self,
+        width: PciRootBridgeIoProtocolWidth,
+        destination: PciRegion,
+        source: PciRegion,
+    ) -> crate::Result<()> {
+        assert_eq!(destination.length, source.length);
+
+        let status = unsafe {
+            (self.0.copy_mem)(
+                &mut self.0,
+                width,
+                destination.device_address,
+                source.device_address,
+                destination.length,
+            )
+        };
+
+        match status {
+            Status::SUCCESS => Ok(()),
+            error => Err(error.into()),
+        }
+    }
+
     // TODO: poll I/O
     // TODO: mem I/O access
     // TODO: io I/O access
-    // TODO: copy memory
     // TODO: get/set attributes
     // TODO: configuration / resource settings
 }
@@ -180,8 +200,8 @@ impl PciIoAccessPci<'_> {
     /// - The read value of type `U`.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The read request could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The read request could not be completed due to a lack of resources.
     pub fn read_one<U: PciIoUnit>(&self, addr: PciIoAddress) -> crate::Result<U> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         let mut result = U::default();
@@ -204,8 +224,8 @@ impl PciIoAccessPci<'_> {
     /// - `data` - The value to write.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The write request could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The write request could not be completed due to a lack of resources.
     pub fn write_one<U: PciIoUnit>(&self, addr: PciIoAddress, data: U) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         unsafe {
@@ -227,8 +247,8 @@ impl PciIoAccessPci<'_> {
     /// - `data` - A mutable slice to store the read values.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
     pub fn read<U: PciIoUnit>(&self, addr: PciIoAddress, data: &mut [U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         unsafe {
@@ -250,8 +270,8 @@ impl PciIoAccessPci<'_> {
     /// - `data` - A slice containing the values to write.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
     pub fn write<U: PciIoUnit>(&self, addr: PciIoAddress, data: &[U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         unsafe {
@@ -274,8 +294,8 @@ impl PciIoAccessPci<'_> {
     /// - `data` - The value to fill the address range with.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The operation could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The operation could not be completed due to a lack of resources.
     pub fn fill_write<U: PciIoUnit>(
         &self,
         addr: PciIoAddress,
@@ -306,8 +326,8 @@ impl PciIoAccessPci<'_> {
     /// The resulting `data` buffer will contain the elements returned by reading the same address multiple times sequentially.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
     pub fn fifo_read<U: PciIoUnit>(&self, addr: PciIoAddress, data: &mut [U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fifo);
         unsafe {
@@ -333,8 +353,8 @@ impl PciIoAccessPci<'_> {
     /// (starting at `addr` and ending at `addr + size_of::<U>()`) sequentially.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
     pub fn fifo_write<U: PciIoUnit>(&self, addr: PciIoAddress, data: &[U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fifo);
         unsafe {

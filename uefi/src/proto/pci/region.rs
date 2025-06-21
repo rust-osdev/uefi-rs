@@ -21,11 +21,23 @@ pub struct PciMappedRegion<'p, 'r>
 where
     'p: 'r,
 {
-    device_address: u64,
-    length: usize,
+    region: PciRegion,
     _lifetime_holder: &'r (),
     key: *const c_void,
     proto: &'p PciRootBridgeIoProtocol,
+}
+
+/// Represents a region of memory in PCI root bridge memory space.
+/// CPU cannot use address in this struct to deference memory.
+/// This is effectively the same as rust's slice type.
+/// This type only exists to prevent users from accidentally dereferencing it.
+#[derive(Debug, Copy, Clone)]
+pub struct PciRegion {
+    /// Starting address of the memory region
+    pub device_address: u64,
+
+    /// Byte length of the memory region.
+    pub length: usize
 }
 
 impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
@@ -44,8 +56,10 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
         let end = device_address + length as u64;
         debug!("Mapped new region [0x{:X}..0x{:X}]", device_address, end);
         Self {
-            device_address,
-            length,
+            region: PciRegion {
+                device_address,
+                length,
+            },
             _lifetime_holder,
             key,
             proto,
@@ -58,8 +72,8 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
     /// **Returned address cannot be used to reference memory from CPU!**
     /// **Do not cast it back to pointer or reference**
     #[must_use]
-    pub const fn region(&self) -> (u64, usize) {
-        (self.device_address, self.length)
+    pub const fn region(&self) -> PciRegion {
+        self.region
     }
 }
 
@@ -68,8 +82,8 @@ impl<'p, 'r> Drop for PciMappedRegion<'p, 'r> {
         let status = unsafe { (self.proto.unmap)(self.proto, self.key) };
         match status {
             Status::SUCCESS => {
-                let end = self.device_address + self.length as u64;
-                debug!("Region [0x{:X}..0x{:X}] was unmapped", self.device_address, end);
+                let end = self.region.device_address + self.region.length as u64;
+                debug!("Region [0x{:X}..0x{:X}] was unmapped", self.region.device_address, end);
             }
             Status::INVALID_PARAMETER => {
                 panic!("This region was not mapped using PciRootBridgeIo::map");
@@ -78,6 +92,20 @@ impl<'p, 'r> Drop for PciMappedRegion<'p, 'r> {
                 panic!("The data was not committed to the target system memory.");
             }
             _ => unreachable!(),
+        }
+    }
+}
+
+impl PciRegion {
+    /// Creates a new region of memory with different length.
+    /// The new region must have shorter length to ensure
+    /// it won't contain invalid memory address.
+    #[must_use]
+    pub fn with_length(self, new_length: usize) -> Self {
+        assert!(new_length <= self.length);
+        Self {
+            device_address: self.device_address,
+            length: new_length,
         }
     }
 }

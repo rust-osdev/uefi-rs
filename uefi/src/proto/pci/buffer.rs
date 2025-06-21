@@ -5,6 +5,7 @@
 use core::mem::{ManuallyDrop, MaybeUninit};
 use core::num::NonZeroUsize;
 use core::ops::{Deref, DerefMut};
+use core::ptr;
 use core::ptr::NonNull;
 use log::debug;
 use uefi_raw::Status;
@@ -13,12 +14,27 @@ use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocol;
 /// Smart pointer for wrapping owned buffer allocated by PCI Root Bridge protocol.
 #[derive(Debug)]
 pub struct PciBuffer<'p, T> {
-    pub(crate) base: NonNull<T>,
-    pub(crate) pages: NonZeroUsize,
-    pub(crate) proto: &'p PciRootBridgeIoProtocol,
+    base: NonNull<T>,
+    pages: NonZeroUsize,
+    proto_lifetime: &'p (),
+    proto: *const PciRootBridgeIoProtocol,
 }
 
 impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
+
+    /// Creates wrapper for buffer allocated by PCI Root Bridge protocol.
+    /// Passed protocol is stored as a pointer along with its lifetime so that it doesn't
+    /// block others from using its mutable functions.
+    #[must_use]
+    pub const fn new(base: NonNull<MaybeUninit<T>>, pages: NonZeroUsize, proto: &'p PciRootBridgeIoProtocol) -> Self {
+        Self {
+            base,
+            pages,
+            proto_lifetime: &(),
+            proto: ptr::from_ref(proto),
+        }
+    }
+
     /// Assumes the contents of this buffer have been initialized.
     ///
     /// # Safety
@@ -29,6 +45,7 @@ impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
         PciBuffer {
             base: old.base.cast(),
             pages: old.pages,
+            proto_lifetime: old.proto_lifetime,
             proto: old.proto,
         }
     }
@@ -63,7 +80,8 @@ impl<'p, T> DerefMut for PciBuffer<'p, T> {
 impl<'p, T> Drop for PciBuffer<'p, T> {
     fn drop(&mut self) {
         let status = unsafe {
-            (self.proto.free_buffer)(self.proto, self.pages.get(), self.base.as_ptr().cast())
+            let proto = self.proto.as_ref().unwrap();
+            (proto.free_buffer)(proto, self.pages.get(), self.base.as_ptr().cast())
         };
         match status {
             Status::SUCCESS => {

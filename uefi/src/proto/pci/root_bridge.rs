@@ -5,7 +5,7 @@
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
-use crate::proto::pci::mapped_region::PciMappedRegion;
+use crate::proto::pci::region::{PciMappedRegion, PciRegion};
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
@@ -14,10 +14,7 @@ use core::ptr::NonNull;
 use log::debug;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::{
-    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
-    PciRootBridgeIoProtocolOperation,
-};
+use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 #[cfg(doc)]
@@ -60,12 +57,12 @@ impl PciRootBridgeIo {
     /// Allocates pages suitable for communicating with PCI devices.
     ///
     /// # Errors
-    /// - [`crate::Status::INVALID_PARAMETER`] MemoryType is invalid.
-    /// - [`crate::Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
+    /// - [`Status::INVALID_PARAMETER`] MemoryType is invalid.
+    /// - [`Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE`]
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
-    /// - [`crate::Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
+    /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
     pub fn allocate_buffer<T>(
         &self,
         memory_type: MemoryType,
@@ -104,11 +101,7 @@ impl PciRootBridgeIo {
             Status::SUCCESS => {
                 let base = NonNull::new(address as *mut MaybeUninit<T>).unwrap();
                 debug!("Allocated {} pages at 0x{:X}", pages.get(), address);
-                Ok(PciBuffer {
-                    base,
-                    pages,
-                    proto: &self.0,
-                })
+                Ok(PciBuffer::new(base, pages, &self.0))
             }
             error
             @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
@@ -158,10 +151,37 @@ impl PciRootBridgeIo {
         }
     }
 
+    /// Copies a region in PCI root bridge memory space onto the other.
+    /// Two regions must have same length. Functionally, this is the same as
+    /// `<[T]>::copy_from_slice` which is effectively memcpy.
+    /// And the same safety requirements as the above method apply.
+    pub fn copy(
+        &mut self,
+        width: PciRootBridgeIoProtocolWidth,
+        destination: PciRegion,
+        source: PciRegion,
+    ) -> crate::Result<()> {
+        assert_eq!(destination.length, source.length);
+
+        let status = unsafe {
+            (self.0.copy_mem)(
+                &mut self.0,
+                width,
+                destination.device_address,
+                source.device_address,
+                destination.length,
+            )
+        };
+
+        match status {
+            Status::SUCCESS => Ok(()),
+            error => Err(error.into()),
+        }
+    }
+
     // TODO: poll I/O
     // TODO: mem I/O access
     // TODO: io I/O access
-    // TODO: copy memory
     // TODO: get/set attributes
     // TODO: configuration / resource settings
 }

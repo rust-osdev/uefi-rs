@@ -2,22 +2,22 @@
 
 //! Defines wrapper allocated by PCI Root Bridge protocol.
 
+use core::cell::RefCell;
 use core::mem::{ManuallyDrop, MaybeUninit};
 use core::num::NonZeroUsize;
 use core::ops::{Deref, DerefMut};
-use core::ptr;
 use core::ptr::NonNull;
 use log::debug;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocol;
+use crate::boot::ScopedProtocol;
+use crate::proto::pci::root_bridge::PciRootBridgeIo;
 
 /// Smart pointer for wrapping owned buffer allocated by PCI Root Bridge protocol.
 #[derive(Debug)]
 pub struct PciBuffer<'p, T> {
     base: NonNull<T>,
     pages: NonZeroUsize,
-    proto_lifetime: &'p (),
-    proto: *const PciRootBridgeIoProtocol,
+    proto: &'p RefCell<ScopedProtocol<PciRootBridgeIo>>,
 }
 
 impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
@@ -26,12 +26,11 @@ impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
     /// Passed protocol is stored as a pointer along with its lifetime so that it doesn't
     /// block others from using its mutable functions.
     #[must_use]
-    pub const fn new(base: NonNull<MaybeUninit<T>>, pages: NonZeroUsize, proto: &'p PciRootBridgeIoProtocol) -> Self {
+    pub const fn new(base: NonNull<MaybeUninit<T>>, pages: NonZeroUsize, proto: &'p RefCell<ScopedProtocol<PciRootBridgeIo>>) -> Self {
         Self {
             base,
             pages,
-            proto_lifetime: &(),
-            proto: ptr::from_ref(proto),
+            proto,
         }
     }
 
@@ -45,7 +44,6 @@ impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
         PciBuffer {
             base: old.base.cast(),
             pages: old.pages,
-            proto_lifetime: old.proto_lifetime,
             proto: old.proto,
         }
     }
@@ -79,10 +77,7 @@ impl<'p, T> DerefMut for PciBuffer<'p, T> {
 
 impl<'p, T> Drop for PciBuffer<'p, T> {
     fn drop(&mut self) {
-        let status = unsafe {
-            let proto = self.proto.as_ref().unwrap();
-            (proto.free_buffer)(proto, self.pages.get(), self.base.as_ptr().cast())
-        };
+        let status = PciRootBridgeIo::free_buffer(&self.proto, self.pages, self.base);
         match status {
             Status::SUCCESS => {
                 debug!(

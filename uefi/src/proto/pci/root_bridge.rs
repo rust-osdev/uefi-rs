@@ -2,11 +2,12 @@
 
 //! PCI Root Bridge protocol.
 
+use core::cell::RefCell;
+use core::ffi::c_void;
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
 use crate::proto::pci::region::{PciMappedRegion, PciRegion};
-use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
 use core::ptr;
@@ -16,12 +17,21 @@ use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
 use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
+use crate::boot::ScopedProtocol;
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
 ///
 /// # UEFI Spec Description
 /// Provides the basic Memory, I/O, PCI configuration, and DMA interfaces that are
 /// used to abstract accesses to PCI controllers behind a PCI Root Bridge Controller.
+///
+/// # RefCell Usage
+/// Types such as [`PciMappedRegion`] holds references to this protocol
+/// so that it can free themselves in drop. However it prevents others calling mutable
+/// method of this protocol. To avoid this we
+///
+/// TODO Find a way to hide above implementation detail. Even if we still use
+/// RefCell, we should use it internally instead of requiring users to do so themselves.
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(PciRootBridgeIoProtocol::GUID)]
@@ -61,7 +71,7 @@ impl PciRootBridgeIo {
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
     /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
     pub fn allocate_buffer<T>(
-        &self,
+        protocol: &RefCell<ScopedProtocol<Self>>,
         memory_type: MemoryType,
         pages: Option<NonZeroUsize>,
         attributes: PciRootBridgeIoProtocolAttribute,
@@ -83,9 +93,11 @@ impl PciRootBridgeIo {
             NonZeroUsize::new(size.div_ceil(alignment)).unwrap()
         };
 
+        let borrow = protocol.borrow();
+        let raw = &borrow.0;
         let status = unsafe {
-            (self.0.allocate_buffer)(
-                &self.0,
+            (raw.allocate_buffer)(
+                raw,
                 AllocateType(0),
                 memory_type,
                 pages.get(),
@@ -98,13 +110,26 @@ impl PciRootBridgeIo {
             Status::SUCCESS => {
                 let base = NonNull::new(address as *mut MaybeUninit<T>).unwrap();
                 debug!("Allocated {} pages at 0x{:X}", pages.get(), address);
-                Ok(PciBuffer::new(base, pages, &self.0))
+                drop(borrow);
+                Ok(PciBuffer::new(base, pages, protocol))
             }
             error
             @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
                 Err(error.into())
             }
             _ => unreachable!(),
+        }
+    }
+
+    pub(crate) fn free_buffer<T>(
+        protocol: &RefCell<ScopedProtocol<Self>>,
+        pages: NonZeroUsize,
+        base: NonNull<T>,
+    ) -> Status {
+        let borrow = protocol.borrow();
+        let raw = &borrow.0;
+        unsafe {
+            (raw.free_buffer)(raw, pages.get(), base.as_ptr().cast())
         }
     }
 
@@ -117,7 +142,7 @@ impl PciRootBridgeIo {
     /// # Returns
     /// - PciMappedRegion capturing lifetime of passed variable
     pub fn map<'p, 'r, T>(
-        &'p self,
+        protocol: &'p RefCell<ScopedProtocol<Self>>,
         operation: PciRootBridgeIoProtocolOperation,
         to_map: &'r T,
     ) -> PciMappedRegion<'p, 'r>
@@ -130,8 +155,10 @@ impl PciRootBridgeIo {
         let mut mapping: *mut c_void = ptr::null_mut();
 
         let status = unsafe {
-            (self.0.map)(
-                &self.0,
+            let borrow = protocol.borrow();
+            let raw = &borrow.0;
+            (raw.map)(
+                raw,
                 operation,
                 host_address.cast(),
                 ptr::from_mut(&mut bytes),
@@ -142,9 +169,20 @@ impl PciRootBridgeIo {
 
         match status {
             Status::SUCCESS => {
-                PciMappedRegion::new(mapped_address, bytes, mapping, to_map, &self.0)
+                PciMappedRegion::new(mapped_address, bytes, mapping, to_map, protocol)
             }
             _ => unreachable!(),
+        }
+    }
+
+    pub(crate) fn unmap(
+        protocol: &RefCell<ScopedProtocol<Self>>,
+        key: *const c_void,
+    ) -> Status {
+        let borrow = protocol.borrow();
+        let raw = &borrow.0;
+        unsafe {
+            (raw.unmap)(raw, key)
         }
     }
 
@@ -153,16 +191,18 @@ impl PciRootBridgeIo {
     /// `<[T]>::copy_from_slice` which is effectively memcpy.
     /// And the same safety requirements as the above method apply.
     pub fn copy(
-        &mut self,
+        protocol: &RefCell<ScopedProtocol<Self>>,
         width: PciRootBridgeIoProtocolWidth,
         destination: PciRegion,
         source: PciRegion,
     ) -> crate::Result<()> {
         assert_eq!(destination.length, source.length);
+        let mut borrow = protocol.borrow_mut();
 
         let status = unsafe {
-            (self.0.copy_mem)(
-                &mut self.0,
+            let raw = &mut borrow.0;
+            (raw.copy_mem)(
+                raw,
                 width,
                 destination.device_address,
                 source.device_address,
@@ -170,10 +210,7 @@ impl PciRootBridgeIo {
             )
         };
 
-        match status {
-            Status::SUCCESS => Ok(()),
-            error => Err(error.into()),
-        }
+        status.to_result()
     }
 
     // TODO: poll I/O

@@ -5,25 +5,25 @@ use uefi::proto::shell::Shell;
 use uefi::{boot, cstr16};
 use uefi_raw::Status;
 
-/// Test `get_env()`, `get_envs()`, and `set_env()`
+/// Test `var()`, `vars()`, and `set_var()`
 pub fn test_env(shell: &ScopedProtocol<Shell>) {
     /* Test retrieving list of environment variable names */
-    let mut cur_env_vec = shell.get_envs();
+    let mut cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.next().unwrap(), cstr16!("path"),);
     // check pre-defined shell variables; see UEFI Shell spec
     assert_eq!(cur_env_vec.next().unwrap(), cstr16!("nonesting"),);
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let default_len = cur_env_vec.count();
 
     /* Test setting and getting a specific environment variable */
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let test_var = cstr16!("test_var");
     let test_val = cstr16!("test_val");
-    assert!(shell.get_env(test_var).is_none());
-    let status = shell.set_env(test_var, test_val, false);
+    assert!(shell.var(test_var).is_none());
+    let status = shell.set_var(test_var, test_val, false);
     assert_eq!(status, Status::SUCCESS);
     let cur_env_str = shell
-        .get_env(test_var)
+        .var(test_var)
         .expect("Could not get environment variable");
     assert_eq!(cur_env_str, test_val);
 
@@ -34,7 +34,7 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
         }
     }
     assert!(!found_var);
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let mut found_var = false;
     for env_var in cur_env_vec {
         if env_var == test_var {
@@ -43,16 +43,16 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
     }
     assert!(found_var);
 
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.count(), default_len + 1);
 
     /* Test deleting environment variable */
     let test_val = cstr16!("");
-    let status = shell.set_env(test_var, test_val, false);
+    let status = shell.set_var(test_var, test_val, false);
     assert_eq!(status, Status::SUCCESS);
-    assert!(shell.get_env(test_var).is_none());
+    assert!(shell.var(test_var).is_none());
 
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let mut found_var = false;
     for env_var in cur_env_vec {
         if env_var == test_var {
@@ -60,20 +60,20 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
         }
     }
     assert!(!found_var);
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.count(), default_len);
 }
 
-/// Test `get_cur_dir()` and `set_cur_dir()`
+/// Test `current_dir()` and `set_current_dir()`
 pub fn test_cur_dir(shell: &ScopedProtocol<Shell>) {
     /* Test setting and getting current file system and current directory */
     let fs_var = cstr16!("fs0:");
     let dir_var = cstr16!("/");
-    let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
+    let status = shell.set_current_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
 
     let cur_fs_str = shell
-        .get_cur_dir(Some(fs_var))
+        .current_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     let expected_fs_str = cstr16!("FS0:\\");
     assert_eq!(cur_fs_str, expected_fs_str);
@@ -81,11 +81,11 @@ pub fn test_cur_dir(shell: &ScopedProtocol<Shell>) {
     // Changing current file system
     let fs_var = cstr16!("fs1:");
     let dir_var = cstr16!("/");
-    let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
+    let status = shell.set_current_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
 
     let cur_fs_str = shell
-        .get_cur_dir(Some(fs_var))
+        .current_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     assert_ne!(cur_fs_str, expected_fs_str);
     let expected_fs_str = cstr16!("FS1:\\");
@@ -94,11 +94,11 @@ pub fn test_cur_dir(shell: &ScopedProtocol<Shell>) {
     // Changing current file system and current directory
     let fs_var = cstr16!("fs0:");
     let dir_var = cstr16!("efi/");
-    let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
+    let status = shell.set_current_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
 
     let cur_fs_str = shell
-        .get_cur_dir(Some(fs_var))
+        .current_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     assert_ne!(cur_fs_str, expected_fs_str);
     let expected_fs_str = cstr16!("FS0:\\efi");
@@ -108,50 +108,50 @@ pub fn test_cur_dir(shell: &ScopedProtocol<Shell>) {
 
     // At this point, the current working file system has not been set
     // So we expect a NULL output
-    assert!(shell.get_cur_dir(None).is_none());
+    assert!(shell.current_dir(None).is_none());
 
     // Setting the current working file system and current working directory
     let dir_var = cstr16!("fs0:/");
-    let status = shell.set_cur_dir(None, Some(dir_var));
+    let status = shell.set_current_dir(None, Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
     let cur_fs_str = shell
-        .get_cur_dir(Some(fs_var))
+        .current_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     let expected_fs_str = cstr16!("FS0:");
     assert_eq!(cur_fs_str, expected_fs_str);
 
     let cur_fs_str = shell
-        .get_cur_dir(None)
+        .current_dir(None)
         .expect("Could not get the current file system mapping");
     assert_eq!(cur_fs_str, expected_fs_str);
 
     // Changing current working directory
     let dir_var = cstr16!("/efi");
-    let status = shell.set_cur_dir(None, Some(dir_var));
+    let status = shell.set_current_dir(None, Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
     let cur_fs_str = shell
-        .get_cur_dir(Some(fs_var))
+        .current_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     let expected_fs_str = cstr16!("FS0:\\efi");
     assert_eq!(cur_fs_str, expected_fs_str);
     let cur_fs_str = shell
-        .get_cur_dir(None)
+        .current_dir(None)
         .expect("Could not get the current file system mapping");
     assert_eq!(cur_fs_str, expected_fs_str);
 
     // Changing current directory in a non-current working file system
     let fs_var = cstr16!("fs0:");
     let dir_var = cstr16!("efi/tools");
-    let status = shell.set_cur_dir(Some(fs_var), Some(dir_var));
+    let status = shell.set_current_dir(Some(fs_var), Some(dir_var));
     assert_eq!(status, Status::SUCCESS);
     let cur_fs_str = shell
-        .get_cur_dir(None)
+        .current_dir(None)
         .expect("Could not get the current file system mapping");
     assert_ne!(cur_fs_str, expected_fs_str);
 
     let expected_fs_str = cstr16!("FS0:\\efi\\tools");
     let cur_fs_str = shell
-        .get_cur_dir(Some(fs_var))
+        .current_dir(Some(fs_var))
         .expect("Could not get the current file system mapping");
     assert_eq!(cur_fs_str, expected_fs_str);
 }

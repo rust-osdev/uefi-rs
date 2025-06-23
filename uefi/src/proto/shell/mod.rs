@@ -3,14 +3,13 @@
 //! EFI Shell Protocol v2.2
 
 use uefi_macros::unsafe_protocol;
-use uefi_raw::Status;
 
 use core::marker::PhantomData;
 use core::ptr;
 
 use uefi_raw::protocol::shell::ShellProtocol;
 
-use crate::{CStr16, Char16};
+use crate::{CStr16, Char16, Result, StatusExt};
 
 /// Shell Protocol
 #[derive(Debug)]
@@ -68,7 +67,7 @@ impl Shell {
 
     /// Gets an iterator over the names of all environment variables
     #[must_use]
-    pub fn vars(&self) -> Vars {
+    pub fn vars(&self) -> Vars<'_> {
         let env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
         Vars {
             inner: env_ptr.cast::<Char16>(),
@@ -88,10 +87,10 @@ impl Shell {
     /// # Returns
     ///
     /// * `Status::SUCCESS` - The variable was successfully set
-    pub fn set_var(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Status {
+    pub fn set_var(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Result {
         let name_ptr: *const Char16 = name.as_ptr();
         let value_ptr: *const Char16 = value.as_ptr();
-        unsafe { (self.0.set_env)(name_ptr.cast(), value_ptr.cast(), volatile) }
+        unsafe { (self.0.set_env)(name_ptr.cast(), value_ptr.cast(), volatile) }.to_result()
     }
 
     /// Returns the current directory on the specified device
@@ -131,10 +130,14 @@ impl Shell {
     /// # Errors
     ///
     /// * `Status::EFI_NOT_FOUND` - The directory does not exist
-    pub fn set_current_dir(&self, file_system: Option<&CStr16>, directory: Option<&CStr16>) -> Status {
+    pub fn set_current_dir(
+        &self,
+        file_system: Option<&CStr16>,
+        directory: Option<&CStr16>,
+    ) -> Result {
         let fs_ptr: *const Char16 = file_system.map_or(ptr::null(), |x| (x.as_ptr()));
         let dir_ptr: *const Char16 = directory.map_or(ptr::null(), |x| (x.as_ptr()));
-        unsafe { (self.0.set_cur_dir)(fs_ptr.cast(), dir_ptr.cast()) }
+        unsafe { (self.0.set_cur_dir)(fs_ptr.cast(), dir_ptr.cast()) }.to_result()
     }
 }
 

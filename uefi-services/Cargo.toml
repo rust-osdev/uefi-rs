@@ -1,0 +1,24 @@
+[package]
+name = "uefi-services"
+version = "0.26.0"
+readme = "README.md"
+description = "Deprecated. Please migrate to `uefi::helpers`."
+
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+
+[badges.maintenance]
+status = "deprecated"
+
+[features]
+default = []
+qemu = []
+panic_handler = []
+logger = []

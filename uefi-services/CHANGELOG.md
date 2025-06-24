@@ -1,4 +1,4 @@
-# uefi-services - 0.26 (2025-06-23)
+# uefi-services - 0.26 (2025-06-24)
 
 ## Changed
 - The deprecation warning was replaced with a `compile_error!` call to alert

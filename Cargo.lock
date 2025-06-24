@@ -982,10 +982,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "uefi-services"
-version = "0.26.0"
-
-[[package]]
 name = "uefi-std-example"
 version = "0.1.0"
 dependencies = [

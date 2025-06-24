@@ -367,7 +367,6 @@ fn format_file_headers(fmt_opt: &FmtOpt) -> Result<()> {
         // This directory contains short code snippets used in `trybuild` tests,
         // no license needed.
         "uefi-macros/tests/ui/",
-        "uefi-services",
     ];
 
     // Recursively get Rust files

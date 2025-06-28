@@ -7,6 +7,9 @@ use crate::{Result, StatusExt};
 use core::ops::Range;
 use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
 
+#[cfg(doc)]
+use crate::Status;
+
 /// Memory Attribute [`Protocol`] for Memory Protection.
 ///
 /// Protocol for getting and setting memory protection attributes.
@@ -34,7 +37,6 @@ impl MemoryProtection {
     /// [`READ_PROTECT`]: MemoryAttribute::READ_PROTECT
     /// [`EXECUTE_PROTECT`]: MemoryAttribute::EXECUTE_PROTECT
     /// [`READ_ONLY`]: MemoryAttribute::READ_ONLY
-    /// [`Status::NO_MAPPING`]: crate::Status::NO_MAPPING
     /// [UEFI page size]: uefi::boot::PAGE_SIZE
     pub fn get_memory_attributes(
         &self,

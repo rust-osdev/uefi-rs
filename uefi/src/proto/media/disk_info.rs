@@ -6,6 +6,9 @@ use crate::StatusExt;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::disk::DiskInfoProtocol;
 
+#[cfg(doc)]
+use crate::Status;
+
 /// Enum representing the interface type of the disk.
 ///
 /// This protocol abstracts various disk interfaces, including IDE, USB, AHCI, NVME, and more.
@@ -60,7 +63,7 @@ pub struct DeviceLocationInfo {
 ///
 /// Not all operations are supported by all interface types!
 /// Either use [`DiskInfo::interface`] to determine what should be possible, or simply
-/// try and handle the [`crate::Status::UNSUPPORTED`] error return value.
+/// try and handle the [`Status::UNSUPPORTED`] error return value.
 ///
 /// # UEFI Spec Description
 /// Provides the basic interfaces to abstract platform information regarding an IDE controller.
@@ -99,10 +102,10 @@ impl DiskInfo {
     /// Length of the response (amount of bytes that were written to the given buffer).
     ///
     /// # Errors
-    /// - [`crate::Status::SUCCESS`] The command was accepted without any errors.
-    /// - [`crate::Status::NOT_FOUND`] The device does not support this data class.
-    /// - [`crate::Status::DEVICE_ERROR`] An error occurred while reading the InquiryData from the device.
-    /// - [`crate::Status::BUFFER_TOO_SMALL`] The provided InquiryDataSize buffer is not large enough to store the required data.
+    /// - [`Status::SUCCESS`] The command was accepted without any errors.
+    /// - [`Status::NOT_FOUND`] The device does not support this data class.
+    /// - [`Status::DEVICE_ERROR`] An error occurred while reading the InquiryData from the device.
+    /// - [`Status::BUFFER_TOO_SMALL`] The provided InquiryDataSize buffer is not large enough to store the required data.
     pub fn inquiry(&self, bfr: &mut [u8]) -> crate::Result<usize> {
         let mut len: u32 = bfr.len() as u32;
         unsafe {
@@ -120,10 +123,10 @@ impl DiskInfo {
     /// Length of the response (amount of bytes that were written to the given buffer).
     ///
     /// # Errors
-    /// - [`crate::Status::SUCCESS`] The command was accepted without any errors.
-    /// - [`crate::Status::NOT_FOUND`] The device does not support this data class.
-    /// - [`crate::Status::DEVICE_ERROR`] An error occurred while reading the IdentifyData from the device.
-    /// - [`crate::Status::BUFFER_TOO_SMALL`] The provided IdentifyDataSize buffer is not large enough to store the required data.
+    /// - [`Status::SUCCESS`] The command was accepted without any errors.
+    /// - [`Status::NOT_FOUND`] The device does not support this data class.
+    /// - [`Status::DEVICE_ERROR`] An error occurred while reading the IdentifyData from the device.
+    /// - [`Status::BUFFER_TOO_SMALL`] The provided IdentifyDataSize buffer is not large enough to store the required data.
     pub fn identify(&self, bfr: &mut [u8]) -> crate::Result<usize> {
         let mut len: u32 = bfr.len() as u32;
         unsafe {
@@ -141,10 +144,10 @@ impl DiskInfo {
     /// [`SenseDataInfo`] struct containing the number of bytes of sense data and the number of sense data structures.
     ///
     /// # Errors
-    /// - [`crate::Status::SUCCESS`] The command was accepted without any errors.
-    /// - [`crate::Status::NOT_FOUND`] The device does not support this data class.
-    /// - [`crate::Status::DEVICE_ERROR`] An error occurred while reading the SenseData from the device.
-    /// - [`crate::Status::BUFFER_TOO_SMALL`] The provided SenseDataSize buffer is not large enough to store the required data.
+    /// - [`Status::SUCCESS`] The command was accepted without any errors.
+    /// - [`Status::NOT_FOUND`] The device does not support this data class.
+    /// - [`Status::DEVICE_ERROR`] An error occurred while reading the SenseData from the device.
+    /// - [`Status::BUFFER_TOO_SMALL`] The provided SenseDataSize buffer is not large enough to store the required data.
     pub fn sense_data(&self, bfr: &mut [u8]) -> crate::Result<SenseDataInfo> {
         let mut len: u32 = bfr.len() as u32;
         let mut number: u8 = 0;
@@ -166,8 +169,8 @@ impl DiskInfo {
     /// [`DeviceLocationInfo`] struct containing the channel and device numbers.
     ///
     /// # Errors
-    /// - [`crate::Status::SUCCESS`] The `IdeChannel` and `IdeDevice` values are valid.
-    /// - [`crate::Status::UNSUPPORTED`] Not supported by this disk's interface type.
+    /// - [`Status::SUCCESS`] The `IdeChannel` and `IdeDevice` values are valid.
+    /// - [`Status::UNSUPPORTED`] Not supported by this disk's interface type.
     pub fn bus_location(&self) -> crate::Result<DeviceLocationInfo> {
         let mut ide_channel: u32 = 0; // called ide, but also useful for other interfaces
         let mut ide_device: u32 = 0;

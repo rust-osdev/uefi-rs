@@ -55,18 +55,18 @@ pub trait File: Sized {
     /// errors returned by this function, but some implementations (such as EDK2) perform
     /// additional validation and may return that status for invalid inputs.
     ///
-    /// [`INVALID_PARAMETER`]: uefi::Status::INVALID_PARAMETER
+    /// [`INVALID_PARAMETER`]: Status::INVALID_PARAMETER
     ///
-    /// * [`uefi::Status::INVALID_PARAMETER`]
-    /// * [`uefi::Status::NOT_FOUND`]
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::MEDIA_CHANGED`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::WRITE_PROTECTED`]
-    /// * [`uefi::Status::ACCESS_DENIED`]
-    /// * [`uefi::Status::OUT_OF_RESOURCES`]
-    /// * [`uefi::Status::VOLUME_FULL`]
+    /// * [`Status::INVALID_PARAMETER`]
+    /// * [`Status::NOT_FOUND`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::MEDIA_CHANGED`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
+    /// * [`Status::WRITE_PROTECTED`]
+    /// * [`Status::ACCESS_DENIED`]
+    /// * [`Status::OUT_OF_RESOURCES`]
+    /// * [`Status::VOLUME_FULL`]
     fn open(
         &mut self,
         filename: &CStr16,
@@ -96,7 +96,7 @@ pub trait File: Sized {
     ///
     /// See section `EFI_FILE_PROTOCOL.Delete()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::WARN_DELETE_FAILURE`]
+    /// * [`Status::WARN_DELETE_FAILURE`]
     fn delete(mut self) -> Result {
         let result = unsafe { (self.imp().delete)(self.imp()) }.to_result();
         mem::forget(self);
@@ -117,11 +117,11 @@ pub trait File: Sized {
     ///
     /// See section `EFI_FILE_PROTOCOL.GetInfo()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::UNSUPPORTED`]
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::BUFFER_TOO_SMALL`]
+    /// * [`Status::UNSUPPORTED`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
+    /// * [`Status::BUFFER_TOO_SMALL`]
     fn get_info<'buf, Info: FileProtocolInfo + ?Sized>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -162,14 +162,14 @@ pub trait File: Sized {
     ///
     /// See section `EFI_FILE_PROTOCOL.SetInfo()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::UNSUPPORTED`]
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::WRITE_PROTECTED`]
-    /// * [`uefi::Status::ACCESS_DENIED`]
-    /// * [`uefi::Status::VOLUME_FULL`]
-    /// * [`uefi::Status::BAD_BUFFER_SIZE`]
+    /// * [`Status::UNSUPPORTED`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
+    /// * [`Status::WRITE_PROTECTED`]
+    /// * [`Status::ACCESS_DENIED`]
+    /// * [`Status::VOLUME_FULL`]
+    /// * [`Status::BAD_BUFFER_SIZE`]
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = ptr::from_ref(info).cast::<c_void>();
         let info_size = size_of_val(info);
@@ -182,12 +182,12 @@ pub trait File: Sized {
     ///
     /// See section `EFI_FILE_PROTOCOL.Flush()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::WRITE_PROTECTED`]
-    /// * [`uefi::Status::ACCESS_DENIED`]
-    /// * [`uefi::Status::VOLUME_FULL`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
+    /// * [`Status::WRITE_PROTECTED`]
+    /// * [`Status::ACCESS_DENIED`]
+    /// * [`Status::VOLUME_FULL`]
     fn flush(&mut self) -> Result {
         unsafe { (self.imp().flush)(self.imp()) }.to_result()
     }

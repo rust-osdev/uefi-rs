@@ -11,6 +11,9 @@ use uefi_raw::protocol::scsi::{
     ScsiIoDataDirection, ScsiIoHostAdapterStatus, ScsiIoScsiRequestPacket, ScsiIoTargetStatus,
 };
 
+#[cfg(doc)]
+use crate::Status;
+
 pub mod pass_thru;
 
 /// Represents the data direction for a SCSI request.
@@ -124,7 +127,7 @@ impl<'a> ScsiRequestBuilder<'a> {
     /// # Description
     /// By default (without calling this method, or by calling with [`Duration::ZERO`]),
     /// SCSI requests have no timeout.
-    /// Setting a timeout here will cause SCSI commands to potentially fail with [`crate::Status::TIMEOUT`].
+    /// Setting a timeout here will cause SCSI commands to potentially fail with [`Status::TIMEOUT`].
     #[must_use]
     pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.req.packet.timeout = (timeout.as_nanos() / 100) as u64;

@@ -37,9 +37,9 @@ impl RegularFile {
     ///
     /// See section `EFI_FILE_PROTOCOL.Read()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
     ///
     /// # Quirks
     ///
@@ -91,12 +91,12 @@ impl RegularFile {
     ///
     /// See section `EFI_FILE_PROTOCOL.Write()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::WRITE_PROTECTED`]
-    /// * [`uefi::Status::ACCESS_DENIED`]
-    /// * [`uefi::Status::VOLUME_FULL`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
+    /// * [`Status::WRITE_PROTECTED`]
+    /// * [`Status::ACCESS_DENIED`]
+    /// * [`Status::VOLUME_FULL`]
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
         unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr().cast()) }
@@ -109,7 +109,7 @@ impl RegularFile {
     ///
     /// See section `EFI_FILE_PROTOCOL.GetPosition()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`Status::DEVICE_ERROR`]
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
         unsafe { (self.imp().get_position)(self.imp(), &mut pos) }.to_result_with_val(|| pos)
@@ -129,7 +129,7 @@ impl RegularFile {
     ///
     /// See section `EFI_FILE_PROTOCOL.SetPosition()` in the UEFI Specification for more details.
     ///
-    /// * [`uefi::Status::DEVICE_ERROR`]
+    /// * [`Status::DEVICE_ERROR`]
     pub fn set_position(&mut self, position: u64) -> Result {
         unsafe { (self.imp().set_position)(self.imp(), position) }.to_result()
     }

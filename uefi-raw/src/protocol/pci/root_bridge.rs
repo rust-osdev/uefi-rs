@@ -153,3 +153,23 @@ pub struct PciRootBridgeIoProtocol {
 impl PciRootBridgeIoProtocol {
     pub const GUID: Guid = guid!("2f707ebb-4a1a-11d4-9a38-0090273fc14d");
 }
+
+impl PciRootBridgeIoProtocolWidth {
+    pub fn size(self) -> usize {
+        match self {
+            Self::UINT8 |
+            Self::FIFO_UINT8 |
+            Self::FILL_UINT8 => 1,
+            Self::UINT16 |
+            Self::FIFO_UINT16 |
+            Self::FILL_UINT16 => 2,
+            Self::UINT32 |
+            Self::FIFO_UINT32 |
+            Self::FILL_UINT32 => 4,
+            Self::UINT64 |
+            Self::FIFO_UINT64 |
+            Self::FILL_UINT64 => 8,
+            _ => unreachable!(),
+        }
+    }
+}

@@ -340,6 +340,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghost-cell"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8449d342b1c67f49169e92e71deb7b9b27f30062301a16dbc27a4cc8d2351b7"
+
+[[package]]
 name = "glob"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -953,6 +959,7 @@ version = "0.35.0"
 dependencies = [
  "bitflags 2.9.1",
  "cfg-if",
+ "ghost-cell",
  "log",
  "ptr_meta",
  "qemu-exit",
@@ -992,6 +999,7 @@ dependencies = [
 name = "uefi-test-runner"
 version = "0.2.0"
 dependencies = [
+ "ghost-cell",
  "log",
  "qemu-exit",
  "smoltcp",

@@ -4,12 +4,13 @@
 
 use core::cell::RefCell;
 use core::ffi::c_void;
+use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
-use core::ptr;
+use core::ops::Deref;
+use ghost_cell::{GhostCell, GhostToken};
 use log::debug;
+use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocol;
 use uefi_raw::Status;
-use crate::boot::ScopedProtocol;
-use crate::proto::pci::root_bridge::PciRootBridgeIo;
 
 /// Represents a region of memory mapped by PCI Root Bridge I/O protocol.
 /// The region will be unmapped automatically when it is dropped.
@@ -19,15 +20,15 @@ use crate::proto::pci::root_bridge::PciRootBridgeIo;
 /// `'r` is the lifetime for Mapped Region.
 /// Protocol must outlive the mapped region
 /// as unmap function can only be accessed through the protocol.
-#[derive(Debug)]
-pub struct PciMappedRegion<'p, 'r>
+pub struct PciMappedRegion<'p, 'r, 'id>
 where
     'p: 'r,
 {
     region: PciRegion,
     _lifetime_holder: PhantomData<&'r ()>,
     key: *const c_void,
-    proto: &'p RefCell<ScopedProtocol<PciRootBridgeIo>>,
+    proto: &'p GhostCell<'id, PciRootBridgeIoProtocol>,
+    token: &'p RefCell<GhostToken<'id>>,
 }
 
 /// Represents a region of memory in PCI root bridge memory space.
@@ -43,13 +44,14 @@ pub struct PciRegion {
     pub length: usize
 }
 
-impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
+impl<'p, 'r, 'id> PciMappedRegion<'p, 'r, 'id> where 'p: 'r {
     pub(crate) fn new<T>(
         device_address: u64,
         length: usize,
         key: *const c_void,
         _to_map: &'r T,
-        proto: &'p RefCell<ScopedProtocol<PciRootBridgeIo>>,
+        proto: &'p GhostCell<'id, PciRootBridgeIoProtocol>,
+        token: &'p RefCell<GhostToken<'id>>,
     ) -> Self {
         let end = device_address + length as u64;
         debug!("Mapped new region [0x{:X}..0x{:X}]", device_address, end);
@@ -61,6 +63,7 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
             _lifetime_holder: PhantomData,
             key,
             proto,
+            token,
         }
     }
 
@@ -75,9 +78,13 @@ impl<'p, 'r> PciMappedRegion<'p, 'r> where 'p: 'r {
     }
 }
 
-impl<'p, 'r> Drop for PciMappedRegion<'p, 'r> {
+impl<'p, 'r, 'id> Drop for PciMappedRegion<'p, 'r, 'id> {
     fn drop(&mut self) {
-        let status = PciRootBridgeIo::unmap(self.proto, self.key);
+        let token = self.token.borrow();
+        let protocol = self.proto.borrow(token.deref());
+        let status = unsafe {
+            (protocol.unmap)(protocol, self.key)
+        };
         match status {
             Status::SUCCESS => {
                 let end = self.region.device_address + self.region.length as u64;
@@ -91,6 +98,21 @@ impl<'p, 'r> Drop for PciMappedRegion<'p, 'r> {
             }
             _ => unreachable!(),
         }
+    }
+}
+
+impl<'p, 'r, 'id> Debug for PciMappedRegion<'p, 'r, 'id> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        let mut debug = f.debug_struct("PciMappedRegion");
+        debug.field("region", &self.region);
+        debug.field("key", &self.key);
+
+        if let Ok(token) = self.token.try_borrow() {
+            debug.field("proto", self.proto.borrow(token.deref()));
+        } else {
+            debug.field("proto", &"unavailable");
+        }
+        debug.finish()
     }
 }
 

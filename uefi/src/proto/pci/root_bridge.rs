@@ -4,20 +4,22 @@
 
 use core::cell::RefCell;
 use core::ffi::c_void;
+use core::fmt::{Debug, Formatter};
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
 use crate::proto::pci::region::{PciMappedRegion, PciRegion};
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
+use core::ops::Deref;
 use core::ptr;
 use core::ptr::NonNull;
+use ghost_cell::{GhostCell, GhostToken};
 use log::debug;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
 use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
-use crate::boot::ScopedProtocol;
 
 #[cfg(doc)]
 use crate::Status;
@@ -35,23 +37,24 @@ use crate::Status;
 ///
 /// TODO Find a way to hide above implementation detail. Even if we still use
 /// RefCell, we should use it internally instead of requiring users to do so themselves.
-#[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(PciRootBridgeIoProtocol::GUID)]
-pub struct PciRootBridgeIo(PciRootBridgeIoProtocol);
+pub struct PciRootBridgeIo<'id>(GhostCell<'id, PciRootBridgeIoProtocol>);
 
-impl PciRootBridgeIo {
+impl<'id> PciRootBridgeIo<'id> {
     /// Get the segment number where this PCI root bridge resides.
     #[must_use]
-    pub const fn segment_nr(&self) -> u32 {
-        self.0.segment_number
+    pub fn segment_nr(&self, token: &GhostToken<'id>) -> u32 {
+        self.0.borrow(token).segment_number
     }
 
     /// Access PCI I/O operations on this root bridge.
-    pub const fn pci(&mut self) -> PciIoAccessPci<'_> {
+    pub fn pci<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a> where 'p: 'a
+    {
+        let proto = self.0.borrow_mut(token);
         PciIoAccessPci {
-            proto: &mut self.0,
-            io_access: &mut self.0.pci,
+            proto,
+            io_access: &mut proto.pci,
         }
     }
 
@@ -60,8 +63,9 @@ impl PciRootBridgeIo {
     /// # Errors
     /// - [`Status::DEVICE_ERROR`] The PCI posted write transactions were not flushed from the PCI host bridge
     ///   due to a hardware error.
-    pub fn flush(&mut self) -> crate::Result<()> {
-        unsafe { (self.0.flush)(&mut self.0).to_result() }
+    pub fn flush(&self, token: &mut GhostToken<'id>) -> crate::Result<()> {
+        let proto = self.0.borrow_mut(token);
+        unsafe { (proto.flush)(proto).to_result() }
     }
 
     /// Allocates pages suitable for communicating with PCI devices.
@@ -73,12 +77,14 @@ impl PciRootBridgeIo {
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
     /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
-    pub fn allocate_buffer<T>(
-        protocol: &RefCell<ScopedProtocol<Self>>,
+    #[cfg(feature = "alloc")]
+    pub fn allocate_buffer<'p, 'b, T>(
+        &'p self,
+        token: &'b RefCell<GhostToken<'id>>,
         memory_type: MemoryType,
         pages: Option<NonZeroUsize>,
         attributes: PciRootBridgeIoProtocolAttribute,
-    ) -> crate::Result<PciBuffer<MaybeUninit<T>>> {
+    ) -> crate::Result<PciBuffer<'b, 'id, MaybeUninit<T>>> where 'p: 'b {
         let mut address = 0usize;
         let original_alignment = align_of::<T>();
         assert_ne!(original_alignment, 0);
@@ -96,11 +102,11 @@ impl PciRootBridgeIo {
             NonZeroUsize::new(size.div_ceil(alignment)).unwrap()
         };
 
-        let borrow = protocol.borrow();
-        let raw = &borrow.0;
+        let token_borrow = token.borrow();
+        let protocol = self.0.borrow(token_borrow.deref());
         let status = unsafe {
-            (raw.allocate_buffer)(
-                raw,
+            (protocol.allocate_buffer)(
+                protocol,
                 AllocateType(0),
                 memory_type,
                 pages.get(),
@@ -111,28 +117,16 @@ impl PciRootBridgeIo {
 
         match status {
             Status::SUCCESS => {
+                drop(token_borrow);
                 let base = NonNull::new(address as *mut MaybeUninit<T>).unwrap();
                 debug!("Allocated {} pages at 0x{:X}", pages.get(), address);
-                drop(borrow);
-                Ok(PciBuffer::new(base, pages, protocol))
+                Ok(PciBuffer::new(base, pages, &self.0, token))
             }
             error
             @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
                 Err(error.into())
             }
             _ => unreachable!(),
-        }
-    }
-
-    pub(crate) fn free_buffer<T>(
-        protocol: &RefCell<ScopedProtocol<Self>>,
-        pages: NonZeroUsize,
-        base: NonNull<T>,
-    ) -> Status {
-        let borrow = protocol.borrow();
-        let raw = &borrow.0;
-        unsafe {
-            (raw.free_buffer)(raw, pages.get(), base.as_ptr().cast())
         }
     }
 
@@ -144,11 +138,13 @@ impl PciRootBridgeIo {
     ///
     /// # Returns
     /// - PciMappedRegion capturing lifetime of passed variable
+    #[cfg(feature = "alloc")]
     pub fn map<'p, 'r, T>(
-        protocol: &'p RefCell<ScopedProtocol<Self>>,
+        &'p self,
+        token: &'p RefCell<GhostToken<'id>>,
         operation: PciRootBridgeIoProtocolOperation,
         to_map: &'r T,
-    ) -> PciMappedRegion<'p, 'r>
+    ) -> PciMappedRegion<'p, 'r, 'id>
     where
         'p: 'r,
     {
@@ -156,12 +152,12 @@ impl PciRootBridgeIo {
         let mut bytes = size_of_val(to_map);
         let mut mapped_address = 0u64;
         let mut mapping: *mut c_void = ptr::null_mut();
+        let token_borrow = token.borrow();
+        let protocol = self.0.borrow(token_borrow.deref());
 
         let status = unsafe {
-            let borrow = protocol.borrow();
-            let raw = &borrow.0;
-            (raw.map)(
-                raw,
+            (protocol.map)(
+                protocol,
                 operation,
                 host_address.cast(),
                 ptr::from_mut(&mut bytes),
@@ -172,20 +168,10 @@ impl PciRootBridgeIo {
 
         match status {
             Status::SUCCESS => {
-                PciMappedRegion::new(mapped_address, bytes, mapping, to_map, protocol)
+                drop(token_borrow);
+                PciMappedRegion::new(mapped_address, bytes, mapping, to_map, &self.0, token)
             }
             _ => unreachable!(),
-        }
-    }
-
-    pub(crate) fn unmap(
-        protocol: &RefCell<ScopedProtocol<Self>>,
-        key: *const c_void,
-    ) -> Status {
-        let borrow = protocol.borrow();
-        let raw = &borrow.0;
-        unsafe {
-            (raw.unmap)(raw, key)
         }
     }
 
@@ -193,23 +179,30 @@ impl PciRootBridgeIo {
     /// Two regions must have same length. Functionally, this is the same as
     /// `<[T]>::copy_from_slice` which is effectively memcpy.
     /// And the same safety requirements as the above method apply.
+    #[cfg(feature = "alloc")]
     pub fn copy(
-        protocol: &RefCell<ScopedProtocol<Self>>,
+        &self,
+        token: &mut GhostToken<'id>,
         width: PciRootBridgeIoProtocolWidth,
         destination: PciRegion,
         source: PciRegion,
     ) -> crate::Result<()> {
         assert_eq!(destination.length, source.length);
-        let mut borrow = protocol.borrow_mut();
+        let protocol = self.0.borrow_mut(token);
 
+        debug!("Width: {:?}", width);
+        debug!("Destination Address: 0x{:X}", destination.device_address);
+        debug!("Destination Length: 0x{:X}", destination.length);
+        debug!("Source Address: 0x{:X}", source.device_address);
+        debug!("Source Address: 0x{:X}", source.length);
+        debug!("Count: 0x{:X}", destination.length / width.size());
         let status = unsafe {
-            let raw = &mut borrow.0;
-            (raw.copy_mem)(
-                raw,
+            (protocol.copy_mem)(
+                protocol,
                 width,
                 destination.device_address,
                 source.device_address,
-                destination.length,
+                destination.length / width.size(),
             )
         };
 
@@ -221,6 +214,14 @@ impl PciRootBridgeIo {
     // TODO: io I/O access
     // TODO: get/set attributes
     // TODO: configuration / resource settings
+}
+
+impl<'id> Debug for PciRootBridgeIo<'id> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        let mut debug = f.debug_tuple("PciRootBridgeIo");
+        debug.field(&"unavailable");
+        debug.finish()
+    }
 }
 
 /// Struct for performing PCI I/O operations on a root bridge.

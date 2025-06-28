@@ -45,6 +45,7 @@ ucs2 = "0.3.3"
 uefi-macros = "0.18.1"
 uefi-raw = "0.11.0"
 qemu-exit = { version = "3.0.2", optional = true }
+ghost-cell.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true

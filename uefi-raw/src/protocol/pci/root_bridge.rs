@@ -42,21 +42,22 @@ bitflags! {
     /// Describes PCI I/O Protocol Attribute bitflags specified in UEFI specification.
     ///. https://uefi.org/specs/UEFI/2.10_A/14_Protocols_PCI_Bus_Support.html
     #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+    #[repr(transparent)]
     pub struct PciRootBridgeIoProtocolAttribute: u64 {
-        const PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO     = 0x0001;
-        const PCI_ATTRIBUTE_ISA_IO                 = 0x0002;
-        const PCI_ATTRIBUTE_VGA_PALETTE_IO         = 0x0004;
-        const PCI_ATTRIBUTE_VGA_MEMORY             = 0x0008;
-        const PCI_ATTRIBUTE_VGA_IO                 = 0x0010;
-        const PCI_ATTRIBUTE_IDE_PRIMARY_IO         = 0x0020;
-        const PCI_ATTRIBUTE_IDE_SECONDARY_IO       = 0x0040;
-        const PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE   = 0x0080;
-        const PCI_ATTRIBUTE_MEMORY_CACHED          = 0x0800;
-        const PCI_ATTRIBUTE_MEMORY_DISABLE         = 0x1000;
-        const PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE     = 0x8000;
-        const PCI_ATTRIBUTE_ISA_IO_16              = 0x10000;
-        const PCI_ATTRIBUTE_VGA_PALETTE_IO_16      = 0x20000;
-        const PCI_ATTRIBUTE_VGA_IO_16              = 0x40000;
+        const ISA_MOTHERBOARD_IO     = 0x0001;
+        const ISA_IO                 = 0x0002;
+        const VGA_PALETTE_IO         = 0x0004;
+        const VGA_MEMORY             = 0x0008;
+        const VGA_IO                 = 0x0010;
+        const IDE_PRIMARY_IO         = 0x0020;
+        const IDE_SECONDARY_IO       = 0x0040;
+        const MEMORY_WRITE_COMBINE   = 0x0080;
+        const MEMORY_CACHED          = 0x0800;
+        const MEMORY_DISABLE         = 0x1000;
+        const DUAL_ADDRESS_CYCLE     = 0x8000;
+        const ISA_IO_16              = 0x10000;
+        const VGA_PALETTE_IO_16      = 0x20000;
+        const VGA_IO_16              = 0x40000;
     }
 }
 
@@ -157,18 +158,10 @@ impl PciRootBridgeIoProtocol {
 impl PciRootBridgeIoProtocolWidth {
     pub fn size(self) -> usize {
         match self {
-            Self::UINT8 |
-            Self::FIFO_UINT8 |
-            Self::FILL_UINT8 => 1,
-            Self::UINT16 |
-            Self::FIFO_UINT16 |
-            Self::FILL_UINT16 => 2,
-            Self::UINT32 |
-            Self::FIFO_UINT32 |
-            Self::FILL_UINT32 => 4,
-            Self::UINT64 |
-            Self::FIFO_UINT64 |
-            Self::FILL_UINT64 => 8,
+            Self::UINT8 | Self::FIFO_UINT8 | Self::FILL_UINT8 => 1,
+            Self::UINT16 | Self::FIFO_UINT16 | Self::FILL_UINT16 => 2,
+            Self::UINT32 | Self::FIFO_UINT32 | Self::FILL_UINT32 => 4,
+            Self::UINT64 | Self::FIFO_UINT64 | Self::FILL_UINT64 => 8,
             _ => unreachable!(),
         }
     }

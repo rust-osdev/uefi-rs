@@ -340,12 +340,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ghost-cell"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8449d342b1c67f49169e92e71deb7b9b27f30062301a16dbc27a4cc8d2351b7"
-
-[[package]]
 name = "glob"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -801,6 +795,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -959,7 +959,6 @@ version = "0.35.0"
 dependencies = [
  "bitflags 2.9.1",
  "cfg-if",
- "ghost-cell",
  "log",
  "ptr_meta",
  "qemu-exit",
@@ -985,6 +984,7 @@ name = "uefi-raw"
 version = "0.11.0"
 dependencies = [
  "bitflags 2.9.1",
+ "static_assertions",
  "uguid",
 ]
 
@@ -999,7 +999,6 @@ dependencies = [
 name = "uefi-test-runner"
 version = "0.2.0"
 dependencies = [
- "ghost-cell",
  "log",
  "qemu-exit",
  "smoltcp",

@@ -2,26 +2,27 @@
 
 //! PCI Root Bridge protocol.
 
-use core::cell::RefCell;
-use core::ffi::c_void;
-use core::fmt::{Debug, Formatter};
-use core::marker::PhantomData;
 use super::{PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
 use crate::proto::pci::region::PciMappedRegion;
+use core::ffi::c_void;
+use core::fmt::Debug;
+use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
-use core::ops::Deref;
 use core::ptr;
-use core::ptr::NonNull;
-use ghost_cell::{GhostCell, GhostToken};
+use core::ptr::{NonNull, slice_from_raw_parts};
 use log::debug;
 use uefi::proto::pci::PciIoMode;
 use uefi::proto::pci::root_bridge::io_access::IoAccessType;
 use uefi_macros::unsafe_protocol;
+use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation};
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
+    PciRootBridgeIoProtocolOperation,
+};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 #[cfg(doc)]
@@ -32,54 +33,41 @@ use crate::Status;
 /// # UEFI Spec Description
 /// Provides the basic Memory, I/O, PCI configuration, and DMA interfaces that are
 /// used to abstract accesses to PCI controllers behind a PCI Root Bridge Controller.
-///
-/// # RefCell Usage
-/// Types such as [`PciMappedRegion`] holds references to this protocol
-/// so that it can free themselves in drop. However it prevents others calling mutable
-/// method of this protocol. To avoid this we
-///
-/// TODO Find a way to hide above implementation detail. Even if we still use
-/// RefCell, we should use it internally instead of requiring users to do so themselves.
 #[repr(transparent)]
 #[unsafe_protocol(PciRootBridgeIoProtocol::GUID)]
-pub struct PciRootBridgeIo<'id>(GhostCell<'id, PciRootBridgeIoProtocol>);
+#[derive(Debug)]
+pub struct PciRootBridgeIo(PciRootBridgeIoProtocol);
 
-impl<'id> PciRootBridgeIo<'id> {
+impl PciRootBridgeIo {
     /// Get the segment number where this PCI root bridge resides.
     #[must_use]
-    pub fn segment_nr(&self, token: &GhostToken<'id>) -> u32 {
-        self.0.borrow(token).segment_number
+    pub fn segment_nr(&self) -> u32 {
+        self.0.segment_number
     }
 
     /// Access PCI operations on this root bridge.
-    pub fn pci<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a, io_access::Pci> where 'p: 'a
-    {
-        let proto = self.0.borrow_mut(token);
+    pub fn pci(&self) -> PciIoAccessPci<'_, io_access::Pci> {
         PciIoAccessPci {
-            proto,
-            io_access: &mut proto.pci,
+            proto: ptr::from_ref(&self.0).cast_mut(),
+            io_access: &self.0.pci,
             _type: PhantomData,
         }
     }
 
     /// Access I/O operations on this root bridge.
-    pub fn io<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a, io_access::Io> where 'p: 'a
-    {
-        let proto = self.0.borrow_mut(token);
+    pub fn io(&self) -> PciIoAccessPci<'_, io_access::Io> {
         PciIoAccessPci {
-            proto,
-            io_access: &mut proto.io,
+            proto: ptr::from_ref(&self.0).cast_mut(),
+            io_access: &self.0.io,
             _type: PhantomData,
         }
     }
 
     /// Access memory operations on this root bridge.
-    pub fn mem<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a, io_access::Mem> where 'p: 'a
-    {
-        let proto = self.0.borrow_mut(token);
+    pub fn mem(&self) -> PciIoAccessPci<'_, io_access::Mem> {
         PciIoAccessPci {
-            proto,
-            io_access: &mut proto.mem,
+            proto: ptr::from_ref(&self.0).cast_mut(),
+            io_access: &self.0.mem,
             _type: PhantomData,
         }
     }
@@ -89,9 +77,9 @@ impl<'id> PciRootBridgeIo<'id> {
     /// # Errors
     /// - [`Status::DEVICE_ERROR`] The PCI posted write transactions were not flushed from the PCI host bridge
     ///   due to a hardware error.
-    pub fn flush(&self, token: &mut GhostToken<'id>) -> crate::Result<()> {
-        let proto = self.0.borrow_mut(token);
-        unsafe { (proto.flush)(proto).to_result() }
+    pub fn flush(&self) -> crate::Result<()> {
+        let this = (&self.0) as *const PciRootBridgeIoProtocol;
+        unsafe { (self.0.flush)(this.cast_mut()).to_result() }
     }
 
     /// Allocates pages suitable for communicating with PCI devices.
@@ -104,13 +92,12 @@ impl<'id> PciRootBridgeIo<'id> {
     ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
     /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
     #[cfg(feature = "alloc")]
-    pub fn allocate_buffer<'p, 'b, T>(
-        &'p self,
-        token: &'b RefCell<GhostToken<'id>>,
+    pub fn allocate_buffer<T>(
+        &self,
         memory_type: MemoryType,
         pages: Option<NonZeroUsize>,
         attributes: PciRootBridgeIoProtocolAttribute,
-    ) -> crate::Result<PciBuffer<'b, 'id, MaybeUninit<T>>> where 'p: 'b {
+    ) -> crate::Result<PciBuffer<MaybeUninit<T>>> {
         let mut address = 0usize;
         let original_alignment = align_of::<T>();
         assert_ne!(original_alignment, 0);
@@ -128,11 +115,9 @@ impl<'id> PciRootBridgeIo<'id> {
             NonZeroUsize::new(size.div_ceil(alignment)).unwrap()
         };
 
-        let token_borrow = token.borrow();
-        let protocol = self.0.borrow(token_borrow.deref());
         let status = unsafe {
-            (protocol.allocate_buffer)(
-                protocol,
+            (self.0.allocate_buffer)(
+                &self.0,
                 AllocateType(0),
                 memory_type,
                 pages.get(),
@@ -143,10 +128,9 @@ impl<'id> PciRootBridgeIo<'id> {
 
         match status {
             Status::SUCCESS => {
-                drop(token_borrow);
                 let base = NonNull::new(address as *mut MaybeUninit<T>).unwrap();
                 debug!("Allocated {} pages at 0x{:X}", pages.get(), address);
-                Ok(PciBuffer::new(base, pages, &self.0, token))
+                Ok(PciBuffer::new(base, pages, &self.0))
             }
             error
             @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
@@ -167,22 +151,21 @@ impl<'id> PciRootBridgeIo<'id> {
     #[cfg(feature = "alloc")]
     pub fn map<'p, 'r, T>(
         &'p self,
-        token: &'p RefCell<GhostToken<'id>>,
         operation: PciRootBridgeIoProtocolOperation,
         to_map: &'r T,
-    ) -> crate::Result<PciMappedRegion<'p, 'r, 'id>>
-    where 'p: 'r, T: ?Sized
+    ) -> crate::Result<PciMappedRegion<'p, 'r>>
+    where
+        'p: 'r,
+        T: ?Sized,
     {
         let host_address = ptr::from_ref(to_map);
         let mut bytes = size_of_val(to_map);
         let mut mapped_address = 0u64;
         let mut mapping: *mut c_void = ptr::null_mut();
-        let token_borrow = token.borrow();
-        let protocol = self.0.borrow(token_borrow.deref());
 
         let status = unsafe {
-            (protocol.map)(
-                protocol,
+            (self.0.map)(
+                &self.0,
                 operation,
                 host_address.cast(),
                 ptr::from_mut(&mut bytes),
@@ -192,13 +175,14 @@ impl<'id> PciRootBridgeIo<'id> {
         };
 
         match status {
-            Status::SUCCESS => {
-                drop(token_borrow);
-                Ok(PciMappedRegion::new(mapped_address, bytes, mapping, to_map, &self.0, token))
-            }
-            e => {
-                Err(e.into())
-            }
+            Status::SUCCESS => Ok(PciMappedRegion::new(
+                mapped_address,
+                bytes,
+                mapping,
+                to_map,
+                &self.0,
+            )),
+            e => Err(e.into()),
         }
     }
 
@@ -207,22 +191,21 @@ impl<'id> PciRootBridgeIo<'id> {
     /// `<[T]>::copy_from_slice` which is effectively memcpy.
     /// And the same safety requirements as the above method apply.
     ///
+    /// # Returns
+    /// [`Ok`] on successful copy.
+    /// [`Err`] otherwise.
+    /// * [`Status::INVALID_PARAMETER`]: Width is invalid for this PCI root bridge.
+    /// * [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
     /// # Question
     /// Should this support other types than just primitives?
     #[cfg(feature = "alloc")]
-    pub fn copy<U: PciIoUnit>(
-        &self,
-        token: &mut GhostToken<'id>,
-        destination: &[U],
-        source: &[U],
-    ) -> crate::Result<()> {
+    pub fn copy<U: PciIoUnit>(&self, destination: &[U], source: &[U]) -> crate::Result<()> {
         assert_eq!(destination.len(), source.len());
-        let protocol = self.0.borrow_mut(token);
         let width = encode_io_mode_and_unit::<U>(PciIoMode::Normal);
 
         let status = unsafe {
-            (protocol.copy_mem)(
-                protocol,
+            (self.0.copy_mem)(
+                ((&self.0) as *const PciRootBridgeIoProtocol).cast_mut(),
                 width,
                 destination.as_ptr().addr() as u64,
                 source.as_ptr().addr() as u64,
@@ -233,27 +216,81 @@ impl<'id> PciRootBridgeIo<'id> {
         status.to_result()
     }
 
+    /// Retrieves the current resource settings of this PCI root bridge
+    /// in the form of a set of ACPI resource descriptors.
+    ///
+    /// # Returns
+    /// [`Ok`] when it successfully retrieved current configuration.
+    /// [`Err`] when it failed to retrieve current configuration.
+    /// * Status value will be [`Status::UNSUPPORTED`]
+    ///
+    /// # Panic
+    /// It may panic if pci devices or drivers for those provided by boot service misbehave.
+    /// There are multiple verifications put in place, and they will panic if invariants
+    /// are broken, such as when invalid enum variant value was received
+    /// or reserved bits are not 0
+    pub fn configuration(&self) -> crate::Result<&'static [QWordAddressSpaceDescriptor]> {
+        let mut configuration_address = 0u64;
+        let configuration_status = unsafe {
+            (self.0.configuration)(
+                &self.0,
+                ((&mut configuration_address) as *mut u64).cast::<*const c_void>(),
+            )
+        };
+        match configuration_status {
+            Status::SUCCESS => {
+                let head = configuration_address as *const QWordAddressSpaceDescriptor;
+                let mut count = 0;
+
+                unsafe {
+                    loop {
+                        let cursor = head.add(count);
+                        match cursor.cast::<u8>().read() {
+                            0x8A => {
+                                let cursor_ref = cursor.as_ref().unwrap();
+                                cursor_ref.verify();
+                                count += 1;
+                                if count >= 1024 {
+                                    panic!("Timed out while fetching configurations:\
+                                     There are more than 1024 configuration spaces");
+                                }
+                            }
+                            0x79 => {
+                                let checksum_ptr = cursor.cast::<u8>().byte_add(1);
+                                if checksum_ptr.read() != 0 {
+                                    panic!(
+                                        "Checksum failed for QWordAddressSpaceDescriptor list starting at 0x{:X} with size {}",
+                                        configuration_address, count
+                                    );
+                                }
+                                break;
+                            }
+                            _ => panic!(
+                                "Invalid Tag value for entry in QWordAddressSpaceDescriptor list starting at 0x{:X} with index {}",
+                                configuration_address, count
+                            ),
+                        }
+                    }
+                };
+                let list: &[QWordAddressSpaceDescriptor] =
+                    unsafe { slice_from_raw_parts(head, count).as_ref().unwrap() };
+                Ok(list)
+            }
+            e => Err(e.into()),
+        }
+    }
+
     // TODO: poll I/O
     // TODO: get/set attributes
-    // TODO: configuration / resource settings
-}
-
-impl<'id> Debug for PciRootBridgeIo<'id> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        let mut debug = f.debug_tuple("PciRootBridgeIo");
-        debug.field(&"unavailable");
-        debug.finish()
-    }
 }
 
 /// Struct for performing PCI I/O operations on a root bridge.
 #[derive(Debug)]
 pub struct PciIoAccessPci<'a, T: IoAccessType> {
     proto: *mut PciRootBridgeIoProtocol,
-    io_access: &'a mut PciRootBridgeIoAccess,
+    io_access: &'a PciRootBridgeIoAccess,
     _type: PhantomData<T>,
 }
-
 
 /// Defines all 3 PCI_ROOT_BRIDGE_IO_PROTOCOL_ACCESS types according to UEFI protocol 2.10
 /// Currently there are 3: Mem, Io, Pci

@@ -21,6 +21,7 @@ rust-version = "1.85.1"
 [dependencies]
 bitflags.workspace = true
 uguid.workspace = true
+static_assertions.workspace = true
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

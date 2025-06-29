@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use core::cell::RefCell;
-use core::mem;
 use core::ops::DerefMut;
+use core::ptr;
 use ghost_cell::GhostToken;
 use uefi::boot::{image_handle, OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol};
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
@@ -11,15 +11,15 @@ use uefi::proto::ProtocolPointer;
 use uefi::Handle;
 use uefi_raw::protocol::pci::root_bridge::{
     PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,
-    PciRootBridgeIoProtocolWidth,
 };
-use uefi_raw::table::boot::{MemoryType, PAGE_SIZE};
+use uefi_raw::table::boot::MemoryType;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
 const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
+const DEVICE_IVSHMEM: u16 = 0x1110;
 
-const REG_SIZE: u8 = mem::size_of::<u32>() as u8;
+const REG_SIZE: u8 = size_of::<u32>() as u8;
 
 pub fn test_io() {
     let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
@@ -123,7 +123,7 @@ pub fn test_mapping() {
                 &token,
                 PciRootBridgeIoProtocolOperation::BUS_MASTER_COMMON_BUFFER64,
                 buffer.as_ref(),
-            );
+            ).unwrap();
             if mapped.region().device_address == buffer.as_ptr().addr() as u64 {
                 info!("This PCI device uses identity mapping");
             } else {
@@ -138,52 +138,73 @@ pub fn test_copy() {
 
     for pci_handle in pci_handles {
         GhostToken::new(|token| {
-            let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
             let token: RefCell<_> = token.into();
+            let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+            for bus in 0..=255 {
+                for dev in 0..32 {
+                    for fun in 0..8 {
+                        let addr = PciIoAddress::new(bus, dev, fun);
+                        let mut token_mut = token.borrow_mut();
+                        let pci_access = pci_proto.pci(token_mut.deref_mut());
+                        let Ok(reg0) = pci_access.read_one::<u32>(addr.with_register(0)) else {
+                            continue;
+                        };
+                        if reg0 == 0xFFFFFFFF {
+                            continue; // not a valid device
+                        }
 
-            let mut src = pci_proto.allocate_buffer::<[u32; 4096 / 4]>(
-                &token,
-                MemoryType::BOOT_SERVICES_DATA,
-                None,
-                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
-            ).unwrap();
-            assert_eq!(size_of_val(src.as_ref()), size_of::<[u8; PAGE_SIZE]>());
-            let src = unsafe {
-                src.assume_init_mut().fill(0xDEADBEEF);
-                src.assume_init()
-            };
-            let src_mapped = pci_proto.map(
-                &token,
-                PciRootBridgeIoProtocolOperation::BUS_MASTER_READ,
-                src.as_ref(),
-            );
+                        let vendor_id = (reg0 & 0xFFFF) as u16;
+                        let device_id = (reg0 >> 16) as u16;
 
-            let dst = pci_proto.allocate_buffer::<[u32; 4096 / 4]>(
-                &token,
-                MemoryType::BOOT_SERVICES_DATA,
-                None,
-                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
-            ).unwrap();
-            assert_eq!(size_of_val(dst.as_ref()), size_of::<[u8; PAGE_SIZE]>());
-            let dst_mapped = pci_proto.map(
-                &token,
-                PciRootBridgeIoProtocolOperation::BUS_MASTER_WRITE,
-                dst.as_ref(),
-            );
+                        if vendor_id != RED_HAT_PCI_VENDOR_ID {
+                            continue;
+                        }
+                        if device_id != DEVICE_IVSHMEM {
+                            continue;
+                        }
 
-            let width = PciRootBridgeIoProtocolWidth::UINT32;
-            assert_eq!(width.size(), 4);
+                        let header_type: u8 = pci_access.read_one(addr.with_register(0xE)).unwrap();
+                        assert_eq!(header_type, 0);
 
-            pci_proto.copy(
-                token.borrow_mut().deref_mut(),
-                width,
-                dst_mapped.region(),
-                src_mapped.region(),
-            ).unwrap();
-            drop(dst_mapped);
-            let dst = unsafe { dst.assume_init() };
+                        let command_value = pci_access.read_one::<u16>(addr.with_register(4)).unwrap();
+                        pci_access.write_one::<u16>(addr.with_register(4), command_value & !0x11).unwrap();
 
-            assert!(dst.iter().all(|&b| b == 0xDEADBEEF));
+                        let bar2 = pci_access.read_one::<u64>(addr.with_register(0x18)).unwrap(); // reads both bar2 and bar3 since it's 64bit
+                        assert_eq!(bar2 & 0b1, 0);
+                        assert_eq!((bar2 & 0b110) >> 1, 2); // make sure it's actually 64bit
+
+                        let bar2_value = bar2 & 0xFFFFFFFFFFFFFFF0;
+                        let bar2_size = {
+                            pci_access.write_one(addr.with_register(0x18), u32::MAX).unwrap();
+                            let value: u32 = pci_access.read_one(addr.with_register(0x18)).unwrap();
+                            let size = (!value).wrapping_add(1);
+                            pci_access.write_one(addr.with_register(0x18), bar2 as u32).unwrap();
+                            size
+                        };
+                        assert!(bar2_size >= 0x1000 * 2);
+
+                        pci_access.write_one::<u16>(addr.with_register(4), command_value | 0b10).unwrap();
+                        drop(pci_access);
+                        drop(token_mut);
+
+                        let (src, dst) = unsafe {
+                            let src = ptr::slice_from_raw_parts_mut((bar2_value as usize) as *mut u32, 0x1000 / size_of::<u32>()).as_mut().unwrap();
+                            let dst = ptr::slice_from_raw_parts((bar2_value as usize + 0x1000) as *mut u32, 0x1000 / size_of::<u32>()).as_ref().unwrap();
+                            (src, dst)
+                        };
+                        src.fill(0xDEADBEEF);
+
+                        pci_proto.copy::<u32>(
+                            token.borrow_mut().deref_mut(),
+                            dst,
+                            src,
+                        ).unwrap();
+
+                        assert!(dst.iter().all(|&b| b == 0xDEADBEEF));
+                        break;
+                    }
+                }
+            }
         });
     }
 }

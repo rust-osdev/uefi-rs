@@ -99,6 +99,10 @@ impl PciIoUnit for u8 {}
 impl PciIoUnit for u16 {}
 impl PciIoUnit for u32 {}
 impl PciIoUnit for u64 {}
+impl PciIoUnit for i8 {}
+impl PciIoUnit for i16 {}
+impl PciIoUnit for i32 {}
+impl PciIoUnit for i64 {}
 
 #[allow(dead_code)]
 enum PciIoMode {
@@ -108,7 +112,7 @@ enum PciIoMode {
 }
 
 fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProtocolWidth {
-    match (mode, core::mem::size_of::<U>()) {
+    match (mode, size_of::<U>()) {
         (PciIoMode::Normal, 1) => PciRootBridgeIoProtocolWidth::UINT8,
         (PciIoMode::Normal, 2) => PciRootBridgeIoProtocolWidth::UINT16,
         (PciIoMode::Normal, 4) => PciRootBridgeIoProtocolWidth::UINT32,

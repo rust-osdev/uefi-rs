@@ -5,10 +5,11 @@
 use core::cell::RefCell;
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
-use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
+use core::marker::PhantomData;
+use super::{PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
-use crate::proto::pci::region::{PciMappedRegion, PciRegion};
+use crate::proto::pci::region::PciMappedRegion;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
 use core::ops::Deref;
@@ -16,9 +17,11 @@ use core::ptr;
 use core::ptr::NonNull;
 use ghost_cell::{GhostCell, GhostToken};
 use log::debug;
+use uefi::proto::pci::PciIoMode;
+use uefi::proto::pci::root_bridge::io_access::IoAccessType;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
+use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 #[cfg(doc)]
@@ -48,13 +51,36 @@ impl<'id> PciRootBridgeIo<'id> {
         self.0.borrow(token).segment_number
     }
 
-    /// Access PCI I/O operations on this root bridge.
-    pub fn pci<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a> where 'p: 'a
+    /// Access PCI operations on this root bridge.
+    pub fn pci<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a, io_access::Pci> where 'p: 'a
     {
         let proto = self.0.borrow_mut(token);
         PciIoAccessPci {
             proto,
             io_access: &mut proto.pci,
+            _type: PhantomData,
+        }
+    }
+
+    /// Access I/O operations on this root bridge.
+    pub fn io<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a, io_access::Io> where 'p: 'a
+    {
+        let proto = self.0.borrow_mut(token);
+        PciIoAccessPci {
+            proto,
+            io_access: &mut proto.io,
+            _type: PhantomData,
+        }
+    }
+
+    /// Access memory operations on this root bridge.
+    pub fn mem<'p, 'a>(&'p self, token: &'a mut GhostToken<'id>) -> PciIoAccessPci<'a, io_access::Mem> where 'p: 'a
+    {
+        let proto = self.0.borrow_mut(token);
+        PciIoAccessPci {
+            proto,
+            io_access: &mut proto.mem,
+            _type: PhantomData,
         }
     }
 
@@ -144,9 +170,8 @@ impl<'id> PciRootBridgeIo<'id> {
         token: &'p RefCell<GhostToken<'id>>,
         operation: PciRootBridgeIoProtocolOperation,
         to_map: &'r T,
-    ) -> PciMappedRegion<'p, 'r, 'id>
-    where
-        'p: 'r,
+    ) -> crate::Result<PciMappedRegion<'p, 'r, 'id>>
+    where 'p: 'r, T: ?Sized
     {
         let host_address = ptr::from_ref(to_map);
         let mut bytes = size_of_val(to_map);
@@ -169,9 +194,11 @@ impl<'id> PciRootBridgeIo<'id> {
         match status {
             Status::SUCCESS => {
                 drop(token_borrow);
-                PciMappedRegion::new(mapped_address, bytes, mapping, to_map, &self.0, token)
+                Ok(PciMappedRegion::new(mapped_address, bytes, mapping, to_map, &self.0, token))
             }
-            _ => unreachable!(),
+            e => {
+                Err(e.into())
+            }
         }
     }
 
@@ -179,30 +206,27 @@ impl<'id> PciRootBridgeIo<'id> {
     /// Two regions must have same length. Functionally, this is the same as
     /// `<[T]>::copy_from_slice` which is effectively memcpy.
     /// And the same safety requirements as the above method apply.
+    ///
+    /// # Question
+    /// Should this support other types than just primitives?
     #[cfg(feature = "alloc")]
-    pub fn copy(
+    pub fn copy<U: PciIoUnit>(
         &self,
         token: &mut GhostToken<'id>,
-        width: PciRootBridgeIoProtocolWidth,
-        destination: PciRegion,
-        source: PciRegion,
+        destination: &[U],
+        source: &[U],
     ) -> crate::Result<()> {
-        assert_eq!(destination.length, source.length);
+        assert_eq!(destination.len(), source.len());
         let protocol = self.0.borrow_mut(token);
+        let width = encode_io_mode_and_unit::<U>(PciIoMode::Normal);
 
-        debug!("Width: {:?}", width);
-        debug!("Destination Address: 0x{:X}", destination.device_address);
-        debug!("Destination Length: 0x{:X}", destination.length);
-        debug!("Source Address: 0x{:X}", source.device_address);
-        debug!("Source Address: 0x{:X}", source.length);
-        debug!("Count: 0x{:X}", destination.length / width.size());
         let status = unsafe {
             (protocol.copy_mem)(
                 protocol,
                 width,
-                destination.device_address,
-                source.device_address,
-                destination.length / width.size(),
+                destination.as_ptr().addr() as u64,
+                source.as_ptr().addr() as u64,
+                destination.len(),
             )
         };
 
@@ -226,12 +250,47 @@ impl<'id> Debug for PciRootBridgeIo<'id> {
 
 /// Struct for performing PCI I/O operations on a root bridge.
 #[derive(Debug)]
-pub struct PciIoAccessPci<'a> {
+pub struct PciIoAccessPci<'a, T: IoAccessType> {
     proto: *mut PciRootBridgeIoProtocol,
     io_access: &'a mut PciRootBridgeIoAccess,
+    _type: PhantomData<T>,
 }
 
-impl PciIoAccessPci<'_> {
+
+/// Defines all 3 PCI_ROOT_BRIDGE_IO_PROTOCOL_ACCESS types according to UEFI protocol 2.10
+/// Currently there are 3: Mem, Io, Pci
+pub mod io_access {
+    use uefi::proto::pci::PciIoAddress;
+
+    /// One of PCI_ROOT_BRIDGE_IO_PROTOCOL_ACCESS types that provides PCI configurations space access.
+    #[derive(Debug)]
+    pub struct Pci;
+    impl IoAccessType for Pci {
+        type Address = PciIoAddress;
+    }
+
+    /// One of PCI_ROOT_BRIDGE_IO_PROTOCOL_ACCESS types that provides I/O space access.
+    #[derive(Debug)]
+    pub struct Io;
+    impl IoAccessType for Io {
+        type Address = u64;
+    }
+
+    /// One of PCI_ROOT_BRIDGE_IO_PROTOCOL_ACCESS types that provides memory mapped I/O space access.
+    #[derive(Debug)]
+    pub struct Mem;
+    impl IoAccessType for Mem {
+        type Address = u64;
+    }
+
+    /// Defines base trait for all PCI_ROOT_BRIDGE_IO_PROTOCOL_ACCESS types
+    pub trait IoAccessType {
+        /// Specify what to use as address. This is needed as Pci IO Access uses special address format.
+        type Address: Into<u64>;
+    }
+}
+
+impl<T: IoAccessType> PciIoAccessPci<'_, T> {
     /// Reads a single value of type `U` from the specified PCI address.
     ///
     /// # Arguments
@@ -243,8 +302,8 @@ impl PciIoAccessPci<'_> {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
     /// - [`Status::OUT_OF_RESOURCES`] The read request could not be completed due to a lack of resources.
-    pub fn read_one<U: PciIoUnit>(&self, addr: PciIoAddress) -> crate::Result<U> {
-        let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
+    pub fn read_one<U: PciIoUnit>(&self, addr: T::Address) -> crate::Result<U> {
+        let width_mode = encode_io_mode_and_unit::<U>(PciIoMode::Normal);
         let mut result = U::default();
         unsafe {
             (self.io_access.read)(
@@ -267,8 +326,8 @@ impl PciIoAccessPci<'_> {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
     /// - [`Status::OUT_OF_RESOURCES`] The write request could not be completed due to a lack of resources.
-    pub fn write_one<U: PciIoUnit>(&self, addr: PciIoAddress, data: U) -> crate::Result<()> {
-        let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
+    pub fn write_one<U: PciIoUnit>(&self, addr: T::Address, data: U) -> crate::Result<()> {
+        let width_mode = encode_io_mode_and_unit::<U>(PciIoMode::Normal);
         unsafe {
             (self.io_access.write)(
                 self.proto,
@@ -290,7 +349,7 @@ impl PciIoAccessPci<'_> {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
     /// - [`Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
-    pub fn read<U: PciIoUnit>(&self, addr: PciIoAddress, data: &mut [U]) -> crate::Result<()> {
+    pub fn read<U: PciIoUnit>(&self, addr: T::Address, data: &mut [U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         unsafe {
             (self.io_access.read)(
@@ -313,7 +372,7 @@ impl PciIoAccessPci<'_> {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
     /// - [`Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
-    pub fn write<U: PciIoUnit>(&self, addr: PciIoAddress, data: &[U]) -> crate::Result<()> {
+    pub fn write<U: PciIoUnit>(&self, addr: T::Address, data: &[U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         unsafe {
             (self.io_access.write)(
@@ -339,7 +398,7 @@ impl PciIoAccessPci<'_> {
     /// - [`Status::OUT_OF_RESOURCES`] The operation could not be completed due to a lack of resources.
     pub fn fill_write<U: PciIoUnit>(
         &self,
-        addr: PciIoAddress,
+        addr: T::Address,
         count: usize,
         data: U,
     ) -> crate::Result<()> {
@@ -369,7 +428,7 @@ impl PciIoAccessPci<'_> {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
     /// - [`Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
-    pub fn fifo_read<U: PciIoUnit>(&self, addr: PciIoAddress, data: &mut [U]) -> crate::Result<()> {
+    pub fn fifo_read<U: PciIoUnit>(&self, addr: T::Address, data: &mut [U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fifo);
         unsafe {
             (self.io_access.read)(
@@ -396,7 +455,7 @@ impl PciIoAccessPci<'_> {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
     /// - [`Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
-    pub fn fifo_write<U: PciIoUnit>(&self, addr: PciIoAddress, data: &[U]) -> crate::Result<()> {
+    pub fn fifo_write<U: PciIoUnit>(&self, addr: T::Address, data: &[U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fifo);
         unsafe {
             (self.io_access.write)(

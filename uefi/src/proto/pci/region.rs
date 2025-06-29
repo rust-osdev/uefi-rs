@@ -45,7 +45,7 @@ pub struct PciRegion {
 }
 
 impl<'p, 'r, 'id> PciMappedRegion<'p, 'r, 'id> where 'p: 'r {
-    pub(crate) fn new<T>(
+    pub(crate) fn new<T: ?Sized>(
         device_address: u64,
         length: usize,
         key: *const c_void,

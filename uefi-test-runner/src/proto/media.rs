@@ -316,7 +316,7 @@ fn test_raw_disk_io2(handle: Handle) {
             let mut task = DiskIoTask {
                 token: DiskIo2Token {
                     event: Some(event.unsafe_clone()),
-                    transaction_status: uefi::Status::NOT_READY,
+                    transaction_status: Status::NOT_READY,
                 },
                 buffer: [0; 512],
             };
@@ -337,7 +337,7 @@ fn test_raw_disk_io2(handle: Handle) {
                 .expect("Failed to wait on completion event");
 
             // Verify that the disk's MBR signature is correct
-            assert_eq!(task.token.transaction_status, uefi::Status::SUCCESS);
+            assert_eq!(task.token.transaction_status, Status::SUCCESS);
             assert_eq!(task.buffer[510], 0x55);
             assert_eq!(task.buffer[511], 0xaa);
 

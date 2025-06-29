@@ -8,6 +8,9 @@ use crate::{Result, StatusExt};
 use core::ptr;
 use uefi_raw::protocol::file_system::SimpleFileSystemProtocol;
 
+#[cfg(doc)]
+use crate::Status;
+
 /// Simple File System [`Protocol`]. Allows access to a FAT-12/16/32 file
 /// system.
 ///
@@ -41,13 +44,13 @@ impl SimpleFileSystem {
     /// `EFI_SIMPLE_FILE SYSTEM_PROTOCOL.OpenVolume()` (this has a space in between FILE and
     /// SYSTEM; it could be a typo in the UEFI spec).
     ///
-    /// * [`uefi::Status::UNSUPPORTED`]
-    /// * [`uefi::Status::NO_MEDIA`]
-    /// * [`uefi::Status::DEVICE_ERROR`]
-    /// * [`uefi::Status::VOLUME_CORRUPTED`]
-    /// * [`uefi::Status::ACCESS_DENIED`]
-    /// * [`uefi::Status::OUT_OF_RESOURCES`]
-    /// * [`uefi::Status::MEDIA_CHANGED`]
+    /// * [`Status::UNSUPPORTED`]
+    /// * [`Status::NO_MEDIA`]
+    /// * [`Status::DEVICE_ERROR`]
+    /// * [`Status::VOLUME_CORRUPTED`]
+    /// * [`Status::ACCESS_DENIED`]
+    /// * [`Status::OUT_OF_RESOURCES`]
+    /// * [`Status::MEDIA_CHANGED`]
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
         unsafe { (self.0.open_volume)(&mut self.0, &mut ptr) }

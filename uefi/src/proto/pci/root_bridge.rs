@@ -234,8 +234,6 @@ impl<'id> PciRootBridgeIo<'id> {
     }
 
     // TODO: poll I/O
-    // TODO: mem I/O access
-    // TODO: io I/O access
     // TODO: get/set attributes
     // TODO: configuration / resource settings
 }

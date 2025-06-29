@@ -95,15 +95,11 @@ impl Ord for PciIoAddress {
 
 /// Trait implemented by all data types that can natively be read from a PCI device.
 /// Note: Not all of them have to actually be supported by the hardware at hand.
-pub trait PciIoUnit: Sized + Default {}
+pub trait PciIoUnit: Sized + Default + Into<u64> {}
 impl PciIoUnit for u8 {}
 impl PciIoUnit for u16 {}
 impl PciIoUnit for u32 {}
 impl PciIoUnit for u64 {}
-impl PciIoUnit for i8 {}
-impl PciIoUnit for i16 {}
-impl PciIoUnit for i32 {}
-impl PciIoUnit for i64 {}
 
 #[allow(dead_code)]
 enum PciIoMode {

@@ -186,9 +186,9 @@ pub trait QWordAddressSpaceDescriptorExt {
     /// Returns if this descriptor is currently 64 bit or 32 bit.
     ///
     /// # Returns
-    /// None: It's unspecified
-    /// true: This descriptor is 64 bit
-    /// false: This descriptor is 32 bit
+    /// [`None`]: It's unspecified
+    /// [`true`]: This descriptor is 64 bit
+    /// [`false`]: This descriptor is 32 bit
     fn is_64bit(&self) -> Option<bool> {
         let granularity = self.descriptor().address_granularity;
         match granularity {

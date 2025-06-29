@@ -13,16 +13,14 @@ use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
 use core::ptr;
 use core::ptr::{NonNull, slice_from_raw_parts};
+use core::time::Duration;
 use log::debug;
 use uefi::proto::pci::PciIoMode;
 use uefi::proto::pci::root_bridge::io_access::IoAccessType;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::{
-    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
-    PciRootBridgeIoProtocolOperation,
-};
+use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 #[cfg(doc)]
@@ -280,7 +278,80 @@ impl PciRootBridgeIo {
         }
     }
 
-    // TODO: poll I/O
+    /// Polls a same memory location until criteria is met.
+    /// The criteria in question is met when value read from provided reference
+    /// equals to provided value when masked:
+    /// `(*to_poll) & mask == value`
+    /// /// Refer to [`Self::poll_io`] for polling io port instead.
+    ///
+    /// # Returns
+    /// [`Ok`]: Criteria was met before timeout.
+    /// [`Err`]: One of below error happened:
+    /// * [`Status::TIMEOUT`]: Delay expired before a match occurred.
+    /// * [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
+    ///
+    /// # Panic
+    /// Panics when delay is too large (longer than 58494 years).
+    pub fn poll_mem<U: PciIoUnit>(&self, to_poll: &U, mask: U, value: U, delay: Duration) -> crate::Result<(), U> {
+        let mut result = U::default();
+        let delay = delay.as_nanos().div_ceil(100).try_into().unwrap();
+        let status = unsafe {
+            (self.0.poll_mem)(
+                ptr::from_ref(&self.0).cast_mut(),
+                encode_io_mode_and_unit::<U>(PciIoMode::Normal),
+                ptr::from_ref(to_poll).addr() as u64,
+                mask.into(),
+                value,
+                delay,
+                &mut result
+            )
+        };
+
+        match status {
+            Status::SUCCESS => {
+                Ok(())
+            }
+            e => Err(e.into()),
+        }
+    }
+
+    /// Polls a same io port until criteria is met.
+    /// The criteria in question is met when value read from provided reference
+    /// equals to provided value when masked:
+    /// `(*to_poll) & mask == value`
+    /// Refer to [`Self::poll_mem`] for polling memory instead.
+    ///
+    /// # Returns
+    /// [`Ok`]: Criteria was met before timeout.
+    /// [`Err`]: One of below error happened:
+    /// * [`Status::TIMEOUT`]: Delay expired before a match occurred.
+    /// * [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
+    ///
+    /// # Panic
+    /// Panics when delay is too large (longer than 58494 years).
+    pub fn poll_io<U: PciIoUnit>(&self, to_poll: &U, mask: U, value: U, delay: Duration) -> crate::Result<(), U> {
+        let mut result = U::default();
+        let delay = delay.as_nanos().div_ceil(100).try_into().unwrap();
+        let status = unsafe {
+            (self.0.poll_io)(
+                ptr::from_ref(&self.0).cast_mut(),
+                encode_io_mode_and_unit::<U>(PciIoMode::Normal),
+                ptr::from_ref(to_poll).addr() as u64,
+                mask.into(),
+                value,
+                delay,
+                &mut result
+            )
+        };
+
+        match status {
+            Status::SUCCESS => {
+                Ok(())
+            }
+            e => Err(e.into()),
+        }
+    }
+
     // TODO: get/set attributes
 }
 

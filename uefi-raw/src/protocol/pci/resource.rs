@@ -7,8 +7,8 @@ use static_assertions::assert_eq_size;
 #[repr(C, packed)]
 #[derive(Debug)]
 pub struct QWordAddressSpaceDescriptor {
-    tag: u8,
-    descriptor_length: u16,
+    pub tag: u8,
+    pub descriptor_length: u16,
     pub resource_type: ResourceType,
     pub flags: GeneralFlags,
     pub type_flags: u8,
@@ -57,12 +57,18 @@ impl QWordAddressSpaceDescriptor {
     pub fn verify(&self) {
         let tag = self.tag;
         if tag != 0x8A {
-            panic!("Tag value for QWordAddressSpaceDescriptor should be 0x8A, not {}", tag);
+            panic!(
+                "Tag value for QWordAddressSpaceDescriptor should be 0x8A, not {}",
+                tag
+            );
         }
 
         let length = self.descriptor_length;
         if self.descriptor_length != 0x2B {
-            panic!("Length value for QWordAddressSpaceDescriptor should be 0x2B, not {}", length);
+            panic!(
+                "Length value for QWordAddressSpaceDescriptor should be 0x2B, not {}",
+                length
+            );
         }
 
         if self.flags.bits() & 0b11110000 != 0 {
@@ -93,7 +99,10 @@ impl QWordAddressSpaceDescriptor {
         let min = self.range_min;
         let max = self.range_max;
         if max < min {
-            panic!("Address range is invalid. Max(0x{:X}) is smaller than Min(0x{:X}).", max, min);
+            panic!(
+                "Address range is invalid. Max(0x{:X}) is smaller than Min(0x{:X}).",
+                max, min
+            );
         }
     }
 }

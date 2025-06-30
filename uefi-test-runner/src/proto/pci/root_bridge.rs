@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use core::ptr;
-use uefi::{println, Handle};
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, image_handle};
 use uefi::proto::ProtocolPointer;
 use uefi::proto::pci::PciIoAddress;
-use uefi::proto::pci::root_bridge::PciRootBridgeIo;
+use uefi::proto::pci::root_bridge::{AttributeReport, PciRootBridgeIo};
+use uefi::{Handle, println};
 use uefi_raw::protocol::pci::root_bridge::{
     PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,
 };
@@ -220,6 +220,20 @@ pub fn test_config() {
             continue;
         };
         info!("Found {} configurations", configuration.len());
+    }
+}
+
+pub fn test_attributes() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+        let AttributeReport { supported, .. } = pci_proto.get_attributes();
+
+        pci_proto
+            .set_attributes(PciRootBridgeIoProtocolAttribute::empty(), None)
+            .unwrap();
+        pci_proto.set_attributes(supported, None).unwrap();
     }
 }
 

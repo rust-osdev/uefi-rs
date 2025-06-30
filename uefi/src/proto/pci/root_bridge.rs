@@ -12,15 +12,18 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
 use core::ptr;
-use core::ptr::{NonNull, slice_from_raw_parts};
+use core::ptr::NonNull;
 use core::time::Duration;
 use log::debug;
 use uefi::proto::pci::PciIoMode;
 use uefi::proto::pci::root_bridge::io_access::IoAccessType;
 use uefi_macros::unsafe_protocol;
-use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
 use uefi_raw::Status;
-use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth};
+use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
+    PciRootBridgeIoProtocolOperation,
+};
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 #[cfg(doc)]
@@ -191,9 +194,10 @@ impl PciRootBridgeIo {
     ///
     /// # Returns
     /// [`Ok`] on successful copy.
+    ///
     /// [`Err`] otherwise.
-    /// * [`Status::INVALID_PARAMETER`]: Width is invalid for this PCI root bridge.
-    /// * [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
     /// # Question
     /// Should this support other types than just primitives?
     #[cfg(feature = "alloc")]
@@ -219,15 +223,16 @@ impl PciRootBridgeIo {
     ///
     /// # Returns
     /// [`Ok`] when it successfully retrieved current configuration.
+    ///
     /// [`Err`] when it failed to retrieve current configuration.
-    /// * Status value will be [`Status::UNSUPPORTED`]
+    /// - Its Status value will be [`Status::UNSUPPORTED`]
     ///
     /// # Panic
     /// It may panic if pci devices or drivers for those provided by boot service misbehave.
     /// There are multiple verifications put in place, and they will panic if invariants
     /// are broken, such as when invalid enum variant value was received
     /// or reserved bits are not 0
-    pub fn configuration(&self) -> crate::Result<&'static [QWordAddressSpaceDescriptor]> {
+    pub fn configuration(&self) -> crate::Result<&[QWordAddressSpaceDescriptor]> {
         let mut configuration_address = 0u64;
         let configuration_status = unsafe {
             (self.0.configuration)(
@@ -249,8 +254,10 @@ impl PciRootBridgeIo {
                                 cursor_ref.verify();
                                 count += 1;
                                 if count >= 1024 {
-                                    panic!("Timed out while fetching configurations:\
-                                     There are more than 1024 configuration spaces");
+                                    panic!(
+                                        "Timed out while fetching configurations:\
+                                     There are more than 1024 configuration spaces"
+                                    );
                                 }
                             }
                             0x79 => {
@@ -271,7 +278,7 @@ impl PciRootBridgeIo {
                     }
                 };
                 let list: &[QWordAddressSpaceDescriptor] =
-                    unsafe { slice_from_raw_parts(head, count).as_ref().unwrap() };
+                    unsafe { ptr::slice_from_raw_parts(head, count).as_ref().unwrap() };
                 Ok(list)
             }
             e => Err(e.into()),
@@ -282,18 +289,27 @@ impl PciRootBridgeIo {
     /// The criteria in question is met when value read from provided reference
     /// equals to provided value when masked:
     /// `(*to_poll) & mask == value`
-    /// /// Refer to [`Self::poll_io`] for polling io port instead.
+    ///
+    /// Refer to [`Self::poll_io`] for polling io port instead.
     ///
     /// # Returns
     /// [`Ok`]: Criteria was met before timeout.
+    ///
     /// [`Err`]: One of below error happened:
-    /// * [`Status::TIMEOUT`]: Delay expired before a match occurred.
-    /// * [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
+    /// - [`Status::TIMEOUT`]: Delay expired before a match occurred.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
     ///
     /// # Panic
     /// Panics when delay is too large (longer than 58494 years).
-    pub fn poll_mem<U: PciIoUnit>(&self, to_poll: &U, mask: U, value: U, delay: Duration) -> crate::Result<(), U> {
-        let mut result = U::default();
+    pub fn poll_mem<U: PciIoUnit>(
+        &self,
+        to_poll: &U,
+        mask: U,
+        value: U,
+        delay: Duration,
+    ) -> crate::Result<(), u64> {
+        let mut result = 0u64;
         let delay = delay.as_nanos().div_ceil(100).try_into().unwrap();
         let status = unsafe {
             (self.0.poll_mem)(
@@ -301,36 +317,40 @@ impl PciRootBridgeIo {
                 encode_io_mode_and_unit::<U>(PciIoMode::Normal),
                 ptr::from_ref(to_poll).addr() as u64,
                 mask.into(),
-                value,
+                value.into(),
                 delay,
-                &mut result
+                &mut result,
             )
         };
 
-        match status {
-            Status::SUCCESS => {
-                Ok(())
-            }
-            e => Err(e.into()),
-        }
+        status.to_result_with_err(|_| result)
     }
 
     /// Polls a same io port until criteria is met.
     /// The criteria in question is met when value read from provided reference
     /// equals to provided value when masked:
     /// `(*to_poll) & mask == value`
+    ///
     /// Refer to [`Self::poll_mem`] for polling memory instead.
     ///
     /// # Returns
     /// [`Ok`]: Criteria was met before timeout.
+    ///
     /// [`Err`]: One of below error happened:
-    /// * [`Status::TIMEOUT`]: Delay expired before a match occurred.
-    /// * [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
+    /// - [`Status::TIMEOUT`]: Delay expired before a match occurred.
+    /// - [`Status::INVALID_PARAMETER`] The requested width is invalid for this PCI root bridge.
+    /// - [`Status::OUT_OF_RESOURCES`]: The request could not be completed due to a lack of resources.
     ///
     /// # Panic
     /// Panics when delay is too large (longer than 58494 years).
-    pub fn poll_io<U: PciIoUnit>(&self, to_poll: &U, mask: U, value: U, delay: Duration) -> crate::Result<(), U> {
-        let mut result = U::default();
+    pub fn poll_io<U: PciIoUnit>(
+        &self,
+        to_poll: &U,
+        mask: U,
+        value: U,
+        delay: Duration,
+    ) -> crate::Result<(), u64> {
+        let mut result = 0u64;
         let delay = delay.as_nanos().div_ceil(100).try_into().unwrap();
         let status = unsafe {
             (self.0.poll_io)(
@@ -338,21 +358,101 @@ impl PciRootBridgeIo {
                 encode_io_mode_and_unit::<U>(PciIoMode::Normal),
                 ptr::from_ref(to_poll).addr() as u64,
                 mask.into(),
-                value,
+                value.into(),
                 delay,
-                &mut result
+                &mut result,
+            )
+        };
+
+        status.to_result_with_err(|_| result)
+    }
+
+    /// Returns available and used attributes of this root bridge.
+    ///
+    /// # Returns
+    /// Both supported and used attribute will be returned in struct [`AttributeReport`]
+    pub fn get_attributes(&self) -> AttributeReport {
+        let mut supports = PciRootBridgeIoProtocolAttribute::empty();
+        let mut attributes = PciRootBridgeIoProtocolAttribute::empty();
+        let status = unsafe {
+            (self.0.get_attributes)(
+                &self.0,
+                ptr::from_mut(&mut supports).cast(),
+                ptr::from_mut(&mut attributes).cast(),
+            )
+        };
+
+        match status {
+            Status::SUCCESS => AttributeReport {
+                supported: supports,
+                used: attributes,
+            },
+            Status::INVALID_PARAMETER => unreachable!(),
+            e => panic!("Unexpected error occurred: {:?}", e),
+        }
+    }
+
+    /// Sets attributes to use for this root bridge.
+    /// Specified attributes must be supported. Otherwise, it will return error.
+    /// Supported attributes can be requested with [`Self::get_attributes`]
+    ///
+    /// # Returns
+    /// [`Ok`]: Optional resource range. It will only be available when resource
+    /// parameter is Some and one of:
+    /// - [`PciRootBridgeIoProtocolAttribute::MEMORY_WRITE_COMBINE`]
+    /// - [`PciRootBridgeIoProtocolAttribute::MEMORY_CACHED`]
+    /// - [`PciRootBridgeIoProtocolAttribute::MEMORY_DISABLE`]
+    /// is set.
+    ///
+    /// [`Err`]: Possible error cases:
+    /// - [`Status::UNSUPPORTED`]: A bit is set in Attributes that is not supported by the PCI Root Bridge.
+    ///   The supported attribute bits are reported by [`Self::get_attributes`]
+    /// - [`Status::INVALID_PARAMETER`]: More than one attribute bit is set in Attributes that requires a resource parameter.
+    /// - [`Status::OUT_OF_RESOURCES`]: There are not enough resources to set the attributes on the resource range specified by resource parameter.
+    pub fn set_attributes<'a, 'p>(
+        &'p self,
+        attributes: PciRootBridgeIoProtocolAttribute,
+        resource: Option<&'a [u64]>,
+    ) -> crate::Result<Option<&'a [u64]>>
+    where
+        'p: 'a,
+    {
+        let (mut base, mut length) = match resource {
+            Some(v) => {
+                let ptr: *const [u64] = v;
+                let base = ptr.addr() as u64;
+                let length = ptr.len() as u64;
+                (base, length)
+            }
+            None => (0, 0),
+        };
+        let status = unsafe {
+            (self.0.set_attributes)(
+                ptr::from_ref(&self.0).cast_mut(),
+                attributes.bits(),
+                &mut base,
+                &mut length,
             )
         };
 
         match status {
             Status::SUCCESS => {
-                Ok(())
+                let to_return = if length != 0 {
+                    unsafe {
+                        Some(
+                            ptr::slice_from_raw_parts(base as *const u64, length as usize)
+                                .as_ref()
+                                .unwrap(),
+                        )
+                    }
+                } else {
+                    None
+                };
+                Ok(to_return)
             }
             e => Err(e.into()),
         }
     }
-
-    // TODO: get/set attributes
 }
 
 /// Struct for performing PCI I/O operations on a root bridge.
@@ -574,4 +674,16 @@ impl<T: IoAccessType> PciIoAccessPci<'_, T> {
             .to_result()
         }
     }
+}
+
+/// Struct containing return value for [`PciRootBridgeIo::get_attributes`]
+/// This is to minimize confusion by giving both of them names.
+#[derive(Debug)]
+pub struct AttributeReport {
+    /// Attributes supported by this bridge.
+    /// Only attributes in this set can be used as parameter for [`PciRootBridgeIo::set_attributes`]
+    pub supported: PciRootBridgeIoProtocolAttribute,
+
+    /// Attributes currently being used.
+    pub used: PciRootBridgeIoProtocolAttribute,
 }

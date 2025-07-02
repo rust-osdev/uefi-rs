@@ -5,7 +5,8 @@ use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, ima
 use uefi::proto::ProtocolPointer;
 use uefi::proto::pci::PciIoAddress;
 use uefi::proto::pci::root_bridge::{AttributeReport, PciRootBridgeIo};
-use uefi::{Handle, println};
+use uefi::Handle;
+use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
 use uefi_raw::protocol::pci::root_bridge::{
     PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,
 };
@@ -235,6 +236,11 @@ pub fn test_attributes() {
             .unwrap();
         pci_proto.set_attributes(supported, None).unwrap();
     }
+}
+
+pub fn test_sizes() {
+    assert_eq!(size_of::<QWordAddressSpaceDescriptor>(), 0x2E);
+    assert_eq!(size_of::<PciIoAddress>(), size_of::<u64>());
 }
 
 fn get_open_protocol<P: ProtocolPointer + ?Sized>(handle: Handle) -> ScopedProtocol<P> {

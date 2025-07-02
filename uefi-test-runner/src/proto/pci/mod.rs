@@ -8,4 +8,6 @@ pub fn test() {
     root_bridge::test_mapping();
     root_bridge::test_copy();
     root_bridge::test_config();
+    root_bridge::test_attributes();
+    root_bridge::test_sizes();
 }

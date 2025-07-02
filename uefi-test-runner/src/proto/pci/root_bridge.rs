@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use core::ptr;
+use uefi::Handle;
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, image_handle};
 use uefi::proto::ProtocolPointer;
 use uefi::proto::pci::PciIoAddress;
 use uefi::proto::pci::root_bridge::{AttributeReport, PciRootBridgeIo};
-use uefi::Handle;
 use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
 use uefi_raw::protocol::pci::root_bridge::{
     PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,

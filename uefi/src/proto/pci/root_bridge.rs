@@ -3,10 +3,9 @@
 //! PCI Root Bridge protocol.
 
 use super::{PciIoUnit, encode_io_mode_and_unit};
-use crate::Status;
-use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
 use crate::proto::pci::region::PciMappedRegion;
+use crate::{Status, StatusExt};
 use core::ffi::c_void;
 use core::fmt::Debug;
 use core::marker::PhantomData;

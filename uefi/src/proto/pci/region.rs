@@ -76,7 +76,7 @@ where
     }
 }
 
-impl<'p, 'r> Drop for PciMappedRegion<'p, 'r> {
+impl Drop for PciMappedRegion<'_, '_> {
     fn drop(&mut self) {
         let status = unsafe { (self.proto.unmap)(self.proto, self.key) };
         match status {

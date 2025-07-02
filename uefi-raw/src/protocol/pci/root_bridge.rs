@@ -40,7 +40,7 @@ newtype_enum! {
 
 bitflags! {
     /// Describes PCI I/O Protocol Attribute bitflags specified in UEFI specification.
-    ///. https://uefi.org/specs/UEFI/2.10_A/14_Protocols_PCI_Bus_Support.html
+    /// <https://uefi.org/specs/UEFI/2.10_A/14_Protocols_PCI_Bus_Support.html>
     #[derive(Copy, Clone, Debug, Eq, PartialEq)]
     #[repr(transparent)]
     pub struct PciRootBridgeIoProtocolAttribute: u64 {
@@ -156,6 +156,7 @@ impl PciRootBridgeIoProtocol {
 }
 
 impl PciRootBridgeIoProtocolWidth {
+    #[must_use]
     pub fn size(self) -> usize {
         match self {
             Self::UINT8 | Self::FIFO_UINT8 | Self::FILL_UINT8 => 1,

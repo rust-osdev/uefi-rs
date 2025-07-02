@@ -3,6 +3,7 @@
 //! PCI Root Bridge protocol.
 
 use super::{PciIoUnit, encode_io_mode_and_unit};
+use crate::Status;
 use crate::StatusExt;
 use crate::proto::pci::buffer::PciBuffer;
 use crate::proto::pci::region::PciMappedRegion;
@@ -18,16 +19,12 @@ use log::debug;
 use uefi::proto::pci::PciIoMode;
 use uefi::proto::pci::root_bridge::io_access::IoAccessType;
 use uefi_macros::unsafe_protocol;
-use uefi_raw::Status;
 use uefi_raw::protocol::pci::resource::QWordAddressSpaceDescriptor;
 use uefi_raw::protocol::pci::root_bridge::{
     PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
     PciRootBridgeIoProtocolOperation,
 };
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
-
-#[cfg(doc)]
-use crate::Status;
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
 ///
@@ -42,12 +39,13 @@ pub struct PciRootBridgeIo(PciRootBridgeIoProtocol);
 impl PciRootBridgeIo {
     /// Get the segment number where this PCI root bridge resides.
     #[must_use]
-    pub fn segment_nr(&self) -> u32 {
+    pub const fn segment_nr(&self) -> u32 {
         self.0.segment_number
     }
 
     /// Access PCI operations on this root bridge.
-    pub fn pci(&self) -> PciIoAccessPci<'_, io_access::Pci> {
+    #[must_use]
+    pub const fn pci(&self) -> PciIoAccessPci<'_, io_access::Pci> {
         PciIoAccessPci {
             proto: ptr::from_ref(&self.0).cast_mut(),
             io_access: &self.0.pci,
@@ -56,7 +54,8 @@ impl PciRootBridgeIo {
     }
 
     /// Access I/O operations on this root bridge.
-    pub fn io(&self) -> PciIoAccessPci<'_, io_access::Io> {
+    #[must_use]
+    pub const fn io(&self) -> PciIoAccessPci<'_, io_access::Io> {
         PciIoAccessPci {
             proto: ptr::from_ref(&self.0).cast_mut(),
             io_access: &self.0.io,
@@ -65,7 +64,8 @@ impl PciRootBridgeIo {
     }
 
     /// Access memory operations on this root bridge.
-    pub fn mem(&self) -> PciIoAccessPci<'_, io_access::Mem> {
+    #[must_use]
+    pub const fn mem(&self) -> PciIoAccessPci<'_, io_access::Mem> {
         PciIoAccessPci {
             proto: ptr::from_ref(&self.0).cast_mut(),
             io_access: &self.0.mem,
@@ -88,9 +88,9 @@ impl PciRootBridgeIo {
     /// # Errors
     /// - [`Status::INVALID_PARAMETER`] MemoryType is invalid.
     /// - [`Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
-    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE`]
-    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
-    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::MEMORY_WRITE_COMBINE`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::MEMORY_CACHED`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::DUAL_ADDRESS_CYCLE`]
     /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
     #[cfg(feature = "alloc")]
     pub fn allocate_buffer<T>(
@@ -207,7 +207,7 @@ impl PciRootBridgeIo {
 
         let status = unsafe {
             (self.0.copy_mem)(
-                ((&self.0) as *const PciRootBridgeIoProtocol).cast_mut(),
+                ptr::from_ref::<PciRootBridgeIoProtocol>(&self.0).cast_mut(),
                 width,
                 destination.as_ptr().addr() as u64,
                 source.as_ptr().addr() as u64,
@@ -237,7 +237,7 @@ impl PciRootBridgeIo {
         let configuration_status = unsafe {
             (self.0.configuration)(
                 &self.0,
-                ((&mut configuration_address) as *mut u64).cast::<*const c_void>(),
+                ptr::from_mut::<u64>(&mut configuration_address).cast::<*const c_void>(),
             )
         };
         match configuration_status {
@@ -371,6 +371,7 @@ impl PciRootBridgeIo {
     ///
     /// # Returns
     /// Both supported and used attribute will be returned in struct [`AttributeReport`]
+    #[must_use]
     pub fn get_attributes(&self) -> AttributeReport {
         let mut supports = PciRootBridgeIoProtocolAttribute::empty();
         let mut attributes = PciRootBridgeIoProtocolAttribute::empty();
@@ -398,11 +399,10 @@ impl PciRootBridgeIo {
     ///
     /// # Returns
     /// [`Ok`]: Optional resource range. It will only be available when resource
-    /// parameter is Some and one of:
+    /// parameter is Some and contains one of:
     /// - [`PciRootBridgeIoProtocolAttribute::MEMORY_WRITE_COMBINE`]
     /// - [`PciRootBridgeIoProtocolAttribute::MEMORY_CACHED`]
     /// - [`PciRootBridgeIoProtocolAttribute::MEMORY_DISABLE`]
-    /// is set.
     ///
     /// [`Err`]: Possible error cases:
     /// - [`Status::UNSUPPORTED`]: A bit is set in Attributes that is not supported by the PCI Root Bridge.

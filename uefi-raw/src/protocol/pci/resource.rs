@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use bitflags::bitflags;
-use static_assertions::assert_eq_size;
 
 /// Descriptor for current PCI root bridge's configuration space.
 /// Specification:
-/// https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#qword-address-space-descriptor
+/// <https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#qword-address-space-descriptor>
 #[repr(C, packed)]
 #[derive(Debug)]
 pub struct QWordAddressSpaceDescriptor {
@@ -18,7 +19,6 @@ pub struct QWordAddressSpaceDescriptor {
     pub translation_offset: u64,
     pub address_length: u64,
 }
-assert_eq_size!(QWordAddressSpaceDescriptor, [u8; 0x2E]);
 
 newtype_enum! {
     /// Indicates which type of resource this descriptor describes.

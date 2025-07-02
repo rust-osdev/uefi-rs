@@ -37,29 +37,30 @@ impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
     /// # Safety
     /// Callers of this function must guarantee that value stored is valid.
     #[must_use]
-    pub unsafe fn assume_init(self) -> PciBuffer<'p, T> {
-        let old = ManuallyDrop::new(self);
-        PciBuffer {
-            base: old.base.cast(),
-            pages: old.pages,
-            proto: old.proto,
-        }
+    pub const unsafe fn assume_init(self) -> PciBuffer<'p, T> {
+        let initialized = PciBuffer {
+            base: self.base.cast(),
+            pages: self.pages,
+            proto: self.proto,
+        };
+        let _ = ManuallyDrop::new(self);
+        initialized
     }
 }
 
-impl<'p, T> AsRef<T> for PciBuffer<'p, T> {
+impl<T> AsRef<T> for PciBuffer<'_, T> {
     fn as_ref(&self) -> &T {
         unsafe { self.base.as_ref() }
     }
 }
 
-impl<'p, T> AsMut<T> for PciBuffer<'p, T> {
+impl<T> AsMut<T> for PciBuffer<'_, T> {
     fn as_mut(&mut self) -> &mut T {
         unsafe { self.base.as_mut() }
     }
 }
 
-impl<'p, T> Deref for PciBuffer<'p, T> {
+impl<T> Deref for PciBuffer<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -67,13 +68,13 @@ impl<'p, T> Deref for PciBuffer<'p, T> {
     }
 }
 
-impl<'p, T> DerefMut for PciBuffer<'p, T> {
+impl<T> DerefMut for PciBuffer<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_mut()
     }
 }
 
-impl<'p, T> Drop for PciBuffer<'p, T> {
+impl<T> Drop for PciBuffer<'_, T> {
     fn drop(&mut self) {
         let status = unsafe {
             (self.proto.free_buffer)(self.proto, self.pages.get(), self.base.as_ptr().cast())

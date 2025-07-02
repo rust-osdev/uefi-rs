@@ -7,7 +7,7 @@ use uefi_raw::protocol::pci::resource::{QWordAddressSpaceDescriptor, ResourceTyp
 
 /// Describes resource type specific flags.
 /// ACPI Specification:
-/// https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#type-specific-attributes
+/// <https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#type-specific-attributes>
 #[derive(Debug)]
 pub enum TypeFlag {
     /// Flags for Memory type resource.
@@ -20,7 +20,7 @@ pub enum TypeFlag {
 
 /// Flags for Memory type resource.
 /// ACPI Specification:
-/// https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#memory-resource-flag-resource-type-0-definitions
+/// <https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#memory-resource-flag-resource-type-0-definitions>
 #[derive(Debug)]
 pub struct MemoryFlag {
     /// Specifies if this resource is I/O on primary side of the bridge.
@@ -43,7 +43,7 @@ pub struct MemoryFlag {
 
 /// Flags for Io type resource.
 /// ACP Specification:
-/// https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#io-resource-flag-resource-type-1-definitions
+/// <https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#io-resource-flag-resource-type-1-definitions>
 #[derive(Debug)]
 pub struct IoFlags {
     /// Specifies sparsity of address translation.
@@ -62,7 +62,7 @@ pub struct IoFlags {
 /// Flags for Bus type resource.
 /// Currently, it's unused and all bits should be 0.
 /// ACPI Specification:
-/// https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#bus-number-range-resource-flag-resource-type-2-definitions
+/// <https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/06_Device_Configuration/Device_Configuration.html#bus-number-range-resource-flag-resource-type-2-definitions>
 #[derive(Debug)]
 pub struct BusFlags {
     _reserved: u8,
@@ -224,6 +224,7 @@ impl MemoryFlag {
     ///
     /// # Panic
     /// Panics when reserved bits are not 0.
+    #[must_use]
     pub fn new(flags: u8) -> Self {
         let write_status = WriteStatus(flags & 0b1);
         let mem_attribute = MemAttribute((flags >> 1) & 0b11);
@@ -245,6 +246,7 @@ impl IoFlags {
     ///
     /// # Panic
     /// Panics when reserved bits are not 0.
+    #[must_use]
     pub fn new(flags: u8) -> Self {
         assert_ne!(flags & 0b11, 0);
         let rng_range = RngRange(flags & 0b11);
@@ -269,6 +271,7 @@ impl BusFlags {
     ///
     /// # Panic
     /// Panics when byte is not 0.
+    #[must_use]
     pub fn new(flags: u8) -> Self {
         assert_eq!(flags, 0);
         Self { _reserved: 0 }

@@ -53,7 +53,7 @@ where
         proto: &'p PciRootBridgeIoProtocol,
     ) -> Self {
         let end = device_address + length as u64;
-        debug!("Mapped new region [0x{:X}..0x{:X}]", device_address, end);
+        debug!("Mapped new region [0x{device_address:X}..0x{end:X}]");
         Self {
             region: PciRegion {
                 device_address,

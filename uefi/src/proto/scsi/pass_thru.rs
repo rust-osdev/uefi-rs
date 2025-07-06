@@ -106,7 +106,7 @@ impl ExtScsiPassThru {
     /// This operation resets all the SCSI devices connected to the SCSI channel.
     ///
     /// # Returns
-    /// [`Result<()>`] indicating the success or failure of the operation.
+    /// [`Result`] indicating the success or failure of the operation.
     ///
     /// # Errors
     /// - [`Status::UNSUPPORTED`] The SCSI channel does not support a channel reset operation.
@@ -174,7 +174,7 @@ impl ScsiDevice<'_> {
     /// to perform target resets.
     ///
     /// # Returns
-    /// [`Result<()>`] indicating the success or failure of the operation.
+    /// [`Result`] indicating the success or failure of the operation.
     ///
     /// # Errors
     /// - [`Status::UNSUPPORTED`] The SCSI channel does not support a target reset operation.

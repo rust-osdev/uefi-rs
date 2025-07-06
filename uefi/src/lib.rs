@@ -216,11 +216,11 @@
 //! [Zulip]: https://rust-osdev.zulipchat.com
 //! [`GlobalAlloc`]: alloc::alloc::GlobalAlloc
 //! [`cstr16!`]: crate::cstr16
-//! [`entry-macro`]: uefi_macros::entry
 //! [`r-efi`]: https://crates.io/crates/r-efi
 //! [`unsafe_protocol`]: proto::unsafe_protocol
 //! [apache]: https://github.com/rust-osdev/uefi-rs/blob/main/uefi/LICENSE-APACHE
 //! [contributing]: https://github.com/rust-osdev/uefi-rs/blob/main/CONTRIBUTING.md
+//! [entry-macro]: uefi_macros::entry
 //! [issue tracker]: https://github.com/rust-osdev/uefi-rs/issues
 //! [mit]: https://github.com/rust-osdev/uefi-rs/blob/main/uefi/LICENSE-MIT
 //! [rustc-uefi-std]: https://doc.rust-lang.org/nightly/rustc/platform-support/unknown-uefi.html

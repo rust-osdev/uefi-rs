@@ -39,13 +39,13 @@ impl UnicodeCollation {
     ///
     /// The following syntax can be used to build the string `pattern`:
     ///
-    /// |Pattern Character            |Meaning                                           |
-    /// |-----------------------------|--------------------------------------------------|
-    /// |*                            | Match 0 or more characters                       |
-    /// |?                            | Match any one character                          |
-    /// |[`char1` `char2`...`charN`]| Match any character in the set                   |
-    /// |[`char1`-`char2`]          | Match any character between `char1` and `char2`|
-    /// |`char`                      | Match the character `char`                      |
+    /// |Pattern Character              |Meaning                                           |
+    /// |-------------------------------|--------------------------------------------------|
+    /// |*                              | Match 0 or more characters                       |
+    /// |?                              | Match any one character                          |
+    /// |``[`char1` `char2`...`charN`]``| Match any character in the set                   |
+    /// |``[`char1`-`char2`]``          | Match any character between `char1` and `char2`|
+    /// |`char`                         | Match the character `char`                      |
     ///
     /// For example, the pattern "*.Fw" will match all strings that end
     /// in ".FW", ".fw", ".Fw" or ".fW". The pattern "[a-z]" will match any

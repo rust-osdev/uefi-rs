@@ -2,6 +2,7 @@
 
 use crate::table::boot::{AllocateType, MemoryType};
 use crate::{Handle, PhysicalAddress, Status};
+use bitflags::bitflags;
 use core::ffi::c_void;
 use uguid::{Guid, guid};
 
@@ -34,6 +35,29 @@ newtype_enum! {
         BUS_MASTER_WRITE64 = 4,
         BUS_MASTER_COMMON_BUFFER64 = 5,
         MAXIMUM = 6,
+    }
+}
+
+bitflags! {
+    /// Describes PCI I/O Protocol Attribute bitflags specified in UEFI specification.
+    /// <https://uefi.org/specs/UEFI/2.10_A/14_Protocols_PCI_Bus_Support.html>
+    #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+    #[repr(transparent)]
+    pub struct PciRootBridgeIoProtocolAttribute: u64 {
+        const ISA_MOTHERBOARD_IO     = 0x0001;
+        const ISA_IO                 = 0x0002;
+        const VGA_PALETTE_IO         = 0x0004;
+        const VGA_MEMORY             = 0x0008;
+        const VGA_IO                 = 0x0010;
+        const IDE_PRIMARY_IO         = 0x0020;
+        const IDE_SECONDARY_IO       = 0x0040;
+        const MEMORY_WRITE_COMBINE   = 0x0080;
+        const MEMORY_CACHED          = 0x0800;
+        const MEMORY_DISABLE         = 0x1000;
+        const DUAL_ADDRESS_CYCLE     = 0x8000;
+        const ISA_IO_16              = 0x10000;
+        const VGA_PALETTE_IO_16      = 0x20000;
+        const VGA_IO_16              = 0x40000;
     }
 }
 
@@ -129,4 +153,17 @@ pub struct PciRootBridgeIoProtocol {
 
 impl PciRootBridgeIoProtocol {
     pub const GUID: Guid = guid!("2f707ebb-4a1a-11d4-9a38-0090273fc14d");
+}
+
+impl PciRootBridgeIoProtocolWidth {
+    #[must_use]
+    pub fn size(self) -> usize {
+        match self {
+            Self::UINT8 | Self::FIFO_UINT8 | Self::FILL_UINT8 => 1,
+            Self::UINT16 | Self::FIFO_UINT16 | Self::FILL_UINT16 => 2,
+            Self::UINT32 | Self::FIFO_UINT32 | Self::FILL_UINT32 => 4,
+            Self::UINT64 | Self::FIFO_UINT64 | Self::FILL_UINT64 => 8,
+            _ => unreachable!(),
+        }
+    }
 }

@@ -3,9 +3,12 @@
 //! PCI Bus specific protocols.
 
 use core::cmp::Ordering;
-
+use core::fmt::Debug;
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
+pub mod buffer;
+pub mod region;
+pub mod resource;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations
@@ -92,7 +95,7 @@ impl Ord for PciIoAddress {
 
 /// Trait implemented by all data types that can natively be read from a PCI device.
 /// Note: Not all of them have to actually be supported by the hardware at hand.
-pub trait PciIoUnit: Sized + Default {}
+pub trait PciIoUnit: Sized + Default + Into<u64> + Debug {}
 impl PciIoUnit for u8 {}
 impl PciIoUnit for u16 {}
 impl PciIoUnit for u32 {}
@@ -106,7 +109,7 @@ enum PciIoMode {
 }
 
 fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProtocolWidth {
-    match (mode, core::mem::size_of::<U>()) {
+    match (mode, size_of::<U>()) {
         (PciIoMode::Normal, 1) => PciRootBridgeIoProtocolWidth::UINT8,
         (PciIoMode::Normal, 2) => PciRootBridgeIoProtocolWidth::UINT16,
         (PciIoMode::Normal, 4) => PciRootBridgeIoProtocolWidth::UINT32,

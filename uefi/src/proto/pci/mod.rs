@@ -6,6 +6,7 @@ use core::cmp::Ordering;
 
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
+pub mod page;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations

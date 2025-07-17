@@ -6,6 +6,8 @@ use core::cmp::Ordering;
 
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
+pub mod page;
+pub mod region;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations
@@ -106,7 +108,7 @@ enum PciIoMode {
 }
 
 fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProtocolWidth {
-    match (mode, core::mem::size_of::<U>()) {
+    match (mode, size_of::<U>()) {
         (PciIoMode::Normal, 1) => PciRootBridgeIoProtocolWidth::UINT8,
         (PciIoMode::Normal, 2) => PciRootBridgeIoProtocolWidth::UINT16,
         (PciIoMode::Normal, 4) => PciRootBridgeIoProtocolWidth::UINT32,

@@ -38,6 +38,7 @@ pub mod debug;
 pub mod device_path;
 pub mod driver;
 pub mod hii;
+pub mod dma;
 pub mod loaded_image;
 pub mod media;
 pub mod misc;

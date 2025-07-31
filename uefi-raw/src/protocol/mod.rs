@@ -33,6 +33,7 @@ pub mod driver;
 pub mod file_system;
 pub mod firmware_volume;
 pub mod hii;
+pub mod iommu;
 pub mod loaded_image;
 pub mod media;
 pub mod memory_protection;

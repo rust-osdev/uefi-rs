@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::table::boot::MemoryType;
+use crate::table::boot::{AllocateType, MemoryType};
 use crate::{Guid, Handle, Status, guid};
 use bitflags::bitflags;
 use core::ffi::c_void;
@@ -20,7 +20,7 @@ pub struct EdkiiIommuProtocol {
         this: *const Self,
         device_handle: Handle,
         mapping: *mut c_void,
-        iommu_access: u64,
+        iommu_access: EdkiiIommuAccess,
     ) -> Status,
     pub map: unsafe extern "efiapi" fn(
         this: *const Self,
@@ -33,11 +33,11 @@ pub struct EdkiiIommuProtocol {
     pub unmap: unsafe extern "efiapi" fn(this: *const Self, mapping: *mut c_void) -> Status,
     pub allocate_buffer: unsafe extern "efiapi" fn(
         this: *const Self,
-        allocate_type: u32,
+        allocate_type: AllocateType,
         memory_type: MemoryType,
         pages: usize,
         host_address: *mut *mut c_void,
-        attributes: u64,
+        attributes: EdkiiIommuAttribute,
     ) -> Status,
     pub free_buffer: unsafe extern "efiapi" fn(
         this: *const Self,

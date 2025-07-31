@@ -7,6 +7,7 @@
 - Added `proto::hii::config::ConfigKeywordHandler`.
 - Added `proto::hii::config::HiiConfigAccess`.
 - Added `proto::hii::config_str::ConfigurationString`.
+- Added `proto::acpi::AcpiTable`.
 
 ## Changed
 - **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.

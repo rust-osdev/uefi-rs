@@ -31,6 +31,7 @@
 //! [`boot`]: crate::boot#accessing-protocols
 //! [UEFI protocols]: uefi_raw::protocol
 
+pub mod acpi;
 #[cfg(feature = "alloc")]
 pub mod ata;
 pub mod console;

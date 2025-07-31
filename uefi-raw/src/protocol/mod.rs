@@ -23,6 +23,7 @@
 //!
 //! [`GUID`]: crate::Guid
 
+pub mod acpi;
 pub mod ata;
 pub mod block;
 pub mod console;

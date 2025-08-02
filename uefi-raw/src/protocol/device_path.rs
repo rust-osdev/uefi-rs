@@ -304,13 +304,12 @@ impl DevicePathUtilitiesProtocol {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::mem;
 
     /// Test that ensures the struct is packed. Thus, we don't need to
     /// explicitly specify `packed`.
     #[test]
     fn abi() {
-        assert_eq!(mem::size_of::<DevicePathProtocol>(), 4);
-        assert_eq!(mem::align_of::<DevicePathProtocol>(), 1);
+        assert_eq!(size_of::<DevicePathProtocol>(), 4);
+        assert_eq!(align_of::<DevicePathProtocol>(), 1);
     }
 }

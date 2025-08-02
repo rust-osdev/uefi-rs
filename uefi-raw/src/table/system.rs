@@ -6,7 +6,6 @@ use crate::table::boot::BootServices;
 use crate::table::configuration::ConfigurationTable;
 use crate::table::runtime::RuntimeServices;
 use crate::{Char16, Handle};
-use core::mem::size_of;
 use core::ptr;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

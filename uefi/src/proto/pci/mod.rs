@@ -106,7 +106,7 @@ enum PciIoMode {
 }
 
 fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProtocolWidth {
-    match (mode, core::mem::size_of::<U>()) {
+    match (mode, size_of::<U>()) {
         (PciIoMode::Normal, 1) => PciRootBridgeIoProtocolWidth::UINT8,
         (PciIoMode::Normal, 2) => PciRootBridgeIoProtocolWidth::UINT16,
         (PciIoMode::Normal, 4) => PciRootBridgeIoProtocolWidth::UINT32,
@@ -129,11 +129,10 @@ fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProt
 #[cfg(test)]
 mod tests {
     use super::PciIoAddress;
-    use core::mem;
 
     #[test]
     fn test_pci_ioaddr_raw_conversion() {
-        assert_eq!(mem::size_of::<u64>(), mem::size_of::<PciIoAddress>());
+        assert_eq!(size_of::<u64>(), size_of::<PciIoAddress>());
         let srcaddr = PciIoAddress {
             reg: 0x11,
             fun: 0x33,

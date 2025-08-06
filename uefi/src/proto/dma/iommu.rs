@@ -3,16 +3,15 @@
 //! EDK2 IoMmu protocol.
 
 use core::ffi::c_void;
-use uefi::{
-    Handle, Result, StatusExt, data_types::PhysicalAddress, mem::memory_map::MemoryType,
-    proto::unsafe_protocol,
-};
+use uefi::data_types::PhysicalAddress;
+use uefi::mem::memory_map::MemoryType;
+use uefi::proto::unsafe_protocol;
+use uefi::{Handle, Result, StatusExt};
+use uefi_raw::table::boot::AllocateType;
 
-pub use crate::{
-    proto::dma::{DmaBuffer, Mapping},
-    uefi_raw::protocol::iommu::{
-        EdkiiIommuAccess, EdkiiIommuAttribute, EdkiiIommuOperation, EdkiiIommuProtocol,
-    },
+pub use crate::proto::dma::{DmaBuffer, Mapping};
+pub use crate::uefi_raw::protocol::iommu::{
+    EdkiiIommuAccess, EdkiiIommuAttribute, EdkiiIommuOperation, EdkiiIommuProtocol,
 };
 
 /// EDK2 IoMmu [`Protocol`].
@@ -39,12 +38,7 @@ impl Iommu {
     ) -> Result {
         let mapping_raw = mapping.as_ptr();
         let status = unsafe {
-            (self.0.set_attribute)(
-                &self.0,
-                device_handle.as_ptr(),
-                mapping_raw,
-                iommu_access.bits(),
-            )
+            (self.0.set_attribute)(&self.0, device_handle.as_ptr(), mapping_raw, iommu_access)
         };
 
         status.to_result()
@@ -97,7 +91,7 @@ impl Iommu {
         let mut host_address: *mut c_void = core::ptr::null_mut();
 
         // Must be ignored
-        let allocate_type = 0u32;
+        let allocate_type = AllocateType::ANY_PAGES;
 
         let status = unsafe {
             (self.0.allocate_buffer)(
@@ -106,7 +100,7 @@ impl Iommu {
                 memory_type,
                 pages,
                 &mut host_address,
-                attributes.bits(),
+                attributes,
             )
         };
 

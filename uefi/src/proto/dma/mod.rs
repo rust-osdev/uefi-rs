@@ -2,10 +2,8 @@
 
 //! EDK2 IoMmu  protocol.
 
-use core::{
-    ffi::c_void,
-    ops::{Deref, DerefMut},
-};
+use core::ffi::c_void;
+use core::ops::{Deref, DerefMut};
 
 use uefi_raw::table::boot::PAGE_SIZE;
 
@@ -94,7 +92,7 @@ impl<'a> Mapping<'a> {
     }
 
     /// Get the raw mapping pointer
-    #[must_use] 
+    #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.ptr
     }

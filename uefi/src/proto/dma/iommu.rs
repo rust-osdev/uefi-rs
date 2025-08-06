@@ -50,7 +50,7 @@ impl Iommu {
         operation: EdkiiIommuOperation,
         host_buffer: &DmaBuffer,
         number_of_bytes: usize,
-    ) -> Result<(PhysicalAddress, Mapping, usize)> {
+    ) -> Result<(PhysicalAddress, Mapping<'_>, usize)> {
         let mut number_of_bytes = number_of_bytes;
 
         let mut mapping_raw: *mut c_void = core::ptr::null_mut();
@@ -87,7 +87,7 @@ impl Iommu {
         memory_type: MemoryType,
         pages: usize,
         attributes: EdkiiIommuAttribute,
-    ) -> Result<DmaBuffer> {
+    ) -> Result<DmaBuffer<'_>> {
         let mut host_address: *mut c_void = core::ptr::null_mut();
 
         // Must be ignored

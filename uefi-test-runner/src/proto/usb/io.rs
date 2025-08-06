@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use core::mem;
 use uefi::proto::usb::DeviceDescriptor;
 use uefi::proto::usb::io::{ControlTransfer, UsbIo};
 use uefi::{Status, boot};
@@ -61,14 +60,14 @@ pub fn test() {
             result.expect("failed to acquire string descriptor");
         }
 
-        let mut buffer = [0u8; mem::size_of::<DeviceDescriptor>()];
+        let mut buffer = [0u8; size_of::<DeviceDescriptor>()];
 
         io.control_transfer(
             DEVICE_TO_HOST | STANDARD_REQUEST | DEVICE_RECIPIENT,
             GET_DESCRIPTOR_REQUEST,
             u16::from(DEVICE_DESCRIPTOR) << 8,
             0,
-            ControlTransfer::DataIn(&mut buffer[..mem::size_of::<DeviceDescriptor>()]),
+            ControlTransfer::DataIn(&mut buffer[..size_of::<DeviceDescriptor>()]),
             0,
         )
         .expect("failed control transfer");

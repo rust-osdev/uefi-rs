@@ -81,7 +81,6 @@ fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         };
         use crate::proto::network::IpAddress;
         use crate::mem::memory_map::MemoryType;
-        use core::mem::{size_of, size_of_val};
         use core::ptr::addr_of;
         use core::{fmt, slice};
         use ptr_meta::Pointee;
@@ -94,7 +93,7 @@ fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         pub mod build {
             use super::*;
 
-            use core::mem::{MaybeUninit, size_of_val};
+            use core::mem::MaybeUninit;
             use crate::CStr16;
             use crate::proto::device_path::build::{BuildError, BuildNode};
             use crate::proto::device_path::{DeviceSubType, DeviceType};

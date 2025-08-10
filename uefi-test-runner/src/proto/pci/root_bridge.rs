@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use core::mem;
 use uefi::Handle;
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, image_handle};
 use uefi::proto::ProtocolPointer;
@@ -11,7 +10,7 @@ const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
 const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
 
-const REG_SIZE: u8 = mem::size_of::<u32>() as u8;
+const REG_SIZE: u8 = size_of::<u32>() as u8;
 
 pub fn test() {
     let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();

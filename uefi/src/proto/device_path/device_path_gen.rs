@@ -17,7 +17,6 @@ use crate::proto::device_path::{
 use crate::proto::network::IpAddress;
 use crate::{Guid, guid};
 use bitflags::bitflags;
-use core::mem::{size_of, size_of_val};
 use core::ptr::addr_of;
 use core::{fmt, slice};
 use ptr_meta::Pointee;
@@ -3650,7 +3649,7 @@ pub mod build {
     use crate::CStr16;
     use crate::proto::device_path::build::{BuildError, BuildNode};
     use crate::proto::device_path::{DeviceSubType, DeviceType};
-    use core::mem::{MaybeUninit, size_of_val};
+    use core::mem::MaybeUninit;
     /// Device path build nodes for [`DeviceType::END`].
     pub mod end {
         use super::*;

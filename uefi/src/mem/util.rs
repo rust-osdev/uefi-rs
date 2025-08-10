@@ -120,7 +120,6 @@ mod tests {
     use crate::{ResultExt, StatusExt};
     #[cfg(feature = "unstable")]
     use alloc::alloc::Global;
-    use core::mem::{align_of, size_of};
 
     /// Some simple dummy type to test [`make_boxed`].
     #[derive(Debug)]

@@ -467,7 +467,7 @@ mod tests {
 
     fn mmap_raw<'a>(memory: &mut [MemoryDescriptor]) -> (&'a mut [u8], MemoryMapMeta) {
         let desc_size = size_of::<MemoryDescriptor>();
-        let len = core::mem::size_of_val(memory);
+        let len = size_of_val(memory);
         let ptr = memory.as_mut_ptr().cast::<u8>();
         let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
         let meta = MemoryMapMeta {

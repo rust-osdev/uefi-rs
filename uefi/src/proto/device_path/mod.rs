@@ -921,7 +921,6 @@ fn open_utility_protocol() -> Result<ScopedProtocol<DevicePathUtilities>, Device
 mod tests {
     use super::*;
     use alloc::vec::Vec;
-    use core::mem::{size_of, size_of_val};
 
     /// Create a node to `path` from raw data.
     fn add_node(path: &mut Vec<u8>, device_type: u8, sub_type: u8, node_data: &[u8]) {

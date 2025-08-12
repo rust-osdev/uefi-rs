@@ -7,15 +7,15 @@ use uefi_raw::Status;
 
 use core::ptr;
 
-pub use uefi_raw::protocol::shell::ShellProtocol;
+use uefi_raw::protocol::shell::ShellProtocol;
 
 use crate::{CStr16, Char16};
 
 /// Shell Protocol
 #[derive(Debug)]
 #[repr(transparent)]
-#[unsafe_protocol(uefi_raw::protocol::shell::ShellProtocol::GUID)]
-pub struct Shell(uefi_raw::protocol::shell::ShellProtocol);
+#[unsafe_protocol(ShellProtocol::GUID)]
+pub struct Shell(ShellProtocol);
 
 impl Shell {
     /// Returns the current directory on the specified device
@@ -24,12 +24,13 @@ impl Shell {
     ///
     /// * `file_system_mapping` - The file system mapping for which to get
     ///   the current directory
+    ///
     /// # Returns
     ///
     /// * `Some(cwd)` - CStr16 containing the current working directory
     /// * `None` - Could not retrieve current directory
     #[must_use]
-    pub fn get_cur_dir<'a>(&'a self, file_system_mapping: Option<&CStr16>) -> Option<&'a CStr16> {
+    pub fn get_cur_dir(&self, file_system_mapping: Option<&CStr16>) -> Option<&CStr16> {
         let mapping_ptr: *const Char16 = file_system_mapping.map_or(ptr::null(), |x| (x.as_ptr()));
         let cur_dir = unsafe { (self.0.get_cur_dir)(mapping_ptr.cast()) };
         if cur_dir.is_null() {
@@ -46,13 +47,14 @@ impl Shell {
     /// * `file_system` - Pointer to the file system's mapped name.
     /// * `directory` - Points to the directory on the device specified by
     ///   `file_system`.
+    ///
     /// # Returns
     ///
-    /// * `Status::SUCCESS` The directory was successfully set
+    /// * `Status::SUCCESS` - The directory was successfully set
     ///
     /// # Errors
     ///
-    /// * `Status::EFI_NOT_FOUND` The directory does not exist
+    /// * `Status::EFI_NOT_FOUND` - The directory does not exist
     pub fn set_cur_dir(&self, file_system: Option<&CStr16>, directory: Option<&CStr16>) -> Status {
         let fs_ptr: *const Char16 = file_system.map_or(ptr::null(), |x| (x.as_ptr()));
         let dir_ptr: *const Char16 = directory.map_or(ptr::null(), |x| (x.as_ptr()));

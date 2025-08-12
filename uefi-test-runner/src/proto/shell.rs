@@ -100,25 +100,25 @@ pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
     assert_eq!(cur_fs_str, expected_fs_str);
 }
 
-/// Test `get_env()`, `get_envs()`, and `set_env()`
+/// Test `var()`, `vars()`, and `set_var()`
 pub fn test_env(shell: &ScopedProtocol<Shell>) {
     /* Test retrieving list of environment variable names */
-    let mut cur_env_vec = shell.get_envs();
+    let mut cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.next().unwrap(), cstr16!("path"),);
     // check pre-defined shell variables; see UEFI Shell spec
     assert_eq!(cur_env_vec.next().unwrap(), cstr16!("nonesting"),);
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let default_len = cur_env_vec.count();
 
     /* Test setting and getting a specific environment variable */
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let test_var = cstr16!("test_var");
     let test_val = cstr16!("test_val");
-    assert!(shell.get_env(test_var).is_none());
-    let status = shell.set_env(test_var, test_val, false);
-    assert_eq!(status, Status::SUCCESS);
+    assert!(shell.var(test_var).is_none());
+    let status = shell.set_var(test_var, test_val, false);
+    assert!(status.is_ok());
     let cur_env_str = shell
-        .get_env(test_var)
+        .var(test_var)
         .expect("Could not get environment variable");
     assert_eq!(cur_env_str, test_val);
 
@@ -129,7 +129,7 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
         }
     }
     assert!(!found_var);
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let mut found_var = false;
     for env_var in cur_env_vec {
         if env_var == test_var {
@@ -138,16 +138,16 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
     }
     assert!(found_var);
 
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.count(), default_len + 1);
 
     /* Test deleting environment variable */
     let test_val = cstr16!("");
-    let status = shell.set_env(test_var, test_val, false);
-    assert_eq!(status, Status::SUCCESS);
-    assert!(shell.get_env(test_var).is_none());
+    let status = shell.set_var(test_var, test_val, false);
+    assert!(status.is_ok());
+    assert!(shell.var(test_var).is_none());
 
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     let mut found_var = false;
     for env_var in cur_env_vec {
         if env_var == test_var {
@@ -155,7 +155,7 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
         }
     }
     assert!(!found_var);
-    let cur_env_vec = shell.get_envs();
+    let cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.count(), default_len);
 }
 

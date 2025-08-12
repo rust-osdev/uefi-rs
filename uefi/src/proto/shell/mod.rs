@@ -4,6 +4,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{CStr16, Char16, Error, Result, Status, StatusExt};
+
 use core::marker::PhantomData;
 use core::ptr;
 use uefi_raw::protocol::shell::ShellProtocol;
@@ -28,17 +29,12 @@ impl<'a> Iterator for Vars<'a> {
     // We iterate a list of NUL terminated CStr16s.
     // The list is terminated with a double NUL.
     fn next(&mut self) -> Option<Self::Item> {
-        let cur_start = self.inner;
-        let mut cur_len = 0;
-        unsafe {
-            if *(cur_start) == Char16::from_u16_unchecked(0) {
-                return None;
-            }
-            while *(cur_start.add(cur_len)) != Char16::from_u16_unchecked(0) {
-                cur_len += 1;
-            }
-            self.inner = self.inner.add(cur_len + 1);
-            Some(CStr16::from_ptr(cur_start))
+        let s = unsafe { CStr16::from_ptr(self.inner) };
+        if s.is_empty() {
+            None
+        } else {
+            self.inner = unsafe { self.inner.add(s.num_chars() + 1) };
+            Some(s)
         }
     }
 }
@@ -98,8 +94,8 @@ impl Shell {
     ///   environment variable
     /// * `None` - If environment variable does not exist
     #[must_use]
-    pub fn get_env(&self, name: &CStr16) -> Option<&CStr16> {
-        let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(name).cast();
+    pub fn var(&self, name: &CStr16) -> Option<&CStr16> {
+        let name_ptr: *const Char16 = name.as_ptr();
         let var_val = unsafe { (self.0.get_env)(name_ptr.cast()) };
         if var_val.is_null() {
             None
@@ -108,13 +104,9 @@ impl Shell {
         }
     }
 
-    /// Gets the list of environment variables
-    ///
-    /// # Returns
-    ///
-    /// * `Vec<env_names>` - Vector of environment variable names
+    /// Gets an iterator over the names of all environment variables
     #[must_use]
-    pub fn get_envs(&self) -> Vars {
+    pub fn vars(&self) -> Vars<'_> {
         let env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
         Vars {
             inner: env_ptr.cast::<Char16>(),
@@ -134,10 +126,10 @@ impl Shell {
     /// # Returns
     ///
     /// * `Status::SUCCESS` - The variable was successfully set
-    pub fn set_env(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Status {
-        let name_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(name).cast();
-        let value_ptr: *const Char16 = core::ptr::from_ref::<CStr16>(value).cast();
-        unsafe { (self.0.set_env)(name_ptr.cast(), value_ptr.cast(), volatile) }
+    pub fn set_var(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Result {
+        let name_ptr: *const Char16 = name.as_ptr();
+        let value_ptr: *const Char16 = value.as_ptr();
+        unsafe { (self.0.set_env)(name_ptr.cast(), value_ptr.cast(), volatile) }.to_result()
     }
 }
 

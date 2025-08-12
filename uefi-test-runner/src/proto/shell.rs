@@ -101,12 +101,12 @@ pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
 }
 
 /// Test `var()`, `vars()`, and `set_var()`
-pub fn test_env(shell: &ScopedProtocol<Shell>) {
+pub fn test_var(shell: &ScopedProtocol<Shell>) {
     /* Test retrieving list of environment variable names */
     let mut cur_env_vec = shell.vars();
-    assert_eq!(cur_env_vec.next().unwrap(), cstr16!("path"),);
+    assert_eq!(cur_env_vec.next().unwrap().0, cstr16!("path"));
     // check pre-defined shell variables; see UEFI Shell spec
-    assert_eq!(cur_env_vec.next().unwrap(), cstr16!("nonesting"),);
+    assert_eq!(cur_env_vec.next().unwrap().0, cstr16!("nonesting"));
     let cur_env_vec = shell.vars();
     let default_len = cur_env_vec.count();
 
@@ -123,7 +123,7 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
     assert_eq!(cur_env_str, test_val);
 
     let mut found_var = false;
-    for env_var in cur_env_vec {
+    for (env_var, _) in cur_env_vec {
         if env_var == test_var {
             found_var = true;
         }
@@ -131,7 +131,7 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
     assert!(!found_var);
     let cur_env_vec = shell.vars();
     let mut found_var = false;
-    for env_var in cur_env_vec {
+    for (env_var, _) in cur_env_vec {
         if env_var == test_var {
             found_var = true;
         }
@@ -149,7 +149,7 @@ pub fn test_env(shell: &ScopedProtocol<Shell>) {
 
     let cur_env_vec = shell.vars();
     let mut found_var = false;
-    for env_var in cur_env_vec {
+    for (env_var, _) in cur_env_vec {
         if env_var == test_var {
             found_var = true;
         }
@@ -168,5 +168,5 @@ pub fn test() {
         boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
 
     test_current_dir(&shell);
-    test_env(&shell);
+    test_var(&shell);
 }

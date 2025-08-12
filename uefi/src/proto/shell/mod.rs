@@ -17,27 +17,42 @@ use crate::{CStr16, Char16, Result, StatusExt};
 #[unsafe_protocol(ShellProtocol::GUID)]
 pub struct Shell(ShellProtocol);
 
+/// Trait for implementing the var function
+pub trait ShellVar {
+    /// Gets the value of the specified environment variable
+    fn var(&self, name: &CStr16) -> Option<&CStr16>;
+}
+
 /// Iterator over the names of environmental variables obtained from the Shell protocol.
 #[derive(Debug)]
-pub struct Vars<'a> {
+pub struct Vars<'a, T: ShellVar> {
     /// Char16 containing names of environment variables
-    inner: *const Char16,
+    names: *const Char16,
+    /// Reference to Shell Protocol
+    protocol: *const T,
     /// Placeholder to attach a lifetime to `Vars`
     placeholder: PhantomData<&'a CStr16>,
 }
 
-impl<'a> Iterator for Vars<'a> {
-    type Item = &'a CStr16;
+impl<'a, T: ShellVar + 'a> Iterator for Vars<'a, T> {
+    type Item = (&'a CStr16, Option<&'a CStr16>);
     // We iterate a list of NUL terminated CStr16s.
     // The list is terminated with a double NUL.
     fn next(&mut self) -> Option<Self::Item> {
-        let s = unsafe { CStr16::from_ptr(self.inner) };
+        let s = unsafe { CStr16::from_ptr(self.names) };
         if s.is_empty() {
             None
         } else {
-            self.inner = unsafe { self.inner.add(s.num_chars() + 1) };
-            Some(s)
+            self.names = unsafe { self.names.add(s.num_chars() + 1) };
+            Some((s, unsafe { self.protocol.as_ref().unwrap().var(s) }))
         }
+    }
+}
+
+impl ShellVar for Shell {
+    /// Gets the value of the specified environment variable
+    fn var(&self, name: &CStr16) -> Option<&CStr16> {
+        self.var(name)
     }
 }
 
@@ -67,10 +82,11 @@ impl Shell {
 
     /// Gets an iterator over the names of all environment variables
     #[must_use]
-    pub fn vars(&self) -> Vars<'_> {
+    pub fn vars(&self) -> Vars<'_, Self> {
         let env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
         Vars {
-            inner: env_ptr.cast::<Char16>(),
+            names: env_ptr.cast::<Char16>(),
+            protocol: self,
             placeholder: PhantomData,
         }
     }
@@ -97,8 +113,32 @@ impl Shell {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::collections::BTreeMap;
     use alloc::vec::Vec;
     use uefi::cstr16;
+
+    struct ShellMock<'a> {
+        inner: BTreeMap<&'a CStr16, &'a CStr16>,
+    }
+
+    impl<'a> ShellMock<'a> {
+        fn new(names: Vec<&'a CStr16>, values: Vec<&'a CStr16>) -> ShellMock<'a> {
+            let mut inner_map = BTreeMap::new();
+            for (name, val) in names.iter().zip(values.iter()) {
+                inner_map.insert(*name, *val);
+            }
+            ShellMock { inner: inner_map }
+        }
+    }
+    impl<'a> ShellVar for ShellMock<'a> {
+        fn var(&self, name: &CStr16) -> Option<&CStr16> {
+            if let Some(val) = self.inner.get(name) {
+                Some(*val)
+            } else {
+                None
+            }
+        }
+    }
 
     /// Testing Vars struct
     #[test]
@@ -108,9 +148,11 @@ mod tests {
         vars_mock.push(0);
         vars_mock.push(0);
         let mut vars = Vars {
-            inner: vars_mock.as_ptr().cast(),
+            names: vars_mock.as_ptr().cast(),
+            protocol: &ShellMock::new(Vec::new(), Vec::new()),
             placeholder: PhantomData,
         };
+
         assert!(vars.next().is_none());
 
         // One environment variable in Vars
@@ -121,10 +163,14 @@ mod tests {
         vars_mock.push(0);
         vars_mock.push(0);
         let vars = Vars {
-            inner: vars_mock.as_ptr().cast(),
+            names: vars_mock.as_ptr().cast(),
+            protocol: &ShellMock::new(Vec::from([cstr16!("foo")]), Vec::from([cstr16!("value")])),
             placeholder: PhantomData,
         };
-        assert_eq!(vars.collect::<Vec<_>>(), Vec::from([cstr16!("foo")]));
+        assert_eq!(
+            vars.collect::<Vec<_>>(),
+            Vec::from([(cstr16!("foo"), Some(cstr16!("value")))])
+        );
 
         // Multiple environment variables in Vars
         let mut vars_mock = Vec::<u16>::new();
@@ -145,12 +191,20 @@ mod tests {
         vars_mock.push(0);
 
         let vars = Vars {
-            inner: vars_mock.as_ptr().cast(),
+            names: vars_mock.as_ptr().cast(),
+            protocol: &ShellMock::new(
+                Vec::from([cstr16!("foo1"), cstr16!("bar"), cstr16!("baz2")]),
+                Vec::from([cstr16!("value"), cstr16!("one"), cstr16!("two")]),
+            ),
             placeholder: PhantomData,
         };
         assert_eq!(
             vars.collect::<Vec<_>>(),
-            Vec::from([cstr16!("foo1"), cstr16!("bar"), cstr16!("baz2")])
+            Vec::from([
+                (cstr16!("foo1"), Some(cstr16!("value"))),
+                (cstr16!("bar"), Some(cstr16!("one"))),
+                (cstr16!("baz2"), Some(cstr16!("two")))
+            ])
         );
     }
 }

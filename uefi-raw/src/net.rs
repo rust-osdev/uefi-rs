@@ -387,14 +387,6 @@ mod tests {
         }
     }
 
-    /// Tests that all bytes are initialized and that the Debug print doesn't
-    /// produce errors, when Miri executes this.
-    #[test]
-    fn test_ip_address_debug_memory_safe() {
-        let uefi_addr = IpAddress::new_v6(TEST_IPV6);
-        std::eprintln!("{uefi_addr:#?}");
-    }
-
     /// Tests the expected flow of types in a higher-level UEFI API.
     #[test]
     fn test_uefi_flow() {
@@ -434,5 +426,17 @@ mod tests {
         };
         let expected = [42, 42, 42, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 42];
         assert_eq!(ipv6_addr.octets(), expected);
+    }
+
+    #[test]
+    fn test_efi_ip_address_abi() {
+        #[repr(C, packed)]
+        struct PackedHelper<T>(T);
+
+        assert_eq!(align_of::<IpAddress>(), 4);
+        assert_eq!(size_of::<IpAddress>(), 16);
+
+        assert_eq!(align_of::<PackedHelper<IpAddress>>(), 1);
+        assert_eq!(size_of::<PackedHelper<IpAddress>>(), 16);
     }
 }

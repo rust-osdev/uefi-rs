@@ -5,6 +5,10 @@
 - Added `PciRootBridgeIoProtocol`.
 - Added `ConfigKeywordHandlerProtocol`.
 - Added `HiiConfigAccessProtocol`.
+- Added lots of convenient methods and `From` implementations to better
+  integrate the `uefi_raw::net::*` types with the types from `core::net::*`.
+  Further, more associated functions for an improved convenience have been
+  added to the types of that module.
 
 ## Changed
 - The documentation for UEFI protocols has been streamlined and improved.

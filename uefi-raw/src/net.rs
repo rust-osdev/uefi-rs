@@ -202,4 +202,18 @@ mod tests {
         let uefi_addr = IpAddress::from(core_addr);
         assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
     }
+
+    // Ensure that our IpAddress type can be put into a packed struct,
+    // even when it is normally 4 byte aligned.
+    #[test]
+    fn test_efi_ip_address_abi() {
+        #[repr(C, packed)]
+        struct PackedHelper<T>(T);
+
+        assert_eq!(align_of::<IpAddress>(), 4);
+        assert_eq!(size_of::<IpAddress>(), 16);
+
+        assert_eq!(align_of::<PackedHelper<IpAddress>>(), 1);
+        assert_eq!(size_of::<PackedHelper<IpAddress>>(), 16);
+    }
 }

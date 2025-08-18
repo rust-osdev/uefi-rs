@@ -2,7 +2,7 @@
 
 use uefi::boot::ScopedProtocol;
 use uefi::proto::shell::Shell;
-use uefi::{boot, cstr16};
+use uefi::{Error, Status, boot, cstr16};
 
 /// Test `current_dir()` and `set_current_dir()`
 pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
@@ -48,7 +48,11 @@ pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
 
     // At this point, the current working file system has not been set
     // So we expect a NULL output
-    assert!(shell.current_dir(None).is_none());
+    assert!(shell.current_dir(None).is_err());
+    assert_eq!(
+        shell.current_dir(None).err().unwrap(),
+        Error::new(Status::NOT_FOUND, ())
+    );
 
     // Setting the current working file system and current working directory
     let dir_var = cstr16!("fs0:/");

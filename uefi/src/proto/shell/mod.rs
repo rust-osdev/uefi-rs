@@ -2,39 +2,35 @@
 
 //! EFI Shell Protocol v2.2
 
-use uefi_macros::unsafe_protocol;
-
+use crate::proto::unsafe_protocol;
+use crate::{CStr16, Char16, Error, Result, Status, StatusExt};
 use core::ptr;
-
 use uefi_raw::protocol::shell::ShellProtocol;
-
-use crate::{CStr16, Char16, Result, StatusExt};
 
 /// Shell Protocol
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(ShellProtocol::GUID)]
 pub struct Shell(ShellProtocol);
+
 impl Shell {
-    /// Returns the current directory on the specified device
+    /// Returns the current directory on the specified device.
     ///
     /// # Arguments
     ///
     /// * `file_system_mapping` - The file system mapping for which to get
     ///   the current directory
     ///
-    /// # Returns
+    /// # Errors
     ///
-    /// * `Some(cwd)` - CStr16 containing the current working directory
-    /// * `None` - Could not retrieve current directory
-    #[must_use]
-    pub fn current_dir(&self, file_system_mapping: Option<&CStr16>) -> Option<&CStr16> {
+    /// * [`Status::NOT_FOUND`] - Could not retrieve current directory
+    pub fn current_dir(&self, file_system_mapping: Option<&CStr16>) -> Result<&CStr16> {
         let mapping_ptr: *const Char16 = file_system_mapping.map_or(ptr::null(), CStr16::as_ptr);
         let cur_dir = unsafe { (self.0.get_cur_dir)(mapping_ptr.cast()) };
         if cur_dir.is_null() {
-            None
+            Err(Error::new(Status::NOT_FOUND, ()))
         } else {
-            unsafe { Some(CStr16::from_ptr(cur_dir.cast())) }
+            unsafe { Ok(CStr16::from_ptr(cur_dir.cast())) }
         }
     }
 
@@ -42,17 +38,13 @@ impl Shell {
     ///
     /// # Arguments
     ///
-    /// * `file_system` - Pointer to the file system's mapped name.
-    /// * `directory` - Points to the directory on the device specified by
+    /// * `file_system` - File system's mapped name.
+    /// * `directory` - Directory on the device specified by
     ///   `file_system`.
-    ///
-    /// # Returns
-    ///
-    /// * `Status::SUCCESS` - The directory was successfully set
     ///
     /// # Errors
     ///
-    /// * `Status::EFI_NOT_FOUND` - The directory does not exist
+    /// * [`Status::NOT_FOUND`] - The directory does not exist
     pub fn set_current_dir(
         &self,
         file_system: Option<&CStr16>,

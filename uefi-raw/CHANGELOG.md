@@ -7,6 +7,7 @@
 - Added `HiiConfigAccessProtocol`.
 - Added `::octets()` for `Ipv4Address`, `Ipv6Address`, and
   `MacAddress` to streamline the API with `core::net`.
+- Added `::ZERO` constant for `IpAddress`
 
 ## Changed
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.

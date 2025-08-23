@@ -153,12 +153,7 @@ impl MacAddress {
 impl From<[u8; 6]> for MacAddress {
     fn from(octets: [u8; 6]) -> Self {
         let mut buffer = [0; 32];
-        buffer[0] = octets[0];
-        buffer[1] = octets[1];
-        buffer[2] = octets[2];
-        buffer[3] = octets[3];
-        buffer[4] = octets[4];
-        buffer[5] = octets[5];
+        buffer[..6].copy_from_slice(&octets);
         Self(buffer)
     }
 }

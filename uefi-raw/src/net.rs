@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 //! UEFI network types.
+//!
+//! The main exports of this module are:
+//! - [`MacAddress`]
+//! - [`IpAddress`]
+//! - [`Ipv4Address`]
+//! - [`Ipv6Address`]
 
 use core::fmt;
 use core::fmt::{Debug, Formatter};
@@ -39,7 +45,7 @@ impl From<Ipv6Address> for core::net::Ipv6Addr {
     }
 }
 
-/// An IPv4 or IPv6 internet protocol address.
+/// An IPv4 or IPv6 internet protocol address that is ABI compatible with EFI.
 ///
 /// Corresponds to the `EFI_IP_ADDRESS` type in the UEFI specification. This
 /// type is defined in the same way as edk2 for compatibility with C code. Note
@@ -106,7 +112,15 @@ impl From<core::net::IpAddr> for IpAddress {
     }
 }
 
-/// A Media Access Control (MAC) address.
+/// UEFI Media Access Control (MAC) address.
+///
+/// UEFI supports multiple network protocols and hardware types, not just
+/// Ethernet. Some of them may use MAC addresses longer than 6 bytes. To be
+/// protocol-agnostic and future-proof, the UEFI spec chooses a maximum size
+/// that can hold any supported media access control address.
+///
+/// In most cases, this is just a typical `[u8; 6]` Ethernet style MAC
+/// address with the rest of the bytes being zero.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);

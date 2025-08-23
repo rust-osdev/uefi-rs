@@ -16,6 +16,8 @@
   - `[u8; 32]` --> `MacAddress`
   - `[u8; 4]`  --> `Ipv4Address`, `IpAddress`
   - `[u8; 16]` --> `Ipv6Address`, `IpAddress`
+- Added `::into_core_ip_addr()` for `IpAddress`
+- Added `::try_into_ethernet_mac_addr()` for `MacAddress`
 
 ## Changed
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.

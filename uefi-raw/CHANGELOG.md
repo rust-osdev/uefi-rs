@@ -12,6 +12,14 @@
 - Added `::ZERO` constant for `IpAddress`
 - `Ipv4Address` and `Ipv6Address` now implement `Display`. They
   use the same formatting as `core::net::{Ipv4Addr, Ipv6Addr}`
+- Added comprehensive integration with `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}`
+  via `From` impls to better integrate uefi-raw types `IpAddress`,
+  `Ipv4Address`, and `Ipv6Address` with the Rust ecosystem.
+- Added convenient `From` impls:
+  - `[u8; 6]`  <--> `MacAddress`
+  - `[u8; 32]`  --> `MacAddress`
+  - `[u8; 4]`   --> `Ipv4Address`, `IpAddress`
+  - `[u8; 16]`  --> `Ipv6Address`, `IpAddress`
 
 ## Changed
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.

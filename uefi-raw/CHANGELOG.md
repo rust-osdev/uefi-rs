@@ -19,6 +19,8 @@
   - `[u8; 32]` --> `MacAddress`
   - `[u8; 4]`  --> `Ipv4Address`, `IpAddress`
   - `[u8; 16]` --> `Ipv6Address`, `IpAddress`
+- Added `::into_std_ip_addr()` for `IpAddress`
+- Added `::try_into_ethernet_mac_addr()` for `MacAddress`
 
 ## Changed
 - The documentation for UEFI protocols has been streamlined and improved.

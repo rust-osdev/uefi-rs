@@ -161,6 +161,25 @@ impl IpAddress {
     pub const fn as_ptr_mut(&mut self) -> *mut Self {
         core::ptr::addr_of_mut!(*self)
     }
+
+    /// Transforms this EFI type to the Rust standard library's type.
+    ///
+    /// # Arguments
+    /// - `is_ipv6`: Whether the internal data should be interpreted as IPv6 or
+    ///   IPv4 address.
+    ///
+    /// # Safety
+    /// Callers must be sure that all underlying bytes were initialized.
+    #[must_use]
+    pub unsafe fn into_std_ip_addr(self, is_ipv6: bool) -> StdIpAddr {
+        if is_ipv6 {
+            // SAFETY: Caller assumes that the underlying data is initialized.
+            StdIpAddr::V6(StdIpv6Addr::from(unsafe { self.v6.octets() }))
+        } else {
+            // SAFETY: Caller assumes that the underlying data is initialized.
+            StdIpAddr::V4(StdIpv4Addr::from(unsafe { self.v4.octets() }))
+        }
+    }
 }
 
 impl Debug for IpAddress {
@@ -236,6 +255,17 @@ impl MacAddress {
     #[must_use]
     pub const fn octets(self) -> [u8; 32] {
         self.0
+    }
+
+    /// Tries to interpret the MAC address as normal 6-byte MAC address, as used
+    /// in ethernet.
+    pub fn try_into_ethernet_mac_addr(self) -> Result<[u8; 6], [u8; 32]> {
+        let extra = self.octets()[4..].iter().any(|&x| x != 0);
+        if extra {
+            Err(self.0)
+        } else {
+            Ok(self.octets()[..4].try_into().unwrap())
+        }
     }
 }
 

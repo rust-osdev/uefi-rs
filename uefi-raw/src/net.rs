@@ -13,6 +13,13 @@ use core::mem;
 use core::net::{IpAddr as StdIpAddr, Ipv4Addr as StdIpv4Addr, Ipv6Addr as StdIpv6Addr};
 
 /// An IPv4 internet protocol address.
+///
+/// # Conversions and Relation to [`core::net`]
+///
+/// The following [`From`] implementations exist:
+///   - `[u8; 4]` -> [`Ipv4Address`]
+///   - [`core::net::Ipv4Addr`] -> [`Ipv4Address`]
+///   - [`core::net::IpAddr`] -> [`Ipv4Address`]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Ipv4Address(pub [u8; 4]);
@@ -37,7 +44,20 @@ impl From<Ipv4Address> for StdIpv4Addr {
     }
 }
 
+impl From<[u8; 4]> for Ipv4Address {
+    fn from(octets: [u8; 4]) -> Self {
+        Self(octets)
+    }
+}
+
 /// An IPv6 internet protocol address.
+///
+/// # Conversions and Relation to [`core::net`]
+///
+/// The following [`From`] implementations exist:
+///   - `[u8; 16]` -> [`Ipv6Address`]
+///   - [`core::net::Ipv6Addr`] -> [`Ipv6Address`]
+///   - [`core::net::IpAddr`] -> [`Ipv6Address`]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Ipv6Address(pub [u8; 16]);
@@ -62,12 +82,27 @@ impl From<Ipv6Address> for StdIpv6Addr {
     }
 }
 
-/// An IPv4 or IPv6 internet protocol address that is ABI compatible with EFI.
+impl From<[u8; 16]> for Ipv6Address {
+    fn from(octets: [u8; 16]) -> Self {
+        Self(octets)
+    }
+}
+
+/// EFI ABI-compatible union of an IPv4 or IPv6 internet protocol address.
 ///
 /// Corresponds to the `EFI_IP_ADDRESS` type in the UEFI specification. This
 /// type is defined in the same way as edk2 for compatibility with C code. Note
 /// that this is an untagged union, so there's no way to tell which type of
 /// address an `IpAddress` value contains without additional context.
+///
+/// # Conversions and Relation to [`core::net`]
+///
+/// The following [`From`] implementations exist:
+///   - `[u8; 4]` -> [`IpAddress`]
+///   - `[u8; 16]` -> [`IpAddress`]
+///   - [`core::net::Ipv4Addr`] -> [`IpAddress`]
+///   - [`core::net::Ipv6Addr`] -> [`IpAddress`]
+///   - [`core::net::IpAddr`] -> [`IpAddress`]
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub union IpAddress {
@@ -152,6 +187,30 @@ impl From<StdIpAddr> for IpAddress {
     }
 }
 
+impl From<StdIpv4Addr> for IpAddress {
+    fn from(value: StdIpv4Addr) -> Self {
+        Self::new_v4(value.octets())
+    }
+}
+
+impl From<StdIpv6Addr> for IpAddress {
+    fn from(value: StdIpv6Addr) -> Self {
+        Self::new_v6(value.octets())
+    }
+}
+
+impl From<[u8; 4]> for IpAddress {
+    fn from(octets: [u8; 4]) -> Self {
+        Self::new_v4(octets)
+    }
+}
+
+impl From<[u8; 16]> for IpAddress {
+    fn from(octets: [u8; 16]) -> Self {
+        Self::new_v6(octets)
+    }
+}
+
 /// UEFI Media Access Control (MAC) address.
 ///
 /// UEFI supports multiple network protocols and hardware types, not just
@@ -161,6 +220,13 @@ impl From<StdIpAddr> for IpAddress {
 ///
 /// In most cases, this is just a typical `[u8; 6]` Ethernet style MAC
 /// address with the rest of the bytes being zero.
+///
+/// # Conversions and Relation to [`core::net`]
+///
+/// There is no matching type in [`core::net`] but the following [`From`]
+/// implementations exist:
+///   - `[u8; 6]` -> [`MacAddress`]
+///   - `[u8; 32]` -> [`MacAddress`]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);
@@ -182,9 +248,10 @@ impl From<[u8; 6]> for MacAddress {
     }
 }
 
-impl From<MacAddress> for [u8; 6] {
-    fn from(MacAddress(o): MacAddress) -> Self {
-        [o[0], o[1], o[2], o[3], o[4], o[5]]
+// UEFI MAC addresses.
+impl From<[u8; 32]> for MacAddress {
+    fn from(octets: [u8; 32]) -> Self {
+        Self(octets)
     }
 }
 
@@ -239,5 +306,65 @@ mod tests {
 
         assert_eq!(align_of::<PackedHelper<IpAddress>>(), 1);
         assert_eq!(size_of::<PackedHelper<IpAddress>>(), 16);
+    }
+
+    /// Tests the From-impls from the documentation.
+    #[test]
+    fn test_promised_from_impls() {
+        // octets -> Ipv4Address
+        {
+            let octets = [0_u8, 1, 2, 3];
+            assert_eq!(Ipv4Address::from(octets), Ipv4Address(octets));
+            let uefi_addr = IpAddress::from(octets);
+            assert_eq!(&octets, &unsafe { uefi_addr.v4.octets() });
+        }
+        // octets -> Ipv6Address
+        {
+            let octets = [0_u8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+            assert_eq!(Ipv6Address::from(octets), Ipv6Address(octets));
+            let uefi_addr = IpAddress::from(octets);
+            assert_eq!(&octets, &unsafe { uefi_addr.v6.octets() });
+        }
+        // StdIpv4Addr -> Ipv4Address
+        {
+            let octets = [7, 5, 3, 1];
+            let core_ipv4_addr = StdIpv4Addr::from(octets);
+            assert_eq!(Ipv4Address::from(core_ipv4_addr).octets(), octets);
+            assert_eq!(
+                unsafe { IpAddress::from(core_ipv4_addr).v4.octets() },
+                octets
+            );
+        }
+        // StdIpv6Addr -> Ipv6Address
+        {
+            let octets = [7, 5, 3, 1, 6, 3, 8, 5, 2, 5, 2, 7, 3, 5, 2, 6];
+            let core_ipv6_addr = StdIpv6Addr::from(octets);
+            assert_eq!(Ipv6Address::from(core_ipv6_addr).octets(), octets);
+            assert_eq!(
+                unsafe { IpAddress::from(core_ipv6_addr).v6.octets() },
+                octets
+            );
+        }
+        // StdIpAddr -> IpAddress
+        {
+            let octets = [8, 8, 2, 6];
+            let core_ip_addr = StdIpAddr::from(octets);
+            assert_eq!(unsafe { IpAddress::from(core_ip_addr).v4.octets() }, octets);
+        }
+        // octets -> MacAddress
+        {
+            let octets = [8, 8, 2, 6, 6, 7];
+            let uefi_mac_addr = MacAddress::from(octets);
+            assert_eq!(uefi_mac_addr.octets()[0..6], octets);
+        }
+        // octets -> MacAddress
+        {
+            let octets = [
+                8_u8, 8, 2, 6, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 7, 0, 0, 0,
+                0, 0, 0, 0, 42,
+            ];
+            let uefi_mac_addr = MacAddress::from(octets);
+            assert_eq!(uefi_mac_addr.octets(), octets);
+        }
     }
 }

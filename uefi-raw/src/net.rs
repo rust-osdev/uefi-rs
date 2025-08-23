@@ -98,6 +98,27 @@ impl IpAddress {
             v6: Ipv6Address(ip_addr),
         }
     }
+
+    /// Transforms this EFI type to the Rust standard library's type
+    /// [`core::net::IpAddr`].
+    ///
+    /// # Arguments
+    /// - `is_ipv6`: Whether the internal data should be interpreted as IPv6 or
+    ///   IPv4 address.
+    ///
+    /// # Safety
+    /// Callers must ensure that the `v4` field is valid if `is_ipv6` is false,
+    /// and that the `v6` field is valid if `is_ipv6` is true
+    #[must_use]
+    pub unsafe fn into_core_addr(self, is_ipv6: bool) -> core::net::IpAddr {
+        if is_ipv6 {
+            // SAFETY: Caller assumes that the underlying data is initialized.
+            core::net::IpAddr::V6(core::net::Ipv6Addr::from(unsafe { self.v6.octets() }))
+        } else {
+            // SAFETY: Caller assumes that the underlying data is initialized.
+            core::net::IpAddr::V4(core::net::Ipv4Addr::from(unsafe { self.v4.octets() }))
+        }
+    }
 }
 
 impl Debug for IpAddress {
@@ -146,6 +167,15 @@ impl MacAddress {
     #[must_use]
     pub const fn octets(self) -> [u8; 32] {
         self.0
+    }
+
+    /// Interpret the MAC address as normal 6-byte MAC address, as used in
+    /// Ethernet.
+    #[must_use]
+    pub fn into_ethernet_addr(self) -> [u8; 6] {
+        let mut buffer = [0; 6];
+        buffer.copy_from_slice(&self.octets()[6..]);
+        buffer
     }
 }
 

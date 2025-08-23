@@ -9,6 +9,7 @@
 //! - [`Ipv6Address`]
 
 use core::fmt::{self, Debug, Formatter};
+use core::mem;
 use core::net::{IpAddr as StdIpAddr, Ipv4Addr as StdIpv4Addr, Ipv6Addr as StdIpv6Addr};
 
 /// An IPv4 internet protocol address.
@@ -83,20 +84,47 @@ pub union IpAddress {
 }
 
 impl IpAddress {
-    /// Construct a new IPv4 address.
+    /// Construct a new zeroed address.
     #[must_use]
-    pub const fn new_v4(ip_addr: [u8; 4]) -> Self {
-        Self {
-            v4: Ipv4Address(ip_addr),
-        }
+    pub const fn new_zeroed() -> Self {
+        // SAFETY: All bit patterns are valid.
+        unsafe { mem::zeroed() }
+    }
+
+    /// Construct a new IPv4 address.
+    ///
+    /// The type won't know that it is an IPv6 address and additional context
+    /// is needed.
+    #[must_use]
+    pub const fn new_v4(octets: [u8; 4]) -> Self {
+        // Initialize all bytes to zero first.
+        let mut obj = Self::new_zeroed();
+        obj.v4 = Ipv4Address(octets);
+        obj
     }
 
     /// Construct a new IPv6 address.
+    ///
+    /// The type won't know that it is an IPv6 address and additional context
+    /// is needed.
     #[must_use]
-    pub const fn new_v6(ip_addr: [u8; 16]) -> Self {
-        Self {
-            v6: Ipv6Address(ip_addr),
-        }
+    pub const fn new_v6(octets: [u8; 16]) -> Self {
+        // Initialize all bytes to zero first.
+        let mut obj = Self::new_zeroed();
+        obj.v6 = Ipv6Address(octets);
+        obj
+    }
+
+    /// Returns a raw pointer to the IP address.
+    #[must_use]
+    pub const fn as_ptr(&self) -> *const Self {
+        core::ptr::addr_of!(*self)
+    }
+
+    /// Returns a raw mutable pointer to the IP address.
+    #[must_use]
+    pub const fn as_ptr_mut(&mut self) -> *mut Self {
+        core::ptr::addr_of_mut!(*self)
     }
 }
 
@@ -111,19 +139,15 @@ impl Debug for IpAddress {
 
 impl Default for IpAddress {
     fn default() -> Self {
-        Self { addr: [0u32; 4] }
+        Self::new_zeroed()
     }
 }
 
 impl From<StdIpAddr> for IpAddress {
     fn from(t: StdIpAddr) -> Self {
         match t {
-            StdIpAddr::V4(ip) => Self {
-                v4: Ipv4Address::from(ip),
-            },
-            StdIpAddr::V6(ip) => Self {
-                v6: Ipv6Address::from(ip),
-            },
+            StdIpAddr::V4(ip) => Self::new_v4(ip.octets()),
+            StdIpAddr::V6(ip) => Self::new_v6(ip.octets()),
         }
     }
 }

@@ -7,6 +7,10 @@
 - Added `HiiConfigAccessProtocol`.
 - Added `::octets()` for `Ipv4Address`, `Ipv6Address`, and
   `MacAddress` to streamline the API with `core::net`.
+- Added `::new_zeroed()` for `IpAddress` and improved the `::new_v4()`
+  constructor to ensure that always all bytes are initialized.
+- Added `::as_ptr()` and `::as_ptr_mut()` for `IpAddress` to simplify usage
+  with various UEFI functions and protocols.
 
 ## Changed
 - The documentation for UEFI protocols has been streamlined and improved.

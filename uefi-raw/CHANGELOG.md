@@ -5,6 +5,8 @@
 - Added `PciRootBridgeIoProtocol`.
 - Added `ConfigKeywordHandlerProtocol`.
 - Added `HiiConfigAccessProtocol`.
+- Added `::octets()` for `Ipv4Address`, `Ipv6Address`, and
+  `MacAddress` to streamline the API with `core::net`.
 
 ## Changed
 - The documentation for UEFI protocols has been streamlined and improved.

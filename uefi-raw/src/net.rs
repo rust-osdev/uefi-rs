@@ -16,6 +16,14 @@ use core::fmt::{Debug, Formatter};
 #[repr(transparent)]
 pub struct Ipv4Address(pub [u8; 4]);
 
+impl Ipv4Address {
+    /// Returns the octets of the IP address.
+    #[must_use]
+    pub const fn octets(self) -> [u8; 4] {
+        self.0
+    }
+}
+
 impl From<core::net::Ipv4Addr> for Ipv4Address {
     fn from(ip: core::net::Ipv4Addr) -> Self {
         Self(ip.octets())
@@ -32,6 +40,14 @@ impl From<Ipv4Address> for core::net::Ipv4Addr {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Ipv6Address(pub [u8; 16]);
+
+impl Ipv6Address {
+    /// Returns the octets of the IP address.
+    #[must_use]
+    pub const fn octets(self) -> [u8; 16] {
+        self.0
+    }
+}
 
 impl From<core::net::Ipv6Addr> for Ipv6Address {
     fn from(ip: core::net::Ipv6Addr) -> Self {
@@ -125,6 +141,15 @@ impl From<core::net::IpAddr> for IpAddress {
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);
 
+impl MacAddress {
+    /// Returns the octets of the MAC address.
+    #[must_use]
+    pub const fn octets(self) -> [u8; 32] {
+        self.0
+    }
+}
+
+// Normal/typical MAC addresses, such as in Ethernet.
 impl From<[u8; 6]> for MacAddress {
     fn from(octets: [u8; 6]) -> Self {
         let mut buffer = [0; 32];

@@ -8,8 +8,8 @@
 //! - [`Ipv4Address`]
 //! - [`Ipv6Address`]
 
-use core::fmt;
-use core::fmt::{Debug, Formatter};
+use core::fmt::{self, Debug, Formatter};
+use core::net::{IpAddr as StdIpAddr, Ipv4Addr as StdIpv4Addr, Ipv6Addr as StdIpv6Addr};
 
 /// An IPv4 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -24,13 +24,13 @@ impl Ipv4Address {
     }
 }
 
-impl From<core::net::Ipv4Addr> for Ipv4Address {
-    fn from(ip: core::net::Ipv4Addr) -> Self {
+impl From<StdIpv4Addr> for Ipv4Address {
+    fn from(ip: StdIpv4Addr) -> Self {
         Self(ip.octets())
     }
 }
 
-impl From<Ipv4Address> for core::net::Ipv4Addr {
+impl From<Ipv4Address> for StdIpv4Addr {
     fn from(ip: Ipv4Address) -> Self {
         Self::from(ip.0)
     }
@@ -49,13 +49,13 @@ impl Ipv6Address {
     }
 }
 
-impl From<core::net::Ipv6Addr> for Ipv6Address {
-    fn from(ip: core::net::Ipv6Addr) -> Self {
+impl From<StdIpv6Addr> for Ipv6Address {
+    fn from(ip: StdIpv6Addr) -> Self {
         Self(ip.octets())
     }
 }
 
-impl From<Ipv6Address> for core::net::Ipv6Addr {
+impl From<Ipv6Address> for StdIpv6Addr {
     fn from(ip: Ipv6Address) -> Self {
         Self::from(ip.0)
     }
@@ -115,13 +115,13 @@ impl Default for IpAddress {
     }
 }
 
-impl From<core::net::IpAddr> for IpAddress {
-    fn from(t: core::net::IpAddr) -> Self {
+impl From<StdIpAddr> for IpAddress {
+    fn from(t: StdIpAddr) -> Self {
         match t {
-            core::net::IpAddr::V4(ip) => Self {
+            StdIpAddr::V4(ip) => Self {
                 v4: Ipv4Address::from(ip),
             },
-            core::net::IpAddr::V6(ip) => Self {
+            StdIpAddr::V6(ip) => Self {
                 v6: Ipv6Address::from(ip),
             },
         }
@@ -173,32 +173,32 @@ mod tests {
         101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
     ];
 
-    /// Test round-trip conversion between `Ipv4Address` and `core::net::Ipv4Addr`.
+    /// Test round-trip conversion between [`Ipv4Address`] and [`StdIpv4Addr`].
     #[test]
     fn test_ip_addr4_conversion() {
         let uefi_addr = Ipv4Address(TEST_IPV4);
-        let core_addr = core::net::Ipv4Addr::from(uefi_addr);
+        let core_addr = StdIpv4Addr::from(uefi_addr);
         assert_eq!(uefi_addr, Ipv4Address::from(core_addr));
     }
 
-    /// Test round-trip conversion between `Ipv6Address` and `core::net::Ipv6Addr`.
+    /// Test round-trip conversion between [`Ipv6Address`] and [`StdIpv6Addr`].
     #[test]
     fn test_ip_addr6_conversion() {
         let uefi_addr = Ipv6Address(TEST_IPV6);
-        let core_addr = core::net::Ipv6Addr::from(uefi_addr);
+        let core_addr = StdIpv6Addr::from(uefi_addr);
         assert_eq!(uefi_addr, Ipv6Address::from(core_addr));
     }
 
-    /// Test conversion from `core::net::IpAddr` to `IpvAddress`.
+    /// Test conversion from [`StdIpAddr`] to [`IpvAddress`].
     ///
     /// Note that conversion in the other direction is not possible.
     #[test]
     fn test_ip_addr_conversion() {
-        let core_addr = core::net::IpAddr::V4(core::net::Ipv4Addr::from(TEST_IPV4));
+        let core_addr = StdIpAddr::V4(StdIpv4Addr::from(TEST_IPV4));
         let uefi_addr = IpAddress::from(core_addr);
         assert_eq!(unsafe { uefi_addr.v4.0 }, TEST_IPV4);
 
-        let core_addr = core::net::IpAddr::V6(core::net::Ipv6Addr::from(TEST_IPV6));
+        let core_addr = StdIpAddr::V6(StdIpv6Addr::from(TEST_IPV6));
         let uefi_addr = IpAddress::from(core_addr);
         assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
     }

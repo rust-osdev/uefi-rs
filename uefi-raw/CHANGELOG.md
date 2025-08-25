@@ -7,6 +7,20 @@
 - Added `HiiConfigAccessProtocol`.
 - Added `::octets()` for `Ipv4Address`, `Ipv6Address`, and
   `MacAddress` to streamline the API with `core::net`.
+- Added `::new_zeroed()` for `IpAddress` and improved the `::new_v4()`
+  constructor to ensure that always all bytes are initialized.
+- Added `::as_ptr()` and `::as_ptr_mut()` for `IpAddress` to simplify usage
+  with various UEFI functions and protocols.
+- Added comprehensive integration with `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}`
+  via `From` impls to better integrate uefi-raw types `IpAddress`,
+  `Ipv4Address`, and `Ipv6Address` with the Rust ecosystem.
+- Added convenient `From` impls:
+  - `[u8; 6]`  --> `MacAddress`
+  - `[u8; 32]` --> `MacAddress`
+  - `[u8; 4]`  --> `Ipv4Address`, `IpAddress`
+  - `[u8; 16]` --> `Ipv6Address`, `IpAddress`
+- Added `::into_std_ip_addr()` for `IpAddress`
+- Added `::try_into_ethernet_mac_addr()` for `MacAddress`
 
 ## Changed
 - The documentation for UEFI protocols has been streamlined and improved.

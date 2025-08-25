@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 //! UEFI network types.
+//!
+//! The main exports of this module are:
+//! - [`MacAddress`]
+//! - [`IpAddress`]
+//! - [`Ipv4Address`]
+//! - [`Ipv6Address`]
 
 use core::fmt;
 use core::fmt::{Debug, Formatter};
@@ -9,6 +15,14 @@ use core::fmt::{Debug, Formatter};
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct Ipv4Address(pub [u8; 4]);
+
+impl Ipv4Address {
+    /// Returns the octets of the IP address.
+    #[must_use]
+    pub const fn octets(self) -> [u8; 4] {
+        self.0
+    }
+}
 
 impl From<core::net::Ipv4Addr> for Ipv4Address {
     fn from(ip: core::net::Ipv4Addr) -> Self {
@@ -27,6 +41,14 @@ impl From<Ipv4Address> for core::net::Ipv4Addr {
 #[repr(transparent)]
 pub struct Ipv6Address(pub [u8; 16]);
 
+impl Ipv6Address {
+    /// Returns the octets of the IP address.
+    #[must_use]
+    pub const fn octets(self) -> [u8; 16] {
+        self.0
+    }
+}
+
 impl From<core::net::Ipv6Addr> for Ipv6Address {
     fn from(ip: core::net::Ipv6Addr) -> Self {
         Self(ip.octets())
@@ -39,7 +61,7 @@ impl From<Ipv6Address> for core::net::Ipv6Addr {
     }
 }
 
-/// An IPv4 or IPv6 internet protocol address.
+/// An IPv4 or IPv6 internet protocol address that is ABI compatible with EFI.
 ///
 /// Corresponds to the `EFI_IP_ADDRESS` type in the UEFI specification. This
 /// type is defined in the same way as edk2 for compatibility with C code. Note
@@ -106,20 +128,32 @@ impl From<core::net::IpAddr> for IpAddress {
     }
 }
 
-/// A Media Access Control (MAC) address.
+/// UEFI Media Access Control (MAC) address.
+///
+/// UEFI supports multiple network protocols and hardware types, not just
+/// Ethernet. Some of them may use MAC addresses longer than 6 bytes. To be
+/// protocol-agnostic and future-proof, the UEFI spec chooses a maximum size
+/// that can hold any supported media access control address.
+///
+/// In most cases, this is just a typical `[u8; 6]` Ethernet style MAC
+/// address with the rest of the bytes being zero.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
 pub struct MacAddress(pub [u8; 32]);
 
+impl MacAddress {
+    /// Returns the octets of the MAC address.
+    #[must_use]
+    pub const fn octets(self) -> [u8; 32] {
+        self.0
+    }
+}
+
+// Normal/typical MAC addresses, such as in Ethernet.
 impl From<[u8; 6]> for MacAddress {
     fn from(octets: [u8; 6]) -> Self {
         let mut buffer = [0; 32];
-        buffer[0] = octets[0];
-        buffer[1] = octets[1];
-        buffer[2] = octets[2];
-        buffer[3] = octets[3];
-        buffer[4] = octets[4];
-        buffer[5] = octets[5];
+        buffer[..6].copy_from_slice(&octets);
         Self(buffer)
     }
 }
@@ -167,5 +201,19 @@ mod tests {
         let core_addr = core::net::IpAddr::V6(core::net::Ipv6Addr::from(TEST_IPV6));
         let uefi_addr = IpAddress::from(core_addr);
         assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
+    }
+
+    // Ensure that our IpAddress type can be put into a packed struct,
+    // even when it is normally 4 byte aligned.
+    #[test]
+    fn test_efi_ip_address_abi() {
+        #[repr(C, packed)]
+        struct PackedHelper<T>(T);
+
+        assert_eq!(align_of::<IpAddress>(), 4);
+        assert_eq!(size_of::<IpAddress>(), 16);
+
+        assert_eq!(align_of::<PackedHelper<IpAddress>>(), 1);
+        assert_eq!(size_of::<PackedHelper<IpAddress>>(), 16);
     }
 }

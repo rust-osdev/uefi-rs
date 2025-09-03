@@ -259,3 +259,27 @@ impl FromStr for ConfigurationString {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use core::str::FromStr;
+
+    use crate::proto::hii::config_str::ConfigurationString;
+
+    #[test]
+    fn parse_single() {
+        // exemplary (shortened / manually constructed) UEFI configuration string
+        let input = "GUID=16d6474bd6a852459d44ccad2e0f4cf9&NAME=00490053004300530049005f0043004f004e004600490047005f004900460052005f004e00560044004100540041&PATH=0104140016d6474bd6a852459d44ccad2e0f4cf97fff0400&OFFSET=01d8&WIDTH=0002&VALUE=0011&OFFSET=01d9&WIDTH=0001&VALUE=00&OFFSET=01da&WIDTH=0001&VALUE=00&OFFSET=01dc&WIDTH=0002&VALUE=03e8&OFFSET=01de&WIDTH=0001&VALUE=00&OFFSET=01df&WIDTH=0001&VALUE=00&OFFSET=05fe&WIDTH=0002&VALUE=0000&OFFSET=062a&WIDTH=0001&VALUE=00&OFFSET=062b&WIDTH=0001&VALUE=01&OFFSET=0fd4&WIDTH=0001&VALUE=00&OFFSET=0fd5&WIDTH=0001&VALUE=00";
+        let parsed = ConfigurationString::from_str(input).unwrap();
+        assert_eq!(parsed.guid, guid!("4b47d616-a8d6-4552-9d44-ccad2e0f4cf9"));
+        assert_eq!(parsed.name, "ISCSI_CONFIG_IFR_NVDATA");
+        assert_eq!(parsed.alt_cfg_id, None);
+        assert_eq!(parsed.elements.len(), 11);
+        assert_eq!(parsed.elements[0].offset, 0x01d8);
+        assert_eq!(parsed.elements[0].width, 2);
+        assert_eq!(&parsed.elements[0].value, &[0x11, 0x00]);
+        assert_eq!(parsed.elements[10].offset, 0x0fd5);
+        assert_eq!(parsed.elements[10].width, 1);
+        assert_eq!(&parsed.elements[10].value, &[0x00]);
+    }
+}

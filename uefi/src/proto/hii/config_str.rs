@@ -5,6 +5,7 @@
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use core::iter::Peekable;
 use core::slice;
 use core::str::{self, FromStr};
 use uguid::Guid;
@@ -128,6 +129,7 @@ impl ConfigurationString {
     /// # Returns
     ///
     /// An iterator over bytes.
+    #[must_use]
     pub fn parse_bytes_from_hex(hex: &str) -> impl DoubleEndedIterator<Item = u8> {
         hex.as_bytes().chunks(2).map(|chunk| {
             let chunk = str::from_utf8(chunk).unwrap_or_default();
@@ -196,14 +198,11 @@ impl ConfigurationString {
         let v: Vec<_> = Self::parse_bytes_from_hex(data).collect();
         Some(Guid::from_bytes(v.try_into().ok()?))
     }
-}
 
-impl FromStr for ConfigurationString {
-    type Err = ParseError;
-
-    fn from_str(bfr: &str) -> Result<Self, Self::Err> {
-        let mut splitter = ConfigurationStringIter::new(bfr).peekable();
-
+    /// Parse an instance of `Peekable<ConfigurationStringIter>` from the given kv-pair iterator.
+    fn parse_from(
+        splitter: &mut Peekable<ConfigurationStringIter<'_>>,
+    ) -> Result<Self, ParseError> {
         let guid = Self::try_parse_with(ParseError::ConfigHdr(ConfigHdrSection::Guid), || {
             let v = splitter.next()?;
             let v = (v.0 == "GUID").then_some(v.1).flatten()?;
@@ -246,7 +245,7 @@ impl FromStr for ConfigurationString {
             };
 
             while let Some(next) = splitter.peek() {
-                if next.0 == "OFFSET" {
+                if next.0 == "OFFSET" || next.0 == "GUID" {
                     break;
                 }
                 let _ = splitter.next(); // drop nvconfig entries for now
@@ -257,6 +256,10 @@ impl FromStr for ConfigurationString {
                 width,
                 value,
             });
+            // Found start of a new [ConfigurationString]
+            if let Some(("GUID", _)) = splitter.peek() {
+                break;
+            }
         }
 
         Ok(Self {
@@ -268,11 +271,42 @@ impl FromStr for ConfigurationString {
     }
 }
 
+impl FromStr for ConfigurationString {
+    type Err = ParseError;
+
+    fn from_str(bfr: &str) -> Result<Self, Self::Err> {
+        Self::parse_from(&mut ConfigurationStringIter::new(bfr).peekable())
+    }
+}
+
+/// Iterator over [ConfigurationString]'s in a multi configuration string.
+#[derive(Debug)]
+pub struct MultiConfigurationStringIter<'a> {
+    splitter: Peekable<ConfigurationStringIter<'a>>,
+}
+impl<'a> MultiConfigurationStringIter<'a> {
+    /// Creates a new iterator instance for a given configuration string.
+    #[must_use]
+    pub fn new(bfr: &'a str) -> Self {
+        let splitter = ConfigurationStringIter::new(bfr).peekable();
+        Self { splitter }
+    }
+}
+impl<'a> Iterator for MultiConfigurationStringIter<'a> {
+    type Item = Result<ConfigurationString, ParseError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.splitter.peek()?; // end of iterator?
+        // try parsing the next full [ConfigurationString] from the splitter
+        Some(ConfigurationString::parse_from(&mut self.splitter))
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::proto::hii::config_str::{ConfigurationString, MultiConfigurationStringIter};
+    use alloc::vec::Vec;
     use core::str::FromStr;
-
-    use crate::proto::hii::config_str::ConfigurationString;
 
     #[test]
     fn parse_single() {
@@ -289,5 +323,39 @@ mod tests {
         assert_eq!(parsed.elements[10].offset, 0x0fd5);
         assert_eq!(parsed.elements[10].width, 1);
         assert_eq!(&parsed.elements[10].value, &[0x00]);
+    }
+
+    #[test]
+    fn parse_multiple() {
+        // exemplary (shortened / manually constructed) UEFI configuration string
+        let input = "GUID=16d6474bd6a852459d44ccad2e0f4cf9&NAME=00490053004300530049005f0043004f004e004600490047005f004900460052005f004e00560044004100540041&PATH=0104140016d6474bd6a852459d44ccad2e0f4cf97fff0400&OFFSET=01d8&WIDTH=0001&VALUE=00&GUID=16d6474bd6a852459d44ccad2e0f4cf9&NAME=00490053004300530049005f0043004f004e004600490047005f004900460052005f004e00560044004100540041&PATH=0104140016d6474bd6a852459d44ccad2e0f4cf97fff0400&OFFSET=01d8&WIDTH=0001&VALUE=00&OFFSET=1337&WIDTH=0005&VALUE=1122334455";
+        let parsed: Vec<_> = MultiConfigurationStringIter::new(input)
+            .collect::<Result<_, _>>()
+            .unwrap();
+
+        assert_eq!(parsed.len(), 2);
+
+        assert_eq!(
+            parsed[0].guid,
+            guid!("4b47d616-a8d6-4552-9d44-ccad2e0f4cf9")
+        );
+        assert_eq!(parsed[0].name, "ISCSI_CONFIG_IFR_NVDATA");
+        assert_eq!(parsed[0].elements.len(), 1);
+        assert_eq!(parsed[0].elements[0].offset, 0x01d8);
+        assert_eq!(parsed[0].elements[0].width, 1);
+        assert_eq!(&parsed[0].elements[0].value, &[0x00]);
+
+        assert_eq!(
+            parsed[1].guid,
+            guid!("4b47d616-a8d6-4552-9d44-ccad2e0f4cf9")
+        );
+        assert_eq!(parsed[1].name, "ISCSI_CONFIG_IFR_NVDATA");
+        assert_eq!(parsed[1].elements.len(), 2);
+        assert_eq!(parsed[1].elements[1].offset, 0x1337);
+        assert_eq!(parsed[1].elements[1].width, 5);
+        assert_eq!(
+            &parsed[1].elements[1].value,
+            &[0x55, 0x44, 0x33, 0x22, 0x11]
+        );
     }
 }

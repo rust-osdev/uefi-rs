@@ -128,7 +128,7 @@ impl ConfigurationString {
     /// # Returns
     ///
     /// An iterator over bytes.
-    pub fn parse_bytes_from_hex(hex: &str) -> impl Iterator<Item = u8> {
+    pub fn parse_bytes_from_hex(hex: &str) -> impl DoubleEndedIterator<Item = u8> {
         hex.as_bytes().chunks(2).map(|chunk| {
             let chunk = str::from_utf8(chunk).unwrap_or_default();
             u8::from_str_radix(chunk, 16).unwrap_or_default()
@@ -237,8 +237,11 @@ impl FromStr for ConfigurationString {
                 }
                 _ => return Err(ParseError::BlockName),
             };
+            // The uefi specification declares `VALUE` as being a "number" of arbitrary length.
+            // And numbers have to be endianness-corrected. Thus, the bytes represented by a value's
+            // hex string of arbitrary length have to be reversed to account for that weird encoding.
             let value = match splitter.next() {
-                Some(("VALUE", Some(data))) => Self::parse_bytes_from_hex(data).collect(),
+                Some(("VALUE", Some(data))) => Self::parse_bytes_from_hex(data).rev().collect(),
                 _ => return Err(ParseError::BlockConfig),
             };
 

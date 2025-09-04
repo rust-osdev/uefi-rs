@@ -9,6 +9,7 @@ use core::slice;
 use core::str::{self, FromStr};
 use uguid::Guid;
 
+use crate::mem::AlignedBuffer;
 use crate::proto::device_path::DevicePath;
 use crate::{CStr16, Char16};
 
@@ -25,7 +26,7 @@ pub struct ConfigurationStringIter<'a> {
 }
 
 impl<'a> ConfigurationStringIter<'a> {
-    /// Creates a new splitter instance for a given configuration string buffer.
+    /// Creates a new splitter instance for a given configuration string.
     #[must_use]
     pub const fn new(bfr: &'a str) -> Self {
         Self { bfr }
@@ -169,11 +170,15 @@ impl ConfigurationString {
         if data.len() % 2 != 0 {
             return None;
         }
-        let mut data: Vec<_> = Self::parse_bytes_from_hex(data).collect();
-        data.chunks_exact_mut(2).for_each(|c| c.swap(0, 1));
-        data.extend_from_slice(&[0, 0]);
+        let size_bytes = data.len() / 2 + 2; // includes \0 terminator
+        let size_chars = size_bytes / 2;
+        let mut bfr = AlignedBuffer::from_size_align(size_bytes, 2).ok()?;
+        bfr.copy_from_iter(Self::parse_bytes_from_hex(data).chain([0, 0]));
+        bfr.as_slice_mut()
+            .chunks_exact_mut(2)
+            .for_each(|c| c.swap(0, 1));
         let data: &[Char16] =
-            unsafe { slice::from_raw_parts(data.as_slice().as_ptr().cast(), data.len() / 2) };
+            unsafe { slice::from_raw_parts(bfr.as_slice().as_ptr().cast(), size_chars) };
         Some(CStr16::from_char16_with_nul(data).ok()?.to_string())
     }
 

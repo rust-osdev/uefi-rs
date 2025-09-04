@@ -2,8 +2,8 @@
 
 use alloc::alloc::{Layout, LayoutError, alloc, dealloc};
 use core::error::Error;
-use core::fmt;
 use core::ptr::NonNull;
+use core::{fmt, slice};
 
 /// Helper class to maintain the lifetime of a memory region allocated with a non-standard alignment.
 /// Facilitates RAII to properly deallocate when lifetime of the object ends.
@@ -51,6 +51,18 @@ impl AlignedBuffer {
         self.ptr.as_ptr()
     }
 
+    /// Get the underlying memory region as immutable slice.
+    #[must_use]
+    pub const fn as_slice(&mut self) -> &[u8] {
+        unsafe { slice::from_raw_parts(self.ptr(), self.size()) }
+    }
+
+    /// Get the underlying memory region as mutable slice.
+    #[must_use]
+    pub const fn as_slice_mut(&mut self) -> &mut [u8] {
+        unsafe { slice::from_raw_parts_mut(self.ptr_mut(), self.size()) }
+    }
+
     /// Get the size of the aligned memory region managed by this instance.
     #[must_use]
     pub const fn size(&self) -> usize {
@@ -65,6 +77,14 @@ impl AlignedBuffer {
         unsafe {
             self.ptr_mut().copy_from(src.as_ptr(), src.len());
         }
+    }
+
+    /// Fill the aligned memory region with data from the given iterator.
+    /// If the given iterator is shorter than the buffer, the remaining area will be left untouched.
+    pub fn copy_from_iter(&mut self, src: impl Iterator<Item = u8>) {
+        src.take(self.size())
+            .zip(self.as_slice_mut().iter_mut())
+            .for_each(|(src, dst)| *dst = src);
     }
 
     /// Check the buffer's alignment against the `required_alignment`.

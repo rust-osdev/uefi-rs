@@ -531,7 +531,9 @@ pub fn check_event(event: Event) -> Result<bool> {
     }
 }
 
-/// Places the supplied `event` in the signaled state. If `event` is already in
+/// Places the supplied `event` in the signaled state.
+///
+/// If `event` is already in
 /// the signaled state, the function returns successfully. If `event` is of type
 /// [`NOTIFY_SIGNAL`], the event's notification function is scheduled to be
 /// invoked at the event's notification task priority level.
@@ -746,12 +748,14 @@ pub unsafe fn install_protocol_interface(
     .to_result_with_val(|| unsafe { Handle::from_ptr(handle) }.unwrap())
 }
 
-/// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
-/// These interfaces may be the same, in which case the registered protocol notifications occur for the handle
-/// without replacing the interface.
+/// Reinstalls a protocol interface on a device handle. `old_interface` is
+/// replaced with `new_interface`.
 ///
-/// As with `install_protocol_interface`, any process that has registered to wait for the installation of
-/// the interface is notified.
+/// These interfaces may be the same, in which case the registered protocol
+/// notifications occur for the handle without replacing the interface.
+///
+/// As with `install_protocol_interface`, any process that has registered to
+/// wait for the installation of the interface is notified.
 ///
 /// # Safety
 ///

@@ -60,7 +60,9 @@ impl Align for MemoryDescriptor {
 pub struct MemoryMapKey(pub(crate) usize);
 
 /// A structure containing the meta attributes associated with a call to
-/// `GetMemoryMap` of UEFI. Note that all values refer to the time this was
+/// `GetMemoryMap` of UEFI.
+///
+/// Note that all values refer to the time this was
 /// called. All following invocations (hidden, subtle, and asynchronous ones)
 /// will likely invalidate this.
 #[derive(Copy, Clone, Debug)]

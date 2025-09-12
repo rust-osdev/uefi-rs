@@ -514,7 +514,9 @@ pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
 }
 
 /// Changes the runtime addressing mode of EFI firmware from physical to
-/// virtual. It is up to the caller to translate the old system table address
+/// virtual.
+///
+/// It is up to the caller to translate the old system table address
 /// to a new virtual address and provide it for this function.
 ///
 /// If successful, this function will call [`set_system_table`] with
@@ -906,9 +908,10 @@ impl Display for VariableKey {
 }
 
 /// Information about UEFI variable storage space returned by
-/// [`query_variable_info`]. Note that the data here is
-/// limited to a specific type of variable (as specified by the
-/// `attributes` argument to `query_variable_info`).
+/// [`query_variable_info`].
+///
+/// Note that the data here is limited to a specific type of variable (as
+/// specified by the `attributes` argument to `query_variable_info`).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct VariableStorageInfo {
     /// Maximum size in bytes of the storage space available for

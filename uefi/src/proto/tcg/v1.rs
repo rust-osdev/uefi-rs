@@ -429,14 +429,13 @@ impl Tcg {
         data_to_hash: Option<&[u8]>,
     ) -> Result {
         let hash_data;
-        let hash_data_len;
-        if let Some(data_to_hash) = data_to_hash {
+        let hash_data_len = if let Some(data_to_hash) = data_to_hash {
             hash_data = data_to_hash.as_ptr() as PhysicalAddress;
-            hash_data_len = u64::try_from(data_to_hash.len()).unwrap();
+            u64::try_from(data_to_hash.len()).unwrap()
         } else {
             hash_data = 0;
-            hash_data_len = 0;
-        }
+            0
+        };
 
         // Don't bother returning these, it's not very useful info.
         let mut event_number = 0;

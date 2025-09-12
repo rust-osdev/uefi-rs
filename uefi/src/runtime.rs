@@ -321,14 +321,13 @@ impl Iterator for VariableKeys {
                 }))
             }
             Err(err) => {
+                self.is_done = true;
                 if err.status() == Status::NOT_FOUND {
                     // This status indicates the end of the list. The final variable
                     // has already been yielded at this point, so return `None`.
-                    self.is_done = true;
                     None
                 } else {
                     // Return the error and end iteration.
-                    self.is_done = true;
                     Some(Err(err.to_err_without_payload()))
                 }
             }

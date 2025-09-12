@@ -69,7 +69,7 @@ impl Directory {
         let read_entry_res = self.read_entry(&mut []);
 
         // If no more entries are available, return early.
-        if let Ok(None) = read_entry_res {
+        if read_entry_res == Ok(None) {
             return Ok(None);
         }
 
@@ -102,7 +102,7 @@ impl Directory {
         let read_entry_res = self.read_entry(&mut []);
 
         // If no more entries are available, return early.
-        if let Ok(None) = read_entry_res {
+        if read_entry_res == Ok(None) {
             return Ok(None);
         }
 

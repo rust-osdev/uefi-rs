@@ -142,30 +142,32 @@ impl SimpleNetwork {
         status.to_result_with_val(|| mac_address)
     }
 
-    /// Perform read operations on the NVRAM device attached to
-    /// a network interface.
-    pub fn read_nv_data(&self, offset: usize, buffer: &[u8]) -> Result {
+    /// Reads data from the NVRAM device attached to the network interface into
+    /// the provided `dst_buffer`.
+    pub fn read_nv_data(&self, offset: usize, dst_buffer: &mut [u8]) -> Result {
         unsafe {
             (self.0.non_volatile_data)(
                 &self.0,
                 Boolean::from(true),
                 offset,
-                buffer.len(),
-                buffer.as_ptr() as *mut c_void,
+                dst_buffer.len(),
+                dst_buffer.as_mut_ptr().cast(),
             )
         }
         .to_result()
     }
 
-    /// Perform write operations on the NVRAM device attached to a network interface.
-    pub fn write_nv_data(&self, offset: usize, buffer: &mut [u8]) -> Result {
+    /// Writes data into the NVRAM device attached to the network interface from
+    /// the provided `src_buffer`.
+    pub fn write_nv_data(&self, offset: usize, src_buffer: &[u8]) -> Result {
         unsafe {
             (self.0.non_volatile_data)(
                 &self.0,
                 Boolean::from(false),
                 offset,
-                buffer.len(),
-                buffer.as_mut_ptr().cast(),
+                src_buffer.len(),
+                // SAFETY: The buffer is only used for reading.
+                src_buffer.as_ptr().cast::<c_void>().cast_mut(),
             )
         }
         .to_result()

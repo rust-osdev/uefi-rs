@@ -161,6 +161,8 @@ pub struct GraphicsOutputProtocol {
     pub set_mode: unsafe extern "efiapi" fn(*mut Self, mode_number: u32) -> Status,
     pub blt: unsafe extern "efiapi" fn(
         *mut Self,
+        // Depending on `blt_operation`, this is an IN parameter (readable)
+        // or an OUT parameter (writeable).
         blt_buffer: *mut GraphicsOutputBltPixel,
         blt_operation: GraphicsOutputBltOperation,
         source_x: usize,

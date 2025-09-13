@@ -238,7 +238,7 @@ pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>
     let ptr = unsafe { (bt.allocate_pool)(memory_type, size, &mut buffer) }
         .to_result_with_val(|| buffer)?;
 
-    NonNull::new(ptr).ok_or(Status::OUT_OF_RESOURCES.into())
+    NonNull::new(ptr).ok_or_else(|| Status::OUT_OF_RESOURCES.into())
 }
 
 /// Frees memory allocated by [`allocate_pool`].

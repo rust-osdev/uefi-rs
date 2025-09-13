@@ -834,12 +834,12 @@ impl TryFrom<&[u8]> for Time {
                 Self::UNSPECIFIED_TIMEZONE => None,
                 num => Some(num),
             };
-            let daylight = Daylight::from_bits(bytes[14]).ok_or(
+            let daylight = Daylight::from_bits(bytes[14]).ok_or_else(|| {
                 TimeByteConversionError::InvalidFields(TimeError {
                     daylight: true,
                     ..Default::default()
-                }),
-            )?;
+                })
+            })?;
 
             let time_params = TimeParams {
                 year,

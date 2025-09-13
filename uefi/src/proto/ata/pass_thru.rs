@@ -156,7 +156,7 @@ impl AtaDevice<'_> {
                 .to_result()?;
             NonNull::new(path_ptr.cast_mut())
                 .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 

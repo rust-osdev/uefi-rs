@@ -71,7 +71,7 @@ impl ExtScsiPassThru {
     /// The Scsi api will validate that your buffers have the correct alignment and crash
     /// if they don't.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size (in bytes) of the buffer to allocate.
     ///
     /// # Returns
@@ -196,7 +196,7 @@ impl ScsiDevice<'_> {
     /// It supports both blocking and nonblocking I/O. Blocking I/O is mandatory, while
     /// nonblocking I/O is optional and dependent on the driver's implementation.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `scsi_req`: The [`ScsiRequest`] containing the command and data to send to the device.
     ///
     /// # Returns

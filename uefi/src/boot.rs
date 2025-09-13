@@ -310,7 +310,7 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
 /// the right allocation size for the memory map to prevent
 /// [`Status::BUFFER_TOO_SMALL`].
 ///
-/// # Parameters
+/// # Arguments
 ///
 /// - `mt`: The memory type for the backing memory on the UEFI heap.
 ///   Usually, this is [`MemoryType::LOADER_DATA`]. You can also use a

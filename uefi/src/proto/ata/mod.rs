@@ -43,7 +43,7 @@ pub struct AtaRequestBuilder<'a> {
 impl<'a> AtaRequestBuilder<'a> {
     /// Creates a new [`AtaRequestBuilder`] with the specified alignment, command, and protocol.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `io_align`: The I/O buffer alignment required for the ATA controller.
     /// - `command`: The ATA command byte specifying the operation to execute.
     /// - `protocol`: The protocol type for the command (e.g., DMA, UDMA, etc.).
@@ -89,7 +89,7 @@ impl<'a> AtaRequestBuilder<'a> {
 
     /// Creates a builder for a UDMA read operation.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `io_align`: The I/O buffer alignment required for the ATA controller.
     /// - `command`: The ATA command byte specifying the read operation.
     ///
@@ -104,7 +104,7 @@ impl<'a> AtaRequestBuilder<'a> {
 
     /// Creates a builder for a UDMA write operation.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `io_align`: The I/O buffer alignment required for the ATA controller.
     /// - `command`: The ATA command byte specifying the write operation.
     ///
@@ -196,7 +196,7 @@ impl<'a> AtaRequestBuilder<'a> {
 
     /// Uses a user-supplied buffer for reading data from the device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable reference to an [`AlignedBuffer`] that will be used to store data read from the device.
     ///
     /// # Returns
@@ -216,7 +216,7 @@ impl<'a> AtaRequestBuilder<'a> {
 
     /// Adds a newly allocated read buffer to the built ATA request.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size of the buffer (in bytes) to allocate for receiving data.
     ///
     /// # Returns
@@ -234,7 +234,7 @@ impl<'a> AtaRequestBuilder<'a> {
 
     /// Uses a user-supplied buffer for writing data to the device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable reference to an [`AlignedBuffer`] containing the data to be written to the device.
     ///
     /// # Returns
@@ -255,7 +255,7 @@ impl<'a> AtaRequestBuilder<'a> {
     /// Adds a newly allocated write buffer to the built ATA request that is filled from the
     /// given data buffer. (Done for memory alignment and lifetime purposes)
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `data`: A slice of bytes representing the data to be written.
     ///
     /// # Returns

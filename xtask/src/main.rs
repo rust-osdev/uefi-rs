@@ -214,13 +214,10 @@ fn run_host_tests(test_opt: &TestOpt) -> Result<()> {
         packages.push(Package::UefiMacros);
     }
 
-    // Run uefi-rs and uefi-macros tests.
+    // Run uefi-rs and uefi-macros tests with `unstable` feature.
     let cargo = Cargo {
         action: CargoAction::Test,
-        // At least one unit test, for make_boxed() currently, has different behaviour dependent on
-        // the unstable feature. Because of this, we need to allow to test both variants. Runtime
-        // features is set to no as it is not possible as as soon a #[global_allocator] is
-        // registered, the Rust runtime executing the tests uses it as well.
+        // Some tests may behave differently depending on the unstable feature.
         features: Feature::more_code(*test_opt.unstable, false),
         packages,
         release: false,

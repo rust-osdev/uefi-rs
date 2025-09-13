@@ -48,7 +48,7 @@ impl DevicePathUtilities {
                 (self.0.append_device_path)(path0.as_ffi_ptr().cast(), path1.as_ffi_ptr().cast());
             NonNull::new(ptr.cast_mut())
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 
@@ -71,7 +71,7 @@ impl DevicePathUtilities {
                 (self.0.append_device_node)(basepath.as_ffi_ptr().cast(), node.as_ffi_ptr().cast());
             NonNull::new(ptr.cast_mut())
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 
@@ -96,7 +96,7 @@ impl DevicePathUtilities {
             );
             NonNull::new(ptr.cast_mut())
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 }

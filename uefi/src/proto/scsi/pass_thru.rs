@@ -130,6 +130,7 @@ pub struct ScsiDevice<'a> {
     target_lun: ScsiTargetLun,
 }
 impl ScsiDevice<'_> {
+    #[allow(clippy::needless_pass_by_ref_mut)] // cast to mutable ptr
     const fn proto_mut(&mut self) -> *mut ExtScsiPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }
@@ -162,7 +163,7 @@ impl ScsiDevice<'_> {
             .to_result()?;
             NonNull::new(path_ptr.cast_mut())
                 .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 

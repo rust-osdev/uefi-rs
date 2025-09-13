@@ -256,7 +256,7 @@ pub fn variable_keys() -> VariableKeys {
 
 /// Iterator over all UEFI variables.
 ///
-/// Each iteration yields a `Result<`[`VariableKey`]`>`. Error values:
+/// Each iteration yields a <code>Result<`[`VariableKey`]`></code>. Error values:
 ///
 /// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
 /// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
@@ -844,12 +844,12 @@ impl TryFrom<&[u8]> for Time {
                 Self::UNSPECIFIED_TIMEZONE => None,
                 num => Some(num),
             };
-            let daylight = Daylight::from_bits(bytes[14]).ok_or(
+            let daylight = Daylight::from_bits(bytes[14]).ok_or_else(|| {
                 TimeByteConversionError::InvalidFields(TimeError {
                     daylight: true,
                     ..Default::default()
-                }),
-            )?;
+                })
+            })?;
 
             let time_params = TimeParams {
                 year,

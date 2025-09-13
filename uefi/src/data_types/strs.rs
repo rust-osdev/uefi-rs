@@ -745,7 +745,7 @@ impl PoolString {
     pub unsafe fn new(text: *const Char16) -> crate::Result<Self> {
         NonNull::new(text.cast_mut())
             .map(|p| Self(PoolAllocation::new(p.cast())))
-            .ok_or(Status::OUT_OF_RESOURCES.into())
+            .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
     }
 }
 

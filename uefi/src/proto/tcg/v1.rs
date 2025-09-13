@@ -24,9 +24,6 @@ use uefi_raw::protocol::tcg::v1::{TcgBootServiceCapability, TcgProtocol};
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
 
-#[cfg(all(feature = "unstable", feature = "alloc"))]
-use alloc::alloc::Global;
-
 pub use uefi_raw::protocol::tcg::v1::TcgVersion as Version;
 
 /// 20-byte SHA-1 digest.
@@ -157,17 +154,7 @@ impl PcrEvent {
         digest: Sha1Digest,
         event_data: &[u8],
     ) -> Result<Box<Self>> {
-        #[cfg(not(feature = "unstable"))]
-        {
-            make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data))
-        }
-        #[cfg(feature = "unstable")]
-        {
-            make_boxed(
-                |buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data),
-                Global,
-            )
-        }
+        make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, digest, event_data))
     }
 
     /// PCR index for the event.

@@ -23,6 +23,11 @@
   image in QEMU or Cloud Hypervisor, when the debugcon/debug-console device is
   available.
 - The documentation for UEFI protocols has been streamlined and improved.
+- Removed all internal usages including external APIs using the unstable
+  `allocator_api` feature. It may be reintroduced if it will have a chance of
+  getting stabilized.
+  - Removed `File::get_boxed_info_in`
+  - Removed `Directory::read_entry_boxed_in`
 
 # uefi - 0.35.0 (2025-05-04)
 

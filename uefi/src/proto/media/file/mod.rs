@@ -20,9 +20,6 @@ use core::fmt::Debug;
 use core::{mem, ptr};
 use uefi_raw::protocol::file_system::FileProtocolV1;
 
-#[cfg(all(feature = "unstable", feature = "alloc"))]
-use {alloc::alloc::Global, core::alloc::Allocator};
-
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
 
@@ -198,21 +195,7 @@ pub trait File: Sized {
     #[cfg(feature = "alloc")]
     fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
         let fetch_data_fn = |buf| self.get_info::<Info>(buf);
-        #[cfg(not(feature = "unstable"))]
         let file_info = make_boxed::<Info, _>(fetch_data_fn)?;
-        #[cfg(feature = "unstable")]
-        let file_info = make_boxed::<Info, _, _>(fetch_data_fn, Global)?;
-        Ok(file_info)
-    }
-
-    /// Read the dynamically allocated info for a file.
-    #[cfg(all(feature = "unstable", feature = "alloc"))]
-    fn get_boxed_info_in<Info: FileProtocolInfo + ?Sized + Debug, A: Allocator>(
-        &mut self,
-        allocator: A,
-    ) -> Result<Box<Info>> {
-        let fetch_data_fn = |buf| self.get_info::<Info>(buf);
-        let file_info = make_boxed::<Info, _, A>(fetch_data_fn, allocator)?;
         Ok(file_info)
     }
 

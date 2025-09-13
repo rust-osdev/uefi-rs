@@ -24,9 +24,6 @@ use {
     alloc::{vec, vec::Vec},
 };
 
-#[cfg(all(feature = "unstable", feature = "alloc"))]
-use alloc::alloc::Global;
-
 pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
@@ -187,14 +184,7 @@ pub fn get_variable_boxed(
             val
         })
     };
-    #[cfg(not(feature = "unstable"))]
-    {
-        make_boxed(get_var).map(|val| (val, out_attr))
-    }
-    #[cfg(feature = "unstable")]
-    {
-        make_boxed(get_var, Global).map(|val| (val, out_attr))
-    }
+    make_boxed(get_var).map(|val| (val, out_attr))
 }
 
 /// Gets each variable key (name and vendor) one at a time.

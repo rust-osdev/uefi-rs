@@ -62,7 +62,7 @@ impl AtaPassThru {
     /// The `ata` api will validate that your buffers have the correct alignment and error
     /// if they don't.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size (in bytes) of the buffer to allocate.
     ///
     /// # Returns
@@ -162,7 +162,7 @@ impl AtaDevice<'_> {
 
     /// Executes a command on the device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `req`: The request structure containing details about the command to execute.
     ///
     /// # Returns

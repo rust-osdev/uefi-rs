@@ -69,7 +69,7 @@ impl NvmePassThru {
     /// The `nvme` api will validate that your buffers have the correct alignment and error
     /// if they don't.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size (in bytes) of the buffer to allocate.
     ///
     /// # Returns
@@ -148,7 +148,7 @@ impl NvmeNamespace<'_> {
 
     /// Sends an NVM Express command to this namespace (Namespace ID ≥ 1).
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `req`: The [`NvmeRequest`] containing the command and associated data to send to the namespace.
     ///
     /// # Returns

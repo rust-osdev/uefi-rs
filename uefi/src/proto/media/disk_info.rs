@@ -95,7 +95,7 @@ impl DiskInfo {
 
     /// Performs an inquiry command on the disk device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable byte buffer to store the inquiry data.
     ///
     /// # Returns
@@ -116,7 +116,7 @@ impl DiskInfo {
 
     /// Performs an identify command on the disk device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable byte buffer to store the identification data.
     ///
     /// # Returns
@@ -137,7 +137,7 @@ impl DiskInfo {
 
     /// Retrieves sense data from the disk device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable byte buffer to store the sense data.
     ///
     /// # Returns

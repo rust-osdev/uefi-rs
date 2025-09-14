@@ -46,7 +46,7 @@ pub struct ScsiRequestBuilder<'a> {
 impl ScsiRequestBuilder<'_> {
     /// Creates a new instance with the specified data direction and alignment.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `direction`: Specifies the direction of data transfer (READ, WRITE, or BIDIRECTIONAL).
     /// - `io_align`: Specifies the required alignment for data buffers. (SCSI Controller specific!)
     #[must_use]
@@ -84,7 +84,7 @@ impl ScsiRequestBuilder<'_> {
     /// - READ
     /// - MODE_SENSE
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `io_align`: Specifies the required alignment for data buffers.
     #[must_use]
     pub fn read(io_align: u32) -> Self {
@@ -97,7 +97,7 @@ impl ScsiRequestBuilder<'_> {
     /// - WRITE
     /// - MODE_SELECT
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `io_align`: Specifies the required alignment for data buffers.
     #[must_use]
     pub fn write(io_align: u32) -> Self {
@@ -109,7 +109,7 @@ impl ScsiRequestBuilder<'_> {
     /// Some examples of SCSI bidirectional commands are:
     /// - SEND DIAGNOSTIC
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `io_align`: Specifies the required alignment for data buffers.
     #[must_use]
     pub fn bidirectional(io_align: u32) -> Self {
@@ -120,7 +120,7 @@ impl ScsiRequestBuilder<'_> {
 impl<'a> ScsiRequestBuilder<'a> {
     /// Sets a timeout for the SCSI request.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `timeout`: A [`Duration`] representing the maximum time allowed for the request.
     ///   The value is converted to 100-nanosecond units.
     ///
@@ -139,7 +139,7 @@ impl<'a> ScsiRequestBuilder<'a> {
 
     /// Uses a user-supplied buffer for reading data from the device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable reference to an [`AlignedBuffer`] that will be used to store data read from the device.
     ///
     /// # Returns
@@ -159,7 +159,7 @@ impl<'a> ScsiRequestBuilder<'a> {
 
     /// Adds a newly allocated read buffer to the built SCSI request.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size of the buffer (in bytes) to allocate for receiving data.
     ///
     /// # Returns
@@ -177,7 +177,7 @@ impl<'a> ScsiRequestBuilder<'a> {
 
     /// Adds a newly allocated sense buffer to the built SCSI request.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size of the buffer (in bytes) to allocate for receiving sense data.
     ///
     /// # Returns
@@ -195,7 +195,7 @@ impl<'a> ScsiRequestBuilder<'a> {
 
     /// Uses a user-supplied buffer for writing data to the device.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `bfr`: A mutable reference to an [`AlignedBuffer`] containing the data to be written to the device.
     ///
     /// # Returns
@@ -216,7 +216,7 @@ impl<'a> ScsiRequestBuilder<'a> {
     /// Adds a newly allocated write buffer to the built SCSI request that is filled from the
     /// given data buffer. (Done for memory alignment and lifetime purposes)
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `data`: A slice of bytes representing the data to be written.
     ///
     /// # Returns
@@ -235,7 +235,7 @@ impl<'a> ScsiRequestBuilder<'a> {
 
     /// Uses a user-supplied Command Data Block (CDB) buffer.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `data`: A mutable reference to an [`AlignedBuffer`] containing the CDB to be sent to the device.
     ///
     /// # Returns
@@ -259,7 +259,7 @@ impl<'a> ScsiRequestBuilder<'a> {
     /// Adds a newly allocated Command Data Block (CDB) buffer to the built SCSI request that is filled from the
     /// given data buffer. (Done for memory alignment and lifetime purposes)
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `data`: A slice of bytes representing the command to be sent.
     ///
     /// # Returns

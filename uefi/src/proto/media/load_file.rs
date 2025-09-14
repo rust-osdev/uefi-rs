@@ -43,7 +43,7 @@ pub struct LoadFile(LoadFileProtocol);
 impl LoadFile {
     /// Causes the driver to load a specified file.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `file_path` The device specific path of the file to load.
     /// - `boot_policy` The [`BootPolicy`] to use.
     ///
@@ -121,7 +121,7 @@ pub struct LoadFile2(LoadFile2Protocol);
 impl LoadFile2 {
     /// Causes the driver to load a specified file.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `file_path` The device specific path of the file to load.
     ///
     /// # Errors

@@ -23,6 +23,8 @@
   image in QEMU or Cloud Hypervisor, when the debugcon/debug-console device is
   available.
 - The documentation for UEFI protocols has been streamlined and improved.
+- Fixed memory safety bug in `SimpleNetwork::read_nv_data`. The `buffer`
+  parameter is now mutable.
 
 # uefi - 0.35.0 (2025-05-04)
 

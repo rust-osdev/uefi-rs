@@ -48,7 +48,7 @@ impl Input {
     /// fn read_keyboard_events(input: &mut Input) -> Result {
     ///     loop {
     ///         // Pause until a keyboard event occurs.
-    ///         let mut events = unsafe { [input.wait_for_key_event().unwrap()] };
+    ///         let mut events = [input.wait_for_key_event().unwrap()];
     ///         boot::wait_for_event(&mut events).discard_errdata()?;
     ///
     ///         let u_key = Char16::try_from('u').unwrap();

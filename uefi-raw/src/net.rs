@@ -8,7 +8,7 @@
 //! - [`Ipv4Address`]
 //! - [`Ipv6Address`]
 
-use core::fmt::{self, Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 
 /// An IPv4 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -35,6 +35,13 @@ impl From<Ipv4Address> for core::net::Ipv4Addr {
     }
 }
 
+impl Display for Ipv4Address {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ip = core::net::Ipv4Addr::from(*self);
+        write!(f, "{}", ip)
+    }
+}
+
 /// An IPv6 internet protocol address.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[repr(transparent)]
@@ -57,6 +64,13 @@ impl From<core::net::Ipv6Addr> for Ipv6Address {
 impl From<Ipv6Address> for core::net::Ipv6Addr {
     fn from(ip: Ipv6Address) -> Self {
         Self::from(ip.0)
+    }
+}
+
+impl Display for Ipv6Address {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ip = core::net::Ipv6Addr::from(*self);
+        write!(f, "{}", ip)
     }
 }
 

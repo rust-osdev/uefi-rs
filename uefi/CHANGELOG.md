@@ -63,6 +63,15 @@
   defaults to the recommended value of `MemoryType::LOADER_DATA`.
 - **Breaking:** Removed duplication in `DevicePathHeader`. Instead of public fields,
   there is now a public constructor combined with public getters.
+- **Breaking:** All public APIs related to networking now use
+  `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}`, i.e., the types from the standard
+  library.
+- **Breaking:** Removed type `IpAddress`. Instead, a new alias `EfiIpAddr` is
+  exported which forwards to the new `IpAddress` type in `uefi-raw`. That type
+  is tightly integrated with `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}` via
+  various `From/Into` implementations. This simplifies working with IP addresses
+  significantly.
+- **Breaking:** For consistency, `MacAddress` was renamed to `EfiMacAddr`.
 - `boot::memory_map()` will never return `Status::BUFFER_TOO_SMALL` from now on,
   as this is considered a hard internal error where users can't do anything
   about it anyway. It will panic instead.

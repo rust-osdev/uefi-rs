@@ -25,6 +25,11 @@
 - The documentation for UEFI protocols has been streamlined and improved.
 - Fixed memory safety bug in `SimpleNetwork::read_nv_data`. The `buffer`
   parameter is now mutable.
+- Removed all internal usages including public APIs using the unstable
+  `allocator_api` feature. It may be reintroduced if it will have a chance of
+  getting stabilized in stable Rust.
+  - Removed `File::get_boxed_info_in`
+  - Removed `Directory::read_entry_boxed_in`
 
 # uefi - 0.35.0 (2025-05-04)
 

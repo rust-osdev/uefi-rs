@@ -5,7 +5,7 @@
 pub mod config;
 pub mod database;
 
-use crate::{Char16, Guid};
+use crate::{Char16, Guid, newtype_enum};
 
 pub type HiiHandle = *mut core::ffi::c_void;
 

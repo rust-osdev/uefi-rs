@@ -4,7 +4,7 @@ use core::ffi;
 
 use bitflags::bitflags;
 
-use crate::Status;
+use crate::{Status, newtype_enum};
 
 pub mod host_controller;
 pub mod io;

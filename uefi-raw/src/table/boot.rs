@@ -4,7 +4,9 @@
 
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::table::Header;
-use crate::{Boolean, Char16, Event, Guid, Handle, PhysicalAddress, Status, VirtualAddress};
+use crate::{
+    Boolean, Char16, Event, Guid, Handle, PhysicalAddress, Status, VirtualAddress, newtype_enum,
+};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::ops::RangeInclusive;

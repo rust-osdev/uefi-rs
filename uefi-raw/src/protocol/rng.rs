@@ -2,7 +2,7 @@
 
 //! `Rng` protocol.
 
-use crate::{Guid, Status, guid};
+use crate::{Guid, Status, guid, newtype_enum};
 
 newtype_enum! {
     /// The algorithms listed are optional, not meant to be exhaustive

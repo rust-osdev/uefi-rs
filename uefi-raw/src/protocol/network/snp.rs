@@ -4,7 +4,7 @@ use core::ffi;
 
 use bitflags::bitflags;
 
-use crate::{Boolean, Event, Guid, IpAddress, MacAddress, Status, guid};
+use crate::{Boolean, Event, Guid, IpAddress, MacAddress, Status, guid, newtype_enum};
 
 #[derive(Debug)]
 #[repr(C)]

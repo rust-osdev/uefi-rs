@@ -4,7 +4,7 @@ use core::ffi;
 
 use bitflags::bitflags;
 
-use crate::{Boolean, Guid, Status, guid};
+use crate::{Boolean, Guid, Status, guid, newtype_enum};
 
 use super::{AsyncUsbTransferCallback, DataDirection, DeviceRequest, UsbTransferStatus};
 

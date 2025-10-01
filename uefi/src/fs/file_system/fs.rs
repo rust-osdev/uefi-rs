@@ -63,11 +63,13 @@ impl FileSystem {
         let mut src = self
             .open(src_path, UefiFileMode::Read, false)?
             .into_regular_file()
-            .ok_or(Error::Io(IoError {
-                path: src_path.to_path_buf(),
-                context: IoErrorContext::NotAFile,
-                uefi_error: Status::INVALID_PARAMETER.into(),
-            }))?;
+            .ok_or_else(|| {
+                Error::Io(IoError {
+                    path: src_path.to_path_buf(),
+                    context: IoErrorContext::NotAFile,
+                    uefi_error: Status::INVALID_PARAMETER.into(),
+                })
+            })?;
 
         // Get the source file's size in bytes.
         let src_size = {
@@ -91,11 +93,13 @@ impl FileSystem {
         let mut dest = self
             .open(dest_path, UefiFileMode::CreateReadWrite, false)?
             .into_regular_file()
-            .ok_or(Error::Io(IoError {
-                path: dest_path.to_path_buf(),
-                context: IoErrorContext::OpenError,
-                uefi_error: Status::INVALID_PARAMETER.into(),
-            }))?;
+            .ok_or_else(|| {
+                Error::Io(IoError {
+                    path: dest_path.to_path_buf(),
+                    context: IoErrorContext::OpenError,
+                    uefi_error: Status::INVALID_PARAMETER.into(),
+                })
+            })?;
 
         // 1 MiB copy buffer.
         let mut chunk = vec![0; 1024 * 1024];
@@ -198,13 +202,15 @@ impl FileSystem {
         let mut file = self
             .open(path, UefiFileMode::Read, false)?
             .into_regular_file()
-            .ok_or(Error::Io(IoError {
-                path: path.to_path_buf(),
-                context: IoErrorContext::NotAFile,
-                // We do not have a real UEFI error here as we have a logical
-                // problem.
-                uefi_error: Status::INVALID_PARAMETER.into(),
-            }))?;
+            .ok_or_else(|| {
+                Error::Io(IoError {
+                    path: path.to_path_buf(),
+                    context: IoErrorContext::NotAFile,
+                    // We do not have a real UEFI error here as we have a logical
+                    // problem.
+                    uefi_error: Status::INVALID_PARAMETER.into(),
+                })
+            })?;
 
         let info = file.get_boxed_info::<UefiFileInfo>().map_err(|err| {
             Error::Io(IoError {
@@ -237,13 +243,15 @@ impl FileSystem {
         let dir = self
             .open(path, UefiFileMode::Read, false)?
             .into_directory()
-            .ok_or(Error::Io(IoError {
-                path: path.to_path_buf(),
-                context: IoErrorContext::NotADirectory,
-                // We do not have a real UEFI error here as we have a logical
-                // problem.
-                uefi_error: Status::INVALID_PARAMETER.into(),
-            }))?;
+            .ok_or_else(|| {
+                Error::Io(IoError {
+                    path: path.to_path_buf(),
+                    context: IoErrorContext::NotADirectory,
+                    // We do not have a real UEFI error here as we have a logical
+                    // problem.
+                    uefi_error: Status::INVALID_PARAMETER.into(),
+                })
+            })?;
         Ok(UefiDirectoryIter::new(dir))
     }
 

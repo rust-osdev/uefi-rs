@@ -42,7 +42,7 @@ impl<'a> Iterator for ConfigurationStringIter<'a> {
         let (keyval, remainder) = self
             .bfr
             .split_once('&')
-            .unwrap_or((self.bfr, &self.bfr[0..0]));
+            .unwrap_or_else(|| (self.bfr, &self.bfr[0..0]));
         self.bfr = remainder;
         let (key, value) = keyval
             .split_once('=')

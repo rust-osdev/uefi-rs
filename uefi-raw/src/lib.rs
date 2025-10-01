@@ -22,7 +22,6 @@
     unused
 )]
 
-#[macro_use]
 mod enums;
 
 pub mod capsule;

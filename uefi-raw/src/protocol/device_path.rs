@@ -42,7 +42,7 @@
 
 mod device_path_gen;
 
-use crate::{Boolean, Char16, Guid, guid};
+use crate::{Boolean, Char16, Guid, guid, newtype_enum};
 
 pub use device_path_gen::{acpi, bios_boot_spec, end, hardware, media, messaging};
 

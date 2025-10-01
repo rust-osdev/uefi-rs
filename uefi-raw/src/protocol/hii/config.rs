@@ -4,7 +4,7 @@
 
 use core::fmt::Debug;
 
-use crate::{Char16, Guid, Status, guid};
+use crate::{Char16, Guid, Status, guid, newtype_enum};
 
 /// EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL
 #[derive(Debug)]

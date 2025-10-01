@@ -54,7 +54,7 @@ fn gen_uefi_raw_code_as_string(groups: &[NodeGroup]) -> Result<String> {
         use bitflags::bitflags;
         use crate::protocol::device_path;
         use crate::table::boot::MemoryType;
-        use crate::{Guid, IpAddress, guid};
+        use crate::{Guid, IpAddress, guid, newtype_enum};
         use device_path::DevicePathProtocol as DevicePathHeader;
         #[cfg(doc)]
         use device_path::DeviceType;

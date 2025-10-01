@@ -6,7 +6,7 @@ use crate::capsule::CapsuleHeader;
 use crate::table::Header;
 use crate::table::boot::MemoryDescriptor;
 use crate::time::Time;
-use crate::{Boolean, Char16, Guid, PhysicalAddress, Status, guid};
+use crate::{Boolean, Char16, Guid, PhysicalAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
 use core::ffi::c_void;
 

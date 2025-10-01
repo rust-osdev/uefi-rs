@@ -117,7 +117,7 @@ pub trait Align {
     /// this will return 7. Returns 0 if `val == 0`.
     #[must_use]
     fn offset_up_to_alignment(val: usize) -> usize {
-        assert!(Self::alignment() != 0);
+        assert_ne!(Self::alignment(), 0);
         let r = val % Self::alignment();
         if r == 0 { 0 } else { Self::alignment() - r }
     }
@@ -169,7 +169,9 @@ pub use strs::{
     UnalignedCStr16Error,
 };
 
-/// These functions are used in the implementation of the [`cstr8`] macro.
+/// These functions are used in the implementation of the [`cstr8!`] macro.
+///
+/// [`cstr8!`]: crate::cstr8
 #[doc(hidden)]
 pub use strs::{str_num_latin1_chars, str_to_latin1};
 

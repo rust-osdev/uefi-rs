@@ -130,6 +130,7 @@ pub struct ScsiDevice<'a> {
     target_lun: ScsiTargetLun,
 }
 impl ScsiDevice<'_> {
+    #[allow(clippy::needless_pass_by_ref_mut)] // cast to mutable ptr
     const fn proto_mut(&mut self) -> *mut ExtScsiPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }

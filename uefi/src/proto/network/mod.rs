@@ -8,6 +8,7 @@ pub mod http;
 pub mod ip4config2;
 pub mod pxe;
 pub mod snp;
+pub mod tcpv4;
 
 pub use uefi_raw::MacAddress;
 

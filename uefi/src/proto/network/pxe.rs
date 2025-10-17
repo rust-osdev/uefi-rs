@@ -411,6 +411,27 @@ impl BaseCode {
     }
 
     /// Reads a UDP packet from the network interface.
+    ///
+    /// # Arguments
+    /// - `op_flags`: [`UdpOpFlags`] specifying the behavior of the function
+    /// - `dest_ip`: The behavior depends on whether
+    ///   [`UdpOpFlags::ANY_DEST_IP`] is set. If it not set, packets must match
+    ///   the specified IP. Otherwise, the corresponding IP is written into the
+    ///   provided buffer.
+    /// - `dest_port`: The behavior depends on whether
+    ///   [`UdpOpFlags::ANY_DEST_PORT`] is set. If it not set, packets must match
+    ///   the specified port. Otherwise, the corresponding port is written into
+    ///   the provided buffer.
+    /// - `src_ip`: The behavior depends on whether
+    ///   [`UdpOpFlags::ANY_SRC_IP`] is set. If it not set, packets must match
+    ///   the specified IP. Otherwise, the corresponding IP is written into the
+    ///   provided buffer.
+    /// - `src_port`: The behavior depends on whether
+    ///   [`UdpOpFlags::ANY_SRC_PORT`] is set. If it not set, packets must match
+    ///   the specified port. Otherwise, the corresponding port is written into
+    ///   the provided buffer.
+    /// - `header`: Optional header of the data inside `buffer`.
+    /// - `buffer`: Buffer for the UDP packet's content.
     #[allow(clippy::too_many_arguments)]
     pub fn udp_read(
         &mut self,

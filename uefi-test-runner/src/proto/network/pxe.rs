@@ -76,10 +76,11 @@ pub fn test() {
 
         info!("Reading UDP packet from example service");
 
-        let mut src_ip = server_ip;
-        let mut src_port = EXAMPLE_SERVICE_PORT;
-        let mut dest_ip = base_code.mode().station_ip();
-        let mut dest_port = write_src_port;
+        // Used as buffers
+        let mut src_ip = IpAddress::new_v4([0; 4]);
+        let mut src_port = 0;
+        let mut dest_ip = IpAddress::new_v4([0; 4]);
+        let mut dest_port = 0;
         let mut header = [0; 1];
         let mut received = [0; 4];
 
@@ -88,7 +89,12 @@ pub fn test() {
         let mut read_result = Ok(0);
         for i in 0..5 {
             read_result = base_code.udp_read(
-                UdpOpFlags::USE_FILTER,
+                // We expect exactly one packet but accept all to catch
+                // unexpected network traffic.
+                UdpOpFlags::ANY_SRC_PORT
+                    | UdpOpFlags::ANY_SRC_IP
+                    | UdpOpFlags::ANY_DEST_PORT
+                    | UdpOpFlags::ANY_DEST_IP,
                 Some(&mut dest_ip),
                 Some(&mut dest_port),
                 Some(&mut src_ip),
@@ -103,6 +109,14 @@ pub fn test() {
             info!("Read attempt {i} failed: {read_result:?}");
         }
         read_result.unwrap();
+
+        // Check that we indeed received the expected packet.
+        assert_eq!(dest_ip, base_code.mode().station_ip());
+        assert_eq!(src_ip, server_ip);
+        assert_eq!(src_port, EXAMPLE_SERVICE_PORT);
+        // We don't know the dst port here, as it is dynamically handled
+        // by QEMU/the NIC.
+        debug!("dest UDP port: {dest_port}");
 
         // Check the header.
         assert_eq!(header[0] as usize, payload.len());

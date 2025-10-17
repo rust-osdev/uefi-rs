@@ -10,7 +10,8 @@
 //! - [`Ipv6Addr`]
 //!
 //! The only exception is [`uefi_raw::MacAddress`] which doesn't have a
-//! corresponding type in the standard library.
+//! corresponding type in the standard library. It is re-exported as
+//! [`EfiMacAddr`].
 //!
 //! [`IpAddr`]: core::net::IpAddr
 //! [`Ipv4Addr`]: core::net::Ipv4Addr
@@ -20,3 +21,5 @@ pub mod http;
 pub mod ip4config2;
 pub mod pxe;
 pub mod snp;
+
+pub use uefi_raw::MacAddress as EfiMacAddr;

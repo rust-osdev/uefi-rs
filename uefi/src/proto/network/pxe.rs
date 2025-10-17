@@ -14,11 +14,12 @@ use core::net::{IpAddr, Ipv4Addr};
 use core::ptr::{self, null, null_mut};
 use core::slice;
 use ptr_meta::Pointee;
+use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeMtftpInfo,
     PxeBaseCodePacket, PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
 };
-use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr, MacAddress as EfiMacAddr};
+use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,

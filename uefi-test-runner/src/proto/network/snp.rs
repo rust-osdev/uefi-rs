@@ -6,9 +6,9 @@ use smoltcp::wire::{
     ETHERNET_HEADER_LEN, EthernetFrame, IPV4_HEADER_LEN, Ipv4Packet, UDP_HEADER_LEN, UdpPacket,
 };
 use uefi::boot::ScopedProtocol;
+use uefi::proto::network::EfiMacAddr;
 use uefi::proto::network::snp::{InterruptStatus, ReceiveFlags, SimpleNetwork};
 use uefi::{Status, boot};
-use uefi_raw::MacAddress as EfiMacAddr;
 use uefi_raw::protocol::network::snp::NetworkState;
 
 /// The MAC address configured for the interface.

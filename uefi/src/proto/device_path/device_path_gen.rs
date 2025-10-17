@@ -14,12 +14,12 @@ use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::device_path::{
     self, DevicePathHeader, DevicePathNode, DeviceSubType, DeviceType, NodeConversionError,
 };
-use crate::proto::network::IpAddress;
 use crate::{Guid, guid};
 use bitflags::bitflags;
 use core::ptr::addr_of;
 use core::{fmt, slice};
 use ptr_meta::Pointee;
+use uefi_raw::IpAddress;
 /// Device path nodes for [`DeviceType::END`].
 pub mod end {
     use super::*;

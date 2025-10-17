@@ -18,6 +18,13 @@
 - `system::with_config_table`, `system::with_stdin`, `system::with_stdout` and `system::with_stderr`
   now take mutably closure.
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
+- **Breaking:** All public APIs related to networking now use
+  `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}`, i.e., the types from the standard
+  library.
+  - This especially affects the SNP and PXE protocols
+  - The new design makes writing network code much simpler.
+- **Breaking:** Removed type `IpAddress`. In case you still need a low-level
+  EFI compatible type please use `IpAddress` from `uefi-raw`.
 - The documentation in `lib.rs` now provides guidance on how to select features
   tailored to your use case.
 - Feature `log-debugcon` is no longer a default feature. You only need to add
@@ -32,6 +39,7 @@
   getting stabilized in stable Rust.
   - Removed `File::get_boxed_info_in`
   - Removed `Directory::read_entry_boxed_in`
+
 
 # uefi - 0.35.0 (2025-05-04)
 

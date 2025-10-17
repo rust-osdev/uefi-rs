@@ -121,6 +121,7 @@ pub struct NvmeNamespace<'a> {
 }
 
 impl NvmeNamespace<'_> {
+    #[allow(clippy::needless_pass_by_ref_mut)] // cast to mutable ptr
     const fn proto_mut(&mut self) -> *mut NvmExpressPassThruProtocol {
         ptr::from_ref(self.proto).cast_mut()
     }

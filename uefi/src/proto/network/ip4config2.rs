@@ -7,13 +7,13 @@
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::net::Ipv4Addr;
 use core::time::Duration;
 
 use uefi::boot::ScopedProtocol;
 use uefi::prelude::*;
 use uefi::proto::unsafe_protocol;
 use uefi::{print, println};
-use uefi_raw::Ipv4Address;
 use uefi_raw::protocol::network::ip4_config2::{
     Ip4Config2DataType, Ip4Config2InterfaceInfo, Ip4Config2Policy, Ip4Config2Protocol,
 };
@@ -102,29 +102,19 @@ impl Ip4Config2 {
         })
     }
 
-    fn print_info(info: &Ip4Config2InterfaceInfo) {
-        println!(
-            "addr v4: {}.{}.{}.{}",
-            info.station_addr.0[0],
-            info.station_addr.0[1],
-            info.station_addr.0[2],
-            info.station_addr.0[3],
-        );
-    }
-
     /// Bring up network interface.  Does nothing in case the network
     /// is already set up.  Otherwise turns on DHCP and waits until an
     /// IPv4 address has been assigned.  Reports progress on the
     /// console if verbose is set to true.  Returns TIMEOUT error in
     /// case DHCP configuration does not finish within 30 seconds.
     pub fn ifup(&mut self, verbose: bool) -> uefi::Result<()> {
-        let no_address = Ipv4Address::default();
+        let no_address = Ipv4Addr::from_bits(0);
 
         let info = self.get_interface_info()?;
-        if info.station_addr != no_address {
+        if info.station_addr != no_address.into() {
             if verbose {
                 print!("Network is already up: ");
-                Self::print_info(&info);
+                println!("addr v4: {}", info.station_addr);
             }
             return Ok(());
         }
@@ -140,10 +130,10 @@ impl Ip4Config2 {
             }
             boot::stall(Duration::from_secs(1));
             let info = self.get_interface_info()?;
-            if info.station_addr != no_address {
+            if info.station_addr != no_address.into() {
                 if verbose {
                     print!(" OK: ");
-                    Self::print_info(&info);
+                    println!("addr v4: {}", info.station_addr);
                 }
                 return Ok(());
             }

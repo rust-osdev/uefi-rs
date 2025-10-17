@@ -98,6 +98,16 @@ pub struct ConfigurationStringElement {
     // nvconfig: HashMap<String, Vec<u8>>,
 }
 
+/// Internal module with known keys found in uefi configuration strings.
+mod keys {
+    pub const ALTCFG: &str = "ALTCFG";
+    pub const GUID: &str = "GUID";
+    pub const NAME: &str = "NAME";
+    pub const OFFSET: &str = "OFFSET";
+    pub const VALUE: &str = "VALUE";
+    pub const WIDTH: &str = "WIDTH";
+}
+
 /// A full UEFI Configuration String representation.
 ///
 /// This structure contains routing information such as GUID and device path,
@@ -209,12 +219,12 @@ impl ConfigurationString {
     ) -> Result<Self, ParseError> {
         let guid = Self::try_parse_with(ParseError::ConfigHdr(ConfigHdrSection::Guid), || {
             let v = splitter.next()?;
-            let v = (v.0 == "GUID").then_some(v.1).flatten()?;
+            let v = (v.0 == keys::GUID).then_some(v.1).flatten()?;
             Self::parse_guid_from_hex(v)
         })?;
         let name = Self::try_parse_with(ParseError::ConfigHdr(ConfigHdrSection::Name), || {
             let v = splitter.next()?;
-            let v = (v.0 == "NAME").then_some(v.1).flatten()?;
+            let v = (v.0 == keys::NAME).then_some(v.1).flatten()?;
             Self::parse_string_from_hex(v)
         })?;
         let device_path =
@@ -225,7 +235,7 @@ impl ConfigurationString {
                 Some(v.to_boxed())
             })?;
         let alt_cfg_id = match splitter.peek() {
-            Some(("ALTCFG", _)) => Some(Self::try_parse_with(
+            Some((keys::ALTCFG, _)) => Some(Self::try_parse_with(
                 ParseError::ConfigHdr(ConfigHdrSection::DescHdr),
                 || {
                     let v = splitter.next()?.1?;
@@ -238,14 +248,14 @@ impl ConfigurationString {
         let mut elements = Vec::new();
         loop {
             let offset = match splitter.next() {
-                Some(("OFFSET", Some(data))) => {
+                Some((keys::OFFSET, Some(data))) => {
                     Self::parse_number_from_hex(data).ok_or(ParseError::BlockName)?
                 }
                 None => break,
                 _ => return Err(ParseError::BlockName),
             };
             let width = match splitter.next() {
-                Some(("WIDTH", Some(data))) => {
+                Some((keys::WIDTH, Some(data))) => {
                     Self::parse_number_from_hex(data).ok_or(ParseError::BlockName)?
                 }
                 _ => return Err(ParseError::BlockName),
@@ -254,12 +264,12 @@ impl ConfigurationString {
             // And numbers have to be endianness-corrected. Thus, the bytes represented by a value's
             // hex string of arbitrary length have to be reversed to account for that weird encoding.
             let value = match splitter.next() {
-                Some(("VALUE", Some(data))) => Self::parse_bytes_from_hex(data).rev().collect(),
+                Some((keys::VALUE, Some(data))) => Self::parse_bytes_from_hex(data).rev().collect(),
                 _ => return Err(ParseError::BlockConfig),
             };
 
             while let Some(next) = splitter.peek() {
-                if next.0 == "OFFSET" || next.0 == "GUID" {
+                if next.0 == keys::OFFSET || next.0 == keys::GUID {
                     break;
                 }
                 let _ = splitter.next(); // drop nvconfig entries for now
@@ -271,7 +281,7 @@ impl ConfigurationString {
                 value,
             });
             // Found start of a new [ConfigurationString]
-            if let Some(("GUID", _)) = splitter.peek() {
+            if let Some((keys::GUID, _)) = splitter.peek() {
                 break;
             }
         }

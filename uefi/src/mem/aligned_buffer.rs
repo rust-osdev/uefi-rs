@@ -2,8 +2,8 @@
 
 use alloc::alloc::{Layout, LayoutError, alloc, dealloc};
 use core::error::Error;
-use core::fmt;
 use core::ptr::NonNull;
+use core::{fmt, slice};
 
 /// Helper class to maintain the lifetime of a memory region allocated with a non-standard alignment.
 /// Facilitates RAII to properly deallocate when lifetime of the object ends.
@@ -51,10 +51,32 @@ impl AlignedBuffer {
         self.ptr.as_ptr()
     }
 
+    /// Get the underlying memory region as immutable slice.
+    #[must_use]
+    pub const fn as_slice(&self) -> &[u8] {
+        unsafe { slice::from_raw_parts(self.ptr(), self.size()) }
+    }
+
+    /// Get the underlying memory region as mutable slice.
+    #[must_use]
+    pub const fn as_slice_mut(&mut self) -> &mut [u8] {
+        unsafe { slice::from_raw_parts_mut(self.ptr_mut(), self.size()) }
+    }
+
     /// Get the size of the aligned memory region managed by this instance.
     #[must_use]
     pub const fn size(&self) -> usize {
         self.layout.size()
+    }
+
+    /// Returns an iterator over the aligned buffer contents.
+    pub fn iter(&self) -> impl Iterator<Item = &u8> {
+        self.as_slice().iter()
+    }
+
+    /// Returns a mutable iterator over the aligned buffer contents.
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut u8> {
+        self.as_slice_mut().iter_mut()
     }
 
     /// Fill the aligned memory region with data from the given buffer.
@@ -65,6 +87,14 @@ impl AlignedBuffer {
         unsafe {
             self.ptr_mut().copy_from(src.as_ptr(), src.len());
         }
+    }
+
+    /// Fill the aligned memory region with data from the given iterator.
+    /// If the given iterator is shorter than the buffer, the remaining area will be left untouched.
+    pub fn copy_from_iter(&mut self, src: impl Iterator<Item = u8>) {
+        self.iter_mut()
+            .zip(src)
+            .for_each(|(dst, src_byte)| *dst = src_byte);
     }
 
     /// Check the buffer's alignment against the `required_alignment`.
@@ -118,6 +148,30 @@ mod tests {
                 assert_eq!(buffer.ptr() as usize % request_alignment, 0);
                 assert_eq!(buffer.size(), request_len);
             }
+        }
+    }
+
+    #[test]
+    fn test_copy_from_iter() {
+        let src8: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+        {
+            // src as large as dst
+            let mut bfr = AlignedBuffer::from_size_align(8, 8).unwrap();
+            bfr.copy_from_iter(src8.iter().cloned());
+            assert_eq!(bfr.as_slice(), src8);
+        }
+        {
+            // src larger than dst
+            let mut bfr = AlignedBuffer::from_size_align(7, 8).unwrap();
+            bfr.copy_from_iter(src8.iter().cloned());
+            assert_eq!(bfr.as_slice(), [1, 2, 3, 4, 5, 6, 7]);
+        }
+        {
+            // src smaller than dst
+            let mut bfr = AlignedBuffer::from_size_align(9, 8).unwrap();
+            bfr.iter_mut().for_each(|dst| *dst = 0); // fill with 0s
+            bfr.copy_from_iter(src8.iter().cloned());
+            assert_eq!(bfr.as_slice(), [1, 2, 3, 4, 5, 6, 7, 8, 0]);
         }
     }
 }

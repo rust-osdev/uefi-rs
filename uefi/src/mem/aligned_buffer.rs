@@ -89,6 +89,14 @@ impl AlignedBuffer {
         }
     }
 
+    /// Fill the aligned memory region with data from the given iterator.
+    /// If the given iterator is shorter than the buffer, the remaining area will be left untouched.
+    pub fn copy_from_iter(&mut self, src: impl Iterator<Item = u8>) {
+        self.iter_mut()
+            .zip(src)
+            .for_each(|(dst, src_byte)| *dst = src_byte);
+    }
+
     /// Check the buffer's alignment against the `required_alignment`.
     pub fn check_alignment(&self, required_alignment: usize) -> Result<(), AlignmentError> {
         //TODO: use bfr.addr() when it's available
@@ -140,6 +148,30 @@ mod tests {
                 assert_eq!(buffer.ptr() as usize % request_alignment, 0);
                 assert_eq!(buffer.size(), request_len);
             }
+        }
+    }
+
+    #[test]
+    fn test_copy_from_iter() {
+        let src8: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+        {
+            // src as large as dst
+            let mut bfr = AlignedBuffer::from_size_align(8, 8).unwrap();
+            bfr.copy_from_iter(src8.iter().cloned());
+            assert_eq!(bfr.as_slice(), src8);
+        }
+        {
+            // src larger than dst
+            let mut bfr = AlignedBuffer::from_size_align(7, 8).unwrap();
+            bfr.copy_from_iter(src8.iter().cloned());
+            assert_eq!(bfr.as_slice(), [1, 2, 3, 4, 5, 6, 7]);
+        }
+        {
+            // src smaller than dst
+            let mut bfr = AlignedBuffer::from_size_align(9, 8).unwrap();
+            bfr.iter_mut().for_each(|dst| *dst = 0); // fill with 0s
+            bfr.copy_from_iter(src8.iter().cloned());
+            assert_eq!(bfr.as_slice(), [1, 2, 3, 4, 5, 6, 7, 8, 0]);
         }
     }
 }

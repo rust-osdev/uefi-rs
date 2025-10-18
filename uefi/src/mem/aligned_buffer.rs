@@ -69,6 +69,16 @@ impl AlignedBuffer {
         self.layout.size()
     }
 
+    /// Returns an iterator over the aligned buffer contents.
+    pub fn iter(&self) -> impl Iterator<Item = &u8> {
+        self.as_slice().iter()
+    }
+
+    /// Returns a mutable iterator over the aligned buffer contents.
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut u8> {
+        self.as_slice_mut().iter_mut()
+    }
+
     /// Fill the aligned memory region with data from the given buffer.
     ///
     /// The length of `src` must be the same as `self`.

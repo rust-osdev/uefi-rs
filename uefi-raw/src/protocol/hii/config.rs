@@ -4,6 +4,7 @@
 
 use core::fmt::Debug;
 
+use crate::protocol::device_path::DevicePathProtocol;
 use crate::{Char16, Guid, Status, guid, newtype_enum};
 
 /// EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL
@@ -171,4 +172,51 @@ pub struct HiiConfigAccessProtocol {
 
 impl HiiConfigAccessProtocol {
     pub const GUID: Guid = guid!("330d4706-f2a0-4e4f-a369-b66fa8d54385");
+}
+
+/// EFI_HII_CONFIG_ROUTING_PROTOCOL
+#[derive(Debug)]
+#[repr(C)]
+pub struct HiiConfigRoutingProtocol {
+    pub extract_config: unsafe extern "efiapi" fn(
+        this: *const Self,
+        config_request: *const Char16,
+        progress: *mut *const Char16,
+        results: *mut *const Char16,
+    ) -> Status,
+    pub export_config:
+        unsafe extern "efiapi" fn(this: *const Self, results: *mut *const Char16) -> Status,
+    pub route_config: unsafe extern "efiapi" fn(
+        this: *const Self,
+        configuration: *const Char16,
+        progress: *mut *const Char16,
+    ) -> Status,
+    pub block_to_config: unsafe extern "efiapi" fn(
+        this: *const Self,
+        config_request: *const Char16,
+        block: *const u8,
+        block_size: usize,
+        config: *mut *const Char16,
+        progress: *mut *const Char16,
+    ) -> Status,
+    pub config_to_block: unsafe extern "efiapi" fn(
+        this: *const Self,
+        config_resp: *const Char16,
+        block: *mut *const u8,
+        block_size: *mut usize,
+        progress: *mut *const Char16,
+    ) -> Status,
+    pub get_alt_cfg: unsafe extern "efiapi" fn(
+        this: *const Self,
+        config_resp: *const Char16,
+        guid: *const Guid,
+        name: *const Char16,
+        device_path: *const DevicePathProtocol,
+        alt_cfg_id: *const Char16,
+        alt_cfg_resp: *mut *const Char16,
+    ) -> Status,
+}
+
+impl HiiConfigRoutingProtocol {
+    pub const GUID: Guid = guid!("587e72d7-cc50-4f79-8209-ca291fc1a10f");
 }

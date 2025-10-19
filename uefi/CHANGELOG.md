@@ -9,6 +9,8 @@
 - Added `proto::hii::config_str::ConfigurationString`.
 - Added `proto::acpi::AcpiTable`.
 - Added `proto::hii::database::HiiDatabase`.
+- Added `proto::hii::config_str::MultiConfigurationStringIter`.
+- Added `proto::hii::config_routing::HiiConfigRouting`.
 
 ## Changed
 - **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.

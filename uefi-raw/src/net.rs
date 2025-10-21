@@ -403,4 +403,50 @@ mod tests {
             assert_eq!(uefi_mac_addr.octets(), octets);
         }
     }
+
+    /// Tests the intended usage of net types in high-level APIs and how they
+    /// map to lower level UEFI types.
+    ///
+    /// TL;DR: High-level interfaces use core::net types whereas lower-level
+    /// interfaces use types from this module.
+    #[test]
+    fn test_uefi_flow() {
+        fn efi_retrieve_efi_ip_addr(addr: *mut IpAddress, is_ipv6: bool) {
+            let addr = unsafe { addr.as_mut().unwrap() };
+            // SAFETY: Alignment is guaranteed and memory is initialized.
+            unsafe {
+                addr.v4.0[0] = 42;
+                addr.v4.0[1] = 42;
+                addr.v4.0[2] = 42;
+                addr.v4.0[3] = 42;
+            }
+            if is_ipv6 {
+                unsafe {
+                    addr.v6.0[14] = 42;
+                    addr.v6.0[15] = 42;
+                }
+            }
+        }
+
+        fn high_level_retrieve_ip(is_ipv6: bool) -> core::net::IpAddr {
+            let mut efi_ip_addr = IpAddress::ZERO;
+            efi_retrieve_efi_ip_addr(&mut efi_ip_addr, is_ipv6);
+            unsafe { efi_ip_addr.into_core_addr(is_ipv6) }
+        }
+
+        let ipv4_addr = high_level_retrieve_ip(false);
+        let ipv4_addr: core::net::Ipv4Addr = match ipv4_addr {
+            core::net::IpAddr::V4(ipv4_addr) => ipv4_addr,
+            core::net::IpAddr::V6(_) => panic!("should not happen"),
+        };
+        assert_eq!(ipv4_addr.octets(), [42, 42, 42, 42]);
+
+        let ipv6_addr = high_level_retrieve_ip(true);
+        let ipv6_addr: core::net::Ipv6Addr = match ipv6_addr {
+            core::net::IpAddr::V6(ipv6_addr) => ipv6_addr,
+            core::net::IpAddr::V4(_) => panic!("should not happen"),
+        };
+        let expected = [42, 42, 42, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 42];
+        assert_eq!(ipv6_addr.octets(), expected);
+    }
 }

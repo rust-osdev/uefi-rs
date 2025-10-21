@@ -1,6 +1,13 @@
 # uefi - [Unreleased]
 
 ## Added
+
+## Changed
+
+
+# uefi - v0.36 (2025-10-21)
+
+## Added
 - Added `ConfigTableEntry::MEMORY_ATTRIBUTES_GUID` and `ConfigTableEntry::IMAGE_SECURITY_DATABASE_GUID`.
 - Added `proto::usb::io::UsbIo`.
 - Added `proto::pci::PciRootBridgeIo`.

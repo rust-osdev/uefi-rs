@@ -1,6 +1,13 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+
+## Changed
+
+
+# uefi-raw - v0.12 (2025-10-21)
+
+## Added
 - Added `AllocateType`.
 - Added `PciRootBridgeIoProtocol`.
 - Added `ConfigKeywordHandlerProtocol`.

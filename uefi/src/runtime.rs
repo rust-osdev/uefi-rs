@@ -246,7 +246,7 @@ pub fn variable_keys() -> VariableKeys {
 
 /// Iterator over all UEFI variables.
 ///
-/// Each iteration yields a `Result<`[`VariableKey`]`>`. Error values:
+/// Each iteration yields a <code>Result<`[`VariableKey`]`></code>. Error values:
 ///
 /// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
 /// * [`Status::UNSUPPORTED`]: this platform does not support variable storage

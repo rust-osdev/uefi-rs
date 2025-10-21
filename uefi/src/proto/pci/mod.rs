@@ -131,6 +131,7 @@ mod tests {
     use super::PciIoAddress;
 
     #[test]
+    #[allow(clippy::unusual_byte_groupings)]
     fn test_pci_ioaddr_raw_conversion() {
         assert_eq!(size_of::<u64>(), size_of::<PciIoAddress>());
         let srcaddr = PciIoAddress {

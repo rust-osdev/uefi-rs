@@ -2,7 +2,6 @@
 
 //! PXE Base Code protocol.
 
-use super::{IpAddress, MacAddress};
 use crate::polyfill::maybe_uninit_slice_as_mut_ptr;
 use crate::proto::unsafe_protocol;
 use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
@@ -11,14 +10,16 @@ use bitflags::bitflags;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::iter::from_fn;
 use core::mem::MaybeUninit;
+use core::net::{IpAddr, Ipv4Addr};
 use core::ptr::{self, null, null_mut};
 use core::slice;
 use ptr_meta::Pointee;
+use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeMtftpInfo,
     PxeBaseCodePacket, PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
 };
-use uefi_raw::{Boolean, Char8};
+use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,
@@ -67,9 +68,10 @@ impl BaseCode {
     }
 
     /// Returns the size of a file located on a TFTP server.
-    pub fn tftp_get_file_size(&mut self, server_ip: &IpAddress, filename: &CStr8) -> Result<u64> {
+    pub fn tftp_get_file_size(&mut self, server_ip: &IpAddr, filename: &CStr8) -> Result<u64> {
         let mut buffer_size = 0;
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -78,7 +80,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 cstr8_to_ptr(filename),
                 null(),
                 Boolean::FALSE,
@@ -90,7 +92,7 @@ impl BaseCode {
     /// Reads a file located on a TFTP server.
     pub fn tftp_read_file(
         &mut self,
-        server_ip: &IpAddress,
+        server_ip: &IpAddr,
         filename: &CStr8,
         buffer: Option<&mut [u8]>,
     ) -> Result<u64> {
@@ -101,6 +103,7 @@ impl BaseCode {
             (null_mut(), 0, Boolean::TRUE)
         };
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -109,7 +112,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 cstr8_to_ptr(filename),
                 null(),
                 dont_use_buffer,
@@ -121,7 +124,7 @@ impl BaseCode {
     /// Writes to a file located on a TFTP server.
     pub fn tftp_write_file(
         &mut self,
-        server_ip: &IpAddress,
+        server_ip: &IpAddr,
         filename: &CStr8,
         overwrite: bool,
         buffer: &[u8],
@@ -129,6 +132,7 @@ impl BaseCode {
         let buffer_ptr = buffer.as_ptr().cast_mut().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -137,7 +141,7 @@ impl BaseCode {
                 overwrite.into(),
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 cstr8_to_ptr(filename),
                 null(),
                 Boolean::FALSE,
@@ -149,7 +153,7 @@ impl BaseCode {
     /// Reads a directory listing of a directory on a TFTP server.
     pub fn tftp_read_dir<'a>(
         &mut self,
-        server_ip: &IpAddress,
+        server_ip: &IpAddr,
         directory_name: &CStr8,
         buffer: &'a mut [u8],
     ) -> Result<impl Iterator<Item = core::result::Result<TftpFileInfo<'a>, ReadDirParseError>> + 'a>
@@ -157,6 +161,7 @@ impl BaseCode {
         let buffer_ptr = buffer.as_mut_ptr().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -165,7 +170,7 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 cstr8_to_ptr(directory_name),
                 null(),
                 Boolean::FALSE,
@@ -224,12 +229,13 @@ impl BaseCode {
     /// Returns the size of a file located on a MTFTP server.
     pub fn mtftp_get_file_size(
         &mut self,
-        server_ip: &IpAddress,
+        server_ip: &IpAddr,
         filename: &CStr8,
         info: &MtftpInfo,
     ) -> Result<u64> {
         let mut buffer_size = 0;
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -238,9 +244,9 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 cstr8_to_ptr(filename),
-                info.as_raw_ptr(),
+                info.as_ptr(),
                 Boolean::FALSE,
             )
         };
@@ -250,7 +256,7 @@ impl BaseCode {
     /// Reads a file located on a MTFTP server.
     pub fn mtftp_read_file(
         &mut self,
-        server_ip: &IpAddress,
+        server_ip: &IpAddr,
         filename: &CStr8,
         buffer: Option<&mut [u8]>,
         info: &MtftpInfo,
@@ -262,6 +268,7 @@ impl BaseCode {
             (null_mut(), 0, Boolean::TRUE)
         };
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -270,9 +277,9 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 cstr8_to_ptr(filename),
-                info.as_raw_ptr(),
+                info.as_ptr(),
                 dont_use_buffer,
             )
         };
@@ -282,7 +289,7 @@ impl BaseCode {
     /// Reads a directory listing of a directory on a MTFTP server.
     pub fn mtftp_read_dir<'a>(
         &mut self,
-        server_ip: &IpAddress,
+        server_ip: &IpAddr,
         buffer: &'a mut [u8],
         info: &MtftpInfo,
     ) -> Result<impl Iterator<Item = core::result::Result<MtftpFileInfo<'a>, ReadDirParseError>> + 'a>
@@ -290,6 +297,7 @@ impl BaseCode {
         let buffer_ptr = buffer.as_mut_ptr().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
+        let server_ip = EfiIpAddr::from(*server_ip);
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -298,9 +306,9 @@ impl BaseCode {
                 Boolean::FALSE,
                 &mut buffer_size,
                 null(),
-                server_ip.as_raw_ptr(),
+                &server_ip,
                 null_mut(),
-                info.as_raw_ptr(),
+                info.as_ptr(),
                 Boolean::FALSE,
             )
         };
@@ -332,7 +340,7 @@ impl BaseCode {
                 // The IP should have exact 4 octets, not more.
                 return Err(ReadDirParseError);
             }
-            let ip_address = IpAddress::new_v4(buffer);
+            let ip_address = IpAddr::V4(Ipv4Addr::from(buffer));
 
             let information_string = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, information_string) = information_string.split_last().unwrap();
@@ -376,10 +384,10 @@ impl BaseCode {
     pub fn udp_write(
         &mut self,
         op_flags: UdpOpFlags,
-        dest_ip: &IpAddress,
+        dest_ip: &IpAddr,
         dest_port: u16,
-        gateway_ip: Option<&IpAddress>,
-        src_ip: Option<&IpAddress>,
+        gateway_ip: Option<&IpAddr>,
+        src_ip: Option<&IpAddr>,
         src_port: Option<&mut u16>,
         header: Option<&[u8]>,
         buffer: &[u8],
@@ -392,14 +400,17 @@ impl BaseCode {
             (None, null())
         };
 
+        let dest_ip = EfiIpAddr::from(*dest_ip);
+        let gateway_ip = gateway_ip.map(|ip| EfiIpAddr::from(*ip));
+        let src_ip = src_ip.map(|ip| EfiIpAddr::from(*ip));
         unsafe {
             (self.0.udp_write)(
                 &mut self.0,
                 op_flags,
-                dest_ip.as_raw_ptr(),
+                &dest_ip,
                 &dest_port,
-                opt_ip_addr_to_ptr(gateway_ip),
-                opt_ip_addr_to_ptr(src_ip),
+                opt_ip_addr_to_ptr(gateway_ip.as_ref()),
+                opt_ip_addr_to_ptr(src_ip.as_ref()),
                 opt_mut_to_ptr(src_port),
                 opt_ref_to_ptr(header_size),
                 header_ptr,
@@ -436,9 +447,9 @@ impl BaseCode {
     pub fn udp_read(
         &mut self,
         op_flags: UdpOpFlags,
-        dest_ip: Option<&mut IpAddress>,
+        mut dest_ip: Option<&mut IpAddr>,
         dest_port: Option<&mut u16>,
-        src_ip: Option<&mut IpAddress>,
+        mut src_ip: Option<&mut IpAddr>,
         src_port: Option<&mut u16>,
         header: Option<&mut [u8]>,
         buffer: &mut [u8],
@@ -453,13 +464,16 @@ impl BaseCode {
 
         let mut buffer_size = buffer.len();
 
+        let mut dest_ip_efi = dest_ip.as_ref().map(|ip| EfiIpAddr::from(**ip));
+        let mut src_ip_efi = src_ip.as_ref().map(|ip| EfiIpAddr::from(**ip));
+
         let status = unsafe {
             (self.0.udp_read)(
                 &mut self.0,
                 op_flags,
-                opt_ip_addr_to_ptr_mut(dest_ip),
+                opt_ip_addr_to_ptr_mut(dest_ip_efi.as_mut()),
                 opt_mut_to_ptr(dest_port),
-                opt_ip_addr_to_ptr_mut(src_ip),
+                opt_ip_addr_to_ptr_mut(src_ip_efi.as_mut()),
                 opt_mut_to_ptr(src_port),
                 header_size,
                 header_ptr,
@@ -467,6 +481,20 @@ impl BaseCode {
                 buffer.as_mut_ptr().cast(),
             )
         };
+
+        // Translate IP types back into the higher-level types.
+        let fn_replace_ip = |core_ip: &mut Option<&mut IpAddr>, efi_ip: Option<EfiIpAddr>| {
+            // TODO use let-chain once we are on MSRV 1.88
+            if let (Some(core_ip_location), Some(efi_ip)) = (core_ip, efi_ip) {
+                // SAFETY: We trust that `using_ipv6()` tells the truth.
+                let core_ip = unsafe { efi_ip.into_core_addr(self.mode().using_ipv6()) };
+                **core_ip_location = core_ip;
+            }
+        };
+
+        fn_replace_ip(&mut dest_ip, dest_ip_efi);
+        fn_replace_ip(&mut src_ip, src_ip_efi);
+
         status.to_result_with_val(|| buffer_size)
     }
 
@@ -478,9 +506,9 @@ impl BaseCode {
     }
 
     /// Uses the ARP protocol to resolve a MAC address.
-    pub fn arp(&mut self, ip_addr: &IpAddress, mac_addr: Option<&mut MacAddress>) -> Result {
-        unsafe { (self.0.arp)(&mut self.0, ip_addr.as_raw_ptr(), opt_mut_to_ptr(mac_addr)) }
-            .to_result()
+    pub fn arp(&mut self, ip_addr: &IpAddr, mac_addr: Option<&mut EfiMacAddr>) -> Result {
+        let ip_addr = EfiIpAddr::from(*ip_addr);
+        unsafe { (self.0.arp)(&mut self.0, &ip_addr, opt_mut_to_ptr(mac_addr)) }.to_result()
     }
 
     /// Updates the parameters that affect the operation of the PXE Base Code
@@ -510,14 +538,16 @@ impl BaseCode {
     /// device.
     pub fn set_station_ip(
         &mut self,
-        new_station_ip: Option<&IpAddress>,
-        new_subnet_mask: Option<&IpAddress>,
+        new_station_ip: Option<&IpAddr>,
+        new_subnet_mask: Option<&IpAddr>,
     ) -> Result {
+        let new_station_ip = new_station_ip.map(|ip| EfiIpAddr::from(*ip));
+        let new_subnet_mask = new_subnet_mask.map(|mask| EfiIpAddr::from(*mask));
         unsafe {
             (self.0.set_station_ip)(
                 &mut self.0,
-                opt_ip_addr_to_ptr(new_station_ip),
-                opt_ip_addr_to_ptr(new_subnet_mask),
+                opt_ip_addr_to_ptr(new_station_ip.as_ref()),
+                opt_ip_addr_to_ptr(new_subnet_mask.as_ref()),
             )
         }
         .to_result()
@@ -581,14 +611,14 @@ fn opt_bool_to_ptr(arg: &Option<bool>) -> *const Boolean {
         .unwrap_or_else(null)
 }
 
-/// Convert an `Option<&IpAddress>` to a `*const uefi_raw::IpAddress`.
-fn opt_ip_addr_to_ptr(arg: Option<&IpAddress>) -> *const uefi_raw::IpAddress {
-    arg.map(|arg| arg.as_raw_ptr()).unwrap_or_else(null)
+/// Convert an `Option<&EfiIpAddr>` to a `*const uefi_raw::EfiIpAddr`.
+fn opt_ip_addr_to_ptr(arg: Option<&EfiIpAddr>) -> *const EfiIpAddr {
+    arg.map(|arg| &raw const *arg).unwrap_or_else(null)
 }
 
-/// Convert an `Option<&mut IpAddress>` to a `*mut uefi_raw::IpAddress`.
-fn opt_ip_addr_to_ptr_mut(arg: Option<&mut IpAddress>) -> *mut uefi_raw::IpAddress {
-    arg.map(|arg| arg.as_raw_ptr_mut()).unwrap_or_else(null_mut)
+/// Convert an `Option<&mut EfiIpAddr>` to a `*mut uefi_raw::EfiIpAddr`.
+fn opt_ip_addr_to_ptr_mut(arg: Option<&mut EfiIpAddr>) -> *mut EfiIpAddr {
+    arg.map(|arg| &raw mut *arg).unwrap_or_else(null_mut)
 }
 
 /// Convert an `Option<&Packet>` to a `*const PxeBaseCodePacket`.
@@ -623,7 +653,7 @@ pub struct DiscoverInfo {
     use_b_cast: bool,
     use_u_cast: bool,
     must_use_list: bool,
-    server_m_cast_ip: IpAddress,
+    server_m_cast_ip: EfiIpAddr,
     ip_cnt: u16,
     srv_list: [Server],
 }
@@ -636,14 +666,14 @@ impl DiscoverInfo {
         use_b_cast: bool,
         use_u_cast: bool,
         must_use_list: bool,
-        server_m_cast_ip: IpAddress,
+        server_m_cast_ip: EfiIpAddr,
         srv_list: &[Server],
     ) -> Result<&'buf mut Self> {
         let server_count = srv_list.len();
         assert!(server_count <= u16::MAX as usize, "too many servers");
 
         let required_size = size_of::<bool>() * 4
-            + size_of::<IpAddress>()
+            + size_of::<EfiIpAddr>()
             + size_of::<u16>()
             + size_of_val(srv_list);
 
@@ -698,7 +728,7 @@ impl DiscoverInfo {
 
     /// Returns the address used in multicast discovery.
     #[must_use]
-    pub const fn server_m_cast_ip(&self) -> &IpAddress {
+    pub const fn server_m_cast_ip(&self) -> &EfiIpAddr {
         &self.server_m_cast_ip
     }
 
@@ -727,7 +757,7 @@ pub struct Server {
     accept_any_response: bool,
     _reserved: u8,
     /// The IP address of the server
-    ip_addr: IpAddress,
+    ip_addr: EfiIpAddr,
 }
 
 impl Server {
@@ -735,19 +765,19 @@ impl Server {
     /// `None` only Boot Server replies with matching the IP address will be
     /// accepted.
     #[must_use]
-    pub fn new(ty: u16, ip_addr: Option<IpAddress>) -> Self {
+    pub fn new(ty: u16, ip_addr: Option<EfiIpAddr>) -> Self {
         Self {
             ty,
             accept_any_response: ip_addr.is_none(),
             _reserved: 0,
-            ip_addr: ip_addr.unwrap_or(IpAddress([0; 16])),
+            ip_addr: ip_addr.unwrap_or_default(),
         }
     }
 
-    /// Returns a `None` if the any response should be accepted or the IP
+    /// Returns `None` if any response should be accepted, or otherwise the IP
     /// address of a Boot Server whose responses should be accepted.
     #[must_use]
-    pub const fn ip_addr(&self) -> Option<&IpAddress> {
+    pub const fn ip_addr(&self) -> Option<&EfiIpAddr> {
         if self.accept_any_response {
             None
         } else {
@@ -762,9 +792,10 @@ impl Server {
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct MtftpInfo {
+    // TODO we need a low level type and a high-level type with `IpAddr`
     /// File multicast IP address. This is the IP address to which the server
     /// will send the requested file.
-    pub m_cast_ip: IpAddress,
+    pub m_cast_ip: EfiIpAddr,
     /// Client multicast listening port. This is the UDP port to which the
     /// server will send the requested file.
     pub c_port: u16,
@@ -780,7 +811,7 @@ pub struct MtftpInfo {
 }
 
 impl MtftpInfo {
-    const fn as_raw_ptr(&self) -> *const PxeBaseCodeMtftpInfo {
+    const fn as_ptr(&self) -> *const PxeBaseCodeMtftpInfo {
         ptr::from_ref(self).cast()
     }
 }
@@ -795,7 +826,7 @@ pub struct IpFilter {
     pub filters: IpFilters,
     ip_cnt: u8,
     _reserved: u16,
-    ip_list: [IpAddress; 8],
+    ip_list: [IpAddr; 8],
 }
 
 impl IpFilter {
@@ -805,11 +836,11 @@ impl IpFilter {
     ///
     /// Panics if `ip_list` contains more than 8 entries.
     #[must_use]
-    pub fn new(filters: IpFilters, ip_list: &[IpAddress]) -> Self {
+    pub fn new(filters: IpFilters, ip_list: &[IpAddr]) -> Self {
         assert!(ip_list.len() <= 8);
 
         let ip_cnt = ip_list.len() as u8;
-        let mut buffer = [IpAddress([0; 16]); 8];
+        let mut buffer = [IpAddr::from([0; 16]); 8];
         buffer[..ip_list.len()].copy_from_slice(ip_list);
 
         Self {
@@ -823,7 +854,7 @@ impl IpFilter {
     /// A list of IP addresses other than the Station Ip that should be
     /// enabled. Maybe be multicast or unicast.
     #[must_use]
-    pub fn ip_list(&self) -> &[IpAddress] {
+    pub fn ip_list(&self) -> &[IpAddr] {
         &self.ip_list[..usize::from(self.ip_cnt)]
     }
 }
@@ -1145,8 +1176,10 @@ impl Mode {
     /// [`BaseCode::udp_write`], [`BaseCode::arp`] and any of the TFTP/MTFTP
     /// operations are called.
     #[must_use]
-    pub fn station_ip(&self) -> IpAddress {
-        unsafe { IpAddress::from_raw(self.0.station_ip, self.using_ipv6()) }
+    pub fn station_ip(&self) -> IpAddr {
+        let efi_ip = self.0.station_ip;
+        // SAFETY: We trust that `using_ipv6()` tells the truth.
+        unsafe { efi_ip.into_core_addr(self.using_ipv6()) }
     }
 
     /// The device's current subnet mask. This field is initialized to a zero
@@ -1158,8 +1191,10 @@ impl Mode {
     /// [`BaseCode::udp_read`], [`BaseCode::udp_write`],
     /// [`BaseCode::arp`] or any of the TFTP/MTFTP operations are called.
     #[must_use]
-    pub fn subnet_mask(&self) -> IpAddress {
-        unsafe { IpAddress::from_raw(self.0.subnet_mask, self.using_ipv6()) }
+    pub fn subnet_mask(&self) -> IpAddr {
+        let efi_ip = self.0.subnet_mask;
+        // SAFETY: We trust that `using_ipv6()` tells the truth.
+        unsafe { efi_ip.into_core_addr(self.using_ipv6()) }
     }
 
     /// Cached DHCP Discover packet. This field is zero-filled by the
@@ -1276,9 +1311,9 @@ impl Mode {
 #[derive(Debug)]
 pub struct ArpEntry {
     /// The IP address.
-    pub ip_addr: IpAddress,
+    pub ip_addr: IpAddr,
     /// The mac address of the device that is addressed by [`Self::ip_addr`].
-    pub mac_addr: MacAddress,
+    pub mac_addr: EfiMacAddr,
 }
 
 /// An entry for the route table found in [`Mode::route_table`]
@@ -1288,9 +1323,12 @@ pub struct ArpEntry {
 #[allow(missing_docs)]
 #[derive(Debug)]
 pub struct RouteEntry {
-    pub ip_addr: IpAddress,
-    pub subnet_mask: IpAddress,
-    pub gw_addr: IpAddress,
+    /// IP address.
+    pub ip_addr: IpAddr,
+    /// Subnet mask.
+    pub subnet_mask: IpAddr,
+    /// Gateway address.
+    pub gw_addr: IpAddr,
 }
 
 /// An ICMP error packet.
@@ -1380,7 +1418,7 @@ pub struct TftpFileInfo<'a> {
 #[derive(Debug)]
 pub struct MtftpFileInfo<'a> {
     pub filename: &'a CStr8,
-    pub ip_address: IpAddress,
+    pub ip_address: IpAddr,
     pub size: u64,
     pub year: u16,
     pub month: u8,

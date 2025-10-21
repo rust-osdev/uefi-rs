@@ -9,15 +9,15 @@
 //! No interface function must be called until `SimpleNetwork.start` is successfully
 //! called first.
 
-use super::{IpAddress, MacAddress};
 use crate::data_types::Event;
 use crate::proto::unsafe_protocol;
 use crate::{Result, StatusExt};
 use core::ffi::c_void;
+use core::net::IpAddr;
 use core::ptr;
 use core::ptr::NonNull;
-use uefi_raw::Boolean;
 use uefi_raw::protocol::network::snp::SimpleNetworkProtocol;
+use uefi_raw::{Boolean, IpAddress as EfiIpAddr, MacAddress as EfiMacAddr};
 
 pub use uefi_raw::protocol::network::snp::{
     InterruptStatus, NetworkMode, NetworkState, NetworkStatistics, ReceiveFlags,
@@ -68,7 +68,7 @@ impl SimpleNetwork {
         enable: ReceiveFlags,
         disable: ReceiveFlags,
         reset_mcast_filter: bool,
-        mcast_filter: Option<&[MacAddress]>,
+        mcast_filter: Option<&[EfiMacAddr]>,
     ) -> Result {
         let filter_count = mcast_filter.map(|filters| filters.len()).unwrap_or(0);
         let filters = mcast_filter
@@ -89,7 +89,7 @@ impl SimpleNetwork {
     }
 
     /// Modify or reset the current station address, if supported.
-    pub fn station_address(&self, reset: bool, new: Option<&MacAddress>) -> Result {
+    pub fn station_address(&self, reset: bool, new: Option<&EfiMacAddr>) -> Result {
         unsafe {
             (self.0.station_address)(
                 &self.0,
@@ -129,13 +129,14 @@ impl SimpleNetwork {
     }
 
     /// Convert a multicast IP address to a multicast HW MAC Address.
-    pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddress) -> Result<MacAddress> {
-        let mut mac_address = MacAddress([0; 32]);
+    pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddr) -> Result<EfiMacAddr> {
+        let mut mac_address = EfiMacAddr([0; 32]);
+        let ip = EfiIpAddr::from(ip);
         let status = unsafe {
             (self.0.multicast_ip_to_mac)(
                 &self.0,
                 Boolean::from(ipv6),
-                ip.as_raw_ptr(),
+                &raw const ip,
                 &mut mac_address,
             )
         };
@@ -220,8 +221,8 @@ impl SimpleNetwork {
         &self,
         header_size: usize,
         buffer: &[u8],
-        src_addr: Option<MacAddress>,
-        dst_addr: Option<MacAddress>,
+        src_addr: Option<EfiMacAddr>,
+        dst_addr: Option<EfiMacAddr>,
         protocol: Option<u16>,
     ) -> Result {
         unsafe {
@@ -245,8 +246,8 @@ impl SimpleNetwork {
         &self,
         buffer: &mut [u8],
         header_size: Option<&mut usize>,
-        src_addr: Option<&mut MacAddress>,
-        dest_addr: Option<&mut MacAddress>,
+        src_addr: Option<&mut EfiMacAddr>,
+        dest_addr: Option<&mut EfiMacAddr>,
         protocol: Option<&mut u16>,
     ) -> Result<usize> {
         let mut buffer_size = buffer.len();

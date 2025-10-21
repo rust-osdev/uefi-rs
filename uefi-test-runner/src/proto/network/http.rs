@@ -96,7 +96,7 @@ pub fn test() {
 
         info!("Bring up interface (ip4 config2 protocol)");
         let mut ip4 = Ip4Config2::new(*h).expect("open ip4 config2 protocol");
-        ip4.ifup(true).expect("acquire ipv4 address");
+        ip4.ifup().expect("acquire ipv4 address");
 
         // hard to find web sites which still allow plain http these days ...
         info!("Testing HTTP");

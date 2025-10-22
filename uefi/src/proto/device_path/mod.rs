@@ -37,7 +37,9 @@
 //!
 //! # Types
 //!
-//! To represent device paths, this module provides several types:
+//! To represent device paths, this module provides several types, which are
+//! listed in the following. To construct device paths, please head to the
+//! [`build`] module.
 //!
 //! * [`DevicePath`] is the root type that represents a full device
 //!   path, containing one or more device path instance. It ends with an
@@ -79,6 +81,13 @@
 //!
 //! Note: the API provided by this module is currently mostly limited to
 //! reading existing device paths rather than constructing new ones.
+//!
+//! # Submodules
+//!
+//! - utilities to construct device paths: [`build`]
+//! - utilities to transform device paths to a textual representation: [`text`]
+//! - DevicePathUtilities protocol:: [`util`]
+//!
 //!
 //! [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 //! [`END_INSTANCE`]: DeviceSubType::END_INSTANCE

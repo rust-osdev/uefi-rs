@@ -9,7 +9,9 @@ extend-exclude = [
 [default]
 extend-ignore-identifiers-re = [
   # uefi-raw/src/protocol/device_path.rs
-  "PnP"
+  "PnP",
+  # uefi-raw/src/protocol/network/tcpv4.rs
+  "ANDed"
 ]
 
 [default.extend-words]

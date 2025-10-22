@@ -12,7 +12,6 @@ use crate::protocol::network::snp::NetworkMode;
 use crate::{Boolean, Event, Guid, Handle, Ipv4Address, Status, guid, newtype_enum};
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
-use core::ptr::NonNull;
 
 #[derive(Debug)]
 #[repr(C)]
@@ -25,7 +24,7 @@ pub struct Tcpv4Protocol {
     /// drivers such as IPv4, MNP, or SNP.
     #[allow(clippy::type_complexity)]
     pub get_mode_data: unsafe extern "efiapi" fn(
-        this: NonNull<Self>,
+        this: *mut Self,
         connection_state: *mut Tcpv4ConnectionState,
         config_data: *mut Tcpv4ConfigData,
         ip4_mode_data: *mut Ipv4ModeData,
@@ -50,7 +49,7 @@ pub struct Tcpv4Protocol {
     /// and transmit queue will be flushed, and no traffic will be
     /// allowed through this instance.
     pub configure:
-        unsafe extern "efiapi" fn(this: NonNull<Self>, config_data: *mut Tcpv4ConfigData) -> Status,
+        unsafe extern "efiapi" fn(this: *mut Self, config_data: *const Tcpv4ConfigData) -> Status,
 
     /// Add or delete routing entries.
     ///
@@ -87,11 +86,11 @@ pub struct Tcpv4Protocol {
     /// independent network stack that shares information only through
     /// EFI TCPv4 variable.
     pub routes: unsafe extern "efiapi" fn(
-        this: NonNull<Self>,
+        this: *mut Self,
         delete_route: Boolean,
-        subnet_address: NonNull<Ipv4Address>,
-        subnet_mask: NonNull<Ipv4Address>,
-        gateway_address: NonNull<Ipv4Address>,
+        subnet_address: *const Ipv4Address,
+        subnet_mask: *const Ipv4Address,
+        gateway_address: *const Ipv4Address,
     ) -> Status,
 
     /// Initiate a nonblocking TCP connection request for an active
@@ -110,8 +109,8 @@ pub struct Tcpv4Protocol {
     /// [`Tcpv4ConnectionState::ESTABLISHED`], otherwise, the state
     /// will return to [`Tcpv4ConnectionState::CLOSED`].
     pub connect: unsafe extern "efiapi" fn(
-        this: NonNull<Self>,
-        connection_token: NonNull<Tcpv4CompletionToken>,
+        this: *mut Self,
+        connection_token: *mut Tcpv4CompletionToken,
     ) -> Status,
 
     /// Listen on the passive instance to accept an incoming
@@ -134,10 +133,8 @@ pub struct Tcpv4Protocol {
     ///
     /// This function can only be called when the current TCP instance
     /// is in [`Tcpv4ConnectionState::LISTEN`] state.
-    pub accept: unsafe extern "efiapi" fn(
-        this: NonNull<Self>,
-        listen_token: NonNull<Tcpv4ListenToken>,
-    ) -> Status,
+    pub accept:
+        unsafe extern "efiapi" fn(this: *mut Self, listen_token: *mut Tcpv4ListenToken) -> Status,
 
     /// Queues outgoing data into the transmit queue.
     ///
@@ -145,8 +142,7 @@ pub struct Tcpv4Protocol {
     /// instance along with the user data. The status of the token is
     /// updated and the event in the token will be signaled once the
     /// data is sent out or some error occurs.
-    pub transmit:
-        unsafe extern "efiapi" fn(this: NonNull<Self>, token: NonNull<Tcpv4IoToken>) -> Status,
+    pub transmit: unsafe extern "efiapi" fn(this: *mut Self, token: *mut Tcpv4IoToken) -> Status,
 
     /// Places an asynchronous receive request into the receiving
     /// queue.
@@ -169,8 +165,7 @@ pub struct Tcpv4Protocol {
     /// for the event will enable the user to receive the notification
     /// and receiving status. That notification function is guaranteed
     /// to not be re-entered.
-    pub receive:
-        unsafe extern "efiapi" fn(this: NonNull<Self>, token: NonNull<Tcpv4IoToken>) -> Status,
+    pub receive: unsafe extern "efiapi" fn(this: *mut Self, token: *mut Tcpv4IoToken) -> Status,
 
     /// Disconnect a TCP connection gracefully or reset a TCP
     /// connection. This function is a nonblocking operation.
@@ -185,7 +180,7 @@ pub struct Tcpv4Protocol {
     /// [`Tcpv4ConnectionState::CLOSED`] state, all pending
     /// asynchronous operations are signaled, and any buffers used for
     /// TCP network traffic are flushed.
-    pub close: unsafe extern "efiapi" fn(this: NonNull<Self>, close_token: *mut c_void) -> Status,
+    pub close: unsafe extern "efiapi" fn(this: *mut Self, close_token: *mut c_void) -> Status,
 
     /// Abort an asynchronous connection, listen, transmission or
     /// receive request.
@@ -202,8 +197,7 @@ pub struct Tcpv4Protocol {
     /// by [`Tcpv4Protocol::connect`], [`Tcpv4Protocol::accept`],
     /// [`Tcpv4Protocol::transmit`] and [`Tcpv4Protocol::receive`]
     /// will be aborted.
-    pub cancel:
-        unsafe extern "efiapi" fn(this: NonNull<Self>, completion_token: *mut c_void) -> Status,
+    pub cancel: unsafe extern "efiapi" fn(this: *mut Self, completion_token: *mut c_void) -> Status,
 
     /// Poll to receive incoming data and transmit outgoing segments.
     ///
@@ -216,7 +210,7 @@ pub struct Tcpv4Protocol {
     /// enough to avoid dropping packets. Drivers and applications
     /// that are experiencing packet loss should try calling the
     /// `poll` function at a high frequency.
-    pub poll: unsafe extern "efiapi" fn(this: NonNull<Self>) -> Status,
+    pub poll: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
 }
 
 impl Tcpv4Protocol {
@@ -232,7 +226,7 @@ impl Tcpv4Protocol {
 }
 
 newtype_enum! {
-    pub enum Tcpv4ConnectionState: i32 => #[allow(missing_docs)] {
+    pub enum Tcpv4ConnectionState: i32 => {
         CLOSED = 0,
         LISTEN = 1,
         SYN_SENT = 2,
@@ -264,21 +258,23 @@ pub struct Ipv4ModeData {
     /// Number of joined multicast groups.
     pub group_count: u32,
     /// List of joined multicast group addresses.
-    pub group_table: *mut Ipv4Address,
+    pub group_table: *const Ipv4Address,
     /// Number of entries in the routing table.
     pub route_count: u32,
     /// Routing table entries.
-    pub ip4_route_table: *mut Ipv4RouteTable,
+    pub ip4_route_table: *const Ipv4RouteTable,
     /// Number of entries in the supported ICMP types list.
     pub icmp_type_count: u32,
     /// Array of ICMP types and codes that are supported.
-    pub icmp_type_list: *mut Ipv4IcmpType,
+    pub icmp_type_list: *const Ipv4IcmpType,
 }
 
 #[derive(Debug)]
 #[repr(C)]
 pub struct Ipv4ConfigData {
     /// Default protocol to be used.
+    ///
+    /// See <https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>.
     pub default_protocol: u8,
     /// Set to `TRUE` to receive all IPv4 packets.
     pub accept_any_protocol: Boolean,
@@ -427,9 +423,9 @@ pub struct Tcpv4IoToken {
 #[repr(C)]
 pub union Tcpv4Packet {
     /// Pointer to receive data structure.
-    pub rx_data: NonNull<Tcpv4ReceiveData>,
+    pub rx_data: *mut Tcpv4ReceiveData,
     /// Pointer to transmit data structure.
-    pub tx_data: NonNull<Tcpv4TransmitData>,
+    pub tx_data: *mut Tcpv4TransmitData,
 }
 
 impl Debug for Tcpv4Packet {
@@ -445,7 +441,7 @@ pub struct Tcpv4FragmentData {
     pub fragment_length: u32,
     /// Pointer to an array of contiguous bytes, at least
     /// `fragment_length` in length.
-    pub fragment_buf: NonNull<u8>,
+    pub fragment_buf: *mut u8,
 }
 
 #[derive(Debug)]

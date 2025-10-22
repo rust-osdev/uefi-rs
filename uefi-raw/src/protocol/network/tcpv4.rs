@@ -180,7 +180,8 @@ pub struct Tcpv4Protocol {
     /// [`Tcpv4ConnectionState::CLOSED`] state, all pending
     /// asynchronous operations are signaled, and any buffers used for
     /// TCP network traffic are flushed.
-    pub close: unsafe extern "efiapi" fn(this: *mut Self, close_token: *mut c_void) -> Status,
+    pub close:
+        unsafe extern "efiapi" fn(this: *mut Self, close_token: *mut Tcpv4CloseToken) -> Status,
 
     /// Abort an asynchronous connection, listen, transmission or
     /// receive request.
@@ -197,7 +198,10 @@ pub struct Tcpv4Protocol {
     /// by [`Tcpv4Protocol::connect`], [`Tcpv4Protocol::accept`],
     /// [`Tcpv4Protocol::transmit`] and [`Tcpv4Protocol::receive`]
     /// will be aborted.
-    pub cancel: unsafe extern "efiapi" fn(this: *mut Self, completion_token: *mut c_void) -> Status,
+    pub cancel: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        completion_token: *mut Tcpv4CompletionToken,
+    ) -> Status,
 
     /// Poll to receive incoming data and transmit outgoing segments.
     ///
@@ -418,6 +422,17 @@ pub struct Tcpv4IoToken {
     pub completion_token: Tcpv4CompletionToken,
     /// Packet data for the I/O operation.
     pub packet: Tcpv4Packet,
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct Tcpv4CloseToken {
+    /// Completion token for the close operation.
+    pub completion_token: Tcpv4CompletionToken,
+    /// Abort the TCP connection on close instead of the standard TCP
+    /// close process when it is set to TRUE. This option can be used
+    /// to satisfy a fast disconnect.
+    pub abort_on_close: Boolean,
 }
 
 #[repr(C)]

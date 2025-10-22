@@ -1,6 +1,7 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `Tcpv4` protocol and types.
 
 ## Changed
 

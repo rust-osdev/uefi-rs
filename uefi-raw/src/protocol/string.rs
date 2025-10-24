@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{Char8, Char16, Guid, guid};
+use crate::{Boolean, Char8, Char16, Guid, guid};
 
 #[derive(Debug)]
 #[repr(C)]
@@ -11,7 +11,7 @@ pub struct UnicodeCollationProtocol {
         this: *const Self,
         string: *const Char16,
         pattern: *const Char16,
-    ) -> bool,
+    ) -> Boolean,
     pub str_lwr: unsafe extern "efiapi" fn(this: *const Self, s: *mut Char16),
     pub str_upr: unsafe extern "efiapi" fn(this: *const Self, s: *mut Char16),
     pub fat_to_str: unsafe extern "efiapi" fn(
@@ -25,7 +25,7 @@ pub struct UnicodeCollationProtocol {
         s: *const Char16,
         fat_size: usize,
         fat: *mut Char8,
-    ) -> bool,
+    ) -> Boolean,
     pub supported_languages: *const Char8,
 }
 

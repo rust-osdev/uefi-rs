@@ -289,7 +289,7 @@ pub struct DevicePathUtilitiesProtocol {
         device_path_instance_size: *mut usize,
     ) -> *const DevicePathProtocol,
     pub is_device_path_multi_instance:
-        unsafe extern "efiapi" fn(device_path: *const DevicePathProtocol) -> bool,
+        unsafe extern "efiapi" fn(device_path: *const DevicePathProtocol) -> Boolean,
     pub create_device_node: unsafe extern "efiapi" fn(
         node_type: DeviceType,
         node_sub_type: DeviceSubType,

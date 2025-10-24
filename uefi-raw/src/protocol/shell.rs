@@ -4,7 +4,7 @@
 
 use core::ffi::c_void;
 
-use crate::{Char8, Char16, Event, Guid, Handle, Status, guid};
+use crate::{Boolean, Char8, Char16, Event, Guid, Handle, Status, guid};
 
 use super::device_path::DevicePathProtocol;
 use super::file_system::FileInfo;
@@ -58,14 +58,15 @@ pub struct ShellProtocol {
     pub set_env: unsafe extern "efiapi" fn(
         name: *const Char16,
         value: *const Char16,
-        volatile: bool,
+        volatile: Boolean,
     ) -> Status,
-    pub get_alias: unsafe extern "efiapi" fn(alias: *const Char16, volatile: bool) -> *const Char16,
+    pub get_alias:
+        unsafe extern "efiapi" fn(alias: *const Char16, volatile: Boolean) -> *const Char16,
     pub set_alias: unsafe extern "efiapi" fn(
         command: *const Char16,
         alias: *const Char16,
-        replace: bool,
-        volatile: bool,
+        replace: Boolean,
+        volatile: Boolean,
     ) -> Status,
     pub get_help_text: unsafe extern "efiapi" fn(
         command: *const Char16,
@@ -97,11 +98,11 @@ pub struct ShellProtocol {
     pub remove_dup_in_file_list:
         unsafe extern "efiapi" fn(file_list: *const *const ShellFileInfo) -> Status,
 
-    pub batch_is_active: unsafe extern "efiapi" fn() -> bool,
-    pub is_root_shell: unsafe extern "efiapi" fn() -> bool,
+    pub batch_is_active: unsafe extern "efiapi" fn() -> Boolean,
+    pub is_root_shell: unsafe extern "efiapi" fn() -> Boolean,
     pub enable_page_break: unsafe extern "efiapi" fn(),
     pub disable_page_break: unsafe extern "efiapi" fn(),
-    pub get_page_break: unsafe extern "efiapi" fn() -> bool,
+    pub get_page_break: unsafe extern "efiapi" fn() -> Boolean,
     pub get_device_name: unsafe extern "efiapi" fn(
         device_handle: Handle,
         flags: ShellDeviceNameFlags,

@@ -5,7 +5,7 @@
 use core::fmt::Debug;
 
 use crate::protocol::device_path::DevicePathProtocol;
-use crate::{Char16, Guid, Status, guid, newtype_enum};
+use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
 
 /// EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL
 #[derive(Debug)]
@@ -129,7 +129,7 @@ pub union IfrTypeValue {
     pub u16: u16,         // EFI_IFR_TYPE_NUM_SIZE_16
     pub u32: u32,         // EFI_IFR_TYPE_NUM_SIZE_32
     pub u64: u64,         // EFI_IFR_TYPE_NUM_SIZE_64
-    pub b: bool,          // EFI_IFR_TYPE_BOOLEAN
+    pub b: Boolean,       // EFI_IFR_TYPE_BOOLEAN
     pub time: HiiTime,    // EFI_IFR_TYPE_TIME
     pub date: HiiDate,    // EFI_IFR_TYPE_DATE
     pub string: StringId, // EFI_IFR_TYPE_STRING, EFI_IFR_TYPE_ACTION

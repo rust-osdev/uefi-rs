@@ -51,6 +51,7 @@ enum ErrorKind {
     MissingPub,
     MissingRepr,
     MissingUnsafe,
+    PrimitiveBool,
     UnderscoreField,
     UnknownRepr,
 }
@@ -85,6 +86,7 @@ impl Display for ErrorKind {
             Self::MissingPub => write!(f, "missing pub"),
             Self::MissingRepr => write!(f, "missing repr"),
             Self::MissingUnsafe => write!(f, "missing unsafe"),
+            Self::PrimitiveBool => write!(f, "use `Boolean` instead of `bool`"),
             Self::UnderscoreField => write!(f, "field name starts with `_`"),
             Self::UnknownRepr => write!(f, "unknown repr"),
         }
@@ -234,9 +236,16 @@ fn check_type(ty: &Type, src: &Path) -> Result<(), Error> {
     match ty {
         Type::Array(TypeArray { elem, .. }) => check_type(elem, src),
         Type::BareFn(f) => check_fn_ptr(f, src),
-        Type::Never(_) | Type::Path(_) => {
+        Type::Never(_) => {
             // Allow.
             Ok(())
+        }
+        Type::Path(type_path) => {
+            if type_path.path.is_ident("bool") {
+                Err(Error::new(ErrorKind::PrimitiveBool, src, ty))
+            } else {
+                Ok(())
+            }
         }
         Type::Ptr(TypePtr { elem, .. }) => check_type(elem, src),
         ty => Err(Error::new(ErrorKind::ForbiddenType, src, ty)),
@@ -649,6 +658,17 @@ mod tests {
                 }
             },
             ErrorKind::ForbiddenType,
+        );
+
+        // Forbidden field type: primitive bool.
+        check_item_err(
+            parse_quote! {
+                #[repr(C)]
+                pub struct S {
+                    pub f: bool,
+                }
+            },
+            ErrorKind::PrimitiveBool,
         );
     }
 

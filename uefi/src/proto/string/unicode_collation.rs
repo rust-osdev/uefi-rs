@@ -54,7 +54,7 @@ impl UnicodeCollation {
     /// any single character followed by a "." followed by any string.
     #[must_use]
     pub fn metai_match(&self, s: &CStr16, pattern: &CStr16) -> bool {
-        unsafe { (self.0.metai_match)(&self.0, s.as_ptr().cast(), pattern.as_ptr().cast()) }
+        unsafe { (self.0.metai_match)(&self.0, s.as_ptr().cast(), pattern.as_ptr().cast()) }.into()
     }
 
     /// Converts the characters in `s` to lower case characters.
@@ -132,7 +132,7 @@ impl UnicodeCollation {
                 buf.as_mut_ptr(),
             )
         };
-        if failed {
+        if bool::from(failed) {
             Err(StrConversionError::ConversionFailed)
         } else {
             // After the conversion, there is a possibility that the converted string

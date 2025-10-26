@@ -3,6 +3,7 @@
 ## Added
 
 ## Changed
+- **Breaking:** Various uses of `bool` have been replaced with `Boolean`.
 
 
 # uefi-raw - v0.12 (2025-10-21)

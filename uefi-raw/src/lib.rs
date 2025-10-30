@@ -11,7 +11,6 @@
 //! [`uefi`]: https://crates.io/crates/uefi
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(
     clippy::all,
     clippy::missing_const_for_fn,

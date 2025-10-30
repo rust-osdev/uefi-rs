@@ -23,4 +23,4 @@ bitflags.workspace = true
 uguid.workspace = true
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--cfg", "docsrs"]
+all-features = true

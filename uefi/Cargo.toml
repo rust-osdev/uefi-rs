@@ -48,4 +48,3 @@ qemu-exit = { version = "3.0.2", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]

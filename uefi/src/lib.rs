@@ -227,7 +227,6 @@
 //! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
-#![cfg_attr(docsrs, feature(doc_cfg))]
 #![no_std]
 #![deny(
     clippy::all,

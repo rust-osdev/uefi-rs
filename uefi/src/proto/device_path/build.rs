@@ -2,8 +2,11 @@
 
 //! Utilities for creating new [`DevicePaths`].
 //!
-//! This module contains [`DevicePathBuilder`], as well as submodules
-//! containing types for building each type of device path node.
+//! This module provides builders to construct device paths, as well as
+//! submodules containing types for building each type of device path node.
+//!
+//! - [`DevicePathBuilder`]
+//! - [`OwnedDevicePathBuilder`]
 //!
 //! [`DevicePaths`]: DevicePath
 
@@ -15,7 +18,10 @@ use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
 
 #[cfg(feature = "alloc")]
-use alloc::vec::Vec;
+use {
+    alloc::{boxed::Box, vec::Vec},
+    core::mem,
+};
 
 /// A builder for [`DevicePaths`].
 ///
@@ -74,14 +80,14 @@ use alloc::vec::Vec;
 /// ```
 #[derive(Debug)]
 pub struct DevicePathBuilder<'a> {
-    storage: BuilderStorage<'a>,
+    storage: BuilderStorageRef<'a>,
 }
 
 impl<'a> DevicePathBuilder<'a> {
     /// Create a builder backed by a statically-sized buffer.
     pub const fn with_buf(buf: &'a mut [MaybeUninit<u8>]) -> Self {
         Self {
-            storage: BuilderStorage::Buf { buf, offset: 0 },
+            storage: BuilderStorageRef::Buf { buf, offset: 0 },
         }
     }
 
@@ -92,14 +98,14 @@ impl<'a> DevicePathBuilder<'a> {
     pub fn with_vec(v: &'a mut Vec<u8>) -> Self {
         v.clear();
         Self {
-            storage: BuilderStorage::Vec(v),
+            storage: BuilderStorageRef::Vec(v),
         }
     }
 
     /// Add a node to the device path.
     ///
     /// An error will be returned if an [`END_ENTIRE`] node is passed to
-    /// this function, as that node will be added when `finalize` is
+    /// this function, as that node will be added when [`Self::finalize`] is
     /// called.
     ///
     /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
@@ -107,7 +113,7 @@ impl<'a> DevicePathBuilder<'a> {
         let node_size = usize::from(node.size_in_bytes()?);
 
         match &mut self.storage {
-            BuilderStorage::Buf { buf, offset } => {
+            BuilderStorageRef::Buf { buf, offset } => {
                 node.write_data(
                     buf.get_mut(*offset..*offset + node_size)
                         .ok_or(BuildError::BufferTooSmall)?,
@@ -115,7 +121,7 @@ impl<'a> DevicePathBuilder<'a> {
                 *offset += node_size;
             }
             #[cfg(feature = "alloc")]
-            BuilderStorage::Vec(vec) => {
+            BuilderStorageRef::Vec(vec) => {
                 let old_size = vec.len();
                 vec.reserve(node_size);
                 let buf = &mut vec.spare_capacity_mut()[..node_size];
@@ -138,11 +144,11 @@ impl<'a> DevicePathBuilder<'a> {
         let this = self.push(&end::Entire)?;
 
         let data: &[u8] = match &this.storage {
-            BuilderStorage::Buf { buf, offset } => unsafe {
+            BuilderStorageRef::Buf { buf, offset } => unsafe {
                 maybe_uninit_slice_assume_init_ref(&buf[..*offset])
             },
             #[cfg(feature = "alloc")]
-            BuilderStorage::Vec(vec) => vec,
+            BuilderStorageRef::Vec(vec) => vec,
         };
 
         let ptr: *const () = data.as_ptr().cast();
@@ -150,8 +156,9 @@ impl<'a> DevicePathBuilder<'a> {
     }
 }
 
+/// Reference to the backup storage for [`DevicePathBuilder`]
 #[derive(Debug)]
-enum BuilderStorage<'a> {
+enum BuilderStorageRef<'a> {
     Buf {
         buf: &'a mut [MaybeUninit<u8>],
         offset: usize,
@@ -192,6 +199,58 @@ impl Display for BuildError {
 }
 
 impl core::error::Error for BuildError {}
+
+/// Variant of [`DevicePathBuilder`] to construct a boxed [`DevicePath`].
+///
+/// Using this builder is equivalent to calling [`DevicePath::to_boxed`] on a
+/// device path constructed by the normal builder.
+#[derive(Debug)]
+#[cfg(feature = "alloc")]
+pub struct OwnedDevicePathBuilder {
+    vec: Vec<u8>,
+}
+
+#[cfg(feature = "alloc")]
+impl OwnedDevicePathBuilder {
+    /// Creates a new builder.
+    pub fn new() -> Self {
+        let vec = Vec::new();
+        Self { vec }
+    }
+
+    /// Add a node to the device path.
+    ///
+    /// An error will be returned if an [`END_ENTIRE`] node is passed to
+    /// this function, as that node will be added when [`Self::finalize`] is
+    /// called.
+    ///
+    /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
+    pub fn push(mut self, node: &dyn BuildNode) -> Result<Self, BuildError> {
+        let node_size = usize::from(node.size_in_bytes()?);
+
+        let old_size = self.vec.len();
+        self.vec.reserve(node_size);
+        let buf = &mut self.vec.spare_capacity_mut()[..node_size];
+        node.write_data(buf);
+        unsafe {
+            self.vec.set_len(old_size + node_size);
+        }
+        Ok(self)
+    }
+
+    /// Add an [`END_ENTIRE`] node and return the resulting [`DevicePath`].
+    ///
+    /// This method consumes the builder.
+    ///
+    /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
+    pub fn finalize(self) -> Result<Box<DevicePath>, BuildError> {
+        let this = self.push(&end::Entire)?;
+        let boxed = this.vec.into_boxed_slice();
+        // SAFETY: This is safe as a DevicePath has the same layout.
+        let dvp = unsafe { mem::transmute(boxed) };
+        Ok(dvp)
+    }
+}
 
 /// Trait for types that can be used to build a node via
 /// [`DevicePathBuilder::push`].
@@ -246,11 +305,6 @@ mod tests {
     use crate::proto::device_path::messaging::{
         Ipv4AddressOrigin, IscsiLoginOptions, IscsiProtocol, RestServiceAccessMode, RestServiceType,
     };
-    use core::slice;
-
-    const fn path_to_bytes(path: &DevicePath) -> &[u8] {
-        unsafe { slice::from_raw_parts(path.as_ffi_ptr().cast::<u8>(), size_of_val(path)) }
-    }
 
     /// Test building an ACPI ADR node.
     #[test]
@@ -267,10 +321,8 @@ mod tests {
         let node: &crate::proto::device_path::acpi::Adr =
             path.node_iter().next().unwrap().try_into().unwrap();
         assert_eq!(node.adr().iter().collect::<Vec<_>>(), [1, 2]);
-
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // ACPI ADR node
             0x02, 0x03, 0x0c, 0x00,
             // Values
@@ -308,9 +360,8 @@ mod tests {
         assert_eq!(node.uid_str(), b"bc\0");
         assert_eq!(node.cid_str(), b"def\0");
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // ACPI Expanded node
             0x02, 0x02, 0x19, 0x00,
             // HID
@@ -365,9 +416,8 @@ mod tests {
         assert_eq!(node.vendor_guid_and_data().unwrap().0, vendor_guid);
         assert_eq!(node.vendor_guid_and_data().unwrap().1, &[1, 2, 3, 4, 5]);
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // Messaging REST Service node.
             0x03, 0x21, 0x06, 0x00,
             // Type and access mode
@@ -428,27 +478,37 @@ mod tests {
     /// from the UEFI Specification.
     #[test]
     fn test_fibre_channel_ex_device_path_example() -> Result<(), BuildError> {
+        let nodes: &[&dyn BuildNode] = &[
+            &acpi::Acpi {
+                hid: 0x41d0_0a03,
+                uid: 0x0000_0000,
+            },
+            &hardware::Pci {
+                function: 0x00,
+                device: 0x1f,
+            },
+            &messaging::FibreChannelEx {
+                world_wide_name: [0, 1, 2, 3, 4, 5, 6, 7],
+                logical_unit_number: [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+        ];
+
         // Arbitrarily choose this test to use a statically-sized
         // buffer, just to make sure that code path is tested.
         let mut buf = [MaybeUninit::uninit(); 256];
-        let path = DevicePathBuilder::with_buf(&mut buf)
-            .push(&acpi::Acpi {
-                hid: 0x41d0_0a03,
-                uid: 0x0000_0000,
-            })?
-            .push(&hardware::Pci {
-                function: 0x00,
-                device: 0x1f,
-            })?
-            .push(&messaging::FibreChannelEx {
-                world_wide_name: [0, 1, 2, 3, 4, 5, 6, 7],
-                logical_unit_number: [0, 1, 2, 3, 4, 5, 6, 7],
-            })?
+        let path1 = DevicePathBuilder::with_buf(&mut buf)
+            .push(nodes[0])?
+            .push(nodes[1])?
+            .push(nodes[2])?
+            .finalize()?;
+        let path2 = OwnedDevicePathBuilder::new()
+            .push(nodes[0])?
+            .push(nodes[1])?
+            .push(nodes[2])?
             .finalize()?;
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        const EXPECTED: [u8; 46] = [
             // ACPI node
             0x02, 0x01, 0x0c, 0x00,
             // HID
@@ -477,7 +537,10 @@ mod tests {
 
             // End-entire node
             0x7f, 0xff, 0x04, 0x00,
-        ]);
+        ];
+
+        assert_eq!(path1.as_bytes(), EXPECTED);
+        assert_eq!(path2.as_bytes(), EXPECTED);
 
         Ok(())
     }
@@ -532,9 +595,8 @@ mod tests {
             })?
             .finalize()?;
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // ACPI node
             0x02, 0x01, 0x0c, 0x00,
             // HID

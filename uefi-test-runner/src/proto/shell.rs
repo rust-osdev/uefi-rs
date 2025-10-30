@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use uefi::boot::ScopedProtocol;
+use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol};
+use uefi::proto::device_path::DevicePath;
+use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::shell::Shell;
 use uefi::{Error, Status, boot, cstr16};
+use uefi_raw::protocol::shell::ShellProtocol;
 
 /// Test `current_dir()` and `set_current_dir()`
 pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {

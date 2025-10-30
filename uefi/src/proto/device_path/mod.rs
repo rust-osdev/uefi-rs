@@ -37,7 +37,8 @@
 //!
 //! # Types
 //!
-//! To represent device paths, this module provides several types:
+//! This module defines several types used to represent device paths.
+//! For constructing device paths, see the [`build`] module.
 //!
 //! * [`DevicePath`] is the root type that represents a full device
 //!   path, containing one or more device path instance. It ends with an
@@ -79,6 +80,13 @@
 //!
 //! Note: the API provided by this module is currently mostly limited to
 //! reading existing device paths rather than constructing new ones.
+//!
+//! # Submodules
+//!
+//! - utilities to construct device paths: [`build`]
+//! - utilities to transform device paths to a textual representation: [`text`]
+//! - DevicePathUtilities protocol:: [`util`]
+//!
 //!
 //! [`END_ENTIRE`]: DeviceSubType::END_ENTIRE
 //! [`END_INSTANCE`]: DeviceSubType::END_INSTANCE
@@ -343,9 +351,14 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathNode {
     }
 }
 
-/// A single device path instance that ends with either an [`END_INSTANCE`]
-/// or [`END_ENTIRE`] node. Use [`DevicePath::instance_iter`] to get the
-/// path instances in a [`DevicePath`].
+/// A single device path instance within a fully-qualified [`DevicePath`], which
+/// ends with either an [`END_INSTANCE`] or [`END_ENTIRE`] node.
+///
+/// An instance is one of possibly multiple complete route to the target, e.g.,
+/// a file can be located via network device one or two.
+///
+/// Use [`DevicePath::instance_iter`] to get the path instances in a
+/// [`DevicePath`].
 ///
 /// See the [module-level documentation] for more details.
 ///
@@ -411,10 +424,15 @@ impl ToOwned for DevicePathInstance {
     }
 }
 
-/// High-level representation of the UEFI [device path protocol].
+/// High-level representation of the UEFI [device path protocol], often simply
+/// referred to as "device path".
 ///
 /// This type represents an entire device path, possibly consisting of multiple
 /// [`DevicePathInstance`]s and [`DevicePathNode`]s.
+///
+/// Further, this Rust type is a DST and therefore typically exists as reference
+/// to parse underlying data correspondingly. To get an owned device path, you
+/// can use [`DevicePath::to_owned`].
 ///
 /// See the [module-level documentation] for more details.
 ///

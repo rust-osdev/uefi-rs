@@ -397,6 +397,7 @@ impl DevicePathInstance {
     pub fn to_boxed(&self) -> Box<Self> {
         let data = self.data.to_owned();
         let data = data.into_boxed_slice();
+        // SAFETY: This is safe as a DevicePath has the same layout.
         unsafe { mem::transmute(data) }
     }
 }
@@ -587,6 +588,7 @@ impl DevicePath {
     pub fn to_boxed(&self) -> Box<Self> {
         let data = self.data.to_owned();
         let data = data.into_boxed_slice();
+        // SAFETY: This is safe as a DevicePath has the same layout.
         unsafe { mem::transmute(data) }
     }
 

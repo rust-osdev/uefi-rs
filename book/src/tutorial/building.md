@@ -2,9 +2,10 @@
 
 ## Toolchain
 
-In order to compile for UEFI, an appropriate target must be installed. The
-easiest way to set this up is using a [rustup toolchain file]. In the root of
-your repository, add `rust-toolchain.toml`:
+In order to compile for UEFI, an appropriate target must be installed. Unless
+your operating system provides packages for the Rust UEFI targets, the easiest
+way to set this up is using a [rustup toolchain file]. In the root of your
+repository, add `rust-toolchain.toml`:
 
 ```toml
 [toolchain]

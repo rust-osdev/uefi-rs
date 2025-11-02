@@ -41,20 +41,20 @@ mod exception;
 pub struct DebugSupport {
     isa: ProcessorArch,
     get_maximum_processor_index:
-        extern "efiapi" fn(this: &mut DebugSupport, max_processor_index: &mut usize) -> Status,
+        extern "efiapi" fn(this: &mut Self, max_processor_index: &mut usize) -> Status,
     register_periodic_callback: unsafe extern "efiapi" fn(
-        this: &mut DebugSupport,
+        this: &mut Self,
         processor_index: usize,
         periodic_callback: Option<unsafe extern "efiapi" fn(SystemContext)>,
     ) -> Status,
     register_exception_callback: unsafe extern "efiapi" fn(
-        this: &mut DebugSupport,
+        this: &mut Self,
         processor_index: usize,
         exception_callback: Option<unsafe extern "efiapi" fn(ExceptionType, SystemContext)>,
         exception_type: ExceptionType,
     ) -> Status,
     invalidate_instruction_cache: unsafe extern "efiapi" fn(
-        this: &mut DebugSupport,
+        this: &mut Self,
         processor_index: usize,
         start: *mut c_void,
         length: u64,
@@ -192,20 +192,20 @@ pub enum ProcessorArch: u32 => {
 #[repr(C)]
 #[unsafe_protocol("eba4e8d2-3858-41ec-a281-2647ba9660d0")]
 pub struct DebugPort {
-    reset: extern "efiapi" fn(this: &DebugPort) -> Status,
+    reset: extern "efiapi" fn(this: &Self) -> Status,
     write: extern "efiapi" fn(
-        this: &DebugPort,
+        this: &Self,
         timeout: u32,
         buffer_size: &mut usize,
         buffer: *const c_void,
     ) -> Status,
     read: extern "efiapi" fn(
-        this: &DebugPort,
+        this: &Self,
         timeout: u32,
         buffer_size: &mut usize,
         buffer: *mut c_void,
     ) -> Status,
-    poll: extern "efiapi" fn(this: &DebugPort) -> Status,
+    poll: extern "efiapi" fn(this: &Self) -> Status,
 }
 
 impl DebugPort {

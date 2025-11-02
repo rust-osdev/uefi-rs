@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, clap::ValueEnum)]
 pub enum UefiArch {
     #[value(name = "aarch64")]
     AArch64,
@@ -11,6 +11,7 @@ pub enum UefiArch {
     IA32,
 
     #[value(name = "x86_64")]
+    #[default]
     X86_64,
 }
 
@@ -29,12 +30,6 @@ impl UefiArch {
             Self::IA32 => "i686-unknown-uefi",
             Self::X86_64 => "x86_64-unknown-uefi",
         }
-    }
-}
-
-impl Default for UefiArch {
-    fn default() -> Self {
-        Self::X86_64
     }
 }
 

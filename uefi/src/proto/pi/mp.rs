@@ -105,17 +105,17 @@ pub struct CpuPhysicalLocation {
 #[unsafe_protocol("3fdda605-a76e-4f46-ad29-12f4531b3d08")]
 pub struct MpServices {
     get_number_of_processors: extern "efiapi" fn(
-        this: *const MpServices,
+        this: *const Self,
         number_of_processors: *mut usize,
         number_of_enabled_processors: *mut usize,
     ) -> Status,
     get_processor_info: extern "efiapi" fn(
-        this: *const MpServices,
+        this: *const Self,
         processor_number: usize,
         processor_info_buffer: *mut ProcessorInformation,
     ) -> Status,
     startup_all_aps: extern "efiapi" fn(
-        this: *const MpServices,
+        this: *const Self,
         procedure: Procedure,
         single_thread: bool,
         wait_event: *mut c_void,
@@ -124,7 +124,7 @@ pub struct MpServices {
         failed_cpu_list: *mut *mut usize,
     ) -> Status,
     startup_this_ap: extern "efiapi" fn(
-        this: *const MpServices,
+        this: *const Self,
         procedure: Procedure,
         processor_number: usize,
         wait_event: *mut c_void,
@@ -133,17 +133,17 @@ pub struct MpServices {
         finished: *mut bool,
     ) -> Status,
     switch_bsp: extern "efiapi" fn(
-        this: *const MpServices,
+        this: *const Self,
         processor_number: usize,
         enable_old_bsp: bool,
     ) -> Status,
     enable_disable_ap: extern "efiapi" fn(
-        this: *const MpServices,
+        this: *const Self,
         processor_number: usize,
         enable_ap: bool,
         health_flag: *const u32,
     ) -> Status,
-    who_am_i: extern "efiapi" fn(this: *const MpServices, processor_number: *mut usize) -> Status,
+    who_am_i: extern "efiapi" fn(this: *const Self, processor_number: *mut usize) -> Status,
 }
 
 impl MpServices {

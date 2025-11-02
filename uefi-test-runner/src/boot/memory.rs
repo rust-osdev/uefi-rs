@@ -93,15 +93,14 @@ mod bootservices {
 /// global allocator.
 mod global {
     use alloc::boxed::Box;
+    use core::ops::Deref;
     use uefi_raw::table::boot::PAGE_SIZE;
 
     /// Simple test to ensure our custom allocator works with the `alloc` crate.
     pub fn alloc_vec() {
         info!("Allocating a vector using the global allocator");
 
-        #[allow(clippy::useless_vec)]
-        let mut values = vec![-5, 16, 23, 4, 0];
-
+        let mut values = Box::new([-5, 16, 23, 4, 0]);
         values.sort_unstable();
 
         assert_eq!(values[..], [-5, 0, 4, 16, 23], "Failed to sort vector");
@@ -115,8 +114,9 @@ mod global {
             #[repr(align(0x100))]
             struct Block([u8; 0x100]);
 
-            let value = vec![Block([1; 0x100])];
-            assert_eq!(value.as_ptr() as usize % 0x100, 0, "Wrong alignment");
+            let value = Box::new(Block([1; 0x100]));
+            let inner_value = value.deref();
+            assert_eq!(align_of_val(inner_value), 0x100, "Wrong alignment");
         }
         {
             info!("Allocating a memory page ({PAGE_SIZE}) using the global allocator");

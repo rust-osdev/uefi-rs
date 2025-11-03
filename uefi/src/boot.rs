@@ -131,7 +131,7 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
 /// - `memory_type`: The [`MemoryType`] used to persist the allocation in the
 ///   UEFI memory map. Typically, UEFI OS loaders should allocate memory of
 ///   type [`MemoryType::LOADER_DATA`].
-///- `count`: Number of bytes to allocate.
+///- `count`: Number of pages to allocate.
 ///
 /// # Safety
 ///

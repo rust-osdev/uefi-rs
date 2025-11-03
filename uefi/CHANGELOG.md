@@ -1,6 +1,7 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `proto::ata::AtaRequestBuilder::read_pio()`.
 
 ## Changed
 

@@ -39,13 +39,13 @@ newtype_enum! {
 #[repr(C)]
 pub struct RngProtocol {
     pub get_info: unsafe extern "efiapi" fn(
-        this: *mut RngProtocol,
+        this: *mut Self,
         algorithm_list_size: *mut usize,
         algorithm_list: *mut RngAlgorithmType,
     ) -> Status,
 
     pub get_rng: unsafe extern "efiapi" fn(
-        this: *mut RngProtocol,
+        this: *mut Self,
         algorithm: *const RngAlgorithmType,
         value_length: usize,
         value: *mut u8,

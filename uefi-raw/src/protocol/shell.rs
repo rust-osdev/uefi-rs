@@ -16,8 +16,8 @@ use bitflags::bitflags;
 #[derive(Debug)]
 #[repr(C)]
 pub struct ListEntry {
-    pub f_link: *mut ListEntry,
-    pub b_link: *mut ListEntry,
+    pub f_link: *mut Self,
+    pub b_link: *mut Self,
 }
 
 /// ShellFileInfo for File Lists

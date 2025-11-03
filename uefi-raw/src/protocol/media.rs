@@ -8,7 +8,7 @@ use core::ffi::c_void;
 #[repr(C)]
 pub struct LoadFileProtocol {
     pub load_file: unsafe extern "efiapi" fn(
-        this: *mut LoadFileProtocol,
+        this: *mut Self,
         file_path: *const DevicePathProtocol,
         boot_policy: Boolean,
         buffer_size: *mut usize,
@@ -24,7 +24,7 @@ impl LoadFileProtocol {
 #[repr(C)]
 pub struct LoadFile2Protocol {
     pub load_file: unsafe extern "efiapi" fn(
-        this: *mut LoadFile2Protocol,
+        this: *mut Self,
         file_path: *const DevicePathProtocol,
         boot_policy: Boolean,
         buffer_size: *mut usize,

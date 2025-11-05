@@ -37,6 +37,30 @@ impl PciIoAddress {
         }
     }
 
+    /// Construct a new address with the bus address set to the given value
+    #[must_use]
+    pub const fn with_bus(&self, bus: u8) -> Self {
+        let mut addr = *self;
+        addr.bus = bus;
+        addr
+    }
+
+    /// Construct a new address with the device address set to the given value
+    #[must_use]
+    pub const fn with_device(&self, dev: u8) -> Self {
+        let mut addr = *self;
+        addr.dev = dev;
+        addr
+    }
+
+    /// Construct a new address with the function address set to the given value
+    #[must_use]
+    pub const fn with_function(&self, fun: u8) -> Self {
+        let mut addr = *self;
+        addr.fun = fun;
+        addr
+    }
+
     /// Configure the **byte**-offset of the register to access.
     #[must_use]
     pub const fn with_register(&self, reg: u8) -> Self {

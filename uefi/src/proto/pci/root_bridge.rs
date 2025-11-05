@@ -2,10 +2,15 @@
 
 //! PCI Root Bridge protocol.
 
-use core::ptr;
-
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
+#[cfg(feature = "alloc")]
+use crate::proto::pci::configuration::{self, QwordAddressSpaceDescriptor};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
+use core::ffi::c_void;
+use core::ptr;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
 
@@ -52,7 +57,24 @@ impl PciRootBridgeIo {
     // TODO: map & unmap & copy memory
     // TODO: buffer management
     // TODO: get/set attributes
-    // TODO: configuration / resource settings
+
+    /// Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI resource descriptors.
+    ///
+    /// The returned list of descriptors contains information about bus, memory and io ranges that were set up
+    /// by the firmware.
+    ///
+    /// # Errors
+    /// - [`Status::UNSUPPORTED`] The current configuration of this PCI root bridge could not be retrieved.
+    #[cfg(feature = "alloc")]
+    pub fn configuration(&self) -> crate::Result<Vec<QwordAddressSpaceDescriptor>> {
+        // The storage for the resource descriptors is allocated by this function. The caller must treat
+        // the return buffer as read-only data, and the buffer must not be freed by the caller.
+        let mut resources: *const c_void = ptr::null();
+        unsafe {
+            ((self.0.configuration)(&self.0, &mut resources))
+                .to_result_with_val(|| configuration::parse(resources))
+        }
+    }
 }
 
 /// Struct for performing PCI I/O operations on a root bridge.

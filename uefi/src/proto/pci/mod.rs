@@ -6,6 +6,7 @@ use core::cmp::Ordering;
 
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
+pub mod configuration;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations
@@ -188,33 +189,36 @@ mod tests {
         let addr1_0_0 = PciIoAddress::new(1, 0, 0);
 
         assert_eq!(addr0_0_0.cmp(&addr0_0_0), Ordering::Equal);
-        assert_eq!(addr0_0_0.cmp(addr0_0_1), Ordering::Less);
+        assert_eq!(addr0_0_0.cmp(&addr0_0_1), Ordering::Less);
         assert_eq!(addr0_0_0.cmp(&addr0_1_0), Ordering::Less);
         assert_eq!(addr0_0_0.cmp(&addr1_0_0), Ordering::Less);
 
-        assert_eq!(addr0_0_1.cmp(addr0_0_0), Ordering::Greater);
-        assert_eq!(addr0_0_1.cmp(addr0_0_1), Ordering::Equal);
+        assert_eq!(addr0_0_1.cmp(&addr0_0_0), Ordering::Greater);
+        assert_eq!(addr0_0_1.cmp(&addr0_0_1), Ordering::Equal);
         assert_eq!(addr0_0_1.cmp(&addr0_1_0), Ordering::Less);
         assert_eq!(addr0_0_1.cmp(&addr1_0_0), Ordering::Less);
 
-        assert_eq!(addr0_1_0.cmp(addr0_0_0), Ordering::Greater);
-        assert_eq!(addr0_1_0.cmp(addr0_0_1), Ordering::Greater);
+        assert_eq!(addr0_1_0.cmp(&addr0_0_0), Ordering::Greater);
+        assert_eq!(addr0_1_0.cmp(&addr0_0_1), Ordering::Greater);
         assert_eq!(addr0_1_0.cmp(&addr0_1_0), Ordering::Equal);
         assert_eq!(addr0_1_0.cmp(&addr1_0_0), Ordering::Less);
 
-        assert_eq!(addr1_0_0.cmp(addr0_0_0), Ordering::Greater);
-        assert_eq!(addr1_0_0.cmp(addr0_0_1), Ordering::Greater);
+        assert_eq!(addr1_0_0.cmp(&addr0_0_0), Ordering::Greater);
+        assert_eq!(addr1_0_0.cmp(&addr0_0_1), Ordering::Greater);
         assert_eq!(addr1_0_0.cmp(&addr0_1_0), Ordering::Greater);
         assert_eq!(addr1_0_0.cmp(&addr1_0_0), Ordering::Equal);
 
-        assert_eq!(addr0_0_0.cmp(addr0_0_0.with_register(1)), Ordering::Less);
-        assert_eq!(addr0_0_0.with_register(1).cmp(addr0_0_0), Ordering::Greater);
+        assert_eq!(addr0_0_0.cmp(&addr0_0_0.with_register(1)), Ordering::Less);
         assert_eq!(
-            addr0_0_0.cmp(addr0_0_0.with_extended_register(1)),
+            addr0_0_0.with_register(1).cmp(&addr0_0_0),
+            Ordering::Greater
+        );
+        assert_eq!(
+            addr0_0_0.cmp(&addr0_0_0.with_extended_register(1)),
             Ordering::Less
         );
         assert_eq!(
-            addr0_0_0.with_extended_register(1).cmp(addr0_0_0),
+            addr0_0_0.with_extended_register(1).cmp(&addr0_0_0),
             Ordering::Greater
         );
     }

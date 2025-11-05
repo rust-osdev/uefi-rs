@@ -6,6 +6,11 @@
 ## Changed
 
 
+# uefi - v0.36.1 (2025-11-05)
+
+- Fixing build on <https://docs.rs/uefi>
+
+
 # uefi - v0.36 (2025-10-21)
 
 ## Added

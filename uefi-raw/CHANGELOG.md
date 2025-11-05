@@ -3,7 +3,13 @@
 ## Added
 
 ## Changed
+
+
+# uefi-raw - v0.13.0 (2025-11-05)
+
+## Changed
 - **Breaking:** Various uses of `bool` have been replaced with `Boolean`.
+- Fixing build on <https://docs.rs/uefi>
 
 
 # uefi-raw - v0.12 (2025-10-21)
@@ -33,6 +39,7 @@
 ## Changed
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
 - The documentation for UEFI protocols has been streamlined and improved.
+
 
 # uefi-raw - 0.11.0 (2025-05-04)
 

@@ -7,6 +7,8 @@ use core::cmp::Ordering;
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
 pub mod configuration;
+#[cfg(feature = "alloc")]
+mod enumeration;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations
@@ -121,6 +123,38 @@ impl Ord for PciIoAddress {
             .then(ext_reg.cmp(&o_ext_reg))
     }
 }
+
+// --------------------------------------------------------------------------------------------
+
+/// Fully qualified pci address. This address is valid across root bridges.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct FullPciIoAddress {
+    /// PCI segment number
+    segment: u32,
+    /// Subsequent PCI address
+    addr: PciIoAddress,
+}
+impl FullPciIoAddress {
+    /// Construct a new fully qualified pci address.
+    #[must_use]
+    pub const fn new(segment: u32, addr: PciIoAddress) -> Self {
+        Self { segment, addr }
+    }
+
+    /// Get the segment number this address belongs to.
+    #[must_use]
+    pub const fn segment(&self) -> u32 {
+        self.segment
+    }
+
+    /// Get the internal RootBridge-specific portion of the address.
+    #[must_use]
+    pub const fn addr(&self) -> PciIoAddress {
+        self.addr
+    }
+}
+
+// ############################################################################################
 
 /// Trait implemented by all data types that can natively be read from a PCI device.
 /// Note: Not all of them have to actually be supported by the hardware at hand.

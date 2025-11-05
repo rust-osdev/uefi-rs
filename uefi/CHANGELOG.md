@@ -4,6 +4,7 @@
 - Added `proto::ata::AtaRequestBuilder::read_pio()`.
 - Added `proto::shell::Shell::{var(), set_var(), vars()}`
 - Added `proto::pci::root_bridge::PciRootBridgeIo::configuration()`.
+- Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

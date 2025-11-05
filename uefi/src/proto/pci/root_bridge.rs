@@ -5,7 +5,9 @@
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 use crate::StatusExt;
 #[cfg(feature = "alloc")]
-use crate::proto::pci::configuration::{self, QwordAddressSpaceDescriptor};
+use crate::proto::pci::configuration::QwordAddressSpaceDescriptor;
+#[cfg(feature = "alloc")]
+use alloc::collections::btree_set::BTreeSet;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 #[cfg(feature = "alloc")]
@@ -14,6 +16,8 @@ use core::ptr;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
 
+#[cfg(doc)]
+use super::FullPciIoAddress;
 #[cfg(doc)]
 use crate::Status;
 
@@ -67,6 +71,7 @@ impl PciRootBridgeIo {
     /// - [`Status::UNSUPPORTED`] The current configuration of this PCI root bridge could not be retrieved.
     #[cfg(feature = "alloc")]
     pub fn configuration(&self) -> crate::Result<Vec<QwordAddressSpaceDescriptor>> {
+        use crate::proto::pci::configuration;
         // The storage for the resource descriptors is allocated by this function. The caller must treat
         // the return buffer as read-only data, and the buffer must not be freed by the caller.
         let mut resources: *const c_void = ptr::null();
@@ -74,6 +79,40 @@ impl PciRootBridgeIo {
             ((self.0.configuration)(&self.0, &mut resources))
                 .to_result_with_val(|| configuration::parse(resources))
         }
+    }
+
+    // ###################################################
+    // # Convenience functionality
+
+    /// Recursively enumerate all devices, device functions and pci-to-pci bridges on this root bridge.
+    ///
+    /// The returned addresses might overlap with the addresses returned by another [`PciRootBridgeIo`] instance.
+    /// Make sure to perform some form of cross-[`PciRootBridgeIo`] deduplication on the returned [`FullPciIoAddress`]es.
+    /// **WARNING:** Only use the returned addresses with the respective [`PciRootBridgeIo`] instance that returned them.
+    ///
+    /// # Returns
+    /// An ordered list of addresses containing all present devices below this RootBridge.
+    ///
+    /// # Errors
+    /// This can basically fail with all the IO errors found in [`PciIoAccessPci`] methods.
+    #[cfg(feature = "alloc")]
+    pub fn enumerate(&mut self) -> crate::Result<BTreeSet<super::FullPciIoAddress>> {
+        use crate::proto::pci::configuration::ResourceRangeType;
+        use crate::proto::pci::enumeration;
+
+        let mut devices = BTreeSet::new();
+        for descriptor in self.configuration()? {
+            // In the descriptors we can query for the current root bridge, Bus entries contain ranges of valid
+            // bus addresses. These are starting points for the recursive scanning process performed in
+            // enumeration::enum_bus
+            if descriptor.resource_range_type == ResourceRangeType::Bus {
+                for bus in (descriptor.address_min as u8)..=(descriptor.address_max as u8) {
+                    let addr = PciIoAddress::new(bus, 0, 0);
+                    enumeration::visit_bus(self, addr, &mut devices)?;
+                }
+            }
+        }
+        Ok(devices)
     }
 }
 

@@ -2,11 +2,8 @@
 
 //! Utilities for creating new [`DevicePaths`].
 //!
-//! This module provides builders to construct device paths, as well as
-//! submodules containing types for building each type of device path node.
-//!
-//! - [`DevicePathBuilder`] to construct device paths into pre-allocated buffers
-//! - [`OwnedDevicePathBuilder`] for construction on the Rust heap
+//! This module contains [`DevicePathBuilder`], as well as submodules
+//! containing types for building each type of device path node.
 //!
 //! [`DevicePaths`]: DevicePath
 
@@ -18,10 +15,7 @@ use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
 
 #[cfg(feature = "alloc")]
-use {
-    alloc::{boxed::Box, vec::Vec},
-    core::mem,
-};
+use alloc::vec::Vec;
 
 /// A builder for [`DevicePaths`].
 ///
@@ -80,14 +74,14 @@ use {
 /// ```
 #[derive(Debug)]
 pub struct DevicePathBuilder<'a> {
-    storage: BuilderStorageRef<'a>,
+    storage: BuilderStorage<'a>,
 }
 
 impl<'a> DevicePathBuilder<'a> {
     /// Create a builder backed by a statically-sized buffer.
     pub const fn with_buf(buf: &'a mut [MaybeUninit<u8>]) -> Self {
         Self {
-            storage: BuilderStorageRef::Buf { buf, offset: 0 },
+            storage: BuilderStorage::Buf { buf, offset: 0 },
         }
     }
 
@@ -98,7 +92,7 @@ impl<'a> DevicePathBuilder<'a> {
     pub fn with_vec(v: &'a mut Vec<u8>) -> Self {
         v.clear();
         Self {
-            storage: BuilderStorageRef::Vec(v),
+            storage: BuilderStorage::Vec(v),
         }
     }
 
@@ -113,7 +107,7 @@ impl<'a> DevicePathBuilder<'a> {
         let node_size = usize::from(node.size_in_bytes()?);
 
         match &mut self.storage {
-            BuilderStorageRef::Buf { buf, offset } => {
+            BuilderStorage::Buf { buf, offset } => {
                 node.write_data(
                     buf.get_mut(*offset..*offset + node_size)
                         .ok_or(BuildError::BufferTooSmall)?,
@@ -121,7 +115,7 @@ impl<'a> DevicePathBuilder<'a> {
                 *offset += node_size;
             }
             #[cfg(feature = "alloc")]
-            BuilderStorageRef::Vec(vec) => {
+            BuilderStorage::Vec(vec) => {
                 let old_size = vec.len();
                 vec.reserve(node_size);
                 let buf = &mut vec.spare_capacity_mut()[..node_size];
@@ -144,11 +138,11 @@ impl<'a> DevicePathBuilder<'a> {
         let this = self.push(&end::Entire)?;
 
         let data: &[u8] = match &this.storage {
-            BuilderStorageRef::Buf { buf, offset } => unsafe {
+            BuilderStorage::Buf { buf, offset } => unsafe {
                 maybe_uninit_slice_assume_init_ref(&buf[..*offset])
             },
             #[cfg(feature = "alloc")]
-            BuilderStorageRef::Vec(vec) => vec,
+            BuilderStorage::Vec(vec) => vec,
         };
 
         let ptr: *const () = data.as_ptr().cast();
@@ -158,7 +152,7 @@ impl<'a> DevicePathBuilder<'a> {
 
 /// Reference to the backup storage for [`DevicePathBuilder`]
 #[derive(Debug)]
-enum BuilderStorageRef<'a> {
+enum BuilderStorage<'a> {
     Buf {
         buf: &'a mut [MaybeUninit<u8>],
         offset: usize,
@@ -199,58 +193,6 @@ impl Display for BuildError {
 }
 
 impl core::error::Error for BuildError {}
-
-/// Variant of [`DevicePathBuilder`] to construct a boxed [`DevicePath`].
-///
-/// Using this builder is equivalent to calling [`DevicePath::to_boxed`] on a
-/// device path constructed by the normal builder.
-#[derive(Debug)]
-#[cfg(feature = "alloc")]
-pub struct OwnedDevicePathBuilder {
-    vec: Vec<u8>,
-}
-
-#[cfg(feature = "alloc")]
-impl OwnedDevicePathBuilder {
-    /// Creates a new builder.
-    pub fn new() -> Self {
-        let vec = Vec::new();
-        Self { vec }
-    }
-
-    /// Add a node to the device path.
-    ///
-    /// An error will be returned if an [`END_ENTIRE`] node is passed to
-    /// this function, as that node will be added when [`Self::finalize`] is
-    /// called.
-    ///
-    /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
-    pub fn push(mut self, node: &dyn BuildNode) -> Result<Self, BuildError> {
-        let node_size = usize::from(node.size_in_bytes()?);
-
-        let old_size = self.vec.len();
-        self.vec.reserve(node_size);
-        let buf = &mut self.vec.spare_capacity_mut()[..node_size];
-        node.write_data(buf);
-        unsafe {
-            self.vec.set_len(old_size + node_size);
-        }
-        Ok(self)
-    }
-
-    /// Add an [`END_ENTIRE`] node and return the resulting [`DevicePath`].
-    ///
-    /// This method consumes the builder.
-    ///
-    /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
-    pub fn finalize(self) -> Result<Box<DevicePath>, BuildError> {
-        let this = self.push(&end::Entire)?;
-        let boxed = this.vec.into_boxed_slice();
-        // SAFETY: This is safe as a DevicePath has the same layout.
-        let dvp = unsafe { mem::transmute(boxed) };
-        Ok(dvp)
-    }
-}
 
 /// Trait for types that can be used to build a node via
 /// [`DevicePathBuilder::push`].

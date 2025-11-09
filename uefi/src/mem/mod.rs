@@ -25,6 +25,10 @@ pub use aligned_buffer::{AlignedBuffer, AlignmentError};
 pub(crate) struct PoolAllocation(NonNull<u8>);
 
 impl PoolAllocation {
+    /// This creates a new [`PoolAllocation`] from a `ptr` that represents
+    /// the allocation.
+    ///
+    /// This function doesn't allocate.
     pub(crate) const fn new(ptr: NonNull<u8>) -> Self {
         Self(ptr)
     }

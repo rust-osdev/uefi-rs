@@ -141,7 +141,7 @@ fn reconnect_serial_to_console(serial_handle: Handle) {
     } else {
         Vendor::VT_UTF8
     };
-    let terminal_device_path = DevicePathBuilder::with_vec(&mut storage)
+    let terminal_device_path = DevicePathBuilder::with_rust_heap(&mut storage)
         .push(&build::messaging::Vendor {
             vendor_guid: terminal_guid,
             vendor_defined_data: &[],

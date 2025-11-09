@@ -6,8 +6,9 @@
 //! containing types for building each type of device path node.
 //!
 //! [`DevicePaths`]: DevicePath
-
 pub use crate::proto::device_path::device_path_gen::build::*;
+use alloc::boxed::Box;
+use alloc::vec;
 
 use crate::polyfill::{maybe_uninit_slice_as_mut_ptr, maybe_uninit_slice_assume_init_ref};
 use crate::proto::device_path::{DevicePath, DevicePathNode};
@@ -16,11 +17,20 @@ use core::mem::MaybeUninit;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
+use core::mem;
+use uefi::boot;
+use uefi::mem::PoolAllocation;
+use uefi::proto::device_path::PoolDevicePath;
+use uefi_raw::table::boot::MemoryType;
 
 /// A builder for [`DevicePaths`].
 ///
-/// The builder can be constructed with either a fixed-length buffer or
-/// (if the `alloc` feature is enabled) a `Vec`.
+/// The builder has multiple constructors affecting the ownership of the
+/// resulting device path:
+///
+/// - [`DevicePathBuilder::with_buf`]
+/// - [`DevicePathBuilder::with_uefi_heap`]
+/// - [`DevicePathBuilder::with_rust_heap`]
 ///
 /// Nodes are added via the [`push`] method. To construct a node, use one
 /// of the structs in these submodules:
@@ -78,21 +88,27 @@ pub struct DevicePathBuilder<'a> {
 }
 
 impl<'a> DevicePathBuilder<'a> {
-    /// Create a builder backed by a statically-sized buffer.
+    /// Create a builder that will return [`BuiltDevicePath::Buf`].
     pub const fn with_buf(buf: &'a mut [MaybeUninit<u8>]) -> Self {
         Self {
             storage: BuilderStorage::Buf { buf, offset: 0 },
         }
     }
 
-    /// Create a builder backed by a `Vec`.
-    ///
-    /// The `Vec` is cleared before use.
-    #[cfg(feature = "alloc")]
-    pub fn with_vec(v: &'a mut Vec<u8>) -> Self {
-        v.clear();
+    /// Create a builder that will return [`BuiltDevicePath::UefiHeap`].
+    pub fn with_uefi_heap() -> Self {
+        // TODO propagate result?
+        let ptr = { boot::allocate_pool(MemoryType::LOADER_DATA, 1).unwrap() };
         Self {
-            storage: BuilderStorage::Vec(v),
+            storage: BuilderStorage::UefiHeap(PoolAllocation::new(ptr)),
+        }
+    }
+
+    /// Create a builder that will return [`BuiltDevicePath::Boxed`].
+    #[cfg(feature = "alloc")]
+    pub const fn with_rust_heap() -> Self {
+        Self {
+            storage: BuilderStorage::Boxed(vec::Vec::new()),
         }
     }
 
@@ -114,8 +130,11 @@ impl<'a> DevicePathBuilder<'a> {
                 );
                 *offset += node_size;
             }
+            BuiltDevicePath::UefiHeap(_pool) => {
+                todo!()
+            }
             #[cfg(feature = "alloc")]
-            BuilderStorage::Vec(vec) => {
+            BuilderStorage::Boxed(vec) => {
                 let old_size = vec.len();
                 vec.reserve(node_size);
                 let buf = &mut vec.spare_capacity_mut()[..node_size];
@@ -129,24 +148,33 @@ impl<'a> DevicePathBuilder<'a> {
         Ok(self)
     }
 
-    /// Add an [`END_ENTIRE`] node and return the resulting [`DevicePath`].
+    // todo extend method (multiple push)
+
+    /// Add an [`END_ENTIRE`] node and return [`BuiltDevicePath`], depending
+    /// on the chosen builder strategy.
     ///
     /// This method consumes the builder.
     ///
     /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
-    pub fn finalize(self) -> Result<&'a DevicePath, BuildError> {
+    pub fn finalize(self) -> Result<BuiltDevicePath<'a>, BuildError> {
         let this = self.push(&end::Entire)?;
 
-        let data: &[u8] = match &this.storage {
+        match this.storage {
             BuilderStorage::Buf { buf, offset } => unsafe {
-                maybe_uninit_slice_assume_init_ref(&buf[..*offset])
+                let data = maybe_uninit_slice_assume_init_ref(&buf[..offset]);
+                let ptr: *const () = data.as_ptr().cast();
+                let path = &*ptr_meta::from_raw_parts(ptr, data.len());
+                Ok(BuiltDevicePath::Buf(path))
             },
+            BuilderStorage::UefiHeap(pool) => Ok(BuiltDevicePath::UefiHeap(PoolDevicePath(pool))),
             #[cfg(feature = "alloc")]
-            BuilderStorage::Vec(vec) => vec,
-        };
-
-        let ptr: *const () = data.as_ptr().cast();
-        Ok(unsafe { &*ptr_meta::from_raw_parts(ptr, data.len()) })
+            BuilderStorage::Boxed(vec) => {
+                let data = vec.into_boxed_slice();
+                // SAFETY: Same layout, trivially safe.
+                let device_path = unsafe { mem::transmute(data) };
+                Ok(BuiltDevicePath::Boxed(device_path))
+            }
+        }
     }
 }
 
@@ -158,8 +186,23 @@ enum BuilderStorage<'a> {
         offset: usize,
     },
 
+    UefiHeap(PoolAllocation),
+
     #[cfg(feature = "alloc")]
-    Vec(&'a mut Vec<u8>),
+    Boxed(Vec<u8>),
+}
+
+/// The device path that is build by [`DevicePathBuilder`].
+///
+/// This directly depends on [`BuilderStorage`].
+pub enum BuiltDevicePath<'a> {
+    /// Returns a reference to the provided buffer ([`BuilderStorage::Boxed`]).
+    Buf(&'a DevicePath),
+    /// Owned value on the UEFI heap.
+    UefiHeap(PoolDevicePath),
+    #[cfg(feature = "alloc")]
+    /// Boxed value on the Rust heap a reference to the provided buffer ([`BuilderStorage::Boxed`]).
+    Boxed(Box<DevicePath>),
 }
 
 /// Error type used by [`DevicePathBuilder`].
@@ -254,7 +297,7 @@ mod tests {
         assert!(acpi::AdrSlice::new(&[]).is_none());
 
         let mut v = Vec::new();
-        let path = DevicePathBuilder::with_vec(&mut v)
+        let path = DevicePathBuilder::with_rust_heap(&mut v)
             .push(&acpi::Adr {
                 adr: acpi::AdrSlice::new(&[1, 2]).unwrap(),
             })?
@@ -282,7 +325,7 @@ mod tests {
     #[test]
     fn test_acpi_expanded() -> Result<(), BuildError> {
         let mut v = Vec::new();
-        let path = DevicePathBuilder::with_vec(&mut v)
+        let path = DevicePathBuilder::with_rust_heap(&mut v)
             .push(&acpi::Expanded {
                 hid: 1,
                 uid: 2,
@@ -334,7 +377,7 @@ mod tests {
     fn test_messaging_rest_service() -> Result<(), BuildError> {
         let mut v = Vec::new();
         let vendor_guid = guid!("a1005a90-6591-4596-9bab-1c4249a6d4ff");
-        let path = DevicePathBuilder::with_vec(&mut v)
+        let path = DevicePathBuilder::with_rust_heap(&mut v)
             .push(&messaging::RestService {
                 service_type: RestServiceType::REDFISH,
                 access_mode: RestServiceAccessMode::IN_BAND,
@@ -390,7 +433,7 @@ mod tests {
     fn test_build_with_packed_node() -> Result<(), BuildError> {
         // Build a path with both a statically-sized and DST nodes.
         let mut v = Vec::new();
-        let path1 = DevicePathBuilder::with_vec(&mut v)
+        let path1 = DevicePathBuilder::with_rust_heap(&mut v)
             .push(&acpi::Acpi {
                 hid: 0x41d0_0a03,
                 uid: 0x0000_0000,
@@ -404,7 +447,7 @@ mod tests {
         // Create a second path by copying in the packed nodes from the
         // first path.
         let mut v = Vec::new();
-        let mut builder = DevicePathBuilder::with_vec(&mut v);
+        let mut builder = DevicePathBuilder::with_rust_heap(&mut v);
         for node in path1.node_iter() {
             builder = builder.push(&node)?;
         }
@@ -492,7 +535,7 @@ mod tests {
     #[test]
     fn test_ipv4_configuration_example() -> Result<(), BuildError> {
         let mut v = Vec::new();
-        let path = DevicePathBuilder::with_vec(&mut v)
+        let path = DevicePathBuilder::with_rust_heap(&mut v)
             .push(&acpi::Acpi {
                 hid: 0x41d0_0a03,
                 uid: 0x0000_0000,

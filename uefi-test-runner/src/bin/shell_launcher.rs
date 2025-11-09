@@ -29,7 +29,7 @@ fn get_shell_app_device_path(storage: &mut Vec<u8>) -> &DevicePath {
         boot::open_protocol_exclusive::<LoadedImageDevicePath>(boot::image_handle())
             .expect("failed to open LoadedImageDevicePath protocol");
 
-    let mut builder = DevicePathBuilder::with_vec(storage);
+    let mut builder = DevicePathBuilder::with_rust_heap(storage);
     for node in loaded_image_device_path.node_iter() {
         if node.full_type() == (DeviceType::MEDIA, DeviceSubType::MEDIA_FILE_PATH) {
             break;

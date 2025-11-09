@@ -98,7 +98,7 @@ pub fn test() {
     }
 
     let mut dvp_vec = Vec::new();
-    let dummy_dvp = DevicePathBuilder::with_vec(&mut dvp_vec);
+    let dummy_dvp = DevicePathBuilder::with_rust_heap(&mut dvp_vec);
     let dummy_dvp = dummy_dvp.finalize().unwrap();
 
     let mut load_file_protocol = boot::open_protocol_exclusive::<LoadFile>(image).unwrap();

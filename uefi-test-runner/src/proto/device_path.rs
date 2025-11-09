@@ -48,7 +48,7 @@ pub fn test() {
 
 fn create_test_device_path() -> Box<DevicePath> {
     let mut v = Vec::new();
-    DevicePathBuilder::with_vec(&mut v)
+    DevicePathBuilder::with_rust_heap(&mut v)
         // Add an ATAPI node because edk2 displays it differently depending on
         // the value of `DisplayOnly`.
         .push(&build::messaging::Atapi {

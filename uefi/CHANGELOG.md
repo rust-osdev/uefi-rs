@@ -2,6 +2,7 @@
 
 ## Added
 - Added `proto::ata::AtaRequestBuilder::read_pio()`.
+- Added `proto::shell::Shell::{var(), set_var(), vars()}`
 
 ## Changed
 

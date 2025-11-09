@@ -75,6 +75,8 @@
 //!   other types in this module are DSTs, so pointers to the type are
 //!   "fat" and not suitable for FFI.
 //!
+//! * [`PoolDevicePath`] is an owned device path on the UEFI heap.
+//!
 //! All of these types use a packed layout and may appear on any byte
 //! boundary.
 //!
@@ -133,6 +135,10 @@ opaque_type! {
 }
 
 /// Device path allocated from UEFI pool memory.
+///
+/// Please note that this differs from <code>Box<[DevicePath]></code>. Although
+/// both represent owned values, a <code>Box<[DevicePath]></code> is on the Rust
+/// heap which may or may not be backed by the UEFI heap.
 #[derive(Debug)]
 pub struct PoolDevicePath(pub(crate) PoolAllocation);
 
@@ -392,11 +398,15 @@ impl DevicePathInstance {
     }
 
     /// Returns a boxed copy of that value.
+    ///
+    /// The semantics slightly differs from a [`PoolDevicePath`] but is
+    /// generally more idiomatic to use.
     #[cfg(feature = "alloc")]
     #[must_use]
     pub fn to_boxed(&self) -> Box<Self> {
         let data = self.data.to_owned();
         let data = data.into_boxed_slice();
+        // SAFETY: This is safe as a DevicePath has the same layout.
         unsafe { mem::transmute(data) }
     }
 }
@@ -581,12 +591,16 @@ impl DevicePath {
         &self.data
     }
 
-    /// Returns a boxed copy of that value.
+    /// Returns a boxed copy of that value on the Rust heap.
+    ///
+    /// The semantics slightly differs from a [`PoolDevicePath`] but is
+    /// generally more idiomatic to use.
     #[cfg(feature = "alloc")]
     #[must_use]
     pub fn to_boxed(&self) -> Box<Self> {
         let data = self.data.to_owned();
         let data = data.into_boxed_slice();
+        // SAFETY: This is safe as a DevicePath has the same layout.
         unsafe { mem::transmute(data) }
     }
 

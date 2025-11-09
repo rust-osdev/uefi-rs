@@ -247,11 +247,6 @@ mod tests {
     use crate::proto::device_path::messaging::{
         Ipv4AddressOrigin, IscsiLoginOptions, IscsiProtocol, RestServiceAccessMode, RestServiceType,
     };
-    use core::slice;
-
-    const fn path_to_bytes(path: &DevicePath) -> &[u8] {
-        unsafe { slice::from_raw_parts(path.as_ffi_ptr().cast::<u8>(), size_of_val(path)) }
-    }
 
     /// Test building an ACPI ADR node.
     #[test]
@@ -268,10 +263,8 @@ mod tests {
         let node: &crate::proto::device_path::acpi::Adr =
             path.node_iter().next().unwrap().try_into().unwrap();
         assert_eq!(node.adr().iter().collect::<Vec<_>>(), [1, 2]);
-
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // ACPI ADR node
             0x02, 0x03, 0x0c, 0x00,
             // Values
@@ -309,9 +302,8 @@ mod tests {
         assert_eq!(node.uid_str(), b"bc\0");
         assert_eq!(node.cid_str(), b"def\0");
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // ACPI Expanded node
             0x02, 0x02, 0x19, 0x00,
             // HID
@@ -366,9 +358,8 @@ mod tests {
         assert_eq!(node.vendor_guid_and_data().unwrap().0, vendor_guid);
         assert_eq!(node.vendor_guid_and_data().unwrap().1, &[1, 2, 3, 4, 5]);
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // Messaging REST Service node.
             0x03, 0x21, 0x06, 0x00,
             // Type and access mode
@@ -429,27 +420,37 @@ mod tests {
     /// from the UEFI Specification.
     #[test]
     fn test_fibre_channel_ex_device_path_example() -> Result<(), BuildError> {
+        let nodes: &[&dyn BuildNode] = &[
+            &acpi::Acpi {
+                hid: 0x41d0_0a03,
+                uid: 0x0000_0000,
+            },
+            &hardware::Pci {
+                function: 0x00,
+                device: 0x1f,
+            },
+            &messaging::FibreChannelEx {
+                world_wide_name: [0, 1, 2, 3, 4, 5, 6, 7],
+                logical_unit_number: [0, 1, 2, 3, 4, 5, 6, 7],
+            },
+        ];
+
         // Arbitrarily choose this test to use a statically-sized
         // buffer, just to make sure that code path is tested.
         let mut buf = [MaybeUninit::uninit(); 256];
-        let path = DevicePathBuilder::with_buf(&mut buf)
-            .push(&acpi::Acpi {
-                hid: 0x41d0_0a03,
-                uid: 0x0000_0000,
-            })?
-            .push(&hardware::Pci {
-                function: 0x00,
-                device: 0x1f,
-            })?
-            .push(&messaging::FibreChannelEx {
-                world_wide_name: [0, 1, 2, 3, 4, 5, 6, 7],
-                logical_unit_number: [0, 1, 2, 3, 4, 5, 6, 7],
-            })?
+        let path1 = DevicePathBuilder::with_buf(&mut buf)
+            .push(nodes[0])?
+            .push(nodes[1])?
+            .push(nodes[2])?
+            .finalize()?;
+        let path2 = OwnedDevicePathBuilder::new()
+            .push(nodes[0])?
+            .push(nodes[1])?
+            .push(nodes[2])?
             .finalize()?;
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        const EXPECTED: [u8; 46] = [
             // ACPI node
             0x02, 0x01, 0x0c, 0x00,
             // HID
@@ -478,7 +479,10 @@ mod tests {
 
             // End-entire node
             0x7f, 0xff, 0x04, 0x00,
-        ]);
+        ];
+
+        assert_eq!(path1.as_bytes(), EXPECTED);
+        assert_eq!(path2.as_bytes(), EXPECTED);
 
         Ok(())
     }
@@ -533,9 +537,8 @@ mod tests {
             })?
             .finalize()?;
 
-        let bytes = path_to_bytes(path);
         #[rustfmt::skip]
-        assert_eq!(bytes, [
+        assert_eq!(path.as_bytes(), [
             // ACPI node
             0x02, 0x01, 0x0c, 0x00,
             // HID

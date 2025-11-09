@@ -51,7 +51,6 @@ pub mod rng;
 #[cfg(feature = "alloc")]
 pub mod scsi;
 pub mod security;
-#[cfg(feature = "alloc")]
 pub mod shell;
 pub mod shell_params;
 pub mod shim;

@@ -99,7 +99,7 @@ impl<'a> DevicePathBuilder<'a> {
     /// Add a node to the device path.
     ///
     /// An error will be returned if an [`END_ENTIRE`] node is passed to
-    /// this function, as that node will be added when `finalize` is
+    /// this function, as that node will be added when [`Self::finalize`] is
     /// called.
     ///
     /// [`END_ENTIRE`]: uefi::proto::device_path::DeviceSubType::END_ENTIRE
@@ -150,6 +150,7 @@ impl<'a> DevicePathBuilder<'a> {
     }
 }
 
+/// Reference to the backup storage for [`DevicePathBuilder`]
 #[derive(Debug)]
 enum BuilderStorage<'a> {
     Buf {

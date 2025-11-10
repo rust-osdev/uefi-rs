@@ -6,6 +6,9 @@ use core::cmp::Ordering;
 
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
+pub mod configuration;
+#[cfg(feature = "alloc")]
+mod enumeration;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations
@@ -35,6 +38,30 @@ impl PciIoAddress {
             reg: 0,
             ext_reg: 0,
         }
+    }
+
+    /// Construct a new address with the bus address set to the given value
+    #[must_use]
+    pub const fn with_bus(&self, bus: u8) -> Self {
+        let mut addr = *self;
+        addr.bus = bus;
+        addr
+    }
+
+    /// Construct a new address with the device address set to the given value
+    #[must_use]
+    pub const fn with_device(&self, dev: u8) -> Self {
+        let mut addr = *self;
+        addr.dev = dev;
+        addr
+    }
+
+    /// Construct a new address with the function address set to the given value
+    #[must_use]
+    pub const fn with_function(&self, fun: u8) -> Self {
+        let mut addr = *self;
+        addr.fun = fun;
+        addr
     }
 
     /// Configure the **byte**-offset of the register to access.
@@ -85,10 +112,49 @@ impl PartialOrd for PciIoAddress {
 }
 
 impl Ord for PciIoAddress {
-    fn cmp(&self, other: &Self) -> Ordering {
-        u64::from(*self).cmp(&u64::from(*other))
+    fn cmp(&self, o: &Self) -> Ordering {
+        // extract fields because taking references to unaligned fields in packed structs is a nono
+        let (bus, dev, fun, reg, ext_reg) = (self.bus, self.dev, self.fun, self.reg, self.ext_reg);
+        let (o_bus, o_dev, o_fun, o_reg, o_ext_reg) = (o.bus, o.dev, o.fun, o.reg, o.ext_reg);
+        bus.cmp(&o_bus)
+            .then(dev.cmp(&o_dev))
+            .then(fun.cmp(&o_fun))
+            .then(reg.cmp(&o_reg))
+            .then(ext_reg.cmp(&o_ext_reg))
     }
 }
+
+// --------------------------------------------------------------------------------------------
+
+/// Fully qualified pci address. This address is valid across root bridges.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct FullPciIoAddress {
+    /// PCI segment number
+    segment: u32,
+    /// Subsequent PCI address
+    addr: PciIoAddress,
+}
+impl FullPciIoAddress {
+    /// Construct a new fully qualified pci address.
+    #[must_use]
+    pub const fn new(segment: u32, addr: PciIoAddress) -> Self {
+        Self { segment, addr }
+    }
+
+    /// Get the segment number this address belongs to.
+    #[must_use]
+    pub const fn segment(&self) -> u32 {
+        self.segment
+    }
+
+    /// Get the internal RootBridge-specific portion of the address.
+    #[must_use]
+    pub const fn addr(&self) -> PciIoAddress {
+        self.addr
+    }
+}
+
+// ############################################################################################
 
 /// Trait implemented by all data types that can natively be read from a PCI device.
 /// Note: Not all of them have to actually be supported by the hardware at hand.
@@ -128,6 +194,8 @@ fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProt
 
 #[cfg(test)]
 mod tests {
+    use core::cmp::Ordering;
+
     use super::PciIoAddress;
 
     #[test]
@@ -145,5 +213,47 @@ mod tests {
         let dstaddr = PciIoAddress::from(rawaddr);
         assert_eq!(rawaddr, 0x99_bb_dd_ff_7755_3311);
         assert_eq!(srcaddr, dstaddr);
+    }
+
+    #[test]
+    fn test_pci_order() {
+        let addr0_0_0 = PciIoAddress::new(0, 0, 0);
+        let addr0_0_1 = PciIoAddress::new(0, 0, 1);
+        let addr0_1_0 = PciIoAddress::new(0, 1, 0);
+        let addr1_0_0 = PciIoAddress::new(1, 0, 0);
+
+        assert_eq!(addr0_0_0.cmp(&addr0_0_0), Ordering::Equal);
+        assert_eq!(addr0_0_0.cmp(&addr0_0_1), Ordering::Less);
+        assert_eq!(addr0_0_0.cmp(&addr0_1_0), Ordering::Less);
+        assert_eq!(addr0_0_0.cmp(&addr1_0_0), Ordering::Less);
+
+        assert_eq!(addr0_0_1.cmp(&addr0_0_0), Ordering::Greater);
+        assert_eq!(addr0_0_1.cmp(&addr0_0_1), Ordering::Equal);
+        assert_eq!(addr0_0_1.cmp(&addr0_1_0), Ordering::Less);
+        assert_eq!(addr0_0_1.cmp(&addr1_0_0), Ordering::Less);
+
+        assert_eq!(addr0_1_0.cmp(&addr0_0_0), Ordering::Greater);
+        assert_eq!(addr0_1_0.cmp(&addr0_0_1), Ordering::Greater);
+        assert_eq!(addr0_1_0.cmp(&addr0_1_0), Ordering::Equal);
+        assert_eq!(addr0_1_0.cmp(&addr1_0_0), Ordering::Less);
+
+        assert_eq!(addr1_0_0.cmp(&addr0_0_0), Ordering::Greater);
+        assert_eq!(addr1_0_0.cmp(&addr0_0_1), Ordering::Greater);
+        assert_eq!(addr1_0_0.cmp(&addr0_1_0), Ordering::Greater);
+        assert_eq!(addr1_0_0.cmp(&addr1_0_0), Ordering::Equal);
+
+        assert_eq!(addr0_0_0.cmp(&addr0_0_0.with_register(1)), Ordering::Less);
+        assert_eq!(
+            addr0_0_0.with_register(1).cmp(&addr0_0_0),
+            Ordering::Greater
+        );
+        assert_eq!(
+            addr0_0_0.cmp(&addr0_0_0.with_extended_register(1)),
+            Ordering::Less
+        );
+        assert_eq!(
+            addr0_0_0.with_extended_register(1).cmp(&addr0_0_0),
+            Ordering::Greater
+        );
     }
 }

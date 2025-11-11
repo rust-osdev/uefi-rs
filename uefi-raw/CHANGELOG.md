@@ -1,6 +1,7 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+- Added `Tcpv4Protocol`.
 
 ## Changed
 

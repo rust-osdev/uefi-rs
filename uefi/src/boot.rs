@@ -230,6 +230,7 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
 /// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
 ///   [`MemoryType::UNACCEPTED`], or in the range <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
+// TODO should we return PoolAllocation here?
 pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };

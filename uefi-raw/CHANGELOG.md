@@ -2,6 +2,10 @@
 
 ## Added
 
+- Added `HiiFontProtocol`, `HiiFontExProtocol`.
+- Added `HiiImageProtocol`, `HiiImageExProtocol`.
+- Added `HiiStringProtocol`.
+
 ## Changed
 
 

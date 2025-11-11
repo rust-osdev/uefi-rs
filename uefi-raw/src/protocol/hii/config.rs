@@ -4,6 +4,7 @@
 
 use core::fmt::Debug;
 
+use super::{FormId, QuestionId, StringId};
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
 
@@ -140,10 +141,6 @@ impl core::fmt::Debug for IfrTypeValue {
         f.debug_struct("EfiIfrTypeValue").finish()
     }
 }
-
-pub type QuestionId = u16;
-pub type FormId = u16;
-pub type StringId = u16;
 
 /// EFI_HII_CONFIG_ACCESS_PROTOCOL
 #[derive(Debug)]

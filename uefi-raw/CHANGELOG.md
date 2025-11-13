@@ -7,6 +7,7 @@
   `EFI_PCI_ATTRIBUTE_MEMORY`, `EFI_PCI_ATTRIBUTE_BUS_MASTER`,
   `EFI_PCI_ATTRIBUTE_EMBEDDED_DEVICE`, and `EFI_PCI_ATTRIBUTE_EMBEDDED_ROM`
   to `PciRootBridgeIoProtocolAttributes`.
+- Added HII Internal Forms Representation (IFR) types
 
 ## Changed
 - **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for

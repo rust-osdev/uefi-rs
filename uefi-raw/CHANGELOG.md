@@ -4,6 +4,11 @@
 - Added `Tcpv4Protocol`.
 - Added `StorageSecurityCommandProtocol`.
 - Added `FirmwareManagementProtocol`.
+- Added `HiiFontProtocol`, `HiiFontExProtocol`.
+- Added `HiiImageProtocol`, `HiiImageExProtocol`.
+- Added `HiiStringProtocol`.
+- Added `HiiPopupProtocol`.
+- Added `FormBrowser2Protocol`.
 
 ## Changed
 

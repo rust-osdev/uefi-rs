@@ -14,16 +14,18 @@ pub struct Ip4RouteTable {
 #[derive(Debug)]
 #[repr(C)]
 pub struct Ip4ModeData {
-    /// Set to `TRUE` after this [`Tcp4Protocol`] instance has been
-    /// successfully configured.
+    // TODO Ipv4Protocol not yet in uefi-raw
+    /// Set to [`Boolean::TRUE`] after an associated `Ipv4Protocol` instance
+    /// has been successfully configured.
     pub is_started: Boolean,
     /// The maximum packet size, in bytes, of the packet which the
     /// upper layer driver could feed.
     pub max_packet_size: u32,
     /// Current configuration settings.
     pub config_data: Ip4ConfigData,
-    /// Set to `TRUE` when the [`Tcp4Protocol`] instance has a
-    /// station address and subnet mask.
+    // TODO Ipv4Protocol not yet in uefi-raw
+    /// Set to [`Boolean::TRUE`] when an associated `Ipv4Protocol` instance
+    /// has a station address and subnet mask.
     pub is_configured: Boolean,
     /// Number of joined multicast groups.
     pub group_count: u32,

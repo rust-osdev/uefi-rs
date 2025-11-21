@@ -101,17 +101,18 @@ impl PciRootBridgeIo {
         use crate::proto::pci::enumeration;
 
         let mut devices = BTreeSet::new();
-        for descriptor in self.configuration()? {
-            // In the descriptors we can query for the current root bridge, Bus entries contain ranges of valid
-            // bus addresses. These are starting points for the recursive scanning process performed in
-            // enumeration::enum_bus
-            if descriptor.resource_range_type == ResourceRangeType::Bus {
-                for bus in (descriptor.address_min as u8)..=(descriptor.address_max as u8) {
-                    let addr = PciIoAddress::new(bus, 0, 0);
-                    enumeration::visit_bus(self, addr, &mut devices)?;
-                }
-            }
+        // In the descriptors, the entry with range_type bus specifies the bus numbers that were
+        // allocated to devices below this root bridge. The first bus number in this range is
+        // the starting point. All subsequent numbers are reached via PCI bridge recursion during enumeration.
+        if let Some(descriptor) = self
+            .configuration()?
+            .iter()
+            .find(|d| d.resource_range_type == ResourceRangeType::Bus)
+        {
+            let addr = PciIoAddress::new(descriptor.address_min as u8, 0, 0);
+            enumeration::visit_bus(self, addr, &mut devices)?;
         }
+
         Ok(devices)
     }
 }

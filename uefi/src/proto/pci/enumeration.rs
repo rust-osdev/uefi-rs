@@ -37,10 +37,10 @@ struct PciRegister3 {
 #[allow(unused)]
 #[derive(Clone, Copy, Debug)]
 struct PciHeader1Register6 {
-    secondary_latency_timer: u8,
-    subordinate_bus: u8,
-    secondary_bus: u8,
     primary_bus: u8,
+    secondary_bus: u8,
+    subordinate_bus: u8,
+    secondary_latency_timer: u8,
 }
 
 /// Read the 4byte pci register with the given `addr` and cast it into the given structured representation.
@@ -93,7 +93,8 @@ fn visit_function(
     }
     queue.insert(FullPciIoAddress::new(proto.segment_nr(), addr));
     let (base_class, sub_class) = get_classes(proto, addr)?;
-    if base_class == 0x6 && sub_class == 0x4 && get_header_type(proto, addr)? == 0x01 {
+    let header_type = get_header_type(proto, addr)? & 0b01111111;
+    if base_class == 0x6 && sub_class == 0x4 && header_type == 0x01 {
         // This is a PCI-to-PCI bridge controller. The current `addr` is the address with which it's
         // mounted in the PCI tree we are currently traversing. Now we query its header, where
         // the bridge tells us a range of addresses [secondary;subordinate], with which the other

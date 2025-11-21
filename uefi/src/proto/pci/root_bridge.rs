@@ -7,8 +7,6 @@ use crate::StatusExt;
 #[cfg(feature = "alloc")]
 use crate::proto::pci::configuration::QwordAddressSpaceDescriptor;
 #[cfg(feature = "alloc")]
-use alloc::collections::btree_set::BTreeSet;
-#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 #[cfg(feature = "alloc")]
 use core::ffi::c_void;
@@ -16,8 +14,6 @@ use core::ptr;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
 
-#[cfg(doc)]
-use super::FullPciIoAddress;
 #[cfg(doc)]
 use crate::Status;
 
@@ -84,10 +80,10 @@ impl PciRootBridgeIo {
     // ###################################################
     // # Convenience functionality
 
-    /// Recursively enumerate all devices, device functions and pci-to-pci bridges on this root bridge.
+    /// Recursively enumerate all devices, device functions and pci(e)-to-pci(e) bridges, starting from this pci root.
     ///
     /// The returned addresses might overlap with the addresses returned by another [`PciRootBridgeIo`] instance.
-    /// Make sure to perform some form of cross-[`PciRootBridgeIo`] deduplication on the returned [`FullPciIoAddress`]es.
+    /// Make sure to perform some form of cross-[`PciRootBridgeIo`] deduplication on the discovered addresses.
     /// **WARNING:** Only use the returned addresses with the respective [`PciRootBridgeIo`] instance that returned them.
     ///
     /// # Returns
@@ -96,24 +92,27 @@ impl PciRootBridgeIo {
     /// # Errors
     /// This can basically fail with all the IO errors found in [`PciIoAccessPci`] methods.
     #[cfg(feature = "alloc")]
-    pub fn enumerate(&mut self) -> crate::Result<BTreeSet<super::FullPciIoAddress>> {
+    pub fn enumerate(&mut self) -> crate::Result<super::enumeration::PciTree> {
+        use super::enumeration::{self, PciTree};
         use crate::proto::pci::configuration::ResourceRangeType;
-        use crate::proto::pci::enumeration;
 
-        let mut devices = BTreeSet::new();
-        // In the descriptors, the entry with range_type bus specifies the bus numbers that were
-        // allocated to devices below this root bridge. The first bus number in this range is
-        // the starting point. All subsequent numbers are reached via PCI bridge recursion during enumeration.
-        if let Some(descriptor) = self
-            .configuration()?
-            .iter()
-            .find(|d| d.resource_range_type == ResourceRangeType::Bus)
-        {
-            let addr = PciIoAddress::new(descriptor.address_min as u8, 0, 0);
-            enumeration::visit_bus(self, addr, &mut devices)?;
+        let mut tree = PciTree::new(self.segment_nr());
+        for descriptor in self.configuration()? {
+            // In the descriptors we can query for the current root bridge, Bus entries contain ranges of valid
+            // bus addresses. These are all bus addresses found below ourselves. These are not only the busses
+            // linked to **directly** from ourselves, but also recursively. Thus we use PciTree::push_bus() to
+            // determine whether we have already visited a given bus number.
+            if descriptor.resource_range_type == ResourceRangeType::Bus {
+                for bus in (descriptor.address_min as u8)..=(descriptor.address_max as u8) {
+                    if tree.should_visit_bus(bus) {
+                        let addr = PciIoAddress::new(bus, 0, 0);
+                        enumeration::visit_bus(self, addr, &mut tree)?;
+                    }
+                }
+            }
         }
 
-        Ok(devices)
+        Ok(tree)
     }
 }
 

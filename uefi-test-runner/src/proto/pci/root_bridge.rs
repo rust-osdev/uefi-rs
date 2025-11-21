@@ -21,9 +21,8 @@ pub fn test() {
     for pci_handle in pci_handles {
         let mut pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
 
-        let devices = pci_proto.enumerate().unwrap();
-        for fqaddr in devices {
-            let addr = fqaddr.addr();
+        let pci_tree = pci_proto.enumerate().unwrap();
+        for addr in pci_tree.iter().cloned() {
             let Ok(reg0) = pci_proto.pci().read_one::<u32>(addr.with_register(0)) else {
                 continue;
             };
@@ -53,8 +52,11 @@ pub fn test() {
 
             let (bus, dev, fun) = (addr.bus, addr.dev, addr.fun);
             log::info!(
-                "PCI Device: [{bus}, {dev}, {fun}]: vendor={vendor_id:04X}, device={device_id:04X}, class={class_code:02X}, subclass={subclass_code:02X}"
+                "PCI Device: [{bus:02x}, {dev:02x}, {fun:02x}]: vendor={vendor_id:04X}, device={device_id:04X}, class={class_code:02X}, subclass={subclass_code:02X}"
             );
+            for child_bus in pci_tree.child_bus_of_iter(addr) {
+                log::info!(" |- Bus: {child_bus:02x}");
+            }
         }
     }
 

@@ -16,9 +16,9 @@ fn test_allocating_api() {
     // by default respectively. We manually configure an additional SCSI controller.
     // Thus, we should see two controllers with support for EXT_SCSI_PASS_THRU on this platform
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    assert_eq!(scsi_ctrl_handles.len(), 2);
+    assert_eq!(scsi_ctrl_handles.len(), 4);
     #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
-    assert_eq!(scsi_ctrl_handles.len(), 1);
+    assert_eq!(scsi_ctrl_handles.len(), 3);
 
     let mut found_drive = false;
     for handle in scsi_ctrl_handles {

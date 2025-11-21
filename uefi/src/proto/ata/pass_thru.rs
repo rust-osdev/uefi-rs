@@ -182,12 +182,13 @@ impl AtaDevice<'_> {
     /// - [`Status::UNSUPPORTED`] The host adapter does not support the command described by the ATA command.
     ///   The command was not sent, and no additional status information is available.
     /// - [`Status::TIMEOUT`] A timeout occurred while waiting for the ATA command to execute. Refer to `Asb` for additional status details.
+    #[allow(clippy::result_large_err)]
     pub fn execute_command<'req>(
         &mut self,
         mut req: AtaRequest<'req>,
-    ) -> crate::Result<AtaResponse<'req>> {
+    ) -> crate::Result<AtaResponse<'req>, AtaResponse<'req>> {
         req.packet.acb = &req.acb;
-        unsafe {
+        let result = unsafe {
             ((*self.proto.get()).pass_thru)(
                 self.proto.get(),
                 self.port,
@@ -195,7 +196,11 @@ impl AtaDevice<'_> {
                 &mut req.packet,
                 ptr::null_mut(),
             )
-            .to_result_with_val(|| AtaResponse { req })
+            .to_result()
+        };
+        match result {
+            Ok(_) => Ok(AtaResponse { req }),
+            Err(s) => Err(crate::Error::new(s.status(), AtaResponse { req })),
         }
     }
 }

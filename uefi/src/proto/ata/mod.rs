@@ -161,6 +161,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `features` field.
+    /// FEATURES (7:0)
     #[must_use]
     pub const fn with_features(mut self, features: u8) -> Self {
         self.req.acb.features = features;
@@ -168,6 +169,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `sector_number` field.
+    /// LBA (7:0)
     #[must_use]
     pub const fn with_sector_number(mut self, sector_number: u8) -> Self {
         self.req.acb.sector_number = sector_number;
@@ -175,6 +177,8 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `cylinder` fields (low and high combined).
+    /// low:  LBA (15:8)
+    /// high: LBA (23:16)
     #[must_use]
     pub const fn with_cylinder(mut self, low: u8, high: u8) -> Self {
         self.req.acb.cylinder_low = low;
@@ -183,6 +187,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `device_head` field.
+    /// DEVICE
     #[must_use]
     pub const fn with_device_head(mut self, device_head: u8) -> Self {
         self.req.acb.device_head = device_head;
@@ -190,6 +195,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `sector_number_exp` field.
+    /// LBA (31:24)
     #[must_use]
     pub const fn with_sector_number_exp(mut self, sector_number_exp: u8) -> Self {
         self.req.acb.sector_number_exp = sector_number_exp;
@@ -197,6 +203,8 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `cylinder_exp` fields (low and high combined).
+    /// low_exp:  LBA (39:32)
+    /// high_exp: LBA (47:40)
     #[must_use]
     pub const fn with_cylinder_exp(mut self, low_exp: u8, high_exp: u8) -> Self {
         self.req.acb.cylinder_low_exp = low_exp;
@@ -205,6 +213,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `features_exp` field.
+    /// FEATURES (15:8)
     #[must_use]
     pub const fn with_features_exp(mut self, features_exp: u8) -> Self {
         self.req.acb.features_exp = features_exp;
@@ -212,6 +221,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `sector_count` field.
+    /// COUNT (7:0)
     #[must_use]
     pub const fn with_sector_count(mut self, sector_count: u8) -> Self {
         self.req.acb.sector_count = sector_count;
@@ -219,6 +229,7 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `sector_count_exp` field.
+    /// COUNT (15:8)
     #[must_use]
     pub const fn with_sector_count_exp(mut self, sector_count_exp: u8) -> Self {
         self.req.acb.sector_count_exp = sector_count_exp;

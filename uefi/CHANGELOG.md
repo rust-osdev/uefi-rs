@@ -7,6 +7,7 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::device_path::DevicePath::to_pool()`.
 - Added `proto::device_path::DevicePathUtilities::duplicate_path()`.
+- Added `proto::pci::enumeration::PciTree::device_path()`.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

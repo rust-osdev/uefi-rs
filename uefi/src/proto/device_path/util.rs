@@ -29,6 +29,22 @@ impl DevicePathUtilities {
         unsafe { (self.0.get_device_path_size)(device_path.as_ffi_ptr().cast()) }
     }
 
+    /// Create a new device path by cloning the given `path` into newly allocated memory.
+    ///
+    /// # Arguments
+    /// - `path`: A reference to the device path to clone.
+    ///
+    /// # Returns
+    /// A [`PoolDevicePath`] instance created by cloning the given `path`.
+    pub fn duplicate_path(&self, path: &DevicePath) -> crate::Result<PoolDevicePath> {
+        unsafe {
+            let ptr = (self.0.duplicate_device_path)(path.as_ffi_ptr().cast());
+            NonNull::new(ptr.cast_mut())
+                .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
+        }
+    }
+
     /// Creates a new device path by appending the second device path to the first.
     ///
     /// # Arguments

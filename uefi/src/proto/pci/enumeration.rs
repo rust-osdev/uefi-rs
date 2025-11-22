@@ -2,10 +2,15 @@
 
 //! PCI Bus device function and bridge enumeration.
 
-use core::mem;
+use core::fmt::{Display, Formatter};
+use core::mem::{self, MaybeUninit};
 
 use alloc::collections::btree_map::BTreeMap;
 use alloc::collections::btree_set::{self, BTreeSet};
+use alloc::fmt;
+
+use crate::proto::device_path::build::{BuildError, DevicePathBuilder};
+use crate::proto::device_path::{self, DevicePath, DevicePathUtilitiesError, PoolDevicePath};
 
 use super::PciIoAddress;
 use super::root_bridge::PciRootBridgeIo;
@@ -57,6 +62,45 @@ fn read_device_register_u32<T: Sized + Copy>(
 }
 
 // ##########################################################################################
+
+/// Error type used by the device path construction of [`PciTree`].
+#[derive(Debug)]
+pub enum PciDevicePathBuildError {
+    /// The given [`PciIoAddress`] was invalid or not path of the enumeration.
+    InvalidAddress,
+    /// Error while constructing the pci device DevicePath.
+    PathBuildError(BuildError),
+    /// Error while
+    DevicePathUtilitiesError(DevicePathUtilitiesError),
+}
+impl From<BuildError> for PciDevicePathBuildError {
+    fn from(value: BuildError) -> Self {
+        Self::PathBuildError(value)
+    }
+}
+impl From<DevicePathUtilitiesError> for PciDevicePathBuildError {
+    fn from(value: DevicePathUtilitiesError) -> Self {
+        Self::DevicePathUtilitiesError(value)
+    }
+}
+
+impl Display for PciDevicePathBuildError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl core::error::Error for PciDevicePathBuildError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::PathBuildError(e) => Some(e),
+            Self::DevicePathUtilitiesError(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+// ------------------------------------------------------------------------------------------
 
 /// Struct representing the tree structure of PCI devices.
 ///
@@ -124,6 +168,54 @@ impl PciTree {
             .filter(move |&(_, parent)| *parent == addr)
             .map(|(bus, _)| bus)
             .cloned()
+    }
+
+    /// Construct a device path for the given PCI `addr` and append it to the given `root_path`.
+    ///
+    /// # Arguments
+    /// - `root_path`: The [`DevicePath`] instance corresponding to the [`PciRootBridgeIo`] instance that
+    ///   produced this [`PciTree`]. This path is prepended to the generated device paths.
+    /// - `addr`: [`PciIoAddress`] of the device
+    pub fn device_path(
+        &self,
+        root_path: &DevicePath,
+        addr: PciIoAddress,
+    ) -> Result<PoolDevicePath, PciDevicePathBuildError> {
+        use device_path::build;
+
+        if !self.devices.contains(&addr) {
+            return Err(PciDevicePathBuildError::InvalidAddress);
+        }
+
+        // A PCI [`DevicePath`] can have max. 255 PCI segments, each of which is 6 bytes in size.
+        // These are prepended by the given `root_path`. A construction buffer of 2048 bytes
+        // should thus suffice for all realistic scenarios.
+        let mut bfr = [MaybeUninit::uninit(); 2048];
+        let mut builder = DevicePathBuilder::with_buf(&mut bfr);
+        for node in root_path.node_iter() {
+            builder = builder.push(&node)?;
+        }
+
+        // A pci device path is built by appending segments of `dev` and `fun` address byte pairs
+        // starting from a pci root bus to the specified address. Since the child <-> parent
+        // relationship is stored from child to parent, we start at the address and recurse back
+        // to the parent for path generation.
+        fn inner<'a>(
+            root: &PciTree,
+            mut builder: DevicePathBuilder<'a>,
+            addr: PciIoAddress,
+        ) -> Result<DevicePathBuilder<'a>, BuildError> {
+            if let Some(parent) = root.parent_for(addr) {
+                builder = inner(root, builder, parent)?;
+            }
+            builder.push(&build::hardware::Pci {
+                function: addr.fun,
+                device: addr.dev,
+            })
+        }
+
+        builder = inner(self, builder, addr)?;
+        Ok(builder.finalize()?.to_pool()?)
     }
 }
 impl IntoIterator for PciTree {

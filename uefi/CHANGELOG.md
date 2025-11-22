@@ -9,6 +9,7 @@
 - Added `proto::media::block::BlockIO2`.
 - Added `proto::device_path::DevicePath::to_pool()`.
 - Added `proto::device_path::DevicePathUtilities::duplicate_path()`.
+- Added `proto::pci::enumeration::PciTree::device_path()`.
 
 ## Changed
 - export all `text::{input, output}::*` types

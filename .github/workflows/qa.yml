@@ -5,7 +5,7 @@ jobs:
     name: Spellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # Executes "typos ."
       - uses: crate-ci/typos@v1.39.2
   lints:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
       - uses: Swatinem/rust-cache@v2
       # Dedicated step to separate all the

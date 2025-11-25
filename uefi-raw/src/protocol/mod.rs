@@ -31,6 +31,7 @@ pub mod device_path;
 pub mod disk;
 pub mod driver;
 pub mod file_system;
+pub mod firmware_management;
 pub mod firmware_volume;
 pub mod hii;
 pub mod iommu;

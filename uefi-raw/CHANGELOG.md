@@ -3,6 +3,7 @@
 ## Added
 - Added `Tcpv4Protocol`.
 - Added `StorageSecurityCommandProtocol`.
+- Added `FirmwareManagementProtocol`.
 
 ## Changed
 

@@ -101,12 +101,24 @@ impl NvmePassThru {
     /// This can be used to send ADMIN commands.
     ///
     /// # Returns
-    /// A [`NvmeNamespaceIterator`] for iterating through the namespaces.
+    /// A [`NvmeNamespace`] addressing the controller (nsid = 0).
     #[must_use]
     pub const fn controller(&self) -> NvmeNamespace<'_> {
         NvmeNamespace {
             proto: &self.0,
             namespace_id: 0,
+        }
+    }
+
+    /// Get the broadcast namespace (id = 0xffffffff).
+    ///
+    /// # Returns
+    /// A [`NvmeNamespace`] with nsid = 0xffffffff.
+    #[must_use]
+    pub const fn broadcast(&self) -> NvmeNamespace<'_> {
+        NvmeNamespace {
+            proto: &self.0,
+            namespace_id: 0xffffffff,
         }
     }
 }

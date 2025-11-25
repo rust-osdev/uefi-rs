@@ -4,6 +4,8 @@
 
 use core::fmt::Debug;
 
+use super::form_browser::BrowserActionRequest;
+use super::{FormId, QuestionId, StringId};
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
 
@@ -69,34 +71,6 @@ newtype_enum! {
     }
 }
 
-newtype_enum! {
-    /// Represents actions requested by the Forms Browser in response to user interactions.
-    #[derive(Default)]
-    pub enum BrowserActionRequest: usize => {
-        /// No special behavior is taken by the Forms Browser.
-        NONE = 0,
-        /// The Forms Browser will exit and request the platform to reset.
-        RESET = 1,
-        /// The Forms Browser will save all modified question values to storage and exit.
-        SUBMIT = 2,
-        /// The Forms Browser will discard all modified question values and exit.
-        EXIT = 3,
-        /// The Forms Browser will write all modified question values on the selected form to storage and exit the form.
-        FORM_SUBMIT_EXIT = 4,
-        /// The Forms Browser will discard the modified question values on the selected form and exit the form.
-        FORM_DISCARD_EXIT = 5,
-        /// The Forms Browser will write all modified current question values on the selected form to storage.
-        FORM_APPLY = 6,
-        /// The Forms Browser will discard the current question values on the selected form and replace them with the original values.
-        FORM_DISCARD = 7,
-        /// The user performed a hardware or software configuration change, requiring controller reconnection.
-        /// The Forms Browser calls `DisconnectController()` followed by `ConnectController()`.
-        RECONNECT = 8,
-        /// The Forms Browser will write the current modified question value on the selected form to storage.
-        QUESTION_APPLY = 9,
-    }
-}
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiTime {
@@ -140,10 +114,6 @@ impl core::fmt::Debug for IfrTypeValue {
         f.debug_struct("EfiIfrTypeValue").finish()
     }
 }
-
-pub type QuestionId = u16;
-pub type FormId = u16;
-pub type StringId = u16;
 
 /// EFI_HII_CONFIG_ACCESS_PROTOCOL
 #[derive(Debug)]

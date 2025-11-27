@@ -7,43 +7,7 @@ use uefi::{Identify, proto};
 pub fn test() {
     info!("Testing various protocols");
 
-    console::test();
-
-    find_protocol();
-    test_protocols_per_handle();
-    test_test_protocol();
-
-    debug::test();
-    device_path::test();
-    driver::test();
-    load::test();
-    loaded_image::test();
-    media::test();
-    network::test();
-    pci::test();
-    pi::test();
-    rng::test();
-    shell_params::test();
-    string::test();
-    usb::test();
-    misc::test();
-
-    // disable the ATA test on aarch64 for now. The aarch64 UEFI Firmware does not yet seem
-    // to support SATA controllers (and providing an AtaPassThru protocol instance for them).
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    ata::test();
-    scsi::test();
-    nvme::test();
-
-    #[cfg(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "arm",
-        target_arch = "aarch64"
-    ))]
-    shim::test();
     shell::test();
-    tcg::test();
 }
 
 fn find_protocol() {

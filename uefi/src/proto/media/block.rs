@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Block I/O protocols.
+//! Block I/O protocols [`BlockIO`] and [`BlockIO2`].
+
+use core::ptr::NonNull;
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, StatusExt};
+use crate::util::opt_nonnull_to_ptr;
+use crate::{Event, Result, Status, StatusExt};
 
-pub use uefi_raw::protocol::block::{BlockIoProtocol, Lba};
+pub use uefi_raw::protocol::block::{BlockIo2Protocol, BlockIoProtocol, Lba};
 
 /// Block I/O [`Protocol`].
 ///
@@ -184,5 +187,132 @@ impl BlockIOMedia {
     #[must_use]
     pub const fn optimal_transfer_length_granularity(&self) -> u32 {
         self.0.optimal_transfer_length_granularity
+    }
+}
+
+/// Asynchronous transaction token for Block I/O 2 operations.
+#[repr(C)]
+#[derive(Debug)]
+pub struct BlockIO2Token {
+    /// Event to be signalled when an asynchronous block I/O operation
+    /// completes.
+    pub event: Option<Event>,
+    /// Transaction status code.
+    pub transaction_status: Status,
+}
+
+/// Block I/O 2 [`Protocol`].
+///
+/// The Block I/O 2 protocol defines an extension to the Block I/O protocol
+/// which enables the ability to read and write data at a block level in a
+/// non-blocking manner.
+///
+/// [`Protocol`]: uefi::proto::Protocol
+#[derive(Debug)]
+#[repr(transparent)]
+#[unsafe_protocol(BlockIo2Protocol::GUID)]
+pub struct BlockIO2(BlockIo2Protocol);
+
+impl BlockIO2 {
+    /// Pointer for block IO media.
+    #[must_use]
+    pub const fn media(&self) -> &BlockIOMedia {
+        unsafe { &*self.0.media.cast::<BlockIOMedia>() }
+    }
+
+    /// Resets the block device hardware.
+    ///
+    /// # Arguments
+    /// * `extended_verification` - Indicates that the driver may perform a more exhaustive verification operation of the device during reset.
+    ///
+    /// # Errors
+    /// * [`Status::DEVICE_ERROR`] The block device is not functioning correctly and could not be reset.
+    pub fn reset(&mut self, extended_verification: bool) -> Result {
+        unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
+    }
+
+    /// Reads the requested number of blocks from the device.
+    ///
+    /// # Arguments
+    /// * `media_id` - The media ID that the read request is for.
+    /// * `lba` - The starting logical block address to read from on the device.
+    /// * `token` - Transaction token for asynchronous read.
+    /// * `len` - Buffer size.
+    /// * `buffer` - The target buffer of the read operation
+    ///
+    /// # Safety
+    /// Because of the asynchronous nature of the block transaction, manual lifetime
+    /// tracking is required.
+    ///
+    /// # Errors
+    /// * [`Status::INVALID_PARAMETER`] The read request contains LBAs that are not valid, or the buffer is not on proper alignment.
+    /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
+    /// * [`Status::MEDIA_CHANGED`]     The `media_id` is not for the current media.
+    /// * [`Status::NO_MEDIA`]          There is no media in the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the read operation.
+    /// * [`Status::BAD_BUFFER_SIZE`]   The buffer size parameter is not a multiple of the intrinsic block size of the device.
+    pub unsafe fn read_blocks_ex(
+        &self,
+        media_id: u32,
+        lba: Lba,
+        token: Option<NonNull<BlockIO2Token>>,
+        len: usize,
+        buffer: *mut u8,
+    ) -> Result {
+        let token = opt_nonnull_to_ptr(token);
+        unsafe { (self.0.read_blocks_ex)(&self.0, media_id, lba, token.cast(), len, buffer.cast()) }
+            .to_result()
+    }
+
+    /// Writes a specified number of blocks to the device.
+    ///
+    /// # Arguments
+    /// * `media_id` - The media ID that the write request is for.
+    /// * `lba` - The starting logical block address to be written.
+    /// * `token` - Transaction token for asynchronous write.
+    /// * `len` - Buffer size.
+    /// * `buffer` - Buffer to be written from.
+    ///
+    /// # Safety
+    /// Because of the asynchronous nature of the block transaction, manual
+    /// lifetime tracking is required.
+    ///
+    /// # Errors
+    /// * [`Status::INVALID_PARAMETER`] The write request contains LBAs that are not valid, or the buffer is not on proper alignment.
+    /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
+    /// * [`Status::MEDIA_CHANGED`]     The `media_id` is not for the current media.
+    /// * [`Status::NO_MEDIA`]          There is no media in the device.
+    /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the write operation.
+    /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
+    /// * [`Status::BAD_BUFFER_SIZE`]   The buffer size parameter is not a multiple of the intrinsic block size of the device.
+    pub unsafe fn write_blocks_ex(
+        &mut self,
+        media_id: u32,
+        lba: Lba,
+        token: Option<NonNull<BlockIO2Token>>,
+        len: usize,
+        buffer: *const u8,
+    ) -> Result {
+        let token = opt_nonnull_to_ptr(token);
+        unsafe {
+            (self.0.write_blocks_ex)(&mut self.0, media_id, lba, token.cast(), len, buffer.cast())
+        }
+        .to_result()
+    }
+
+    /// Flushes all modified data to the physical device.
+    ///
+    /// # Arguments
+    /// * `token` - Transaction token for asynchronous flush.
+    ///
+    /// # Errors
+    /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
+    /// * [`Status::MEDIA_CHANGED`]     The media in the device has changed since the last access.
+    /// * [`Status::NO_MEDIA`]          There is no media in the device.
+    /// * [`Status::DEVICE_ERROR`]      The `media_id` is not for the current media.
+    /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
+    pub fn flush_blocks_ex(&mut self, token: Option<NonNull<BlockIO2Token>>) -> Result {
+        let token = opt_nonnull_to_ptr(token);
+        unsafe { (self.0.flush_blocks_ex)(&mut self.0, token.cast()) }.to_result()
     }
 }

@@ -14,8 +14,10 @@
 - **Breaking:** `SimpleNetwork::wait_for_packet`
   - has been renamed to `wait_for_packet_event`
   - now returns `Result<Event>` instead of `&Event`
-- `Http::get_mode_data` doesn't consume a parameter anymore and instead return
+- **Breaking:** `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- **Breaking:** `boot::check_event` now consumes `&Event` rather than `Event`, removing the
+  need for unnecessary `Event::unsafe_clone()`s.
 
 # uefi - v0.36.1 (2025-11-05)
 

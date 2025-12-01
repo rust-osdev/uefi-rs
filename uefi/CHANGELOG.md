@@ -11,10 +11,9 @@
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
 - Return request with status as error data object for `proto::ata::pass_thru::AtaDevice`.
-- **Breaking:** Renamed `proto::network::snp::SimpleNetwork::wait_for_packet` to
-  `wait_for_packet_event`
-- **Breaking:** `proto::network::snp::SimpleNetwork::wait_for_packet_event` now
-  returns `Option<Event>` instead of `&Event`.
+- **Breaking:** `SimpleNetwork::wait_for_packet`
+  - has been renamed to `wait_for_packet_event`
+  - now returns `Result<Event>` instead of `&Event`
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
 

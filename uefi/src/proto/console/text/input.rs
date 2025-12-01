@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::proto::unsafe_protocol;
-use crate::{Char16, Event, Result, Status, StatusExt};
+use crate::{Char16, Error, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
 use uefi_raw::protocol::console::{InputKey, SimpleTextInputProtocol};
 
@@ -84,9 +84,8 @@ impl Input {
     /// for a key to be available
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
-    #[must_use]
-    pub fn wait_for_key_event(&self) -> Option<Event> {
-        unsafe { Event::from_ptr(self.0.wait_for_key) }
+    pub fn wait_for_key_event(&self) -> Result<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_key) }.ok_or(Error::from(Status::UNSUPPORTED))
     }
 }
 

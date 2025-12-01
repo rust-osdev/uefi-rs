@@ -11,7 +11,8 @@
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
 - Return request with status as error data object for `proto::ata::pass_thru::AtaDevice`.
 - **Breaking:** `proto::network::snp::SimpleNetwork::wait_for_packet` now
-  returns `Option<Event>` instead of `&Event`.
+  returns `Option<Event>` instead of `&Event`. It has also been renamed to
+  `wait_for_packet`.
 
 # uefi - v0.36.1 (2025-11-05)
 

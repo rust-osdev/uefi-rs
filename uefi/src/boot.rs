@@ -424,7 +424,7 @@ pub unsafe fn create_event(
     unsafe { (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event) }
         .to_result_with_val(
             // OK to unwrap: event is non-null for Status::SUCCESS.
-            || unsafe { Event::from_ptr(event) }.unwrap(),
+            || Event::from_ptr(event).unwrap(),
         )
 }
 
@@ -502,7 +502,7 @@ pub unsafe fn create_event_ex(
     }
     .to_result_with_val(
         // OK to unwrap: event is non-null for Status::SUCCESS.
-        || unsafe { Event::from_ptr(event) }.unwrap(),
+        || Event::from_ptr(event).unwrap(),
     )
 }
 

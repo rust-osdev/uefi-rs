@@ -86,7 +86,7 @@ impl Input {
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     #[must_use]
     pub fn wait_for_key_event(&self) -> Option<Event> {
-        unsafe { Event::from_ptr(self.0.wait_for_key) }
+        Event::from_ptr(self.0.wait_for_key)
     }
 }
 

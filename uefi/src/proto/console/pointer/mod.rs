@@ -55,7 +55,7 @@ impl Pointer {
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     #[must_use]
     pub fn wait_for_input_event(&self) -> Option<Event> {
-        unsafe { Event::from_ptr(self.0.wait_for_input) }
+        Event::from_ptr(self.0.wait_for_input)
     }
 
     /// Returns a reference to the pointer device information.

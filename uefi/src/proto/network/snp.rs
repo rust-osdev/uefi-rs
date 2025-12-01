@@ -270,8 +270,8 @@ impl SimpleNetwork {
     /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
     /// of UEFI properly implements this event before using it.
     #[must_use]
-    pub const fn wait_for_packet(&self) -> &Event {
-        unsafe { &*(ptr::from_ref(&self.0.wait_for_packet).cast::<Event>()) }
+    pub fn wait_for_packet(&self) -> Option<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_packet) }
     }
 
     /// Returns a reference to the Simple Network mode.

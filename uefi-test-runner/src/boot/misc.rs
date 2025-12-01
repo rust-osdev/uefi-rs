@@ -45,8 +45,7 @@ fn test_check_event() {
         unsafe { boot::create_event(EventType::NOTIFY_WAIT, Tpl::CALLBACK, Some(callback), None) }
             .unwrap();
 
-    let event_clone = unsafe { event.unsafe_clone() };
-    let is_signaled = boot::check_event(event_clone).unwrap();
+    let is_signaled = boot::check_event(&event).unwrap();
     assert!(!is_signaled);
 
     boot::close_event(event).unwrap();
@@ -56,8 +55,8 @@ fn test_timer() {
     let timer_event =
         unsafe { boot::create_event_ex(EventType::TIMER, Tpl::CALLBACK, None, None, None) }
             .unwrap();
-    let mut events = unsafe { [timer_event.unsafe_clone()] };
     boot::set_timer(&timer_event, TimerTrigger::Relative(5_0 /*00 ns */)).unwrap();
+    let mut events = [unsafe { timer_event.unsafe_clone() }];
     assert_eq!(boot::wait_for_event(&mut events).unwrap(), 0);
 
     boot::close_event(timer_event).unwrap();
@@ -89,7 +88,7 @@ fn test_callback_with_ctx() {
         .expect("Failed to create event with context")
     };
 
-    boot::check_event(event).expect("Failed to check event");
+    boot::check_event(&event).expect("Failed to check event");
 
     // Check that `data` was updated inside the event callback.
     assert_eq!(data, 456);

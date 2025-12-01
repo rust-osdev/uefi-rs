@@ -11,7 +11,8 @@ fn read_keyboard_events(input: &mut Input) -> Result {
         println!("waiting for key press...");
 
         // Pause until a keyboard event occurs.
-        let mut events = [input.wait_for_key_event().unwrap()];
+        let event = input.wait_for_key_event()?;
+        let mut events = [event];
         boot::wait_for_event(&mut events).discard_errdata()?;
 
         match input.read_key()? {

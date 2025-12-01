@@ -309,7 +309,7 @@ fn test_raw_disk_io2(handle: Handle) {
 
         unsafe {
             // Create the completion event
-            let mut event = boot::create_event(EventType::empty(), Tpl::NOTIFY, None, None)
+            let event = boot::create_event(EventType::empty(), Tpl::NOTIFY, None, None)
                 .expect("Failed to create disk I/O completion event");
 
             // Initialise the task context
@@ -333,8 +333,7 @@ fn test_raw_disk_io2(handle: Handle) {
                 .expect("Failed to initiate asynchronous disk I/O read");
 
             // Wait for the transaction to complete
-            boot::wait_for_event(core::slice::from_mut(&mut event))
-                .expect("Failed to wait on completion event");
+            boot::wait_for_event(&mut [event]).expect("Failed to wait on completion event");
 
             // Verify that the disk's MBR signature is correct
             assert_eq!(task.token.transaction_status, Status::SUCCESS);

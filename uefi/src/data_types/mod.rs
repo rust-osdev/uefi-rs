@@ -82,12 +82,9 @@ impl Event {
         Self(self.0)
     }
 
-    /// Create an `Event` from a raw pointer.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the pointer is valid.
-    pub unsafe fn from_ptr(ptr: *mut c_void) -> Option<Self> {
+    /// Create an [`Event`] from a raw pointer. Returns [`None`] if the pointer
+    /// null.
+    pub fn from_ptr(ptr: *mut c_void) -> Option<Self> {
         NonNull::new(ptr).map(Self)
     }
 

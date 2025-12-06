@@ -237,7 +237,6 @@ impl BlockIO2 {
     /// * `media_id` - The media ID that the read request is for.
     /// * `lba` - The starting logical block address to read from on the device.
     /// * `token` - Transaction token for asynchronous read.
-    /// * `len` - Buffer size.
     /// * `buffer` - The target buffer of the read operation
     ///
     /// # Safety
@@ -256,12 +255,20 @@ impl BlockIO2 {
         media_id: u32,
         lba: Lba,
         token: Option<NonNull<BlockIO2Token>>,
-        len: usize,
-        buffer: *mut u8,
+        buffer: &mut [u8],
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
-        unsafe { (self.0.read_blocks_ex)(&self.0, media_id, lba, token.cast(), len, buffer.cast()) }
-            .to_result()
+        unsafe {
+            (self.0.read_blocks_ex)(
+                &self.0,
+                media_id,
+                lba,
+                token.cast(),
+                buffer.len(),
+                buffer.as_mut_ptr().cast(),
+            )
+        }
+        .to_result()
     }
 
     /// Writes a specified number of blocks to the device.
@@ -270,7 +277,6 @@ impl BlockIO2 {
     /// * `media_id` - The media ID that the write request is for.
     /// * `lba` - The starting logical block address to be written.
     /// * `token` - Transaction token for asynchronous write.
-    /// * `len` - Buffer size.
     /// * `buffer` - Buffer to be written from.
     ///
     /// # Safety
@@ -290,12 +296,18 @@ impl BlockIO2 {
         media_id: u32,
         lba: Lba,
         token: Option<NonNull<BlockIO2Token>>,
-        len: usize,
-        buffer: *const u8,
+        buffer: &[u8],
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
         unsafe {
-            (self.0.write_blocks_ex)(&mut self.0, media_id, lba, token.cast(), len, buffer.cast())
+            (self.0.write_blocks_ex)(
+                &mut self.0,
+                media_id,
+                lba,
+                token.cast(),
+                buffer.len(),
+                buffer.as_ptr().cast(),
+            )
         }
         .to_result()
     }

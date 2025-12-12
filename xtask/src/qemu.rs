@@ -506,6 +506,37 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         None
     };
 
+    // Make PCI tree a little more complicated so the PCI enumeration integration
+    // test is more interesting. This specific architecture was taken from:
+    // https://blogs.oracle.com/linux/a-study-of-the-linux-kernel-pci-subsystem-with-qemu
+    // It employs a complex PCIe switch (x3130) setup, which makes it interesting for testing.
+    // The bus architecture this generates is found below `0000:00:03.0` in below diagram.
+    // (actual bus numbers and surrounding devices don't match this diagram)
+    // -[0000:00]-+-00.0
+    //            +-01.0
+    //            +-02.0
+    //            +-03.0-[01-04]----00.0-[02-04]--+-00.0-[03]----00.0
+    //            |                               \-01.0-[04]----00.0
+    //            +-1f.0
+    //            +-1f.2
+    //            \-1f.3
+    // In the diagram, `0000:03:00.0` and `0000:04:00.0` are just dummy SCSI devices
+    // connected below the PCIe switch, to test correct recursion in the bus enumeration implementation.
+    cmd.args([
+        "-device",
+        "ioh3420,id=root_port1,bus=pcie.0",
+        "-device",
+        "x3130-upstream,id=upstream1,bus=root_port1",
+        "-device",
+        "xio3130-downstream,id=downstream1,bus=upstream1,chassis=9",
+        "-device",
+        "virtio-scsi-pci,bus=downstream1",
+        "-device",
+        "xio3130-downstream,id=downstream2,bus=upstream1,chassis=10",
+        "-device",
+        "virtio-scsi-pci,bus=downstream2",
+    ]);
+
     // Pass CA certificate database to the edk2 firmware, for TLS support.
     cmd.args([
         "-fw_cfg",

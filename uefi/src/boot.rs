@@ -424,7 +424,7 @@ pub unsafe fn create_event(
     unsafe { (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event) }
         .to_result_with_val(
             // OK to unwrap: event is non-null for Status::SUCCESS.
-            || unsafe { Event::from_ptr(event) }.unwrap(),
+            || Event::from_ptr(event).unwrap(),
         )
 }
 
@@ -502,7 +502,7 @@ pub unsafe fn create_event_ex(
     }
     .to_result_with_val(
         // OK to unwrap: event is non-null for Status::SUCCESS.
-        || unsafe { Event::from_ptr(event) }.unwrap(),
+        || Event::from_ptr(event).unwrap(),
     )
 }
 
@@ -519,7 +519,7 @@ pub unsafe fn create_event_ex(
 /// * [`Status::INVALID_PARAMETER`]: `event` is of type [`NOTIFY_SIGNAL`].
 ///
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
-pub fn check_event(event: Event) -> Result<bool> {
+pub fn check_event(event: &Event) -> Result<bool> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 

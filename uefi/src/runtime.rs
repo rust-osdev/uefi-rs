@@ -24,9 +24,6 @@ use {
     alloc::{vec, vec::Vec},
 };
 
-#[cfg(all(feature = "unstable", feature = "alloc"))]
-use alloc::alloc::Global;
-
 pub use uefi_raw::capsule::{CapsuleBlockDescriptor, CapsuleFlags, CapsuleHeader};
 pub use uefi_raw::table::runtime::{
     ResetType, TimeCapabilities, VariableAttributes, VariableVendor,
@@ -187,14 +184,7 @@ pub fn get_variable_boxed(
             val
         })
     };
-    #[cfg(not(feature = "unstable"))]
-    {
-        make_boxed(get_var).map(|val| (val, out_attr))
-    }
-    #[cfg(feature = "unstable")]
-    {
-        make_boxed(get_var, Global).map(|val| (val, out_attr))
-    }
+    make_boxed(get_var).map(|val| (val, out_attr))
 }
 
 /// Gets each variable key (name and vendor) one at a time.
@@ -256,7 +246,7 @@ pub fn variable_keys() -> VariableKeys {
 
 /// Iterator over all UEFI variables.
 ///
-/// Each iteration yields a `Result<`[`VariableKey`]`>`. Error values:
+/// Each iteration yields a <code>Result<`[`VariableKey`]`></code>. Error values:
 ///
 /// * [`Status::DEVICE_ERROR`]: variable could not be read due to a hardware error.
 /// * [`Status::UNSUPPORTED`]: this platform does not support variable storage
@@ -321,14 +311,13 @@ impl Iterator for VariableKeys {
                 }))
             }
             Err(err) => {
+                self.is_done = true;
                 if err.status() == Status::NOT_FOUND {
                     // This status indicates the end of the list. The final variable
                     // has already been yielded at this point, so return `None`.
-                    self.is_done = true;
                     None
                 } else {
                     // Return the error and end iteration.
-                    self.is_done = true;
                     Some(Err(err.to_err_without_payload()))
                 }
             }
@@ -514,7 +503,9 @@ pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
 }
 
 /// Changes the runtime addressing mode of EFI firmware from physical to
-/// virtual. It is up to the caller to translate the old system table address
+/// virtual.
+///
+/// It is up to the caller to translate the old system table address
 /// to a new virtual address and provide it for this function.
 ///
 /// If successful, this function will call [`set_system_table`] with
@@ -843,12 +834,12 @@ impl TryFrom<&[u8]> for Time {
                 Self::UNSPECIFIED_TIMEZONE => None,
                 num => Some(num),
             };
-            let daylight = Daylight::from_bits(bytes[14]).ok_or(
+            let daylight = Daylight::from_bits(bytes[14]).ok_or_else(|| {
                 TimeByteConversionError::InvalidFields(TimeError {
                     daylight: true,
                     ..Default::default()
-                }),
-            )?;
+                })
+            })?;
 
             let time_params = TimeParams {
                 year,
@@ -906,9 +897,10 @@ impl Display for VariableKey {
 }
 
 /// Information about UEFI variable storage space returned by
-/// [`query_variable_info`]. Note that the data here is
-/// limited to a specific type of variable (as specified by the
-/// `attributes` argument to `query_variable_info`).
+/// [`query_variable_info`].
+///
+/// Note that the data here is limited to a specific type of variable (as
+/// specified by the `attributes` argument to `query_variable_info`).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct VariableStorageInfo {
     /// Maximum size in bytes of the storage space available for

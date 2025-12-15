@@ -44,11 +44,7 @@ impl HiiDatabase {
             }
         }
 
-        #[cfg(not(feature = "unstable"))]
         let buf = make_boxed::<[u8], _>(|buf| fetch_data_fn(self, buf))?;
-
-        #[cfg(feature = "unstable")]
-        let buf = make_boxed::<[u8], _, _>(|buf| fetch_data_fn(self, buf), alloc::alloc::Global)?;
 
         Ok(buf)
     }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use crate::newtype_enum;
 use core::fmt::Debug;
 
 newtype_enum! {
@@ -46,7 +47,7 @@ pub enum Status: usize => {
     WRITE_PROTECTED         = Self::ERROR_BIT |  8,
     /// A resource has run out.
     OUT_OF_RESOURCES        = Self::ERROR_BIT |  9,
-    /// An inconstency was detected on the file system.
+    /// An inconsistency was detected on the file system.
     VOLUME_CORRUPTED        = Self::ERROR_BIT | 10,
     /// There is no more space on the file system.
     VOLUME_FULL             = Self::ERROR_BIT | 11,

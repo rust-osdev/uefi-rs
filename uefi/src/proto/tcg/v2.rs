@@ -26,9 +26,6 @@ use uefi_raw::protocol::tcg::v2::{Tcg2EventHeader as EventHeader, Tcg2Protocol};
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
 
-#[cfg(all(feature = "unstable", feature = "alloc"))]
-use alloc::alloc::Global;
-
 pub use uefi_raw::protocol::tcg::v2::{
     Tcg2EventLogFormat as EventLogFormat, Tcg2HashAlgorithmBitmap,
     Tcg2HashLogExtendEventFlags as HashLogExtendEventFlags, Tcg2Version as Version,
@@ -183,17 +180,7 @@ impl PcrEventInputs {
         event_type: EventType,
         event_data: &[u8],
     ) -> Result<Box<Self>> {
-        #[cfg(not(feature = "unstable"))]
-        {
-            make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data))
-        }
-        #[cfg(feature = "unstable")]
-        {
-            make_boxed(
-                |buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data),
-                Global,
-            )
-        }
+        make_boxed(|buf| Self::new_in_buffer(buf, pcr_index, event_type, event_data))
     }
 }
 

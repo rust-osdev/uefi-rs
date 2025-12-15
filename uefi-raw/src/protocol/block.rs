@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{Boolean, Guid, Status, guid};
+use crate::{Boolean, Event, Guid, Status, guid};
 use core::ffi::c_void;
 
 /// Logical block address.
@@ -53,4 +53,40 @@ pub struct BlockIoProtocol {
 
 impl BlockIoProtocol {
     pub const GUID: Guid = guid!("964e5b21-6459-11d2-8e39-00a0c969723b");
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct BlockIo2Token {
+    pub event: Event,
+    pub transaction_status: Status,
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct BlockIo2Protocol {
+    pub media: *const BlockIoMedia,
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
+    pub read_blocks_ex: unsafe extern "efiapi" fn(
+        this: *const Self,
+        media_id: u32,
+        lba: Lba,
+        token: *mut BlockIo2Token,
+        buffer_size: usize,
+        buffer: *mut c_void,
+    ) -> Status,
+    pub write_blocks_ex: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        media_id: u32,
+        lba: Lba,
+        token: *mut BlockIo2Token,
+        buffer_size: usize,
+        buffer: *const c_void,
+    ) -> Status,
+    pub flush_blocks_ex:
+        unsafe extern "efiapi" fn(this: *mut Self, token: *mut BlockIo2Token) -> Status,
+}
+
+impl BlockIo2Protocol {
+    pub const GUID: Guid = guid!("a77b2472-e282-4e9f-a245-c2c0e27bbcc1");
 }

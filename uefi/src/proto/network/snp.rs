@@ -9,15 +9,15 @@
 //! No interface function must be called until `SimpleNetwork.start` is successfully
 //! called first.
 
-use super::{IpAddress, MacAddress};
 use crate::data_types::Event;
 use crate::proto::unsafe_protocol;
 use crate::{Result, StatusExt};
 use core::ffi::c_void;
+use core::net::IpAddr;
 use core::ptr;
 use core::ptr::NonNull;
-use uefi_raw::Boolean;
 use uefi_raw::protocol::network::snp::SimpleNetworkProtocol;
+use uefi_raw::{Boolean, IpAddress as EfiIpAddr, MacAddress as EfiMacAddr};
 
 pub use uefi_raw::protocol::network::snp::{
     InterruptStatus, NetworkMode, NetworkState, NetworkStatistics, ReceiveFlags,
@@ -68,7 +68,7 @@ impl SimpleNetwork {
         enable: ReceiveFlags,
         disable: ReceiveFlags,
         reset_mcast_filter: bool,
-        mcast_filter: Option<&[MacAddress]>,
+        mcast_filter: Option<&[EfiMacAddr]>,
     ) -> Result {
         let filter_count = mcast_filter.map(|filters| filters.len()).unwrap_or(0);
         let filters = mcast_filter
@@ -89,7 +89,7 @@ impl SimpleNetwork {
     }
 
     /// Modify or reset the current station address, if supported.
-    pub fn station_address(&self, reset: bool, new: Option<&MacAddress>) -> Result {
+    pub fn station_address(&self, reset: bool, new: Option<&EfiMacAddr>) -> Result {
         unsafe {
             (self.0.station_address)(
                 &self.0,
@@ -129,43 +129,46 @@ impl SimpleNetwork {
     }
 
     /// Convert a multicast IP address to a multicast HW MAC Address.
-    pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddress) -> Result<MacAddress> {
-        let mut mac_address = MacAddress([0; 32]);
+    pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddr) -> Result<EfiMacAddr> {
+        let mut mac_address = EfiMacAddr([0; 32]);
+        let ip = EfiIpAddr::from(ip);
         let status = unsafe {
             (self.0.multicast_ip_to_mac)(
                 &self.0,
                 Boolean::from(ipv6),
-                ip.as_raw_ptr(),
+                &raw const ip,
                 &mut mac_address,
             )
         };
         status.to_result_with_val(|| mac_address)
     }
 
-    /// Perform read operations on the NVRAM device attached to
-    /// a network interface.
-    pub fn read_nv_data(&self, offset: usize, buffer: &[u8]) -> Result {
+    /// Reads data from the NVRAM device attached to the network interface into
+    /// the provided `dst_buffer`.
+    pub fn read_nv_data(&self, offset: usize, dst_buffer: &mut [u8]) -> Result {
         unsafe {
             (self.0.non_volatile_data)(
                 &self.0,
                 Boolean::from(true),
                 offset,
-                buffer.len(),
-                buffer.as_ptr() as *mut c_void,
+                dst_buffer.len(),
+                dst_buffer.as_mut_ptr().cast(),
             )
         }
         .to_result()
     }
 
-    /// Perform write operations on the NVRAM device attached to a network interface.
-    pub fn write_nv_data(&self, offset: usize, buffer: &mut [u8]) -> Result {
+    /// Writes data into the NVRAM device attached to the network interface from
+    /// the provided `src_buffer`.
+    pub fn write_nv_data(&self, offset: usize, src_buffer: &[u8]) -> Result {
         unsafe {
             (self.0.non_volatile_data)(
                 &self.0,
                 Boolean::from(false),
                 offset,
-                buffer.len(),
-                buffer.as_mut_ptr().cast(),
+                src_buffer.len(),
+                // SAFETY: The buffer is only used for reading.
+                src_buffer.as_ptr().cast::<c_void>().cast_mut(),
             )
         }
         .to_result()
@@ -218,8 +221,8 @@ impl SimpleNetwork {
         &self,
         header_size: usize,
         buffer: &[u8],
-        src_addr: Option<MacAddress>,
-        dst_addr: Option<MacAddress>,
+        src_addr: Option<EfiMacAddr>,
+        dst_addr: Option<EfiMacAddr>,
         protocol: Option<u16>,
     ) -> Result {
         unsafe {
@@ -243,8 +246,8 @@ impl SimpleNetwork {
         &self,
         buffer: &mut [u8],
         header_size: Option<&mut usize>,
-        src_addr: Option<&mut MacAddress>,
-        dest_addr: Option<&mut MacAddress>,
+        src_addr: Option<&mut EfiMacAddr>,
+        dest_addr: Option<&mut EfiMacAddr>,
         protocol: Option<&mut u16>,
     ) -> Result<usize> {
         let mut buffer_size = buffer.len();
@@ -267,8 +270,8 @@ impl SimpleNetwork {
     /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
     /// of UEFI properly implements this event before using it.
     #[must_use]
-    pub const fn wait_for_packet(&self) -> &Event {
-        unsafe { &*(ptr::from_ref(&self.0.wait_for_packet).cast::<Event>()) }
+    pub fn wait_for_packet(&self) -> Option<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_packet) }
     }
 
     /// Returns a reference to the Simple Network mode.

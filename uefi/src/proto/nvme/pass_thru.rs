@@ -7,6 +7,7 @@ use crate::StatusExt;
 use crate::mem::{AlignedBuffer, PoolAllocation};
 use crate::proto::device_path::PoolDevicePathNode;
 use core::alloc::LayoutError;
+use core::cell::UnsafeCell;
 use core::ptr::{self, NonNull};
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
@@ -40,7 +41,7 @@ pub type NvmeNamespaceId = u32;
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(NvmExpressPassThruProtocol::GUID)]
-pub struct NvmePassThru(NvmExpressPassThruProtocol);
+pub struct NvmePassThru(UnsafeCell<NvmExpressPassThruProtocol>);
 
 impl NvmePassThru {
     /// Retrieves the mode of the NVMe Pass Thru protocol.
@@ -49,7 +50,7 @@ impl NvmePassThru {
     /// An instance of [`NvmePassThruMode`] describing the NVMe controller's capabilities.
     #[must_use]
     pub fn mode(&self) -> NvmePassThruMode {
-        let mut mode = unsafe { (*self.0.mode).clone() };
+        let mut mode = unsafe { (*(*self.0.get()).mode).clone() };
         mode.io_align = mode.io_align.max(1); // 0 and 1 is the same, says UEFI spec
         mode
     }
@@ -69,7 +70,7 @@ impl NvmePassThru {
     /// The `nvme` api will validate that your buffers have the correct alignment and error
     /// if they don't.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `len`: The size (in bytes) of the buffer to allocate.
     ///
     /// # Returns
@@ -100,12 +101,24 @@ impl NvmePassThru {
     /// This can be used to send ADMIN commands.
     ///
     /// # Returns
-    /// A [`NvmeNamespaceIterator`] for iterating through the namespaces.
+    /// A [`NvmeNamespace`] addressing the controller (nsid = 0).
     #[must_use]
     pub const fn controller(&self) -> NvmeNamespace<'_> {
         NvmeNamespace {
             proto: &self.0,
             namespace_id: 0,
+        }
+    }
+
+    /// Get the broadcast namespace (id = 0xffffffff).
+    ///
+    /// # Returns
+    /// A [`NvmeNamespace`] with nsid = 0xffffffff.
+    #[must_use]
+    pub const fn broadcast(&self) -> NvmeNamespace<'_> {
+        NvmeNamespace {
+            proto: &self.0,
+            namespace_id: 0xffffffff,
         }
     }
 }
@@ -116,15 +129,11 @@ impl NvmePassThru {
 /// Typically, consumer devices only have a single namespace where all the data resides (id 1).
 #[derive(Debug)]
 pub struct NvmeNamespace<'a> {
-    proto: &'a NvmExpressPassThruProtocol,
+    proto: &'a UnsafeCell<NvmExpressPassThruProtocol>,
     namespace_id: NvmeNamespaceId,
 }
 
 impl NvmeNamespace<'_> {
-    const fn proto_mut(&mut self) -> *mut NvmExpressPassThruProtocol {
-        ptr::from_ref(self.proto).cast_mut()
-    }
-
     /// Retrieves the namespace identifier (NSID) associated with this NVMe namespace.
     #[must_use]
     pub const fn namespace_id(&self) -> NvmeNamespaceId {
@@ -138,17 +147,21 @@ impl NvmeNamespace<'_> {
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
         unsafe {
             let mut path_ptr: *const DevicePathProtocol = ptr::null();
-            (self.proto.build_device_path)(self.proto, self.namespace_id, &mut path_ptr)
-                .to_result()?;
+            ((*self.proto.get()).build_device_path)(
+                self.proto.get(),
+                self.namespace_id,
+                &mut path_ptr,
+            )
+            .to_result()?;
             NonNull::new(path_ptr.cast_mut())
                 .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 
     /// Sends an NVM Express command to this namespace (Namespace ID ≥ 1).
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `req`: The [`NvmeRequest`] containing the command and associated data to send to the namespace.
     ///
     /// # Returns
@@ -178,8 +191,8 @@ impl NvmeNamespace<'_> {
         req.packet.nvme_cmd = &req.cmd;
         req.packet.nvme_completion = &mut completion;
         unsafe {
-            (self.proto.pass_thru)(
-                self.proto_mut(),
+            ((*self.proto.get()).pass_thru)(
+                self.proto.get(),
                 self.namespace_id,
                 &mut req.packet,
                 ptr::null_mut(),
@@ -195,7 +208,7 @@ impl NvmeNamespace<'_> {
 /// on the NVMe controller.
 #[derive(Debug)]
 pub struct NvmeNamespaceIterator<'a> {
-    proto: &'a NvmExpressPassThruProtocol,
+    proto: &'a UnsafeCell<NvmExpressPassThruProtocol>,
     prev: NvmeNamespaceId,
 }
 
@@ -203,7 +216,8 @@ impl<'a> Iterator for NvmeNamespaceIterator<'a> {
     type Item = NvmeNamespace<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let result = unsafe { (self.proto.get_next_namespace)(self.proto, &mut self.prev) };
+        let result =
+            unsafe { ((*self.proto.get()).get_next_namespace)(self.proto.get(), &mut self.prev) };
         match result {
             Status::SUCCESS => Some(NvmeNamespace {
                 proto: self.proto,

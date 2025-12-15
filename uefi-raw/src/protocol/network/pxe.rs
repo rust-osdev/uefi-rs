@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{Boolean, Char8, Guid, IpAddress, MacAddress, Status, guid};
+use crate::{Boolean, Char8, Guid, IpAddress, MacAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Formatter};

@@ -745,7 +745,7 @@ impl PoolString {
     pub unsafe fn new(text: *const Char16) -> crate::Result<Self> {
         NonNull::new(text.cast_mut())
             .map(|p| Self(PoolAllocation::new(p.cast())))
-            .ok_or(Status::OUT_OF_RESOURCES.into())
+            .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
     }
 }
 
@@ -770,6 +770,7 @@ impl UnalignedSlice<'_, u16> {
 }
 
 /// The EqStrUntilNul trait helps to compare Rust strings against UEFI string types (UCS-2 strings).
+///
 /// The given generic implementation of this trait enables us that we only have to
 /// implement one direction (`left.eq_str_until_nul(&right)`) for each UEFI string type and we
 /// get the other direction (`right.eq_str_until_nul(&left)`) for free. Hence, the relation is

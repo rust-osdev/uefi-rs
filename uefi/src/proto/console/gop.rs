@@ -59,8 +59,8 @@ use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
 use uefi_raw::protocol::console::{
-    GraphicsOutputBltOperation, GraphicsOutputModeInformation, GraphicsOutputProtocol,
-    GraphicsOutputProtocolMode,
+    GraphicsOutputBltOperation, GraphicsOutputBltPixel, GraphicsOutputModeInformation,
+    GraphicsOutputProtocol, GraphicsOutputProtocolMode,
 };
 
 pub use uefi_raw::protocol::console::PixelBitmask;
@@ -201,7 +201,8 @@ impl GraphicsOutput {
                     match src_region {
                         BltRegion::Full => (self.0.blt)(
                             &mut self.0,
-                            buffer.as_ptr() as *mut _,
+                            // SAFETY: The buffer is only used for reading.
+                            buffer.as_ptr().cast::<GraphicsOutputBltPixel>().cast_mut(),
                             GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             0,
                             0,
@@ -217,7 +218,8 @@ impl GraphicsOutput {
                             px_stride,
                         } => (self.0.blt)(
                             &mut self.0,
-                            buffer.as_ptr() as *mut _,
+                            // SAFETY: The buffer is only used for reading.
+                            buffer.as_ptr().cast::<GraphicsOutputBltPixel>().cast_mut(),
                             GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO,
                             src_x,
                             src_y,

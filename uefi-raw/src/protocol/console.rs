@@ -2,7 +2,7 @@
 
 pub mod serial;
 
-use crate::{Boolean, Char16, Event, Guid, PhysicalAddress, Status, guid};
+use crate::{Boolean, Char16, Event, Guid, PhysicalAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
 use core::ptr;
 
@@ -133,14 +133,9 @@ pub struct SimplePointerState {
 #[derive(Debug)]
 #[repr(C)]
 pub struct SimplePointerProtocol {
-    pub reset: unsafe extern "efiapi" fn(
-        this: *mut SimplePointerProtocol,
-        extended_verification: Boolean,
-    ) -> Status,
-    pub get_state: unsafe extern "efiapi" fn(
-        this: *mut SimplePointerProtocol,
-        state: *mut SimplePointerState,
-    ) -> Status,
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
+    pub get_state:
+        unsafe extern "efiapi" fn(this: *mut Self, state: *mut SimplePointerState) -> Status,
     pub wait_for_input: Event,
     pub mode: *const SimplePointerMode,
 }
@@ -161,6 +156,8 @@ pub struct GraphicsOutputProtocol {
     pub set_mode: unsafe extern "efiapi" fn(*mut Self, mode_number: u32) -> Status,
     pub blt: unsafe extern "efiapi" fn(
         *mut Self,
+        // Depending on `blt_operation`, this is an IN parameter (readable)
+        // or an OUT parameter (writeable).
         blt_buffer: *mut GraphicsOutputBltPixel,
         blt_operation: GraphicsOutputBltOperation,
         source_x: usize,

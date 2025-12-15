@@ -1,6 +1,27 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `proto::ata::AtaRequestBuilder::read_pio()`.
+- Added `proto::shell::Shell::{var(), set_var(), vars()}`
+- Added `proto::pci::root_bridge::PciRootBridgeIo::configuration()`.
+- Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
+- Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
+- Added `proto::media::block::BlockIO2`.
+
+## Changed
+- Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
+- Return request with status as error data object for `proto::ata::pass_thru::AtaDevice`.
+- **Breaking:** `proto::network::snp::SimpleNetwork::wait_for_packet` now
+  returns `Option<Event>` instead of `&Event`.
+
+# uefi - v0.36.1 (2025-11-05)
+
+- Fixing build on <https://docs.rs/uefi>
+
+
+# uefi - v0.36 (2025-10-21)
+
+## Added
 - Added `ConfigTableEntry::MEMORY_ATTRIBUTES_GUID` and `ConfigTableEntry::IMAGE_SECURITY_DATABASE_GUID`.
 - Added `proto::usb::io::UsbIo`.
 - Added `proto::pci::PciRootBridgeIo`.
@@ -9,6 +30,8 @@
 - Added `proto::hii::config_str::ConfigurationString`.
 - Added `proto::acpi::AcpiTable`.
 - Added `proto::hii::database::HiiDatabase`.
+- Added `proto::hii::config_str::MultiConfigurationStringIter`.
+- Added `proto::hii::config_routing::HiiConfigRouting`.
 
 ## Changed
 - **Breaking:** `boot::stall` now take `core::time::Duration` instead of `usize`.
@@ -16,6 +39,13 @@
 - `system::with_config_table`, `system::with_stdin`, `system::with_stdout` and `system::with_stderr`
   now take mutably closure.
 - **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
+- **Breaking:** All public APIs related to networking now use
+  `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}`, i.e., the types from the standard
+  library.
+  - This especially affects the SNP and PXE protocols
+  - The new design makes writing network code much simpler.
+- **Breaking:** Removed type `IpAddress`. In case you still need a low-level
+  EFI compatible type please use `IpAddress` from `uefi-raw`.
 - The documentation in `lib.rs` now provides guidance on how to select features
   tailored to your use case.
 - Feature `log-debugcon` is no longer a default feature. You only need to add
@@ -23,6 +53,14 @@
   image in QEMU or Cloud Hypervisor, when the debugcon/debug-console device is
   available.
 - The documentation for UEFI protocols has been streamlined and improved.
+- Fixed memory safety bug in `SimpleNetwork::read_nv_data`. The `buffer`
+  parameter is now mutable.
+- Removed all internal usages including public APIs using the unstable
+  `allocator_api` feature. It may be reintroduced if it will have a chance of
+  getting stabilized in stable Rust.
+  - Removed `File::get_boxed_info_in`
+  - Removed `Directory::read_entry_boxed_in`
+
 
 # uefi - 0.35.0 (2025-05-04)
 

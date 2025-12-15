@@ -131,7 +131,7 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
 /// - `memory_type`: The [`MemoryType`] used to persist the allocation in the
 ///   UEFI memory map. Typically, UEFI OS loaders should allocate memory of
 ///   type [`MemoryType::LOADER_DATA`].
-///- `count`: Number of bytes to allocate.
+///- `count`: Number of pages to allocate.
 ///
 /// # Safety
 ///
@@ -143,7 +143,7 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
-///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
+///   [`MemoryType::UNACCEPTED`], or in the range <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
 /// * [`Status::NOT_FOUND`]: the requested pages could not be found.
 pub fn allocate_pages(
     allocation_type: AllocateType,
@@ -229,7 +229,7 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
 /// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
-///   [`MemoryType::UNACCEPTED`], or in the range [`MemoryType::MAX`]`..=0x6fff_ffff`.
+///   [`MemoryType::UNACCEPTED`], or in the range <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
 pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
@@ -238,7 +238,7 @@ pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>
     let ptr = unsafe { (bt.allocate_pool)(memory_type, size, &mut buffer) }
         .to_result_with_val(|| buffer)?;
 
-    NonNull::new(ptr).ok_or(Status::OUT_OF_RESOURCES.into())
+    NonNull::new(ptr).ok_or_else(|| Status::OUT_OF_RESOURCES.into())
 }
 
 /// Frees memory allocated by [`allocate_pool`].
@@ -310,7 +310,7 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
 /// the right allocation size for the memory map to prevent
 /// [`Status::BUFFER_TOO_SMALL`].
 ///
-/// # Parameters
+/// # Arguments
 ///
 /// - `mt`: The memory type for the backing memory on the UEFI heap.
 ///   Usually, this is [`MemoryType::LOADER_DATA`]. You can also use a
@@ -531,7 +531,9 @@ pub fn check_event(event: Event) -> Result<bool> {
     }
 }
 
-/// Places the supplied `event` in the signaled state. If `event` is already in
+/// Places the supplied `event` in the signaled state.
+///
+/// If `event` is already in
 /// the signaled state, the function returns successfully. If `event` is of type
 /// [`NOTIFY_SIGNAL`], the event's notification function is scheduled to be
 /// invoked at the event's notification task priority level.
@@ -746,12 +748,14 @@ pub unsafe fn install_protocol_interface(
     .to_result_with_val(|| unsafe { Handle::from_ptr(handle) }.unwrap())
 }
 
-/// Reinstalls a protocol interface on a device handle. `old_interface` is replaced with `new_interface`.
-/// These interfaces may be the same, in which case the registered protocol notifications occur for the handle
-/// without replacing the interface.
+/// Reinstalls a protocol interface on a device handle. `old_interface` is
+/// replaced with `new_interface`.
 ///
-/// As with `install_protocol_interface`, any process that has registered to wait for the installation of
-/// the interface is notified.
+/// These interfaces may be the same, in which case the registered protocol
+/// notifications occur for the handle without replacing the interface.
+///
+/// As with `install_protocol_interface`, any process that has registered to
+/// wait for the installation of the interface is notified.
 ///
 /// # Safety
 ///

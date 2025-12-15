@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use crate::newtype_enum;
+
 newtype_enum! {
     /// Algorithm identifiers.
     ///

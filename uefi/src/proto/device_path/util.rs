@@ -19,7 +19,7 @@ impl DevicePathUtilities {
     /// Retrieves the size of the specified device path in bytes, including the
     /// end-of-device-path node.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `device_path`: A reference to the [`DevicePath`] whose size is to be determined.
     ///
     /// # Returns
@@ -31,7 +31,7 @@ impl DevicePathUtilities {
 
     /// Creates a new device path by appending the second device path to the first.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `path0`: A reference to the base device path.
     /// - `path1`: A reference to the device path to append.
     ///
@@ -48,13 +48,13 @@ impl DevicePathUtilities {
                 (self.0.append_device_path)(path0.as_ffi_ptr().cast(), path1.as_ffi_ptr().cast());
             NonNull::new(ptr.cast_mut())
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 
     /// Creates a new device path by appending a device node to the base device path.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `basepath`: A reference to the base device path.
     /// - `node`: A reference to the device node to append.
     ///
@@ -71,13 +71,13 @@ impl DevicePathUtilities {
                 (self.0.append_device_node)(basepath.as_ffi_ptr().cast(), node.as_ffi_ptr().cast());
             NonNull::new(ptr.cast_mut())
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 
     /// Creates a new device path by appending the specified device path instance to the base path.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `basepath`: A reference to the base device path.
     /// - `instance`: A reference to the device path instance to append.
     ///
@@ -96,7 +96,7 @@ impl DevicePathUtilities {
             );
             NonNull::new(ptr.cast_mut())
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
-                .ok_or(Status::OUT_OF_RESOURCES.into())
+                .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
     }
 }

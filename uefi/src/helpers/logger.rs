@@ -248,7 +248,7 @@ impl<W: fmt::Write> fmt::Write for DecoratedLog<'_, '_, W> {
         // If the string ends with a newline character, we must 1/propagate it
         // to the output (it was swallowed by the iteration) and 2/prepare to
         // write the log level of the beginning of the next line (if any).
-        if let Some('\n') = s.chars().next_back() {
+        if s.ends_with('\n') {
             writeln!(self.writer)?;
             self.at_line_start = true;
         }

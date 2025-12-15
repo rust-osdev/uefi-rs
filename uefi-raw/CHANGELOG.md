@@ -1,13 +1,53 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+- Added `Tcpv4Protocol`.
+- Added `StorageSecurityCommandProtocol`.
+- Added `FirmwareManagementProtocol`.
+- Added `HiiFontProtocol`, `HiiFontExProtocol`.
+- Added `HiiImageProtocol`, `HiiImageExProtocol`.
+- Added `HiiStringProtocol`.
+- Added `HiiPopupProtocol`.
+- Added `FormBrowser2Protocol`.
+
+## Changed
+
+
+# uefi-raw - v0.13.0 (2025-11-05)
+
+## Changed
+- **Breaking:** Various uses of `bool` have been replaced with `Boolean`.
+- Fixing build on <https://docs.rs/uefi>
+
+
+# uefi-raw - v0.12 (2025-10-21)
+
+## Added
 - Added `AllocateType`.
 - Added `PciRootBridgeIoProtocol`.
 - Added `ConfigKeywordHandlerProtocol`.
 - Added `HiiConfigAccessProtocol`.
+- Added `::octets()` for `Ipv4Address`, `Ipv6Address`, and
+  `MacAddress` to streamline the API with `core::net`.
+- Added `::into_core_addr()` for `IpAddress`
+- Added `::into_ethernet_addr()` for `MacAddress`
+- Added `::ZERO` constant for `IpAddress`
+- `Ipv4Address` and `Ipv6Address` now implement `Display`. They
+  use the same formatting as `core::net::{Ipv4Addr, Ipv6Addr}`
+- Added comprehensive integration with `core::net::{IpAddr, Ipv4Addr, Ipv6Addr}`
+  via `From` impls to better integrate uefi-raw types `IpAddress`,
+  `Ipv4Address`, and `Ipv6Address` with the Rust ecosystem.
+- Added convenient `From` impls:
+  - `[u8; 6]`  <--> `MacAddress`
+  - `[u8; 32]`  --> `MacAddress`
+  - `[u8; 4]`   --> `Ipv4Address`, `IpAddress`
+  - `[u8; 16]`  --> `Ipv6Address`, `IpAddress`
+- Added `HiiConfigRoutingProtocol`.
 
 ## Changed
+- **Breaking:** The MSRV is now 1.85.1 and the crate uses the Rust 2024 edition.
 - The documentation for UEFI protocols has been streamlined and improved.
+
 
 # uefi-raw - 0.11.0 (2025-05-04)
 

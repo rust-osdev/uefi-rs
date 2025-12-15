@@ -5,8 +5,6 @@
 #[cfg(doc)]
 use crate::Status;
 use crate::proto::unsafe_protocol;
-#[cfg(all(feature = "alloc", feature = "unstable"))]
-use alloc::alloc::Global;
 use uefi_raw::protocol::media::{LoadFile2Protocol, LoadFileProtocol};
 #[cfg(feature = "alloc")]
 use {
@@ -43,7 +41,7 @@ pub struct LoadFile(LoadFileProtocol);
 impl LoadFile {
     /// Causes the driver to load a specified file.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `file_path` The device specific path of the file to load.
     /// - `boot_policy` The [`BootPolicy`] to use.
     ///
@@ -90,12 +88,7 @@ impl LoadFile {
             status.to_result_with_err(|_| Some(size)).map(|_| buf)
         };
 
-        #[cfg(not(feature = "unstable"))]
         let file: Box<[u8]> = make_boxed::<[u8], _>(fetch_data_fn)?;
-
-        #[cfg(feature = "unstable")]
-        let file = make_boxed::<[u8], _, _>(fetch_data_fn, Global)?;
-
         Ok(file)
     }
 }
@@ -121,7 +114,7 @@ pub struct LoadFile2(LoadFile2Protocol);
 impl LoadFile2 {
     /// Causes the driver to load a specified file.
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `file_path` The device specific path of the file to load.
     ///
     /// # Errors
@@ -158,11 +151,7 @@ impl LoadFile2 {
             status.to_result_with_err(|_| Some(size)).map(|_| buf)
         };
 
-        #[cfg(not(feature = "unstable"))]
         let file: Box<[u8]> = make_boxed::<[u8], _>(fetch_data_fn)?;
-
-        #[cfg(feature = "unstable")]
-        let file = make_boxed::<[u8], _, _>(fetch_data_fn, Global)?;
 
         Ok(file)
     }

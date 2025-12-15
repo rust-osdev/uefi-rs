@@ -142,10 +142,8 @@
 //! - `log-debugcon`: Whether the logger set up by `logger` should also log
 //!   to the debugcon device (available in QEMU or Cloud Hypervisor on x86).
 //! - `panic_handler`: Add a default panic handler that logs to `stdout`.
-//! - `unstable`: Enable functionality that depends on [unstable
-//!   features] in the nightly compiler.
-//!   As example, in conjunction with the `alloc`-feature, this gate allows
-//!   the `allocator_api` on certain functions.
+//! - `unstable`: Enable functionality that depends on [unstable features] in
+//!   the Rust compiler (nightly version).
 //! - `qemu`: Enable some code paths to adapt their execution when executed
 //!   in QEMU, such as using the special `qemu-exit` device when the panic
 //!   handler is called.
@@ -229,8 +227,7 @@
 //! [uefi-std-tr-issue]: https://github.com/rust-lang/rust/issues/100499
 //! [unstable features]: https://doc.rust-lang.org/unstable-book/
 
-#![cfg_attr(all(feature = "unstable", feature = "alloc"), feature(allocator_api))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![no_std]
 #![deny(
     clippy::all,

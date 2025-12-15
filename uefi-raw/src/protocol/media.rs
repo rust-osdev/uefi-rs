@@ -8,7 +8,7 @@ use core::ffi::c_void;
 #[repr(C)]
 pub struct LoadFileProtocol {
     pub load_file: unsafe extern "efiapi" fn(
-        this: *mut LoadFileProtocol,
+        this: *mut Self,
         file_path: *const DevicePathProtocol,
         boot_policy: Boolean,
         buffer_size: *mut usize,
@@ -24,7 +24,7 @@ impl LoadFileProtocol {
 #[repr(C)]
 pub struct LoadFile2Protocol {
     pub load_file: unsafe extern "efiapi" fn(
-        this: *mut LoadFile2Protocol,
+        this: *mut Self,
         file_path: *const DevicePathProtocol,
         boot_policy: Boolean,
         buffer_size: *mut usize,
@@ -34,4 +34,33 @@ pub struct LoadFile2Protocol {
 
 impl LoadFile2Protocol {
     pub const GUID: Guid = guid!("4006c0c1-fcb3-403e-996d-4a6c8724e06d");
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct StorageSecurityCommandProtocol {
+    pub receive_data: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        media_id: u32,
+        timeout: u64,
+        security_protocol: u8,
+        security_protocol_specific_data: u16,
+        buffer_size: usize,
+        buffer: *mut c_void,
+        transfer_size: *mut usize,
+    ) -> Status,
+
+    pub send_data: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        media_id: u32,
+        timeout: u64,
+        security_protocol: u8,
+        security_protocol_specific_data: u16,
+        buffer_size: usize,
+        buffer: *const c_void,
+    ) -> Status,
+}
+
+impl StorageSecurityCommandProtocol {
+    pub const GUID: Guid = guid!("c88b0b6d-0dfc-49a7-9cb4-49074b4c3a78");
 }

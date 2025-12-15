@@ -4,10 +4,22 @@
 
 pub mod config;
 pub mod database;
+pub mod font;
+pub mod form_browser;
+pub mod image;
+pub mod popup;
+pub mod string;
 
-use crate::{Char16, Guid};
+use crate::{Char16, Guid, newtype_enum};
 
 pub type HiiHandle = *mut core::ffi::c_void;
+
+pub type QuestionId = u16;
+pub type ImageId = u16;
+pub type StringId = u16;
+pub type FormId = u16;
+pub type VarstoreId = u16;
+pub type AnimationId = u16;
 
 /// EFI_HII_PACKAGE_HEADER
 #[derive(Debug)]

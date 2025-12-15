@@ -275,7 +275,7 @@ pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);
 impl MemoryMapBackingMemory {
     /// Constructs a new [`MemoryMapBackingMemory`].
     ///
-    /// # Parameters
+    /// # Arguments
     /// - `memory_type`: The memory type for the memory map allocation.
     ///   Typically, [`MemoryType::LOADER_DATA`] for regular UEFI applications.
     pub(crate) fn new(memory_type: MemoryType) -> crate::Result<Self> {

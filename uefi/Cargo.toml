@@ -1,6 +1,6 @@
 [package]
 name = "uefi"
-version = "0.35.0"
+version = "0.36.1"
 readme = "README.md"
 description = """
 This crate makes it easy to develop Rust software that leverages safe,
@@ -42,8 +42,8 @@ ptr_meta.workspace = true
 uguid.workspace = true
 cfg-if = "1.0.0"
 ucs2 = "0.3.3"
-uefi-macros = "0.18.1"
-uefi-raw = "0.11.0"
+uefi-macros = "0.19.0"
+uefi-raw = "0.13.0"
 qemu-exit = { version = "3.0.2", optional = true }
 
 [package.metadata.docs.rs]

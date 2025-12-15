@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::table::boot::{AllocateType, MemoryType};
-use crate::{Handle, PhysicalAddress, Status};
+use crate::{Handle, PhysicalAddress, Status, newtype_enum};
 use core::ffi::c_void;
 use uguid::{Guid, guid};
 

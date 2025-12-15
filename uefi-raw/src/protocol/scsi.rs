@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use super::device_path::DevicePathProtocol;
-use crate::{Event, Guid, Status, guid};
+use crate::{Event, Guid, Status, guid, newtype_enum};
 use core::ffi::c_void;
 
 pub const SCSI_TARGET_MAX_BYTES: usize = 0x10;

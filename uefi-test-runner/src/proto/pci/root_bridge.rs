@@ -3,7 +3,6 @@
 use uefi::Handle;
 use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, image_handle};
 use uefi::proto::ProtocolPointer;
-use uefi::proto::pci::PciIoAddress;
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
@@ -22,41 +21,41 @@ pub fn test() {
     for pci_handle in pci_handles {
         let mut pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
 
-        for bus in 0..=255 {
-            for dev in 0..32 {
-                for fun in 0..8 {
-                    let addr = PciIoAddress::new(bus, dev, fun);
-                    let Ok(reg0) = pci_proto.pci().read_one::<u32>(addr.with_register(0)) else {
-                        continue;
-                    };
-                    if reg0 == 0xFFFFFFFF {
-                        continue; // not a valid device
-                    }
-                    let reg1 = pci_proto
-                        .pci()
-                        .read_one::<u32>(addr.with_register(2 * REG_SIZE))
-                        .unwrap();
+        let pci_tree = pci_proto.enumerate().unwrap();
+        for addr in pci_tree.iter().cloned() {
+            let Ok(reg0) = pci_proto.pci().read_one::<u32>(addr.with_register(0)) else {
+                continue;
+            };
+            if reg0 == 0xFFFFFFFF {
+                continue; // not a valid device
+            }
+            let reg1 = pci_proto
+                .pci()
+                .read_one::<u32>(addr.with_register(2 * REG_SIZE))
+                .unwrap();
 
-                    let vendor_id = (reg0 & 0xFFFF) as u16;
-                    let device_id = (reg0 >> 16) as u16;
-                    if vendor_id == RED_HAT_PCI_VENDOR_ID {
-                        red_hat_dev_cnt += 1;
-                    }
+            let vendor_id = (reg0 & 0xFFFF) as u16;
+            let device_id = (reg0 >> 16) as u16;
+            if vendor_id == RED_HAT_PCI_VENDOR_ID {
+                red_hat_dev_cnt += 1;
+            }
 
-                    let class_code = (reg1 >> 24) as u8;
-                    let subclass_code = ((reg1 >> 16) & 0xFF) as u8;
-                    if class_code == MASS_STORAGE_CTRL_CLASS_CODE {
-                        mass_storage_ctrl_cnt += 1;
+            let class_code = (reg1 >> 24) as u8;
+            let subclass_code = ((reg1 >> 16) & 0xFF) as u8;
+            if class_code == MASS_STORAGE_CTRL_CLASS_CODE {
+                mass_storage_ctrl_cnt += 1;
 
-                        if subclass_code == SATA_CTRL_SUBCLASS_CODE {
-                            sata_ctrl_cnt += 1;
-                        }
-                    }
-
-                    log::info!(
-                        "PCI Device: [{bus}, {dev}, {fun}]: vendor={vendor_id:04X}, device={device_id:04X}, class={class_code:02X}, subclass={subclass_code:02X}"
-                    );
+                if subclass_code == SATA_CTRL_SUBCLASS_CODE {
+                    sata_ctrl_cnt += 1;
                 }
+            }
+
+            let (bus, dev, fun) = (addr.bus, addr.dev, addr.fun);
+            log::info!(
+                "PCI Device: [{bus:02x}, {dev:02x}, {fun:02x}]: vendor={vendor_id:04X}, device={device_id:04X}, class={class_code:02X}, subclass={subclass_code:02X}"
+            );
+            for child_bus in pci_tree.child_bus_of_iter(addr) {
+                log::info!(" |- Bus: {child_bus:02x}");
             }
         }
     }

@@ -31,10 +31,11 @@ pub struct Http(HttpProtocol);
 
 impl Http {
     /// Receive HTTP Protocol configuration.
-    pub fn get_mode_data(&mut self, config_data: &mut HttpConfigData) -> uefi::Result<()> {
-        let status = unsafe { (self.0.get_mode_data)(&mut self.0, config_data) };
+    pub fn get_mode_data(&mut self) -> uefi::Result<HttpConfigData> {
+        let mut config_data = HttpConfigData::default();
+        let status = unsafe { (self.0.get_mode_data)(&mut self.0, &mut config_data) };
         match status {
-            Status::SUCCESS => Ok(()),
+            Status::SUCCESS => Ok(config_data),
             _ => Err(status.into()),
         }
     }

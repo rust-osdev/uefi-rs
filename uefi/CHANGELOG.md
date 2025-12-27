@@ -13,6 +13,8 @@
 - Return request with status as error data object for `proto::ata::pass_thru::AtaDevice`.
 - **Breaking:** `proto::network::snp::SimpleNetwork::wait_for_packet` now
   returns `Option<Event>` instead of `&Event`.
+- `Http::get_mode_data` doesn't consume a parameter anymore and instead return
+  an owned value of type `HttpConfigData`
 
 # uefi - v0.36.1 (2025-11-05)
 

@@ -53,13 +53,15 @@ fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
         error!("http server error: {:?}", rsp.status);
         return None;
     }
-    let Some(cl_hdr) = rsp.headers.iter().find(|h| h.0 == "content-length") else {
+    let cl_hdr = rsp.headers.iter().find(|h| h.0 == "content-length");
+    if cl_hdr.is_none() {
         // The only way to figure when your transfer is complete is to
         // get the content length header and count the bytes you got.
-        // So missing header -> fatal error.
-        error!("no content length");
-        return None;
+        // So missing header -> give up and pretend things are okay.
+        warn!("no content length header, we might not have the whole body");
+        return Some(rsp.body);
     };
+    let cl_hdr = cl_hdr.unwrap();
     let Ok(cl) = cl_hdr.1.parse::<usize>() else {
         error!("parse content length ({})", cl_hdr.1);
         return None;

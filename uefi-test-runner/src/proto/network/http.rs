@@ -99,7 +99,7 @@ pub fn test() {
 
         // hard to find web sites which still allow plain http these days ...
         info!("Testing HTTP");
-        fetch_http(*h, "http://example.com/").expect("http request failed");
+        fetch_http(*h, "http://example.com/").expect("http request failed: http://example.com");
 
         // FYI: not all firmware builds support modern tls versions.
         // request() -> ABORTED typically is a tls handshake error.

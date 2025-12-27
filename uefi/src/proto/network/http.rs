@@ -117,18 +117,23 @@ impl HttpBinding {
     }
 }
 
-/// HTTP Response data
+/// Representation of the underlying UEFI HTTP response.
+///
+/// Helper type for [`HttpHelper`].
 #[derive(Debug)]
 pub struct HttpHelperResponse {
     /// HTTP Status
     pub status: HttpStatusCode,
     /// HTTP Response Headers
     pub headers: Vec<(String, String)>,
-    /// HTTP Body
+    /// Partial or entire HTTP body, depending on context.
     pub body: Vec<u8>,
 }
 
-/// HTTP Helper, makes using the HTTP protocol more convenient.
+/// HTTP Helper, makes using the [HTTP] [`Protocol`] more convenient.
+///
+/// [HTTP]: Http
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 pub struct HttpHelper {
     child_handle: Handle,
@@ -271,7 +276,12 @@ impl HttpHelper {
         Ok(())
     }
 
-    /// Receive the start of the http response, the headers and (parts of) the body.
+    /// Receive the start of the http response, the headers and (parts of) the
+    /// body.
+    ///
+    /// Depending on the HTTP response, its length, its encoding, and its
+    /// transmission method (chunked or not), users may have to call
+    /// [`Self::response_more`] afterward.
     pub fn response_first(&mut self, expect_body: bool) -> uefi::Result<HttpHelperResponse> {
         let mut rx_rsp = HttpResponseData {
             status_code: HttpStatusCode::STATUS_UNSUPPORTED,

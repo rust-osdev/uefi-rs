@@ -347,12 +347,13 @@ impl HttpHelper {
         Ok(rsp)
     }
 
-    /// Receive more body data.
-    pub fn response_more(&mut self) -> uefi::Result<Vec<u8>> {
-        let mut body = vec![0; 16 * 1024];
+    /// Try to receive more of the HTTP response and append any new data to the
+    /// provided  `body` vector.
+    pub fn response_more<'a>(&mut self, body: &'a mut Vec<u8>) -> uefi::Result<&'a [u8]> {
+        let mut body_recv_buffer = vec![0; 16 * 1024];
         let mut rx_msg = HttpMessage {
-            body_length: body.len(),
-            body: body.as_mut_ptr().cast::<c_void>(),
+            body_length: body_recv_buffer.len(),
+            body: body_recv_buffer.as_mut_ptr().cast::<c_void>(),
             ..Default::default()
         };
 
@@ -378,9 +379,16 @@ impl HttpHelper {
             return Err(rx_token.status.into());
         };
 
-        debug!("http: body: {}/{}", rx_msg.body_length, body.len());
+        debug!(
+            "http: body: {}/{}",
+            rx_msg.body_length,
+            body_recv_buffer.len()
+        );
 
-        Ok(body[0..rx_msg.body_length].to_vec())
+        let new_data = &body_recv_buffer[0..rx_msg.body_length];
+        body.extend(new_data);
+        let new_data_slice = &body[body.len() - new_data.len()..];
+        Ok(new_data_slice)
     }
 }
 

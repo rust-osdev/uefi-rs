@@ -74,14 +74,11 @@ fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
             break;
         }
 
-        let res = http.response_more();
+        let res = http.response_more(&mut data);
         if let Err(e) = res {
             error!("read response: {e}");
             return None;
         }
-
-        let mut buf = res.unwrap();
-        data.append(&mut buf);
     }
 
     Some(data)

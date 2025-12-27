@@ -29,7 +29,8 @@ fn serial_test_helper(serial: &mut Serial) -> Result {
     serial.write(OUTPUT).discard_errdata()?;
 
     let mut input = [0u8; MSG_LEN];
-    serial.read(&mut input).discard_errdata()?;
+    let n = serial.read(&mut input).discard_errdata()?;
+    assert_eq!(n, input.len());
 
     // Clean up after ourselves
     serial.reset()?;

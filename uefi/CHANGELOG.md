@@ -60,7 +60,8 @@
   getting stabilized in stable Rust.
   - Removed `File::get_boxed_info_in`
   - Removed `Directory::read_entry_boxed_in`
-
+- Fixed `Serial::read` to properly read only as many bytes as it can report
+  that `n` to the caller.
 
 # uefi - 0.35.0 (2025-05-04)
 

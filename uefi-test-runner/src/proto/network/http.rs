@@ -53,13 +53,15 @@ fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
         error!("http server error: {:?}", rsp.status);
         return None;
     }
-    let Some(cl_hdr) = rsp.headers.iter().find(|h| h.0 == "content-length") else {
+    let cl_hdr = rsp.headers.iter().find(|h| h.0 == "content-length");
+    if cl_hdr.is_none() {
         // The only way to figure when your transfer is complete is to
         // get the content length header and count the bytes you got.
-        // So missing header -> fatal error.
-        error!("no content length");
-        return None;
+        // So missing header -> give up and pretend things are okay.
+        warn!("no content length header, we might not have the whole body");
+        return Some(rsp.body);
     };
+    let cl_hdr = cl_hdr.unwrap();
     let Ok(cl) = cl_hdr.1.parse::<usize>() else {
         error!("parse content length ({})", cl_hdr.1);
         return None;
@@ -72,14 +74,11 @@ fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
             break;
         }
 
-        let res = http.response_more();
+        let res = http.response_more(&mut data);
         if let Err(e) = res {
             error!("read response: {e}");
             return None;
         }
-
-        let mut buf = res.unwrap();
-        data.append(&mut buf);
     }
 
     Some(data)
@@ -100,7 +99,7 @@ pub fn test() {
 
         // hard to find web sites which still allow plain http these days ...
         info!("Testing HTTP");
-        fetch_http(*h, "http://example.com/").expect("http request failed");
+        fetch_http(*h, "http://example.com/").expect("http request failed: http://example.com");
 
         // FYI: not all firmware builds support modern tls versions.
         // request() -> ABORTED typically is a tls handshake error.

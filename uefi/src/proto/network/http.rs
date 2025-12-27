@@ -31,10 +31,11 @@ pub struct Http(HttpProtocol);
 
 impl Http {
     /// Receive HTTP Protocol configuration.
-    pub fn get_mode_data(&mut self, config_data: &mut HttpConfigData) -> uefi::Result<()> {
-        let status = unsafe { (self.0.get_mode_data)(&mut self.0, config_data) };
+    pub fn get_mode_data(&mut self) -> uefi::Result<HttpConfigData> {
+        let mut config_data = HttpConfigData::default();
+        let status = unsafe { (self.0.get_mode_data)(&mut self.0, &mut config_data) };
         match status {
-            Status::SUCCESS => Ok(()),
+            Status::SUCCESS => Ok(config_data),
             _ => Err(status.into()),
         }
     }
@@ -116,18 +117,23 @@ impl HttpBinding {
     }
 }
 
-/// HTTP Response data
+/// Representation of the underlying UEFI HTTP response.
+///
+/// Helper type for [`HttpHelper`].
 #[derive(Debug)]
 pub struct HttpHelperResponse {
     /// HTTP Status
     pub status: HttpStatusCode,
     /// HTTP Response Headers
     pub headers: Vec<(String, String)>,
-    /// HTTP Body
+    /// Partial or entire HTTP body, depending on context.
     pub body: Vec<u8>,
 }
 
-/// HTTP Helper, makes using the HTTP protocol more convenient.
+/// HTTP Helper, makes using the [HTTP] [`Protocol`] more convenient.
+///
+/// [HTTP]: Http
+/// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 pub struct HttpHelper {
     child_handle: Handle,
@@ -270,7 +276,12 @@ impl HttpHelper {
         Ok(())
     }
 
-    /// Receive the start of the http response, the headers and (parts of) the body.
+    /// Receive the start of the http response, the headers and (parts of) the
+    /// body.
+    ///
+    /// Depending on the HTTP response, its length, its encoding, and its
+    /// transmission method (chunked or not), users may have to call
+    /// [`Self::response_more`] afterward.
     pub fn response_first(&mut self, expect_body: bool) -> uefi::Result<HttpHelperResponse> {
         let mut rx_rsp = HttpResponseData {
             status_code: HttpStatusCode::STATUS_UNSUPPORTED,
@@ -336,12 +347,13 @@ impl HttpHelper {
         Ok(rsp)
     }
 
-    /// Receive more body data.
-    pub fn response_more(&mut self) -> uefi::Result<Vec<u8>> {
-        let mut body = vec![0; 16 * 1024];
+    /// Try to receive more of the HTTP response and append any new data to the
+    /// provided  `body` vector.
+    pub fn response_more<'a>(&mut self, body: &'a mut Vec<u8>) -> uefi::Result<&'a [u8]> {
+        let mut body_recv_buffer = vec![0; 16 * 1024];
         let mut rx_msg = HttpMessage {
-            body_length: body.len(),
-            body: body.as_mut_ptr().cast::<c_void>(),
+            body_length: body_recv_buffer.len(),
+            body: body_recv_buffer.as_mut_ptr().cast::<c_void>(),
             ..Default::default()
         };
 
@@ -367,9 +379,16 @@ impl HttpHelper {
             return Err(rx_token.status.into());
         };
 
-        debug!("http: body: {}/{}", rx_msg.body_length, body.len());
+        debug!(
+            "http: body: {}/{}",
+            rx_msg.body_length,
+            body_recv_buffer.len()
+        );
 
-        Ok(body[0..rx_msg.body_length].to_vec())
+        let new_data = &body_recv_buffer[0..rx_msg.body_length];
+        body.extend(new_data);
+        let new_data_slice = &body[body.len() - new_data.len()..];
+        Ok(new_data_slice)
     }
 }
 

@@ -22,6 +22,9 @@ use {crate::ResultExt, alloc::vec::Vec};
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
 ///
+/// Depending on the use-case, please consider setting a low timeout to prevent
+/// long blocking times. More information in [`Serial::read_to_end`].
+///
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
@@ -90,7 +93,13 @@ impl Serial {
     /// so far.
     ///
     /// To prevent missing data (overrun), it is recommended to call this
-    /// function multiple times.
+    /// function multiple times. To prevent long blocking times, i.e., to only
+    /// read what is available as of calling this function, it is recommended to
+    /// set the timeout in [`IoMode`] to 1 µs.
+    ///
+    /// # Errors
+    ///  - `Status::TIMEOUT` if the provided buffer could not be filled within
+    ///    the configured timeout (see [`IoMode`]).
     pub fn read(
         &mut self,
         data: &mut [u8],

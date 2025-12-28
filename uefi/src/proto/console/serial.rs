@@ -2,14 +2,15 @@
 
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
-use crate::proto::unsafe_protocol;
-use crate::{Result, StatusExt};
-use core::fmt::Write;
-use uefi_raw::protocol::console::serial::SerialIoProtocol;
-
 pub use uefi_raw::protocol::console::serial::{
     ControlBits, Parity, SerialIoMode as IoMode, StopBits,
 };
+
+use crate::proto::unsafe_protocol;
+use crate::{Error, Result, StatusExt};
+use core::fmt::Write;
+use uefi_raw::Status;
+use uefi_raw::protocol::console::serial::SerialIoProtocol;
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
@@ -81,15 +82,24 @@ impl Serial {
 
     /// Reads data from this device.
     ///
-    /// This operation will block until the buffer has been filled with data or
-    /// an error occurs. In the latter case, the error will indicate how many
-    /// bytes were actually read from the device.
-    pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
+    /// This function will try to fill the whole buffer with data read from the
+    /// device. If this is not possible in the configured timeout (see
+    /// [`IoMode`]), the function will return the data that it was able to read
+    /// so far.
+    ///
+    /// To prevent missing data (overrun), it is recommended to call this
+    /// function multiple times.
+    pub fn read(&mut self, data: &mut [u8]) -> Result<usize /* read bytes*/> {
         let mut buffer_size = data.len();
-        unsafe { (self.0.read)(&mut self.0, &mut buffer_size, data.as_mut_ptr()) }.to_result_with(
-            || debug_assert_eq!(buffer_size, data.len()),
-            |_| buffer_size,
-        )
+        let status = unsafe { (self.0.read)(&mut self.0, &mut buffer_size, data.as_mut_ptr()) };
+        match status {
+            Status::SUCCESS => Ok(buffer_size),
+            // UEFI was either not able to fill the whole buffer in the specified
+            // timeout, but nevertheless read some data, or there was too much
+            // data.
+            Status::TIMEOUT => Ok(buffer_size),
+            s => Err(Error::new(s, ())),
+        }
     }
 
     /// Writes data to this device.
@@ -99,10 +109,8 @@ impl Serial {
     /// were actually written to the device.
     pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
-        unsafe { (self.0.write)(&mut self.0, &mut buffer_size, data.as_ptr()) }.to_result_with(
-            || debug_assert_eq!(buffer_size, data.len()),
-            |_| buffer_size,
-        )
+        unsafe { (self.0.write)(&mut self.0, &mut buffer_size, data.as_ptr()) }
+            .to_result_with(|| (), |_| buffer_size)
     }
 }
 

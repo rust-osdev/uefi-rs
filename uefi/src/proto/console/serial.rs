@@ -11,6 +11,8 @@ use crate::{Error, Result, StatusExt};
 use core::fmt::Write;
 use uefi_raw::Status;
 use uefi_raw::protocol::console::serial::SerialIoProtocol;
+#[cfg(feature = "alloc")]
+use {crate::ResultExt, alloc::vec::Vec};
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
@@ -89,17 +91,58 @@ impl Serial {
     ///
     /// To prevent missing data (overrun), it is recommended to call this
     /// function multiple times.
-    pub fn read(&mut self, data: &mut [u8]) -> Result<usize /* read bytes*/> {
+    pub fn read(
+        &mut self,
+        data: &mut [u8],
+    ) -> Result<usize /* read bytes*/, usize /* read bytes */> {
         let mut buffer_size = data.len();
         let status = unsafe { (self.0.read)(&mut self.0, &mut buffer_size, data.as_mut_ptr()) };
         match status {
             Status::SUCCESS => Ok(buffer_size),
-            // UEFI was either not able to fill the whole buffer in the specified
-            // timeout, but nevertheless read some data, or there was too much
-            // data.
-            Status::TIMEOUT => Ok(buffer_size),
-            s => Err(Error::new(s, ())),
+            // UEFI was not able to fill the whole buffer in the specified
+            // timeout, but we still read data (good case).
+            Status::TIMEOUT => Err(Error::new(status, buffer_size)),
+            // any other error
+            _ => Err(Error::new(status, buffer_size)),
         }
+    }
+
+    /// Reads all data that is currently available from the device.
+    ///
+    /// It is strongly recommended to configure a **very short timeout**
+    /// (for example, `1 µs`) to avoid unintended blocking behavior
+    /// (see [`IoMode`]).
+    ///
+    /// Note that the timeout applies to completion of the entire buffer:
+    /// if a timeout of `5 s` is specified, a buffer of `1024` bytes is provided,
+    /// and only `1023` bytes become available, this function will block for the
+    /// full `5 s` before returning.
+    #[cfg(feature = "alloc")]
+    pub fn read_to_end(&mut self) -> Result<Vec<u8>> {
+        let mut vec = Vec::new();
+        let mut buf = [0; 2048];
+        loop {
+            // We read from a temporary buffer to grow the vector dynamically
+            // in the next step.
+            let res = self.read(&mut buf);
+            let status = res.status();
+            let n = match (res, status) {
+                (Ok(n), _) => n,
+                // Okay, not an error in this case.
+                (Err(err), Status::TIMEOUT) => *err.data(),
+                (Err(err), _) => {
+                    return Err(err.status().into());
+                }
+            };
+            if n == 0 {
+                break;
+            } else {
+                // Grew vector dynamically.
+                vec.extend_from_slice(&buf[..n]);
+            }
+        }
+
+        Ok(vec)
     }
 
     /// Writes data to this device.

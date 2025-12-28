@@ -13,6 +13,11 @@ fn serial_test_helper(serial: &mut Serial) -> Result {
     let old_ctrl_bits = serial.get_control_bits()?;
     let mut ctrl_bits = ControlBits::empty();
 
+    let old_io_mode = *serial.io_mode();
+    let mut io_mode = old_io_mode;
+    io_mode.timeout = 1;
+    serial.set_attributes(&io_mode)?;
+
     // For the purposes of testing, we're _not_ going to implement
     // software flow control.
     ctrl_bits |= ControlBits::HARDWARE_FLOW_CONTROL_ENABLE;
@@ -28,13 +33,13 @@ fn serial_test_helper(serial: &mut Serial) -> Result {
 
     serial.write(OUTPUT).discard_errdata()?;
 
-    let mut input = [0u8; MSG_LEN];
-    let n = serial.read(&mut input).discard_errdata()?;
-    assert_eq!(n, input.len());
+    let input = serial.read_to_end().discard_errdata()?;
+    assert_eq!(input.len(), MSG_LEN);
 
     // Clean up after ourselves
     serial.reset()?;
     serial.set_control_bits(old_ctrl_bits & ControlBits::SETTABLE)?;
+    serial.set_attributes(&old_io_mode)?;
 
     if OUTPUT == input {
         Ok(())

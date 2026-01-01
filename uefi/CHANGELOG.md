@@ -10,6 +10,9 @@
 - Added `boot::test_protocol_by_guid()`
 - Added `boot::register_protocol_notify_by_guid()`
 - Added `boot::[re_,un_]install_protocol_interface_by_guid()` functions.
+- Added `boot::[un_]install_multiple_protocol_interface`. Currently, this
+  replicates the functionality of the EDK2 implementation rather than using it
+  due to Rusts limited support for variadic arguments.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

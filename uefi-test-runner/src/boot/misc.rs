@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::ptr::{self, NonNull};
 
@@ -7,8 +9,11 @@ use uefi::boot::{
     EventType, OpenProtocolAttributes, OpenProtocolParams, SearchType, TimerTrigger, Tpl,
 };
 use uefi::mem::memory_map::MemoryType;
-use uefi::proto::unsafe_protocol;
-use uefi::{Event, Guid, Identify, boot, guid, system};
+use uefi::proto::device_path::build::DevicePathBuilder;
+use uefi::proto::device_path::{DevicePath, build};
+use uefi::proto::{ProtocolPointer, unsafe_protocol};
+use uefi::{Event, Guid, Identify, ResultExt, boot, cstr16, guid, system};
+use uefi_raw::Status;
 
 pub fn test() {
     test_tpl();
@@ -25,6 +30,8 @@ pub fn test() {
     test_install_protocol_interface();
     test_reinstall_protocol_interface();
     test_uninstall_protocol_interface();
+    test_install_multiple_protocol_interface();
+    test_uninstall_multiple_protocol_interface();
     test_install_configuration_table();
     info!("Testing crc32...");
     test_calculate_crc32();
@@ -210,11 +217,128 @@ fn test_uninstall_protocol_interface() {
             &mut *sp
         };
 
-        boot::uninstall_protocol_interface(handle, &TestProtocol::GUID, interface_ptr.cast())
+        boot::uninstall_protocol_interface::<TestProtocol>(handle, interface_ptr.cast())
             .expect("Failed to uninstall protocol interface");
 
         boot::free_pool(NonNull::new(interface_ptr.cast()).unwrap()).unwrap();
     }
+}
+
+fn test_install_multiple_protocol_interface() {
+    info!("Installing multiple test protocols");
+
+    let alloc: *mut TestProtocol =
+        boot::allocate_pool(MemoryType::BOOT_SERVICES_DATA, size_of::<TestProtocol>())
+            .unwrap()
+            .cast()
+            .as_ptr();
+    unsafe { alloc.write(TestProtocol { data: 123 }) };
+
+    let dvp = {
+        let mut vec = Vec::new();
+        DevicePathBuilder::with_vec(&mut vec)
+            .push(&build::media::FilePath {
+                path_name: cstr16!("foobar"),
+            })
+            .unwrap()
+            .finalize()
+            .unwrap()
+            .to_boxed()
+    };
+    // Memory must stay valid as long as handle with interfaces lives:
+    // => so we leak the memory but will free it in the uninstall hook again.
+    let dvp = Box::leak(dvp);
+
+    let handle = unsafe {
+        boot::install_multiple_protocol_interface(
+            None,
+            &[
+                (&TestProtocol::GUID, alloc.cast()),
+                (&DevicePath::GUID, dvp.as_ffi_ptr().cast()),
+            ],
+        )
+        .expect("Failed to install protocol interface")
+    };
+
+    // Test we indeed installed the protocols.
+    {
+        assert_eq!(
+            boot::test_protocol::<DevicePath>(OpenProtocolParams {
+                handle,
+                agent: boot::image_handle(),
+                controller: None,
+            }),
+            Ok(true)
+        );
+    }
+
+    // Test that installing the device path protocol multiple times results in
+    // EFI_ALREADY_STARTED
+    {
+        let res = unsafe {
+            boot::install_multiple_protocol_interface(
+                Some(handle),
+                &[(&DevicePath::GUID, dvp.as_ffi_ptr().cast())],
+            )
+        };
+        assert_eq!(res.status(), Status::ALREADY_STARTED);
+    }
+}
+
+fn test_uninstall_multiple_protocol_interface() {
+    info!("Uninstalling multiple test protocols");
+
+    let handles = boot::locate_handle_buffer(SearchType::from_proto::<TestProtocol>())
+        .expect("Failed to find protocol after it was installed");
+    let handle = *handles.first().unwrap();
+
+    let interface_test_protocol: *mut TestProtocol = unsafe {
+        let mut sp = boot::open_protocol::<TestProtocol>(
+            OpenProtocolParams {
+                handle,
+                agent: boot::image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .unwrap();
+        assert_eq!(sp.data, 123);
+        &mut *sp
+    };
+
+    let interface_dvp: *mut DevicePath = unsafe {
+        let mut sp = boot::open_protocol::<DevicePath>(
+            OpenProtocolParams {
+                handle,
+                agent: boot::image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::GetProtocol,
+        )
+        .unwrap();
+        &mut *sp
+    };
+
+    unsafe {
+        boot::uninstall_multiple_protocol_interface(
+            handle,
+            &[
+                (&TestProtocol::GUID, interface_test_protocol.cast()),
+                (&DevicePath::GUID, interface_dvp.cast()),
+            ],
+        )
+    }
+    .expect("should uninstall multiple protocols");
+
+    let dvp = unsafe {
+        DevicePath::mut_ptr_from_ffi(interface_dvp.cast())
+            .as_mut()
+            .expect("should be valid device path")
+    };
+
+    // Reconstruct the Rust box to ensure that the object is properly freed in
+    // the Rust global allocator
+    let _ = unsafe { Box::from_raw(dvp) };
 }
 
 fn test_install_configuration_table() {

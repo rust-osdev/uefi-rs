@@ -7,6 +7,7 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Added `boot::test_protocol_by_guid()`
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

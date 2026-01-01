@@ -1143,6 +1143,14 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
 ///
 /// * [`Status::INVALID_PARAMETER`]: one of the handles in `params` is invalid.
 pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) -> Result<bool> {
+    test_protocol_by_guid(&P::GUID, params)
+}
+
+/// Variant of [`test_protocol_by_guid`] that consumes the [`Guid`] as
+/// parameter.
+pub fn test_protocol_by_guid(guid: &Guid, params: OpenProtocolParams) -> Result<bool> {
+    // Not part of `OpenProtocolAttributes` as it is fairly irrelevant for
+    // library users.
     const TEST_PROTOCOL: u32 = 0x04;
 
     let bt = boot_services_raw_panicking();
@@ -1152,7 +1160,7 @@ pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) ->
     let status = unsafe {
         (bt.open_protocol)(
             params.handle.as_ptr(),
-            &P::GUID,
+            guid,
             &mut interface,
             params.agent.as_ptr(),
             Handle::opt_to_ptr(params.controller),

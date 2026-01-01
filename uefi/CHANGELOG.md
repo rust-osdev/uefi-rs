@@ -8,6 +8,7 @@
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
 - Added `boot::test_protocol_by_guid()`
+- Added `boot::register_protocol_notify_by_guid()`
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
@@ -16,6 +17,8 @@
   returns `Option<Event>` instead of `&Event`.
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- **Breaking**: `boot::register_protocol_notify()` now follows our generic-based
+  API and now longer consumes a `&Guid` parameter.
 
 # uefi - v0.36.1 (2025-11-05)
 

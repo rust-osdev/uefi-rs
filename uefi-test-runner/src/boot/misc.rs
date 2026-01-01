@@ -145,12 +145,11 @@ fn test_register_protocol_notify() {
         info!("in callback for test_register_protocol_notify")
     }
 
-    let protocol = &TestProtocol::GUID;
     let event = unsafe {
         boot::create_event(EventType::NOTIFY_SIGNAL, Tpl::NOTIFY, Some(callback), None).unwrap()
     };
 
-    boot::register_protocol_notify(protocol, &event)
+    boot::register_protocol_notify::<TestProtocol>(&event)
         .expect("Failed to register protocol notify fn");
 }
 

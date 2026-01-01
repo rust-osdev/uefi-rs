@@ -819,7 +819,15 @@ pub unsafe fn uninstall_protocol_interface(
 /// # Errors
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
-pub fn register_protocol_notify(
+pub fn register_protocol_notify<P: ProtocolPointer + ?Sized>(
+    event: &Event,
+) -> Result<SearchType<'static>> {
+    register_protocol_notify_by_guid(&P::GUID, event)
+}
+
+/// Variant of [`register_protocol_notify`] that consumes the [`Guid`] as
+/// parameter.
+pub fn register_protocol_notify_by_guid(
     protocol: &'static Guid,
     event: &Event,
 ) -> Result<SearchType<'static>> {

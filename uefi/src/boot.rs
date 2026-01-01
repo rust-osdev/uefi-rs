@@ -4,13 +4,14 @@
 //!
 //! These functions will panic if called after exiting boot services.
 //!
-//! # Accessing protocols
+//! # Accessing Protocols
 //!
 //! Protocols can be opened using several functions in this module. Most
 //! commonly, [`open_protocol_exclusive`] should be used. This ensures that
 //! nothing else can use the protocol until it is closed, and returns a
 //! [`ScopedProtocol`] that takes care of closing the protocol when it is
-//! dropped.
+//! dropped. Beware that this has some caveats, see function documentation
+//! for more details.
 //!
 //! Other methods for opening protocols:
 //!
@@ -18,6 +19,11 @@
 //! * [`get_image_file_system`]
 //!
 //! For protocol definitions, see the [`proto`] module.
+//!
+//! # Accessing Handles
+//!
+//! To access handles supporting a certain protocol, we recommend using
+//! [`find_handles`], [`locate_handle`], and [`locate_handle_buffer`].
 //!
 //! [`proto`]: crate::proto
 
@@ -897,7 +903,8 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
 /// query.
 ///
 /// If you use the `alloc` feature, it might be more convenient to use
-/// [`find_handles`] instead.
+/// [`find_handles`] instead. Another alternative might be
+/// [`locate_handle_buffer`].
 ///
 /// # Errors
 ///
@@ -944,6 +951,10 @@ pub fn locate_handle<'buf>(
 /// pool-allocated buffer.
 ///
 /// See [`SearchType`] for details of the available search operations.
+///
+/// Unlike [`find_handles`], this doesn't need the `alloc` feature and operates
+/// on the UEFI heap directly. Further, it allows a more fine-grained search
+/// via the provided [`SearchType`].
 ///
 /// # Errors
 ///
@@ -1132,6 +1143,10 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
 ///
 /// If successful, a [`ScopedProtocol`] is returned that will automatically
 /// close the protocol interface when dropped.
+///
+/// Beware that if any other drivers have the protocol interface opened with an
+/// attribute of [`OpenProtocolAttributes::ByDriver`], then an attempt will be
+/// made to remove them with [`disconnect_controller`].
 ///
 /// # Errors
 ///
@@ -1569,8 +1584,8 @@ impl Deref for ProtocolsPerHandle {
     }
 }
 
-/// A buffer returned by [`locate_handle_buffer`] that contains an array of
-/// [`Handle`]s that support the requested [`Protocol`].
+/// A buffer on the UEFI heap returned by [`locate_handle_buffer`] that contains
+/// an array of [`Handle`]s that support the requested [`Protocol`].
 #[derive(Debug, Eq, PartialEq)]
 pub struct HandleBuffer {
     count: usize,

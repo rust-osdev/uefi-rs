@@ -15,6 +15,8 @@
   returns `Option<Event>` instead of `&Event`.
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- **Breaking:** `boot::find_handles()` and `boot::locate_handle()` no longer
+  return `Err` on `Status::NOT_FOUND` but instead an empty collection.
 
 # uefi - v0.36.1 (2025-11-05)
 

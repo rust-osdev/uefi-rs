@@ -164,7 +164,7 @@ fn test_install_protocol_interface() {
     unsafe { alloc.write(TestProtocol { data: 123 }) };
 
     let _ = unsafe {
-        boot::install_protocol_interface(None, &TestProtocol::GUID, alloc.cast())
+        boot::install_protocol_interface::<TestProtocol>(None, alloc.cast())
             .expect("Failed to install protocol interface")
     };
 
@@ -178,9 +178,8 @@ fn test_reinstall_protocol_interface() {
         .expect("Failed to find protocol to uninstall")[0];
 
     unsafe {
-        let _ = boot::reinstall_protocol_interface(
+        let _ = boot::reinstall_protocol_interface::<TestProtocol>(
             handle,
-            &TestProtocol::GUID,
             ptr::null_mut(),
             ptr::null_mut(),
         );

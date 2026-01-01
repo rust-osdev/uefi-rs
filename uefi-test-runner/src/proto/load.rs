@@ -61,13 +61,15 @@ impl CustomLoadFile2Protocol {
 
 unsafe fn install_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
     unsafe {
-        boot::install_protocol_interface(Some(handle), &guid, addr_of!(*protocol).cast()).unwrap();
+        boot::install_protocol_interface_by_guid(Some(handle), &guid, addr_of!(*protocol).cast())
+            .unwrap();
     }
 }
 
 unsafe fn uninstall_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
     unsafe {
-        boot::uninstall_protocol_interface(handle, &guid, addr_of!(*protocol).cast()).unwrap();
+        boot::uninstall_protocol_interface_by_guid(handle, &guid, addr_of!(*protocol).cast())
+            .unwrap();
     }
 }
 

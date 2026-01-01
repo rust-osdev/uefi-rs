@@ -9,6 +9,7 @@
 - Added `proto::media::block::BlockIO2`.
 - Added `boot::test_protocol_by_guid()`
 - Added `boot::register_protocol_notify_by_guid()`
+- Added `boot::[re_,un_]install_protocol_interface_by_guid()` functions.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
@@ -19,6 +20,9 @@
   an owned value of type `HttpConfigData`
 - **Breaking**: `boot::register_protocol_notify()` now follows our generic-based
   API and now longer consumes a `&Guid` parameter.
+- **Breaking:**`boot::[re_,un_]install_protocol_interface()` no longer consume a
+  `&Guid` parameter but instead follow our generic type-based API. For example:
+  `install_protocol_interface<DevicePath>(handle, interface)`.
 
 # uefi - v0.36.1 (2025-11-05)
 

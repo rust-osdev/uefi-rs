@@ -718,7 +718,12 @@ pub fn disconnect_controller(
 /// When a protocol interface is installed, firmware will call all functions
 /// that have registered to wait for that interface to be installed.
 ///
-/// If `handle` is `None`, a new handle will be created and returned.
+/// # Arguments
+///
+/// - `handle`: Either `None` to allocate a new handle or an existing handle.
+/// - `interface`: The protocol implementation. The memory backing the
+///   implementation **must live as long as the handle!**. Callers need to
+///   ensure a matching lifetime!
 ///
 /// # Safety
 ///
@@ -728,7 +733,20 @@ pub fn disconnect_controller(
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: failed to allocate a new handle.
 /// * [`Status::INVALID_PARAMETER`]: this protocol is already installed on the handle.
-pub unsafe fn install_protocol_interface(
+pub unsafe fn install_protocol_interface<P: ProtocolPointer + ?Sized>(
+    handle: Option<Handle>,
+    interface: *const c_void,
+) -> Result<Handle> {
+    unsafe { install_protocol_interface_by_guid(handle, &P::GUID, interface) }
+}
+
+/// Variant of [`install_protocol_interface`] that consumes the [`Guid`] as
+/// parameter.
+///
+/// # Safety
+///
+/// See safety section in [`install_protocol_interface`].
+pub unsafe fn install_protocol_interface_by_guid(
     handle: Option<Handle>,
     protocol: &Guid,
     interface: *const c_void,
@@ -766,7 +784,21 @@ pub unsafe fn install_protocol_interface(
 ///
 /// * [`Status::NOT_FOUND`]: the old interface was not found on the handle.
 /// * [`Status::ACCESS_DENIED`]: the old interface is still in use and cannot be uninstalled.
-pub unsafe fn reinstall_protocol_interface(
+pub unsafe fn reinstall_protocol_interface<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+    old_interface: *const c_void,
+    new_interface: *const c_void,
+) -> Result<()> {
+    unsafe { reinstall_protocol_interface_by_guid(handle, &P::GUID, old_interface, new_interface) }
+}
+
+/// Variant of [`reinstall_protocol_interface`] that consumes the [`Guid`] as
+/// parameter.
+///
+/// # Safety
+///
+/// See safety section in [`reinstall_protocol_interface`].
+pub unsafe fn reinstall_protocol_interface_by_guid(
     handle: Handle,
     protocol: &Guid,
     old_interface: *const c_void,
@@ -796,7 +828,20 @@ pub unsafe fn reinstall_protocol_interface(
 ///
 /// * [`Status::NOT_FOUND`]: the interface was not found on the handle.
 /// * [`Status::ACCESS_DENIED`]: the interface is still in use and cannot be uninstalled.
-pub unsafe fn uninstall_protocol_interface(
+pub unsafe fn uninstall_protocol_interface<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+    interface: *const c_void,
+) -> Result<()> {
+    unsafe { uninstall_protocol_interface_by_guid(handle, &P::GUID, interface) }
+}
+
+/// Variant of [`uninstall_protocol_interface`] that consumes the [`Guid`] as
+/// parameter.
+///
+/// # Safety
+///
+/// See safety section in [`uninstall_protocol_interface`].
+pub unsafe fn uninstall_protocol_interface_by_guid(
     handle: Handle,
     protocol: &Guid,
     interface: *const c_void,

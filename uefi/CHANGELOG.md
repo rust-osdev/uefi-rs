@@ -14,6 +14,8 @@
   `boot::open_protocol[_exclusive()]` and map `Status::UNSUPPORTED` to `None`
   which allows a more natural handling if protocols are implemented for a handle
   or not.
+- Added `Handle::component_name2()` and `Handle::device_path()` to simplify the
+  very common use-case of querying more information about a handle.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

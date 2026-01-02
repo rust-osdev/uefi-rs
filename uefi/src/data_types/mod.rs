@@ -32,10 +32,23 @@ pub use unaligned_slice::UnalignedSlice;
 
 use core::ffi::c_void;
 use core::ptr::{self, NonNull};
+#[cfg(feature = "alloc")]
+use {
+    crate::Result,
+    crate::boot::ScopedProtocol,
+    crate::boot::{self, OpenProtocolAttributes, OpenProtocolParams},
+    crate::proto::device_path::DevicePath,
+    crate::proto::driver::ComponentName2,
+};
 
 /// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
 ///
 /// If you need to have a nullable handle (for a custom UEFI FFI for example) use `Option<Handle>`.
+///
+/// A handle offers some convenient methods to better explore the context of
+/// it, such as:
+/// - [`Handle::component_name2`]
+/// - [`Handle::device_path`]
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct Handle(NonNull<c_void>);
@@ -84,6 +97,66 @@ impl Handle {
 
     pub(crate) fn opt_to_ptr(handle: Option<Self>) -> *mut c_void {
         handle.map(|h| h.0.as_ptr()).unwrap_or(ptr::null_mut())
+    }
+
+    // some convenient protocol helpers
+
+    /// Opens the underlying [`ComponentName2`], if it exists.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// # use uefi::Handle;
+    /// # let handle = unsafe { Handle::from_ptr(123 as *mut _).unwrap() };
+    /// let cn2_prot = handle
+    ///   .component_name2()
+    ///   .expect("should succeed to query protocol")
+    ///   .expect("should have component name (v2) protocol");
+    /// log::info!(
+    ///     "driver: {}, controller: {}",
+    ///     cn2_prot.driver_name("en").unwrap(),
+    ///     cn2_prot.controller_name(handle, None, "en").unwrap()
+    /// );
+    /// ```
+    #[cfg(feature = "alloc")]
+    pub fn component_name2(&self) -> Result<Option<ScopedProtocol<ComponentName2>>> {
+        // SAFETY: The protocol is only used for reading data.
+        unsafe {
+            boot::open_protocol_if_exists::<ComponentName2>(
+                OpenProtocolParams {
+                    handle: *self,
+                    agent: boot::image_handle(),
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+        }
+    }
+
+    /// Opens the underlying [`DevicePath`] protocol, if it exists.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// # use uefi::Handle;
+    /// # let handle = unsafe { Handle::from_ptr(123 as *mut _).unwrap() };
+    /// let device_path = handle
+    ///   .device_path()
+    ///   .expect("should succeed to query protocol")
+    ///   .expect("should have device path");
+    /// log::info!("device path: {device_path}");
+    /// ```
+    #[cfg(feature = "alloc")]
+    pub fn device_path(&self) -> Result<Option<ScopedProtocol<DevicePath>>> {
+        // SAFETY: The protocol is only used for reading data.
+        unsafe {
+            boot::open_protocol_if_exists::<DevicePath>(
+                OpenProtocolParams {
+                    handle: *self,
+                    agent: boot::image_handle(),
+                    controller: None,
+                },
+                OpenProtocolAttributes::GetProtocol,
+            )
+        }
     }
 }
 

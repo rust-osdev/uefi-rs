@@ -1599,6 +1599,20 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
     }
 }
 
+// Forward Display impl to inner protocol:
+impl<P: Protocol + ?Sized + Display> Display for ScopedProtocol<P> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self.get() {
+            Some(proto) => {
+                write!(f, "{proto}")
+            }
+            None => {
+                write!(f, "<none>")
+            }
+        }
+    }
+}
+
 impl<P: Protocol + ?Sized> Drop for ScopedProtocol<P> {
     fn drop(&mut self) {
         let bt = boot_services_raw_panicking();

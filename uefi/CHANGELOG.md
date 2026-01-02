@@ -7,6 +7,11 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Implemented `Display` for `DevicePath`, `DevicePathNode` and `ScopedProtocol`,
+  enabling a easy and convenient way to visualize a device path. For example,
+  this may print `PciRoot(0x0)/Pci(0x6,0x0)/MAC(525400000001,0x1)`.
+  `ScopedProtocol` only implements `Display` if the underlying protocol also
+  implements `Display`.
 
 ## Changed
 - export all `text::{input, output}::*` types

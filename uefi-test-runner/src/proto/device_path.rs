@@ -107,7 +107,7 @@ fn test_device_path_to_string() {
     let path = create_test_device_path();
 
     let to_text =
-        |display_only, allow_shortcuts| path.to_string(display_only, allow_shortcuts).unwrap();
+        |display_only, allow_shortcuts| path.to_string16(display_only, allow_shortcuts).unwrap();
 
     assert_eq!(
         &*to_text(DisplayOnly(true), AllowShortcuts(true)),
@@ -167,7 +167,7 @@ fn test_device_path_node_to_string() {
     let nodes: Vec<_> = path.node_iter().collect();
 
     let to_text = |node: &DevicePathNode, display_only, allow_shortcuts| {
-        node.to_string(display_only, allow_shortcuts).unwrap()
+        node.to_string16(display_only, allow_shortcuts).unwrap()
     };
 
     assert_eq!(
@@ -229,12 +229,12 @@ fn test_device_path_append() {
     let node = path.node_iter().next().unwrap();
 
     assert_eq!(
-        path.to_string(DisplayOnly(false), AllowShortcuts(false))
+        path.to_string16(DisplayOnly(false), AllowShortcuts(false))
             .unwrap(),
         cstr16!("Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)")
     );
     assert_eq!(
-        node.to_string(DisplayOnly(false), AllowShortcuts(false))
+        node.to_string16(DisplayOnly(false), AllowShortcuts(false))
             .unwrap(),
         cstr16!("Ata(Primary,Master,0x1)")
     );
@@ -242,7 +242,7 @@ fn test_device_path_append() {
     assert_eq!(
         path.append_path(&path2)
             .unwrap()
-            .to_string(DisplayOnly(false), AllowShortcuts(false))
+            .to_string16(DisplayOnly(false), AllowShortcuts(false))
             .unwrap(),
         cstr16!(
             "Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)"
@@ -251,7 +251,7 @@ fn test_device_path_append() {
     assert_eq!(
         path.append_node(node)
             .unwrap()
-            .to_string(DisplayOnly(false), AllowShortcuts(false))
+            .to_string16(DisplayOnly(false), AllowShortcuts(false))
             .unwrap(),
         cstr16!(
             "Ata(Primary,Master,0x1)/VenMsg(E0C14753-F9BE-11D2-9A0C-0090273FC14D)/Ata(Primary,Master,0x1)"

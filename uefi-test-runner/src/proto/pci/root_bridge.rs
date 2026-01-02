@@ -45,7 +45,7 @@ pub fn test() {
             let subclass_code = ((reg1 >> 16) & 0xFF) as u8;
             let device_path = pci_tree.device_path(&root_device_path, addr).unwrap();
             let device_path_str = device_path
-                .to_string(DisplayOnly(false), AllowShortcuts(false))
+                .to_string16(DisplayOnly(false), AllowShortcuts(false))
                 .unwrap()
                 .to_string();
 
@@ -81,7 +81,7 @@ pub fn test() {
     for scsi_handle in scsi_handles {
         let device_path = get_open_protocol::<DevicePath>(scsi_handle);
         let device_path = device_path
-            .to_string(DisplayOnly(false), AllowShortcuts(false))
+            .to_string16(DisplayOnly(false), AllowShortcuts(false))
             .unwrap()
             .to_string();
         assert!(mass_storage_dev_paths.contains(&device_path));

@@ -301,10 +301,10 @@ impl DevicePathNode {
         DevicePathNodeEnum::try_from(self)
     }
 
-    /// Transforms the device path node to its string representation using the
-    /// [`DevicePathToText`] protocol.
+    /// Transforms the device path node to an owned UEFI string ([`CString16`])
+    /// using the [`DevicePathToText`] protocol.
     #[cfg(feature = "alloc")]
-    pub fn to_string(
+    pub fn to_string16(
         &self,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
@@ -460,7 +460,7 @@ impl ToOwned for DevicePathInstance {
 ///         = open_protocol_exclusive::<DevicePath>(device_handle).unwrap();
 ///     log::debug!(
 ///         "Device path: {}",
-///         device_path.to_string(DisplayOnly(true), AllowShortcuts(true)).unwrap()
+///         device_path.to_string16(DisplayOnly(true), AllowShortcuts(true)).unwrap()
 ///     );
 /// }
 /// ```
@@ -598,10 +598,11 @@ impl DevicePath {
             .map_err(|_| DevicePathUtilitiesError::OutOfMemory)
     }
 
-    /// Transforms the device path to its string representation using the
-    /// [`DevicePathToText`] protocol.
+    /// Transforms the device path to an owned UEFI string ([`CString16`])
+    /// using the [`DevicePathToText`] protocol.
     #[cfg(feature = "alloc")]
-    pub fn to_string(
+    // to_string() comes from Display and produces a Rust string.
+    pub fn to_string16(
         &self,
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
@@ -831,9 +832,9 @@ impl Deref for LoadedImageDevicePath {
 }
 
 /// Errors that may happen when a device path is transformed to a string
-/// representation using:
-/// - [`DevicePath::to_string`]
-/// - [`DevicePathNode::to_string`]
+/// using:
+/// - [`DevicePath::to_string16`]
+/// - [`DevicePathNode::to_string16`]
 #[derive(Debug)]
 pub enum DevicePathToTextError {
     /// Can't locate a handle buffer with handles associated with the

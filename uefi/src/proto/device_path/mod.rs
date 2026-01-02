@@ -323,6 +323,20 @@ impl DevicePathNode {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl Display for DevicePathNode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if boot::are_boot_services_active() {
+            let cstring16 = self
+                .to_string16(DisplayOnly(true), AllowShortcuts(true))
+                .unwrap();
+            write!(f, "{}", cstring16)
+        } else {
+            write!(f, "<device path node: {} bytes>", self.data.len())
+        }
+    }
+}
+
 impl Debug for DevicePathNode {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.debug_struct("DevicePathNode")
@@ -459,8 +473,7 @@ impl ToOwned for DevicePathInstance {
 ///     let device_path: ScopedProtocol<DevicePath>
 ///         = open_protocol_exclusive::<DevicePath>(device_handle).unwrap();
 ///     log::debug!(
-///         "Device path: {}",
-///         device_path.to_string16(DisplayOnly(true), AllowShortcuts(true)).unwrap()
+///         "Device path: {device_path}",
 ///     );
 /// }
 /// ```
@@ -637,6 +650,20 @@ impl DevicePath {
         open_utility_protocol()?
             .append_node(self, right)
             .map_err(|_| DevicePathUtilitiesError::OutOfMemory)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl Display for DevicePath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if boot::are_boot_services_active() {
+            let cstring16 = self
+                .to_string16(DisplayOnly(true), AllowShortcuts(true))
+                .unwrap();
+            write!(f, "{}", cstring16)
+        } else {
+            write!(f, "<device path: {} bytes>", self.data.len())
+        }
     }
 }
 

@@ -10,6 +10,10 @@
 - Implemented `Display` for `DevicePath`, `DevicePathNode` and `ScopedProtocol`,
   enabling a easy and convenient way to visualize a device path. For example,
   this may print `PciRoot(0x0)/Pci(0x6,0x0)/MAC(525400000001,0x1)`.
+- Added `boot::open_protocol_[exclusive_]if_exists()` functions that wrap
+  `boot::open_protocol[_exclusive()]` and map `Status::UNSUPPORTED` to `None`
+  which allows a more natural handling if protocols are implemented for a handle
+  or not.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

@@ -38,16 +38,18 @@ use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt, table};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::ffi::c_void;
+use core::fmt::{Display, Formatter};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::time::Duration;
 use core::{mem, slice};
+use uefi::ResultExt;
 use uefi_raw::table::boot::{AllocateType as RawAllocateType, InterfaceType, TimerDelay};
-#[cfg(feature = "alloc")]
-use {alloc::vec::Vec, uefi::ResultExt};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
@@ -1047,7 +1049,8 @@ pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> 
 /// Opens a [`Protocol`] interface for a handle.
 ///
 /// See also [`open_protocol_exclusive`], which provides a safe subset of this
-/// functionality.
+/// functionality. Also consider using [`open_protocol_if_exists`], which allows
+/// more idiomatic code in most circumstances.
 ///
 /// This function attempts to get the protocol implementation of a handle, based
 /// on the [protocol GUID].
@@ -1107,10 +1110,34 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
     })
 }
 
+/// Convenient wrapper around [`open_protocol`] that maps
+/// [`Status::UNSUPPORTED`] to `None` to better differentiate between actual
+/// errors and the absence of a protocol.
+///
+/// # Safety
+///
+/// See safety section in [`open_protocol`].
+pub unsafe fn open_protocol_if_exists<P: ProtocolPointer + ?Sized>(
+    params: OpenProtocolParams,
+    attributes: OpenProtocolAttributes,
+) -> Result<Option<ScopedProtocol<P>>> {
+    let res = unsafe { open_protocol::<P>(params, attributes) };
+    let status = res.status();
+    let maybe_protocol = match (res, status) {
+        (Ok(prot), _) => Some(prot),
+        (Err(_), Status::UNSUPPORTED) => None,
+        (Err(e), _) => return Err(e),
+    };
+    Ok(maybe_protocol)
+}
+
 /// Opens a [`Protocol`] interface for a handle in exclusive mode.
 ///
 /// If successful, a [`ScopedProtocol`] is returned that will automatically
 /// close the protocol interface when dropped.
+///
+/// Also consider using [`open_protocol_exclusive_if_exists`], which allows
+/// more idiomatic code in most circumstances.
 ///
 /// # Errors
 ///
@@ -1133,6 +1160,39 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
             OpenProtocolAttributes::Exclusive,
         )
     }
+}
+
+/// Convenient wrapper around [`open_protocol_exclusive`] that maps
+/// [`Status::UNSUPPORTED`] to `None` to better differentiate between actual
+/// errors and the absence of a protocol.
+///
+/// # Safety
+///
+/// See safety section in [`open_protocol_exclusive`].
+pub fn open_protocol_exclusive_if_exists<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+) -> Result<Option<ScopedProtocol<P>>> {
+    // Safety: opening in exclusive mode with the correct agent
+    // handle set ensures that the protocol cannot be modified or
+    // removed while it is open, so this usage is safe.
+    let res = unsafe {
+        open_protocol::<P>(
+            OpenProtocolParams {
+                handle,
+                agent: image_handle(),
+                controller: None,
+            },
+            OpenProtocolAttributes::Exclusive,
+        )
+    };
+
+    let status = res.status();
+    let maybe_protocol = match (res, status) {
+        (Ok(prot), _) => Some(prot),
+        (Err(_), Status::UNSUPPORTED) => None,
+        (Err(e), _) => return Err(e),
+    };
+    Ok(maybe_protocol)
 }
 
 /// Tests whether a handle supports a [`Protocol`].

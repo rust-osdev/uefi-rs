@@ -15,6 +15,12 @@
   returns `Option<Event>` instead of `&Event`.
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- **Breaking:** Renamed `DevicePath::to_string()` to `DevicePath::to_string16()`
+  to better differentiate with the new `to_string()` coming from the new
+  `Display`.
+- **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
+  to better differentiate with the new `to_string()` coming from the new
+  `Display`.
 
 # uefi - v0.36.1 (2025-11-05)
 

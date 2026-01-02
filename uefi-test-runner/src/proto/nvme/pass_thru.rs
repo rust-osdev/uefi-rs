@@ -27,7 +27,7 @@ fn has_nvme_drive() -> bool {
         };
         let nvme_pt = boot::open_protocol_exclusive::<NvmePassThru>(nvme_pt_handle).unwrap();
         let device_path_str = device_path
-            .to_string(DisplayOnly(true), AllowShortcuts(false))
+            .to_string16(DisplayOnly(true), AllowShortcuts(false))
             .unwrap();
         info!("- Successfully opened NVMe: {device_path_str}");
         let mut nvme_ctrl = nvme_pt.controller();

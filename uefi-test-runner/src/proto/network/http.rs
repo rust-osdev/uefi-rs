@@ -15,7 +15,7 @@ pub fn print_handle_devpath(prefix: &str, handle: &Handle) {
         info!("{prefix}no device path for handle");
         return;
     };
-    if let Ok(string) = dp.to_string(DisplayOnly(true), AllowShortcuts(true)) {
+    if let Ok(string) = dp.to_string16(DisplayOnly(true), AllowShortcuts(true)) {
         info!("{prefix}{string}");
     }
 }

@@ -4,6 +4,32 @@
 //!
 //! This module defines the basic data types that are used throughout uefi-rs
 
+pub mod chars;
+
+mod guid;
+#[macro_use]
+mod opaque;
+#[cfg(feature = "alloc")]
+mod owned_strs;
+mod strs;
+mod unaligned_slice;
+
+pub use chars::{Char8, Char16};
+pub use guid::{Guid, Identify};
+#[cfg(feature = "alloc")]
+pub use owned_strs::{CString16, FromStrError};
+pub use strs::{
+    CStr8, CStr16, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, PoolString,
+    UnalignedCStr16Error,
+};
+/// These functions are used in the implementation of the [`cstr8!`] macro.
+///
+/// [`cstr8!`]: crate::cstr8
+#[doc(hidden)]
+pub use strs::{str_num_latin1_chars, str_to_latin1};
+pub use uefi_raw::{PhysicalAddress, VirtualAddress};
+pub use unaligned_slice::UnalignedSlice;
+
 use core::ffi::c_void;
 use core::ptr::{self, NonNull};
 
@@ -153,37 +179,6 @@ impl Align for [u8] {
         1
     }
 }
-
-mod guid;
-pub use guid::{Guid, Identify};
-
-pub mod chars;
-pub use chars::{Char8, Char16};
-
-#[macro_use]
-mod opaque;
-
-mod strs;
-pub use strs::{
-    CStr8, CStr16, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, PoolString,
-    UnalignedCStr16Error,
-};
-
-/// These functions are used in the implementation of the [`cstr8!`] macro.
-///
-/// [`cstr8!`]: crate::cstr8
-#[doc(hidden)]
-pub use strs::{str_num_latin1_chars, str_to_latin1};
-
-#[cfg(feature = "alloc")]
-mod owned_strs;
-#[cfg(feature = "alloc")]
-pub use owned_strs::{CString16, FromStrError};
-
-mod unaligned_slice;
-pub use unaligned_slice::UnalignedSlice;
-
-pub use uefi_raw::{PhysicalAddress, VirtualAddress};
 
 #[cfg(test)]
 mod tests {

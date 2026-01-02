@@ -126,9 +126,13 @@
 //!
 //! - `alloc`: Enable functionality requiring the [`alloc`] crate from
 //!   the Rust standard library. For example, methods that return a
-//!   `Vec` rather than filling a statically-sized array. This requires
-//!   a global allocator; you can use the `global_allocator` feature or
-//!   provide your own. This is independent of internal direct usages of the
+//!   `Vec` rather than filling a statically-sized array.
+//!   We **highly recommend** activating this feature as more and more
+//!   functionality in `uefi-rs` depends and will depend on `alloc` for
+//!   convenience and good developer experience.
+//!   The `alloc` feature requires a global allocator: you can use the
+//!   `global_allocator` feature or provide your own. The global allocator and
+//!   the `alloc` feature are independent of internal direct usages of the
 //!   UEFI boot service allocator which may happen anyway, where necessary.
 //! - `global_allocator`: Set [`allocator::Allocator`] as the global Rust
 //!   allocator. This is a simple allocator that relies on the UEFI pool

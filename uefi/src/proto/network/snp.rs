@@ -270,7 +270,7 @@ impl SimpleNetwork {
     /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
     /// of UEFI properly implements this event before using it.
     #[must_use]
-    pub fn wait_for_packet(&self) -> Option<Event> {
+    pub fn wait_for_packet_event(&self) -> Option<Event> {
         unsafe { Event::from_ptr(self.0.wait_for_packet) }
     }
 

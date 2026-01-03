@@ -3,7 +3,7 @@
 //! Pointer device access.
 
 use crate::proto::unsafe_protocol;
-use crate::{Event, Result, Status, StatusExt};
+use crate::{Error, Event, Result, Status, StatusExt};
 use uefi_raw::protocol::console::SimplePointerProtocol;
 
 /// Simple Pointer [`Protocol`]. Provides information about a pointer device.
@@ -53,9 +53,8 @@ impl Pointer {
     /// for input from the pointer device
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
-    #[must_use]
-    pub fn wait_for_input_event(&self) -> Option<Event> {
-        unsafe { Event::from_ptr(self.0.wait_for_input) }
+    pub fn wait_for_input_event(&self) -> Result<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_input) }.ok_or(Error::from(Status::UNSUPPORTED))
     }
 
     /// Returns a reference to the pointer device information.

@@ -16,8 +16,9 @@ use core::ffi::c_void;
 use core::net::IpAddr;
 use core::ptr;
 use core::ptr::NonNull;
+use uefi::Error;
 use uefi_raw::protocol::network::snp::SimpleNetworkProtocol;
-use uefi_raw::{Boolean, IpAddress as EfiIpAddr, MacAddress as EfiMacAddr};
+use uefi_raw::{Boolean, IpAddress as EfiIpAddr, MacAddress as EfiMacAddr, Status};
 
 pub use uefi_raw::protocol::network::snp::{
     InterruptStatus, NetworkMode, NetworkState, NetworkStatistics, ReceiveFlags,
@@ -269,9 +270,8 @@ impl SimpleNetwork {
     ///
     /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
     /// of UEFI properly implements this event before using it.
-    #[must_use]
-    pub fn wait_for_packet(&self) -> Option<Event> {
-        unsafe { Event::from_ptr(self.0.wait_for_packet) }
+    pub fn wait_for_packet_event(&self) -> Result<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_packet) }.ok_or(Error::from(Status::UNSUPPORTED))
     }
 
     /// Returns a reference to the Simple Network mode.

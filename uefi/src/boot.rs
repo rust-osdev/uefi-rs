@@ -519,7 +519,7 @@ pub unsafe fn create_event_ex(
 /// * [`Status::INVALID_PARAMETER`]: `event` is of type [`NOTIFY_SIGNAL`].
 ///
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
-pub fn check_event(event: Event) -> Result<bool> {
+pub fn check_event(event: &Event) -> Result<bool> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 

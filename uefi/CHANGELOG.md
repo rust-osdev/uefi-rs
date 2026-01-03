@@ -7,6 +7,8 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- `Serial::read_to_end()` now conveniently reads everything that is currently
+  available on the device into a vector. This needs the `alloc` feature.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
@@ -15,6 +17,8 @@
   returns `Option<Event>` instead of `&Event`.
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- Fixed `Serial::read` to properly read only as many bytes as it can and report
+  that `n` to the caller. This includes graceful handling of `Status::TIMEOUT`.
 
 # uefi - v0.36.1 (2025-11-05)
 

@@ -10,6 +10,7 @@ extern crate alloc;
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use core::time::Duration;
 use uefi::mem::memory_map::MemoryMap;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
@@ -111,7 +112,7 @@ fn send_request_helper(serial: &mut Serial, request: HostRequest) -> Result {
 
     // Set a 10 second timeout for the read and write operations.
     let mut io_mode = *serial.io_mode();
-    io_mode.timeout = 10_000_000;
+    io_mode.timeout = Duration::from_secs(10).as_micros() as u32;
     serial.set_attributes(&io_mode)?;
 
     // Send a screenshot request to the host.

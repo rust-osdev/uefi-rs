@@ -7,6 +7,12 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Added `boot::test_protocol_by_guid()`
+- Added `boot::register_protocol_notify_by_guid()`
+- Added `boot::[re_,un_]install_protocol_interface_by_guid()` functions.
+- Added `boot::[un_]install_multiple_protocol_interface`. Currently, this
+  replicates the functionality of the EDK2 implementation rather than using it
+  due to Rusts limited support for variadic arguments.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
@@ -15,6 +21,11 @@
   returns `Option<Event>` instead of `&Event`.
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- **Breaking**: `boot::register_protocol_notify()` now follows our generic-based
+  API and now longer consumes a `&Guid` parameter.
+- **Breaking:**`boot::[re_,un_]install_protocol_interface()` no longer consume a
+  `&Guid` parameter but instead follow our generic type-based API. For example:
+  `install_protocol_interface<DevicePath>(handle, interface)`.
 
 # uefi - v0.36.1 (2025-11-05)
 

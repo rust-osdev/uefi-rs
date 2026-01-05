@@ -62,7 +62,7 @@ bitflags! {
 pub struct SerialIoMode {
     /// Bitmask of the control bits that this device supports.
     pub control_mask: ControlBits,
-    /// If applicable, the number of microseconds to wait before assuming an
+    /// The number of microseconds (µs) to wait before assuming a read or write
     /// operation timed out.
     pub timeout: u32,
     /// Device's baud rate, or 0 if unknown.
@@ -83,7 +83,7 @@ pub struct SerialIoProtocol {
     pub revision: u32,
     pub reset: unsafe extern "efiapi" fn(*mut Self) -> Status,
     pub set_attributes: unsafe extern "efiapi" fn(
-        *const Self,
+        *mut Self,
         baud_rate: u64,
         receive_fifo_depth: u32,
         timeout: u32,

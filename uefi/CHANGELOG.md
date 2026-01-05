@@ -7,6 +7,15 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Implemented `Display` for `DevicePath`, `DevicePathNode` and `ScopedProtocol`,
+  enabling a easy and convenient way to visualize a device path. For example,
+  this may print `PciRoot(0x0)/Pci(0x6,0x0)/MAC(525400000001,0x1)`.
+- Added `boot::open_protocol_[exclusive_]if_exists()` functions that wrap
+  `boot::open_protocol[_exclusive()]` and map `Status::UNSUPPORTED` to `None`
+  which allows a more natural handling if protocols are implemented for a handle
+  or not.
+- Added `Handle::component_name2()` and `Handle::device_path()` to simplify the
+  very common use-case of querying more information about a handle.
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
@@ -15,6 +24,12 @@
   returns `Option<Event>` instead of `&Event`.
 - `Http::get_mode_data` doesn't consume a parameter anymore and instead return
   an owned value of type `HttpConfigData`
+- **Breaking:** Renamed `DevicePath::to_string()` to `DevicePath::to_string16()`
+  to better differentiate with the new `to_string()` coming from the new
+  `Display`.
+- **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
+  to better differentiate with the new `to_string()` coming from the new
+  `Display`.
 
 # uefi - v0.36.1 (2025-11-05)
 

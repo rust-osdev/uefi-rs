@@ -4,13 +4,14 @@
 //!
 //! These functions will panic if called after exiting boot services.
 //!
-//! # Accessing protocols
+//! # Accessing Protocols
 //!
 //! Protocols can be opened using several functions in this module. Most
 //! commonly, [`open_protocol_exclusive`] should be used. This ensures that
 //! nothing else can use the protocol until it is closed, and returns a
 //! [`ScopedProtocol`] that takes care of closing the protocol when it is
-//! dropped.
+//! dropped. Beware that this has some caveats, see function documentation
+//! for more details.
 //!
 //! Other methods for opening protocols:
 //!
@@ -18,6 +19,11 @@
 //! * [`get_image_file_system`]
 //!
 //! For protocol definitions, see the [`proto`] module.
+//!
+//! # Accessing Handles
+//!
+//! To access handles supporting a certain protocol, we recommend using
+//! [`find_handles`], [`locate_handle`], and [`locate_handle_buffer`].
 //!
 //! [`proto`]: crate::proto
 
@@ -893,17 +899,22 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
     }
 }
 
-/// Enumerates all handles installed on the system which match a certain query.
+/// Enumerates all [`Handle`]s installed on the system which match a certain
+/// query.
+///
+/// If you use the `alloc` feature, it might be more convenient to use
+/// [`find_handles`] instead. Another alternative might be
+/// [`locate_handle_buffer`].
 ///
 /// # Errors
 ///
-/// * [`Status::NOT_FOUND`]: no matching handles found.
 /// * [`Status::BUFFER_TOO_SMALL`]: the buffer is not large enough. The required
 ///   size (in number of handles, not bytes) will be returned in the error data.
+/// * The possibly underlying [`Status::NOT_FOUND`] will be mapped to `Ok(&[])`.
 pub fn locate_handle<'buf>(
     search_ty: SearchType,
     buffer: &'buf mut [MaybeUninit<Handle>],
-) -> Result<&'buf [Handle], Option<usize>> {
+) -> Result<&'buf [Handle], Option<usize /* num handles */>> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
@@ -929,6 +940,8 @@ pub fn locate_handle<'buf>(
             let handles = unsafe { maybe_uninit_slice_assume_init_ref(buffer) };
             Ok(handles)
         }
+        // No need to expose this unhandy error to users.
+        Status::NOT_FOUND => Ok(&[]),
         Status::BUFFER_TOO_SMALL => Err(Error::new(status, Some(num_handles))),
         _ => Err(Error::new(status, None)),
     }
@@ -938,6 +951,10 @@ pub fn locate_handle<'buf>(
 /// pool-allocated buffer.
 ///
 /// See [`SearchType`] for details of the available search operations.
+///
+/// Unlike [`find_handles`], this doesn't need the `alloc` feature and operates
+/// on the UEFI heap directly. Further, it allows a more fine-grained search
+/// via the provided [`SearchType`].
 ///
 /// # Errors
 ///
@@ -965,17 +982,25 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
         })
 }
 
-/// Returns all the handles implementing a certain [`Protocol`].
+/// Returns all the [`Handle`]s implementing a certain [`Protocol`].
+///
+/// This is the recommended way to open handles supporting a certain protocol.
+/// Under the hood, this uses the [`locate_handle` boot service][lhbs].
 ///
 /// # Errors
 ///
-/// * [`Status::NOT_FOUND`]: no matching handles.
+/// This only fails in case the UEFI implementation behaves unexpectedly.
+/// The possibly underlying [`Status::NOT_FOUND`] will be mapped to
+/// `Ok(Vec::new())`.
+///
+/// [lhbs]: self::locate_handle
 #[cfg(feature = "alloc")]
 pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
     // Search by protocol.
     let search_type = SearchType::from_proto::<P>();
 
-    // Determine how much we need to allocate.
+    // Determine how much we need to allocate and returns early if there
+    // are no supported handles.
     let num_handles = match locate_handle(search_type, &mut []) {
         Err(err) => {
             if err.status() == Status::BUFFER_TOO_SMALL {
@@ -984,9 +1009,13 @@ pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
                 return Err(err.to_err_without_payload());
             }
         }
-        // This should never happen: if no handles match the search then a
-        // `NOT_FOUND` error should be returned.
-        Ok(_) => panic!("locate_handle should not return success with empty buffer"),
+        Ok(handles) => {
+            if handles.is_empty() {
+                return Ok(Vec::new());
+            } else {
+                panic!("locate_handle should not return success with non-empty buffer")
+            }
+        }
     };
 
     // Allocate a large enough buffer without pointless initialization.
@@ -996,6 +1025,9 @@ pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
     let num_handles = locate_handle(search_type, handles.spare_capacity_mut())
         .discard_errdata()?
         .len();
+
+    // Panic in the very unlikely case
+    assert!(num_handles <= handles.capacity());
 
     // Mark the returned number of elements as initialized.
     unsafe {
@@ -1111,6 +1143,10 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
 ///
 /// If successful, a [`ScopedProtocol`] is returned that will automatically
 /// close the protocol interface when dropped.
+///
+/// Beware that if any other drivers have the protocol interface opened with an
+/// attribute of [`OpenProtocolAttributes::ByDriver`], then an attempt will be
+/// made to remove them with [`disconnect_controller`].
 ///
 /// # Errors
 ///
@@ -1548,8 +1584,8 @@ impl Deref for ProtocolsPerHandle {
     }
 }
 
-/// A buffer returned by [`locate_handle_buffer`] that contains an array of
-/// [`Handle`]s that support the requested [`Protocol`].
+/// A buffer on the UEFI heap returned by [`locate_handle_buffer`] that contains
+/// an array of [`Handle`]s that support the requested [`Protocol`].
 #[derive(Debug, Eq, PartialEq)]
 pub struct HandleBuffer {
     count: usize,

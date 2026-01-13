@@ -37,7 +37,11 @@ use crate::proto::{BootPolicy, Protocol, ProtocolPointer};
 use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
-use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt, table};
+use crate::{
+    Char16, Error, Event, Guid, Handle, Identify, Result, ResultExt, Status, StatusExt, table,
+};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
@@ -45,9 +49,8 @@ use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::time::Duration;
 use core::{mem, slice};
+use log::error;
 use uefi_raw::table::boot::{AllocateType as RawAllocateType, InterfaceType, TimerDelay};
-#[cfg(feature = "alloc")]
-use {alloc::vec::Vec, uefi::ResultExt};
 
 /// Global image handle. This is only set by [`set_image_handle`], and it is
 /// only read by [`image_handle`].
@@ -713,12 +716,22 @@ pub fn disconnect_controller(
     .to_result_with_err(|_| ())
 }
 
-/// Installs a protocol interface on a device handle.
+/// Installs a protocol interface on a device handle. If no handle is
+/// specified, a new handle will be allocated and returned.
+///
+/// It is recommended to use [`install_multiple_protocol_interface`] when you
+/// plan to install multiple protocols, as it performs more error checking
+/// and cleanup under the hood.
 ///
 /// When a protocol interface is installed, firmware will call all functions
 /// that have registered to wait for that interface to be installed.
 ///
-/// If `handle` is `None`, a new handle will be created and returned.
+/// # Arguments
+///
+/// - `handle`: Either `None` to allocate a new handle or an existing handle.
+/// - `interface`: The protocol implementation. The memory backing the
+///   implementation **must live as long as the handle!**. Callers need to
+///   ensure a matching lifetime!
 ///
 /// # Safety
 ///
@@ -728,11 +741,24 @@ pub fn disconnect_controller(
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: failed to allocate a new handle.
 /// * [`Status::INVALID_PARAMETER`]: this protocol is already installed on the handle.
-pub unsafe fn install_protocol_interface(
+pub unsafe fn install_protocol_interface<P: ProtocolPointer + ?Sized>(
+    handle: Option<Handle>,
+    interface: *const c_void,
+) -> Result<Handle /* new if input was None */> {
+    unsafe { install_protocol_interface_by_guid(handle, &P::GUID, interface) }
+}
+
+/// Variant of [`install_protocol_interface`] that consumes the [`Guid`] as
+/// parameter.
+///
+/// # Safety
+///
+/// See safety section in [`install_protocol_interface`].
+pub unsafe fn install_protocol_interface_by_guid(
     handle: Option<Handle>,
     protocol: &Guid,
     interface: *const c_void,
-) -> Result<Handle> {
+) -> Result<Handle /* new if Input was None */> {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
@@ -766,7 +792,21 @@ pub unsafe fn install_protocol_interface(
 ///
 /// * [`Status::NOT_FOUND`]: the old interface was not found on the handle.
 /// * [`Status::ACCESS_DENIED`]: the old interface is still in use and cannot be uninstalled.
-pub unsafe fn reinstall_protocol_interface(
+pub unsafe fn reinstall_protocol_interface<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+    old_interface: *const c_void,
+    new_interface: *const c_void,
+) -> Result<()> {
+    unsafe { reinstall_protocol_interface_by_guid(handle, &P::GUID, old_interface, new_interface) }
+}
+
+/// Variant of [`reinstall_protocol_interface`] that consumes the [`Guid`] as
+/// parameter.
+///
+/// # Safety
+///
+/// See safety section in [`reinstall_protocol_interface`].
+pub unsafe fn reinstall_protocol_interface_by_guid(
     handle: Handle,
     protocol: &Guid,
     old_interface: *const c_void,
@@ -796,7 +836,20 @@ pub unsafe fn reinstall_protocol_interface(
 ///
 /// * [`Status::NOT_FOUND`]: the interface was not found on the handle.
 /// * [`Status::ACCESS_DENIED`]: the interface is still in use and cannot be uninstalled.
-pub unsafe fn uninstall_protocol_interface(
+pub unsafe fn uninstall_protocol_interface<P: ProtocolPointer + ?Sized>(
+    handle: Handle,
+    interface: *const c_void,
+) -> Result<()> {
+    unsafe { uninstall_protocol_interface_by_guid(handle, &P::GUID, interface) }
+}
+
+/// Variant of [`uninstall_protocol_interface`] that consumes the [`Guid`] as
+/// parameter.
+///
+/// # Safety
+///
+/// See safety section in [`uninstall_protocol_interface`].
+pub unsafe fn uninstall_protocol_interface_by_guid(
     handle: Handle,
     protocol: &Guid,
     interface: *const c_void,
@@ -805,6 +858,168 @@ pub unsafe fn uninstall_protocol_interface(
     let bt = unsafe { bt.as_ref() };
 
     unsafe { (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result() }
+}
+
+/// Installs multiple protocol interfaces for a given handle at once, and
+/// reverts all operations if a single operation fails. If no handle is
+/// specified, a new handle will be allocated and returned.
+///
+/// When a protocol interface is installed, firmware will call all functions
+/// that have registered to wait for that interface to be installed.
+///
+/// As Rust is not having proper C variadic support, this function emulates the
+/// behavior of the `CoreInstallMultipleProtocolInterfaces` function from
+/// `edk2`. Effectively, the behavior is the same, but it doesn't use the
+/// corresponding boot service under the hood.
+///
+/// # Arguments
+///
+/// - `handle`: Either `None` to allocate a new handle or an existing handle.
+/// - `pairs`: Pairs of the [`Guid`] of the [`Protocol`] to install and the
+///   protocol implementation. The memory backing the implementation
+///   **must live as long as the handle!**. Callers need to ensure a matching
+///   lifetime!
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that they pass a valid `Guid` for `protocol`.
+///
+/// # Errors
+///
+/// * [`Status::OUT_OF_RESOURCES`]: failed to allocate a new handle.
+/// * [`Status::INVALID_PARAMETER`]: this protocol is already installed on the handle.
+/// * [`Status::ALREADY_STARTED`]: A Device Path Protocol instance was passed in that is already present in the handle database.
+pub unsafe fn install_multiple_protocol_interface(
+    mut handle: Option<Handle>,
+    pairs: &[(&Guid, *const c_void)],
+) -> Result<Handle /* new if input was None */> {
+    // TODO once Rust has sensible variadic argument support, we should
+    // fallback to the correct boot service.
+
+    // Taken from edk2 source.
+    const TPL_NOTIFY: Tpl = Tpl(16);
+    let tpl = TPL_NOTIFY;
+    // SAFETY: We do not want our loop to be interrupted.
+    let _old_tpl = unsafe { raise_tpl(tpl) };
+
+    // Variables that are updated in the loop.
+    let mut installed_count = 0;
+    let mut status = Status::SUCCESS;
+
+    // try to install all interfaces and update `handle` if it is `None`
+    for (guid, interface) in pairs {
+        // prevent multiple installations of the device path protocol on the
+        // same handle:
+        if let Some(handle) = handle {
+            if *guid == &DevicePath::GUID
+                && test_protocol_by_guid(
+                    guid,
+                    OpenProtocolParams {
+                        handle,
+                        agent: image_handle(),
+                        controller: None,
+                    },
+                )?
+            {
+                status = Status::ALREADY_STARTED;
+                break;
+            }
+        }
+
+        let result = unsafe { install_protocol_interface_by_guid(handle, guid, *interface) };
+
+        match (result, handle, installed_count) {
+            (Ok(new_handle), None, 0) => {
+                handle = Some(new_handle);
+            }
+            (Ok(_handle), _, _) => {}
+            (Err(err), _, _) => {
+                error!("Failed to install protocol interface: {err}");
+                // next, we need to uninstall for all succeeded iterations
+                status = err.status();
+                break;
+            }
+        }
+
+        installed_count += 1;
+    }
+
+    if !status.is_success() {
+        // try to uninstall all that were just successfully installed
+        for (guid, interface) in pairs.iter().take(installed_count) {
+            let res =
+                unsafe { uninstall_protocol_interface_by_guid(handle.unwrap(), guid, *interface) };
+            if let Err(e) = res {
+                let handle_addr = &raw const *handle.as_ref().unwrap();
+                // We don't fail here, as this would break the contract of the
+                // function.
+                error!(
+                    "Failed to uninstall interface after failed multiple install attempt: handle={handle_addr:?}, guid={}, interface={:?}, error={e}",
+                    guid, interface
+                );
+            }
+        }
+
+        Err(status.into())
+    } else {
+        Ok(handle.unwrap())
+    }
+}
+
+/// Removes one or more protocol interfaces into the boot services environment.
+///
+/// If any errors are generated while the protocol interfaces are being
+/// uninstalled, then the protocols uninstalled prior to the error will be
+/// reinstalled.
+///
+/// # Safety
+///
+/// The caller is responsible for ensuring that there are no references to a protocol interface
+/// that has been removed. Some protocols may not be able to be removed as there is no information
+/// available regarding the references. This includes Console I/O, Block I/O, Disk I/o, and handles
+/// to device protocols.
+///
+/// # Errors
+///
+/// * [`Status::NOT_FOUND`]: the interface was not found on the handle.
+/// * [`Status::ACCESS_DENIED`]: the interface is still in use and cannot be uninstalled.
+pub unsafe fn uninstall_multiple_protocol_interface(
+    handle: Handle,
+    pairs: &[(&Guid, *const c_void)],
+) -> Result<()> {
+    let mut uninstalled_count = 0;
+    let mut status = Status::SUCCESS;
+
+    // try to install all interfaces and update `handle` if it is `None`
+    for (guid, interface) in pairs {
+        let result = unsafe { uninstall_protocol_interface_by_guid(handle, guid, *interface) };
+
+        if result.is_err() {
+            // next, we need to install for all succeeded iterations
+            status = result.status();
+            break;
+        }
+
+        uninstalled_count += 1;
+    }
+
+    if !status.is_success() {
+        // try to uninstall all failed ones
+        for (guid, interface) in pairs.iter().take(uninstalled_count) {
+            let res = unsafe { install_protocol_interface_by_guid(Some(handle), guid, *interface) };
+            if let Err(e) = res {
+                let handle_addr = &raw const handle;
+                // We don't fail here, as this would break the contract of the
+                // function.
+                error!(
+                    "Failed to install interface after failed multiple uninstall attempt: handle={handle_addr:?}, guid={}, interface={:?}, error={e}",
+                    guid, interface
+                );
+            }
+        }
+    }
+
+    Ok(())
 }
 
 /// Registers `event` to be signaled whenever a protocol interface is registered for
@@ -819,7 +1034,15 @@ pub unsafe fn uninstall_protocol_interface(
 /// # Errors
 ///
 /// * [`Status::OUT_OF_RESOURCES`]: the event could not be allocated.
-pub fn register_protocol_notify(
+pub fn register_protocol_notify<P: ProtocolPointer + ?Sized>(
+    event: &Event,
+) -> Result<SearchType<'static>> {
+    register_protocol_notify_by_guid(&P::GUID, event)
+}
+
+/// Variant of [`register_protocol_notify`] that consumes the [`Guid`] as
+/// parameter.
+pub fn register_protocol_notify_by_guid(
     protocol: &'static Guid,
     event: &Event,
 ) -> Result<SearchType<'static>> {
@@ -1143,6 +1366,14 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
 ///
 /// * [`Status::INVALID_PARAMETER`]: one of the handles in `params` is invalid.
 pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) -> Result<bool> {
+    test_protocol_by_guid(&P::GUID, params)
+}
+
+/// Variant of [`test_protocol_by_guid`] that consumes the [`Guid`] as
+/// parameter.
+pub fn test_protocol_by_guid(guid: &Guid, params: OpenProtocolParams) -> Result<bool> {
+    // Not part of `OpenProtocolAttributes` as it is fairly irrelevant for
+    // library users.
     const TEST_PROTOCOL: u32 = 0x04;
 
     let bt = boot_services_raw_panicking();
@@ -1152,7 +1383,7 @@ pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) ->
     let status = unsafe {
         (bt.open_protocol)(
             params.handle.as_ptr(),
-            &P::GUID,
+            guid,
             &mut interface,
             params.agent.as_ptr(),
             Handle::opt_to_ptr(params.controller),

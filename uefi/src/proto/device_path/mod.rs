@@ -590,6 +590,14 @@ impl DevicePath {
         unsafe { mem::transmute(data) }
     }
 
+    /// Returns an owned pool copy of this path.
+    #[cfg(feature = "alloc")]
+    pub fn to_pool(&self) -> Result<PoolDevicePath, DevicePathUtilitiesError> {
+        open_utility_protocol()?
+            .duplicate_path(self)
+            .map_err(|_| DevicePathUtilitiesError::OutOfMemory)
+    }
+
     /// Transforms the device path to its string representation using the
     /// [`DevicePathToText`] protocol.
     #[cfg(feature = "alloc")]

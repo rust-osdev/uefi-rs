@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! # `uefi-rs`
+//!
 //! Rusty wrapper for the [Unified Extensible Firmware Interface][UEFI].
 //!
 //! This crate makes it easy to develop Rust software that leverages **safe**,
@@ -126,9 +128,13 @@
 //!
 //! - `alloc`: Enable functionality requiring the [`alloc`] crate from
 //!   the Rust standard library. For example, methods that return a
-//!   `Vec` rather than filling a statically-sized array. This requires
-//!   a global allocator; you can use the `global_allocator` feature or
-//!   provide your own. This is independent of internal direct usages of the
+//!   `Vec` rather than filling a statically-sized array.
+//!   We **highly recommend** activating this feature as more and more
+//!   functionality in `uefi-rs` depends and will depend on `alloc` for
+//!   convenience and good developer experience.
+//!   The `alloc` feature requires a global allocator: you can use the
+//!   `global_allocator` feature or provide your own. The global allocator and
+//!   the `alloc` feature are independent of internal direct usages of the
 //!   UEFI boot service allocator which may happen anyway, where necessary.
 //! - `global_allocator`: Set [`allocator::Allocator`] as the global Rust
 //!   allocator. This is a simple allocator that relies on the UEFI pool
@@ -204,10 +210,31 @@
 //! Licensed under either of [Apache License, Version 2.0][apache] or
 //! [MIT license][mit] at your option.
 //!
-//! # Terminology
+//! # UEFI and `uefi-rs` Terminology
 //!
-//! Both "EFI" and "UEFI" can be used interchangeably, such as "UEFI image" or
-//! "EFI image". We prefer "UEFI" in our crate and its documentation.
+//! Please look into the [specification][spec] for a comprehensive overview. In
+//! UEFI, both "EFI" and "UEFI" are often used interchangeably, such as
+//! "UEFI image" or "EFI image". We prefer "UEFI" in our crate and its
+//! documentation.
+//!
+//! ## Important UEFI Terms and Abstractions
+//!
+//! - **agent**: The entity (usually a driver or application) performing
+//!   operations on a handle or protocol.
+//! - **controller**: A handle that represents a hardware device managed by
+//!   drivers.
+//! - **device path**: A structured description of a device's location or
+//!   access method, used for booting and device identification.
+//! - **driver binding**: A service that matches drivers to controllers and
+//!   manages their lifecycle.
+//! - **image**: A loaded executable (e.g., UEFI application or driver) with its
+//!   own execution context - an `.efi` file (PE/COFF executable).
+//! - **handle**: An opaque identifier representing a UEFI object to which
+//!   protocols can be attached.
+//! - **protocol**: A standardized set of functions and data structures defining
+//!   an interface for services.
+//! - **(protocol) interface**: A concrete implementation of a protocol attached
+//!   to a handle.
 //!
 //! [Rust UEFI Book]: https://rust-osdev.github.io/uefi-rs/HEAD/
 //! [UEFI]: https://uefi.org/

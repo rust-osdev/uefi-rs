@@ -72,13 +72,11 @@ impl LoadFile {
         file_path: &DevicePath,
         boot_policy: BootPolicy,
     ) -> Result<Box<[u8]>> {
-        let this = core::ptr::addr_of_mut!(*self).cast();
-
         let fetch_data_fn = |buf: &'a mut [u8]| {
             let mut size = buf.len();
             let status = unsafe {
                 (self.0.load_file)(
-                    this,
+                    &raw mut self.0,
                     file_path.as_ffi_ptr().cast(),
                     boot_policy.into(),
                     &mut size,
@@ -135,13 +133,11 @@ impl LoadFile2 {
     #[cfg(feature = "alloc")]
     #[allow(clippy::extra_unused_lifetimes)] // false positive, it is used
     pub fn load_file<'a>(&mut self, file_path: &DevicePath) -> Result<Box<[u8]>> {
-        let this = core::ptr::addr_of_mut!(*self).cast();
-
         let fetch_data_fn = |buf: &'a mut [u8]| {
             let mut size = buf.len();
             let status = unsafe {
                 (self.0.load_file)(
-                    this,
+                    &raw mut self.0,
                     file_path.as_ffi_ptr().cast(),
                     Boolean::FALSE, /* always false - see spec */
                     &mut size,

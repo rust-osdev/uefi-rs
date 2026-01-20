@@ -193,13 +193,13 @@ impl FileInfo {
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         unsafe {
             Self::new_impl(storage, file_name, |ptr, size| {
-                ptr::addr_of_mut!((*ptr).size).write(size);
-                ptr::addr_of_mut!((*ptr).file_size).write(file_size);
-                ptr::addr_of_mut!((*ptr).physical_size).write(physical_size);
-                ptr::addr_of_mut!((*ptr).create_time).write(create_time);
-                ptr::addr_of_mut!((*ptr).last_access_time).write(last_access_time);
-                ptr::addr_of_mut!((*ptr).modification_time).write(modification_time);
-                ptr::addr_of_mut!((*ptr).attribute).write(attribute);
+                (&raw mut (*ptr).size).write(size);
+                (&raw mut (*ptr).file_size).write(file_size);
+                (&raw mut (*ptr).physical_size).write(physical_size);
+                (&raw mut (*ptr).create_time).write(create_time);
+                (&raw mut (*ptr).last_access_time).write(last_access_time);
+                (&raw mut (*ptr).modification_time).write(modification_time);
+                (&raw mut (*ptr).attribute).write(attribute);
             })
         }
     }
@@ -314,11 +314,11 @@ impl FileSystemInfo {
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
         unsafe {
             Self::new_impl(storage, volume_label, |ptr, size| {
-                ptr::addr_of_mut!((*ptr).size).write(size);
-                ptr::addr_of_mut!((*ptr).read_only).write(read_only);
-                ptr::addr_of_mut!((*ptr).volume_size).write(volume_size);
-                ptr::addr_of_mut!((*ptr).free_space).write(free_space);
-                ptr::addr_of_mut!((*ptr).block_size).write(block_size);
+                (&raw mut (*ptr).size).write(size);
+                (&raw mut (*ptr).read_only).write(read_only);
+                (&raw mut (*ptr).volume_size).write(volume_size);
+                (&raw mut (*ptr).free_space).write(free_space);
+                (&raw mut (*ptr).block_size).write(block_size);
             })
         }
     }

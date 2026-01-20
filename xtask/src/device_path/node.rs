@@ -209,7 +209,7 @@ impl Node {
                     // the slice might be unaligned. Treat it as a byte
                     // slice instead.
                     quote!(&{
-                        let ptr = addr_of!(#field_val);
+                        let ptr = &raw const #field_val;
                         let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                         let byte_len = size_of::<#slice_elem_ty>() * len;
                         unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }

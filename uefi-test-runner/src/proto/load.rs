@@ -6,7 +6,6 @@ use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::pin::Pin;
 use core::ptr;
-use core::ptr::addr_of;
 use uefi::proto::BootPolicy;
 use uefi::proto::device_path::build::DevicePathBuilder;
 use uefi::proto::media::load_file::{LoadFile, LoadFile2};
@@ -61,13 +60,14 @@ impl CustomLoadFile2Protocol {
 
 unsafe fn install_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
     unsafe {
-        boot::install_protocol_interface(Some(handle), &guid, addr_of!(*protocol).cast()).unwrap();
+        boot::install_protocol_interface(Some(handle), &guid, (&raw const *protocol).cast())
+            .unwrap();
     }
 }
 
 unsafe fn uninstall_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLoadFile2Protocol) {
     unsafe {
-        boot::uninstall_protocol_interface(handle, &guid, addr_of!(*protocol).cast()).unwrap();
+        boot::uninstall_protocol_interface(handle, &guid, (&raw const *protocol).cast()).unwrap();
     }
 }
 

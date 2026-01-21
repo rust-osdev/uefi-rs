@@ -87,7 +87,7 @@ fn alloc_pool_aligned(memory_type: MemoryType, size: usize, align: usize) -> *mu
 ///
 /// [Rust type layout]: https://doc.rust-lang.org/reference/type-layout.html
 const fn layout_allows_page_alloc_shortcut(layout: &Layout) -> bool {
-    layout.size() % PAGE_SIZE == 0 && layout.align() == PAGE_SIZE
+    layout.size().is_multiple_of(PAGE_SIZE) && layout.align() == PAGE_SIZE
 }
 
 /// Allocator using UEFI boot services.

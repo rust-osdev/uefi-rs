@@ -17,7 +17,7 @@ edition = "2024"
 keywords = ["uefi", "efi"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rust-osdev/uefi-rs"
-rust-version = "1.85.1"
+rust-version = "1.88"
 
 [workspace.dependencies]
 bitflags = "2.0.0"

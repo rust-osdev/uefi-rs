@@ -16,7 +16,6 @@ use crate::proto::device_path::{
 };
 use crate::{Guid, guid};
 use bitflags::bitflags;
-use core::ptr::addr_of;
 use core::{fmt, slice};
 use ptr_meta::Pointee;
 use uefi_raw::IpAddress;
@@ -274,7 +273,7 @@ pub mod hardware {
             f.debug_struct("Vendor")
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", &{
-                    let ptr = addr_of!(self.vendor_defined_data);
+                    let ptr = &raw const self.vendor_defined_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -570,7 +569,7 @@ pub mod acpi {
         /// ADR value is required.
         #[must_use]
         pub fn adr(&self) -> UnalignedSlice<'_, u32> {
-            let ptr: *const [u32] = addr_of!(self.adr);
+            let ptr: *const [u32] = &raw const self.adr;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u32>(), len) }
         }
@@ -580,7 +579,7 @@ pub mod acpi {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Adr")
                 .field("adr", &{
-                    let ptr = addr_of!(self.adr);
+                    let ptr = &raw const self.adr;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u32>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -1174,7 +1173,7 @@ pub mod messaging {
         /// Last 64 (or fewer) characters of the USB Serial number.
         #[must_use]
         pub fn serial_number(&self) -> UnalignedSlice<'_, u16> {
-            let ptr: *const [u16] = addr_of!(self.serial_number);
+            let ptr: *const [u16] = &raw const self.serial_number;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
         }
@@ -1187,7 +1186,7 @@ pub mod messaging {
                 .field("device_vendor_id", &{ self.device_vendor_id })
                 .field("device_product_id", &{ self.device_product_id })
                 .field("serial_number", &{
-                    let ptr = addr_of!(self.serial_number);
+                    let ptr = &raw const self.serial_number;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -1841,7 +1840,7 @@ pub mod messaging {
             f.debug_struct("Vendor")
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", &{
-                    let ptr = addr_of!(self.vendor_defined_data);
+                    let ptr = &raw const self.vendor_defined_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -1997,7 +1996,7 @@ pub mod messaging {
                 .field("logical_unit_number", &{ self.logical_unit_number })
                 .field("target_portal_group_tag", &{ self.target_portal_group_tag })
                 .field("iscsi_target_name", &{
-                    let ptr = addr_of!(self.iscsi_target_name);
+                    let ptr = &raw const self.iscsi_target_name;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -2104,7 +2103,7 @@ pub mod messaging {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("Uri")
                 .field("value", &{
-                    let ptr = addr_of!(self.value);
+                    let ptr = &raw const self.value;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -2424,7 +2423,7 @@ pub mod messaging {
         /// One or more instances of the DNS server address.
         #[must_use]
         pub fn addresses(&self) -> UnalignedSlice<'_, IpAddress> {
-            let ptr: *const [IpAddress] = addr_of!(self.addresses);
+            let ptr: *const [IpAddress] = &raw const self.addresses;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<IpAddress>(), len) }
         }
@@ -2435,7 +2434,7 @@ pub mod messaging {
             f.debug_struct("Dns")
                 .field("address_type", &{ self.address_type })
                 .field("addresses", &{
-                    let ptr = addr_of!(self.addresses);
+                    let ptr = &raw const self.addresses;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<IpAddress>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -2540,7 +2539,7 @@ pub mod messaging {
                 .field("service_type", &{ self.service_type })
                 .field("access_mode", &{ self.access_mode })
                 .field("vendor_guid_and_data", &{
-                    let ptr = addr_of!(self.vendor_guid_and_data);
+                    let ptr = &raw const self.vendor_guid_and_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -2611,7 +2610,7 @@ pub mod messaging {
                 .field("nidt", &{ self.nidt })
                 .field("nid", &{ self.nid })
                 .field("subsystem_nqn", &{
-                    let ptr = addr_of!(self.subsystem_nqn);
+                    let ptr = &raw const self.subsystem_nqn;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -2888,7 +2887,7 @@ pub mod media {
             f.debug_struct("Vendor")
                 .field("vendor_guid", &{ self.vendor_guid })
                 .field("vendor_defined_data", &{
-                    let ptr = addr_of!(self.vendor_defined_data);
+                    let ptr = &raw const self.vendor_defined_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -2933,7 +2932,7 @@ pub mod media {
         /// Null-terminated path.
         #[must_use]
         pub fn path_name(&self) -> UnalignedSlice<'_, u16> {
-            let ptr: *const [u16] = addr_of!(self.path_name);
+            let ptr: *const [u16] = &raw const self.path_name;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
             unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
         }
@@ -2943,7 +2942,7 @@ pub mod media {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("FilePath")
                 .field("path_name", &{
-                    let ptr = addr_of!(self.path_name);
+                    let ptr = &raw const self.path_name;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -3038,7 +3037,7 @@ pub mod media {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("PiwgFirmwareFile")
                 .field("data", &{
-                    let ptr = addr_of!(self.data);
+                    let ptr = &raw const self.data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -3092,7 +3091,7 @@ pub mod media {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.debug_struct("PiwgFirmwareVolume")
                 .field("data", &{
-                    let ptr = addr_of!(self.data);
+                    let ptr = &raw const self.data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
@@ -3332,7 +3331,7 @@ pub mod bios_boot_spec {
                 .field("device_type", &{ self.device_type })
                 .field("status_flag", &{ self.status_flag })
                 .field("description_string", &{
-                    let ptr = addr_of!(self.description_string);
+                    let ptr = &raw const self.description_string;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
                     unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }

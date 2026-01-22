@@ -100,7 +100,7 @@ impl AlignedBuffer {
     /// Check the buffer's alignment against the `required_alignment`.
     pub fn check_alignment(&self, required_alignment: usize) -> Result<(), AlignmentError> {
         //TODO: use bfr.addr() when it's available
-        if (self.ptr() as usize) % required_alignment != 0 {
+        if !(self.ptr() as usize).is_multiple_of(required_alignment) {
             return Err(AlignmentError); //TODO: use >is_aligned_to< when it's available
         }
         Ok(())

@@ -75,8 +75,8 @@ impl LoadedImage {
 
         if self.0.load_options.is_null() {
             Err(LoadOptionsError::NotSet)
-        } else if (load_options_size % size_of::<u16>() != 0)
-            || (((self.0.load_options as usize) % align_of::<u16>()) != 0)
+        } else if !load_options_size.is_multiple_of(size_of::<u16>())
+            || !(self.0.load_options as usize).is_multiple_of(align_of::<u16>())
         {
             Err(LoadOptionsError::NotAligned)
         } else {

@@ -101,13 +101,13 @@ impl CString16 {
 
     /// Returns the number of characters without the trailing null character.
     #[must_use]
-    pub fn num_chars(&self) -> usize {
+    pub const fn num_chars(&self) -> usize {
         self.0.len() - 1
     }
 
     /// Returns if the string is empty. This ignores the null character.
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.num_chars() == 0
     }
 }

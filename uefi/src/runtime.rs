@@ -291,11 +291,11 @@ impl Iterator for VariableKeys {
 
         // If the name buffer was too small, resize it to be big enough and call
         // `get_next_variable_key` again.
-        if let Err(err) = &result {
-            if let Some(required_size) = err.data() {
-                self.name.resize(*required_size, 0u16);
-                result = get_next_variable_key(&mut self.name, &mut self.vendor);
-            }
+        if let Err(err) = &result
+            && let Some(required_size) = err.data()
+        {
+            self.name.resize(*required_size, 0u16);
+            result = get_next_variable_key(&mut self.name, &mut self.vendor);
         }
 
         match result {

@@ -9,6 +9,7 @@
 - Added `HiiStringProtocol`.
 - Added `HiiPopupProtocol`.
 - Added `FormBrowser2Protocol`.
+- Added support for `revision` and `device_type_guid` to `SerialIoProtocol`
 
 ## Changed
 

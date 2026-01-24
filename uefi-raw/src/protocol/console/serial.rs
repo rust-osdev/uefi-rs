@@ -77,10 +77,22 @@ pub struct SerialIoMode {
     pub stop_bits: StopBits,
 }
 
+newtype_enum! {
+    /// Type of queues an NVMe command can be placed into
+    /// (Which queue a command should be placed into depends on the command)
+    #[derive(Default)]
+    pub enum SerialIoProtocolRevision: u32  => {
+        /// Initial version 1.0.
+        REVISION_0 = 0x00010000,
+        /// Version 1.1.
+        REVISION_1P1 = 0x00010001,
+    }
+}
+
 #[derive(Debug)]
 #[repr(C)]
 pub struct SerialIoProtocol {
-    pub revision: u32,
+    pub revision: SerialIoProtocolRevision,
     pub reset: unsafe extern "efiapi" fn(*mut Self) -> Status,
     pub set_attributes: unsafe extern "efiapi" fn(
         *mut Self,
@@ -96,6 +108,8 @@ pub struct SerialIoProtocol {
     pub write: unsafe extern "efiapi" fn(*mut Self, *mut usize, *const u8) -> Status,
     pub read: unsafe extern "efiapi" fn(*mut Self, *mut usize, *mut u8) -> Status,
     pub mode: *const SerialIoMode,
+    // Revision 1.1
+    pub device_type_guid: *const Guid,
 }
 
 impl SerialIoProtocol {

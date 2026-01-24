@@ -7,6 +7,7 @@ use crate::{Error, Result, ResultExt, Status, StatusExt};
 use core::fmt;
 use core::fmt::Write;
 use core::time::Duration;
+use log::error;
 use uefi::boot;
 use uefi_raw::protocol::console::serial::SerialIoProtocol;
 pub use uefi_raw::protocol::console::serial::{
@@ -316,6 +317,15 @@ impl Serial {
 
 impl Write for Serial {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.write(s.as_bytes()).map(|_| ()).map_err(|_| fmt::Error)
+        // We retry on Status::TIMEOUT but propagate other errors
+        self.write_exact(s.as_bytes()).map_err(|e| {
+            let msg = "failed to write to device";
+            // Simple check to prevent endless recursion if a logger
+            // implementation uses the serial protocol
+            if !s.starts_with(msg) {
+                error!("{msg}: {e}");
+            }
+            fmt::Error
+        })
     }
 }

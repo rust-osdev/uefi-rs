@@ -28,6 +28,7 @@
 - MSRV increased to 1.88.
 - `Serial::read()` and `Serial::write()` got small improvements to better
   match the spec. Read the documentation of these methods for further insights.
+- Fixed potential partial writes in `core::fmt::Write` impl of `Serial` protocol
 
 # uefi - v0.36.1 (2025-11-05)
 

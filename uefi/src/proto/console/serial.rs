@@ -2,6 +2,8 @@
 
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
+#[cfg(doc)]
+use crate::Status;
 use crate::proto::unsafe_protocol;
 use crate::{Result, StatusExt};
 use core::fmt::Write;
@@ -14,10 +16,34 @@ pub use uefi_raw::protocol::console::serial::{
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
 /// This can include standard UART devices, serial ports over a USB interface,
-/// or any other character-based communication device.
+/// or any other character-based communication device. The protocol is
+/// typically used to connect to a terminal.
 ///
-/// Since UEFI drivers are implemented through polling, if you fail to regularly
-/// check for input/output, some data might be lost.
+/// # Connection Properties and I/O Hints
+///
+/// ## General
+///
+/// Special care must be taken if a significant amount of data is going to be
+/// read from a serial device. Since UEFI drivers are polled mode drivers,
+/// characters received on a serial device might be missed. It is the
+/// responsibility of the software that uses the protocol to check for new data
+/// often enough to guarantee that no characters will be missed. The required
+/// polling frequency depends on the baud rate of the connection and the depth
+/// of the receive FIFO.
+///
+/// ## UART
+///
+/// The default attributes for all UART-style serial device interfaces are:
+/// 115,200 baud, a 1 byte receive FIFO, a 1,000,000 microsecond (1s) timeout
+/// per character, no parity, 8 data bits, and 1 stop bit.
+///
+/// Flow control is the responsibility of the software that uses the protocol.
+/// Hardware flow control can be implemented through the use of the
+/// [`Serial::get_control_bits`] and [`Serial::set_control_bits`] functions
+/// to monitor and assert the flow control signals.
+///
+/// The XON/XOFF flow control algorithm can be implemented in software by
+/// inserting XON and XOFF characters into the serial data stream as required.
 ///
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
@@ -27,6 +53,10 @@ pub struct Serial(SerialIoProtocol);
 
 impl Serial {
     /// Reset the device.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device could not be reset.
     pub fn reset(&mut self) -> Result {
         unsafe { (self.0.reset)(&mut self.0) }.to_result()
     }
@@ -39,7 +69,7 @@ impl Serial {
 
     /// Sets the device's new attributes.
     ///
-    /// The given `IoMode` will become the device's new `IoMode`,
+    /// The given [`IoMode`] will become the device's new [`IoMode`],
     /// with some exceptions:
     ///
     /// - `control_mask` is ignored, since it's a read-only field;
@@ -49,7 +79,13 @@ impl Serial {
     ///
     /// - if either `baud_rate` or `receive_fifo_depth` is less than
     ///   the device's minimum, an error will be returned;
-    ///   this value will be rounded down to the nearest value supported by the device;
+    ///   this value will be rounded down to the nearest value supported by the device
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::INVALID_PARAMETER`]: one or more of the attributes has an
+    ///   unsupported value
+    /// - [`Status::DEVICE_ERROR`]: serial device is not functioning correctly
     pub fn set_attributes(&mut self, mode: &IoMode) -> Result {
         unsafe {
             (self.0.set_attributes)(
@@ -66,6 +102,10 @@ impl Serial {
     }
 
     /// Retrieve the device's current control bits.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device is not functioning correctly
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
         unsafe { (self.0.get_control_bits)(&self.0, &mut bits) }.to_result_with_val(|| bits)
@@ -75,6 +115,11 @@ impl Serial {
     ///
     /// Not all bits can be modified with this function. A mask of the allowed
     /// bits is stored in the [`ControlBits::SETTABLE`] constant.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::UNSUPPORTED`]: serial device does not support this operation
+    /// - [`Status::DEVICE_ERROR`]: serial device is not functioning correctly
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
         unsafe { (self.0.set_control_bits)(&mut self.0, bits) }.to_result()
     }

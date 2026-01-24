@@ -3,9 +3,11 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use crate::proto::unsafe_protocol;
-use crate::{Result, StatusExt};
+use crate::{Error, Result, StatusExt};
 use core::fmt::Write;
-use uefi_raw::protocol::console::serial::SerialIoProtocol;
+use uefi_raw::Status;
+use uefi_raw::protocol::console::serial::{SerialIoProtocol, SerialIoProtocolRevision};
+use uguid::Guid;
 
 pub use uefi_raw::protocol::console::serial::{
     ControlBits, Parity, SerialIoMode as IoMode, StopBits,
@@ -29,6 +31,12 @@ pub use uefi_raw::protocol::console::serial::{
 pub struct Serial(SerialIoProtocol);
 
 impl Serial {
+    /// Returns the revision of the protocol.
+    #[must_use]
+    pub const fn revision(&self) -> SerialIoProtocolRevision {
+        self.0.revision
+    }
+
     /// Reset the device.
     pub fn reset(&mut self) -> Result {
         unsafe { (self.0.reset)(&mut self.0) }.to_result()
@@ -112,6 +120,31 @@ impl Serial {
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
+    }
+
+    /// Pointer to a GUID identifying the device connected to the serial port.
+    ///
+    /// This is either `Ok` if [`Self::revision`] is at least
+    /// [`SerialIoProtocolRevision::REVISION_1P1`] or `Err` with
+    /// [`Status::UNSUPPORTED`].
+    ///
+    /// This field is `None` when the protocol is installed by the serial port
+    /// driver and may be populated by a platform driver for a serial port with
+    /// a known device attached. The field will remain `None` if there is no
+    /// platform serial device identification information available.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::UNSUPPORTED`]: If the revision is older than
+    ///   [`SerialIoProtocolRevision::REVISION_1P1`].
+    pub fn device_type_guid(&self) -> Result<Option<&'_ Guid>> {
+        if self.revision() < SerialIoProtocolRevision::REVISION_1P1 {
+            return Err(Error::from(Status::UNSUPPORTED));
+        }
+        // SAFETY: We trust the pointer is either null or points to a valid
+        // object.
+        let maybe_guid = unsafe { self.0.device_type_guid.as_ref() };
+        Ok(maybe_guid)
     }
 }
 

@@ -10,6 +10,7 @@ use crate::proto::unsafe_protocol;
 use crate::{Error, Result, ResultExt, Status, StatusExt, boot};
 use core::time::Duration;
 use core::{cmp, fmt};
+use log::error;
 use uefi_raw::protocol::console::serial::{
     SerialIoProtocol, SerialIoProtocol_1_1, SerialIoProtocolRevision,
 };
@@ -420,7 +421,16 @@ impl Serial {
 
 impl fmt::Write for Serial {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.write(s.as_bytes()).map(|_| ()).map_err(|_| fmt::Error)
+        // We retry on Status::TIMEOUT but propagate other errors
+        self.write_exact(s.as_bytes()).map_err(|e| {
+            let msg = "failed to write to serial device";
+            // Simple check to prevent endless recursion if a logger
+            // implementation uses the serial protocol
+            if !s.contains(msg) {
+                error!("{msg}: {e}");
+            }
+            fmt::Error
+        })
     }
 }
 

@@ -43,6 +43,7 @@
 - **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
   to better differentiate with the new `to_string()` coming from the new
   `Display`.
+- Fixed potential partial writes in `fmt::Write` impl for `Serial` protocol
 
 # uefi - v0.36.1 (2025-11-05)
 

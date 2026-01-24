@@ -47,6 +47,7 @@
   return `n` in any case. In the happy path, this always corresponds to the
   length if the provided data/buffer, but helps to cope with non-spec-compliant
   implementations.
+- Fixed potential partial writes in `core::fmt::Write` impl of `Serial` protocol
 
 # uefi - v0.36.1 (2025-11-05)
 

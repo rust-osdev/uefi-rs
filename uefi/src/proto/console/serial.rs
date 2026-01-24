@@ -362,6 +362,6 @@ impl Serial {
 
 impl Write for Serial {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.write(s.as_bytes()).map(|_| ()).map_err(|_| fmt::Error)
+        self.write_exact(s.as_bytes()).map_err(|_| fmt::Error)
     }
 }

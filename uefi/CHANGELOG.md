@@ -24,6 +24,8 @@
 - **Breaking:** `boot::check_event` now consumes `&Event` rather than `Event`, removing the
   need for unnecessary `Event::unsafe_clone()`s.
 - MSRV increased to 1.88.
+- `Serial::read()` and `Serial::write()` got small improvements to better
+  match the spec. Read the documentation of these methods for further insights.
 
 # uefi - v0.36.1 (2025-11-05)
 

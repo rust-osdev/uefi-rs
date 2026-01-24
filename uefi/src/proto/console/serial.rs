@@ -3,7 +3,7 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use crate::proto::unsafe_protocol;
-use crate::{Error, Result, Status, StatusExt};
+use crate::{Error, Result, ResultExt, Status, StatusExt};
 use core::fmt;
 use core::fmt::Write;
 use uefi_raw::protocol::console::serial::{
@@ -11,9 +11,13 @@ use uefi_raw::protocol::console::serial::{
 };
 use uguid::Guid;
 
+use core::time::Duration;
+use uefi::boot;
 pub use uefi_raw::protocol::console::serial::{
     ControlBits, Parity, SerialIoMode as IoMode, StopBits,
 };
+#[cfg(feature = "alloc")]
+use {alloc::vec::Vec, core::slice};
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
@@ -164,6 +168,86 @@ impl Serial {
         )
     }
 
+    /// Variant of [`Self::read`] that blocks until the exact amount of
+    /// requested bytes were read.
+    ///
+    /// This loops over potential timeouts and just tries again.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: buffer to fill
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    pub fn read_exact(&mut self, buffer: &mut [u8]) -> Result<()> {
+        let mut remaining_buffer = buffer;
+        // We retry on timeout and only return other errors
+        while !remaining_buffer.is_empty() {
+            match self.read(remaining_buffer) {
+                Ok(_) => {
+                    break;
+                }
+                Err(err) if err.status() == Status::TIMEOUT => {
+                    let n = *err.data();
+                    remaining_buffer = &mut remaining_buffer[n..];
+                    boot::stall(Duration::from_millis(1));
+                }
+                err => {
+                    return Err(Error::from(err.status()));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Reads all data from the device until the first timeout occurs.
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    #[cfg(feature = "alloc")]
+    pub fn read_to_vec(&mut self) -> Result<Vec<u8>> {
+        let mut vec = Vec::new();
+        loop {
+            vec.reserve(256);
+
+            let spare = vec.spare_capacity_mut();
+
+            // SAFETY: `read` promises to write `n` bytes starting at
+            // `spare.as_mut_ptr()` and `n <= buf.len()`.
+            let spare_slice =
+                unsafe { slice::from_raw_parts_mut(spare.as_mut_ptr().cast::<u8>(), spare.len()) };
+
+            let n = match self.read(spare_slice) {
+                Ok(_) => spare_slice.len(),
+                Err(e) if e.status() == Status::TIMEOUT => *e.data(),
+                Err(e) => return Err(Error::from(e.status())),
+            };
+
+            // SAFETY: We know how many bytes have just been written.
+            unsafe {
+                vec.set_len(vec.len() + n);
+            }
+            if n == 0 {
+                break;
+            }
+        }
+        Ok(vec)
+    }
+
     /// Writes data to this device. This function has the raw semantics of the
     /// underlying UEFI protocol.
     ///
@@ -234,6 +318,45 @@ impl Serial {
                 .unwrap_unchecked()
         };
         Ok(protocol)
+    }
+
+    /// Variant of [`Self::write`] that blocks until the exact number of
+    /// provided bytes were written.
+    ///
+    /// This loops over potential timeouts and just tries again.
+    ///
+    /// # Arguments
+    ///
+    /// - `data`: bytes to write
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    pub fn write_exact(&mut self, data: &[u8]) -> Result<()> {
+        let mut remaining_bytes = data;
+        // We retry on timeout and only return other errors
+        while !remaining_bytes.is_empty() {
+            match self.write(remaining_bytes) {
+                Ok(_) => {
+                    break;
+                }
+                Err(err) if err.status() == Status::TIMEOUT => {
+                    let n = *err.data();
+                    remaining_bytes = &remaining_bytes[n..];
+                    boot::stall(Duration::from_millis(1));
+                }
+                err => {
+                    return Err(Error::from(err.status()));
+                }
+            }
+        }
+        Ok(())
     }
 }
 

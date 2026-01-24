@@ -19,6 +19,9 @@ pub use uefi_raw::protocol::console::serial::{
 /// Since UEFI drivers are implemented through polling, if you fail to regularly
 /// check for input/output, some data might be lost.
 ///
+/// Depending on the use-case, please consider setting a low timeout to prevent
+/// long blocking times. More information in [`Serial::read_to_end`].
+///
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
@@ -83,7 +86,13 @@ impl Serial {
     ///
     /// This operation will block until the buffer has been filled with data or
     /// an error occurs. In the latter case, the error will indicate how many
-    /// bytes were actually read from the device.
+    /// bytes were actually read from the device. To prevent long blocking times, i.e., to only
+    /// read what is available as of calling this function, it is recommended to
+    /// set the timeout in [`IoMode`] to 1 µs.
+    ///
+    /// # Errors
+    ///  - `Status::TIMEOUT` if the provided buffer could not be filled within
+    ///    the configured timeout (see [`IoMode`]).
     pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
         unsafe { (self.0.read)(&mut self.0, &mut buffer_size, data.as_mut_ptr()) }.to_result_with(

@@ -14,6 +14,8 @@ pub use uefi_raw::protocol::console::serial::{
 };
 use uefi_raw::protocol::console::serial::{SerialIoProtocol, SerialIoProtocolRevision};
 use uguid::Guid;
+#[cfg(feature = "alloc")]
+use {alloc::vec::Vec, core::slice};
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
@@ -201,6 +203,47 @@ impl Serial {
             }
         }
         Ok(())
+    }
+
+    /// Reads all data from the device until the first timeout occurs.
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    #[cfg(feature = "alloc")]
+    pub fn read_to_vec(&mut self) -> Result<Vec<u8>> {
+        let mut vec = Vec::new();
+        loop {
+            vec.reserve(256);
+
+            let spare = vec.spare_capacity_mut();
+
+            // SAFETY: `read` promises to write `n` bytes starting at
+            // `spare.as_mut_ptr()` and `n <= buf.len()`.
+            let spare_slice =
+                unsafe { slice::from_raw_parts_mut(spare.as_mut_ptr().cast::<u8>(), spare.len()) };
+
+            let n = match self.read(spare_slice) {
+                Ok(_) => spare_slice.len(),
+                Err(e) if e.status() == Status::TIMEOUT => *e.data(),
+                Err(e) => return Err(Error::from(e.status())),
+            };
+
+            // SAFETY: We know how many bytes have just been written.
+            unsafe {
+                vec.set_len(vec.len() + n);
+            }
+            if n == 0 {
+                break;
+            }
+        }
+        Ok(vec)
     }
 
     /// Writes data to this device. This function has the raw semantics of the

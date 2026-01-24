@@ -3,16 +3,17 @@
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
 use crate::proto::unsafe_protocol;
-use crate::{Error, Result, StatusExt};
+use crate::{Error, Result, ResultExt, StatusExt};
 use core::fmt;
 use core::fmt::Write;
+use core::time::Duration;
+use uefi::boot;
 use uefi_raw::Status;
-use uefi_raw::protocol::console::serial::{SerialIoProtocol, SerialIoProtocolRevision};
-use uguid::Guid;
-
 pub use uefi_raw::protocol::console::serial::{
     ControlBits, Parity, SerialIoMode as IoMode, StopBits,
 };
+use uefi_raw::protocol::console::serial::{SerialIoProtocol, SerialIoProtocolRevision};
+use uguid::Guid;
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
@@ -163,6 +164,45 @@ impl Serial {
         )
     }
 
+    /// Variant of [`Self::read`] that blocks until the exact amount of
+    /// requested bytes were read.
+    ///
+    /// This loops over potential timeouts and just tries again.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: buffer to fill
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    pub fn read_exact(&mut self, buffer: &mut [u8]) -> Result<()> {
+        let mut remaining_buffer = buffer;
+        // We retry on timeout and only return other errors
+        while !remaining_buffer.is_empty() {
+            match self.read(remaining_buffer) {
+                Ok(_) => {
+                    break;
+                }
+                Err(err) if err.status() == Status::TIMEOUT => {
+                    let n = *err.data();
+                    remaining_buffer = &mut remaining_buffer[n..];
+                    boot::stall(Duration::from_millis(1));
+                }
+                err => {
+                    return Err(Error::from(err.status()));
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Writes data to this device. This function has the raw semantics of the
     /// underlying UEFI protocol.
     ///
@@ -193,6 +233,45 @@ impl Serial {
             },
             |_| buffer_size,
         )
+    }
+
+    /// Variant of [`Self::write`] that blocks until the exact number of
+    /// provided bytes were written.
+    ///
+    /// This loops over potential timeouts and just tries again.
+    ///
+    /// # Arguments
+    ///
+    /// - `data`: bytes to write
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    pub fn write_exact(&mut self, data: &[u8]) -> Result<()> {
+        let mut remaining_bytes = data;
+        // We retry on timeout and only return other errors
+        while !remaining_bytes.is_empty() {
+            match self.write(remaining_bytes) {
+                Ok(_) => {
+                    break;
+                }
+                Err(err) if err.status() == Status::TIMEOUT => {
+                    let n = *err.data();
+                    remaining_bytes = &remaining_bytes[n..];
+                    boot::stall(Duration::from_millis(1));
+                }
+                err => {
+                    return Err(Error::from(err.status()));
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Pointer to a GUID identifying the device connected to the serial port.

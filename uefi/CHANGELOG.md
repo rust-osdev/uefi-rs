@@ -8,6 +8,7 @@
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
 - Added support for `revision()` and `device_type_guid()` to `Serial` protocol
+- Added `Serial::read_exact()` and `Serial::write_exact()`
 
 ## Changed
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).

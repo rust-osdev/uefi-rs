@@ -24,6 +24,10 @@
 - **Breaking:** `boot::check_event` now consumes `&Event` rather than `Event`, removing the
   need for unnecessary `Event::unsafe_clone()`s.
 - MSRV increased to 1.88.
+- **Breaking**: Changed return type of `Serial::read()` and `Serial::write()` to
+  return `n` in any case. In the happy path, this always corresponds to the
+  length if the provided data/buffer, but helps to cope with non-spec-compliant
+  implementations.
 
 # uefi - v0.36.1 (2025-11-05)
 

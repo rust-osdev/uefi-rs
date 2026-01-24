@@ -7,6 +7,8 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Added `Serial::read_exact()` and `Serial::write_exact()`
+- Added `Serial::read_to_vec()`
 
 ## Changed
 - export all `text::{input, output}::*` types

@@ -41,6 +41,10 @@
 - **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
   to better differentiate with the new `to_string()` coming from the new
   `Display`.
+- **Breaking**: Changed return type of `Serial::read()` and `Serial::write()` to
+  return `n` in any case. In the happy path, this always corresponds to the
+  length if the provided data/buffer, but helps to cope with non-spec-compliant
+  implementations.
 
 # uefi - v0.36.1 (2025-11-05)
 

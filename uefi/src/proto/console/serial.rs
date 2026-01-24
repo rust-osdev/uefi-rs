@@ -4,6 +4,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Error, Result, Status, StatusExt};
+use core::fmt;
 use core::fmt::Write;
 use uefi_raw::protocol::console::serial::{
     SerialIoProtocol, SerialIoProtocol_1_1, SerialIoProtocolRevision,
@@ -131,28 +132,66 @@ impl Serial {
         unsafe { (self.0.set_control_bits)(&mut self.0, bits) }.to_result()
     }
 
-    /// Reads data from this device.
+    /// Reads data from the device. This function has the raw semantics of the
+    /// underlying UEFI protocol.
     ///
-    /// This operation will block until the buffer has been filled with data or
-    /// an error occurs. In the latter case, the error will indicate how many
-    /// bytes were actually read from the device.
-    pub fn read(&mut self, data: &mut [u8]) -> Result<(), usize> {
-        let mut buffer_size = data.len();
-        unsafe { (self.0.read)(&mut self.0, &mut buffer_size, data.as_mut_ptr()) }.to_result_with(
-            || debug_assert_eq!(buffer_size, data.len()),
+    /// The function will read bytes until either the buffer is full or a
+    /// timeout or overrun error occurs.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: buffer to fill
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    /// - [`Status::TIMEOUT`]: operation was stopped due to a timeout or overrun
+    pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), usize /* read bytes on timeout*/> {
+        let mut buffer_size = buffer.len();
+        unsafe { (self.0.read)(&mut self.0, &mut buffer_size, buffer.as_mut_ptr()) }.to_result_with(
+            || {
+                // By spec: Either reads all requested bytes (and blocks) or
+                // returns early with an error.
+                assert_eq!(buffer_size, buffer.len())
+            },
             |_| buffer_size,
         )
     }
 
-    /// Writes data to this device.
+    /// Writes data to this device. This function has the raw semantics of the
+    /// underlying UEFI protocol.
     ///
-    /// This operation will block until the data has been fully written or an
-    /// error occurs. In the latter case, the error will indicate how many bytes
-    /// were actually written to the device.
-    pub fn write(&mut self, data: &[u8]) -> Result<(), usize> {
+    /// The function will try to write all provided bytes in the configured
+    /// timeout.
+    ///
+    /// # Arguments
+    ///
+    /// - `data`: bytes to write
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    /// - [`Status::TIMEOUT`]: data write was stopped due to a timeout
+    pub fn write(&mut self, data: &[u8]) -> Result<(), usize /* bytes written on timeout */> {
         let mut buffer_size = data.len();
         unsafe { (self.0.write)(&mut self.0, &mut buffer_size, data.as_ptr()) }.to_result_with(
-            || debug_assert_eq!(buffer_size, data.len()),
+            || {
+                // By spec: Either reads all requested bytes (and blocks) or
+                // returns early with an error.
+                assert_eq!(buffer_size, data.len())
+            },
             |_| buffer_size,
         )
     }
@@ -199,7 +238,7 @@ impl Serial {
 }
 
 impl Write for Serial {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.write(s.as_bytes()).map_err(|_| core::fmt::Error)
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write(s.as_bytes()).map(|_| ()).map_err(|_| fmt::Error)
     }
 }

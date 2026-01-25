@@ -11,6 +11,7 @@
 - Added `FormBrowser2Protocol`.
 
 ## Changed
+- Switched `*const Self` to `*mut Self` in `SerialIoProtocol::set_attributes()`
 
 
 # uefi-raw - v0.13.0 (2025-11-05)

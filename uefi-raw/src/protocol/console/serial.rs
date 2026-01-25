@@ -83,7 +83,7 @@ pub struct SerialIoProtocol {
     pub revision: u32,
     pub reset: unsafe extern "efiapi" fn(*mut Self) -> Status,
     pub set_attributes: unsafe extern "efiapi" fn(
-        *const Self,
+        *mut Self,
         baud_rate: u64,
         receive_fifo_depth: u32,
         timeout: u32,

@@ -9,7 +9,7 @@
 - Added `proto::media::block::BlockIO2`.
 
 ## Changed
-- export all `text::{input, output} types`
+- export all `text::{input, output}::*` types
 - Changed ordering of `proto::pci::PciIoAddress` to (bus -> dev -> fun -> reg -> ext_reg).
 - Return request with status as error data object for `proto::ata::pass_thru::AtaDevice`.
 - **Breaking:** `SimpleNetwork::wait_for_packet`

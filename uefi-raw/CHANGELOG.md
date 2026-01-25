@@ -9,9 +9,12 @@
 - Added `HiiStringProtocol`.
 - Added `HiiPopupProtocol`.
 - Added `FormBrowser2Protocol`.
+- Added new type `SerialIoProtocolRevision`
 
 ## Changed
 - Switched `*const Self` to `*mut Self` in `SerialIoProtocol::set_attributes()`
+- Switched field `revision` in `SerialIoProtocol` from `u32` to new type
+  `SerialIoProtocolRevision`
 
 
 # uefi-raw - v0.13.0 (2025-11-05)

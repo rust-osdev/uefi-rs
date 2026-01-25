@@ -65,7 +65,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Install QEMU
-        run: choco install qemu --version 2023.4.24
+        run: choco install qemu --version 2025.12.24
       - name: Checkout sources
         uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2

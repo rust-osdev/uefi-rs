@@ -312,19 +312,37 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         UefiArch::AArch64 => "qemu-system-aarch64",
         UefiArch::IA32 | UefiArch::X86_64 => "qemu-system-x86_64",
     };
-    let mut cmd = Command::new(qemu_exe);
 
-    if platform::is_windows() {
-        // The QEMU installer for Windows does not automatically add the
-        // directory containing the QEMU executables to the PATH. Add
-        // the default directory to the PATH to make it more likely that
-        // QEMU will be found on Windows. (The directory is appended, so
-        // if a different directory on the PATH already has the QEMU
-        // binary this change won't affect anything.)
+    // The QEMU installer for Windows does not automatically add the
+    // directory containing the QEMU executables to the PATH. Add
+    // the default directory to the PATH to make it more likely that
+    // QEMU will be found on Windows. (The directory is appended, so
+    // if a different directory on the PATH already has the QEMU
+    // binary this change won't affect anything.)
+    let fn_append_win_path = |cmd: &mut Command| {
         let mut path = env::var_os("PATH").unwrap_or_default();
         path.push(r";C:\Program Files\qemu");
         cmd.env("PATH", path);
+    };
+
+    // Print the QEMU version
+    {
+        let mut cmd = Command::new(qemu_exe);
+        if platform::is_windows() {
+            fn_append_win_path(&mut cmd)
+        };
+        cmd.arg("--version");
+        let output = cmd.output()?;
+        eprintln!("QEMU:");
+        eprintln!("  binary : {qemu_exe}");
+        eprintln!("  version: {}", String::from_utf8(output.stdout)?);
     }
+
+    // Construct the actual QEMU argument
+    let mut cmd = Command::new(qemu_exe);
+    if platform::is_windows() {
+        fn_append_win_path(&mut cmd)
+    };
 
     // Disable default devices.
     // QEMU by defaults enables a ton of devices which slow down boot.

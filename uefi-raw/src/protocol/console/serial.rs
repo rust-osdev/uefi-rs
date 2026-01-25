@@ -114,6 +114,19 @@ impl SerialIoProtocol {
     pub const GUID: Guid = guid!("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd");
 }
 
+/// Serial I/O protocol (revision 1.1).
+#[derive(Debug)]
+#[repr(C)]
+#[allow(non_camel_case_types)]
+pub struct SerialIoProtocol_1_1 {
+    pub base_protocol: SerialIoProtocol,
+    pub device_type_guid: *const Guid,
+}
+
+impl SerialIoProtocol_1_1 {
+    pub const GUID: Guid = SerialIoProtocol::GUID;
+}
+
 newtype_enum! {
     /// The parity of the device.
     pub enum Parity: u32 => {

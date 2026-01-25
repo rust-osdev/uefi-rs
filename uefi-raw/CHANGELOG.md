@@ -10,6 +10,8 @@
 - Added `HiiPopupProtocol`.
 - Added `FormBrowser2Protocol`.
 - Added new type `SerialIoProtocolRevision`
+- Added new type `SerialIoProtocol_1_1` as companion for `SerialIoProtocol`
+  that includes the  `device_type_guid` parameter
 
 ## Changed
 - Switched `*const Self` to `*mut Self` in `SerialIoProtocol::set_attributes()`

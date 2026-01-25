@@ -43,6 +43,7 @@ impl From<&Item> for ItemKind {
 #[derive(Debug, Eq, PartialEq)]
 enum ErrorKind {
     ForbiddenAbi,
+    ForbiddenAllow,
     ForbiddenAttr,
     ForbiddenItemKind(ItemKind),
     ForbiddenRepr(Vec<Repr>),
@@ -60,6 +61,7 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::ForbiddenAbi => write!(f, "forbidden ABI"),
+            Self::ForbiddenAllow => write!(f, "forbidden allow"),
             Self::ForbiddenAttr => write!(f, "forbidden attribute"),
             Self::ForbiddenItemKind(ItemKind::Enum) => write!(
                 f,
@@ -140,6 +142,12 @@ fn is_pub(vis: &Visibility) -> bool {
     matches!(vis, Visibility::Public(_))
 }
 
+/// Allowed `#[allow]` attributes.
+#[derive(Debug, Clone, Copy)]
+enum Allow {
+    NonCamelCaseTypes,
+}
+
 /// Type repr. A type may have more than one of these (e.g. both `C` and `packed`).
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 enum Repr {
@@ -154,6 +162,7 @@ enum Repr {
 /// expected in `uefi-raw`.
 #[derive(Debug, Clone, Copy)]
 enum ParsedAttr {
+    Allow(Allow),
     Derive,
     Doc,
     Repr(Repr),
@@ -194,6 +203,20 @@ fn parse_attrs(attrs: &[Attribute], src: &Path) -> Result<Vec<ParsedAttr>, Error
             .map_err(|_| Error::new(ErrorKind::MalformedAttrs, src, attr))?;
             if unknown_repr_found {
                 return Err(Error::new(ErrorKind::UnknownRepr, src, attr));
+            }
+        } else if path.is_ident("allow") {
+            let mut unknown_allow_found = false;
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("non_camel_case_types") {
+                    va.push(ParsedAttr::Allow(Allow::NonCamelCaseTypes));
+                } else {
+                    unknown_allow_found = true;
+                }
+                Ok(())
+            })
+            .map_err(|_| Error::new(ErrorKind::MalformedAttrs, src, attr))?;
+            if unknown_allow_found {
+                return Err(Error::new(ErrorKind::ForbiddenAllow, src, attr));
             }
         } else {
             return Err(Error::new(ErrorKind::ForbiddenAttr, src, attr));

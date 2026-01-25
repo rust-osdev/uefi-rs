@@ -16,6 +16,8 @@
   this may print `PciRoot(0x0)/Pci(0x6,0x0)/MAC(525400000001,0x1)`.
   `ScopedProtocol` only implements `Display` if the underlying protocol also
   implements `Display`.
+- Added `Handle::component_name()` and `Handle::device_path()` to simplify the
+  common use-case of querying more information about a handle.
 
 ## Changed
 - export all `text::{input, output}::*` types

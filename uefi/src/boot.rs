@@ -45,6 +45,7 @@ use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt, table};
 use core::ffi::c_void;
+use core::fmt::{Display, Formatter};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
@@ -1616,6 +1617,20 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
     #[must_use]
     pub const fn open_params(&self) -> OpenProtocolParams {
         self.open_params
+    }
+}
+
+// Forward Display impl to inner protocol:
+impl<P: Protocol + ?Sized + Display> Display for ScopedProtocol<P> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self.get() {
+            Some(proto) => {
+                write!(f, "{proto}")
+            }
+            None => {
+                write!(f, "<none>")
+            }
+        }
     }
 }
 

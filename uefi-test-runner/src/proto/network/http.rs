@@ -2,23 +2,11 @@
 
 use alloc::vec::Vec;
 
-use uefi::proto::device_path::DevicePath;
-use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::network::http::{HttpBinding, HttpHelper};
 use uefi::proto::network::ip4config2::Ip4Config2;
 use uefi::{Handle, boot};
 
 use uefi_raw::protocol::network::http::HttpStatusCode;
-
-pub fn print_handle_devpath(prefix: &str, handle: &Handle) {
-    let Ok(dp) = boot::open_protocol_exclusive::<DevicePath>(*handle) else {
-        info!("{prefix}no device path for handle");
-        return;
-    };
-    if let Ok(string) = dp.to_string(DisplayOnly(true), AllowShortcuts(true)) {
-        info!("{prefix}{string}");
-    }
-}
 
 fn fetch_http(handle: Handle, url: &str) -> Option<Vec<u8>> {
     info!("http: fetching {url} ...");
@@ -91,7 +79,7 @@ pub fn test() {
         .expect("get nic handles");
 
     for h in handles.as_ref() {
-        print_handle_devpath("nic: ", h);
+        info!("nic: {}", h.device_path().expect("should have device path"));
 
         info!("Bring up interface (ip4 config2 protocol)");
         let mut ip4 = Ip4Config2::new(*h).expect("open ip4 config2 protocol");

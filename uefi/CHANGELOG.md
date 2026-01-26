@@ -7,6 +7,7 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Added `revision()` and `device_type_guid()` to `Serial` protocol
 
 ## Changed
 - export all `text::{input, output}::*` types

@@ -36,7 +36,7 @@ pub use wrappers::{AccessPoint, ConfigData, ConfigOptions};
 /// use core::net::Ipv4Addr;
 /// use uefi::{
 ///     boot, print, println,
-///     proto::network::tcpv4::{AccessPoint, ConfigData, Tcp4,
+///     proto::network::tcp4::{AccessPoint, ConfigData, Tcp4,
 ///     Tcp4ServiceBinding,
 /// },
 /// };

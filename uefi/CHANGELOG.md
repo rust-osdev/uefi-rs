@@ -7,6 +7,8 @@
 - Added `proto::pci::root_bridge::PciRootBridgeIo::enumerate()`.
 - Added `proto::nvme::pass_thru::NvmePassThru::broadcast()`.
 - Added `proto::media::block::BlockIO2`.
+- Added `Serial::read_exact()` and `Serial::write_exact()`
+- Added `Serial::read_to_vec()`
 
 ## Changed
 - export all `text::{input, output}::*` types
@@ -24,6 +26,9 @@
 - **Breaking:** `boot::check_event` now consumes `&Event` rather than `Event`, removing the
   need for unnecessary `Event::unsafe_clone()`s.
 - MSRV increased to 1.88.
+- `Serial::read()` and `Serial::write()` got small improvements to better
+  match the spec. Read the documentation of these methods for further insights.
+- Fixed potential partial writes in `core::fmt::Write` impl of `Serial` protocol
 
 # uefi - v0.36.1 (2025-11-05)
 

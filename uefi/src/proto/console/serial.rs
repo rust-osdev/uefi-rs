@@ -2,12 +2,13 @@
 
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
-#[cfg(doc)]
-use crate::Status;
 use crate::proto::unsafe_protocol;
-use crate::{Result, StatusExt};
+use crate::{Error, Result, Status, StatusExt};
 use core::fmt::Write;
-use uefi_raw::protocol::console::serial::SerialIoProtocol;
+use uefi_raw::protocol::console::serial::{
+    SerialIoProtocol, SerialIoProtocol_1_1, SerialIoProtocolRevision,
+};
+use uguid::Guid;
 
 pub use uefi_raw::protocol::console::serial::{
     ControlBits, Parity, SerialIoMode as IoMode, StopBits,
@@ -52,6 +53,12 @@ pub use uefi_raw::protocol::console::serial::{
 pub struct Serial(SerialIoProtocol);
 
 impl Serial {
+    /// Returns the revision of the protocol.
+    #[must_use]
+    pub const fn revision(&self) -> SerialIoProtocolRevision {
+        self.0.revision
+    }
+
     /// Reset the device.
     ///
     /// # Errors
@@ -148,6 +155,46 @@ impl Serial {
             || debug_assert_eq!(buffer_size, data.len()),
             |_| buffer_size,
         )
+    }
+
+    /// Pointer to a GUID identifying the device connected to the serial port.
+    ///
+    /// This is either `Ok` if [`Self::revision`] is at least
+    /// [`SerialIoProtocolRevision::REVISION_1_1`] or `Err` with
+    /// [`Status::UNSUPPORTED`].
+    ///
+    /// This GUID is `None` when the protocol is installed by the serial port
+    /// driver and may be populated by a platform driver for a serial port with
+    /// a known device attached. The GUID will remain `None` if there is no
+    /// platform serial device identification information available.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::UNSUPPORTED`]: If the revision is older than
+    ///   [`SerialIoProtocolRevision::REVISION_1_1`].
+    pub fn device_type_guid(&self) -> Result<Option<&'_ Guid>> {
+        let proto = self.as_revision_1_1()?;
+        // SAFETY: spec guarantees the layout of the underlying type
+        let device_type_guid = unsafe { proto.device_type_guid.as_ref() };
+        Ok(device_type_guid)
+    }
+
+    /// Casts the underlying [`SerialIoProtocol`] to an
+    /// [`SerialIoProtocol_1_1`].
+    fn as_revision_1_1(&self) -> Result<&'_ SerialIoProtocol_1_1> {
+        if self.revision() < SerialIoProtocolRevision::REVISION_1_1 {
+            return Err(Error::from(Status::UNSUPPORTED));
+        }
+
+        let ptr = &raw const self.0;
+        // SAFETY: ptr is guaranteed to be not null and by checking the revision
+        // we know the underlying allocation has the correct size.
+        let protocol = unsafe {
+            ptr.cast::<SerialIoProtocol_1_1>()
+                .as_ref()
+                .unwrap_unchecked()
+        };
+        Ok(protocol)
     }
 }
 

@@ -52,8 +52,16 @@ pub unsafe fn test() {
     info!("Running serial protocol test");
     let handle = boot::get_handle_for_protocol::<Serial>().expect("missing Serial protocol");
 
+    // Note: After this line, until we reconnected the console driver with the
+    // serial device, we won't get logging output on the serial device.
+    // Log messages are still printed to the debugcon device.
     let mut serial =
         boot::open_protocol_exclusive::<Serial>(handle).expect("failed to open serial protocol");
+    debug!("Serial protocol revision: {:?}", serial.revision());
+    debug!(
+        "Serial protocol device_type_guid: {:?}",
+        serial.device_type_guid()
+    );
 
     // Send the request, but don't check the result yet so that first
     // we can reconnect the console output for the logger.

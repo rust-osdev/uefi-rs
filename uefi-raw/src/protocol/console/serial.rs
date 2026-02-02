@@ -77,10 +77,22 @@ pub struct SerialIoMode {
     pub stop_bits: StopBits,
 }
 
+newtype_enum! {
+    /// The revision of the [`SerialIoProtocol`].
+    #[derive(Default)]
+    pub enum SerialIoProtocolRevision: u32  => {
+        /// Initial version 1.0.
+        REVISION_1_0 = 0x00010000,
+        /// Version 1.1.
+        REVISION_1_1 = 0x00010001,
+    }
+}
+
+/// Serial I/O protocol (revision 1.0).
 #[derive(Debug)]
 #[repr(C)]
 pub struct SerialIoProtocol {
-    pub revision: u32,
+    pub revision: SerialIoProtocolRevision,
     pub reset: unsafe extern "efiapi" fn(*mut Self) -> Status,
     pub set_attributes: unsafe extern "efiapi" fn(
         *mut Self,
@@ -100,8 +112,19 @@ pub struct SerialIoProtocol {
 
 impl SerialIoProtocol {
     pub const GUID: Guid = guid!("bb25cf6f-f1d4-11d2-9a0c-0090273fc1fd");
-    pub const REVISION: u32 = 0x00010000;
-    pub const REVISION1P1: u32 = 0x00010001;
+}
+
+/// Serial I/O protocol (revision 1.1).
+#[derive(Debug)]
+#[repr(C)]
+#[allow(non_camel_case_types)]
+pub struct SerialIoProtocol_1_1 {
+    pub base_protocol: SerialIoProtocol,
+    pub device_type_guid: *const Guid,
+}
+
+impl SerialIoProtocol_1_1 {
+    pub const GUID: Guid = SerialIoProtocol::GUID;
 }
 
 newtype_enum! {

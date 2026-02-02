@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use uefi::boot::{self, OpenProtocolParams};
+use uefi::proto::device_path::DevicePath;
+use uefi::proto::driver::ComponentName2;
 use uefi::proto::loaded_image::LoadedImage;
 use uefi::{Identify, proto};
 
@@ -44,6 +46,9 @@ pub fn test() {
     shim::test();
     shell::test();
     tcg::test();
+
+    // now test some convenience that combines several things
+    test_handle_convenience();
 }
 
 fn find_protocol() {
@@ -72,6 +77,32 @@ fn test_test_protocol() {
         })
         .unwrap()
     );
+}
+
+fn test_handle_convenience() {
+    // Handles that implement the following protocols:
+    // - component name 2
+    // - device path
+    let handles = {
+        let mut cn2_handles = boot::find_handles::<ComponentName2>().unwrap();
+        let dvp_handles = boot::find_handles::<DevicePath>().unwrap();
+
+        cn2_handles.retain(|x| dvp_handles.contains(x));
+        cn2_handles
+    };
+    for handle in handles {
+        let dvp = handle.device_path().expect("should have device path");
+        let cn2 = handle
+            .component_name()
+            .expect("should have component name (v2)");
+        info!("handle: {:x?}", handle);
+        info!("|- dvp: {dvp}");
+        info!("|- cn2 driver: {}", cn2.driver_name("en").unwrap());
+        info!(
+            "|- cn2 controller: {}",
+            cn2.controller_name(handle, None, "en").unwrap()
+        );
+    }
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]

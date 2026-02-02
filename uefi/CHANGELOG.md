@@ -11,6 +11,13 @@
 - Added `proto::device_path::DevicePathUtilities::duplicate_path()`.
 - Added `proto::pci::enumeration::PciTree::device_path()`.
 - Added `revision()` and `device_type_guid()` to `Serial` protocol
+- Implemented `Display` for `DevicePath`, `DevicePathNode` and `ScopedProtocol`,
+  enabling a easy and convenient way to visualize a device path. For example,
+  this may print `PciRoot(0x0)/Pci(0x6,0x0)/MAC(525400000001,0x1)`.
+  `ScopedProtocol` only implements `Display` if the underlying protocol also
+  implements `Display`.
+- Added `Handle::component_name()` and `Handle::device_path()` to simplify the
+  common use-case of querying more information about a handle.
 
 ## Changed
 - export all `text::{input, output}::*` types
@@ -28,6 +35,12 @@
 - **Breaking:** `boot::check_event` now consumes `&Event` rather than `Event`, removing the
   need for unnecessary `Event::unsafe_clone()`s.
 - MSRV increased to 1.88.
+- **Breaking:** Renamed `DevicePath::to_string()` to `DevicePath::to_string16()`
+  to better differentiate with the new `to_string()` coming from the new
+  `Display`.
+- **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
+  to better differentiate with the new `to_string()` coming from the new
+  `Display`.
 
 # uefi - v0.36.1 (2025-11-05)
 

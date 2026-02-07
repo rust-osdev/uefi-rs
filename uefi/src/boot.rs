@@ -1740,12 +1740,37 @@ pub enum OpenProtocolAttributes {
     /// interface. If any drivers have the protocol opened with an
     /// attribute of `ByDriver`, then an attempt will be made to remove
     /// them by calling the driver's `Stop` function.
+    ///
+    /// # Warning
+    ///
+    /// Opening an interface in exclusive mode can have surprising side
+    /// effects. For example:
+    ///
+    /// * Opening a serial protocol in exclusive mode may disconnect it from
+    ///   other output protocols, and that connection will not be automatically
+    ///   restored when the exclusive access is ended. ([`connect_controller`]
+    ///   can sometimes be used to manually restore such connections.)
+    ///
+    /// * Stopping drivers that have the protocol open may be very slow. On some
+    ///   firmware, opening any of the disk protocols in exclusive mode can take
+    ///   nearly one second to complete.
+    ///
+    /// In many cases it is better to use [`GetProtocol`], even though it
+    /// requires the use of `unsafe`.
+    ///
+    /// [`GetProtocol`]: Self::GetProtocol
     Exclusive = 0x20,
 
     /// Used by a driver to gain exclusive access to a protocol
     /// interface. If any other drivers have the protocol interface
     /// opened with an attribute of `ByDriver`, then an attempt will be
     /// made to remove them with `DisconnectController`.
+    ///
+    /// # Warning
+    ///
+    /// See warning section of [`Exclusive`].
+    ///
+    /// [`Exclusive`]: Self::Exclusive
     ByDriverExclusive = 0x30,
 }
 

@@ -1736,17 +1736,17 @@ pub enum OpenProtocolAttributes {
     /// the `ByDriver` attribute.
     ByDriver = 0x10,
 
-    /// Used by a driver to gain exclusive access to a protocol
-    /// interface. If any other drivers have the protocol interface
-    /// opened with an attribute of `ByDriver`, then an attempt will be
-    /// made to remove them with `DisconnectController`.
-    ByDriverExclusive = 0x30,
-
     /// Used by applications to gain exclusive access to a protocol
     /// interface. If any drivers have the protocol opened with an
     /// attribute of `ByDriver`, then an attempt will be made to remove
     /// them by calling the driver's `Stop` function.
     Exclusive = 0x20,
+
+    /// Used by a driver to gain exclusive access to a protocol
+    /// interface. If any other drivers have the protocol interface
+    /// opened with an attribute of `ByDriver`, then an attempt will be
+    /// made to remove them with `DisconnectController`.
+    ByDriverExclusive = 0x30,
 }
 
 /// Parameters passed to [`open_protocol`].

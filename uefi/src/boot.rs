@@ -1091,6 +1091,7 @@ pub fn get_handle_for_protocol<P: ProtocolPointer + ?Sized>() -> Result<Handle> 
 /// * [`Status::UNSUPPORTED`]: the handle does not support the protocol.
 /// * [`Status::ACCESS_DENIED`] or [`Status::ALREADY_STARTED`]: the protocol is
 ///   already open in a way that is incompatible with the new request.
+#[doc(alias = "handle_protocol")]
 pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
     params: OpenProtocolParams,
     attributes: OpenProtocolAttributes,
@@ -1137,6 +1138,7 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
 /// * [`Status::UNSUPPORTED`]: the handle does not support the protocol.
 /// * [`Status::ACCESS_DENIED`]: the protocol is already open in a way that is
 ///   incompatible with the new request.
+#[doc(alias = "handle_protocol")]
 pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
     handle: Handle,
 ) -> Result<ScopedProtocol<P>> {

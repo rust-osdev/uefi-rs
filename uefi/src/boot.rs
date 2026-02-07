@@ -1719,9 +1719,17 @@ impl Drop for TplGuard {
 #[repr(u32)]
 #[derive(Debug)]
 pub enum OpenProtocolAttributes {
-    /// Used by drivers to get a protocol interface for a handle. The
-    /// driver will not be informed if the interface is uninstalled or
-    /// reinstalled.
+    /// Used by applications and drivers to open a protocol interface for a
+    /// handle.
+    ///
+    /// # Safety
+    ///
+    /// The interface is opened non-exclusively. The caller must ensure that
+    /// either the interface is immutable, or that no conflicting concurrent
+    /// access occurs.
+    ///
+    /// The caller must ensure that the interface is not uninstalled or
+    /// reinstalled while still in use.
     GetProtocol = 0x02,
 
     /// Used by bus drivers to show that a protocol is being used by one

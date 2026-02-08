@@ -1736,9 +1736,17 @@ impl Drop for TplGuard {
 #[repr(u32)]
 #[derive(Debug)]
 pub enum OpenProtocolAttributes {
-    /// Used by drivers to get a protocol interface for a handle. The
-    /// driver will not be informed if the interface is uninstalled or
-    /// reinstalled.
+    /// Used by applications and drivers to open a protocol interface for a
+    /// handle.
+    ///
+    /// # Safety
+    ///
+    /// The interface is opened non-exclusively. The caller must ensure that
+    /// either the interface is immutable, or that no conflicting concurrent
+    /// access occurs.
+    ///
+    /// The caller must ensure that the interface is not uninstalled or
+    /// reinstalled while still in use.
     GetProtocol = 0x02,
 
     /// Used by bus drivers to show that a protocol is being used by one
@@ -1753,17 +1761,42 @@ pub enum OpenProtocolAttributes {
     /// the `ByDriver` attribute.
     ByDriver = 0x10,
 
-    /// Used by a driver to gain exclusive access to a protocol
-    /// interface. If any other drivers have the protocol interface
-    /// opened with an attribute of `ByDriver`, then an attempt will be
-    /// made to remove them with `DisconnectController`.
-    ByDriverExclusive = 0x30,
-
     /// Used by applications to gain exclusive access to a protocol
     /// interface. If any drivers have the protocol opened with an
     /// attribute of `ByDriver`, then an attempt will be made to remove
     /// them by calling the driver's `Stop` function.
+    ///
+    /// # Warning
+    ///
+    /// Opening an interface in exclusive mode can have surprising side
+    /// effects. For example:
+    ///
+    /// * Opening a serial protocol in exclusive mode may disconnect it from
+    ///   other output protocols, and that connection will not be automatically
+    ///   restored when the exclusive access is ended. ([`connect_controller`]
+    ///   can sometimes be used to manually restore such connections.)
+    ///
+    /// * Stopping drivers that have the protocol open may be very slow. On some
+    ///   firmware, opening any of the disk protocols in exclusive mode can take
+    ///   nearly one second to complete.
+    ///
+    /// In many cases it is better to use [`GetProtocol`], even though it
+    /// requires the use of `unsafe`.
+    ///
+    /// [`GetProtocol`]: Self::GetProtocol
     Exclusive = 0x20,
+
+    /// Used by a driver to gain exclusive access to a protocol
+    /// interface. If any other drivers have the protocol interface
+    /// opened with an attribute of `ByDriver`, then an attempt will be
+    /// made to remove them with `DisconnectController`.
+    ///
+    /// # Warning
+    ///
+    /// See warning section of [`Exclusive`].
+    ///
+    /// [`Exclusive`]: Self::Exclusive
+    ByDriverExclusive = 0x30,
 }
 
 /// Parameters passed to [`open_protocol`].

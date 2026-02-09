@@ -3,14 +3,14 @@
 //! Date and time types.
 
 use crate::time::helpers::{
-    NANOS_PER_SECOND, SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE, days_since_unix_epoch,
+    NANOS_PER_SECOND, SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE, days_in_month,
+    days_since_unix_epoch, is_leap_year,
 };
 use bitflags::bitflags;
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
 
 /// Generic non-EFI helpers to work with time.
-#[allow(unused)]
 mod helpers {
     pub const NANOS_PER_SECOND: i128 = 1_000_000_000;
     pub const SECONDS_PER_MINUTE: i64 = 60;
@@ -268,6 +268,61 @@ impl Time {
             pad1: 0,
             nanosecond,
             time_zone: 0, // UTC
+            daylight: Daylight::empty(),
+            pad2: 0,
+        }
+    }
+
+    /// Creates a [`Time`] from the provided UNIX time stamp in nanoseconds
+    /// (UTC).
+    #[must_use]
+    pub fn from_utc_unix_timestamp_nanos(nanos: i128) -> Self {
+        let seconds = nanos.div_euclid(NANOS_PER_SECOND);
+        let nanosecond = nanos.rem_euclid(NANOS_PER_SECOND) as u32;
+
+        let mut days = seconds.div_euclid(SECONDS_PER_DAY as i128) as i64;
+        let mut rem_secs = seconds.rem_euclid(SECONDS_PER_DAY as i128) as i64;
+
+        let hour = (rem_secs / SECONDS_PER_HOUR) as u8;
+        rem_secs %= SECONDS_PER_HOUR;
+
+        let minute = (rem_secs / SECONDS_PER_MINUTE) as u8;
+        let second = (rem_secs % SECONDS_PER_MINUTE) as u8;
+
+        // --- Date reconstruction ---
+        let mut year: i32 = 1970;
+
+        loop {
+            let year_days = if is_leap_year(year) { 366 } else { 365 };
+            if days < year_days {
+                break;
+            }
+            days -= year_days;
+            year += 1;
+        }
+
+        let mut month: u8 = 1;
+        loop {
+            let dim = days_in_month(year, month) as i64;
+            if days < dim {
+                break;
+            }
+            days -= dim;
+            month += 1;
+        }
+
+        let day = (days + 1) as u8;
+
+        Self {
+            year: year as u16,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            pad1: 0,
+            nanosecond,
+            time_zone: 0,
             daylight: Daylight::empty(),
             pad2: 0,
         }

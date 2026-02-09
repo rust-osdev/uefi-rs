@@ -48,6 +48,33 @@ impl Time {
     /// Indicates the time should be interpreted as local time.
     pub const UNSPECIFIED_TIMEZONE: i16 = 0x07ff;
 
+    /// Creates a new UEFI [`Time`] from UTC components.
+    #[must_use]
+    pub const fn from_utc_time(
+        year: u16,
+        month: u8,
+        day: u8,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanosecond: u32,
+    ) -> Self {
+        // TODO validate() + return result
+        Self {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            pad1: 0,
+            nanosecond,
+            time_zone: 0, // UTC
+            daylight: Daylight::empty(),
+            pad2: 0,
+        }
+    }
+
     /// Create an invalid `Time` with all fields set to zero.
     #[must_use]
     pub const fn invalid() -> Self {

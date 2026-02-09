@@ -24,6 +24,21 @@ mod helpers {
         }
     }
 
+    /// Days since Unix epoch (1970-01-01), ignoring time-of-day.
+    pub fn days_since_unix_epoch(year: i32, month: u8, day: u8) -> i64 {
+        let mut days = 0i64;
+
+        for y in 1970..year {
+            days += if is_leap_year(y) { 366 } else { 365 };
+        }
+
+        for m in 1..month {
+            days += days_in_month(year, m) as i64;
+        }
+
+        days + (day as i64 - 1)
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -133,6 +148,48 @@ mod helpers {
         #[should_panic(expected = "invalid month")]
         fn max_u8_month_panics() {
             days_in_month(2024, u8::MAX);
+        }
+
+        // --------------------------------
+        // days_since_unix_epoch:
+
+        #[test]
+        fn test_epoch_start() {
+            // January 1, 1970 should be exactly 0 days
+            assert_eq!(days_since_unix_epoch(1970, 1, 1), 0);
+        }
+
+        #[test]
+        fn test_first_year_completion() {
+            // December 31, 1970 (365 days in a non-leap year, so 364 days since Jan 1)
+            assert_eq!(days_since_unix_epoch(1970, 12, 31), 364);
+        }
+
+        #[test]
+        fn test_one_full_year() {
+            // January 1, 1971 should be 365 days after the epoch
+            assert_eq!(days_since_unix_epoch(1971, 1, 1), 365);
+        }
+
+        #[test]
+        fn test_leap_year_handling() {
+            // 1972 was a leap year.
+            // Days: 1970 (365) + 1971 (365) = 730
+            assert_eq!(days_since_unix_epoch(1972, 1, 1), 730);
+
+            // After February 29, 1972
+            // Jan (31) + Feb (29) = 60. So March 1st is day 60 of that year.
+            // Total: 730 + 60 = 790
+            assert_eq!(days_since_unix_epoch(1972, 3, 1), 790);
+        }
+
+        #[test]
+        fn test_modern_date() {
+            // January 1, 2000 (Y2K)
+            // Between 1970 and 2000, there are 30 years.
+            // Leap years: 1972, 76, 80, 84, 88, 92, 96 (7 leap years)
+            // (23 non-leap * 365) + (7 leap * 366) = 10957
+            assert_eq!(days_since_unix_epoch(2000, 1, 1), 10957);
         }
     }
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 //! Date and time types.
+//!
+//! See [`Time`].
 
 use crate::time::helpers::{
     NANOS_PER_SECOND, SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE, days_in_month,
@@ -205,6 +207,13 @@ mod helpers {
 }
 
 /// Date and time representation.
+///
+/// # Integration
+///
+/// The type can be integrated with higher-level time libraries by using the
+/// UTC UNIX timestamp in nanoseconds as exchange format. See:
+/// - [`Self::from_utc_unix_timestamp_nanos`]
+/// - [`Self::to_utc_unix_timestamp_nanos`]
 #[derive(Debug, Default, Copy, Clone, Eq)]
 #[repr(C)]
 pub struct Time {

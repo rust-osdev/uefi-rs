@@ -514,4 +514,140 @@ mod tests {
         time.time_zone = 150;
         assert_eq!(time.to_string(), "2023-05-18 11:29:57.123456789UTC+2.5");
     }
+
+    #[test]
+    fn one_second_after_epoch() {
+        let t = Time::from_utc_time(1970, 1, 1, 0, 0, 1, 0);
+        let nanos = t.to_utc_unix_timestamp_nanos().unwrap();
+        assert_eq!(nanos, NANOS_PER_SECOND);
+
+        let t2 = Time::from_utc_unix_timestamp_nanos(NANOS_PER_SECOND);
+        assert_eq!(t2.second, 1);
+    }
+
+    #[test]
+    fn nanosecond_precision() {
+        let t = Time::from_utc_time(1970, 1, 1, 0, 0, 0, 123_456_789);
+        let nanos = t.to_utc_unix_timestamp_nanos().unwrap();
+        assert_eq!(nanos, 123_456_789);
+
+        let t2 = Time::from_utc_unix_timestamp_nanos(nanos);
+        assert_eq!(t2.nanosecond, 123_456_789);
+    }
+
+    #[test]
+    fn leap_day_2000() {
+        // 2000-02-29 12:00:00 UTC
+        let t = Time::from_utc_time(2000, 2, 29, 12, 0, 0, 0);
+        let nanos = t.to_utc_unix_timestamp_nanos().unwrap();
+        let t2 = Time::from_utc_unix_timestamp_nanos(nanos);
+
+        assert_eq!(t2.year, 2000);
+        assert_eq!(t2.month, 2);
+        assert_eq!(t2.day, 29);
+        assert_eq!(t2.hour, 12);
+    }
+
+    #[test]
+    fn day_rollover() {
+        // 1970-01-01 23:59:59 -> +1s
+        let t = Time::from_utc_time(1970, 1, 1, 23, 59, 59, 0);
+        let nanos = t.to_utc_unix_timestamp_nanos().unwrap() + NANOS_PER_SECOND;
+
+        let t2 = Time::from_utc_unix_timestamp_nanos(nanos);
+        assert_eq!(t2.year, 1970);
+        assert_eq!(t2.month, 1);
+        assert_eq!(t2.day, 2);
+        assert_eq!(t2.hour, 0);
+        assert_eq!(t2.minute, 0);
+        assert_eq!(t2.second, 0);
+    }
+
+    #[test]
+    fn round_trip_utc() {
+        let t = Time::from_utc_time(2024, 10, 5, 17, 42, 9, 999_999_999);
+        let nanos = t.to_utc_unix_timestamp_nanos().unwrap();
+        let t2 = Time::from_utc_unix_timestamp_nanos(nanos);
+
+        assert_eq!(t.year, t2.year);
+        assert_eq!(t.month, t2.month);
+        assert_eq!(t.day, t2.day);
+        assert_eq!(t.hour, t2.hour);
+        assert_eq!(t.minute, t2.minute);
+        assert_eq!(t.second, t2.second);
+        assert_eq!(t.nanosecond, t2.nanosecond);
+        assert_eq!(t2.time_zone, 0);
+    }
+
+    #[test]
+    fn timezone_offset_applied() {
+        // 1970-01-01 01:00:00 with +60 minutes offset == epoch
+        let t = Time {
+            year: 1970,
+            month: 1,
+            day: 1,
+            hour: 1,
+            minute: 0,
+            second: 0,
+            pad1: 0,
+            nanosecond: 0,
+            time_zone: 60, // +1h
+            daylight: Daylight::empty(),
+            pad2: 0,
+        };
+
+        let nanos = t.to_utc_unix_timestamp_nanos().unwrap();
+        assert_eq!(nanos, 0);
+    }
+
+    #[test]
+    fn basic_elapsed() {
+        let t1 = Time::from_utc_time(1970, 1, 1, 0, 0, 0, 0);
+        let t2 = Time::from_utc_time(1970, 1, 1, 0, 0, 10, 500_000_000);
+
+        let elapsed = t2.elapsed_since(&t1).unwrap();
+        assert_eq!(elapsed, Duration::new(10, 500_000_000));
+
+        // Zero elapsed
+        let t3 = Time::from_utc_time(1970, 1, 1, 0, 0, 0, 0);
+        let zero_elapsed = t3.elapsed_since(&t3).unwrap();
+        assert_eq!(zero_elapsed, Duration::new(0, 0));
+
+        let t4 = Time { day: 2, ..t1 };
+        assert_eq!(
+            t4.elapsed_since(&t3),
+            Some(Duration::from_secs(SECONDS_PER_DAY as u64))
+        );
+    }
+
+    #[test]
+    fn self_before_other_returns_none() {
+        let earlier = Time::from_utc_time(1970, 1, 1, 1, 0, 0, 0);
+        let later = Time::from_utc_time(1970, 1, 1, 0, 0, 0, 0);
+
+        let result = later.elapsed_since(&earlier);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn invalid_time_returns_none() {
+        let valid = Time::from_utc_time(1970, 1, 1, 0, 0, 0, 0);
+        let mut invalid = Time::from_utc_time(1970, 1, 1, 0, 0, 0, 0);
+
+        // make invalid (e.g., invalid month)
+        invalid.month = 13;
+
+        assert!(valid.elapsed_since(&invalid).is_none());
+        assert!(invalid.elapsed_since(&valid).is_none());
+    }
+
+    #[test]
+    fn leap_day_elapsed() {
+        let t1 = Time::from_utc_time(2000, 2, 28, 23, 0, 0, 0);
+        let t2 = Time::from_utc_time(2000, 2, 29, 1, 30, 0, 0);
+
+        let elapsed = t2.elapsed_since(&t1).unwrap();
+        let expected = Duration::from_secs(2 * 3600 + 30 * 60); // 2h30m
+        assert_eq!(elapsed, expected);
+    }
 }

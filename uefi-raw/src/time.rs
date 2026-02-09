@@ -2,12 +2,20 @@
 
 //! Date and time types.
 
+use crate::time::helpers::{
+    NANOS_PER_SECOND, SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE, days_since_unix_epoch,
+};
 use bitflags::bitflags;
 use core::fmt::{self, Display, Formatter};
 
 /// Generic non-EFI helpers to work with time.
 #[allow(unused)]
 mod helpers {
+    pub const NANOS_PER_SECOND: i128 = 1_000_000_000;
+    pub const SECONDS_PER_MINUTE: i64 = 60;
+    pub const SECONDS_PER_HOUR: i64 = 60 * SECONDS_PER_MINUTE;
+    pub const SECONDS_PER_DAY: i64 = 24 * SECONDS_PER_HOUR;
+
     #[inline]
     pub const fn is_leap_year(year: i32) -> bool {
         (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
@@ -294,6 +302,32 @@ impl Time {
             && self.nanosecond <= 999_999_999
             && ((-1440..=1440).contains(&self.time_zone)
                 || self.time_zone == Self::UNSPECIFIED_TIMEZONE)
+    }
+
+    /// Convert to signed nanoseconds since Unix epoch (UTC).
+    ///
+    /// Returns `None` if [`Self::is_valid`] returns `false`.
+    #[must_use]
+    pub fn to_utc_unix_timestamp_nanos(&self) -> Option<i128> {
+        if !self.is_valid() {
+            return None;
+        }
+
+        let days = days_since_unix_epoch(self.year as i32, self.month, self.day) as i128;
+
+        let seconds = days * SECONDS_PER_DAY as i128
+            + self.hour as i128 * SECONDS_PER_HOUR as i128
+            + self.minute as i128 * SECONDS_PER_MINUTE as i128
+            + self.second as i128;
+
+        let tz_offset_seconds = match self.time_zone {
+            Self::UNSPECIFIED_TIMEZONE => 0,
+            minutes => minutes as i128 * 60,
+        };
+
+        let total_seconds = seconds - tz_offset_seconds;
+
+        Some(total_seconds * NANOS_PER_SECOND + self.nanosecond as i128)
     }
 }
 

@@ -5,6 +5,70 @@
 use bitflags::bitflags;
 use core::fmt::{self, Display, Formatter};
 
+/// Generic non-EFI helpers to work with time.
+#[allow(unused)]
+mod helpers {
+    #[inline]
+    pub const fn is_leap_year(year: i32) -> bool {
+        (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        // ---------------------------
+        // is_leap_year: basic cases
+
+        #[test]
+        fn leap_years_divisible_by_4() {
+            assert!(is_leap_year(1996));
+            assert!(is_leap_year(2024));
+            assert!(is_leap_year(0)); // year 0 is divisible by 400
+        }
+
+        #[test]
+        fn common_years_not_divisible_by_4() {
+            assert!(!is_leap_year(1999));
+            assert!(!is_leap_year(2023));
+            assert!(!is_leap_year(1));
+        }
+
+        #[test]
+        fn centuries_not_divisible_by_400_are_not_leap_years() {
+            assert!(!is_leap_year(1700));
+            assert!(!is_leap_year(1800));
+            assert!(!is_leap_year(1900));
+            assert!(!is_leap_year(2100));
+        }
+
+        #[test]
+        fn centuries_divisible_by_400_are_leap_years() {
+            assert!(is_leap_year(1600));
+            assert!(is_leap_year(2000));
+            assert!(is_leap_year(2400));
+        }
+
+        // ------------------------------------
+        // is_leap_year: negative / boundary
+
+        #[test]
+        fn negative_years_follow_same_divisibility_rules() {
+            assert!(is_leap_year(-4));
+            assert!(!is_leap_year(-1));
+            assert!(!is_leap_year(-100));
+            assert!(is_leap_year(-400));
+        }
+
+        #[test]
+        fn i32_boundaries_do_not_overflow() {
+            // These tests ensure no arithmetic overflow or panic occurs
+            assert!(!is_leap_year(i32::MAX));
+            assert!(is_leap_year(i32::MIN)); // i32::MIN % 400 == 0
+        }
+    }
+}
+
 /// Date and time representation.
 #[derive(Debug, Default, Copy, Clone, Eq)]
 #[repr(C)]

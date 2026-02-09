@@ -131,6 +131,10 @@ bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Daylight: u8 {
+        /// Daylight information not available or not applicable to the time
+        /// zone.
+        const NONE = 0;
+
         /// Time is affected by daylight savings time.
         const ADJUST_DAYLIGHT = 0x01;
 

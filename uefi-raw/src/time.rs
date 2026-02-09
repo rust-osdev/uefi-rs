@@ -6,6 +6,7 @@ use crate::time::helpers::{
     NANOS_PER_SECOND, SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE, days_since_unix_epoch,
 };
 use bitflags::bitflags;
+use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
 
 /// Generic non-EFI helpers to work with time.
@@ -373,6 +374,14 @@ impl PartialEq for Time {
             && self.nanosecond == other.nanosecond
             && self.time_zone == other.time_zone
             && self.daylight == other.daylight
+    }
+}
+
+impl PartialOrd for Time {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let lhs = self.to_utc_unix_timestamp_nanos()?;
+        let rhs = other.to_utc_unix_timestamp_nanos()?;
+        lhs.partial_cmp(&rhs)
     }
 }
 

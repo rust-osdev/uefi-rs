@@ -13,6 +13,17 @@ mod helpers {
         (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
     }
 
+    #[inline]
+    pub fn days_in_month(year: i32, month: u8) -> u8 {
+        match month {
+            1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+            4 | 6 | 9 | 11 => 30,
+            2 if is_leap_year(year) => 29,
+            2 => 28,
+            v => panic!("invalid month: {v}"),
+        }
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -65,6 +76,63 @@ mod helpers {
             // These tests ensure no arithmetic overflow or panic occurs
             assert!(!is_leap_year(i32::MAX));
             assert!(is_leap_year(i32::MIN)); // i32::MIN % 400 == 0
+        }
+
+        // ---------------------------
+        // days_in_month: fixed months
+
+        #[test]
+        fn months_with_31_days() {
+            let months = [1, 3, 5, 7, 8, 10, 12];
+            for &m in &months {
+                assert_eq!(days_in_month(2023, m), 31);
+                assert_eq!(days_in_month(2024, m), 31); // leap year should not matter
+            }
+        }
+
+        #[test]
+        fn months_with_30_days() {
+            let months = [4, 6, 9, 11];
+            for &m in &months {
+                assert_eq!(days_in_month(2023, m), 30);
+                assert_eq!(days_in_month(2024, m), 30);
+            }
+        }
+
+        // ---------------------------
+        // days_in_month: February
+
+        #[test]
+        fn february_in_common_year() {
+            assert_eq!(days_in_month(2023, 2), 28);
+            assert_eq!(days_in_month(1900, 2), 28); // century common year
+        }
+
+        #[test]
+        fn february_in_leap_year() {
+            assert_eq!(days_in_month(2024, 2), 29);
+            assert_eq!(days_in_month(2000, 2), 29); // century leap year
+        }
+
+        // --------------------------------
+        // days_in_month: invalid months
+
+        #[test]
+        #[should_panic(expected = "invalid month")]
+        fn month_zero_panics() {
+            days_in_month(2024, 0);
+        }
+
+        #[test]
+        #[should_panic(expected = "invalid month")]
+        fn month_above_12_panics() {
+            days_in_month(2024, 13);
+        }
+
+        #[test]
+        #[should_panic(expected = "invalid month")]
+        fn max_u8_month_panics() {
+            days_in_month(2024, u8::MAX);
         }
     }
 }

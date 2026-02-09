@@ -9,6 +9,7 @@ use crate::time::helpers::{
 use bitflags::bitflags;
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
+use core::time::Duration;
 
 /// Generic non-EFI helpers to work with time.
 mod helpers {
@@ -384,6 +385,23 @@ impl Time {
         let total_seconds = seconds - tz_offset_seconds;
 
         Some(total_seconds * NANOS_PER_SECOND + self.nanosecond as i128)
+    }
+
+    /// Returns the elapsed [`Duration`] since `other`, assuming that `self`
+    /// happened later than `other`.
+    ///
+    /// Both dates need to be valid ([`Self::is_valid`]).
+    #[must_use]
+    pub fn elapsed_since(&self, other: &Self) -> Option<Duration> {
+        let lhs = self.to_utc_unix_timestamp_nanos()?;
+        let rhs = other.to_utc_unix_timestamp_nanos()?;
+
+        if lhs < rhs {
+            return None;
+        }
+
+        let delta = (lhs - rhs) as u128;
+        Some(Duration::from_nanos(delta as u64))
     }
 }
 

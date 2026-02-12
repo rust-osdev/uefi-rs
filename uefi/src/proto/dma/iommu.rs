@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! EDK2 IoMmu protocol.
+//! EDK2 IOMMU protocol.
 
 use core::ffi::c_void;
 use uefi::data_types::PhysicalAddress;
@@ -29,7 +29,14 @@ impl Iommu {
         self.0.revision
     }
 
-    /// Set access attributes for a mapping
+    /// Set access attributes for a mapping.
+    ///
+    /// # Errors
+    ///
+    /// * [`Status::INVALID_PARAMETER`]: invalid device handle, mapping, or access flags
+    /// * [`Status::UNSUPPORTED`]: operation not supported by this IOMMU
+    /// * [`Status::OUT_OF_RESOURCES`]: insufficient resources to modify IOMMU access
+    /// * [`Status::DEVICE_ERROR`]: IOMMU device reported an error
     pub fn set_attribute(
         &self,
         device_handle: Handle,
@@ -44,7 +51,17 @@ impl Iommu {
         status.to_result()
     }
 
-    /// Map a buffer for DMA operations
+    /// Map a buffer for DMA operations.
+    ///
+    /// Returns the device address, mapping handle, and actual number of bytes mapped.
+    /// The mapping will be automatically unmapped when dropped.
+    ///
+    /// # Errors
+    ///
+    /// * [`Status::INVALID_PARAMETER`]: invalid operation or buffer
+    /// * [`Status::UNSUPPORTED`]: host address cannot be mapped as a common buffer
+    /// * [`Status::OUT_OF_RESOURCES`]: insufficient resources
+    /// * [`Status::DEVICE_ERROR`]: system hardware could not map the requested address
     pub fn map(
         &self,
         operation: EdkiiIommuOperation,
@@ -81,7 +98,15 @@ impl Iommu {
         status.to_result()
     }
 
-    /// Allocate a buffer suitable for DMA operations
+    /// Allocate a buffer suitable for DMA operations.
+    ///
+    /// The buffer will be automatically freed when dropped.
+    ///
+    /// # Errors
+    ///
+    /// * [`Status::INVALID_PARAMETER`]: invalid memory type or attributes
+    /// * [`Status::UNSUPPORTED`]: unsupported attributes
+    /// * [`Status::OUT_OF_RESOURCES`]: memory pages could not be allocated
     pub fn allocate_buffer(
         &self,
         memory_type: MemoryType,
@@ -90,7 +115,7 @@ impl Iommu {
     ) -> Result<DmaBuffer<'_>> {
         let mut host_address: *mut c_void = core::ptr::null_mut();
 
-        // Must be ignored
+        // Per spec, AllocateType is ignored by the IOMMU allocate_buffer implementation.
         let allocate_type = AllocateType::ANY_PAGES;
 
         let status = unsafe {
@@ -104,9 +129,7 @@ impl Iommu {
             )
         };
 
-        let dma_buffer = unsafe { DmaBuffer::from_raw(host_address, pages, self) };
-
-        status.to_result_with_val(|| dma_buffer)
+        status.to_result_with_val(|| unsafe { DmaBuffer::from_raw(host_address, pages, self) })
     }
 
     /// Free a buffer allocated with allocate_buffer

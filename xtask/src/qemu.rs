@@ -363,8 +363,10 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             cmd.args(["-device", "virtio-gpu-pci"]);
         }
         UefiArch::IA32 | UefiArch::X86_64 => {
-            // Use a modern machine.
-            cmd.args(["-machine", "q35"]);
+            // Use a modern machine. kernel-irqchip=split is required by
+            // intel-iommu with interrupt remapping enabled.
+            cmd.args(["-machine", "q35,kernel-irqchip=split"]);
+            cmd.args(["-device", "intel-iommu,intremap=on,caching-mode=on"]);
 
             // Multi-processor services protocol test needs exactly 4 CPUs.
             cmd.args(["-smp", "4"]);

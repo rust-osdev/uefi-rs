@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! EDK2 IoMmu  protocol.
+//! EDK2 IOMMU protocol.
 
 use core::ffi::c_void;
 use core::ops::{Deref, DerefMut};
@@ -68,7 +68,9 @@ impl<'a> Drop for DmaBuffer<'a> {
     fn drop(&mut self) {
         let ptr = self.ptr;
         let pages = self.pages;
-        let _ = self.iommu.free_buffer_raw(ptr, pages);
+        if let Err(e) = self.iommu.free_buffer_raw(ptr, pages) {
+            log::error!("IOMMU free_buffer failed: {e:?}");
+        }
     }
 }
 
@@ -101,6 +103,8 @@ impl<'a> Mapping<'a> {
 impl<'a> Drop for Mapping<'a> {
     fn drop(&mut self) {
         let ptr = self.ptr;
-        let _ = self.iommu.unmap_raw(ptr);
+        if let Err(e) = self.iommu.unmap_raw(ptr) {
+            log::error!("IOMMU unmap failed: {e:?}");
+        }
     }
 }

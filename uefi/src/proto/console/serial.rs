@@ -4,7 +4,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Error, Result, Status, StatusExt};
-use core::fmt::Write;
+use core::fmt;
 use uefi_raw::protocol::console::serial::{
     SerialIoProtocol, SerialIoProtocol_1_1, SerialIoProtocolRevision,
 };
@@ -236,10 +236,8 @@ impl Serial {
     }
 }
 
-impl Write for Serial {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.write(s.as_bytes())
-            .map(|_| ())
-            .map_err(|_| core::fmt::Error)
+impl fmt::Write for Serial {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write(s.as_bytes()).map(|_| ()).map_err(|_| fmt::Error)
     }
 }

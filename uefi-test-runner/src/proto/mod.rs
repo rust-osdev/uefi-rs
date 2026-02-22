@@ -11,10 +11,11 @@ pub fn test() {
 
     console::test();
 
-    find_protocol();
+    test_find_protocol_handles();
     test_protocols_per_handle();
     test_test_protocol();
 
+    block::test();
     debug::test();
     device_path::test();
     driver::test();
@@ -51,7 +52,11 @@ pub fn test() {
     test_handle_convenience();
 }
 
-fn find_protocol() {
+/// Tests that the [`boot::find_handles`] wrapper can find handles implementing
+/// a certain protocol (here: [`Output`] protocol).
+///
+/// [`Output`]: proto::console::text::Output
+fn test_find_protocol_handles() {
     let handles = boot::find_handles::<proto::console::text::Output>()
         .expect("Failed to retrieve list of handles");
 
@@ -107,6 +112,7 @@ fn test_handle_convenience() {
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod ata;
+mod block;
 mod console;
 mod debug;
 mod device_path;

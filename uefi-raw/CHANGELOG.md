@@ -12,6 +12,10 @@
 - Added new type `SerialIoProtocolRevision`
 - Added new type `SerialIoProtocol_1_1` as companion for `SerialIoProtocol`
   that includes the  `device_type_guid` parameter
+- Added the `time` feature which integrates `struct Time` closely with
+  `OffsetDateTime` from the [time crate](https://crates.io/crates/time).
+  - `Time::to_offset_date_time`
+  - `Time::to_offset_date_time_with_default_timezone`
 
 ## Changed
 - Switched `*const Self` to `*mut Self` in `SerialIoProtocol::set_attributes()`

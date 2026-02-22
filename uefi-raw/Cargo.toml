@@ -20,7 +20,12 @@ rust-version = "1.85.1"
 
 [dependencies]
 bitflags.workspace = true
+time = { workspace = true, optional = true }
 uguid.workspace = true
+
+[features]
+default = ["time"]
+time = ["dep:time"]
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

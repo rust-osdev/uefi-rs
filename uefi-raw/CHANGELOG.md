@@ -16,6 +16,7 @@
   `OffsetDateTime` from the [time crate](https://crates.io/crates/time).
   - `Time::to_offset_date_time`
   - `Time::to_offset_date_time_with_default_timezone`
+  - implemented `TryFrom` from `OffsetDateTime` for `Time`
 
 ## Changed
 - Switched `*const Self` to `*mut Self` in `SerialIoProtocol::set_attributes()`

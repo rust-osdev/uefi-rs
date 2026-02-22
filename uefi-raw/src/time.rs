@@ -75,6 +75,7 @@ impl error::Error for ToOffsetDateTimeError {
 ///
 /// - `Time::to_offset_date_time`
 /// - `Time::to_offset_date_time_with_default_timezone`
+/// - [`TryFrom`] from `OffsetDateTime` to [`Time`]
 ///
 /// [time]: https://crates.io/crates/time
 #[derive(Debug, Default, Copy, Clone, Eq)]
@@ -358,6 +359,84 @@ bitflags! {
     }
 }
 
+#[cfg(feature = "time")]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum FromOffsetDateTimeError {
+    /// The year is not representable as `u16`.
+    InvalidYear(i32),
+    /// Time zone offsets with seconds are not representable.
+    OffsetWithSeconds(i8),
+    InvalidTime(InvalidTimeError),
+}
+
+#[cfg(feature = "time")]
+impl Display for FromOffsetDateTimeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidYear(y) => {
+                write!(
+                    f,
+                    "Cannot to convert OffsetDateTime to EFI Time: invalid year {y}"
+                )
+            }
+            Self::OffsetWithSeconds(s) => {
+                write!(
+                    f,
+                    "Cannot to convert OffsetDateTime to EFI Time: time zone offset has seconds ({s}) which is unsupported"
+                )
+            }
+            Self::InvalidTime(t) => {
+                write!(f, "The time is invalid: {t}")
+            }
+        }
+    }
+}
+
+#[cfg(feature = "time")]
+impl error::Error for FromOffsetDateTimeError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Self::InvalidYear(_) => None,
+            Self::OffsetWithSeconds(_) => None,
+            Self::InvalidTime(e) => Some(e),
+        }
+    }
+}
+
+#[cfg(feature = "time")]
+impl TryFrom<OffsetDateTime> for Time {
+    type Error = FromOffsetDateTimeError;
+
+    fn try_from(value: OffsetDateTime) -> Result<Self, Self::Error> {
+        let this = Self {
+            year: u16::try_from(value.date().year())
+                .map_err(|_| Self::Error::InvalidYear(value.date().year()))?,
+            // No checks needed: underlying type has repr `u8`
+            month: value.date().month() as u8,
+            day: value.date().day(),
+            hour: value.time().hour(),
+            minute: value.time().minute(),
+            second: value.time().second(),
+            pad1: 0,
+            nanosecond: value.time().nanosecond(),
+            time_zone: {
+                let (h, m, s) = value.offset().as_hms();
+                if s != 0 {
+                    return Err(Self::Error::OffsetWithSeconds(s));
+                }
+                (h as i16 * 60) + (m as i16)
+            },
+            daylight: Daylight::NONE,
+            pad2: 0,
+        };
+        if this.is_valid() {
+            Ok(this)
+        } else {
+            Err(Self::Error::InvalidTime(InvalidTimeError(this)))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     extern crate alloc;
@@ -391,7 +470,7 @@ mod tests {
 }
 
 #[cfg(all(test, feature = "time"))]
-mod time_crate_tests {
+mod to_offset_date_time_tests {
     use super::*;
     use time::UtcOffset;
 
@@ -507,5 +586,103 @@ mod time_crate_tests {
 
         t.nanosecond = 999_999_999;
         assert!(t.to_offset_date_time().is_ok());
+    }
+}
+
+#[cfg(all(test, feature = "time"))]
+mod try_from_offset_datetime_tests {
+    use super::*;
+    use time::{Date, OffsetDateTime, UtcOffset};
+
+    fn make_odt(
+        year: i32,
+        month: u8,
+        day: u8,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanosecond: u32,
+        offset_minutes: i16,
+    ) -> OffsetDateTime {
+        let date =
+            Date::from_calendar_date(year, time::Month::try_from(month).unwrap(), day).unwrap();
+        let time = time::Time::from_hms_nano(hour, minute, second, nanosecond).unwrap();
+        let offset =
+            UtcOffset::from_hms((offset_minutes / 60) as i8, (offset_minutes % 60) as i8, 0)
+                .unwrap();
+        OffsetDateTime::new_in_offset(date, time, offset)
+    }
+
+    #[test]
+    fn test_happy_path() {
+        let odt = make_odt(2024, 3, 15, 12, 30, 45, 123_456_789, 120);
+        let t = Time::try_from(odt).unwrap();
+
+        assert_eq!(t.year, 2024);
+        assert_eq!(t.month, 3);
+        assert_eq!(t.day, 15);
+        assert_eq!(t.hour, 12);
+        assert_eq!(t.minute, 30);
+        assert_eq!(t.second, 45);
+        assert_eq!(t.nanosecond, 123_456_789);
+        assert_eq!(t.time_zone, 120);
+    }
+
+    #[test]
+    fn test_negative_timezone() {
+        let odt = make_odt(2024, 1, 1, 0, 0, 0, 0, -330);
+        let t = Time::try_from(odt).unwrap();
+        assert_eq!(t.time_zone, -330);
+    }
+
+    #[test]
+    fn test_offset_with_seconds_fails() {
+        let date = Date::from_calendar_date(2024, time::Month::January, 1).unwrap();
+        let time = time::Time::from_hms_nano(0, 0, 0, 0).unwrap();
+        let offset = UtcOffset::from_hms(1, 0, 30).unwrap();
+        let odt = OffsetDateTime::new_in_offset(date, time, offset);
+
+        let result = Time::try_from(odt);
+        assert!(matches!(
+            result,
+            Err(FromOffsetDateTimeError::OffsetWithSeconds(30))
+        ));
+    }
+
+    #[test]
+    fn test_invalid_year_too_low() {
+        let odt = make_odt(1800, 1, 1, 0, 0, 0, 0, 0);
+        let result = Time::try_from(odt);
+        assert!(matches!(
+            result,
+            Err(FromOffsetDateTimeError::InvalidTime(_))
+        ));
+    }
+
+    #[test]
+    fn test_boundary_years() {
+        let min_valid = make_odt(1900, 1, 1, 0, 0, 0, 0, 0);
+        assert!(Time::try_from(min_valid).is_ok());
+
+        let max_valid = make_odt(9999, 12, 31, 23, 59, 59, 999_999_999, 0);
+        assert!(Time::try_from(max_valid).is_ok());
+    }
+
+    #[test]
+    fn test_round_trip_conversion() {
+        let odt = make_odt(2024, 5, 6, 7, 8, 9, 987_654_321, 180);
+        let t = Time::try_from(odt).unwrap();
+        let odt2 = t
+            .to_offset_date_time_with_default_timezone(UtcOffset::from_hms(3, 0, 0).unwrap())
+            .unwrap();
+
+        assert_eq!(odt.year(), odt2.year());
+        assert_eq!(odt.month(), odt2.month());
+        assert_eq!(odt.day(), odt2.day());
+        assert_eq!(odt.hour(), odt2.hour());
+        assert_eq!(odt.minute(), odt2.minute());
+        assert_eq!(odt.second(), odt2.second());
+        assert_eq!(odt.nanosecond(), odt2.nanosecond());
+        assert_eq!(odt.offset().whole_minutes(), odt2.offset().whole_minutes());
     }
 }

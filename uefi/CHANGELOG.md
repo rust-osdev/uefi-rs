@@ -18,6 +18,8 @@
   implements `Display`.
 - Added `Handle::component_name()` and `Handle::device_path()` to simplify the
   common use-case of querying more information about a handle.
+- Added `Serial::read_exact()` and `Serial::write_exact()`
+- Added `Serial::read_to_vec()`
 
 ## Changed
 - export all `text::{input, output}::*` types
@@ -41,6 +43,11 @@
 - **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
   to better differentiate with the new `to_string()` coming from the new
   `Display`.
+- **Breaking**: Changed return type of `Serial::read()` and `Serial::write()` to
+  return `n` in any case. In the happy path, this always corresponds to the
+  length if the provided data/buffer, but helps to cope with non-spec-compliant
+  implementations.
+- Fixed potential partial writes in `core::fmt::Write` impl of `Serial` protocol
 
 # uefi - v0.36.1 (2025-11-05)
 

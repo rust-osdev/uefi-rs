@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use core::ptr::{self, NonNull};
+use core::{
+    ptr::{self, NonNull},
+    slice,
+};
 
 /// Copy the bytes of `val` to `ptr`, then advance pointer to just after the
 /// newly-copied bytes.
@@ -42,4 +45,50 @@ mod tests {
         assert_eq!(usize_from_u32(0), 0usize);
         assert_eq!(usize_from_u32(u32::MAX), 4294967295usize);
     }
+}
+
+/// Error returned when converting a `&[u8]` to `&[u16]`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum SliceConversionError {
+    /// There were odd number of bytes
+    InvalidLength,
+
+    /// The byte slice pointer aligntment was incorrect
+    InvalidAlignment,
+}
+
+// Converts a byte slice to a u16 slice.
+//
+/// Checks for:
+/// * `bytes` has an even length (so that it can be completely converte to slice of `u16`).
+/// * starting byte of `bytes` is not properly aligned for `u16`.
+pub(crate) fn try_cast_u8_to_u16(bytes: &[u8]) -> Result<&[u16], SliceConversionError> {
+    if !bytes.len().is_multiple_of(2) {
+        return Err(SliceConversionError::InvalidLength);
+    }
+
+    if bytes.as_ptr().align_offset(align_of::<u16>()) != 0 {
+        return Err(SliceConversionError::InvalidAlignment);
+    }
+
+    let u16_slice = unsafe { slice::from_raw_parts(bytes.as_ptr().cast(), bytes.len() / 2) };
+    Ok(u16_slice)
+}
+
+#[test]
+fn test_try_cast_u8_to_u16() {
+    use crate::cstr16;
+
+    // 1. good case
+    let s = cstr16!("hello");
+    let input = s.as_bytes();
+    let expected = s.to_u16_slice_with_nul();
+    assert_eq!(try_cast_u8_to_u16(input), Ok(expected));
+
+    // 2. bad case (odd length)
+    let input = b"123";
+    assert_eq!(
+        try_cast_u8_to_u16(input),
+        Err(SliceConversionError::InvalidLength)
+    );
 }

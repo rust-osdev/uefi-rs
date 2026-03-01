@@ -41,6 +41,10 @@
 - **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
   to better differentiate with the new `to_string()` coming from the new
   `Display`.
+- **Breaking:** `runtime::get_variable` now returns `VariableData` instead of a
+  raw byte slice to signal whether the data is a valid UCS-2 string.
+- **Breaking:** `runtime::get_variable_boxed` now returns `VariableDataOwned`
+instead of `Box<[u8]>`.
 
 # uefi - v0.36.1 (2025-11-05)
 

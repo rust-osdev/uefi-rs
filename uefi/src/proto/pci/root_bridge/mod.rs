@@ -3,6 +3,8 @@
 //! PCI Root Bridge protocol.
 
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
+#[cfg(doc)]
+use crate::Status;
 use crate::StatusExt;
 #[cfg(feature = "alloc")]
 use crate::proto::pci::configuration::QwordAddressSpaceDescriptor;
@@ -14,8 +16,8 @@ use core::ptr;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
 
-#[cfg(doc)]
-use crate::Status;
+pub mod page;
+pub mod region;
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
 ///

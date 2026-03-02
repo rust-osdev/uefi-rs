@@ -6,7 +6,7 @@ use core::mem::{ManuallyDrop, MaybeUninit};
 use core::num::NonZeroUsize;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use log::trace;
+use log::{error, trace};
 use uefi_raw::Status;
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocol;
 
@@ -15,30 +15,20 @@ use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocol;
 /// # Lifetime
 /// `'p` is the lifetime for Protocol.
 #[derive(Debug)]
-pub struct PciPage<'p, T> {
-    base: NonNull<T>,
-    pages: NonZeroUsize,
-    proto: &'p PciRootBridgeIoProtocol,
+pub struct PciBuffer<'p, T> {
+    pub(super) base: NonNull<T>,
+    pub(super) pages: NonZeroUsize,
+    pub(super) proto: &'p PciRootBridgeIoProtocol,
 }
 
-impl<'p, T> PciPage<'p, MaybeUninit<T>> {
-    /// Creates wrapper for pages allocated by PCI Root Bridge protocol.
-    #[must_use]
-    pub const fn new(
-        base: NonNull<MaybeUninit<T>>,
-        pages: NonZeroUsize,
-        proto: &'p PciRootBridgeIoProtocol,
-    ) -> Self {
-        Self { base, pages, proto }
-    }
-
+impl<'p, T> PciBuffer<'p, MaybeUninit<T>> {
     /// Assumes the contents of this buffer have been initialized.
     ///
     /// # Safety
     /// Callers of this function must guarantee that the value stored is valid.
     #[must_use]
-    pub const unsafe fn assume_init(self) -> PciPage<'p, T> {
-        let initialized = PciPage {
+    pub const unsafe fn assume_init(self) -> PciBuffer<'p, T> {
+        let initialized = PciBuffer {
             base: self.base.cast(),
             pages: self.pages,
             proto: self.proto,
@@ -48,19 +38,33 @@ impl<'p, T> PciPage<'p, MaybeUninit<T>> {
     }
 }
 
-impl<T> AsRef<T> for PciPage<'_, T> {
+impl<'p, T> PciBuffer<'p, T> {
+    /// Returns the base address of this buffer
+    #[must_use]
+    pub fn base(&self) -> NonZeroUsize {
+        self.base.addr()
+    }
+
+    /// Returns the number of pages this buffer uses
+    #[must_use]
+    pub const fn pages(&self) -> NonZeroUsize {
+        self.pages
+    }
+}
+
+impl<T> AsRef<T> for PciBuffer<'_, T> {
     fn as_ref(&self) -> &T {
         unsafe { self.base.as_ref() }
     }
 }
 
-impl<T> AsMut<T> for PciPage<'_, T> {
+impl<T> AsMut<T> for PciBuffer<'_, T> {
     fn as_mut(&mut self) -> &mut T {
         unsafe { self.base.as_mut() }
     }
 }
 
-impl<T> Deref for PciPage<'_, T> {
+impl<T> Deref for PciBuffer<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -68,13 +72,13 @@ impl<T> Deref for PciPage<'_, T> {
     }
 }
 
-impl<T> DerefMut for PciPage<'_, T> {
+impl<T> DerefMut for PciBuffer<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_mut()
     }
 }
 
-impl<T> Drop for PciPage<'_, T> {
+impl<T> Drop for PciBuffer<'_, T> {
     fn drop(&mut self) {
         let status = unsafe {
             (self.proto.free_buffer)(self.proto, self.pages.get(), self.base.as_ptr().cast())
@@ -88,9 +92,11 @@ impl<T> Drop for PciPage<'_, T> {
                 );
             }
             Status::INVALID_PARAMETER => {
-                panic!("PciBuffer was not created through valid protocol usage!")
+                error!("PciBuffer was not created through valid protocol usage!")
             }
-            _ => unreachable!(),
+            etc => {
+                error!("Failed to free PciBuffer: {:?}", etc);
+            }
         }
     }
 }

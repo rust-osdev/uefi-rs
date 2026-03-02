@@ -481,6 +481,16 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     cmd.arg("-device");
     cmd.arg("ide-hd,drive=satadisk0,bus=ide.2,serial=AtaPassThru,model=AtaPassThru");
 
+    // Sixth shared memory device used for testing Pci Root Bridge I/O's Copy function.
+    // This is to provide a PCI device with large enough memory.
+    cmd.arg("-device");
+    cmd.arg("ivshmem-plain,memdev=tempmem,id=tempmem");
+    cmd.arg("-object");
+    let mut object_args = OsString::from("memory-backend-file,size=1M,id=tempmem,mem-path=");
+    let ram_path = tmp_dir.join("copy-test.ram");
+    object_args.push(ram_path);
+    cmd.arg(object_args);
+
     let qemu_monitor_pipe = Pipe::new(tmp_dir, "qemu-monitor")?;
     let serial_pipe = Pipe::new(tmp_dir, "serial")?;
 

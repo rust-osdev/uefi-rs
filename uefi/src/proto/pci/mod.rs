@@ -9,6 +9,8 @@ use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 pub mod configuration;
 #[cfg(feature = "alloc")]
 pub mod enumeration;
+pub mod page;
+pub mod region;
 pub mod root_bridge;
 
 /// IO Address for PCI/register IO operations

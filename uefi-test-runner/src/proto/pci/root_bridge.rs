@@ -9,7 +9,9 @@ use uefi::proto::device_path::DevicePath;
 use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
 use uefi::proto::scsi::pass_thru::ExtScsiPassThru;
-use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolAttribute;
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,
+};
 use uefi_raw::table::boot::MemoryType;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
@@ -111,6 +113,45 @@ pub fn test_buffer() {
         assert_eq!(buffer.base_ptr().addr() % 4096, 0);
         unsafe {
             assert!(buffer.base_ptr().as_mut().unwrap().iter().all(|v| *v == 0));
+        }
+    }
+}
+
+pub fn test_mapping() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+    const BUFFER_SIZE: usize = 12342;
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+
+        let buffer = pci_proto
+            .allocate_buffer::<[u8; BUFFER_SIZE]>(
+                MemoryType::BOOT_SERVICES_DATA,
+                None,
+                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+            )
+            .unwrap();
+        let buffer = unsafe {
+            let buffer = buffer.assume_init();
+            buffer.base_ptr().as_mut().unwrap().fill(0);
+            buffer
+        };
+
+        let mut mapped_regions = vec![];
+        let mut offset = 0;
+        loop {
+            let (mapped, mapped_size) = pci_proto
+                .map(
+                    PciRootBridgeIoProtocolOperation::BUS_MASTER_COMMON_BUFFER64,
+                    &buffer,
+                    offset,
+                )
+                .unwrap();
+            mapped_regions.push(mapped);
+            offset += mapped_size;
+            if offset == size_of::<[u8; BUFFER_SIZE]>() {
+                break;
+            }
         }
     }
 }

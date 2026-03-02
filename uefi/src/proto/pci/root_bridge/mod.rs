@@ -6,10 +6,10 @@ use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
 #[cfg(feature = "alloc")]
 use crate::proto::pci::configuration::QwordAddressSpaceDescriptor;
 use crate::proto::pci::root_bridge::buffer::PciBuffer;
+use crate::proto::pci::root_bridge::region::PciMappedRegion;
 use crate::{Status, StatusExt};
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
-#[cfg(feature = "alloc")]
 use core::ffi::c_void;
 use core::mem::MaybeUninit;
 use core::num::NonZeroUsize;
@@ -19,10 +19,12 @@ use log::debug;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::root_bridge::{
     PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
+    PciRootBridgeIoProtocolOperation,
 };
 use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
 pub mod buffer;
+pub mod region;
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
 ///
@@ -146,10 +148,62 @@ impl PciRootBridgeIo {
         }
     }
 
+    /// Map the given buffer into a PCI Controller-specific address
+    /// so that devices can read system memory through it.
+    /// This will not map all bytes in pages allocated in the buffer. Instead it will only
+    /// map bytse actually occupied by type `T`.
+    ///
+    /// # Arguments
+    /// - `operation` - Indicates if bus master is going to read, write, or do both to the buffer.
+    /// - `to_map` - Buffer to map.
+    /// - 'offset' - Offset to add to the base address of buffer.
+    ///
+    /// # Returns
+    /// A mapped region and mapped bytes. It can map up to one DMA operation. Meaning large values
+    /// will require multiple calls to this function.
+    pub fn map<'p: 'r, 'r, T>(
+        &'p self,
+        operation: PciRootBridgeIoProtocolOperation,
+        to_map: &'r PciBuffer<'p, T>,
+        offset: usize,
+    ) -> crate::Result<(PciMappedRegion<'p, 'r, T>, usize)> {
+        let host_address = unsafe {
+            if to_map.pages.get() * PAGE_SIZE < offset {
+                return Err(Status::INVALID_PARAMETER.into());
+            }
+            to_map.base_ptr().byte_offset(offset as isize)
+        };
+        let mut bytes = size_of::<T>() - offset;
+        let mut device_address = 0usize;
+        let mut mapping: *mut c_void = null_mut();
+
+        let status = unsafe {
+            (self.0.map)(
+                &self.0,
+                operation,
+                host_address.cast(),
+                ptr::from_mut(&mut bytes),
+                ptr::from_mut(&mut device_address).cast(),
+                ptr::from_mut(&mut mapping),
+            )
+        };
+
+        status.to_result_with_val(|| {
+            let region = PciMappedRegion {
+                host: to_map,
+                length: 0,
+                device_address,
+                key: mapping,
+                proto: &self.0,
+            };
+            (region, bytes)
+        })
+    }
+
     // TODO: poll I/O
     // TODO: mem I/O access
     // TODO: io I/O access
-    // TODO: map & unmap & copy memory
+    // TODO: copy memory
     // TODO: get/set attributes
 
     /// Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI resource descriptors.

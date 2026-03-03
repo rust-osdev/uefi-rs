@@ -85,6 +85,14 @@ impl Path {
     pub const fn is_empty(&self) -> bool {
         self.to_cstr16().is_empty()
     }
+
+    /// Creates an owned [`PathBuf`] with `path` adjoined to `self`.
+    #[must_use]
+    pub fn join<P: AsRef<Self>>(&self, path: P) -> PathBuf {
+        let mut buf = self.to_path_buf();
+        buf.push(path);
+        buf
+    }
 }
 
 impl Display for Path {
@@ -293,5 +301,20 @@ mod tests {
 
         assert_ne!(path1, path3);
         assert_ne!(path3, path1);
+    }
+
+    #[test]
+    fn join() {
+        let path1 = Path::new(cstr16!(r"a\b"));
+        let path2 = Path::new(cstr16!(r"c\d"));
+        let path3 = Path::new(cstr16!(r"a\b\c\d"));
+
+        assert_eq!(path1.join(path2), path3.to_path_buf());
+
+        let pathbuf1 = path1.to_path_buf();
+        let pathbuf2 = path2.to_path_buf();
+        let pathbuf3 = path3.to_path_buf();
+
+        assert_eq!(pathbuf1.join(pathbuf2), pathbuf3);
     }
 }

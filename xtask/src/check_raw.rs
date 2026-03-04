@@ -389,6 +389,9 @@ fn check_macro(item: &ItemMacro, src: &Path) -> Result<(), Error> {
         let attrs = parse_attrs(&attrs.0, src)?;
 
         let reprs = get_reprs(&attrs);
+        if reprs.is_empty() {
+            return Err(Error::new(ErrorKind::MissingRepr, src, mac));
+        }
         let allowed_reprs: &[&[Repr]] = &[&[Repr::Transparent]];
         if !allowed_reprs.contains(&reprs.as_slice()) {
             return Err(Error::new(ErrorKind::ForbiddenRepr(reprs), src, mac));

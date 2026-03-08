@@ -111,6 +111,7 @@ use crate::proto::{ProtocolPointer, unsafe_protocol};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::ops::Deref;
+use core::ptr;
 use ptr_meta::Pointee;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 #[cfg(feature = "alloc")]
@@ -551,8 +552,7 @@ impl DevicePath {
     /// Cast to a [`FfiDevicePath`] pointer.
     #[must_use]
     pub const fn as_ffi_ptr(&self) -> *const FfiDevicePath {
-        let p = self as *const Self;
-        p.cast()
+        ptr::from_ref(self).cast()
     }
 
     /// Get an iterator over the [`DevicePathInstance`]s in this path.

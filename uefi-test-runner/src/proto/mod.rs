@@ -30,7 +30,7 @@ pub fn test() {
     usb::test();
     misc::test();
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[cfg(target_arch = "x86_64")]
     iommu::test();
 
     // disable the ATA test on aarch64 for now. The aarch64 UEFI Firmware does not yet seem

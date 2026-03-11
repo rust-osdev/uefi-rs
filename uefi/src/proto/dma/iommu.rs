@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! EDK2 IOMMU protocol.
+//! EDKII IOMMU protocol.
 
+use crate::data_types::PhysicalAddress;
+use crate::mem::memory_map::MemoryType;
+use crate::proto::unsafe_protocol;
+use crate::{Handle, Result, StatusExt};
 use core::ffi::c_void;
-use uefi::data_types::PhysicalAddress;
-use uefi::mem::memory_map::MemoryType;
-use uefi::proto::unsafe_protocol;
-use uefi::{Handle, Result, StatusExt};
 use uefi_raw::table::boot::AllocateType;
 
 pub use crate::proto::dma::{DmaBuffer, Mapping};
-pub use crate::uefi_raw::protocol::iommu::{
+pub use uefi_raw::protocol::iommu::{
     EdkiiIommuAccess, EdkiiIommuAttribute, EdkiiIommuOperation, EdkiiIommuProtocol,
 };
 
@@ -33,10 +33,10 @@ impl Iommu {
     ///
     /// # Errors
     ///
-    /// * [`Status::INVALID_PARAMETER`]: invalid device handle, mapping, or access flags
-    /// * [`Status::UNSUPPORTED`]: operation not supported by this IOMMU
-    /// * [`Status::OUT_OF_RESOURCES`]: insufficient resources to modify IOMMU access
-    /// * [`Status::DEVICE_ERROR`]: IOMMU device reported an error
+    /// * [`crate::Status::INVALID_PARAMETER`]: invalid device handle, mapping, or access flags
+    /// * [`crate::Status::UNSUPPORTED`]: operation not supported by this IOMMU
+    /// * [`crate::Status::OUT_OF_RESOURCES`]: insufficient resources to modify IOMMU access
+    /// * [`crate::Status::DEVICE_ERROR`]: IOMMU device reported an error
     pub fn set_attribute(
         &self,
         device_handle: Handle,
@@ -58,10 +58,10 @@ impl Iommu {
     ///
     /// # Errors
     ///
-    /// * [`Status::INVALID_PARAMETER`]: invalid operation or buffer
-    /// * [`Status::UNSUPPORTED`]: host address cannot be mapped as a common buffer
-    /// * [`Status::OUT_OF_RESOURCES`]: insufficient resources
-    /// * [`Status::DEVICE_ERROR`]: system hardware could not map the requested address
+    /// * [`crate::Status::INVALID_PARAMETER`]: invalid operation or buffer
+    /// * [`crate::Status::UNSUPPORTED`]: host address cannot be mapped as a common buffer
+    /// * [`crate::Status::OUT_OF_RESOURCES`]: insufficient resources
+    /// * [`crate::Status::DEVICE_ERROR`]: system hardware could not map the requested address
     pub fn map(
         &self,
         operation: EdkiiIommuOperation,
@@ -104,9 +104,9 @@ impl Iommu {
     ///
     /// # Errors
     ///
-    /// * [`Status::INVALID_PARAMETER`]: invalid memory type or attributes
-    /// * [`Status::UNSUPPORTED`]: unsupported attributes
-    /// * [`Status::OUT_OF_RESOURCES`]: memory pages could not be allocated
+    /// * [`crate::Status::INVALID_PARAMETER`]: invalid memory type or attributes
+    /// * [`crate::Status::UNSUPPORTED`]: unsupported attributes
+    /// * [`crate::Status::OUT_OF_RESOURCES`]: memory pages could not be allocated
     pub fn allocate_buffer(
         &self,
         memory_type: MemoryType,

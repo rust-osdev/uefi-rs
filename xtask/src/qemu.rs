@@ -21,7 +21,7 @@ use tempfile::TempDir;
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
 /// Name of the ovmf-prebuilt release to use by default.
-const OVMF_PREBUILT_SOURCE: Source = Source::EDK2_STABLE202502_R2;
+const OVMF_PREBUILT_SOURCE: Source = Source::EDK2_STABLE202511_R2;
 
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";

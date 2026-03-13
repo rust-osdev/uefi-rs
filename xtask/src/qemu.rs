@@ -370,10 +370,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             cmd.args(["-device", "virtio-gpu-pci"]);
         }
         UefiArch::IA32 | UefiArch::X86_64 => {
-            // Use a modern machine. kernel-irqchip=split is required by
             if arch == UefiArch::X86_64 {
-                cmd.args(["-machine", "q35,kernel-irqchip=split"]);
-                cmd.args(["-device", "intel-iommu,intremap=on,caching-mode=on"]);
+                cmd.args(["-machine", "q35"]);
+                cmd.args(["-device", "intel-iommu"]);
             } else {
                 cmd.args(["-machine", "q35"]);
             }

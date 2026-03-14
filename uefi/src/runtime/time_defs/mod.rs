@@ -7,6 +7,9 @@ use core::fmt;
 use core::fmt::{Debug, Display, Formatter};
 use uefi_raw::time::Daylight;
 
+#[allow(unused)]
+mod integration_common;
+
 /// Date and time representation.
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]

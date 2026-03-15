@@ -50,7 +50,7 @@ impl TryFrom<Time> for OffsetDateTime {
         }
 
         let h = (value.0.time_zone / 60) as i8;
-        let m = (value.0.time_zone.abs() % 60) as i8;
+        let m = (value.0.time_zone % 60) as i8;
 
         let offset = UtcOffset::from_hms(h, m, 0)
             .map_err(time::Error::ComponentRange)
@@ -105,5 +105,63 @@ impl TryFrom<OffsetDateTime> for Time {
         };
 
         Self::new(params).map_err(|e| ConversionError(ConversionErrorInner::InvalidUefiTime(e)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::integration_common::test_helpers;
+    use super::*;
+    use time::{OffsetDateTime, PrimitiveDateTime};
+
+    #[test]
+    fn primitive_roundtrip_basic() {
+        test_helpers::primitive_roundtrip::<PrimitiveDateTime>();
+    }
+
+    #[test]
+    fn zoned_roundtrip_positive_offset() {
+        test_helpers::zoned_roundtrip::<OffsetDateTime>();
+    }
+
+    #[test]
+    fn zoned_roundtrip_negative_offset() {
+        test_helpers::negative_offset_roundtrip::<OffsetDateTime>();
+    }
+
+    #[test]
+    fn nanoseconds_preserved() {
+        test_helpers::preserves_nanoseconds::<OffsetDateTime>();
+    }
+
+    #[test]
+    fn unspecified_timezone_is_rejected() {
+        test_helpers::unspecified_timezone_fails::<OffsetDateTime>();
+    }
+
+    #[test]
+    fn invalid_date_is_rejected() {
+        test_helpers::invalid_calendar_date_fails::<PrimitiveDateTime>();
+    }
+
+    // important real-world offset edge case
+    #[test]
+    fn half_hour_timezone_roundtrip() {
+        let t = test_helpers::sample_time(90); // +01:30
+
+        let dt: OffsetDateTime = t.try_into().unwrap();
+        let back: Time = dt.try_into().unwrap();
+
+        assert_eq!(back.0.time_zone, 90);
+    }
+
+    #[test]
+    fn negative_half_hour_timezone_roundtrip() {
+        let t = test_helpers::sample_time(-330); // -05:30
+
+        let dt: OffsetDateTime = t.try_into().unwrap();
+        let back: Time = dt.try_into().unwrap();
+
+        assert_eq!(back.0.time_zone, -330);
     }
 }

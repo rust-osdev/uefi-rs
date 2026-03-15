@@ -76,7 +76,6 @@ impl Error for ConversionErrorInner {
 }
 
 #[cfg(test)]
-#[allow(unused)]
 pub(super) mod test_helpers {
     use super::*;
     use crate::runtime::TimeParams;

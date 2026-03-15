@@ -34,6 +34,9 @@
 - Added `Serial::read_exact()` and `Serial::write_exact()`
 - `CStr16::from_bytes_with_nul()`: This is especially useful to transform the
   retrieved value from a UEFI variable into a UCS2 (CStr16) string.
+- Integration of `Time` with `time` crate
+  - `TryFrom`: `time::PrimitiveDateTime <--> Time` (without timezone)
+  - `TryFrom`: `time::OffsetDateTime <--> Time` (with timezone)
 
 ## Changed
 - export all `text::{input, output}::*` types

@@ -8,19 +8,19 @@ use core::error::Error;
 use core::fmt;
 use core::fmt::{Display, Formatter};
 
-/// An opaque error type indicating a UEFI [`Time`] could not be converted.
+/// Opaque error type indicating a UEFI [`Time`] could not be converted.
 ///
 /// [`Time`]: super::Time
 #[derive(Debug)]
-pub struct ConversionError(pub(super) ConversionErrorInner);
+pub struct TimeConversionError(pub(super) ConversionErrorInner);
 
-impl Display for ConversionError {
+impl Display for TimeConversionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "Time conversion error: {}", self.0)
     }
 }
 
-impl Error for ConversionError {}
+impl Error for TimeConversionError {}
 
 #[derive(Debug)]
 pub(super) enum ConversionErrorInner {
@@ -35,6 +35,9 @@ pub(super) enum ConversionErrorInner {
     ///
     /// [`Time::UNSPECIFIED_TIMEZONE`]: super::Time::UNSPECIFIED_TIMEZONE
     UnspecifiedTimezone,
+    /// Errors raised in the [`time`] crate.
+    #[cfg(feature = "time03")]
+    TimeCrateError(time::Error),
 }
 
 impl Display for ConversionErrorInner {
@@ -43,6 +46,8 @@ impl Display for ConversionErrorInner {
             Self::InvalidComponent => write!(f, "Invalid component"),
             Self::InvalidUefiTime(e) => write!(f, "Invalid UEFI time: {e}"),
             Self::UnspecifiedTimezone => write!(f, "Unspecified timezone"),
+            #[cfg(feature = "time03")]
+            Self::TimeCrateError(e) => write!(f, "Time crate error: {}", e),
         }
     }
 }
@@ -53,6 +58,8 @@ impl Error for ConversionErrorInner {
             Self::InvalidComponent => None,
             Self::InvalidUefiTime(e) => Some(e),
             Self::UnspecifiedTimezone => None,
+            #[cfg(feature = "time03")]
+            Self::TimeCrateError(e) => Some(e),
         }
     }
 }

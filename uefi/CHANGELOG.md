@@ -1,6 +1,7 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `proto::dma::iommu::Iommu` for IOMMU-based DMA buffer management.
 - Added `proto::ata::AtaRequestBuilder::read_pio()`.
 - Added `proto::shell::Shell::{var(), set_var(), vars()}`
 - Added `proto::pci::root_bridge::PciRootBridgeIo::configuration()`.

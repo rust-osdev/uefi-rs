@@ -20,8 +20,11 @@ use tempfile::TempDir;
 #[cfg(target_os = "linux")]
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
-/// Name of the ovmf-prebuilt release to use by default.
-const OVMF_PREBUILT_SOURCE: Source = Source::EDK2_STABLE202502_R2;
+/// OVMF source for x86_64 — includes IOMMU support.
+const OVMF_PREBUILT_SOURCE_X64: Source = Source::EDK2_STABLE202602_R1;
+
+/// OVMF source for all other architectures.
+const OVMF_PREBUILT_SOURCE_DEFAULT: Source = Source::EDK2_STABLE202508_R1;
 
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";
@@ -76,7 +79,11 @@ impl OvmfPaths {
                 );
             }
         } else {
-            let prebuilt = Prebuilt::fetch(OVMF_PREBUILT_SOURCE, OVMF_PREBUILT_DIR)?;
+            let source = match arch {
+                UefiArch::X86_64 => OVMF_PREBUILT_SOURCE_X64,
+                _ => OVMF_PREBUILT_SOURCE_DEFAULT,
+            };
+            let prebuilt = Prebuilt::fetch(source, OVMF_PREBUILT_DIR)?;
 
             Ok(prebuilt.get_file(arch.into(), file_type))
         }
@@ -363,8 +370,12 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             cmd.args(["-device", "virtio-gpu-pci"]);
         }
         UefiArch::IA32 | UefiArch::X86_64 => {
-            // Use a modern machine.
-            cmd.args(["-machine", "q35"]);
+            if arch == UefiArch::X86_64 {
+                cmd.args(["-machine", "q35"]);
+                cmd.args(["-device", "intel-iommu"]);
+            } else {
+                cmd.args(["-machine", "q35"]);
+            }
 
             // Multi-processor services protocol test needs exactly 4 CPUs.
             cmd.args(["-smp", "4"]);

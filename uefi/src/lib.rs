@@ -148,6 +148,9 @@
 //! - `log-debugcon`: Whether the logger set up by `logger` should also log
 //!   to the debugcon device (available in QEMU or Cloud Hypervisor on x86).
 //! - `panic_handler`: Add a default panic handler that logs to `stdout`.
+//! - `time03`: Integration of [`runtime::Time`] with the `time` crate
+//!   (version 0.3 and possible above). Specifically, it integrates the time
+//!   struct with `PrimitiveDateTime` and `OffsetDateTime` via `TryFrom`.
 //! - `unstable`: Enable functionality that depends on [unstable features] in
 //!   the Rust compiler (nightly version).
 //! - `qemu`: Enable some code paths to adapt their execution when executed

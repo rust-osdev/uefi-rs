@@ -56,6 +56,7 @@ pub enum Feature {
     Unstable,
     PanicHandler,
     Qemu,
+    Time03,
 
     // `uefi-test-runner` features.
     DebugSupport,
@@ -76,6 +77,7 @@ impl Feature {
             Self::Unstable => "unstable",
             Self::PanicHandler => "panic_handler",
             Self::Qemu => "qemu",
+            Self::Time03 => "time03",
 
             Self::DebugSupport => "uefi-test-runner/debug_support",
             Self::MultiProcessor => "uefi-test-runner/multi_processor",
@@ -117,7 +119,7 @@ impl Feature {
     /// - `include_unstable` - add all functionality behind the `unstable` feature
     /// - `runtime_features` - add all functionality that effect the runtime of Rust
     pub fn more_code(include_unstable: bool, runtime_features: bool) -> Vec<Self> {
-        let mut base_features = vec![Self::Alloc, Self::LogDebugcon, Self::Logger];
+        let mut base_features = vec![Self::Alloc, Self::LogDebugcon, Self::Logger, Self::Time03];
         if include_unstable {
             base_features.extend([Self::Unstable])
         }
@@ -387,19 +389,19 @@ mod tests {
     fn test_comma_separated_features() {
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(false, false)),
-            "alloc,log-debugcon,logger"
+            "alloc,log-debugcon,logger,time03"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(false, true)),
-            "alloc,log-debugcon,logger,global_allocator"
+            "alloc,log-debugcon,logger,time03,global_allocator"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(true, false)),
-            "alloc,log-debugcon,logger,unstable"
+            "alloc,log-debugcon,logger,time03,unstable"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(true, true)),
-            "alloc,log-debugcon,logger,unstable,global_allocator"
+            "alloc,log-debugcon,logger,time03,unstable,global_allocator"
         );
     }
 

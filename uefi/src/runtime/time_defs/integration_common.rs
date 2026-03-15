@@ -38,6 +38,9 @@ pub(super) enum ConversionErrorInner {
     ///
     /// [`Time::UNSPECIFIED_TIMEZONE`]: super::Time::UNSPECIFIED_TIMEZONE
     UnspecifiedTimezone,
+    /// Errors raised in the [`time`] crate.
+    #[cfg(feature = "time03")]
+    TimeCrateError(time::Error),
 }
 
 impl Display for ConversionErrorInner {
@@ -46,6 +49,8 @@ impl Display for ConversionErrorInner {
             Self::InvalidComponent => write!(f, "Invalid component"),
             Self::InvalidUefiTime(e) => write!(f, "Invalid UEFI time: {e}"),
             Self::UnspecifiedTimezone => write!(f, "Unspecified timezone"),
+            #[cfg(feature = "time03")]
+            Self::TimeCrateError(e) => write!(f, "Time crate error: {}", e),
         }
     }
 }
@@ -56,6 +61,8 @@ impl Error for ConversionErrorInner {
             Self::InvalidComponent => None,
             Self::InvalidUefiTime(e) => Some(e),
             Self::UnspecifiedTimezone => None,
+            #[cfg(feature = "time03")]
+            Self::TimeCrateError(e) => Some(e),
         }
     }
 }

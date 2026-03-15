@@ -20,6 +20,8 @@ rust-version.workspace = true
 # KEEP this feature list in sync with doc in uefi/lib.rs!
 default = [ ]
 alloc = []
+# Integration with time crate `>= v0.3`
+time03 = ["dep:time"]
 
 # Generic gate to code that uses unstable features of Rust, needing a nightly
 # toolchain.
@@ -39,6 +41,7 @@ log-debugcon = []
 bitflags.workspace = true
 log.workspace = true
 ptr_meta.workspace = true
+time = { workspace = true, optional = true }
 uguid.workspace = true
 cfg-if = "1.0.0"
 ucs2 = "0.3.3"

@@ -22,6 +22,9 @@
 - Integration of `Time` with `time` crate
   - `TryFrom`: `time::PrimitiveDateTime <--> Time` (without timezone)
   - `TryFrom`: `time::OffsetDateTime <--> Time` (with timezone)
+- Integration of `Time` with `jiff` crate
+  - `TryFrom`: `jiff::DateTime <--> Time` (without timezone)
+  - `TryFrom`: `jiff::Zoned <--> Time` (with timezone)
 
 ## Changed
 - export all `text::{input, output}::*` types

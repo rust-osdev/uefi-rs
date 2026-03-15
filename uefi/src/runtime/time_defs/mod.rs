@@ -7,8 +7,10 @@ use core::fmt;
 use core::fmt::{Debug, Display, Formatter};
 use uefi_raw::time::Daylight;
 
-#[cfg(feature = "time03")]
+#[cfg(any(feature = "jiff02", feature = "time03"))]
 mod integration_common;
+#[cfg(feature = "jiff02")]
+mod integration_jiff_crate;
 #[cfg(feature = "time03")]
 mod integration_time_crate;
 
@@ -25,7 +27,13 @@ mod integration_time_crate;
 /// - [`TryFrom`]: `PrimitiveDateTime` <--> [`Time`] (without timezone)
 /// - [`TryFrom`]: `OffsetDateTime` <--> [`Time`] (with timezone)
 ///
+/// ## Integration with [`jiff`][jiff crate] crate
+///
+/// - [`TryFrom`]: `DateTime` <--> [`Time`] (without timezone)
+/// - [`TryFrom`]: `Zoned` <--> [`Time`] (with timezone)
+///
 /// [time crate]: https://crates.io/crates/time
+/// [jiff crate]: https://crates.io/crates/jiff
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Time(uefi_raw::time::Time);

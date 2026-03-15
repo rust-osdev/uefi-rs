@@ -48,6 +48,8 @@
 - **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
   to better differentiate with the new `to_string()` coming from the new
   `Display`.
+- `runtime::set_time()` now consumes `&T` where `T: Clone + TryInto<Time>`
+  instead of `&Time` to improve the integration with other time types.
 
 # uefi - v0.36.1 (2025-11-05)
 

@@ -142,6 +142,9 @@
 //!   using this feature, or no allocator at all if you don't need to
 //!   dynamically allocate any memory. Note that even without that feature,
 //!   some code might use the internal UEFI allocator.
+//! - `jiff02`: Integration of [`runtime::Time`] with the `jiff` crate
+//!   (version 0.2 and possible above). Specifically, it integrates the time
+//!   struct with `DateTime` and `Zoned` via `TryFrom`.
 //! - `logger`: Logging implementation for the standard [`log`] crate
 //!   that prints output to the UEFI console. No buffering is done; this
 //!   is not a high-performance logger.

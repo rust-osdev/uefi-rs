@@ -20,6 +20,8 @@ rust-version.workspace = true
 # KEEP this feature list in sync with doc in uefi/lib.rs!
 default = [ ]
 alloc = []
+# Integration with jiff crate `>= v0.2`
+jiff02 = ["dep:jiff"]
 # Integration with time crate `>= v0.3`
 time03 = ["dep:time"]
 
@@ -41,6 +43,7 @@ log-debugcon = []
 bitflags.workspace = true
 log.workspace = true
 ptr_meta.workspace = true
+jiff = { workspace = true, optional = true }
 time = { workspace = true, optional = true }
 uguid.workspace = true
 cfg-if = "1.0.0"

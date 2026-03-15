@@ -2,7 +2,7 @@
 
 use log::info;
 use uefi::prelude::*;
-use uefi::runtime::{VariableAttributes, VariableVendor};
+use uefi::runtime::{VariableAttributes, VariableData, VariableDataOwned, VariableVendor};
 use uefi::{CStr16, Error, guid, runtime};
 
 /// Test variable name.
@@ -10,9 +10,11 @@ const NAME: &CStr16 = cstr16!("UefiRsTestVar");
 
 /// Test variable vendor.
 const VENDOR: &VariableVendor = &VariableVendor(guid!("9baf21cf-e187-497e-ae77-5bd8b0e09703"));
+const VENDOR2: &VariableVendor = &VariableVendor(guid!("9baf21cf-e187-497e-ae77-5bd8b0e09704"));
 
 /// Test variable value.
 const VALUE: &[u8] = b"TestValue";
+const VALUE2: &CStr16 = cstr16!("TestValue");
 
 /// Test variable attributes.
 const ATTRS: VariableAttributes =
@@ -24,6 +26,7 @@ fn test_variables() {
 
     // Create the test variable.
     runtime::set_variable(NAME, VENDOR, ATTRS, VALUE).expect("failed to set variable");
+    runtime::set_variable(NAME, VENDOR2, ATTRS, VALUE2.as_bytes()).expect("failed to set variable");
 
     assert!(runtime::variable_exists(NAME, VENDOR).unwrap());
 
@@ -38,12 +41,34 @@ fn test_variables() {
     let mut buf = [0u8; 9];
     let (data, attrs) =
         runtime::get_variable(NAME, VENDOR, &mut buf).expect("failed to get variable");
+    let VariableData::Arbitrary(data) = data else {
+        panic!("Expected VariableData::Arbitrary but got {data:?}");
+    };
     assert_eq!(data, VALUE);
+    assert_eq!(attrs, ATTRS);
+
+    let mut buf = [0u8; 20];
+    let (data, attrs) =
+        runtime::get_variable(NAME, VENDOR2, &mut buf).expect("failed to get variable");
+    let VariableData::CStr16(data) = data else {
+        panic!("Expected VariableData::CStr16 but got {data:?}");
+    };
+    assert_eq!(data, VALUE2);
     assert_eq!(attrs, ATTRS);
 
     // Test `get_variable_boxed`.
     let (data, attrs) = runtime::get_variable_boxed(NAME, VENDOR).expect("failed to get variable");
+    let VariableDataOwned::Arbitrary(data) = data else {
+        panic!("Expected VariableDataOwned::Arbitrary, but got {data:?}");
+    };
     assert_eq!(&*data, VALUE);
+    assert_eq!(attrs, ATTRS);
+
+    let (data, attrs) = runtime::get_variable_boxed(NAME, VENDOR2).expect("failed to get variable");
+    let VariableDataOwned::CString16(data) = data else {
+        panic!("Expected VariableDataOwned::CString16, but got {data:?}");
+    };
+    assert_eq!(data, VALUE2);
     assert_eq!(attrs, ATTRS);
 
     // Test that the variable is present in the `variable_keys` iterator.

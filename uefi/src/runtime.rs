@@ -9,7 +9,7 @@
 
 use crate::data_types::PhysicalAddress;
 use crate::table::{self, Revision};
-use crate::{CStr16, Error, Result, Status, StatusExt};
+use crate::{CStr16, Error, Result, Status, StatusExt, util};
 use core::fmt::{self, Debug, Display, Formatter};
 use core::ptr::{self, NonNull};
 use uefi_raw::table::boot::MemoryDescriptor;
@@ -136,7 +136,7 @@ pub fn get_variable<'buf>(
     name: &CStr16,
     vendor: &VariableVendor,
     buf: &'buf mut [u8],
-) -> Result<(&'buf mut [u8], VariableAttributes), Option<usize>> {
+) -> Result<(VariableData<'buf>, VariableAttributes), Option<usize>> {
     let rt = runtime_services_raw_panicking();
     let rt = unsafe { rt.as_ref() };
 
@@ -153,10 +153,46 @@ pub fn get_variable<'buf>(
     };
 
     match status {
-        Status::SUCCESS => Ok((&mut buf[..data_size], attributes)),
+        Status::SUCCESS => {
+            let subslice = &mut buf[..data_size];
+
+            let is_valid_cstr16 = if let Ok(u16_bytes) = util::try_cast_u8_to_u16(subslice) {
+                CStr16::from_u16_with_nul(u16_bytes).is_ok()
+            } else {
+                false
+            };
+
+            if is_valid_cstr16 {
+                let u16_bytes = util::try_cast_u8_to_u16(subslice).unwrap();
+                let cstr = CStr16::from_u16_with_nul(u16_bytes).unwrap();
+                Ok((VariableData::CStr16(cstr), attributes))
+            } else {
+                Ok((VariableData::Arbitrary(subslice), attributes))
+            }
+        }
         Status::BUFFER_TOO_SMALL => Err(Error::new(status, Some(data_size))),
         _ => Err(Error::new(status, None)),
     }
+}
+
+/// Data of a UEFI variable -- either a valid CStr16 or raw bytes.
+#[derive(Debug)]
+pub enum VariableData<'c> {
+    /// Variable data containing a null-terminated UCS-2 string.
+    CStr16(&'c CStr16),
+
+    /// Variable data having raw bytes.
+    Arbitrary(&'c mut [u8]),
+}
+
+/// Owned version of `VariableData`.
+#[cfg(feature = "alloc")]
+#[derive(Debug, Clone)]
+pub enum VariableDataOwned {
+    /// Variable data as owned UCS-2 string.
+    CString16(CString16),
+    /// Variable data as `Box`'ed bytes.
+    Arbitrary(Box<[u8]>),
 }
 
 /// Gets the contents and attributes of a variable.
@@ -173,18 +209,49 @@ pub fn get_variable<'buf>(
 pub fn get_variable_boxed(
     name: &CStr16,
     vendor: &VariableVendor,
-) -> Result<(Box<[u8]>, VariableAttributes)> {
+) -> Result<(VariableDataOwned, VariableAttributes)> {
     let mut out_attr = VariableAttributes::empty();
+    let mut is_cstr16 = false;
     let get_var = |buf| {
         get_variable(name, vendor, buf).map(|(val, attr)| {
             // `make_boxed` expects only a DST value to be returned (`val` in
             // this case), so smuggle the `attr` value out via a separate
             // variable.
             out_attr = attr;
-            val
+            match val {
+                VariableData::CStr16(cstr16) => {
+                    is_cstr16 = true;
+                    // SAFETY: `cstr` is a reference to data inside `buf`. Casting
+                    // the pointer to mutable and returning the slice is safe
+                    // because this closure will only be called by make_boxed,
+                    // which would just copy these bytes to a new Box, and hence
+                    // would not invalidate this memory in any way.
+                    unsafe {
+                        core::slice::from_raw_parts_mut(
+                            cstr16.as_ptr().cast_mut().cast::<u8>(),
+                            cstr16.num_bytes(),
+                        )
+                    }
+                }
+                VariableData::Arbitrary(items) => {
+                    is_cstr16 = false;
+                    items
+                }
+            }
         })
     };
-    make_boxed(get_var).map(|val| (val, out_attr))
+    make_boxed(get_var).map(|val| {
+        let data = if is_cstr16 {
+            let u16_slice =
+                util::try_cast_u8_to_u16(&val).expect("validated due to `is_cstr16` being true");
+            let cstr = CStr16::from_u16_with_nul(u16_slice)
+                .expect("validated due to `is_cstr16` being true");
+            VariableDataOwned::CString16(cstr.to_owned())
+        } else {
+            VariableDataOwned::Arbitrary(val)
+        };
+        (data, out_attr)
+    })
 }
 
 /// Gets each variable key (name and vendor) one at a time.

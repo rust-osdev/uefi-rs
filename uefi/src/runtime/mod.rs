@@ -73,11 +73,15 @@ pub fn get_time_and_caps() -> Result<(Time, TimeCapabilities)> {
 ///
 /// Undefined behavior could happen if multiple tasks try to
 /// use this function at the same time without synchronisation.
-pub unsafe fn set_time(time: &Time) -> Result {
+pub unsafe fn set_time<T: Clone + TryInto<Time>>(time: &T) -> Result {
+    let time: Time = time
+        .clone()
+        .try_into()
+        .map_err(|_| Status::INVALID_PARAMETER)?;
     let rt = runtime_services_raw_panicking();
     let rt = unsafe { rt.as_ref() };
 
-    let time: *const Time = time;
+    let time = &raw const time;
     unsafe { (rt.set_time)(time.cast()) }.to_result()
 }
 

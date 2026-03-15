@@ -19,6 +19,9 @@
 - Added `Handle::component_name()` and `Handle::device_path()` to simplify the
   common use-case of querying more information about a handle.
 - Added `fs::path::Path::join()`.
+- Integration of `Time` with `time` crate
+  - `TryFrom`: `time::PrimitiveDateTime <--> Time` (without timezone)
+  - `TryFrom`: `time::OffsetDateTime <--> Time` (with timezone)
 
 ## Changed
 - export all `text::{input, output}::*` types

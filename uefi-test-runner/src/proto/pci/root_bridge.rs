@@ -9,6 +9,10 @@ use uefi::proto::device_path::DevicePath;
 use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
 use uefi::proto::scsi::pass_thru::ExtScsiPassThru;
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoProtocolAttribute, PciRootBridgeIoProtocolOperation,
+};
+use uefi_raw::table::boot::MemoryType;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
@@ -16,7 +20,7 @@ const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
 
 const REG_SIZE: u8 = size_of::<u32>() as u8;
 
-pub fn test() {
+pub fn test_io() {
     let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
 
     let mut sata_ctrl_cnt = 0;
@@ -85,6 +89,68 @@ pub fn test() {
             .unwrap()
             .to_string();
         assert!(mass_storage_dev_paths.contains(&device_path));
+    }
+}
+
+pub fn test_buffer() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+
+        let buffer = pci_proto
+            .allocate_buffer::<[u8; 4096]>(
+                MemoryType::BOOT_SERVICES_DATA,
+                None,
+                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+            )
+            .unwrap();
+        let buffer = unsafe {
+            let buffer = buffer.assume_init();
+            buffer.base_ptr().as_mut().unwrap().fill(0);
+            buffer
+        };
+        assert_eq!(buffer.base_ptr().addr() % 4096, 0);
+        unsafe {
+            assert!(buffer.base_ptr().as_mut().unwrap().iter().all(|v| *v == 0));
+        }
+    }
+}
+
+pub fn test_mapping() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+    const BUFFER_SIZE: usize = 4096;
+
+    for pci_handle in pci_handles {
+        let pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+
+        let buffer = pci_proto
+            .allocate_buffer::<[u8; BUFFER_SIZE]>(
+                MemoryType::BOOT_SERVICES_DATA,
+                None,
+                PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE,
+            )
+            .unwrap();
+        let buffer = unsafe {
+            let buffer = buffer.assume_init();
+            buffer.base_ptr().as_mut().unwrap().fill(0);
+            buffer
+        };
+        let (mapped, left_over) = pci_proto
+            .map(
+                PciRootBridgeIoProtocolOperation::BUS_MASTER_COMMON_BUFFER64,
+                &buffer,
+            )
+            .unwrap();
+        assert_ne!(left_over, BUFFER_SIZE);
+        if left_over != 0 {
+            info!("Mapped {} out of {} bytes", left_over, BUFFER_SIZE);
+        }
+        if mapped.region().device_address == buffer.base_ptr().addr() {
+            info!("This PCI device uses identity mapping");
+        } else {
+            info!("This PCI device uses different mapping from CPU");
+        }
     }
 }
 

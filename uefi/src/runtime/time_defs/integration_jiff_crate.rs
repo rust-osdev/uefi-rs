@@ -118,3 +118,60 @@ impl TryFrom<Zoned> for Time {
         Self::new(params).map_err(|e| ConversionError(ConversionErrorInner::InvalidUefiTime(e)))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::integration_common::test_helpers;
+    use super::*;
+
+    #[test]
+    fn primitive_roundtrip_basic() {
+        test_helpers::primitive_roundtrip::<DateTime>();
+    }
+
+    #[test]
+    fn zoned_roundtrip_positive_offset() {
+        test_helpers::zoned_roundtrip::<Zoned>();
+    }
+
+    #[test]
+    fn zoned_roundtrip_negative_offset() {
+        test_helpers::negative_offset_roundtrip::<Zoned>();
+    }
+
+    #[test]
+    fn nanoseconds_preserved() {
+        test_helpers::preserves_nanoseconds::<Zoned>();
+    }
+
+    #[test]
+    fn unspecified_timezone_is_rejected() {
+        test_helpers::unspecified_timezone_fails::<Zoned>();
+    }
+
+    #[test]
+    fn invalid_date_is_rejected() {
+        test_helpers::invalid_calendar_date_fails::<DateTime>();
+    }
+
+    // jiff-specific edge case: offset minute precision
+    #[test]
+    fn half_hour_timezone_roundtrip() {
+        let t = test_helpers::sample_time(90); // +01:30
+
+        let z: Zoned = t.try_into().unwrap();
+        let back: Time = z.try_into().unwrap();
+
+        assert_eq!(back.0.time_zone, 90);
+    }
+
+    #[test]
+    fn negative_half_hour_timezone_roundtrip() {
+        let t = test_helpers::sample_time(-330); // -05:30
+
+        let z: Zoned = t.try_into().unwrap();
+        let back: Time = z.try_into().unwrap();
+
+        assert_eq!(back.0.time_zone, -330);
+    }
+}

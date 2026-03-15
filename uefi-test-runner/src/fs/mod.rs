@@ -21,18 +21,18 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), fs::Error> {
     let data_to_write = "hello world";
     fs.write(cstr16!("foo_dir\\foo"), data_to_write)?;
     // Here, we additionally check that absolute paths work.
-    fs.copy(cstr16!("\\foo_dir\\foo"), cstr16!("\\foo_dir\\foo_cpy"))?;
-    let read = fs.read(cstr16!("foo_dir\\foo_cpy"))?;
+    fs.copy(cstr16!("\\foo_dir\\foo"), cstr16!("\\foo_dir\\foo_copy"))?;
+    let read = fs.read(cstr16!("foo_dir\\foo_copy"))?;
     let read = String::from_utf8(read).expect("Should be valid utf8");
     assert_eq!(read.as_str(), data_to_write);
 
     // test rename file + path buf replaces / with \
     fs.rename(
-        PathBuf::from(cstr16!("/foo_dir/foo_cpy")),
-        cstr16!("foo_dir\\foo_cpy2"),
+        PathBuf::from(cstr16!("/foo_dir/foo_copy")),
+        cstr16!("foo_dir\\foo_copy2"),
     )?;
     // file should not be available after rename
-    let err = fs.read(cstr16!("foo_dir\\foo_cpy"));
+    let err = fs.read(cstr16!("foo_dir\\foo_copy"));
     assert!(err.is_err());
 
     // test read dir on a sub dir
@@ -40,7 +40,7 @@ pub fn test(sfs: ScopedProtocol<SimpleFileSystem>) -> Result<(), fs::Error> {
         .read_dir(cstr16!("foo_dir"))?
         .map(|entry| entry.expect("Should be valid").file_name().to_string())
         .collect::<Vec<_>>();
-    assert_eq!(&[".", "..", "foo", "foo_cpy2"], entries.as_slice());
+    assert_eq!(&[".", "..", "foo", "foo_copy2"], entries.as_slice());
 
     // test create dir recursively
     fs.create_dir_all(cstr16!("foo_dir\\1\\2\\3\\4\\5\\6\\7"))?;

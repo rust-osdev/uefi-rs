@@ -7,9 +7,9 @@ pub use uefi_raw::protocol::console::serial::{
 };
 
 use crate::proto::unsafe_protocol;
-use crate::{Error, Result, Status, StatusExt};
-use core::fmt;
+use crate::{Error, Result, ResultExt, Status, StatusExt, boot};
 use core::time::Duration;
+use core::{cmp, fmt};
 use uefi_raw::protocol::console::serial::{
     SerialIoProtocol, SerialIoProtocol_1_1, SerialIoProtocolRevision,
 };
@@ -19,7 +19,6 @@ use uguid::Guid;
 ///
 /// This is conservative: it accounts for the actual serial mode settings
 /// (data bits, parity, stop bits) and rounds up to avoid underestimating.
-#[allow(unused)]
 fn duration_per_byte_estimate(mode: &IoMode) -> Duration {
     if mode.baud_rate == 0 {
         // Baud rate unknown; assume a very slow link to be safe.
@@ -60,6 +59,21 @@ fn duration_per_byte_estimate(mode: &IoMode) -> Duration {
     let us_per_byte = us_per_bit * (bits_per_char as u64);
 
     Duration::from_micros(us_per_byte)
+}
+
+/// Returns the estimated duration it takes to clear/transmit the UARTs internal
+/// FIFO.
+///
+/// This assumes the UART has each a transmit and a receive FIFO with the same
+/// size, which is the case for UART 16550 devices - the de-facto standard
+/// serial device.
+fn duration_fifo_estimate(mode: &IoMode, remaining: usize) -> Duration {
+    let remaining = u32::try_from(remaining).unwrap_or(u32::MAX);
+
+    // default: depth = 1.
+    let depth = mode.receive_fifo_depth.max(1);
+    let remaining = cmp::min(depth, remaining);
+    duration_per_byte_estimate(mode) * remaining
 }
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
@@ -211,6 +225,67 @@ impl Serial {
         )
     }
 
+    /// Reads bytes into the provided buffer, blocking until it is full.
+    ///
+    /// Retries automatically on [`Status::TIMEOUT`], stalling briefly between
+    /// attempts based on the current baud rate. A maximum retry limit prevents
+    /// spinning forever in the unlikely event of a hardware fault.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: buffer to fill
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    /// - [`Status::TIMEOUT`]: This timeout happens if the underlying device
+    ///   seem to stopped its normal operation and is only reported to prevent
+    ///   an endless loop.
+    pub fn read_exact(&mut self, buffer: &mut [u8]) -> Result<()> {
+        // Chosen at will, tested on real hardware.
+        const MAX_ZERO_PROGRESS: usize = 16;
+
+        let mut remaining_buffer = buffer;
+        let mut zero_progress_count = 0;
+
+        // Retry until all bytes were written with endless loop protection.
+        while !remaining_buffer.is_empty() {
+            match self.read(remaining_buffer) {
+                // All data read, buffer is full.
+                Ok(_) => return Ok(()),
+                Err(err) if err.status() == Status::TIMEOUT => {
+                    let n = *err.data();
+                    if n == 0 {
+                        zero_progress_count += 1;
+                        if zero_progress_count >= MAX_ZERO_PROGRESS {
+                            return Err(Error::from(Status::TIMEOUT));
+                        }
+                    } else {
+                        zero_progress_count = 0;
+                    }
+
+                    remaining_buffer = &mut remaining_buffer[n..];
+
+                    // Give FIFO time to fill up. Without that protection, we
+                    // might get TIMEOUT too often and return too early.
+                    let fifo_stall_duration =
+                        duration_fifo_estimate(self.io_mode(), remaining_buffer.len());
+                    boot::stall(fifo_stall_duration);
+                }
+                err => {
+                    return Err(Error::from(err.status()));
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Writes data to this device. This function has the raw semantics of the
     /// underlying UEFI protocol.
     ///
@@ -241,6 +316,65 @@ impl Serial {
             },
             |_| buffer_size,
         )
+    }
+
+    /// Writes all provided bytes, blocking until every byte has been sent.
+    ///
+    /// Retries automatically on [`Status::TIMEOUT`], stalling briefly between
+    /// attempts based on the current baud rate. A maximum retry limit prevents
+    /// spinning forever in the unlikely event of a hardware fault.
+    ///
+    /// # Arguments
+    ///
+    /// - `data`: bytes to write
+    ///
+    /// # Tips
+    ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] matching your use-case. For more info,
+    /// please read the general [documentation](Self) of the protocol.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
+    /// - [`Status::TIMEOUT`]: This timeout happens if the underlying device
+    ///   seem to stopped its normal operation and is only reported to prevent
+    ///   an endless loop.
+    pub fn write_exact(&mut self, data: &[u8]) -> Result<()> {
+        // Chosen at will, tested on real hardware.
+        const MAX_ZERO_PROGRESS: usize = 16;
+
+        let mut remaining_bytes = data;
+        let mut zero_progress_count = 0;
+
+        // Retry until all bytes were written with endless loop protection.
+        while !remaining_bytes.is_empty() {
+            match self.write(remaining_bytes) {
+                // All data written, no data left to send.
+                Ok(_) => return Ok(()),
+                Err(err) if err.status() == Status::TIMEOUT => {
+                    let n = *err.data();
+                    if n == 0 {
+                        zero_progress_count += 1;
+                        if zero_progress_count >= MAX_ZERO_PROGRESS {
+                            return Err(Error::from(Status::TIMEOUT));
+                        }
+                    } else {
+                        zero_progress_count = 0;
+                    }
+
+                    remaining_bytes = &remaining_bytes[n..];
+
+                    // Give FIFO time to drain. Without that protection, we
+                    // might get TIMEOUT too often and return too early.
+                    let fifo_stall_duration =
+                        duration_fifo_estimate(self.io_mode(), remaining_bytes.len());
+                    boot::stall(fifo_stall_duration);
+                }
+                Err(err) => return Err(Error::from(err.status())),
+            }
+        }
+        Ok(())
     }
 
     /// Pointer to a GUID identifying the device connected to the serial port.

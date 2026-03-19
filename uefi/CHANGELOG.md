@@ -19,6 +19,7 @@
 - Added `Handle::component_name()` and `Handle::device_path()` to simplify the
   common use-case of querying more information about a handle.
 - Added `fs::path::Path::join()`.
+- Added `Serial::read_exact()` and `Serial::write_exact()`
 
 ## Changed
 - export all `text::{input, output}::*` types

@@ -2,17 +2,65 @@
 
 //! Abstraction over byte stream devices, also known as serial I/O devices.
 
+pub use uefi_raw::protocol::console::serial::{
+    ControlBits, Parity, SerialIoMode as IoMode, StopBits,
+};
+
 use crate::proto::unsafe_protocol;
 use crate::{Error, Result, Status, StatusExt};
 use core::fmt;
+use core::time::Duration;
 use uefi_raw::protocol::console::serial::{
     SerialIoProtocol, SerialIoProtocol_1_1, SerialIoProtocolRevision,
 };
 use uguid::Guid;
 
-pub use uefi_raw::protocol::console::serial::{
-    ControlBits, Parity, SerialIoMode as IoMode, StopBits,
-};
+/// Returns the estimated time it takes to write a single byte.
+///
+/// This is conservative: it accounts for the actual serial mode settings
+/// (data bits, parity, stop bits) and rounds up to avoid underestimating.
+#[allow(unused)]
+fn duration_per_byte_estimate(mode: &IoMode) -> Duration {
+    if mode.baud_rate == 0 {
+        // Baud rate unknown; assume a very slow link to be safe.
+        return Duration::from_millis(100);
+    }
+
+    // Count the number of bits per character conservatively:
+    //   - 1 start bit (always)
+    //   - data bits (use actual setting, fall back to maximum of 8)
+    //   - parity bit, if any
+    //   - stop bits (round up: ONE_FIVE and TWO both become 2)
+    let data_bits = if mode.data_bits == 0 {
+        8
+    } else {
+        mode.data_bits
+    };
+
+    let parity_bits: u32 = if mode.parity == Parity::NONE || mode.parity == Parity::DEFAULT {
+        0
+    } else {
+        1
+    };
+
+    // Be conservative with stop bits: treat ONE_FIVE as 2.
+    let stop_bits: u32 = match mode.stop_bits {
+        StopBits::ONE => 1,
+        StopBits::DEFAULT | StopBits::ONE_FIVE | StopBits::TWO => 2,
+        // Unknown future variant: assume worst case.
+        _ => 2,
+    };
+
+    let bits_per_char = 1 + data_bits + parity_bits + stop_bits;
+
+    // Compute microseconds per bit, rounding up to avoid underestimating.
+    let us_per_bit = 1_000_000_u64.div_ceil(mode.baud_rate);
+
+    // Total microseconds per byte/character.
+    let us_per_byte = us_per_bit * (bits_per_char as u64);
+
+    Duration::from_micros(us_per_byte)
+}
 
 /// Serial IO [`Protocol`]. Provides access to a serial I/O device.
 ///
@@ -239,5 +287,106 @@ impl Serial {
 impl fmt::Write for Serial {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.write(s.as_bytes()).map(|_| ()).map_err(|_| fmt::Error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_mode(baud_rate: u64, data_bits: u32, parity: Parity, stop_bits: StopBits) -> IoMode {
+        IoMode {
+            control_mask: ControlBits::empty(),
+            timeout: 0,
+            baud_rate,
+            receive_fifo_depth: 0,
+            data_bits,
+            parity,
+            stop_bits,
+        }
+    }
+
+    #[test]
+    fn unknown_baud_rate_returns_large_fallback() {
+        let mode = make_mode(0, 8, Parity::NONE, StopBits::ONE);
+        let duration = duration_per_byte_estimate(&mode);
+        assert!(
+            duration >= Duration::from_millis(50),
+            "fallback should be at least 100ms, got {duration:?}"
+        );
+    }
+
+    #[test]
+    fn higher_baud_rate_gives_shorter_duration() {
+        let slow = make_mode(9_600, 8, Parity::NONE, StopBits::ONE);
+        let fast = make_mode(115_200, 8, Parity::NONE, StopBits::ONE);
+        assert!(
+            duration_per_byte_estimate(&slow) > duration_per_byte_estimate(&fast),
+            "9600 baud should take longer per byte than 115200 baud"
+        );
+    }
+
+    #[test]
+    fn parity_bit_increases_duration() {
+        let no_parity = make_mode(9_600, 8, Parity::NONE, StopBits::ONE);
+        let with_parity = make_mode(9_600, 8, Parity::EVEN, StopBits::ONE);
+        assert!(
+            duration_per_byte_estimate(&with_parity) > duration_per_byte_estimate(&no_parity),
+            "a parity bit should increase the estimated duration"
+        );
+    }
+
+    #[test]
+    fn two_stop_bits_increases_duration() {
+        let one_stop = make_mode(9_600, 8, Parity::NONE, StopBits::ONE);
+        let two_stop = make_mode(9_600, 8, Parity::NONE, StopBits::TWO);
+        assert!(
+            duration_per_byte_estimate(&two_stop) > duration_per_byte_estimate(&one_stop),
+            "two stop bits should increase the estimated duration"
+        );
+    }
+
+    #[test]
+    fn one_five_stop_bits_same_as_two() {
+        // ONE_FIVE is rounded up conservatively to 2, same as TWO.
+        let one_five = make_mode(9_600, 8, Parity::NONE, StopBits::ONE_FIVE);
+        let two = make_mode(9_600, 8, Parity::NONE, StopBits::TWO);
+        assert_eq!(
+            duration_per_byte_estimate(&one_five),
+            duration_per_byte_estimate(&two),
+            "ONE_FIVE should be treated as 2 stop bits"
+        );
+    }
+
+    #[test]
+    fn more_data_bits_increases_duration() {
+        let seven = make_mode(9_600, 7, Parity::NONE, StopBits::ONE);
+        let eight = make_mode(9_600, 8, Parity::NONE, StopBits::ONE);
+        assert!(
+            duration_per_byte_estimate(&eight) > duration_per_byte_estimate(&seven),
+            "more data bits should increase the estimated duration"
+        );
+    }
+
+    #[test]
+    fn default_stop_bits_conservative() {
+        // DEFAULT is unknown, so it should be treated at least as generously as TWO.
+        let default_stop = make_mode(9_600, 8, Parity::NONE, StopBits::DEFAULT);
+        let two_stop = make_mode(9_600, 8, Parity::NONE, StopBits::TWO);
+        assert!(
+            duration_per_byte_estimate(&default_stop) >= duration_per_byte_estimate(&two_stop),
+            "DEFAULT stop bits should be at least as conservative as TWO"
+        );
+    }
+
+    #[test]
+    fn default_parity_conservative() {
+        // DEFAULT parity is unknown, so assume a parity bit may be present.
+        let default_parity = make_mode(9_600, 8, Parity::DEFAULT, StopBits::ONE);
+        let no_parity = make_mode(9_600, 8, Parity::NONE, StopBits::ONE);
+        assert!(
+            duration_per_byte_estimate(&default_parity) >= duration_per_byte_estimate(&no_parity),
+            "DEFAULT parity should be at least as conservative as a known parity bit"
+        );
     }
 }

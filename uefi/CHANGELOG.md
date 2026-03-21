@@ -19,6 +19,12 @@
 - Added `Handle::component_name()` and `Handle::device_path()` to simplify the
   common use-case of querying more information about a handle.
 - Added `fs::path::Path::join()`.
+- Integration of `Time` with `time` crate
+  - `TryFrom`: `time::PrimitiveDateTime <--> Time` (without timezone)
+  - `TryFrom`: `time::OffsetDateTime <--> Time` (with timezone)
+- Integration of `Time` with `jiff` crate
+  - `TryFrom`: `jiff::DateTime <--> Time` (without timezone)
+  - `TryFrom`: `jiff::Zoned <--> Time` (with timezone)
 
 ## Changed
 - export all `text::{input, output}::*` types
@@ -42,6 +48,8 @@
 - **Breaking:** Renamed `DevicePathNode::to_string()` to `DevicePathNode::to_string16()`
   to better differentiate with the new `to_string()` coming from the new
   `Display`.
+- `runtime::set_time()` now consumes `&T` where `T: Clone + TryInto<Time>`
+  instead of `&Time` to improve the integration with other time types.
 
 # uefi - v0.36.1 (2025-11-05)
 

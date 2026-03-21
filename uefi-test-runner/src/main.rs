@@ -10,6 +10,7 @@ extern crate alloc;
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use core::fmt::Write;
 use uefi::mem::memory_map::MemoryMap;
 use uefi::prelude::*;
 use uefi::proto::console::serial::Serial;
@@ -115,7 +116,8 @@ fn send_request_helper(serial: &mut Serial, request: HostRequest) -> Result {
     serial.set_attributes(&io_mode)?;
 
     // Send a screenshot request to the host.
-    serial.write(request.as_bytes()).discard_errdata()?;
+    // We transitively test Serial::write_exact() and Serial::write()
+    write!(serial, "{}", request).expect("should write all bytes");
 
     // Wait for the host's acknowledgement before moving forward.
     let mut reply = [0; 3];

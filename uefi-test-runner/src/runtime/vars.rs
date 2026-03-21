@@ -66,6 +66,14 @@ fn test_variables() {
     );
     // Variable is no longer present in the `variable_keys` iterator.
     assert!(!find_by_key());
+
+    // Test `get_variable` plus conversion to UEFI string
+    let value_cstr16 = cstr16!("Hello World");
+    runtime::set_variable(NAME, VENDOR, ATTRS, value_cstr16.as_bytes()).unwrap();
+    let (data, attrs) = runtime::get_variable_boxed(NAME, VENDOR).expect("failed to get variable");
+    let retrieved = CStr16::from_bytes_with_nul(&data).expect("should be valid UCS2 string");
+    assert_eq!(value_cstr16, retrieved);
+    assert_eq!(attrs, ATTRS);
 }
 
 fn test_variable_info() {

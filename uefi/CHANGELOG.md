@@ -1,6 +1,13 @@
 # uefi - [Unreleased]
 
 ## Added
+
+## Changed
+
+
+# uefi - v0.37.0 (2026-03-22)
+
+## Added
 - Added `proto::ata::AtaRequestBuilder::read_pio()`.
 - Added `proto::shell::Shell::{var(), set_var(), vars()}`
 - Added `proto::pci::root_bridge::PciRootBridgeIo::configuration()`.
@@ -12,7 +19,7 @@
 - Added `proto::pci::enumeration::PciTree::device_path()`.
 - Added `revision()` and `device_type_guid()` to `Serial` protocol
 - Implemented `Display` for `DevicePath`, `DevicePathNode` and `ScopedProtocol`,
-  enabling a easy and convenient way to visualize a device path. For example,
+  enabling an easy and convenient way to visualize a device path. For example,
   this may print `PciRoot(0x0)/Pci(0x6,0x0)/MAC(525400000001,0x1)`.
   `ScopedProtocol` only implements `Display` if the underlying protocol also
   implements `Display`.

@@ -1,6 +1,13 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+
+## Changed
+
+
+# uefi-raw - v0.14.0 (2026-03-22)
+
+## Added
 - Added `Tcpv4Protocol`.
 - Added `StorageSecurityCommandProtocol`.
 - Added `FirmwareManagementProtocol`.

@@ -3,19 +3,26 @@
 //! PCI Root Bridge protocol.
 
 use super::{PciIoAddress, PciIoUnit, encode_io_mode_and_unit};
-use crate::StatusExt;
 #[cfg(feature = "alloc")]
 use crate::proto::pci::configuration::QwordAddressSpaceDescriptor;
+use crate::proto::pci::root_bridge::buffer::PciBuffer;
+use crate::{Status, StatusExt};
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 #[cfg(feature = "alloc")]
 use core::ffi::c_void;
+use core::mem::MaybeUninit;
+use core::num::NonZeroUsize;
 use core::ptr;
+use core::ptr::{NonNull, null_mut};
+use log::debug;
 use uefi_macros::unsafe_protocol;
-use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttribute,
+};
+use uefi_raw::table::boot::{AllocateType, MemoryType, PAGE_SIZE};
 
-#[cfg(doc)]
-use crate::Status;
+pub mod buffer;
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
 ///
@@ -51,11 +58,98 @@ impl PciRootBridgeIo {
         unsafe { (self.0.flush)(&mut self.0).to_result() }
     }
 
+    /// Allocates pages suitable for communicating with PCI devices.
+    ///
+    /// # Errors
+    /// - [`Status::INVALID_PARAMETER`] MemoryType is invalid.
+    /// - [`Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
+    /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
+    pub fn allocate_buffer<T>(
+        &self,
+        memory_type: MemoryType,
+        pages: Option<NonZeroUsize>,
+        attributes: PciRootBridgeIoProtocolAttribute,
+    ) -> crate::Result<PciBuffer<'_, MaybeUninit<T>>> {
+        let original_alignment = align_of::<T>();
+        // TODO switch to const block once it lands on stable. These checks should be done in compile time.
+        assert_ne!(original_alignment, 0);
+        assert!(PAGE_SIZE >= original_alignment);
+        assert_eq!(PAGE_SIZE % original_alignment, 0);
+
+        let alignment = PAGE_SIZE;
+
+        let pages = if let Some(pages) = pages {
+            pages
+        } else {
+            let size = size_of::<T>();
+            assert_ne!(size, 0);
+
+            NonZeroUsize::new(size.div_ceil(alignment)).unwrap()
+        };
+        let size = size_of::<T>();
+        // TODO switch to const block once it lands on stable.
+        assert!(pages.get() * PAGE_SIZE >= size);
+
+        let mut address: *mut T = null_mut();
+        let status = unsafe {
+            (self.0.allocate_buffer)(
+                &self.0,
+                AllocateType(0),
+                memory_type,
+                pages.get(),
+                ptr::from_mut(&mut address).cast(),
+                attributes.bits(),
+            )
+        };
+
+        match status {
+            Status::SUCCESS => {
+                let base = NonNull::new(address.cast()).unwrap();
+                debug!("Allocated {} pages at 0x{:X}", pages.get(), address.addr());
+                Ok(PciBuffer {
+                    base,
+                    pages,
+                    proto: &self.0,
+                })
+            }
+            error
+            @ (Status::INVALID_PARAMETER | Status::UNSUPPORTED | Status::OUT_OF_RESOURCES) => {
+                Err(error.into())
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    /// Allocates pages suitable for communicating with PCI devices and initialize it right away.
+    ///
+    /// # Errors
+    /// Same as [`Self::allocate_buffer`]
+    /// - [`Status::INVALID_PARAMETER`] MemoryType is invalid.
+    /// - [`Status::UNSUPPORTED`] Attributes is unsupported. The only legal attribute bits are:
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_MEMORY_CACHED`]
+    ///   - [`PciRootBridgeIoProtocolAttribute::PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE`]
+    /// - [`Status::OUT_OF_RESOURCES`] The memory pages could not be allocated.
+    pub fn allocate_buffer_init<T>(
+        &self,
+        memory_type: MemoryType,
+        value: T,
+        attributes: PciRootBridgeIoProtocolAttribute,
+    ) -> crate::Result<PciBuffer<'_, T>> {
+        let buffer = self.allocate_buffer(memory_type, None, attributes)?;
+        unsafe {
+            buffer.base_ptr().write(MaybeUninit::new(value));
+            Ok(buffer.assume_init())
+        }
+    }
+
     // TODO: poll I/O
     // TODO: mem I/O access
     // TODO: io I/O access
     // TODO: map & unmap & copy memory
-    // TODO: buffer management
     // TODO: get/set attributes
 
     /// Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI resource descriptors.

@@ -20,6 +20,8 @@
   common use-case of querying more information about a handle.
 - Added `fs::path::Path::join()`.
 - Added `Serial::read_exact()` and `Serial::write_exact()`
+- `CStr16::from_bytes_with_nul()`: This is especially useful to transform the
+  retrieved value from a UEFI variable into a UCS2 (CStr16) string.
 
 ## Changed
 - export all `text::{input, output}::*` types

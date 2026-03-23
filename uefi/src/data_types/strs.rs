@@ -51,6 +51,9 @@ pub enum FromSliceWithNulError {
 
     /// The slice was not null-terminated
     NotNulTerminated,
+
+    /// Slice is not aligned to a 16-bit boundary.
+    NotAligned,
 }
 
 impl Display for FromSliceWithNulError {
@@ -59,6 +62,7 @@ impl Display for FromSliceWithNulError {
             Self::InvalidChar(usize) => write!(f, "invalid character at index {usize}"),
             Self::InteriorNul(usize) => write!(f, "interior null character at index {usize}"),
             Self::NotNulTerminated => write!(f, "not null-terminated"),
+            Self::NotAligned => write!(f, "slice is not aligned to a 16-bit boundary"),
         }
     }
 }
@@ -505,7 +509,7 @@ impl CStr16 {
         Self::from_u16_with_nul(&buf[..index + 1]).map_err(|err| match err {
             FromSliceWithNulError::InvalidChar(p) => FromStrWithBufError::InvalidChar(p),
             FromSliceWithNulError::InteriorNul(p) => FromStrWithBufError::InteriorNul(p),
-            FromSliceWithNulError::NotNulTerminated => {
+            FromSliceWithNulError::NotNulTerminated | FromSliceWithNulError::NotAligned => {
                 unreachable!()
             }
         })
@@ -533,7 +537,59 @@ impl CStr16 {
             FromSliceWithNulError::InvalidChar(v) => UnalignedCStr16Error::InvalidChar(v),
             FromSliceWithNulError::InteriorNul(v) => UnalignedCStr16Error::InteriorNul(v),
             FromSliceWithNulError::NotNulTerminated => UnalignedCStr16Error::NotNulTerminated,
+            // input is aligned
+            FromSliceWithNulError::NotAligned => unreachable!(),
         })
+    }
+
+    /// Creates a `&CStr16` from a byte slice.
+    ///
+    /// The byte slice is reinterpreted as a `u16` slice and validated as a
+    /// null-terminated UCS-2 string. The slice must satisfy the following
+    /// requirements:
+    ///
+    /// - Its length must be even (every `u16` is two bytes).
+    /// - Its starting address must be 2-byte aligned.
+    /// - It must be null-terminated with no interior null characters.
+    /// - All `u16` values must be valid UCS-2 characters.
+    ///
+    /// # Errors
+    ///
+    /// See [`FromSliceWithNulError`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use uefi::CStr16;
+    ///
+    /// let mut aligned_buf = [0u16; 3];
+    /// // "AB\0" as native-endian u16 bytes
+    /// aligned_buf[0] = b'A' as u16;
+    /// aligned_buf[1] = b'B' as u16;
+    /// aligned_buf[2] = 0;
+    ///
+    /// let bytes: &[u8] = unsafe {
+    ///     core::slice::from_raw_parts(aligned_buf.as_ptr().cast::<u8>(), 6)
+    /// };
+    ///
+    /// let s = CStr16::from_bytes_with_nul(bytes).unwrap();
+    /// assert_eq!(s.to_u16_slice_with_nul(), &[b'A' as u16, b'B' as u16, 0]);
+    /// ```
+    pub fn from_bytes_with_nul(bytes: &[u8]) -> Result<&Self, FromSliceWithNulError> {
+        if !bytes.len().is_multiple_of(size_of::<Char16>()) || !bytes.ends_with(&[0, 0]) {
+            return Err(FromSliceWithNulError::NotNulTerminated);
+        }
+
+        // Unlikely: Most UEFI buffers are 8 byte aligned
+        if bytes.as_ptr().align_offset(2) != 0 {
+            return Err(FromSliceWithNulError::NotAligned);
+        }
+
+        // Safety: length is even and pointer is 2-byte aligned.
+        let u16_slice =
+            unsafe { slice::from_raw_parts(bytes.as_ptr().cast::<u16>(), bytes.len() / 2) };
+
+        Self::from_u16_with_nul(u16_slice)
     }
 
     /// Returns the inner pointer to this C16 string.
@@ -1123,5 +1179,69 @@ mod tests {
         // now other direction
         assert!(String::from("test").eq_str_until_nul(input));
         assert!("test".eq_str_until_nul(input));
+    }
+
+    #[test]
+    fn test_cstr16_from_bytes_with_nul() {
+        // Valid: "AB\0"
+        let aligned: &[u16] = &[b'A' as u16, b'B' as u16, 0];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 6) };
+        let s = CStr16::from_bytes_with_nul(bytes).unwrap();
+        assert_eq!(s.to_u16_slice_with_nul(), &[65, 66, 0]);
+
+        // Invalid: odd number of bytes.
+        let aligned: &[u16] = &[b'A' as u16, 0];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 3) };
+        assert_eq!(
+            CStr16::from_bytes_with_nul(bytes),
+            Err(FromSliceWithNulError::NotNulTerminated)
+        );
+
+        // Invalid: not null-terminated (last u16 is not NUL).
+        let aligned: &[u16] = &[b'A' as u16, b'B' as u16];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 4) };
+        assert_eq!(
+            CStr16::from_bytes_with_nul(bytes),
+            Err(FromSliceWithNulError::NotNulTerminated)
+        );
+
+        // Invalid: only the high byte of the terminator is zero (half-null).
+        let aligned: &[u16] = &[b'A' as u16, 0x0100];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 4) };
+        assert_eq!(
+            CStr16::from_bytes_with_nul(bytes),
+            Err(FromSliceWithNulError::NotNulTerminated)
+        );
+
+        // Invalid: interior null.
+        let aligned: &[u16] = &[b'A' as u16, 0, b'B' as u16, 0];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 8) };
+        assert_eq!(
+            CStr16::from_bytes_with_nul(bytes),
+            Err(FromSliceWithNulError::InteriorNul(1))
+        );
+
+        // Invalid: invalid UCS-2 character.
+        let aligned: &[u16] = &[0xd800, 0];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 4) };
+        assert_eq!(
+            CStr16::from_bytes_with_nul(bytes),
+            Err(FromSliceWithNulError::InvalidChar(0))
+        );
+
+        // Invalid: misaligned pointer. We simulate this by taking a byte slice
+        // starting one byte into an aligned u16 buffer.
+        let aligned: &[u16] = &[b'A' as u16, 0, 0];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>().add(1), 4) };
+        assert_eq!(
+            CStr16::from_bytes_with_nul(bytes),
+            Err(FromSliceWithNulError::NotAligned)
+        );
+
+        // Edge case: empty string (just a null terminator).
+        let aligned: &[u16] = &[0];
+        let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 2) };
+        let s = CStr16::from_bytes_with_nul(bytes).unwrap();
+        assert!(s.is_empty());
     }
 }

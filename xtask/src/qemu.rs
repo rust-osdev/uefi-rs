@@ -407,7 +407,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     // Make a copy of the OVMF vars file so that it can be used
     // read+write without modifying the original. Under AArch64, some
-    // versions of OVMF won't boot if the vars file isn't writeable.
+    // versions of OVMF won't boot if the vars file isn't writable.
     let ovmf_vars = tmp_dir.join("ovmf_vars");
     fs_err::copy(&ovmf_paths.vars, &ovmf_vars)?;
     // Necessary, as for example on NixOS, the files are read-only inside

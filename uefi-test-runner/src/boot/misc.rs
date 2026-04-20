@@ -2,7 +2,7 @@
 
 use core::ffi::c_void;
 use core::ptr::{self, NonNull};
-
+use core::time::Duration;
 use uefi::boot::{
     EventType, OpenProtocolAttributes, OpenProtocolParams, SearchType, TimerTrigger, Tpl,
 };
@@ -55,7 +55,11 @@ fn test_timer() {
     let timer_event =
         unsafe { boot::create_event_ex(EventType::TIMER, Tpl::CALLBACK, None, None, None) }
             .unwrap();
-    boot::set_timer(&timer_event, TimerTrigger::Relative(5_0 /*00 ns */)).unwrap();
+    boot::set_timer(
+        &timer_event,
+        TimerTrigger::Relative(Duration::from_nanos(5_000)),
+    )
+    .unwrap();
     let mut events = [unsafe { timer_event.unsafe_clone() }];
     assert_eq!(boot::wait_for_event(&mut events).unwrap(), 0);
 

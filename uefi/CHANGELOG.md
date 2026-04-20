@@ -3,7 +3,7 @@
 ## Added
 
 ## Changed
-
+- **Breaking:** The variants of `TimerTrigger` now hold a `Duration`
 
 # uefi - v0.37.0 (2026-03-22)
 

@@ -1,6 +1,7 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `proto::console::text::InputEx`.
 
 ## Changed
 - **Breaking:** The variants of `TimerTrigger` now hold a `Duration`

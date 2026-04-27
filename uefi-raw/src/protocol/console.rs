@@ -76,6 +76,74 @@ impl SimpleTextInputProtocol {
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[repr(C)]
+pub struct KeyData {
+    pub key: InputKey,
+    pub key_state: KeyState,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(C)]
+pub struct KeyState {
+    pub key_shift_state: KeyShiftState,
+    pub key_toggle_state: KeyToggleState,
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct KeyShiftState: u32 {
+        const VALID               = 0x8000_0000;
+        const RIGHT_SHIFT         = 0x0000_0001;
+        const LEFT_SHIFT          = 0x0000_0002;
+        const RIGHT_CONTROL       = 0x0000_0004;
+        const LEFT_CONTROL        = 0x0000_0008;
+        const RIGHT_ALT           = 0x0000_0010;
+        const LEFT_ALT            = 0x0000_0020;
+        const RIGHT_LOGO          = 0x0000_0040;
+        const LEFT_LOGO           = 0x0000_0080;
+        const MENU_KEY            = 0x0000_0100;
+        const SYS_REQ             = 0x0000_0200;
+    }
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct KeyToggleState: u8 {
+        const SCROLL_LOCK_ACTIVE = 0x01;
+        const NUM_LOCK_ACTIVE = 0x02;
+        const CAPS_LOCK_ACTIVE = 0x04;
+        const EXPOSED = 0x40;
+        const VALID = 0x80;
+    }
+}
+
+pub type KeyNotifyFn = unsafe extern "efiapi" fn(key_data: *const KeyData) -> Status;
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct SimpleTextInputExProtocol {
+    pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
+    pub read_key_stroke_ex: unsafe extern "efiapi" fn(this: *mut Self, key: *mut KeyData) -> Status,
+    pub wait_for_key_ex: Event,
+    pub set_state:
+        unsafe extern "efiapi" fn(this: *mut Self, state: *const KeyToggleState) -> Status,
+    pub register_key_notify: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        key_data: *const KeyData,
+        notification_fn: KeyNotifyFn,
+        notify_handle: *mut *mut core::ffi::c_void,
+    ) -> Status,
+    pub unregister_key_notify:
+        unsafe extern "efiapi" fn(this: *mut Self, notify_handle: *mut core::ffi::c_void) -> Status,
+}
+
+impl SimpleTextInputExProtocol {
+    pub const GUID: Guid = guid!("dd9e7534-7762-4698-8c14-f58517a625aa");
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(C)]
 pub struct SimpleTextOutputMode {
     pub max_mode: i32,
     pub mode: i32,

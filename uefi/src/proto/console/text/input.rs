@@ -3,7 +3,10 @@
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Error, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
-use uefi_raw::protocol::console::{InputKey, SimpleTextInputProtocol};
+use uefi_raw::protocol::console::{
+    InputKey, KeyData as RawKeyData, KeyNotifyFn, KeyShiftState, KeyState as RawKeyState,
+    KeyToggleState, SimpleTextInputExProtocol, SimpleTextInputProtocol,
+};
 
 /// Simple Text Input [`Protocol`]. Interface for text-based input devices.
 ///
@@ -171,3 +174,177 @@ pub enum ScanCode: u16 => #[allow(missing_docs)] {
     RECOVERY        = 0x105,
     EJECT           = 0x106,
 }}
+
+/// Simple Text Input Ex [`Protocol`]. Extended Interface for text-based input devices.
+///
+/// [`Protocol`]: uefi::proto::Protocol
+#[derive(Debug)]
+#[repr(transparent)]
+#[unsafe_protocol(SimpleTextInputExProtocol::GUID)]
+pub struct InputEx(SimpleTextInputExProtocol);
+
+impl InputEx {
+    /// Resets the input device hardware.
+    ///
+    /// If the `extended_verification` parameter is true, then the firmware may
+    /// take an extended amount of time to verify the device is operating after
+    /// the reset.
+    ///
+    /// # Errors
+    ///
+    /// - `DeviceError` if the device is malfunctioning and cannot be reset.
+    pub fn reset(&mut self, extended_verification: bool) -> Result {
+        unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
+    }
+
+    /// Reads the next keystroke from the input device, if any.
+    ///
+    /// Use [`wait_for_key_event`] with the [`boot::wait_for_event`]
+    /// interface in order to wait for a key to be pressed.
+    ///
+    /// [`boot::wait_for_event`]: crate::boot::wait_for_event
+    /// [`wait_for_key_event`]: Self::wait_for_key_event
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device
+    pub fn read_key(&mut self) -> Result<Option<KeyData>> {
+        let mut key = MaybeUninit::<RawKeyData>::uninit();
+
+        match unsafe { (self.0.read_key_stroke_ex)(&mut self.0, key.as_mut_ptr()) } {
+            Status::NOT_READY => Ok(None),
+            other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
+        }
+    }
+
+    /// Sets certain state for the input device.
+    ///
+    /// By calling this function with [`KeyToggleState::EXPOSED`] set, this function
+    /// enables [`read_key`] to return incomplete keystrokes such as
+    /// the holding down of certain keys which are expressed as part of
+    /// [`KeyState`] when there is no [`KeyData`].
+    ///
+    /// [`read_key`]: Self::read_key
+    ///
+    /// # Errors
+    ///
+    /// - `Unsupported` if the device does not support the ability to have its
+    ///   state set or the requested state change was not supported.
+    pub fn set_state(&mut self, state: KeyToggleState) -> Result {
+        unsafe { (self.0.set_state)(&mut self.0, &state) }.to_result()
+    }
+
+    /// Event to be used with [`boot::wait_for_event`] in order to wait
+    /// for a key to be available
+    ///
+    /// [`boot::wait_for_event`]: crate::boot::wait_for_event
+    pub fn wait_for_key_event(&self) -> Result<Event> {
+        unsafe { Event::from_ptr(self.0.wait_for_key_ex) }.ok_or(Error::from(Status::UNSUPPORTED))
+    }
+
+    /// Registers a function to be called when a specified key sequence is typed.
+    ///
+    /// The `key_data` defines the key combination (including shift/toggle states)
+    /// that will trigger the `notify_function`.
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::OUT_OF_RESOURCES`] if the notification could not be registered.
+    /// - [`Status::INVALID_PARAMETER`] if the key sequence is invalid.
+    pub fn register_key_notify(
+        &mut self,
+        key_data: KeyData,
+        notify_function: KeyNotifyFn,
+    ) -> Result<KeyNotifyHandle> {
+        let mut handle = core::ptr::null_mut();
+
+        // We must convert our high-level KeyData back to the raw format the firmware expects
+        let raw_key_data = RawKeyData {
+            key: InputKey {
+                scan_code: match key_data.key {
+                    Key::Special(s) => s.0,
+                    Key::Printable(_) => ScanCode::NULL.0,
+                },
+                unicode_char: match key_data.key {
+                    Key::Printable(c) => c.into(),
+                    Key::Special(_) => 0,
+                },
+            },
+            key_state: RawKeyState {
+                key_shift_state: key_data
+                    .key_state
+                    .key_shift_state
+                    .unwrap_or(KeyShiftState::empty()),
+                key_toggle_state: key_data
+                    .key_state
+                    .key_toggle_state
+                    .unwrap_or(KeyToggleState::empty()),
+            },
+        };
+
+        unsafe {
+            (self.0.register_key_notify)(&mut self.0, &raw_key_data, notify_function, &mut handle)
+                .to_result_with_val(|| KeyNotifyHandle(handle))
+        }
+    }
+
+    /// Unregisters a key notification previously registered with [`register_key_notify`].
+    ///
+    /// [`register_key_notify`]: Self::register_key_notify
+    ///
+    /// # Errors
+    ///
+    /// - [`Status::INVALID_PARAMETER`] if the handle is not valid.
+    pub fn unregister_key_notify(&mut self, handle: KeyNotifyHandle) -> Result {
+        unsafe { (self.0.unregister_key_notify)(&mut self.0, handle.0) }.to_result()
+    }
+}
+
+/// A handle to a registered key notification.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[repr(transparent)]
+pub struct KeyNotifyHandle(*mut core::ffi::c_void);
+
+/// A key read from the console and associated keyboard state.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct KeyData {
+    /// The high-level representation of the key read from the console.
+    pub key: Key,
+    /// The associated keyboard state.
+    pub key_state: KeyState,
+}
+
+impl From<RawKeyData> for KeyData {
+    fn from(k: RawKeyData) -> Self {
+        Self {
+            key: k.key.into(),
+            key_state: k.key_state.into(),
+        }
+    }
+}
+
+/// The state of various toggled attributes as well as input modifier values.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct KeyState {
+    /// The currently pressed shift modifiers for the input device.
+    pub key_shift_state: Option<KeyShiftState>,
+    /// The current internal state of various toggled attributes.
+    pub key_toggle_state: Option<KeyToggleState>,
+}
+
+impl From<RawKeyState> for KeyState {
+    fn from(key_state: RawKeyState) -> Self {
+        Self {
+            key_shift_state: if key_state.key_shift_state.contains(KeyShiftState::VALID) {
+                Some(key_state.key_shift_state)
+            } else {
+                None
+            },
+            key_toggle_state: if key_state.key_toggle_state.contains(KeyToggleState::VALID) {
+                Some(key_state.key_toggle_state)
+            } else {
+                None
+            },
+        }
+    }
+}

@@ -152,7 +152,7 @@ pub struct BootServices {
     // Driver support services
     pub connect_controller: unsafe extern "efiapi" fn(
         controller: Handle,
-        driver_image: Handle,
+        driver_image: *const Handle,
         remaining_device_path: *const DevicePathProtocol,
         recursive: Boolean,
     ) -> Status,

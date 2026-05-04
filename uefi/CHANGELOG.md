@@ -5,6 +5,9 @@
 
 ## Changed
 - **Breaking:** The variants of `TimerTrigger` now hold a `Duration`
+- **Breaking:** The `driver_image` parameter of `boot::connect_controller` is
+  now a `None`-terminated slice. Callers that previously passed `None` for this
+  argument should pass in `&[]` instead.
 
 # uefi - v0.37.0 (2026-03-22)
 

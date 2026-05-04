@@ -152,7 +152,7 @@ fn reconnect_serial_to_console(serial_handle: Handle) {
         .finalize()
         .unwrap();
 
-    uefi::boot::connect_controller(serial_handle, None, Some(terminal_device_path), true)
+    uefi::boot::connect_controller(serial_handle, &[], Some(terminal_device_path), true)
         .expect("failed to reconnect serial to console");
 }
 

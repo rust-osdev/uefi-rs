@@ -661,6 +661,11 @@ pub fn wait_for_event(events: &mut [Event]) -> Result<usize, Option<usize>> {
 /// to make them rescan some state that changed, e.g. reconnecting
 /// a block handle after your app modified disk partitions.
 ///
+/// The `driver_image` argument is usually an empty slice. Otherwise, it
+/// contains an ordered list of candidates for the driver binding protocols that
+/// will manage the `controller`. If non-empty, the slice must be terminated
+/// with `None`.
+///
 /// # Errors
 ///
 /// * [`Status::NOT_FOUND`]: there are no driver-binding protocol instances
@@ -669,17 +674,27 @@ pub fn wait_for_event(events: &mut [Event]) -> Result<usize, Option<usize>> {
 ///   start drivers associated with `controller`.
 pub fn connect_controller(
     controller: Handle,
-    driver_image: Option<Handle>,
+    driver_image: &[Option<Handle>],
     remaining_device_path: Option<&DevicePath>,
     recursive: bool,
 ) -> Result {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
+    let driver_image: *const uefi_raw::Handle = if let Some(last) = driver_image.last() {
+        assert!(
+            last.is_none(),
+            "driver_image parameter must be terminated with None"
+        );
+        driver_image.as_ptr().cast()
+    } else {
+        ptr::null()
+    };
+
     unsafe {
         (bt.connect_controller)(
             controller.as_ptr(),
-            Handle::opt_to_ptr(driver_image),
+            driver_image,
             remaining_device_path
                 .map(|dp| dp.as_ffi_ptr())
                 .unwrap_or(ptr::null())

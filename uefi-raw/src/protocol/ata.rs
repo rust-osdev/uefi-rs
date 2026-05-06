@@ -72,7 +72,7 @@ newtype_enum! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct AtaStatusBlock {
     pub reserved1: [u8; 2],
@@ -91,7 +91,7 @@ pub struct AtaStatusBlock {
     pub reserved3: [u8; 6],
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 #[repr(C)]
 pub struct AtaCommandBlock {
     pub reserved1: [u8; 2],

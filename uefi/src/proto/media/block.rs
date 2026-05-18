@@ -2,11 +2,11 @@
 
 //! Block I/O protocols [`BlockIO`] and [`BlockIO2`].
 
-use core::ptr::NonNull;
-
 use crate::proto::unsafe_protocol;
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Event, Result, Status, StatusExt};
+use core::ptr::NonNull;
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 pub use uefi_raw::protocol::block::{BlockIo2Protocol, BlockIoProtocol, Lba};
 
@@ -196,9 +196,39 @@ impl BlockIOMedia {
 pub struct BlockIO2Token {
     /// Event to be signalled when an asynchronous block I/O operation
     /// completes.
-    pub event: Option<Event>,
+    pub event: Event,
     /// Transaction status code.
-    pub transaction_status: Status,
+    // UEFI can change this at any time, so we need atomic access.
+    pub transaction_status: AtomicUsize,
+}
+
+impl BlockIO2Token {
+    /// Creates a new token.
+    #[must_use]
+    pub const fn new(event: Event, status: Status) -> Self {
+        Self {
+            event,
+            transaction_status: AtomicUsize::new(status.0),
+        }
+    }
+
+    /// Returns the transaction current status.
+    pub fn transaction_status(&self) -> Status {
+        Status(self.transaction_status.load(Ordering::SeqCst))
+    }
+
+    /// Clone this token.
+    ///
+    /// # Safety
+    /// The caller must ensure that any clones of a closed `Event` are never
+    /// used again.
+    #[must_use]
+    pub unsafe fn unsafe_clone(&self) -> Self {
+        Self {
+            event: unsafe { self.event.unsafe_clone() },
+            transaction_status: AtomicUsize::new(self.transaction_status.load(Ordering::SeqCst)),
+        }
+    }
 }
 
 /// Block I/O 2 [`Protocol`].
@@ -236,7 +266,8 @@ impl BlockIO2 {
     /// # Arguments
     /// * `media_id` - The media ID that the read request is for.
     /// * `lba` - The starting logical block address to read from on the device.
-    /// * `token` - Transaction token for asynchronous read.
+    /// * `token` - Transaction token for asynchronous read or `None` for
+    ///   synchronous operation.
     /// * `len` - Buffer size.
     /// * `buffer` - The target buffer of the read operation
     ///
@@ -269,7 +300,8 @@ impl BlockIO2 {
     /// # Arguments
     /// * `media_id` - The media ID that the write request is for.
     /// * `lba` - The starting logical block address to be written.
-    /// * `token` - Transaction token for asynchronous write.
+    /// * `token` - Transaction token for asynchronous write or `None` for
+    ///   synchronous operation
     /// * `len` - Buffer size.
     /// * `buffer` - Buffer to be written from.
     ///

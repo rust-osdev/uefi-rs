@@ -36,7 +36,7 @@
       devShells = forAllSystems (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            nixfmt-rfc-style
+            nixfmt
 
             # Integration test dependencies
             swtpm
@@ -58,6 +58,6 @@
           # OVMF_SHELL="${pkgs.edk2-uefi-shell}";
         };
       });
-      formatter = forAllSystems (pkgs: pkgs.nixfmt-rfc-style);
+      formatter = forAllSystems (pkgs: pkgs.treefmt-nix);
     };
 }

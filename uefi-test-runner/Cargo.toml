@@ -8,11 +8,10 @@ edition = "2024"
 [dependencies]
 uefi-raw = { path = "../uefi-raw" }
 uefi = { path = "../uefi", features = ["alloc", "global_allocator", "panic_handler", "logger", "qemu", "log-debugcon"] }
-smoltcp = { version = "0.12.0", default-features = false, features = ["medium-ethernet", "proto-ipv4", "socket-udp"] }
+smoltcp = { version = "0.13.1", default-features = false, features = ["medium-ethernet", "proto-ipv4", "socket-udp"] }
 
 log.workspace = true
-
-qemu-exit = "3.0.0"
+qemu-exit = { workspace = true }
 
 [features]
 # Enable the debug support protocol test.

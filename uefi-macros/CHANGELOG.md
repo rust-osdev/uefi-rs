@@ -3,7 +3,7 @@
 ## Added
 
 ## Changed
-
+- MSRV increased from 1.88 to 1.91.
 
 # uefi-macros - v0.19 (2025-10-21)
 

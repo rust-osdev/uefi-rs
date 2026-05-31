@@ -39,12 +39,12 @@ log-debugcon = []
 bitflags.workspace = true
 log.workspace = true
 ptr_meta.workspace = true
+qemu-exit = { workspace = true, optional = true }
 uguid.workspace = true
 cfg-if = "1.0.0"
 ucs2 = "0.3.3"
 uefi-macros = "0.19.0"
 uefi-raw = "0.14.0"
-qemu-exit = { version = "3.0.2", optional = true }
 
 [package.metadata.docs.rs]
 all-features = true

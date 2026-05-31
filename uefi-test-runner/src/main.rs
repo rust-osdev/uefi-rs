@@ -230,7 +230,8 @@ fn shutdown() -> ! {
     {
         use qemu_exit::QEMUExit;
         let custom_exit_success = 3;
-        let qemu_exit_handle = qemu_exit::X86::new(0xF4, custom_exit_success);
+        // SAFETY: the I/O port matches the one of the QEMU environment.
+        let qemu_exit_handle = unsafe { qemu_exit::X86::new(0xF4, custom_exit_success) };
         qemu_exit_handle.exit_success();
     }
 

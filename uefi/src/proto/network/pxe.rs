@@ -484,8 +484,9 @@ impl BaseCode {
 
         // Translate IP types back into the higher-level types.
         let fn_replace_ip = |core_ip: &mut Option<&mut IpAddr>, efi_ip: Option<EfiIpAddr>| {
-            // TODO use let-chain once we are on MSRV 1.88
-            if let (Some(core_ip_location), Some(efi_ip)) = (core_ip, efi_ip) {
+            if let Some(core_ip_location) = core_ip
+                && let Some(efi_ip) = efi_ip
+            {
                 // SAFETY: We trust that `using_ipv6()` tells the truth.
                 let core_ip = unsafe { efi_ip.into_core_addr(self.mode().using_ipv6()) };
                 **core_ip_location = core_ip;

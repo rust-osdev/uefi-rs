@@ -4,6 +4,7 @@
 - Added `proto::console::text::InputEx`.
 
 ## Changed
+- MSRV increased from 1.88 to 1.91.
 - **Breaking:** The variants of `TimerTrigger` now hold a `Duration`
 - **Breaking:** The `driver_image` parameter of `boot::connect_controller` is
   now a `None`-terminated slice. Callers that previously passed `None` for this

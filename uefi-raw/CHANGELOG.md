@@ -2,6 +2,7 @@
 
 ## Added
 - Added `SimpleTextInputExProtocol`.
+- Added `PciRootBridgeIoProtocolAttributes`
 
 ## Changed
 - Corrected the type of the `driver_image` parameter in

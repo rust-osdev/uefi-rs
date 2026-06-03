@@ -2,6 +2,7 @@
 
 use crate::table::boot::{AllocateType, MemoryType};
 use crate::{Handle, PhysicalAddress, Status, newtype_enum};
+use bitflags::bitflags;
 use core::ffi::c_void;
 use uguid::{Guid, guid};
 
@@ -34,6 +35,28 @@ newtype_enum! {
         BUS_MASTER_WRITE64 = 4,
         BUS_MASTER_COMMON_BUFFER64 = 5,
         MAXIMUM = 6,
+    }
+}
+
+bitflags! {
+    /// Corresponds to the `EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL` attribute bitflags.
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct PciRootBridgeIoProtocolAttribute: u64 {
+        const EFI_PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO = 0x0001;
+        const EFI_PCI_ATTRIBUTE_ISA_IO = 0x0002;
+        const EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO = 0x0004;
+        const EFI_PCI_ATTRIBUTE_VGA_MEMORY = 0x0008;
+        const EFI_PCI_ATTRIBUTE_VGA_IO = 0x0010;
+        const EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO = 0x0020;
+        const EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO = 0x0040;
+        const EFI_PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE = 0x0080;
+        const EFI_PCI_ATTRIBUTE_MEMORY_CACHED = 0x0800;
+        const EFI_PCI_ATTRIBUTE_MEMORY_DISABLE = 0x1000;
+        const EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE = 0x8000;
+        const EFI_PCI_ATTRIBUTE_ISA_IO_16 = 0x10000;
+        const EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO_16 = 0x20000;
+        const EFI_PCI_ATTRIBUTE_VGA_IO_16 = 0x40000;
     }
 }
 

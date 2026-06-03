@@ -12,6 +12,7 @@ use uefi::proto::scsi::pass_thru::ExtScsiPassThru;
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolAttributes;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
+const VIRTIO_RNG_DEVICE_ID: u16 = 0x1005;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
 const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
 
@@ -40,15 +41,20 @@ fn test_enumeration_and_address_space_access() {
                 .pci()
                 .read_one::<u32>(addr.with_register(0))
                 .unwrap();
-            let reg1 = pci_proto
+            let reg2 = pci_proto
                 .pci()
                 .read_one::<u32>(addr.with_register(2 * REG_SIZE))
+                .unwrap();
+            let reg3 = pci_proto
+                .pci()
+                .read_one::<u32>(addr.with_register(3 * REG_SIZE))
                 .unwrap();
 
             let vendor_id = (reg0 & 0xFFFF) as u16;
             let device_id = (reg0 >> 16) as u16;
-            let class_code = (reg1 >> 24) as u8;
-            let subclass_code = ((reg1 >> 16) & 0xFF) as u8;
+            let class_code = (reg2 >> 24) as u8;
+            let subclass_code = ((reg2 >> 16) & 0xFF) as u8;
+            let header_type = ((reg3 >> 16) & 0x7F) as u8;
             let device_path = pci_tree.device_path(&root_device_path, addr).unwrap();
             let device_path_str = device_path
                 .to_string16(DisplayOnly(false), AllowShortcuts(false))
@@ -64,6 +70,61 @@ fn test_enumeration_and_address_space_access() {
                     sata_ctrl_cnt += 1;
                 }
                 mass_storage_dev_paths.insert(device_path_str.clone());
+            }
+
+            if vendor_id == RED_HAT_PCI_VENDOR_ID && device_id == VIRTIO_RNG_DEVICE_ID {
+                assert_eq!(
+                    header_type, 0x00,
+                    "unexpected header type for PCI virtio rng device"
+                );
+
+                let mut bars = [0; 6];
+                pci_proto
+                    .pci()
+                    .read::<u32>(addr.with_register(4 * REG_SIZE), &mut bars)
+                    .unwrap();
+                log::info!("BARS: {bars:#x?}");
+
+                let mut bars = bars.into_iter();
+                let mut next_bar = bars.next();
+                while let Some(bar) = next_bar {
+                    next_bar = bars.next();
+
+                    let bar = decode_bar(bar, next_bar);
+                    match bar {
+                        Bar::Io(base) => {
+                            // Virtio RNG devices have a device features register that is safe to
+                            // read at the start of the I/O space.
+                            let device_features =
+                                pci_proto.io().read_one::<u32>(u64::from(base)).unwrap();
+                            log::info!("Device Features: {device_features:#0b}");
+                        }
+                        Bar::Mem32 {
+                            base,
+                            prefetchable: true,
+                        } => {
+                            // Reading from a prefetchable MMIO region is always non-destructive.
+                            pci_proto.memory().read_one::<u32>(u64::from(base)).unwrap();
+                        }
+                        Bar::Mem64 {
+                            base,
+                            prefetchable: true,
+                        } => {
+                            // Reading from a prefetchable MMIO region is always non-destructive.
+                            pci_proto.memory().read_one::<u32>(base).unwrap();
+                        }
+                        _ => {}
+                    }
+
+                    log::info!("BAR: {bar:x?}");
+                    if let Bar::Mem64 {
+                        base: _,
+                        prefetchable: _,
+                    } = bar
+                    {
+                        next_bar = bars.next();
+                    }
+                }
             }
 
             let (bus, dev, fun) = (addr.bus, addr.dev, addr.fun);
@@ -123,4 +184,35 @@ fn get_open_protocol<P: ProtocolPointer + ?Sized>(handle: Handle) -> ScopedProto
     };
     let open_attrs = OpenProtocolAttributes::GetProtocol;
     unsafe { uefi::boot::open_protocol(open_opts, open_attrs).unwrap() }
+}
+
+fn decode_bar(bar: u32, next_bar: Option<u32>) -> Bar {
+    if bar & 0b1 == 0b0 {
+        match (bar & 0b110) >> 1 {
+            0b00 => Bar::Mem32 {
+                base: bar & !0b1111,
+                prefetchable: bar & 0b1000 != 0,
+            },
+            0b10 => {
+                if let Some(next_bar) = next_bar {
+                    Bar::Mem64 {
+                        base: u64::from(bar & !0b1111) | (u64::from(next_bar) << 32),
+                        prefetchable: bar & 0b1000 != 0,
+                    }
+                } else {
+                    unreachable!("PCI hardware error")
+                }
+            }
+            _ => unimplemented!(),
+        }
+    } else {
+        Bar::Io(bar & !0b11)
+    }
+}
+
+#[derive(Debug)]
+enum Bar {
+    Mem32 { base: u32, prefetchable: bool },
+    Mem64 { base: u64, prefetchable: bool },
+    Io(u32),
 }

@@ -6,6 +6,7 @@
 ## Changed
 - Corrected the type of the `driver_image` parameter in
   `BootServices::connect_controller` from `Handle` to `*const Handle`.
+- Corrected signature of `BootServices::exit` from `!` to `Status`.
 
 
 # uefi-raw - v0.14.0 (2026-03-22)

@@ -1306,18 +1306,20 @@ pub unsafe fn exit(
     exit_status: Status,
     exit_data_size: usize,
     exit_data: *mut Char16,
-) -> ! {
+) -> Result {
     let bt = boot_services_raw_panicking();
     let bt = unsafe { bt.as_ref() };
 
-    unsafe {
+    let result = unsafe {
         (bt.exit)(
             image_handle.as_ptr(),
             exit_status,
             exit_data_size,
             exit_data.cast(),
         )
-    }
+    };
+
+    result.to_result()
 }
 
 /// Get the current memory map and exit boot services.

@@ -134,7 +134,7 @@ pub struct BootServices {
         exit_status: Status,
         exit_data_size: usize,
         exit_data: *mut Char16,
-    ) -> !,
+    ) -> Status,
     pub unload_image: unsafe extern "efiapi" fn(image_handle: Handle) -> Status,
     pub exit_boot_services:
         unsafe extern "efiapi" fn(image_handle: Handle, map_key: usize) -> Status,

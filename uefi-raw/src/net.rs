@@ -261,7 +261,7 @@ impl MacAddress {
     #[must_use]
     pub fn into_ethernet_addr(self) -> [u8; 6] {
         let mut buffer = [0; 6];
-        buffer.copy_from_slice(&self.octets()[6..]);
+        buffer.copy_from_slice(&self.octets()[..6]);
         buffer
     }
 }

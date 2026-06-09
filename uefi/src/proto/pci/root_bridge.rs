@@ -12,7 +12,9 @@ use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::ptr;
 use uefi_macros::unsafe_protocol;
-use uefi_raw::protocol::pci::root_bridge::{PciRootBridgeIoAccess, PciRootBridgeIoProtocol};
+use uefi_raw::protocol::pci::root_bridge::{
+    PciRootBridgeIoAccess, PciRootBridgeIoProtocol, PciRootBridgeIoProtocolAttributes,
+};
 
 #[cfg(doc)]
 use crate::Status;
@@ -51,12 +53,73 @@ impl PciRootBridgeIo {
         unsafe { (self.0.flush)(&mut self.0).to_result() }
     }
 
+    /// Gets the [`PciRootBridgeIoProtocolAttributes`] that this PCI root bridge supports setting.
+    pub fn supported_attributes(&self) -> crate::Result<PciRootBridgeIoProtocolAttributes> {
+        let mut supported = 0;
+
+        unsafe {
+            (self.0.get_attributes)(&self.0, &mut supported, ptr::null_mut()).to_result_with_val(
+                || PciRootBridgeIoProtocolAttributes::from_bits_retain(supported),
+            )
+        }
+    }
+
+    /// Gets the [`PciRootBridgeIoProtocolAttributes`] that this PCI root bridge is currently using.
+    pub fn attributes(&self) -> crate::Result<PciRootBridgeIoProtocolAttributes> {
+        let mut current = 0;
+
+        unsafe {
+            (self.0.get_attributes)(&self.0, ptr::null_mut(), &mut current)
+                .to_result_with_val(|| PciRootBridgeIoProtocolAttributes::from_bits_retain(current))
+        }
+    }
+
+    /// Sets [`PciRootBridgeIoProtocolAttributes`] for this PCI root bridge that does not require a
+    /// resource range.
+    ///
+    /// # Safety
+    ///
+    /// The new [`PciRootBridgeIoProtocolAttributes`] must be valid for the current system
+    /// configuration.
+    pub unsafe fn set_attributes(
+        &mut self,
+        attributes: PciRootBridgeIoProtocolAttributes,
+    ) -> crate::Result {
+        unsafe {
+            (self.0.set_attributes)(
+                &mut self.0,
+                attributes.bits(),
+                ptr::null_mut(),
+                ptr::null_mut(),
+            )
+            .to_result()
+        }
+    }
+
+    /// Sets [`PciRootBridgeIoProtocolAttributes`] for this PCI root bridge (supporting attributes
+    /// that require a resource range).
+    ///
+    /// The provided base and length are set to the actual base and length of the region whose
+    /// attributes were changed (due to granularity or other requirements).
+    ///
+    /// # Safety
+    ///
+    /// The new [`PciRootBridgeIoProtocolAttributes`] must be valid for the current system
+    /// configuration.
+    pub unsafe fn set_attributes_with_range(
+        &mut self,
+        attributes: PciRootBridgeIoProtocolAttributes,
+        base: &mut u64,
+        length: &mut u64,
+    ) -> crate::Result {
+        unsafe { (self.0.set_attributes)(&mut self.0, attributes.bits(), base, length).to_result() }
+    }
+
     // TODO: poll I/O
     // TODO: mem I/O access
     // TODO: io I/O access
     // TODO: map & unmap & copy memory
     // TODO: buffer management
-    // TODO: get/set attributes
 
     /// Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI resource descriptors.
     ///

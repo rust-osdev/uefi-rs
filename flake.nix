@@ -28,9 +28,8 @@
         pkgs:
         let
           rust-bin = (inputs.rust-overlay.lib.mkRustBin { }) pkgs;
-          rustToolchainBuilder = import ./nix/rust-toolchain.nix;
         in
-        rustToolchainBuilder { inherit rust-bin; };
+        rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
     in
     {
       devShells = forAllSystems (pkgs: {

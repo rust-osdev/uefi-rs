@@ -12,7 +12,7 @@ pub struct Header {
     pub revision: Revision,
     /// The size in bytes of the entire table.
     pub size: u32,
-    /// 32-bit CRC-32-Castagnoli of the entire table,
+    /// 32-bit CRC of the entire table using polynomial `0x04c11db7`,
     /// calculated with this field set to 0.
     pub crc: u32,
     /// Reserved field that must be set to 0.

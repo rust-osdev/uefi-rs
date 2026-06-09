@@ -184,8 +184,8 @@ pub struct SimplePointerMode {
     pub resolution_x: u64,
     pub resolution_y: u64,
     pub resolution_z: u64,
-    pub left_button: u8,
-    pub right_button: u8,
+    pub left_button: Boolean,
+    pub right_button: Boolean,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]

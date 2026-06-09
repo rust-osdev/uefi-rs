@@ -13,7 +13,7 @@
 //! [TPM]: https://en.wikipedia.org/wiki/Trusted_Platform_Module
 
 use super::EventType;
-use crate::{Guid, PhysicalAddress, Status, guid};
+use crate::{Boolean, Guid, PhysicalAddress, Status, guid};
 use bitflags::bitflags;
 use core::ffi::c_void;
 
@@ -151,7 +151,7 @@ pub struct Tcg2Protocol {
         event_log_format: Tcg2EventLogFormat,
         event_log_location: *mut PhysicalAddress,
         event_log_last_entry: *mut PhysicalAddress,
-        event_log_truncated: *mut u8,
+        event_log_truncated: *mut Boolean,
     ) -> Status,
 
     pub hash_log_extend_event: unsafe extern "efiapi" fn(

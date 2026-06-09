@@ -42,7 +42,7 @@ bitflags! {
     /// Corresponds to the `EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL` attribute bitflags.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    pub struct PciRootBridgeIoProtocolAttribute: u64 {
+    pub struct PciRootBridgeIoProtocolAttributes: u64 {
         const EFI_PCI_ATTRIBUTE_ISA_MOTHERBOARD_IO = 0x0001;
         const EFI_PCI_ATTRIBUTE_ISA_IO = 0x0002;
         const EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO = 0x0004;

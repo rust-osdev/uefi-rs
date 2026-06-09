@@ -172,7 +172,7 @@ pub struct HiiConfigRoutingProtocol {
     pub config_to_block: unsafe extern "efiapi" fn(
         this: *const Self,
         config_resp: *const Char16,
-        block: *mut *const u8,
+        block: *mut u8,
         block_size: *mut usize,
         progress: *mut *const Char16,
     ) -> Status,

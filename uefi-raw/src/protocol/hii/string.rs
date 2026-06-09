@@ -24,7 +24,7 @@ pub struct HiiStringProtocol {
         language: *const Char8,
         package_list: HiiHandle,
         string_id: StringId,
-        string: *mut *mut Char16,
+        string: *mut Char16,
         string_size: *mut usize,
         string_font_info: *mut *mut FontInfo,
     ) -> Status,

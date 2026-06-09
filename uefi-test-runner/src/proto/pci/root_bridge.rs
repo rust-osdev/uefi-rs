@@ -9,6 +9,7 @@ use uefi::proto::device_path::DevicePath;
 use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
 use uefi::proto::scsi::pass_thru::ExtScsiPassThru;
+use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolAttributes;
 
 const RED_HAT_PCI_VENDOR_ID: u16 = 0x1AF4;
 const MASS_STORAGE_CTRL_CLASS_CODE: u8 = 0x1;
@@ -17,6 +18,11 @@ const SATA_CTRL_SUBCLASS_CODE: u8 = 0x6;
 const REG_SIZE: u8 = size_of::<u32>() as u8;
 
 pub fn test() {
+    test_enumeration_and_address_space_access();
+    test_attributes();
+}
+
+fn test_enumeration_and_address_space_access() {
     let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
 
     let mut sata_ctrl_cnt = 0;
@@ -85,6 +91,27 @@ pub fn test() {
             .unwrap()
             .to_string();
         assert!(mass_storage_dev_paths.contains(&device_path));
+    }
+}
+
+fn test_attributes() {
+    let pci_handles = uefi::boot::find_handles::<PciRootBridgeIo>().unwrap();
+    for pci_handle in pci_handles {
+        let mut pci_proto = get_open_protocol::<PciRootBridgeIo>(pci_handle);
+
+        let supported_attributes = pci_proto.supported_attributes().unwrap();
+        log::info!("Supported Attributes: {supported_attributes:?}");
+
+        let current_attributes = pci_proto.attributes().unwrap();
+        log::info!("Current Attributes: {current_attributes:?}");
+
+        unsafe {
+            pci_proto
+                .set_attributes(PciRootBridgeIoProtocolAttributes::empty())
+                .unwrap()
+        }
+        unsafe { pci_proto.set_attributes(supported_attributes).unwrap() }
+        unsafe { pci_proto.set_attributes(current_attributes).unwrap() }
     }
 }
 

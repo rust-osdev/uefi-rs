@@ -53,7 +53,8 @@ impl PciRootBridgeIo {
         unsafe { (self.0.flush)(&mut self.0).to_result() }
     }
 
-    /// Gets the [`PciRootBridgeIoProtocolAttributes`] that this PCI root bridge supports setting.
+    /// Returns the set of [`PciRootBridgeIoProtocolAttributes`] that this PCI root bridge
+    /// supports.
     pub fn supported_attributes(&self) -> crate::Result<PciRootBridgeIoProtocolAttributes> {
         let mut supported = 0;
 
@@ -64,7 +65,7 @@ impl PciRootBridgeIo {
         }
     }
 
-    /// Gets the [`PciRootBridgeIoProtocolAttributes`] that this PCI root bridge is currently using.
+    /// Returns the [`PciRootBridgeIoProtocolAttributes`] that this PCI root bridge is currently using.
     pub fn attributes(&self) -> crate::Result<PciRootBridgeIoProtocolAttributes> {
         let mut current = 0;
 
@@ -74,8 +75,7 @@ impl PciRootBridgeIo {
         }
     }
 
-    /// Sets [`PciRootBridgeIoProtocolAttributes`] for this PCI root bridge that does not require a
-    /// resource range.
+    /// Sets [`PciRootBridgeIoProtocolAttributes`] for this PCI root bridge.
     ///
     /// # Safety
     ///
@@ -97,7 +97,8 @@ impl PciRootBridgeIo {
     }
 
     /// Sets [`PciRootBridgeIoProtocolAttributes`] for this PCI root bridge (supporting attributes
-    /// that require a resource range).
+    /// that require a resource range). For instance, modifying the cache settings of a PCI
+    /// memory range requires the use of this function.
     ///
     /// The provided base and length are set to the actual base and length of the region whose
     /// attributes were changed (due to granularity or other requirements).

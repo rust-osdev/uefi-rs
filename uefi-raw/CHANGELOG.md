@@ -8,6 +8,15 @@
 - Corrected the type of the `driver_image` parameter in
   `BootServices::connect_controller` from `Handle` to `*const Handle`.
 - Corrected signature of `BootServices::exit` from `!` to `Status`.
+- Added `PxeBaseCodeDhcpV4Flags`.
+- Added `PxeBaseCodeDhcpV4Packet::{DHCP_MAGIK, bootp_ident(), bootp_seconds(),
+  bootp_flags(), dhcp_magik()}`.
+- Added `PxeBaseCodeDhcpV6Packet::transaction_id()`.
+- Added `AsRef` implementations to `PxeBaseCodePacket`.
+- Added `PxeBaseCodeIpFilter::{new(), ip_list()}`.
+- Added `PxeBaseCodeSrvlist::{new(), ip_addr()}`.
+- `PxeBaseCodeIcmpError` and `PxeBaseCodeTftpError` now implement `Display` and
+  `core::error::Error`.
 
 
 # uefi-raw - v0.14.0 (2026-03-22)

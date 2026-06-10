@@ -23,8 +23,8 @@ use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho,
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeTftpError as TftpError,
-    PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion, PxeBaseCodeIpFilterFlags as IpFilters,
+    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -1352,23 +1352,6 @@ impl Display for IcmpError {
 }
 
 impl core::error::Error for IcmpError {}
-
-/// Corresponds to the anonymous union inside
-/// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
-#[repr(C)]
-#[expect(missing_docs)]
-pub union IcmpErrorUnion {
-    pub reserved: u32,
-    pub mtu: u32,
-    pub pointer: u32,
-    pub echo: IcmpErrorEcho,
-}
-
-impl Debug for IcmpErrorUnion {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "<binary data>")
-    }
-}
 
 /// Returned by [`BaseCode::tftp_read_dir`].
 #[expect(missing_docs)]

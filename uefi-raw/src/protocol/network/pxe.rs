@@ -154,6 +154,9 @@ pub struct PxeBaseCodeDiscoverInfo {
     pub srv_list: [PxeBaseCodeSrvlist; 0],
 }
 
+/// An entry in the boot server list.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_SRVLIST` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeSrvlist {
@@ -161,6 +164,31 @@ pub struct PxeBaseCodeSrvlist {
     pub accept_any_response: Boolean,
     pub reserved: u8,
     pub ip_addr: IpAddress,
+}
+
+impl PxeBaseCodeSrvlist {
+    /// Construct a [`PxeBaseCodeSrvlist`] for a boot server reply type. If `ip_addr` is not `None`,
+    /// only boot server replies matching the provided IP address will be accepted.
+    #[must_use]
+    pub fn new(server_type: u16, ip_addr: Option<IpAddress>) -> Self {
+        Self {
+            server_type,
+            accept_any_response: Boolean::from(ip_addr.is_none()),
+            reserved: 0,
+            ip_addr: ip_addr.unwrap_or_default(),
+        }
+    }
+
+    /// Returns `None` if any response should be accepted, or otherwise the IP
+    /// address of a boot server whose responses should be accepted.
+    #[must_use]
+    pub const fn ip_addr(&self) -> Option<&IpAddress> {
+        if self.accept_any_response.0 == Boolean::TRUE.0 {
+            None
+        } else {
+            Some(&self.ip_addr)
+        }
+    }
 }
 
 pub type PxeBaseCodeUdpPort = u16;

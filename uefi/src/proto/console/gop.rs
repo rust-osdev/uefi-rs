@@ -455,7 +455,7 @@ impl ExactSizeIterator for ModeIter<'_> {}
 /// Format of pixel data used for blitting.
 ///
 /// This is a BGR 24-bit format with an 8-bit padding, to keep each pixel 32-bit in size.
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct BltPixel {

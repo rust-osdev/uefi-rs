@@ -44,7 +44,6 @@ mod println;
 /// # Panics
 ///
 /// This function may panic if called more than once.
-#[allow(clippy::missing_const_for_fn)]
 pub fn init() -> Result<()> {
     // Set up logging.
     #[cfg(feature = "logger")]
@@ -55,7 +54,6 @@ pub fn init() -> Result<()> {
     Ok(())
 }
 
-#[allow(clippy::missing_const_for_fn)]
 pub(crate) fn exit() {
     #[cfg(feature = "logger")]
     logger::disable();

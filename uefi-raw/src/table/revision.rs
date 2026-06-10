@@ -38,7 +38,7 @@ pub struct Revision(pub u32);
 
 // Allow missing docs, there's nothing useful to document about these
 // constants.
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 impl Revision {
     pub const EFI_1_02: Self = Self::new(1, 2);
     pub const EFI_1_10: Self = Self::new(1, 10);

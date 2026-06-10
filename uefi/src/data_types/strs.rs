@@ -1105,7 +1105,6 @@ mod tests {
 
     // Code generation helper for the compare tests of our CStrX types against "str" and "String"
     // from the standard library.
-    #[allow(non_snake_case)]
     macro_rules! test_compare_cstrX {
         ($input:ident) => {
             assert!($input.eq_str_until_nul(&"test"));

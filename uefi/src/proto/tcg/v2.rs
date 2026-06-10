@@ -243,11 +243,14 @@ fn u32_le_from_bytes_at_offset(bytes: &[u8], offset: usize) -> Option<u32> {
 ///
 /// Layout compatible with the C type `TCG_EfiSpecIDEventStruct`.
 #[derive(Clone, Debug)]
-#[allow(unused)] // We don't current access most of the fields.
+#[cfg_attr(not(test), expect(unused))] // needed for some fields
 struct EventLogHeader<'a> {
     platform_class: u32,
-    // major, minor, errata
-    spec_version: (u8, u8, u8),
+    spec_version: (
+        u8, /* major */
+        u8, /* minor */
+        u8, /* errata */
+    ),
     uintn_size: u8,
     algorithm_digest_sizes: AlgorithmDigestSizes<'a>,
     vendor_info: &'a [u8],

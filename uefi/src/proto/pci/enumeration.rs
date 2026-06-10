@@ -15,14 +15,14 @@ use crate::proto::device_path::{self, DevicePath, DevicePathUtilitiesError, Pool
 use super::PciIoAddress;
 use super::root_bridge::PciRootBridgeIo;
 
-#[allow(unused)]
+#[expect(unused)]
 #[derive(Clone, Copy, Debug)]
 struct PciRegister0 {
     vendor_id: u16,
     device_id: u16,
 }
 
-#[allow(unused)]
+#[expect(unused)]
 #[derive(Clone, Copy, Debug)]
 struct PciRegister2 {
     revision_id: u8,
@@ -31,7 +31,7 @@ struct PciRegister2 {
     class: u8,
 }
 
-#[allow(unused)]
+#[expect(unused)]
 #[derive(Clone, Copy, Debug)]
 struct PciRegister3 {
     cache_line_size: u8,
@@ -40,7 +40,7 @@ struct PciRegister3 {
     bist: u8,
 }
 
-#[allow(unused)]
+#[expect(unused)]
 #[derive(Clone, Copy, Debug)]
 struct PciHeader1Register6 {
     primary_bus: u8,

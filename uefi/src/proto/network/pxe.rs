@@ -380,7 +380,7 @@ impl BaseCode {
     }
 
     /// Writes a UDP packet to the network interface.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     pub fn udp_write(
         &mut self,
         op_flags: UdpOpFlags,
@@ -443,7 +443,7 @@ impl BaseCode {
     ///   the provided buffer.
     /// - `header`: Optional header of the data inside `buffer`.
     /// - `buffer`: Buffer for the UDP packet's content.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     pub fn udp_read(
         &mut self,
         op_flags: UdpOpFlags,
@@ -555,7 +555,7 @@ impl BaseCode {
     }
 
     /// Updates the contents of the cached DHCP and Discover packets.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     pub fn set_packets(
         &mut self,
         new_dhcp_discover_valid: Option<bool>,
@@ -1321,7 +1321,6 @@ pub struct ArpEntry {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_ROUTE_ENTRY` type in the C API.
 #[repr(C)]
-#[allow(missing_docs)]
 #[derive(Debug)]
 pub struct RouteEntry {
     /// IP address.
@@ -1336,7 +1335,7 @@ pub struct RouteEntry {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_ICMP_ERROR` type in the C API.
 #[repr(C)]
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug)]
 pub struct IcmpError {
     pub ty: u8,
@@ -1357,7 +1356,7 @@ impl core::error::Error for IcmpError {}
 /// Corresponds to the anonymous union inside
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
 #[repr(C)]
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 pub union IcmpErrorUnion {
     pub reserved: u32,
     pub mtu: u32,
@@ -1375,7 +1374,7 @@ impl Debug for IcmpErrorUnion {
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR` in the C API.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 pub struct IcmpErrorEcho {
     pub identifier: u16,
     pub sequence: u16,
@@ -1385,7 +1384,7 @@ pub struct IcmpErrorEcho {
 ///
 /// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_ERROR` type in the C API.
 #[repr(C)]
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug)]
 pub struct TftpError {
     pub error_code: u8,
@@ -1401,7 +1400,7 @@ impl Display for TftpError {
 impl core::error::Error for TftpError {}
 
 /// Returned by [`BaseCode::tftp_read_dir`].
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug)]
 pub struct TftpFileInfo<'a> {
     pub filename: &'a CStr8,
@@ -1415,7 +1414,7 @@ pub struct TftpFileInfo<'a> {
 }
 
 /// Returned by [`BaseCode::mtftp_read_dir`].
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug)]
 pub struct MtftpFileInfo<'a> {
     pub filename: &'a CStr8,

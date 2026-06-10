@@ -66,7 +66,7 @@ impl LoadFile {
     ///
     /// [`BootPolicy`]: uefi::proto::BootPolicy
     #[cfg(feature = "alloc")]
-    #[allow(clippy::extra_unused_lifetimes)] // false positive, it is used
+    #[expect(clippy::extra_unused_lifetimes)] // false positive, it is used
     pub fn load_file<'a>(
         &mut self,
         file_path: &DevicePath,
@@ -131,7 +131,7 @@ impl LoadFile2 {
     ///   read the current directory entry. BufferSize has been updated with the
     ///   size needed to complete the request.
     #[cfg(feature = "alloc")]
-    #[allow(clippy::extra_unused_lifetimes)] // false positive, it is used
+    #[expect(clippy::extra_unused_lifetimes)] // false positive, it is used
     pub fn load_file<'a>(&mut self, file_path: &DevicePath) -> Result<Box<[u8]>> {
         let fetch_data_fn = |buf: &'a mut [u8]| {
             let mut size = buf.len();

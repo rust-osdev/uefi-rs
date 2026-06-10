@@ -98,9 +98,8 @@ fn windows_open_pipe(path: &Path) -> Result<File> {
         match OpenOptions::new().read(true).write(true).open(path) {
             Ok(file) => return Ok(file),
             Err(err) => {
-                #[allow(clippy::needless_return_with_question_mark)]
                 if attempt >= iteration_count {
-                    return Err(err)?;
+                    return Err(err.into());
                 } else {
                     // Sleep before trying again.
                     eprintln!("waiting for pipe {} to appear ...", path.display());

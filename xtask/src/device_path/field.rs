@@ -139,7 +139,7 @@ impl ToTokens for PackedType {
     }
 }
 
-#[allow(clippy::large_enum_variant)]
+#[expect(clippy::large_enum_variant)]
 enum BuildType {
     None,
     Packed,

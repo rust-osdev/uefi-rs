@@ -73,7 +73,7 @@ fn init_fat_test_partition(disk: &mut [u8], partition_byte_range: Range<usize>) 
     // The datetime-setting functions have been deprecated, but are
     // useful here to force an exact date that can be checked in the
     // test.
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     {
         let time = Time {
             hour: 0,

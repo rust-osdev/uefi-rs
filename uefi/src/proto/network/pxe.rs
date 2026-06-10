@@ -22,9 +22,10 @@ use uefi_raw::protocol::network::pxe::{
 use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho,
-    PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion, PxeBaseCodeIpFilterFlags as IpFilters,
-    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIcmpError as IcmpError,
+    PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
+    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeTftpError as TftpError,
+    PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -1292,8 +1293,7 @@ impl Mode {
     /// zero-filled by [`BaseCode::start`].
     #[must_use]
     pub const fn icmp_error(&self) -> &IcmpError {
-        // Safety: `IcmpError` has the same layout as `PxeBaseCodeIcmpError`.
-        unsafe { &*ptr::from_ref(&self.0.icmp_error).cast() }
+        &self.0.icmp_error
     }
 
     /// TFTP error packet. This field is updated when a TFTP error is received
@@ -1330,28 +1330,6 @@ pub struct RouteEntry {
     /// Gateway address.
     pub gw_addr: IpAddr,
 }
-
-/// An ICMP error packet.
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_ICMP_ERROR` type in the C API.
-#[repr(C)]
-#[expect(missing_docs)]
-#[derive(Debug)]
-pub struct IcmpError {
-    pub ty: u8,
-    pub code: u8,
-    pub checksum: u16,
-    pub u: IcmpErrorUnion,
-    pub data: [u8; 494],
-}
-
-impl Display for IcmpError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
-
-impl core::error::Error for IcmpError {}
 
 /// Returned by [`BaseCode::tftp_read_dir`].
 #[expect(missing_docs)]

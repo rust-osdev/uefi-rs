@@ -255,25 +255,82 @@ impl Debug for PxeBaseCodePacket {
     }
 }
 
+/// A DHCPv4 packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_DHCPV4_PACKET` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeDhcpV4Packet {
+    /// Packet op code / message type.
     pub bootp_opcode: u8,
+    /// Hardware address type.
     pub bootp_hw_type: u8,
+    /// Hardware address length.
     pub bootp_hw_addr_len: u8,
+    /// Client sets to zero, optionally used by gateways in cross-gateway booting.
     pub bootp_gate_hops: u8,
     pub bootp_ident: u32,
     pub bootp_seconds: u16,
     pub bootp_flags: u16,
+    /// Client IP address, filled in by client in bootrequest if known.
     pub bootp_ci_addr: [u8; 4],
+    /// 'your' (client) IP address; filled by server if client doesn't know its own address (`bootp_ci_addr` was 0).
     pub bootp_yi_addr: [u8; 4],
+    /// Server IP address, returned in bootreply by server.
     pub bootp_si_addr: [u8; 4],
+    /// Gateway IP address, used in optional cross-gateway booting.
     pub bootp_gi_addr: [u8; 4],
+    /// Client hardware address, filled in by client.
     pub bootp_hw_addr: [u8; 16],
+    /// Optional server host name, null terminated string.
     pub bootp_srv_name: [u8; 64],
+    /// Boot file name, null terminated string, 'generic' name or null in
+    /// bootrequest, fully qualified directory-path name in bootreply.
     pub bootp_boot_file: [u8; 128],
+    /// Validation magic number.
     pub dhcp_magik: u32,
+    /// Optional vendor-specific area, e.g. could be hardware type/serial on request, or 'capability' / remote file system handle on reply.  This info may be set aside for use by a third phase bootstrap or kernel.
     pub dhcp_options: [u8; 56],
+}
+
+impl PxeBaseCodeDhcpV4Packet {
+    /// The expected value for [`Self::dhcp_magik`].
+    pub const DHCP_MAGIK: u32 = 0x63825363;
+
+    /// Transaction ID, a random number, used to match this boot request with the responses it generates.
+    #[must_use]
+    pub const fn bootp_ident(&self) -> u32 {
+        u32::from_be(self.bootp_ident)
+    }
+
+    /// Filled in by client, seconds elapsed since client started trying to boot.
+    #[must_use]
+    pub const fn bootp_seconds(&self) -> u16 {
+        u16::from_be(self.bootp_seconds)
+    }
+
+    /// The flags.
+    #[must_use]
+    pub const fn bootp_flags(&self) -> PxeBaseCodeDhcpV4Flags {
+        PxeBaseCodeDhcpV4Flags::from_bits_truncate(u16::from_be(self.bootp_flags))
+    }
+
+    /// A magic cookie, should be [`Self::DHCP_MAGIK`].
+    #[must_use]
+    pub const fn dhcp_magik(&self) -> u32 {
+        u32::from_be(self.dhcp_magik)
+    }
+}
+
+bitflags! {
+    /// Represents the 'flags' field for a [`PxeBaseCodeDhcpV4Packet`].
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct PxeBaseCodeDhcpV4Flags: u16 {
+        /// Should be set when the client cannot receive unicast IP datagrams
+        /// until its protocol software has been configured with an IP address.
+        const BROADCAST = 1;
+    }
 }
 
 /// A DHCPv6 packet.

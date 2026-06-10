@@ -12,6 +12,15 @@
   implementations of `PartialEq`, `Eq`, `PartialOrd`, `Ord`, and `Hash` to match
   the type's logical properties. If you rely on the specific bit pattern,
   please use `.0` to access the underlying value.
+- Added `PxeBaseCodeDhcpV4Flags`.
+- Added `PxeBaseCodeDhcpV4Packet::{DHCP_MAGIK, bootp_ident(), bootp_seconds(),
+  bootp_flags(), dhcp_magik()}`.
+- Added `PxeBaseCodeDhcpV6Packet::transaction_id()`.
+- Added `AsRef` implementations to `PxeBaseCodePacket`.
+- Added `PxeBaseCodeIpFilter::{new(), ip_list()}`.
+- Added `PxeBaseCodeSrvlist::{new(), ip_addr()}`.
+- `PxeBaseCodeIcmpError` and `PxeBaseCodeTftpError` now implement `Display` and
+  `core::error::Error`.
 
 
 # uefi-raw - v0.14.0 (2026-03-22)

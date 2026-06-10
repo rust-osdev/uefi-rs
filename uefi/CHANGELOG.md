@@ -17,6 +17,14 @@
   errors during exit.
 - **Breaking:** Renamed `PciIoAccessPci` to `PciIoAccess` and added a generic
   parameter to handle the PCI configuration, IO port, and MMIO address spaces.
+- **Breaking:** Replace `ArpEntry`, `DhcpV4Flags`, `DhcpV4Packet`,
+  `DhcpV6Packet`, `IcmpError`, `IcmpErrorEcho`, `IcmpErrorUnion`, `IpFilter`,
+  `MtftpInfo`, `Packet`, `RouteEntry`, `Server`, and `TftpError` with re-exports
+  from `uefi-raw`.
+- **Breaking:** Changed `ArpEntry` and `RouteEntry` to fix incorrect slicing in
+  `proto::network::pxe::Mode::{arp_cache(), route_table()}`.
+- **Breaking:** Changed `Server::ty` to `Server::server_type`.
+- **Breaking:** Changed `TftpError::error_string` from `[u8; 127]` to `[Char8; 127]`.
 
 ## Removed
 - **Breaking:** Removed the deprecated `table::cfg::*_GUID` constants. Use

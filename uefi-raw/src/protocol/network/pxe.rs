@@ -312,6 +312,9 @@ bitflags! {
     }
 }
 
+/// An entry for the ARP cache found in [`PxeBaseCodeMode::route_table`].
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_ARP_ENTRY` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeArpEntry {

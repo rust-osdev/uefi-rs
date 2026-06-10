@@ -12,7 +12,6 @@ use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::net::{IpAddr, Ipv4Addr};
 use core::ptr::{self, null, null_mut};
-use core::slice;
 use ptr_meta::Pointee;
 use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
@@ -22,10 +21,11 @@ use uefi_raw::protocol::network::pxe::{
 use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIcmpError as IcmpError,
-    PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeRouteEntry as RouteEntry,
-    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeArpEntry as ArpEntry, PxeBaseCodeBootType as BootstrapType,
+    PxeBaseCodeIcmpError as IcmpError, PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho,
+    PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion, PxeBaseCodeIpFilterFlags as IpFilters,
+    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeTftpError as TftpError,
+    PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -1265,9 +1265,10 @@ impl Mode {
     /// Cached ARP entries.
     #[must_use]
     pub const fn arp_cache(&self) -> &[ArpEntry] {
-        let len = usize_from_u32(self.0.arp_cache_entries);
-        // Safety: `ArpEntry` has the same layout as `PxeBaseCodeArpEntry`.
-        unsafe { slice::from_raw_parts(ptr::from_ref(&self.0.arp_cache).cast::<ArpEntry>(), len) }
+        self.0
+            .arp_cache
+            .split_at(usize_from_u32(self.0.arp_cache_entries))
+            .0
     }
 
     /// The number of valid entries in the current route table. This field is
@@ -1301,18 +1302,6 @@ impl Mode {
     pub const fn tftp_error(&self) -> &TftpError {
         &self.0.tftp_error
     }
-}
-
-/// An entry for the ARP cache found in [`Mode::arp_cache`]
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_ARP_ENTRY` type in the C API.
-#[repr(C)]
-#[derive(Debug)]
-pub struct ArpEntry {
-    /// The IP address.
-    pub ip_addr: IpAddr,
-    /// The mac address of the device that is addressed by [`Self::ip_addr`].
-    pub mac_addr: EfiMacAddr,
 }
 
 /// Returned by [`BaseCode::tftp_read_dir`].

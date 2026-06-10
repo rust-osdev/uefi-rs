@@ -241,6 +241,9 @@ pub struct PxeBaseCodeMode {
     pub tftp_error: PxeBaseCodeTftpError,
 }
 
+/// A network packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_PACKET` type.
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub union PxeBaseCodePacket {
@@ -252,6 +255,24 @@ pub union PxeBaseCodePacket {
 impl Debug for PxeBaseCodePacket {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("PxeBaseCodePacket").finish()
+    }
+}
+
+impl AsRef<[u8; 1472]> for PxeBaseCodePacket {
+    fn as_ref(&self) -> &[u8; 1472] {
+        unsafe { &self.raw }
+    }
+}
+
+impl AsRef<PxeBaseCodeDhcpV4Packet> for PxeBaseCodePacket {
+    fn as_ref(&self) -> &PxeBaseCodeDhcpV4Packet {
+        unsafe { &self.dhcpv4 }
+    }
+}
+
+impl AsRef<PxeBaseCodeDhcpV6Packet> for PxeBaseCodePacket {
+    fn as_ref(&self) -> &PxeBaseCodeDhcpV6Packet {
+        unsafe { &self.dhcpv6 }
     }
 }
 

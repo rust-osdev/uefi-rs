@@ -15,7 +15,7 @@ use ptr_meta::Pointee;
 use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeMtftpInfo,
-    PxeBaseCodePacket, PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
+    PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
@@ -24,8 +24,9 @@ pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDhcpV4Flags as DhcpV4Flags, PxeBaseCodeDhcpV4Packet as DhcpV4Packet,
     PxeBaseCodeDhcpV6Packet as DhcpV6Packet, PxeBaseCodeIcmpError as IcmpError,
     PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeRouteEntry as RouteEntry,
-    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodePacket as Packet,
+    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeTftpError as TftpError,
+    PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -582,12 +583,12 @@ impl BaseCode {
                 opt_bool_to_ptr(&new_pxe_discover_valid),
                 opt_bool_to_ptr(&new_pxe_reply_received),
                 opt_bool_to_ptr(&new_pxe_bis_reply_received),
-                opt_packet_to_ptr(new_dhcp_discover),
-                opt_packet_to_ptr(new_dhcp_ack),
-                opt_packet_to_ptr(new_proxy_offer),
-                opt_packet_to_ptr(new_pxe_discover),
-                opt_packet_to_ptr(new_pxe_reply),
-                opt_packet_to_ptr(new_pxe_bis_reply),
+                opt_ref_to_ptr(new_dhcp_discover),
+                opt_ref_to_ptr(new_dhcp_ack),
+                opt_ref_to_ptr(new_proxy_offer),
+                opt_ref_to_ptr(new_pxe_discover),
+                opt_ref_to_ptr(new_pxe_reply),
+                opt_ref_to_ptr(new_pxe_bis_reply),
             )
         }
         .to_result()
@@ -622,11 +623,6 @@ fn opt_ip_addr_to_ptr(arg: Option<&EfiIpAddr>) -> *const EfiIpAddr {
 /// Convert an `Option<&mut EfiIpAddr>` to a `*mut uefi_raw::EfiIpAddr`.
 fn opt_ip_addr_to_ptr_mut(arg: Option<&mut EfiIpAddr>) -> *mut EfiIpAddr {
     arg.map(|arg| &raw mut *arg).unwrap_or_else(null_mut)
-}
-
-/// Convert an `Option<&Packet>` to a `*const PxeBaseCodePacket`.
-fn opt_packet_to_ptr(arg: Option<&Packet>) -> *const PxeBaseCodePacket {
-    arg.map(|p| ptr::from_ref(p).cast()).unwrap_or_else(null)
 }
 
 /// Convert an `Option<&T>` to a `*const T`.
@@ -862,47 +858,6 @@ impl IpFilter {
     }
 }
 
-/// A network packet.
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_PACKET` type in the C API.
-#[repr(C)]
-pub union Packet {
-    raw: [u8; 1472],
-    dhcpv4: DhcpV4Packet,
-    dhcpv6: DhcpV6Packet,
-}
-
-impl Packet {
-    const fn from_raw(packet: &PxeBaseCodePacket) -> &Self {
-        // Safety: `Packet` has the same layout as `PxeBaseCodePacket`.
-        unsafe { &*ptr::from_ref(packet).cast() }
-    }
-}
-
-impl Debug for Packet {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "<binary data>")
-    }
-}
-
-impl AsRef<[u8; 1472]> for Packet {
-    fn as_ref(&self) -> &[u8; 1472] {
-        unsafe { &self.raw }
-    }
-}
-
-impl AsRef<DhcpV4Packet> for Packet {
-    fn as_ref(&self) -> &DhcpV4Packet {
-        unsafe { &self.dhcpv4 }
-    }
-}
-
-impl AsRef<DhcpV6Packet> for Packet {
-    fn as_ref(&self) -> &DhcpV6Packet {
-        unsafe { &self.dhcpv6 }
-    }
-}
-
 /// The data values in this structure are read-only and are updated by the
 /// [`BaseCode`].
 ///
@@ -1106,7 +1061,7 @@ impl Mode {
     /// [`BaseCode::set_packets`].
     #[must_use]
     pub const fn dhcp_discover(&self) -> &Packet {
-        Packet::from_raw(&self.0.dhcp_discover)
+        &self.0.dhcp_discover
     }
 
     /// Cached DHCP Ack packet. This field is zero-filled by
@@ -1115,7 +1070,7 @@ impl Mode {
     /// [`BaseCode::set_packets`].
     #[must_use]
     pub const fn dhcp_ack(&self) -> &Packet {
-        Packet::from_raw(&self.0.dhcp_ack)
+        &self.0.dhcp_ack
     }
 
     /// Cached Proxy Offer packet. This field is zero-filled by
@@ -1124,7 +1079,7 @@ impl Mode {
     /// [`BaseCode::set_packets`].
     #[must_use]
     pub const fn proxy_offer(&self) -> &Packet {
-        Packet::from_raw(&self.0.proxy_offer)
+        &self.0.proxy_offer
     }
 
     /// Cached PXE Discover packet. This field is zero-filled by
@@ -1133,7 +1088,7 @@ impl Mode {
     /// [`BaseCode::set_packets`].
     #[must_use]
     pub const fn pxe_discover(&self) -> &Packet {
-        Packet::from_raw(&self.0.pxe_discover)
+        &self.0.pxe_discover
     }
 
     /// Cached PXE Reply packet. This field is zero-filled by
@@ -1142,7 +1097,7 @@ impl Mode {
     /// [`BaseCode::set_packets`] function.
     #[must_use]
     pub const fn pxe_reply(&self) -> &Packet {
-        Packet::from_raw(&self.0.pxe_reply)
+        &self.0.pxe_reply
     }
 
     /// Cached PXE BIS Reply packet. This field is zero-filled by
@@ -1150,7 +1105,7 @@ impl Mode {
     /// successfully. This field can be replaced by [`BaseCode::set_packets`].
     #[must_use]
     pub const fn pxe_bis_reply(&self) -> &Packet {
-        Packet::from_raw(&self.0.pxe_bis_reply)
+        &self.0.pxe_bis_reply
     }
 
     /// The current IP receive filter settings. The receive filter is disabled

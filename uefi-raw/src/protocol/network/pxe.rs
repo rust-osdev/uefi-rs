@@ -327,6 +327,9 @@ pub struct PxeBaseCodeRouteEntry {
     pub gw_addr: IpAddress,
 }
 
+/// An ICMP error packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_ICMP_ERROR` type.
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeIcmpError {
@@ -336,6 +339,14 @@ pub struct PxeBaseCodeIcmpError {
     pub u: PxeBaseCodeIcmpErrorUnion,
     pub data: [u8; 494],
 }
+
+impl Display for PxeBaseCodeIcmpError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl core::error::Error for PxeBaseCodeIcmpError {}
 
 /// In the C API, this is an anonymous union inside the definition of
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR`.

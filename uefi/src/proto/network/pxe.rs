@@ -14,8 +14,7 @@ use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeProtocol,
-    PxeBaseCodeTftpOpcode,
+    PxeBaseCodeDiscoverInfo, PxeBaseCodeMode, PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
@@ -24,9 +23,10 @@ pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDhcpV4Flags as DhcpV4Flags, PxeBaseCodeDhcpV4Packet as DhcpV4Packet,
     PxeBaseCodeDhcpV6Packet as DhcpV6Packet, PxeBaseCodeIcmpError as IcmpError,
     PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeMtftpInfo as MtftpInfo,
-    PxeBaseCodePacket as Packet, PxeBaseCodeRouteEntry as RouteEntry,
-    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeIpFilter as IpFilter, PxeBaseCodeIpFilterFlags as IpFilters,
+    PxeBaseCodeMtftpInfo as MtftpInfo, PxeBaseCodePacket as Packet,
+    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeTftpError as TftpError,
+    PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -505,7 +505,6 @@ impl BaseCode {
     /// Updates the IP receive filters of a network device and enables software
     /// filtering.
     pub fn set_ip_filter(&mut self, new_filter: &IpFilter) -> Result {
-        let new_filter: *const PxeBaseCodeIpFilter = ptr::from_ref(new_filter).cast();
         unsafe { (self.0.set_ip_filter)(&mut self.0, new_filter) }.to_result()
     }
 
@@ -785,49 +784,6 @@ impl Server {
     }
 }
 
-/// IP receive filter settings
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_IP_FILTER` type in the C API.
-#[repr(C)]
-#[derive(Debug)]
-pub struct IpFilter {
-    /// A set of filters.
-    pub filters: IpFilters,
-    ip_cnt: u8,
-    _reserved: u16,
-    ip_list: [IpAddr; 8],
-}
-
-impl IpFilter {
-    /// Construct a new `IpFilter`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ip_list` contains more than 8 entries.
-    #[must_use]
-    pub fn new(filters: IpFilters, ip_list: &[IpAddr]) -> Self {
-        assert!(ip_list.len() <= 8);
-
-        let ip_cnt = ip_list.len() as u8;
-        let mut buffer = [IpAddr::from([0; 16]); 8];
-        buffer[..ip_list.len()].copy_from_slice(ip_list);
-
-        Self {
-            filters,
-            ip_cnt,
-            _reserved: 0,
-            ip_list: buffer,
-        }
-    }
-
-    /// A list of IP addresses other than the Station Ip that should be
-    /// enabled. Maybe be multicast or unicast.
-    #[must_use]
-    pub fn ip_list(&self) -> &[IpAddr] {
-        &self.ip_list[..usize::from(self.ip_cnt)]
-    }
-}
-
 /// The data values in this structure are read-only and are updated by the
 /// [`BaseCode`].
 ///
@@ -1083,8 +1039,7 @@ impl Mode {
     /// [`BaseCode::start`], and is set by [`BaseCode::set_ip_filter`].
     #[must_use]
     pub const fn ip_filter(&self) -> &IpFilter {
-        // Safety: `IpFilter` has the same layout as `PxeBaseCodeIpFilter`.
-        unsafe { &*ptr::from_ref(&self.0.ip_filter).cast() }
+        &self.0.ip_filter
     }
 
     /// Cached ARP entries.

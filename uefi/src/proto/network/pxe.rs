@@ -24,8 +24,8 @@ use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIcmpError as IcmpError,
     PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeTftpError as TftpError,
-    PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeRouteEntry as RouteEntry,
+    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -1280,12 +1280,10 @@ impl Mode {
     /// Array of route table entries.
     #[must_use]
     pub const fn route_table(&self) -> &[RouteEntry] {
-        let len = usize_from_u32(self.0.route_table_entries);
-
-        // Safety: `RouteEntry` has the same layout as `PxeBaseCodeRouteEntry`.
-        unsafe {
-            slice::from_raw_parts(ptr::from_ref(&self.0.route_table).cast::<RouteEntry>(), len)
-        }
+        self.0
+            .route_table
+            .split_at(usize_from_u32(self.0.route_table_entries))
+            .0
     }
 
     /// ICMP error packet. This field is updated when an ICMP error is received
@@ -1315,20 +1313,6 @@ pub struct ArpEntry {
     pub ip_addr: IpAddr,
     /// The mac address of the device that is addressed by [`Self::ip_addr`].
     pub mac_addr: EfiMacAddr,
-}
-
-/// An entry for the route table found in [`Mode::route_table`]
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_ROUTE_ENTRY` type in the C API.
-#[repr(C)]
-#[derive(Debug)]
-pub struct RouteEntry {
-    /// IP address.
-    pub ip_addr: IpAddr,
-    /// Subnet mask.
-    pub subnet_mask: IpAddr,
-    /// Gateway address.
-    pub gw_addr: IpAddr,
 }
 
 /// Returned by [`BaseCode::tftp_read_dir`].

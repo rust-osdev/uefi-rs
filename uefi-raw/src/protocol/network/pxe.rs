@@ -3,7 +3,7 @@
 use crate::{Boolean, Char8, Guid, IpAddress, MacAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
 use core::ffi::c_void;
-use core::fmt::{self, Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 
 #[derive(Debug)]
 #[repr(C)]
@@ -363,9 +363,20 @@ pub struct PxeBaseCodeIcmpErrorEcho {
     pub sequence: u16,
 }
 
+/// A TFTP error packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_TFTP_ERROR` type.
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeTftpError {
     pub error_code: u8,
     pub error_string: [Char8; 127],
 }
+
+impl Display for PxeBaseCodeTftpError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl core::error::Error for PxeBaseCodeTftpError {}

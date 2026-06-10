@@ -23,7 +23,7 @@ use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeBootType as BootstrapType, PxeBaseCodeIpFilterFlags as IpFilters,
-    PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -1300,8 +1300,7 @@ impl Mode {
     /// zero-filled by the [`BaseCode::start`] function.
     #[must_use]
     pub const fn tftp_error(&self) -> &TftpError {
-        // Safety: `TftpError` has the same layout as `PxeBaseCodeTftpError`.
-        unsafe { &*ptr::from_ref(&self.0.tftp_error).cast() }
+        &self.0.tftp_error
     }
 }
 
@@ -1379,25 +1378,6 @@ pub struct IcmpErrorEcho {
     pub identifier: u16,
     pub sequence: u16,
 }
-
-/// A TFTP error packet.
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_TFTP_ERROR` type in the C API.
-#[repr(C)]
-#[expect(missing_docs)]
-#[derive(Debug)]
-pub struct TftpError {
-    pub error_code: u8,
-    pub error_string: [u8; 127],
-}
-
-impl Display for TftpError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
-
-impl core::error::Error for TftpError {}
 
 /// Returned by [`BaseCode::tftp_read_dir`].
 #[expect(missing_docs)]

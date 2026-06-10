@@ -25,8 +25,8 @@ pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
     PxeBaseCodeIpFilter as IpFilter, PxeBaseCodeIpFilterFlags as IpFilters,
     PxeBaseCodeMtftpInfo as MtftpInfo, PxeBaseCodePacket as Packet,
-    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeTftpError as TftpError,
-    PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeSrvlist as Server,
+    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -741,46 +741,6 @@ impl DiscoverInfo {
     #[must_use]
     pub const fn srv_list(&self) -> &[Server] {
         &self.srv_list
-    }
-}
-
-/// An entry in the Boot Server list
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_SRVLIST` type in the C API.
-#[repr(C)]
-#[derive(Debug)]
-pub struct Server {
-    /// The type of Boot Server reply
-    pub ty: u16,
-    accept_any_response: bool,
-    _reserved: u8,
-    /// The IP address of the server
-    ip_addr: EfiIpAddr,
-}
-
-impl Server {
-    /// Construct a `Server` for a Boot Server reply type. If `ip_addr` is not
-    /// `None` only Boot Server replies with matching the IP address will be
-    /// accepted.
-    #[must_use]
-    pub fn new(ty: u16, ip_addr: Option<EfiIpAddr>) -> Self {
-        Self {
-            ty,
-            accept_any_response: ip_addr.is_none(),
-            _reserved: 0,
-            ip_addr: ip_addr.unwrap_or_default(),
-        }
-    }
-
-    /// Returns `None` if any response should be accepted, or otherwise the IP
-    /// address of a Boot Server whose responses should be accepted.
-    #[must_use]
-    pub const fn ip_addr(&self) -> Option<&EfiIpAddr> {
-        if self.accept_any_response {
-            None
-        } else {
-            Some(&self.ip_addr)
-        }
     }
 }
 

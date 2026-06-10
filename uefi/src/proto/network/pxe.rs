@@ -22,10 +22,10 @@ use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
 pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeArpEntry as ArpEntry, PxeBaseCodeBootType as BootstrapType,
-    PxeBaseCodeIcmpError as IcmpError, PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho,
-    PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion, PxeBaseCodeIpFilterFlags as IpFilters,
-    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeTftpError as TftpError,
-    PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeDhcpV6Packet as DhcpV6Packet, PxeBaseCodeIcmpError as IcmpError,
+    PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
+    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeRouteEntry as RouteEntry,
+    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -977,29 +977,6 @@ bitflags! {
         /// Should be set when the client cannot receive unicast IP datagrams
         /// until its protocol software has been configured with an IP address.
         const BROADCAST = 1;
-    }
-}
-
-/// A Dhcpv6 Packet.
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_DHCPV6_PACKET` type in the C API.
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct DhcpV6Packet {
-    /// The message type.
-    pub message_type: u8,
-    transaction_id: [u8; 3],
-    /// A byte array containing dhcp options.
-    pub dhcp_options: [u8; 1024],
-}
-
-impl DhcpV6Packet {
-    /// The transaction id.
-    #[must_use]
-    pub fn transaction_id(&self) -> u32 {
-        (u32::from(self.transaction_id[0]) << 16)
-            | (u32::from(self.transaction_id[1]) << 8)
-            | u32::from(self.transaction_id[2])
     }
 }
 

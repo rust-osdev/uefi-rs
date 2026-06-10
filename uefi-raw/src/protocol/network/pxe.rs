@@ -392,6 +392,9 @@ impl PxeBaseCodeDhcpV6Packet {
     }
 }
 
+/// IP receive filter settings.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_IP_FILTER` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeIpFilter {
@@ -399,6 +402,42 @@ pub struct PxeBaseCodeIpFilter {
     pub ip_cnt: u8,
     pub reserved: u16,
     pub ip_list: [IpAddress; 8],
+}
+
+impl PxeBaseCodeIpFilter {
+    #[must_use]
+    pub fn new<T: Into<IpAddress> + Clone>(
+        filters: PxeBaseCodeIpFilterFlags,
+        ip_list: &[T],
+    ) -> Self {
+        assert!(ip_list.len() <= 8);
+
+        let ip_cnt = ip_list.len() as u8;
+        let mut buffer = [IpAddress::default(); 8];
+        for (index, ip_address) in ip_list
+            .iter()
+            .cloned()
+            .map(|value| value.into())
+            .enumerate()
+        {
+            buffer[index] = ip_address;
+        }
+
+        Self {
+            filters,
+            ip_cnt,
+            reserved: 0,
+            ip_list: buffer,
+        }
+    }
+
+    /// A list of IP addresses other than the station IP that should be enabled.
+    ///
+    /// May be multicast or unicast.
+    #[must_use]
+    pub fn ip_list(&self) -> &[IpAddress] {
+        &self.ip_list[..usize::from(self.ip_cnt)]
+    }
 }
 
 bitflags! {

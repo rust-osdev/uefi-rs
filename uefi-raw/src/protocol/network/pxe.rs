@@ -276,12 +276,28 @@ pub struct PxeBaseCodeDhcpV4Packet {
     pub dhcp_options: [u8; 56],
 }
 
+/// A DHCPv6 packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_DHCPV6_PACKET` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeDhcpV6Packet {
+    /// The message type.
     pub message_type: u8,
+    /// The transaction id.
     pub transaction_id: [u8; 3],
+    /// A byte array containing DHCP options.
     pub dhcp_options: [u8; 1024],
+}
+
+impl PxeBaseCodeDhcpV6Packet {
+    /// The transaction id.
+    #[must_use]
+    pub fn transaction_id(&self) -> u32 {
+        (u32::from(self.transaction_id[0]) << 16)
+            | (u32::from(self.transaction_id[1]) << 8)
+            | u32::from(self.transaction_id[2])
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

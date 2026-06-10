@@ -14,8 +14,8 @@ use core::ptr::{self, null, null_mut};
 use ptr_meta::Pointee;
 use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
-    PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeMtftpInfo,
-    PxeBaseCodeProtocol, PxeBaseCodeTftpOpcode,
+    PxeBaseCodeDiscoverInfo, PxeBaseCodeIpFilter, PxeBaseCodeMode, PxeBaseCodeProtocol,
+    PxeBaseCodeTftpOpcode,
 };
 use uefi_raw::{Boolean, Char8, IpAddress as EfiIpAddr};
 
@@ -24,9 +24,9 @@ pub use uefi_raw::protocol::network::pxe::{
     PxeBaseCodeDhcpV4Flags as DhcpV4Flags, PxeBaseCodeDhcpV4Packet as DhcpV4Packet,
     PxeBaseCodeDhcpV6Packet as DhcpV6Packet, PxeBaseCodeIcmpError as IcmpError,
     PxeBaseCodeIcmpErrorEcho as IcmpErrorEcho, PxeBaseCodeIcmpErrorUnion as IcmpErrorUnion,
-    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodePacket as Packet,
-    PxeBaseCodeRouteEntry as RouteEntry, PxeBaseCodeTftpError as TftpError,
-    PxeBaseCodeUdpOpFlags as UdpOpFlags,
+    PxeBaseCodeIpFilterFlags as IpFilters, PxeBaseCodeMtftpInfo as MtftpInfo,
+    PxeBaseCodePacket as Packet, PxeBaseCodeRouteEntry as RouteEntry,
+    PxeBaseCodeTftpError as TftpError, PxeBaseCodeUdpOpFlags as UdpOpFlags,
 };
 
 /// PXE Base Code [`Protocol`].
@@ -249,7 +249,7 @@ impl BaseCode {
                 null(),
                 &server_ip,
                 cstr8_to_ptr(filename),
-                info.as_ptr(),
+                info,
                 Boolean::FALSE,
             )
         };
@@ -282,7 +282,7 @@ impl BaseCode {
                 null(),
                 &server_ip,
                 cstr8_to_ptr(filename),
-                info.as_ptr(),
+                info,
                 dont_use_buffer,
             )
         };
@@ -311,7 +311,7 @@ impl BaseCode {
                 null(),
                 &server_ip,
                 null_mut(),
-                info.as_ptr(),
+                info,
                 Boolean::FALSE,
             )
         };
@@ -782,36 +782,6 @@ impl Server {
         } else {
             Some(&self.ip_addr)
         }
-    }
-}
-
-/// MTFTP connection parameters
-///
-/// Corresponds to the `EFI_PXE_BASE_CODE_MTFTP_INFO` type in the C API.
-#[derive(Clone, Copy, Debug)]
-#[repr(C)]
-pub struct MtftpInfo {
-    // TODO we need a low level type and a high-level type with `IpAddr`
-    /// File multicast IP address. This is the IP address to which the server
-    /// will send the requested file.
-    pub m_cast_ip: EfiIpAddr,
-    /// Client multicast listening port. This is the UDP port to which the
-    /// server will send the requested file.
-    pub c_port: u16,
-    /// Server multicast listening port. This is the UDP port on which the
-    /// server listens for multicast open requests and data acks.
-    pub s_port: u16,
-    /// The number of seconds a client should listen for an active multicast
-    /// session before requesting a new multicast session.
-    pub listen_timeout: u16,
-    /// The number of seconds a client should wait for a packet from the server
-    /// before retransmitting the previous open request or data ack packet.
-    pub transmit_timeout: u16,
-}
-
-impl MtftpInfo {
-    const fn as_ptr(&self) -> *const PxeBaseCodeMtftpInfo {
-        ptr::from_ref(self).cast()
     }
 }
 

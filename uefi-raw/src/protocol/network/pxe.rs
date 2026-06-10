@@ -165,13 +165,27 @@ pub struct PxeBaseCodeSrvlist {
 
 pub type PxeBaseCodeUdpPort = u16;
 
+/// MTFTP connection parameters.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_MTFTP_INFO` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeMtftpInfo {
+    /// We need a low level type and a high-level type with `IpAddr`
+    /// File multicast IP address. This is the IP address to which the server
+    /// will send the requested file.
     pub m_cast_ip: IpAddress,
+    /// Client multicast listening port. This is the UDP port to which the
+    /// server will send the requested file.
     pub c_port: PxeBaseCodeUdpPort,
+    /// Server multicast listening port. This is the UDP port on which the
+    /// server listens for multicast open requests and data acks.
     pub s_port: PxeBaseCodeUdpPort,
+    /// The number of seconds a client should listen for an active multicast
+    /// session before requesting a new multicast session.
     pub listen_timeout: u16,
+    /// The number of seconds a client should wait for a packet from the server
+    /// before retransmitting the previous open request or data ack packet.
     pub transmit_timeout: u16,
 }
 

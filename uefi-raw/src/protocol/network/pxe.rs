@@ -319,6 +319,9 @@ pub struct PxeBaseCodeArpEntry {
     pub mac_addr: MacAddress,
 }
 
+/// An entry for the route table found in [`PxeBaseCodeMode::route_table`].
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_ROUTE_ENTRY` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeRouteEntry {

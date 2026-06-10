@@ -567,16 +567,6 @@ pub struct VariableKey {
 }
 
 #[cfg(feature = "alloc")]
-impl VariableKey {
-    /// Name of the variable.
-    #[deprecated = "Use the VariableKey.name field instead"]
-    #[allow(clippy::missing_const_for_fn)] // false-positive since Rust 1.86
-    pub fn name(&self) -> core::result::Result<&CStr16, crate::data_types::FromSliceWithNulError> {
-        Ok(&self.name)
-    }
-}
-
-#[cfg(feature = "alloc")]
 impl Display for VariableKey {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "VariableKey {{ name: \"{}\", vendor: ", self.name)?;

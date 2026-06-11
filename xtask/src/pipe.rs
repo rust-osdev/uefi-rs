@@ -87,7 +87,10 @@ impl Pipe {
 
 /// Attempt to connect to a duplex named pipe in byte mode.
 fn windows_open_pipe(path: &Path) -> Result<File> {
-    let max_attempts = 100;
+    let max_duration = Duration::from_secs(5);
+    let sleep_per_iteration = Duration::from_millis(100);
+    let iteration_count = max_duration.as_millis() / sleep_per_iteration.as_millis();
+
     let mut attempt = 0;
     loop {
         attempt += 1;
@@ -96,11 +99,12 @@ fn windows_open_pipe(path: &Path) -> Result<File> {
             Ok(file) => return Ok(file),
             Err(err) => {
                 #[allow(clippy::needless_return_with_question_mark)]
-                if attempt >= max_attempts {
+                if attempt >= iteration_count {
                     return Err(err)?;
                 } else {
                     // Sleep before trying again.
-                    thread::sleep(Duration::from_millis(100));
+                    eprintln!("waiting for pipe {} to appear ...", path.display());
+                    thread::sleep(sleep_per_iteration);
                 }
             }
         }

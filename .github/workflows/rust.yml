@@ -33,7 +33,7 @@ jobs:
         timeout-minutes: 4
   test_x86_64:
     name: Integration Test (x86_64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -142,7 +142,7 @@ jobs:
   # Nightly + unstable feature
   nightly_channel:
     name: Nightly (build, test, doc)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6

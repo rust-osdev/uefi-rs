@@ -14,6 +14,12 @@
 - **Breaking:** Corrected function signature of `boot::exit` to enable handling
   errors during exit.
 
+## Removed
+- **Breaking:** Removed the deprecated `table::cfg::*_GUID` constants. Use
+  the matching `ConfigTableEntry::*_GUID` constants instead.
+- **Breaking:** Removed the deprecated `VariableKey::name()` method. Use the
+  public `VariableKey::name` field instead.
+
 # uefi - v0.37.0 (2026-03-22)
 
 ## Added

@@ -261,7 +261,7 @@ impl MacAddress {
     #[must_use]
     pub fn into_ethernet_addr(self) -> [u8; 6] {
         let mut buffer = [0; 6];
-        buffer.copy_from_slice(&self.octets()[6..]);
+        buffer.copy_from_slice(&self.octets()[..6]);
         buffer
     }
 }
@@ -326,6 +326,29 @@ mod tests {
         let core_addr = core::net::IpAddr::V6(core::net::Ipv6Addr::from(TEST_IPV6));
         let uefi_addr = IpAddress::from(core_addr);
         assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
+    }
+
+    /// Test conversions between `MacAddress` and octet arrays.
+    #[test]
+    fn test_mac_addr_conversion() {
+        let ethernet_octets = [0, 1, 2, 3, 4, 5];
+        let mut padded_octets = [0; 32];
+        padded_octets[..6].copy_from_slice(&ethernet_octets);
+
+        let efi_mac_addr = MacAddress::from(ethernet_octets);
+        assert_eq!(efi_mac_addr.octets(), padded_octets);
+        assert_eq!(<[u8; 6]>::from(efi_mac_addr), ethernet_octets);
+        assert_eq!(efi_mac_addr.into_ethernet_addr(), ethernet_octets);
+
+        let efi_octets = [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+            24, 25, 26, 27, 28, 29, 30, 31,
+        ];
+
+        let efi_mac_addr = MacAddress::from(efi_octets);
+        assert_eq!(efi_mac_addr.octets(), efi_octets);
+        assert_eq!(<[u8; 6]>::from(efi_mac_addr), ethernet_octets);
+        assert_eq!(efi_mac_addr.into_ethernet_addr(), ethernet_octets);
     }
 
     // Ensure that our IpAddress type can be put into a packed struct,

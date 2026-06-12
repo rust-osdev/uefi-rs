@@ -29,7 +29,7 @@ pub struct ShellFileInfo {
     pub full_name: *mut Char16,
     pub file_name: *mut Char16,
     pub handle: ShellFileHandle,
-    pub info: FileInfo,
+    pub info: *mut FileInfo,
 }
 
 bitflags! {

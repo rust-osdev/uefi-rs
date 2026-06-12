@@ -74,7 +74,7 @@ bitflags! {
         const ALIGNMENT_64 = 0x0006_0000;
         const ALIGNMENT_128 = 0x0007_0000;
         const ALIGNMENT_256 = 0x0008_0000;
-        const ALIGNMENT_512 = 0x0008_0000;
+        const ALIGNMENT_512 = 0x0009_0000;
         const ALIGNMENT_1K = 0x000a_0000;
         const ALIGNMENT_2K = 0x000b_0000;
         const ALIGNMENT_4K = 0x000c_0000;

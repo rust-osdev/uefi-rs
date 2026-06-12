@@ -21,9 +21,12 @@ pub struct RuntimeServices {
     pub get_time:
         unsafe extern "efiapi" fn(time: *mut Time, capabilities: *mut TimeCapabilities) -> Status,
     pub set_time: unsafe extern "efiapi" fn(time: *const Time) -> Status,
-    pub get_wakeup_time:
-        unsafe extern "efiapi" fn(enabled: *mut u8, pending: *mut u8, time: *mut Time) -> Status,
-    pub set_wakeup_time: unsafe extern "efiapi" fn(enable: u8, time: *const Time) -> Status,
+    pub get_wakeup_time: unsafe extern "efiapi" fn(
+        enabled: *mut Boolean,
+        pending: *mut Boolean,
+        time: *mut Time,
+    ) -> Status,
+    pub set_wakeup_time: unsafe extern "efiapi" fn(enable: Boolean, time: *const Time) -> Status,
     pub set_virtual_address_map: unsafe extern "efiapi" fn(
         map_size: usize,
         desc_size: usize,

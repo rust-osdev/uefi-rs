@@ -21,6 +21,7 @@ use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::{ptr, slice};
 use ptr_meta::Pointee;
+use uefi_raw::Boolean;
 use uefi_raw::protocol::tcg::v2::{Tcg2EventHeader as EventHeader, Tcg2Protocol};
 
 #[cfg(feature = "alloc")]
@@ -568,7 +569,7 @@ impl Tcg {
     pub fn get_event_log_v1(&mut self) -> Result<v1::EventLog<'_>> {
         let mut location = 0;
         let mut last_entry = 0;
-        let mut truncated = 0;
+        let mut truncated = Boolean::default();
 
         let status = unsafe {
             (self.0.get_event_log)(
@@ -581,10 +582,12 @@ impl Tcg {
         };
 
         if status.is_success() {
-            let is_truncated = truncated != 0;
-
             let log = unsafe {
-                v1::EventLog::new(location as *const u8, last_entry as *const u8, is_truncated)
+                v1::EventLog::new(
+                    location as *const u8,
+                    last_entry as *const u8,
+                    truncated.into(),
+                )
             };
 
             Ok(log)
@@ -597,8 +600,7 @@ impl Tcg {
     pub fn get_event_log_v2(&mut self) -> Result<EventLog<'_>> {
         let mut location = 0;
         let mut last_entry = 0;
-        let mut truncated = 0;
-
+        let mut truncated = Boolean::default();
         let status = unsafe {
             (self.0.get_event_log)(
                 &mut self.0,
@@ -610,13 +612,11 @@ impl Tcg {
         };
 
         if status.is_success() {
-            let is_truncated = truncated != 0;
-
             let log = EventLog {
                 _lifetime: PhantomData,
                 location: location as *const u8,
                 last_entry: last_entry as *const u8,
-                is_truncated,
+                is_truncated: truncated.into(),
             };
 
             Ok(log)

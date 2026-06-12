@@ -403,6 +403,6 @@ newtype_enum! {
         /// The interface has been initialized
         INITIALIZED = 2,
         /// No state can have a number higher than this
-        MAX_STATE = 4,
+        MAX_STATE = 3,
     }
 }

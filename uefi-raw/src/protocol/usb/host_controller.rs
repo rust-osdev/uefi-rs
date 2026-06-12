@@ -111,6 +111,11 @@ pub struct Usb2HostControllerProtocol {
         this: *const Self,
         max_speed: *mut Speed,
         port_number: *mut u8,
+        // [`Boolean::TRUE`] if the controller supports 64-bit memory
+        // addressing, [`Boolean::false`] otherwise.
+        //
+        // Effectively this is treated like a [`Boolean`] but the spec types it
+        // as `u8`.
         is_64_bit_capable: *mut u8,
     ) -> Status,
     pub reset: unsafe extern "efiapi" fn(this: *mut Self, attributes: ResetAttributes) -> Status,

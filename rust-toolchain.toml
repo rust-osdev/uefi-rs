@@ -2,4 +2,4 @@
 channel = "stable"
 # cargo, clippy, rustc, rust-docs, rustfmt, rust-std
 profile = "default"
-targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]
+targets = ["aarch64-unknown-uefi", "x86_64-unknown-uefi"]

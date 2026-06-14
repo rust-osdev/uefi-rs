@@ -30,7 +30,6 @@ impl From<UefiArch> for ovmf_prebuilt::Arch {
     fn from(arch: UefiArch) -> Self {
         match arch {
             UefiArch::AArch64 => Self::Aarch64,
-            UefiArch::IA32 => Self::Ia32,
             UefiArch::X86_64 => Self::X64,
         }
     }
@@ -261,7 +260,6 @@ fn build_esp_dir(opt: &QemuOpt, ovmf_paths: &OvmfPaths) -> Result<PathBuf> {
 
     let boot_file_name = match *opt.target {
         UefiArch::AArch64 => "BootAA64.efi",
-        UefiArch::IA32 => "BootIA32.efi",
         UefiArch::X86_64 => "BootX64.efi",
     };
 
@@ -310,7 +308,7 @@ impl Drop for ChildWrapper {
 pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     let qemu_exe = match arch {
         UefiArch::AArch64 => "qemu-system-aarch64",
-        UefiArch::IA32 | UefiArch::X86_64 => "qemu-system-x86_64",
+        UefiArch::X86_64 => "qemu-system-x86_64",
     };
 
     // The QEMU installer for Windows does not automatically add the
@@ -380,7 +378,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
             // Graphics device.
             cmd.args(["-device", "virtio-gpu-pci"]);
         }
-        UefiArch::IA32 | UefiArch::X86_64 => {
+        UefiArch::X86_64 => {
             // Use a modern machine.
             cmd.args(["-machine", "q35"]);
 
@@ -439,7 +437,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     // Configure SCSI Controller
     cmd.arg("-device");
     cmd.arg("virtio-scsi-pci");
-    if arch != UefiArch::IA32 && arch != UefiArch::X86_64 {
+    if arch != UefiArch::X86_64 {
         // The "virt" qemu machine does not have SATA-Controller by default
         cmd.arg("-device");
         cmd.arg("ahci,id=ide");
@@ -599,7 +597,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         .context(format!("qemu was terminated by a signal: {status:?}"))?;
 
     let successful_exit_code = match arch {
-        UefiArch::AArch64 | UefiArch::IA32 => 0,
+        UefiArch::AArch64 => 0,
 
         // The x86_64 version of uefi-test-runner uses exit code 3 to
         // indicate success. See the `shutdown` function in

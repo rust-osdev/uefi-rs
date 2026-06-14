@@ -9,7 +9,7 @@ repository, add `rust-toolchain.toml`:
 
 ```toml
 [toolchain]
-targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]
+targets = ["aarch64-unknown-uefi", "x86_64-unknown-uefi"]
 ```
 
 Here we have specified all three of the currently-supported UEFI targets; you

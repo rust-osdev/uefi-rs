@@ -23,7 +23,6 @@ pub struct Tcp4Protocol {
     /// this instance into user-supplied structs. This function can
     /// also be used to retrieve the operational setting of underlying
     /// drivers such as IPv4, MNP, or SNP.
-    #[allow(clippy::type_complexity)]
     pub get_mode_data: unsafe extern "efiapi" fn(
         this: *mut Self,
         connection_state: *mut Tcp4ConnectionState,

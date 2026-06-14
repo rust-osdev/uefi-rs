@@ -169,8 +169,8 @@ where
 mod tests {
     use super::*;
 
-    #[allow(dead_code)]
-    #[allow(clippy::assertions_on_constants)]
+    #[expect(dead_code)]
+    #[expect(clippy::assertions_on_constants)]
     fn with_config_table_compile_test() {
         assert!(false, "compile test only");
 

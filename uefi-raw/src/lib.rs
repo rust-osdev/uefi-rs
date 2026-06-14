@@ -96,7 +96,7 @@ impl From<bool> for Boolean {
 }
 
 impl From<Boolean> for bool {
-    #[allow(clippy::match_like_matches_macro)]
+    #[expect(clippy::match_like_matches_macro)]
     fn from(value: Boolean) -> Self {
         // We handle it as in C: Any bit-pattern != 0 equals true
         match value.0 {

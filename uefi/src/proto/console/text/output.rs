@@ -280,7 +280,7 @@ impl Iterator for OutputModeIter<'_> {
 ///
 /// All colors can be used as foreground colors.
 /// The first 8 colors can also be used as background colors.
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Debug, Copy, Clone)]
 pub enum Color {
     Black = 0,

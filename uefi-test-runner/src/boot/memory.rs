@@ -107,7 +107,7 @@ mod global {
     }
 
     /// Simple test to ensure our custom allocator works with correct alignment.
-    #[allow(dead_code)] // Ignore warning due to field not being read.
+    #[expect(dead_code)] // Ignore warning due to field not being read.
     pub fn alloc_alignment() {
         {
             info!("Allocating a structure with alignment of 0x100 using the global allocator");

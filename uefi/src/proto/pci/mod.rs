@@ -134,7 +134,6 @@ impl PciIoUnit for u16 {}
 impl PciIoUnit for u32 {}
 impl PciIoUnit for u64 {}
 
-#[allow(dead_code)]
 enum PciIoMode {
     Normal,
     Fifo,
@@ -169,7 +168,7 @@ mod tests {
     use super::PciIoAddress;
 
     #[test]
-    #[allow(clippy::unusual_byte_groupings)]
+    #[expect(clippy::unusual_byte_groupings)]
     fn test_pci_ioaddr_raw_conversion() {
         assert_eq!(size_of::<u64>(), size_of::<PciIoAddress>());
         let srcaddr = PciIoAddress {

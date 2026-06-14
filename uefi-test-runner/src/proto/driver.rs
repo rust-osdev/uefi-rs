@@ -5,7 +5,7 @@ use uefi::prelude::*;
 use uefi::proto::driver::{ComponentName, ComponentName2, LanguageError, LanguageIter};
 use uefi::{CStr16, Result};
 
-#[allow(deprecated)]
+#[expect(deprecated)]
 use uefi::proto::driver::ComponentName1;
 
 /// Generic interface for testing `ComponentName1`, `ComponentName2`, and
@@ -22,7 +22,7 @@ trait ComponentNameInterface: Sized {
     ) -> Result<&CStr16>;
 }
 
-#[allow(deprecated)]
+#[expect(deprecated)]
 impl ComponentNameInterface for ScopedProtocol<ComponentName1> {
     fn open(handle: Handle) -> Result<Self> {
         boot::open_protocol_exclusive::<ComponentName1>(handle)
@@ -140,7 +140,7 @@ fn test_component_name<C: ComponentNameInterface>(english: &str) {
 pub fn test() {
     info!("Running component name test");
 
-    #[allow(deprecated)]
+    #[expect(deprecated)]
     test_component_name::<ScopedProtocol<ComponentName1>>("eng");
     test_component_name::<ScopedProtocol<ComponentName2>>("en");
     test_component_name::<ComponentName>("en");

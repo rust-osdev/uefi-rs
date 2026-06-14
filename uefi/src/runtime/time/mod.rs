@@ -47,7 +47,7 @@ pub struct TimeParams {
 
 /// Error returned by [`Time`] methods. A bool value of `true` means
 /// the specified field is outside its valid range.
-#[allow(missing_docs)]
+#[expect(missing_docs)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct TimeError {
     pub year: bool,

@@ -117,7 +117,6 @@ impl SerialIoProtocol {
 /// Serial I/O protocol (revision 1.1).
 #[derive(Debug)]
 #[repr(C)]
-#[allow(non_camel_case_types)]
 pub struct SerialIoProtocol_1_1 {
     pub base_protocol: SerialIoProtocol,
     pub device_type_guid: *const Guid,

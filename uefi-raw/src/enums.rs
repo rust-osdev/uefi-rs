@@ -35,7 +35,7 @@
 /// # use uefi_raw::newtype_enum;
 /// newtype_enum! {
 /// #[derive(Default)]
-/// pub enum UnixBool: i32 => #[allow(missing_docs)] {
+/// pub enum UnixBool: i32 => #[expect(missing_docs)] {
 ///     FALSE          =  0,
 ///     TRUE           =  1,
 ///     /// Nobody expects the Unix inquisition!
@@ -59,7 +59,6 @@ macro_rules! newtype_enum {
         $visibility struct $type(pub $base_integer);
 
         $(#[$impl_attrs])*
-        #[allow(unused)]
         impl $type {
             $(
                 $(#[$variant_attrs])*

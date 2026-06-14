@@ -7,9 +7,6 @@ pub enum UefiArch {
     #[value(name = "aarch64")]
     AArch64,
 
-    #[value(name = "ia32")]
-    IA32,
-
     #[value(name = "x86_64")]
     #[default]
     X86_64,
@@ -19,7 +16,6 @@ impl UefiArch {
     fn as_str(self) -> &'static str {
         match self {
             Self::AArch64 => "aarch64",
-            Self::IA32 => "ia32",
             Self::X86_64 => "x86_64",
         }
     }
@@ -27,7 +23,6 @@ impl UefiArch {
     pub fn as_triple(self) -> &'static str {
         match self {
             Self::AArch64 => "aarch64-unknown-uefi",
-            Self::IA32 => "i686-unknown-uefi",
             Self::X86_64 => "x86_64-unknown-uefi",
         }
     }

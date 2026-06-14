@@ -45,20 +45,6 @@ jobs:
       - name: Run VM tests
         run: cargo xtask run --target x86_64 --headless --ci --tpm=v1
         timeout-minutes: 4
-  test_ia32:
-    name: Integration Test (IA-32)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v6
-      - uses: Swatinem/rust-cache@v2
-      - name: Install qemu
-        run: |
-          sudo apt-get update
-          sudo apt-get install qemu-system-x86 swtpm -y
-      - name: Run VM tests
-        run: cargo xtask run --target ia32 --headless --ci --tpm=v2
-        timeout-minutes: 4
   # Ensure that developers can build and use this crate on Windows.
   test_x86_64_windows:
     name: Integration Test (x86_64 Windows)

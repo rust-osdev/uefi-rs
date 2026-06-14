@@ -20,6 +20,13 @@
 - **Breaking:** Removed the deprecated `VariableKey::name()` method. Use the
   public `VariableKey::name` field instead.
 
+## Misc
+- We removed testing for IA-32 (32-bit x86, `i686-unknown-uefi`) as OVMF also
+  dropped this target after the 202508 release (see
+  <https://github.com/tianocore/edk2/commit/1fb88ffe284782cc79e306306b8d19829b6248b7>).
+  The crate will likely continue to compile and function with
+  `i686-unknown-uefi`.
+
 # uefi - v0.37.0 (2026-03-22)
 
 ## Added

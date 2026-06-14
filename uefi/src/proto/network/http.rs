@@ -43,6 +43,7 @@ impl Http {
     /// Configure HTTP Protocol.  Must be called before sending HTTP requests.
     pub fn configure(&mut self, config_data: &HttpConfigData) -> uefi::Result<()> {
         let status = unsafe { (self.0.configure)(&mut self.0, config_data) };
+        debug!("http raw: configure({config_data:?}) -> {status}");
         match status {
             Status::SUCCESS => Ok(()),
             _ => Err(status.into()),
@@ -52,6 +53,12 @@ impl Http {
     /// Send HTTP request.
     pub fn request(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
         let status = unsafe { (self.0.request)(&mut self.0, token) };
+        debug!(
+            "http raw: request(headers={}, body_len={}) -> {status}, token.status={}",
+            unsafe { (*token.message).header_count },
+            unsafe { (*token.message).body_length },
+            token.status,
+        );
         match status {
             Status::SUCCESS => Ok(()),
             _ => Err(status.into()),
@@ -70,6 +77,11 @@ impl Http {
     /// Receive HTTP response.
     pub fn response(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
         let status = unsafe { (self.0.response)(&mut self.0, token) };
+        debug!(
+            "http raw: response(body_len={}) -> {status}, token.status={}",
+            unsafe { (*token.message).body_length },
+            token.status,
+        );
         match status {
             Status::SUCCESS => Ok(()),
             _ => Err(status.into()),
@@ -211,12 +223,16 @@ impl HttpHelper {
     ) -> uefi::Result<()> {
         let url16 = uefi::CString16::try_from(url).unwrap();
 
+        let scheme = url.split(':').next().unwrap_or("<missing>");
         let Some(hostname) = url.split('/').nth(2) else {
             return Err(Status::INVALID_PARAMETER.into());
         };
         let mut c_hostname = String::from(hostname);
         c_hostname.push('\0');
-        debug!("http: host: {hostname}");
+        debug!(
+            "http: request setup: method={method:?}, scheme={scheme}, host={hostname}, body_len={}",
+            body.as_ref().map_or(0, |body| body.len())
+        );
 
         let mut tx_req = HttpRequestData {
             method,
@@ -248,12 +264,18 @@ impl HttpHelper {
         p.request(&mut tx_token)?;
         debug!("http: request sent ok");
 
+        let mut polls = 0;
         loop {
             if tx_token.status != Status::NOT_READY {
                 break;
             }
+            polls += 1;
             p.poll()?;
         }
+        debug!(
+            "http: request token completed after {polls} polls with {}",
+            tx_token.status
+        );
 
         if tx_token.status != Status::SUCCESS {
             return Err(tx_token.status.into());

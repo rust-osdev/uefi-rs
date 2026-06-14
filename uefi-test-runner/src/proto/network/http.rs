@@ -87,17 +87,17 @@ pub fn test() {
 
         // hard to find web sites which still allow plain http these days ...
         info!("Testing HTTP");
-        fetch_http(*h, "http://example.com/").expect("http request failed: http://example.com");
+        fetch_http(*h, "http://example.com/").expect("http request to http://example.com failed");
 
         // FYI: not all firmware builds support modern tls versions.
         // request() -> ABORTED typically is a tls handshake error.
         // check the firmware log for details.
         info!("Testing HTTPS");
-        fetch_http(
-            *h,
-            "https://raw.githubusercontent.com/rust-osdev/uefi-rs/refs/heads/main/Cargo.toml",
-        )
-        .expect("https request failed");
+        // Keep this endpoint compatible with edk2's TLS policy. Newer OVMF
+        // defaults OpenSSL to security level 3, so RSA <3072-bit leaf certs
+        // can make Request() fail before any HTTP response is available.
+        fetch_http(*h, "https://example.com/")
+            .expect("https request to https://example.com failed");
 
         info!("PASSED");
     }

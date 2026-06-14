@@ -51,7 +51,7 @@ pub fn test() {
         assert_eq!(EXAMPLE_FILE_CONTENT, &buffer[..len]);
 
         base_code
-            .set_ip_filter(&IpFilter::new(IpFilters::STATION_IP, &[]))
+            .set_ip_filter(&IpFilter::new::<IpAddr>(IpFilters::STATION_IP, &[]))
             .expect("failed to set IP filter");
 
         const EXAMPLE_SERVICE_PORT: u16 = 21572;

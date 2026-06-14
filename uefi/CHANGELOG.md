@@ -13,6 +13,16 @@
   argument should pass in `&[]` instead.
 - **Breaking:** Corrected function signature of `boot::exit` to enable handling
   errors during exit.
+- **Breaking:** Replace `ArpEntry`, `DhcpV4Flags`, `DhcpV4Packet`,
+  `DhcpV6Packet`, `IcmpError`, `IcmpErrorEcho`, `IcmpErrorUnion`, `IpFilter`,
+  `MtftpInfo`, `Packet`, `RouteEntry`, `Server`, and `TftpError` with re-exports
+  from `uefi-raw`.
+- **Breaking:** Changed `IpFilter::new` to utilize generics for the provided
+  `ip_list` slice.
+- **Breaking:** Changed `ArpEntry` and `RouteEntry` to fix incorrect slicing in
+  `proto::network::pxe::Mode::{arp_cache(), route_table()}.
+- **Breaking:** Changed `Server::ty` to `Server::server_type`.
+- **Breaking:** Changed `TftpError::error_string` from `[u8; 127]` to `[Char8; 127`].
 
 ## Removed
 - **Breaking:** Removed the deprecated `table::cfg::*_GUID` constants. Use

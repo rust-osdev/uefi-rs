@@ -142,12 +142,18 @@
 //!   using this feature, or no allocator at all if you don't need to
 //!   dynamically allocate any memory. Note that even without that feature,
 //!   some code might use the internal UEFI allocator.
+//! - `jiff02`: Integration of [`runtime::Time`] with the `jiff` crate
+//!   (version 0.2 and possible above). Specifically, it integrates the time
+//!   struct with `DateTime` and `Zoned` via `TryFrom`.
 //! - `logger`: Logging implementation for the standard [`log`] crate
 //!   that prints output to the UEFI console. No buffering is done; this
 //!   is not a high-performance logger.
 //! - `log-debugcon`: Whether the logger set up by `logger` should also log
 //!   to the debugcon device (available in QEMU or Cloud Hypervisor on x86).
 //! - `panic_handler`: Add a default panic handler that logs to `stdout`.
+//! - `time03`: Integration of [`runtime::Time`] with the `time` crate
+//!   (version 0.3 and possible above). Specifically, it integrates the time
+//!   struct with `PrimitiveDateTime` and `OffsetDateTime` via `TryFrom`.
 //! - `unstable`: Enable functionality that depends on [unstable features] in
 //!   the Rust compiler (nightly version).
 //! - `qemu`: Enable some code paths to adapt their execution when executed

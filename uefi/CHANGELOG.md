@@ -4,6 +4,7 @@
 - Added `proto::console::text::InputEx`.
 - Added `proto::pci::PciRootBridgeIo::{supported_attributes(), attributes(),
   set_attributes(), set_attributes_with_range()}`
+- Added `proto::dma::iommu::Iommu` for IOMMU-based DMA buffer management.
 
 ## Changed
 - MSRV increased from 1.88 to 1.91.

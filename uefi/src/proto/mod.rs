@@ -37,6 +37,7 @@ pub mod ata;
 pub mod console;
 pub mod debug;
 pub mod device_path;
+pub mod dma;
 pub mod driver;
 pub mod hii;
 pub mod loaded_image;

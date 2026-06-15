@@ -89,15 +89,36 @@ pub fn test() {
         info!("Testing HTTP");
         fetch_http(*h, "http://example.com/").expect("http request to http://example.com failed");
 
-        // FYI: not all firmware builds support modern tls versions.
+        // EDK2 uses platform-specific OpenSSL configurations, which can affect
+        // certificate compatibility with HTTPS hosts. Because both our test
+        // hosts and their certificates may change, try multiple candidates and
+        // require at least one request to succeed.
+        //
+        // Not all firmware builds support modern tls versions.
         // request() -> ABORTED typically is a tls handshake error.
         // check the firmware log for details.
+        let https_url_candidates = [
+            "https://example.com/",
+            "https://raw.githubusercontent.com/rust-osdev/uefi-rs/refs/heads/main/Cargo.toml",
+            "https://www.cloudflare.com/",
+            "https://www.google.com/",
+        ];
+
         info!("Testing HTTPS");
-        // Keep this endpoint compatible with edk2's TLS policy. Newer OVMF
-        // defaults OpenSSL to security level 3, so RSA <3072-bit leaf certs
-        // can make Request() fail before any HTTP response is available.
-        fetch_http(*h, "https://example.com/")
-            .expect("https request to https://example.com failed");
+        let https_results = https_url_candidates
+            .iter()
+            .map(|url| (url, fetch_http(*h, url)))
+            .collect::<Vec<_>>();
+        for (url, res) in &https_results {
+            debug!(
+                "HTTPS request to: {url}: {}",
+                if res.is_some() { "OK" } else { "FAILED" }
+            );
+        }
+        assert!(
+            https_results.iter().any(|(_, res)| res.is_some()),
+            "No HTTPS request succeeded"
+        );
 
         info!("PASSED");
     }

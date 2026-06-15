@@ -21,10 +21,24 @@ use tempfile::TempDir;
 use {std::fs::Permissions, std::os::unix::fs::PermissionsExt};
 
 /// Name of the ovmf-prebuilt release to use by default.
+///
+/// This is typically the latest stable release.
 const OVMF_PREBUILT_SOURCE: Source = Source::EDK2_STABLE202605_R1;
+
+/// Name of the ovmf-prebuilt release to use for IA32.
+///
+/// After EDK2_STABLE202508_R1, IA32 support was dropped in edk2.
+const OVMF_PREBUILT_IA32_SOURCE: Source = Source::EDK2_STABLE202508_R1;
 
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";
+
+fn ovmf_prebuilt_source(arch: UefiArch) -> Source {
+    match arch {
+        UefiArch::IA32 => OVMF_PREBUILT_IA32_SOURCE,
+        UefiArch::AArch64 | UefiArch::X86_64 => OVMF_PREBUILT_SOURCE,
+    }
+}
 
 impl From<UefiArch> for ovmf_prebuilt::Arch {
     fn from(arch: UefiArch) -> Self {
@@ -52,6 +66,7 @@ struct OvmfPaths {
     code: PathBuf,
     vars: PathBuf,
     shell: PathBuf,
+    prebuilt_source_tag: &'static str,
 }
 
 impl OvmfPaths {
@@ -62,7 +77,12 @@ impl OvmfPaths {
     /// 1. Command-line arg
     /// 2. Environment variable
     /// 3. Prebuilt file (automatically downloaded)
-    fn find_ovmf_file(file_type: FileType, opt: &QemuOpt, arch: UefiArch) -> Result<PathBuf> {
+    fn find_ovmf_file(
+        file_type: FileType,
+        opt: &QemuOpt,
+        arch: UefiArch,
+        prebuilt: &Prebuilt,
+    ) -> Result<PathBuf> {
         if let Some(path) = get_user_provided_path(file_type, opt) {
             // The user provided an exact path to use; verify that it
             // exists.
@@ -76,8 +96,6 @@ impl OvmfPaths {
                 );
             }
         } else {
-            let prebuilt = Prebuilt::fetch(OVMF_PREBUILT_SOURCE, OVMF_PREBUILT_DIR)?;
-
             Ok(prebuilt.get_file(arch.into(), file_type))
         }
     }
@@ -85,11 +103,35 @@ impl OvmfPaths {
     /// Find path to OVMF files by the strategy documented for
     /// [`Self::find_ovmf_file`].
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
-        let code = Self::find_ovmf_file(FileType::Code, opt, arch)?;
-        let vars = Self::find_ovmf_file(FileType::Vars, opt, arch)?;
-        let shell = Self::find_ovmf_file(FileType::Shell, opt, arch)?;
+        let prebuilt_source = ovmf_prebuilt_source(arch);
+        let prebuilt = Prebuilt::fetch(prebuilt_source.clone(), OVMF_PREBUILT_DIR)?;
+        let code = Self::find_ovmf_file(FileType::Code, opt, arch, &prebuilt)?;
+        let vars = Self::find_ovmf_file(FileType::Vars, opt, arch, &prebuilt)?;
+        let shell = Self::find_ovmf_file(FileType::Shell, opt, arch, &prebuilt)?;
 
-        Ok(Self { code, vars, shell })
+        Ok(Self {
+            code,
+            vars,
+            shell,
+            prebuilt_source_tag: prebuilt_source.tag,
+        })
+    }
+
+    fn log(&self, arch: UefiArch) {
+        eprintln!("OVMF:");
+        eprintln!("  version: {}", self.prebuilt_source_tag);
+        if arch == UefiArch::IA32 {
+            // https://github.com/tianocore/edk2/commit/1fb88ffe284782cc79e306306b8d19829b6248b7
+            eprintln!(
+                "{leftpadding}note: using this instead of {} as it is the last \
+                 release with IA32 support in edk2",
+                OVMF_PREBUILT_SOURCE.tag,
+                leftpadding = " ".repeat(11)
+            );
+        }
+        eprintln!("  code   : {}", self.code.display());
+        eprintln!("  vars   : {}", self.vars.display());
+        eprintln!("  shell  : {}", self.shell.display());
     }
 }
 
@@ -422,6 +464,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     // Set up OVMF.
     let ovmf_paths = OvmfPaths::find(opt, arch)?;
+    ovmf_paths.log(arch);
 
     // Make a copy of the OVMF vars file so that it can be used
     // read+write without modifying the original. Under AArch64, some

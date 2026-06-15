@@ -3,11 +3,32 @@
 //! Module for UEFI time-related types and definitions and convenience and
 //! abstractions build around these.
 
+#[cfg(feature = "time03")]
+pub use integration_common::TimeConversionError;
+
 use core::fmt;
 use core::fmt::{Debug, Display, Formatter};
 use uefi_raw::time::Daylight;
 
+#[cfg(feature = "time03")]
+mod integration_common;
+#[cfg(feature = "time03")]
+mod integration_time_crate;
+
 /// Date and time representation.
+///
+/// # Integration with Time-related Crates of the Ecosystem
+///
+/// Handling time is complicated. Therefore, we do not reinvent the wheel and
+/// forward all complexity of time to well-known crates of the ecosystem. For
+/// that, we provide integrations with various crates:
+///
+/// ## Integration with [`time`][time crate] crate
+///
+/// - [`TryFrom`]: `PrimitiveDateTime` <--> [`Time`] (without timezone)
+/// - [`TryFrom`]: `OffsetDateTime` <--> [`Time`] (with timezone)
+///
+/// [time crate]: https://crates.io/crates/time
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Time(uefi_raw::time::Time);

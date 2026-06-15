@@ -19,7 +19,7 @@ concurrency:
 jobs:
   test_aarch64:
     name: Integration Test (AArch64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -33,7 +33,7 @@ jobs:
         timeout-minutes: 4
   test_x86_64:
     name: Integration Test (x86_64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -47,7 +47,7 @@ jobs:
         timeout-minutes: 4
   test_ia32:
     name: Integration Test (IA-32)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -74,7 +74,7 @@ jobs:
         timeout-minutes: 10
   test:
     name: Unit + Doc Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -88,7 +88,7 @@ jobs:
   # about making changes that require a newer version.
   build_msrv:
     name: Build (stable MSRV)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -111,7 +111,7 @@ jobs:
   # with that version of the toolchain.
   build_msrv_raw:
     name: Build (uefi-raw MSRV)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -130,7 +130,7 @@ jobs:
   # `nightly_channel` because it takes a while to run.
   build_feature_permutations:
     name: Build (feature permutations)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -142,7 +142,7 @@ jobs:
   # Nightly + unstable feature
   nightly_channel:
     name: Nightly (build, test, doc)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -164,7 +164,7 @@ jobs:
         run: cargo xtask test --unstable --skip-macro-tests
   miri:
     name: Unit + Doc Tests (Miri)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -179,7 +179,7 @@ jobs:
   # creating a `no_std` + `no_main` binary.
   build_standard_uefi_binary:
     name: Build Standard Binary (nightly)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -190,7 +190,7 @@ jobs:
         run: cargo build --target x86_64-unknown-uefi --verbose -p uefi-std-example
   coverage:
     name: Test Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6

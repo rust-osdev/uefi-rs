@@ -8,6 +8,10 @@
 - Corrected the type of the `driver_image` parameter in
   `BootServices::connect_controller` from `Handle` to `*const Handle`.
 - Corrected signature of `BootServices::exit` from `!` to `Status`.
+- We made changes to the `Boolean` type, especially switching to manual
+  implementations of `PartialEq`, `Eq`, `PartialOrd`, `Ord`, and `Hash` to match
+  the type's logical properties. If you rely on the specific bit pattern,
+  please use `.0` to access the underlying value.
 
 
 # uefi-raw - v0.14.0 (2026-03-22)

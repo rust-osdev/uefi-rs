@@ -4,6 +4,8 @@
 - Added `proto::console::text::InputEx`.
 - Added `proto::pci::PciRootBridgeIo::{supported_attributes(), attributes(),
   set_attributes(), set_attributes_with_range()}`
+- Added `memory()` and `io()` address space access to `PciRootBridgeIo`
+  protocol.
 
 ## Changed
 - MSRV increased from 1.88 to 1.91.
@@ -13,6 +15,8 @@
   argument should pass in `&[]` instead.
 - **Breaking:** Corrected function signature of `boot::exit` to enable handling
   errors during exit.
+- **Breaking:** Renamed `PciIoAccessPci` to `PciIoAccess` and added a generic
+  parameter to handle the PCI configuration, IO port, and MMIO address spaces.
 
 ## Removed
 - **Breaking:** Removed the deprecated `table::cfg::*_GUID` constants. Use

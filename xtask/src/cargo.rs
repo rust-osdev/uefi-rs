@@ -56,6 +56,7 @@ pub enum Feature {
     Unstable,
     PanicHandler,
     Qemu,
+    Jiff02,
     Time03,
 
     // `uefi-test-runner` features.
@@ -77,6 +78,7 @@ impl Feature {
             Self::Unstable => "unstable",
             Self::PanicHandler => "panic_handler",
             Self::Qemu => "qemu",
+            Self::Jiff02 => "jiff02",
             Self::Time03 => "time03",
 
             Self::DebugSupport => "uefi-test-runner/debug_support",
@@ -119,7 +121,13 @@ impl Feature {
     /// - `include_unstable` - add all functionality behind the `unstable` feature
     /// - `runtime_features` - add all functionality that effect the runtime of Rust
     pub fn more_code(include_unstable: bool, runtime_features: bool) -> Vec<Self> {
-        let mut base_features = vec![Self::Alloc, Self::LogDebugcon, Self::Logger, Self::Time03];
+        let mut base_features = vec![
+            Self::Alloc,
+            Self::Jiff02,
+            Self::LogDebugcon,
+            Self::Logger,
+            Self::Time03,
+        ];
         if include_unstable {
             base_features.extend([Self::Unstable])
         }
@@ -389,19 +397,19 @@ mod tests {
     fn test_comma_separated_features() {
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(false, false)),
-            "alloc,log-debugcon,logger,time03"
+            "alloc,jiff02,log-debugcon,logger,time03"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(false, true)),
-            "alloc,log-debugcon,logger,time03,global_allocator"
+            "alloc,jiff02,log-debugcon,logger,time03,global_allocator"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(true, false)),
-            "alloc,log-debugcon,logger,time03,unstable"
+            "alloc,jiff02,log-debugcon,logger,time03,unstable"
         );
         assert_eq!(
             Feature::comma_separated_string(&Feature::more_code(true, true)),
-            "alloc,log-debugcon,logger,time03,unstable,global_allocator"
+            "alloc,jiff02,log-debugcon,logger,time03,unstable,global_allocator"
         );
     }
 

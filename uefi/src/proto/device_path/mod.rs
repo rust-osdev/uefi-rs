@@ -358,7 +358,8 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathNode {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let dp = <&DevicePathHeader>::try_from(bytes)?;
-        if usize::from(dp.length()) <= bytes.len() {
+        let length = usize::from(dp.length());
+        if length >= size_of::<DevicePathHeader>() && length <= bytes.len() {
             unsafe { Ok(DevicePathNode::from_ffi_ptr(bytes.as_ptr().cast())) }
         } else {
             Err(ByteConversionError::InvalidLength)
@@ -1122,6 +1123,10 @@ mod tests {
 
         // [`DevicePathNode`] data length exceeds the raw_data slice.
         raw_data[2] += 1;
+        assert!(<&DevicePathNode>::try_from(raw_data.as_slice()).is_err());
+
+        // [`DevicePathNode`] data length is shorter than the fixed header.
+        raw_data[2..4].copy_from_slice(&3_u16.to_le_bytes());
         assert!(<&DevicePathNode>::try_from(raw_data.as_slice()).is_err());
     }
 

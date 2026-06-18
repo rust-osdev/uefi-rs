@@ -33,6 +33,6 @@ impl<'a> Iterator for MemoryMapIter<'a> {
 
 impl ExactSizeIterator for MemoryMapIter<'_> {
     fn len(&self) -> usize {
-        self.memory_map.len()
+        self.memory_map.len() - self.index
     }
 }

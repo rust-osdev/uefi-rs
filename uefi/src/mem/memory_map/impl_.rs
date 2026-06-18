@@ -513,6 +513,10 @@ mod tests {
             mmap.entries().copied().collect::<Vec<_>>().as_slice(),
             &BASE_MMAP_UNSORTED
         );
+        let mut entries = mmap.entries();
+        assert_eq!(entries.len(), 3);
+        assert!(entries.next().is_some());
+        assert_eq!(entries.len(), 2);
         assert!(!mmap.is_sorted());
     }
 

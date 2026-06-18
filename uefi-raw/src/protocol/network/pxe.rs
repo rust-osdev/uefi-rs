@@ -3,7 +3,7 @@
 use crate::{Boolean, Char8, Guid, IpAddress, MacAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
 use core::ffi::c_void;
-use core::fmt::{self, Debug, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 
 #[derive(Debug)]
 #[repr(C)]
@@ -154,6 +154,9 @@ pub struct PxeBaseCodeDiscoverInfo {
     pub srv_list: [PxeBaseCodeSrvlist; 0],
 }
 
+/// An entry in the boot server list.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_SRVLIST` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeSrvlist {
@@ -163,15 +166,54 @@ pub struct PxeBaseCodeSrvlist {
     pub ip_addr: IpAddress,
 }
 
+impl PxeBaseCodeSrvlist {
+    /// Construct a [`PxeBaseCodeSrvlist`] for a boot server reply type. If `ip_addr` is not `None`,
+    /// only boot server replies matching the provided IP address will be accepted.
+    #[must_use]
+    pub fn new(server_type: u16, ip_addr: Option<IpAddress>) -> Self {
+        Self {
+            server_type,
+            accept_any_response: Boolean::from(ip_addr.is_none()),
+            reserved: 0,
+            ip_addr: ip_addr.unwrap_or_default(),
+        }
+    }
+
+    /// Returns `None` if any response should be accepted, or otherwise the IP
+    /// address of a boot server whose responses should be accepted.
+    #[must_use]
+    pub fn ip_addr(&self) -> Option<&IpAddress> {
+        if self.accept_any_response.into() {
+            None
+        } else {
+            Some(&self.ip_addr)
+        }
+    }
+}
+
 pub type PxeBaseCodeUdpPort = u16;
 
+/// MTFTP connection parameters.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_MTFTP_INFO` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeMtftpInfo {
+    /// We need a low level type and a high-level type with `IpAddr`
+    /// File multicast IP address. This is the IP address to which the server
+    /// will send the requested file.
     pub m_cast_ip: IpAddress,
+    /// Client multicast listening port. This is the UDP port to which the
+    /// server will send the requested file.
     pub c_port: PxeBaseCodeUdpPort,
+    /// Server multicast listening port. This is the UDP port on which the
+    /// server listens for multicast open requests and data acks.
     pub s_port: PxeBaseCodeUdpPort,
+    /// The number of seconds a client should listen for an active multicast
+    /// session before requesting a new multicast session.
     pub listen_timeout: u16,
+    /// The number of seconds a client should wait for a packet from the server
+    /// before retransmitting the previous open request or data ack packet.
     pub transmit_timeout: u16,
 }
 
@@ -241,6 +283,9 @@ pub struct PxeBaseCodeMode {
     pub tftp_error: PxeBaseCodeTftpError,
 }
 
+/// A network packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_PACKET` type.
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub union PxeBaseCodePacket {
@@ -255,35 +300,129 @@ impl Debug for PxeBaseCodePacket {
     }
 }
 
+impl AsRef<[u8; 1472]> for PxeBaseCodePacket {
+    fn as_ref(&self) -> &[u8; 1472] {
+        unsafe { &self.raw }
+    }
+}
+
+impl AsRef<PxeBaseCodeDhcpV4Packet> for PxeBaseCodePacket {
+    fn as_ref(&self) -> &PxeBaseCodeDhcpV4Packet {
+        unsafe { &self.dhcpv4 }
+    }
+}
+
+impl AsRef<PxeBaseCodeDhcpV6Packet> for PxeBaseCodePacket {
+    fn as_ref(&self) -> &PxeBaseCodeDhcpV6Packet {
+        unsafe { &self.dhcpv6 }
+    }
+}
+
+/// A DHCPv4 packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_DHCPV4_PACKET` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeDhcpV4Packet {
+    /// Packet op code / message type.
     pub bootp_opcode: u8,
+    /// Hardware address type.
     pub bootp_hw_type: u8,
+    /// Hardware address length.
     pub bootp_hw_addr_len: u8,
+    /// Client sets to zero, optionally used by gateways in cross-gateway booting.
     pub bootp_gate_hops: u8,
     pub bootp_ident: u32,
     pub bootp_seconds: u16,
     pub bootp_flags: u16,
+    /// Client IP address, filled in by client in bootrequest if known.
     pub bootp_ci_addr: [u8; 4],
+    /// 'your' (client) IP address; filled by server if client doesn't know its own address (`bootp_ci_addr` was 0).
     pub bootp_yi_addr: [u8; 4],
+    /// Server IP address, returned in bootreply by server.
     pub bootp_si_addr: [u8; 4],
+    /// Gateway IP address, used in optional cross-gateway booting.
     pub bootp_gi_addr: [u8; 4],
+    /// Client hardware address, filled in by client.
     pub bootp_hw_addr: [u8; 16],
+    /// Optional server host name, null terminated string.
     pub bootp_srv_name: [u8; 64],
+    /// Boot file name, null terminated string, 'generic' name or null in
+    /// bootrequest, fully qualified directory-path name in bootreply.
     pub bootp_boot_file: [u8; 128],
+    /// Validation magic number.
     pub dhcp_magik: u32,
+    /// Optional vendor-specific area, e.g. could be hardware type/serial on request, or 'capability' / remote file system handle on reply.  This info may be set aside for use by a third phase bootstrap or kernel.
     pub dhcp_options: [u8; 56],
 }
 
+impl PxeBaseCodeDhcpV4Packet {
+    /// The expected value for [`Self::dhcp_magik`].
+    pub const DHCP_MAGIK: u32 = 0x63825363;
+
+    /// Transaction ID, a random number, used to match this boot request with the responses it generates.
+    #[must_use]
+    pub const fn bootp_ident(&self) -> u32 {
+        u32::from_be(self.bootp_ident)
+    }
+
+    /// Filled in by client, seconds elapsed since client started trying to boot.
+    #[must_use]
+    pub const fn bootp_seconds(&self) -> u16 {
+        u16::from_be(self.bootp_seconds)
+    }
+
+    /// The flags.
+    #[must_use]
+    pub const fn bootp_flags(&self) -> PxeBaseCodeDhcpV4Flags {
+        PxeBaseCodeDhcpV4Flags::from_bits_truncate(u16::from_be(self.bootp_flags))
+    }
+
+    /// A magic cookie, should be [`Self::DHCP_MAGIK`].
+    #[must_use]
+    pub const fn dhcp_magik(&self) -> u32 {
+        u32::from_be(self.dhcp_magik)
+    }
+}
+
+bitflags! {
+    /// Represents the 'flags' field for a [`PxeBaseCodeDhcpV4Packet`].
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct PxeBaseCodeDhcpV4Flags: u16 {
+        /// Should be set when the client cannot receive unicast IP datagrams
+        /// until its protocol software has been configured with an IP address.
+        const BROADCAST = 1;
+    }
+}
+
+/// A DHCPv6 packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_DHCPV6_PACKET` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeDhcpV6Packet {
+    /// The message type.
     pub message_type: u8,
+    /// The transaction id.
     pub transaction_id: [u8; 3],
+    /// A byte array containing DHCP options.
     pub dhcp_options: [u8; 1024],
 }
 
+impl PxeBaseCodeDhcpV6Packet {
+    /// The transaction id.
+    #[must_use]
+    pub fn transaction_id(&self) -> u32 {
+        (u32::from(self.transaction_id[0]) << 16)
+            | (u32::from(self.transaction_id[1]) << 8)
+            | u32::from(self.transaction_id[2])
+    }
+}
+
+/// IP receive filter settings.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_IP_FILTER` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeIpFilter {
@@ -291,6 +430,39 @@ pub struct PxeBaseCodeIpFilter {
     pub ip_cnt: u8,
     pub reserved: u16,
     pub ip_list: [IpAddress; 8],
+}
+
+impl PxeBaseCodeIpFilter {
+    #[must_use]
+    pub fn new(filters: PxeBaseCodeIpFilterFlags, ip_list: &[core::net::IpAddr]) -> Self {
+        assert!(ip_list.len() <= 8);
+
+        let ip_cnt = ip_list.len() as u8;
+        let mut buffer = [IpAddress::default(); 8];
+        for (index, ip_address) in ip_list
+            .iter()
+            .cloned()
+            .map(|value| value.into())
+            .enumerate()
+        {
+            buffer[index] = ip_address;
+        }
+
+        Self {
+            filters,
+            ip_cnt,
+            reserved: 0,
+            ip_list: buffer,
+        }
+    }
+
+    /// A list of IP addresses other than the station IP that should be enabled.
+    ///
+    /// May be multicast or unicast.
+    #[must_use]
+    pub fn ip_list(&self) -> &[IpAddress] {
+        &self.ip_list[..usize::from(self.ip_cnt)]
+    }
 }
 
 bitflags! {
@@ -312,6 +484,9 @@ bitflags! {
     }
 }
 
+/// An entry for the ARP cache found in [`PxeBaseCodeMode::arp_cache`].
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_ARP_ENTRY` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeArpEntry {
@@ -319,6 +494,9 @@ pub struct PxeBaseCodeArpEntry {
     pub mac_addr: MacAddress,
 }
 
+/// An entry for the route table found in [`PxeBaseCodeMode::route_table`].
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_ROUTE_ENTRY` type.
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeRouteEntry {
@@ -327,6 +505,9 @@ pub struct PxeBaseCodeRouteEntry {
     pub gw_addr: IpAddress,
 }
 
+/// An ICMP error packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_ICMP_ERROR` type.
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeIcmpError {
@@ -336,6 +517,14 @@ pub struct PxeBaseCodeIcmpError {
     pub u: PxeBaseCodeIcmpErrorUnion,
     pub data: [u8; 494],
 }
+
+impl Display for PxeBaseCodeIcmpError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl core::error::Error for PxeBaseCodeIcmpError {}
 
 /// In the C API, this is an anonymous union inside the definition of
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR`.
@@ -363,9 +552,20 @@ pub struct PxeBaseCodeIcmpErrorEcho {
     pub sequence: u16,
 }
 
+/// A TFTP error packet.
+///
+/// In the C API, this corresponds to the `EFI_PXE_BASE_CODE_TFTP_ERROR` type.
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeTftpError {
     pub error_code: u8,
     pub error_string: [Char8; 127],
 }
+
+impl Display for PxeBaseCodeTftpError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl core::error::Error for PxeBaseCodeTftpError {}

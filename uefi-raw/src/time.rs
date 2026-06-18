@@ -93,17 +93,18 @@ impl Display for Time {
         if self.time_zone == Self::UNSPECIFIED_TIMEZONE {
             write!(f, " (local)")?;
         } else {
-            let offset_in_hours = self.time_zone as f32 / 60.0;
+            let sign = if self.time_zone < 0 { '-' } else { '+' };
+            let offset_in_hours = self.time_zone.unsigned_abs() as f32 / 60.0;
             let integer_part = offset_in_hours as i16;
             // We can't use "offset_in_hours.fract()" because it is part of `std`.
             let fraction_part = offset_in_hours - (integer_part as f32);
             // most time zones
             if fraction_part == 0.0 {
-                write!(f, "UTC+{offset_in_hours}")?;
+                write!(f, "UTC{sign}{offset_in_hours}")?;
             }
             // time zones with 30min offset (and perhaps other special time zones)
             else {
-                write!(f, "UTC+{offset_in_hours:.1}")?;
+                write!(f, "UTC{sign}{offset_in_hours:.1}")?;
             }
         }
 
@@ -168,5 +169,8 @@ mod tests {
 
         time.time_zone = 150;
         assert_eq!(time.to_string(), "2023-05-18 11:29:57.123456789UTC+2.5");
+
+        time.time_zone = -330;
+        assert_eq!(time.to_string(), "2023-05-18 11:29:57.123456789UTC-5.5");
     }
 }

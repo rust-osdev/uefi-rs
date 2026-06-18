@@ -162,7 +162,9 @@ impl MemoryMap for MemoryMapRefMut<'_> {
 
 impl MemoryMapMut for MemoryMapRefMut<'_> {
     fn sort(&mut self) {
-        self.qsort(0, self.len - 1);
+        if self.len > 1 {
+            self.qsort(0, self.len - 1);
+        }
     }
 
     unsafe fn buffer_mut(&mut self) -> &mut [u8] {
@@ -534,6 +536,25 @@ mod tests {
         );
         assert!(!mmap.is_sorted());
         mmap.sort();
+        assert!(mmap.is_sorted());
+    }
+
+    #[test]
+    fn memory_map_ref_mut_sorts_empty_map() {
+        let mut memory: [MemoryDescriptor; 0] = [];
+        let desc_size = size_of::<MemoryDescriptor>();
+        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), 0) };
+        let meta = MemoryMapMeta {
+            map_size: 0,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+
+        let mut mmap = MemoryMapRefMut::new(raw, meta).unwrap();
+        mmap.sort();
+
+        assert!(mmap.is_empty());
         assert!(mmap.is_sorted());
     }
 

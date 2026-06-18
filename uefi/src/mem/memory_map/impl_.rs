@@ -11,6 +11,19 @@ use core::ptr;
 use core::ptr::NonNull;
 use uefi_raw::PhysicalAddress;
 
+const fn validate_meta(meta: MemoryMapMeta) -> Result<usize, MemoryMapError> {
+    if meta.desc_size < size_of::<MemoryDescriptor>()
+        || !meta
+            .desc_size
+            .is_multiple_of(align_of::<MemoryDescriptor>())
+        || !meta.map_size.is_multiple_of(meta.desc_size)
+    {
+        Err(MemoryMapError::InvalidSize)
+    } else {
+        Ok(meta.map_size / meta.desc_size)
+    }
+}
+
 /// Errors that may happen when constructing a [`MemoryMapRef`] or
 /// [`MemoryMapRefMut`].
 #[derive(Copy, Clone, Debug)]
@@ -50,10 +63,11 @@ impl<'a> MemoryMapRef<'a> {
         if buffer.len() < meta.map_size {
             return Err(MemoryMapError::InvalidSize);
         }
+        let len = validate_meta(meta)?;
         Ok(Self {
             buf: buffer,
             meta,
-            len: meta.entry_count(),
+            len,
         })
     }
 }
@@ -112,10 +126,11 @@ impl<'a> MemoryMapRefMut<'a> {
         if buffer.len() < meta.map_size {
             return Err(MemoryMapError::InvalidSize);
         }
+        let len = validate_meta(meta)?;
         Ok(Self {
             buf: buffer,
             meta,
-            len: meta.entry_count(),
+            len,
         })
     }
 }
@@ -516,6 +531,49 @@ mod tests {
         assert!(!mmap.is_sorted());
         mmap.sort();
         assert!(mmap.is_sorted());
+    }
+
+    #[test]
+    fn memory_map_ref_rejects_invalid_meta() {
+        let mut memory = [MemoryDescriptor::default(); 2];
+        let raw_len = size_of_val(&memory);
+        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
+        let desc_size = size_of::<MemoryDescriptor>();
+        let base_meta = MemoryMapMeta {
+            map_size: desc_size,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+
+        let mut meta = base_meta;
+        meta.desc_size = 0;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut meta = base_meta;
+        meta.desc_size = desc_size - 1;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut meta = base_meta;
+        meta.desc_size = desc_size + 1;
+        meta.map_size = meta.desc_size;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut meta = base_meta;
+        meta.map_size = desc_size + 1;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
     }
 
     /// Basic sanity checks for the type [`MemoryMapOwned`].

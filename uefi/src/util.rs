@@ -11,21 +11,20 @@ pub const unsafe fn ptr_write_unaligned_and_add<T>(ptr: &mut *mut u8, val: T) {
     }
 }
 
-/// Convert from a `u32` to a `usize`. Panic if the input does fit. On typical
-/// targets `usize` is at least as big as `u32`, so this should never panic
-/// except on unusual targets.
+/// Converts a `u32` to `usize`.
 ///
-/// Comparison to alternatives:
-/// * `val as usize` doesn't check that `val` actually fits in a `usize`.
-/// * `usize::try_from(val).unwrap()` doesn't work in a const context.
+/// Panics if `val` does not fit in `usize`.
+///
+/// On targets where `usize` is at least 32 bits wide, this never panics.
+///
+/// Unlike `as`, this does not silently truncate on narrow `usize` targets.
+/// Unlike `usize::try_from(...).unwrap()`, this works in `const` contexts.
 pub const fn usize_from_u32(val: u32) -> usize {
-    // This is essentially the same as `usize::try_from(val).unwrap()`, but
-    // works in a `const` context on stable.
-    if size_of::<usize>() < size_of::<u32>() && val < (usize::MAX as u32) {
-        panic!("value does not fit in a usize");
-    } else {
-        val as usize
+    if size_of::<usize>() < size_of::<u32>() && val > usize::MAX as u32 {
+        panic!("value does not fit in usize");
     }
+
+    val as usize
 }
 
 /// Get the raw pointer from `opt`, defaulting to `null_mut`.

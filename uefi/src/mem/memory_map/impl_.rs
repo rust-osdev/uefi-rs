@@ -397,7 +397,7 @@ impl MemoryMap for MemoryMapOwned {
     }
 
     fn buffer(&self) -> &[u8] {
-        self.buf.as_slice()
+        &self.buf.as_slice()[..self.meta.map_size]
     }
 
     fn entries(&self) -> MemoryMapIter<'_> {
@@ -419,7 +419,7 @@ impl MemoryMapMut for MemoryMapOwned {
     }
 
     unsafe fn buffer_mut(&mut self) -> &mut [u8] {
-        self.buf.as_mut_slice()
+        &mut self.buf.as_mut_slice()[..self.meta.map_size]
     }
 }
 
@@ -534,5 +534,28 @@ mod tests {
         assert!(!mmap.is_sorted());
         mmap.sort();
         assert!(mmap.is_sorted());
+    }
+
+    #[test]
+    fn memory_map_owned_buffer_uses_map_size() {
+        let mut memory = [MemoryDescriptor::default(); 4];
+        memory[..BASE_MMAP_UNSORTED.len()].copy_from_slice(&BASE_MMAP_UNSORTED);
+
+        let desc_size = size_of::<MemoryDescriptor>();
+        let map_size = BASE_MMAP_UNSORTED.len() * desc_size;
+        let raw_len = size_of_val(&memory);
+        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
+        let meta = MemoryMapMeta {
+            map_size,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+
+        let mmap = MemoryMapBackingMemory::from_slice(raw);
+        let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
+
+        assert_eq!(mmap.buffer().len(), map_size);
+        assert_eq!(unsafe { mmap.buffer_mut() }.len(), map_size);
     }
 }

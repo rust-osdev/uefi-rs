@@ -738,6 +738,36 @@ mod tests {
     use alloc::vec::Vec;
     use core::slice;
 
+    fn push_u16(buf: &mut Vec<u8>, value: u16) {
+        buf.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn push_u32(buf: &mut Vec<u8>, value: u32) {
+        buf.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn push_v1_header_event(buf: &mut Vec<u8>, event_data: &[u8]) {
+        push_u32(buf, 0);
+        push_u32(buf, EventType::NO_ACTION.0);
+        buf.extend_from_slice(&[0; 20]);
+        push_u32(buf, u32::try_from(event_data.len()).unwrap());
+        buf.extend_from_slice(event_data);
+    }
+
+    fn push_valid_v2_header(buf: &mut Vec<u8>) {
+        let mut event_data = Vec::new();
+        event_data.extend_from_slice(b"Spec ID Event03\0");
+        push_u32(&mut event_data, 0);
+        event_data.extend_from_slice(&[0, 2, 0]);
+        event_data.push(2);
+        push_u32(&mut event_data, 1);
+        push_u16(&mut event_data, AlgorithmId::SHA1.0);
+        push_u16(&mut event_data, 20);
+        event_data.push(0);
+
+        push_v1_header_event(buf, &event_data);
+    }
+
     #[test]
     fn test_new_event() {
         let mut buf = [0; 22];
@@ -1037,5 +1067,43 @@ mod tests {
         ]);
 
         assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_event_log_v2_rejects_truncated_header_event_data() {
+        let mut bytes = Vec::new();
+        push_v1_header_event(&mut bytes, b"Spec ID Event03\0");
+
+        let log = EventLog {
+            _lifetime: PhantomData,
+            location: bytes.as_ptr(),
+            last_entry: bytes.as_ptr(),
+            is_truncated: false,
+        };
+
+        assert!(log.header().is_none());
+        assert!(log.iter().next().is_none());
+    }
+
+    #[test]
+    fn test_event_log_v2_rejects_event_with_unknown_digest_algorithm() {
+        let mut bytes = Vec::new();
+        push_valid_v2_header(&mut bytes);
+        let event_offset = bytes.len();
+
+        push_u32(&mut bytes, 0);
+        push_u32(&mut bytes, EventType::CRTM_VERSION.0);
+        push_u32(&mut bytes, 1);
+        push_u16(&mut bytes, 0xffff);
+
+        let log = EventLog {
+            _lifetime: PhantomData,
+            location: bytes.as_ptr(),
+            last_entry: unsafe { bytes.as_ptr().add(event_offset) },
+            is_truncated: false,
+        };
+
+        assert!(log.header().is_some());
+        assert!(log.iter().next().is_none());
     }
 }

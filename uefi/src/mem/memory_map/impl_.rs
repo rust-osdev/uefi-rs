@@ -598,6 +598,14 @@ mod tests {
     fn memory_map_owned_buffer_uses_map_size() {
         let mut memory = [MemoryDescriptor::default(); 4];
         memory[..BASE_MMAP_UNSORTED.len()].copy_from_slice(&BASE_MMAP_UNSORTED);
+        let sentinel = MemoryDescriptor {
+            ty: MemoryType::BOOT_SERVICES_DATA,
+            phys_start: 0xdead_beef,
+            virt_start: 0xcafe_babe,
+            page_count: 7,
+            att: MemoryAttribute::UNCACHEABLE,
+        };
+        memory[BASE_MMAP_UNSORTED.len()] = sentinel;
 
         let desc_size = size_of::<MemoryDescriptor>();
         let map_size = BASE_MMAP_UNSORTED.len() * desc_size;
@@ -614,6 +622,13 @@ mod tests {
         let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
 
         assert_eq!(mmap.buffer().len(), map_size);
-        assert_eq!(unsafe { mmap.buffer_mut() }.len(), map_size);
+        assert_eq!(
+            mmap.entries().copied().collect::<Vec<_>>(),
+            BASE_MMAP_UNSORTED
+        );
+        assert!(mmap.entries().all(|desc| *desc != sentinel));
+
+        let buffer_mut = unsafe { mmap.buffer_mut() };
+        assert_eq!(buffer_mut.len(), map_size);
     }
 }

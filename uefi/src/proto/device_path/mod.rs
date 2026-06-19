@@ -1154,6 +1154,18 @@ mod tests {
         assert_eq!(nodes.len(), 5);
     }
 
+    #[test]
+    fn test_device_path_from_bytes_rejects_short_node_length() {
+        #[rustfmt::skip]
+        let raw_data = [
+            0xa0, 0xb0,
+            // Length shorter than the fixed header.
+            0x03, 0x00,
+        ];
+
+        assert!(<&DevicePath>::try_from(raw_data.as_slice()).is_err());
+    }
+
     /// Test converting from `&DevicePathNode` to a specific node type.
     #[test]
     fn test_specific_node_from_device_path_node() {

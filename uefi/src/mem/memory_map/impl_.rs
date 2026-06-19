@@ -493,6 +493,25 @@ mod tests {
         (slice, meta)
     }
 
+    fn mmap_raw_slice(memory: &mut [MemoryDescriptor]) -> &mut [u8] {
+        let raw_len = size_of_val(memory);
+        unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) }
+    }
+
+    fn assert_refs_reject_invalid_meta(meta: MemoryMapMeta) {
+        let mut memory = [MemoryDescriptor::default(); 2];
+        assert!(matches!(
+            MemoryMapRef::new(mmap_raw_slice(&mut memory), meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut memory = [MemoryDescriptor::default(); 2];
+        assert!(matches!(
+            MemoryMapRefMut::new(mmap_raw_slice(&mut memory), meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+    }
+
     /// Basic sanity checks for the type [`MemoryMapRef`].
     #[test]
     fn memory_map_ref() {
@@ -531,9 +550,6 @@ mod tests {
 
     #[test]
     fn memory_map_ref_rejects_invalid_meta() {
-        let mut memory = [MemoryDescriptor::default(); 2];
-        let raw_len = size_of_val(&memory);
-        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
         let desc_size = size_of::<MemoryDescriptor>();
         let base_meta = MemoryMapMeta {
             map_size: desc_size,
@@ -544,32 +560,20 @@ mod tests {
 
         let mut meta = base_meta;
         meta.desc_size = 0;
-        assert!(matches!(
-            MemoryMapRef::new(raw, meta),
-            Err(MemoryMapError::InvalidSize)
-        ));
+        assert_refs_reject_invalid_meta(meta);
 
         let mut meta = base_meta;
         meta.desc_size = desc_size - 1;
-        assert!(matches!(
-            MemoryMapRef::new(raw, meta),
-            Err(MemoryMapError::InvalidSize)
-        ));
+        assert_refs_reject_invalid_meta(meta);
 
         let mut meta = base_meta;
         meta.desc_size = desc_size + 1;
         meta.map_size = meta.desc_size;
-        assert!(matches!(
-            MemoryMapRef::new(raw, meta),
-            Err(MemoryMapError::InvalidSize)
-        ));
+        assert_refs_reject_invalid_meta(meta);
 
         let mut meta = base_meta;
         meta.map_size = desc_size + 1;
-        assert!(matches!(
-            MemoryMapRef::new(raw, meta),
-            Err(MemoryMapError::InvalidSize)
-        ));
+        assert_refs_reject_invalid_meta(meta);
     }
 
     /// Basic sanity checks for the type [`MemoryMapOwned`].

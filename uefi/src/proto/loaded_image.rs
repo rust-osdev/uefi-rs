@@ -197,3 +197,88 @@ impl LoadedImage {
         self.0.image_data_type
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::ptr;
+
+    fn loaded_image_with_load_options(options: *const u8, size: u32) -> LoadedImage {
+        LoadedImage(LoadedImageProtocol {
+            revision: 0,
+            parent_handle: ptr::null_mut(),
+            system_table: ptr::null(),
+            device_handle: ptr::null_mut(),
+            file_path: ptr::null(),
+            reserved: ptr::null(),
+            load_options_size: size,
+            load_options: options.cast(),
+            image_base: ptr::null(),
+            image_size: 0,
+            image_code_type: MemoryType::LOADER_CODE,
+            image_data_type: MemoryType::LOADER_DATA,
+            unload: None,
+        })
+    }
+
+    #[test]
+    fn load_options_as_cstr16_rejects_null() {
+        let image = loaded_image_with_load_options(ptr::null(), 0);
+
+        assert!(matches!(
+            image.load_options_as_cstr16(),
+            Err(LoadOptionsError::NotSet)
+        ));
+    }
+
+    #[test]
+    fn load_options_as_cstr16_rejects_odd_length() {
+        let options = [b'a' as u16, 0];
+        let image = loaded_image_with_load_options(options.as_ptr().cast(), 3);
+
+        assert!(matches!(
+            image.load_options_as_cstr16(),
+            Err(LoadOptionsError::NotAligned)
+        ));
+    }
+
+    #[test]
+    fn load_options_as_cstr16_rejects_unaligned_pointer() {
+        #[repr(align(2))]
+        struct Aligned([u8; 5]);
+
+        let options = Aligned([0, b'a', 0, 0, 0]);
+        let image = loaded_image_with_load_options(unsafe { options.0.as_ptr().add(1) }, 4);
+
+        assert!(matches!(
+            image.load_options_as_cstr16(),
+            Err(LoadOptionsError::NotAligned)
+        ));
+    }
+
+    #[test]
+    fn load_options_as_cstr16_rejects_invalid_string() {
+        let options = [b'a' as u16, 0, b'b' as u16, 0];
+        let image = loaded_image_with_load_options(
+            options.as_ptr().cast(),
+            u32::try_from(size_of_val(&options)).unwrap(),
+        );
+
+        assert!(matches!(
+            image.load_options_as_cstr16(),
+            Err(LoadOptionsError::InvalidString(_))
+        ));
+    }
+
+    #[test]
+    fn load_options_as_cstr16_accepts_valid_string() {
+        let options = [b'a' as u16, b'b' as u16, 0];
+        let image = loaded_image_with_load_options(
+            options.as_ptr().cast(),
+            u32::try_from(size_of_val(&options)).unwrap(),
+        );
+        let load_options = image.load_options_as_cstr16().unwrap();
+
+        assert_eq!(load_options.to_u16_slice_with_nul(), options);
+    }
+}

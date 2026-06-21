@@ -281,6 +281,12 @@ impl MemoryMapBackingMemory {
         let memory_map_meta = boot::memory_map_size();
         let len = Self::safe_allocation_size_hint(memory_map_meta);
         let ptr = boot::allocate_pool(memory_type, len)?.as_ptr();
+        // Initialize all bytes.
+        //
+        // SAFETY: Pointer is valid.
+        unsafe {
+            ptr.write_bytes(0, len);
+        };
 
         // Should be fine as UEFI always has  allocations with a guaranteed
         // alignment of 8 bytes.
@@ -329,12 +335,14 @@ impl MemoryMapBackingMemory {
     /// Returns a slice to the underlying memory.
     #[must_use]
     pub const fn as_slice(&self) -> &[u8] {
+        // SAFETY: Memory is valid and initialized.
         unsafe { self.0.as_ref() }
     }
 
     /// Returns a mutable slice to the underlying memory.
     #[must_use]
     pub const fn as_mut_slice(&mut self) -> &mut [u8] {
+        // SAFETY: Memory is valid and initialized.
         unsafe { self.0.as_mut() }
     }
 }

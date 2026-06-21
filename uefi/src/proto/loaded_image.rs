@@ -71,8 +71,7 @@ impl LoadedImage {
     /// [`&CStr16`]: `CStr16`
     /// [`load_options_as_bytes`]: `Self::load_options_as_bytes`
     pub fn load_options_as_cstr16(&self) -> Result<&CStr16, LoadOptionsError> {
-        let load_options_size = usize::try_from(self.0.load_options_size)
-            .expect("load options size should fit in usize");
+        let load_options_size = usize_from_u32(self.0.load_options_size);
 
         if self.0.load_options.is_null() {
             Err(LoadOptionsError::NotSet)

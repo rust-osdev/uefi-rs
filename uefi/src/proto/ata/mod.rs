@@ -3,6 +3,7 @@
 //! ATA Protocols.
 
 use crate::mem::{AlignedBuffer, AlignmentError};
+use crate::util::usize_from_u32;
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
 use core::ptr;
@@ -63,8 +64,8 @@ impl<'a> AtaRequestBuilder<'a> {
         protocol: AtaPassThruCommandProtocol,
     ) -> Result<Self, LayoutError> {
         // status block has alignment requirements!
-        let io_align_usize = usize::try_from(io_align).expect("I/O alignment should fit in usize");
-        let mut asb = AlignedBuffer::from_size_align(size_of::<AtaStatusBlock>(), io_align_usize)?;
+        let mut asb =
+            AlignedBuffer::from_size_align(size_of::<AtaStatusBlock>(), usize_from_u32(io_align))?;
         Ok(Self {
             req: AtaRequest {
                 io_align,

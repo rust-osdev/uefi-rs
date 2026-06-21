@@ -137,9 +137,9 @@ opaque_type! {
 
 /// Device path allocated from UEFI pool memory.
 ///
-/// Please note that this differs from <code>Box<[DevicePath]></code>. Although
-/// both represent owned values, a <code>Box<[DevicePath]></code> is on the Rust
-/// heap which may or may not be backed by the UEFI heap.
+/// Please note that this differs from `Box<[DevicePath]>`. Although both
+/// represent owned values, a `Box<[DevicePath]>` is on the Rust heap which may
+/// or may not be backed by the UEFI heap.
 #[derive(Debug)]
 pub struct PoolDevicePath(pub(crate) PoolAllocation);
 

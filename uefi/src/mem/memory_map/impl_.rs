@@ -11,6 +11,19 @@ use core::ptr;
 use core::ptr::NonNull;
 use uefi_raw::PhysicalAddress;
 
+const fn validate_meta(meta: MemoryMapMeta) -> Result<usize, MemoryMapError> {
+    if meta.desc_size < size_of::<MemoryDescriptor>()
+        || !meta
+            .desc_size
+            .is_multiple_of(align_of::<MemoryDescriptor>())
+        || !meta.map_size.is_multiple_of(meta.desc_size)
+    {
+        Err(MemoryMapError::InvalidSize)
+    } else {
+        Ok(meta.map_size / meta.desc_size)
+    }
+}
+
 /// Errors that may happen when constructing a [`MemoryMapRef`] or
 /// [`MemoryMapRefMut`].
 #[derive(Copy, Clone, Debug)]
@@ -50,10 +63,11 @@ impl<'a> MemoryMapRef<'a> {
         if buffer.len() < meta.map_size {
             return Err(MemoryMapError::InvalidSize);
         }
+        let len = validate_meta(meta)?;
         Ok(Self {
             buf: buffer,
             meta,
-            len: meta.entry_count(),
+            len,
         })
     }
 }
@@ -112,10 +126,11 @@ impl<'a> MemoryMapRefMut<'a> {
         if buffer.len() < meta.map_size {
             return Err(MemoryMapError::InvalidSize);
         }
+        let len = validate_meta(meta)?;
         Ok(Self {
             buf: buffer,
             meta,
-            len: meta.entry_count(),
+            len,
         })
     }
 }
@@ -147,7 +162,9 @@ impl MemoryMap for MemoryMapRefMut<'_> {
 
 impl MemoryMapMut for MemoryMapRefMut<'_> {
     fn sort(&mut self) {
-        self.qsort(0, self.len - 1);
+        if self.len > 1 {
+            self.qsort(0, self.len - 1);
+        }
     }
 
     unsafe fn buffer_mut(&mut self) -> &mut [u8] {
@@ -281,6 +298,12 @@ impl MemoryMapBackingMemory {
         let memory_map_meta = boot::memory_map_size();
         let len = Self::safe_allocation_size_hint(memory_map_meta);
         let ptr = boot::allocate_pool(memory_type, len)?.as_ptr();
+        // Initialize all bytes.
+        //
+        // SAFETY: Pointer is valid.
+        unsafe {
+            ptr.write_bytes(0, len);
+        };
 
         // Should be fine as UEFI always has  allocations with a guaranteed
         // alignment of 8 bytes.
@@ -329,12 +352,14 @@ impl MemoryMapBackingMemory {
     /// Returns a slice to the underlying memory.
     #[must_use]
     pub const fn as_slice(&self) -> &[u8] {
+        // SAFETY: Memory is valid and initialized.
         unsafe { self.0.as_ref() }
     }
 
     /// Returns a mutable slice to the underlying memory.
     #[must_use]
     pub const fn as_mut_slice(&mut self) -> &mut [u8] {
+        // SAFETY: Memory is valid and initialized.
         unsafe { self.0.as_mut() }
     }
 }
@@ -389,7 +414,7 @@ impl MemoryMap for MemoryMapOwned {
     }
 
     fn buffer(&self) -> &[u8] {
-        self.buf.as_slice()
+        &self.buf.as_slice()[..self.meta.map_size]
     }
 
     fn entries(&self) -> MemoryMapIter<'_> {
@@ -411,7 +436,7 @@ impl MemoryMapMut for MemoryMapOwned {
     }
 
     unsafe fn buffer_mut(&mut self) -> &mut [u8] {
-        self.buf.as_mut_slice()
+        &mut self.buf.as_mut_slice()[..self.meta.map_size]
     }
 }
 
@@ -490,6 +515,10 @@ mod tests {
             mmap.entries().copied().collect::<Vec<_>>().as_slice(),
             &BASE_MMAP_UNSORTED
         );
+        let mut entries = mmap.entries();
+        assert_eq!(entries.len(), 3);
+        assert!(entries.next().is_some());
+        assert_eq!(entries.len(), 2);
         assert!(!mmap.is_sorted());
     }
 
@@ -510,6 +539,68 @@ mod tests {
         assert!(mmap.is_sorted());
     }
 
+    #[test]
+    fn memory_map_ref_mut_sorts_empty_map() {
+        let mut memory: [MemoryDescriptor; 0] = [];
+        let desc_size = size_of::<MemoryDescriptor>();
+        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), 0) };
+        let meta = MemoryMapMeta {
+            map_size: 0,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+
+        let mut mmap = MemoryMapRefMut::new(raw, meta).unwrap();
+        mmap.sort();
+
+        assert!(mmap.is_empty());
+        assert!(mmap.is_sorted());
+    }
+
+    #[test]
+    fn memory_map_ref_rejects_invalid_meta() {
+        let mut memory = [MemoryDescriptor::default(); 2];
+        let raw_len = size_of_val(&memory);
+        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
+        let desc_size = size_of::<MemoryDescriptor>();
+        let base_meta = MemoryMapMeta {
+            map_size: desc_size,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+
+        let mut meta = base_meta;
+        meta.desc_size = 0;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut meta = base_meta;
+        meta.desc_size = desc_size - 1;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut meta = base_meta;
+        meta.desc_size = desc_size + 1;
+        meta.map_size = meta.desc_size;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+
+        let mut meta = base_meta;
+        meta.map_size = desc_size + 1;
+        assert!(matches!(
+            MemoryMapRef::new(raw, meta),
+            Err(MemoryMapError::InvalidSize)
+        ));
+    }
+
     /// Basic sanity checks for the type [`MemoryMapOwned`].
     #[test]
     fn memory_map_owned() {
@@ -526,5 +617,28 @@ mod tests {
         assert!(!mmap.is_sorted());
         mmap.sort();
         assert!(mmap.is_sorted());
+    }
+
+    #[test]
+    fn memory_map_owned_buffer_uses_map_size() {
+        let mut memory = [MemoryDescriptor::default(); 4];
+        memory[..BASE_MMAP_UNSORTED.len()].copy_from_slice(&BASE_MMAP_UNSORTED);
+
+        let desc_size = size_of::<MemoryDescriptor>();
+        let map_size = BASE_MMAP_UNSORTED.len() * desc_size;
+        let raw_len = size_of_val(&memory);
+        let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
+        let meta = MemoryMapMeta {
+            map_size,
+            desc_size,
+            map_key: Default::default(),
+            desc_version: MemoryDescriptor::VERSION,
+        };
+
+        let mmap = MemoryMapBackingMemory::from_slice(raw);
+        let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
+
+        assert_eq!(mmap.buffer().len(), map_size);
+        assert_eq!(unsafe { mmap.buffer_mut() }.len(), map_size);
     }
 }

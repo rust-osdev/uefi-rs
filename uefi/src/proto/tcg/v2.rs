@@ -15,7 +15,7 @@
 use super::{AlgorithmId, EventType, HashAlgorithm, PcrIndex, v1};
 use crate::data_types::{Align, PhysicalAddress, UnalignedSlice};
 use crate::proto::unsafe_protocol;
-use crate::util::ptr_write_unaligned_and_add;
+use crate::util::{ptr_write_unaligned_and_add, usize_from_u32};
 use crate::{Error, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
@@ -279,8 +279,7 @@ impl<'a> EventLogHeader<'a> {
         let version_major = *event.get(21)?;
         let version_errata = *event.get(22)?;
         let uintn_size = *event.get(23)?;
-        let number_of_algorithms = usize::try_from(u32_le_from_bytes_at_offset(event, 24)?)
-            .expect("algorithm count should fit in usize");
+        let number_of_algorithms = usize_from_u32(u32_le_from_bytes_at_offset(event, 24)?);
         let vendor_info_size_byte_offset =
             28 + (number_of_algorithms * size_of::<AlgorithmDigestSize>());
         let vendor_info_size = usize::from(*event.get(vendor_info_size_byte_offset)?);
@@ -463,8 +462,7 @@ impl<'a> PcrEvent<'a> {
 
         let digests = unsafe { slice::from_raw_parts(digests_ptr, digests_byte_size) };
         let event_size_ptr = unsafe { digests_ptr.add(digests_byte_size) };
-        let event_size = usize::try_from(unsafe { event_size_ptr.cast::<u32>().read_unaligned() })
-            .expect("event size should fit in usize");
+        let event_size = usize_from_u32(unsafe { event_size_ptr.cast::<u32>().read_unaligned() });
         let event_data_ptr = unsafe { event_size_ptr.add(4) };
         let event_data = unsafe { slice::from_raw_parts(event_data_ptr, event_size) };
 

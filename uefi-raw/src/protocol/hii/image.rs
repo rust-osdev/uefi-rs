@@ -50,11 +50,14 @@ pub union ImageOutputDest {
 
 impl fmt::Debug for ImageOutputDest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // All union fields are pointers.
-        f.debug_struct("ImageOutputDest")
-            .field("bitmap", unsafe { &self.bitmap })
-            .field("screen", unsafe { &self.screen })
-            .finish()
+        // SAFETY: Both union members are raw pointers, so reading either field
+        // only copies the stored address.
+        unsafe {
+            f.debug_struct("ImageOutputDest")
+                .field("bitmap", &self.bitmap)
+                .field("screen", &self.screen)
+                .finish()
+        }
     }
 }
 

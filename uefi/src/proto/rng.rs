@@ -24,6 +24,7 @@ impl Rng {
     ) -> Result<&'buf [RngAlgorithmType], Option<usize>> {
         let mut algorithm_list_size = size_of_val(algorithm_list);
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_info)(
                 &mut self.0,
@@ -55,6 +56,7 @@ impl Rng {
             Some(algo) => ptr::from_ref(algo),
         };
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_rng)(&mut self.0, algo, buffer_length, buffer.as_mut_ptr()).to_result()
         }

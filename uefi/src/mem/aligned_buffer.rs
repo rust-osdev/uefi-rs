@@ -31,6 +31,7 @@ impl AlignedBuffer {
     /// This method panics when the allocation fails (e.g. due to an out of memory situation).
     #[must_use]
     pub fn from_layout(layout: Layout) -> Self {
+        // SAFETY: The memory is valid.
         let ptr = unsafe { alloc(layout) };
         let ptr = NonNull::new(ptr).expect("Allocation failed");
         Self { ptr, layout }
@@ -54,12 +55,14 @@ impl AlignedBuffer {
     /// Get the underlying memory region as immutable slice.
     #[must_use]
     pub const fn as_slice(&self) -> &[u8] {
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts(self.ptr(), self.size()) }
     }
 
     /// Get the underlying memory region as mutable slice.
     #[must_use]
     pub const fn as_slice_mut(&mut self) -> &mut [u8] {
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts_mut(self.ptr_mut(), self.size()) }
     }
 
@@ -84,6 +87,7 @@ impl AlignedBuffer {
     /// The length of `src` must be the same as `self`.
     pub fn copy_from_slice(&mut self, src: &[u8]) {
         assert_eq!(self.size(), src.len());
+        // SAFETY: The memory is valid.
         unsafe {
             self.ptr_mut().copy_from(src.as_ptr(), src.len());
         }
@@ -109,6 +113,7 @@ impl AlignedBuffer {
 
 impl Drop for AlignedBuffer {
     fn drop(&mut self) {
+        // SAFETY: The memory is valid.
         unsafe {
             dealloc(self.ptr_mut(), self.layout);
         }

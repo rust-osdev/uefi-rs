@@ -26,6 +26,7 @@ impl UnicodeCollation {
     /// null-terminated strings.
     #[must_use]
     pub fn stri_coll(&self, s1: &CStr16, s2: &CStr16) -> Ordering {
+        // SAFETY: The memory is valid.
         let order = unsafe { (self.0.stri_coll)(&self.0, s1.as_ptr().cast(), s2.as_ptr().cast()) };
         order.cmp(&0)
     }
@@ -54,6 +55,7 @@ impl UnicodeCollation {
     /// any single character followed by a "." followed by any string.
     #[must_use]
     pub fn metai_match(&self, s: &CStr16, pattern: &CStr16) -> bool {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.metai_match)(&self.0, s.as_ptr().cast(), pattern.as_ptr().cast()) }.into()
     }
 
@@ -71,8 +73,10 @@ impl UnicodeCollation {
         *buf.get_mut(last_index + 1)
             .ok_or(StrConversionError::BufferTooSmall)? = 0;
 
+        // SAFETY: The memory is valid.
         unsafe { (self.0.str_lwr)(&self.0, buf.as_mut_ptr()) };
 
+        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
 
@@ -90,8 +94,10 @@ impl UnicodeCollation {
         *buf.get_mut(last_index + 1)
             .ok_or(StrConversionError::BufferTooSmall)? = 0;
 
+        // SAFETY: The memory is valid.
         unsafe { (self.0.str_upr)(&self.0, buf.as_mut_ptr()) };
 
+        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
 
@@ -104,6 +110,7 @@ impl UnicodeCollation {
         if buf.len() < fat.as_bytes().len() {
             return Err(StrConversionError::BufferTooSmall);
         }
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.fat_to_str)(
                 &self.0,
@@ -112,6 +119,7 @@ impl UnicodeCollation {
                 buf.as_mut_ptr(),
             )
         };
+        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
 
@@ -124,6 +132,7 @@ impl UnicodeCollation {
         if s.as_slice_with_nul().len() > buf.len() {
             return Err(StrConversionError::BufferTooSmall);
         }
+        // SAFETY: The memory is valid.
         let failed = unsafe {
             (self.0.str_to_fat)(
                 &self.0,
@@ -147,7 +156,9 @@ impl UnicodeCollation {
                     break;
                 }
             }
+            // SAFETY: The pointer is valid for the requested slice length.
             let buf = unsafe { core::slice::from_raw_parts(buf.as_ptr(), last_null_index + 1) };
+            // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
             Ok(unsafe { CStr8::from_bytes_with_nul_unchecked(buf) })
         }
     }

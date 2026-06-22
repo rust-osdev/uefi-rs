@@ -28,6 +28,7 @@ impl Ip4Config2 {
     /// Open IP4 Config2 protocol for the given NIC handle.
     pub fn new(nic_handle: Handle) -> uefi::Result<ScopedProtocol<Self>> {
         let protocol;
+        // SAFETY: The memory is valid.
         unsafe {
             protocol = boot::open_protocol::<Self>(
                 boot::OpenProtocolParams {
@@ -43,6 +44,7 @@ impl Ip4Config2 {
 
     /// Set configuration data.  It is recommended to type-specific set_* helpers instead of calling this directly.
     pub fn set_data(&mut self, data_type: Ip4Config2DataType, data: &mut [u8]) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe {
             let data_ptr = data.as_mut_ptr().cast::<c_void>();
             (self.0.set_data)(&mut self.0, data_type, data.len(), data_ptr)
@@ -58,6 +60,7 @@ impl Ip4Config2 {
         let mut data_size = 0;
 
         // call #1: figure return buffer size
+        // SAFETY: The memory is valid.
         let status = unsafe {
             let null = core::ptr::null_mut();
             (self.0.get_data)(&mut self.0, data_type, &mut data_size, null)
@@ -68,6 +71,7 @@ impl Ip4Config2 {
 
         // call #2: get data
         let mut data = vec![0; data_size];
+        // SAFETY: The memory is valid.
         let status = unsafe {
             let data_ptr = data.as_mut_ptr().cast::<c_void>();
             (self.0.get_data)(&mut self.0, data_type, &mut data_size, data_ptr)
@@ -88,6 +92,7 @@ impl Ip4Config2 {
     pub fn get_interface_info(&mut self) -> uefi::Result<Ip4Config2InterfaceInfo> {
         let data = self.get_data(Ip4Config2DataType::INTERFACE_INFO)?;
         let info: &Ip4Config2InterfaceInfo =
+            // SAFETY: The memory is valid.
             unsafe { &*(data.as_ptr().cast::<Ip4Config2InterfaceInfo>()) };
         Ok(Ip4Config2InterfaceInfo {
             name: info.name,

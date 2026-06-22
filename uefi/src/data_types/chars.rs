@@ -160,6 +160,7 @@ impl PartialEq<char> for Char16 {
 }
 
 /// UCS-2 version of the NUL character
+// SAFETY: The character is valid.
 pub const NUL_16: Char16 = unsafe { Char16::from_u16_unchecked(0) };
 
 #[cfg(test)]

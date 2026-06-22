@@ -40,17 +40,20 @@ pub struct BaseCode(PxeBaseCodeProtocol);
 impl BaseCode {
     /// Enables the use of the PXE Base Code Protocol functions.
     pub fn start(&mut self, use_ipv6: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.start)(&mut self.0, use_ipv6.into()) }.to_result()
     }
 
     /// Disables the use of the PXE Base Code Protocol functions.
     pub fn stop(&mut self) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.stop)(&mut self.0) }.to_result()
     }
 
     /// Attempts to complete a DHCPv4 D.O.R.A. (discover / offer / request /
     /// acknowledge) or DHCPv6 S.A.R.R (solicit / advertise / request / reply) sequence.
     pub fn dhcp(&mut self, sort_offers: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.dhcp)(&mut self.0, sort_offers.into()) }.to_result()
     }
 
@@ -67,6 +70,7 @@ impl BaseCode {
             .map(|info| ptr::from_ref(info).cast())
             .unwrap_or(null());
 
+        // SAFETY: The memory is valid.
         unsafe { (self.0.discover)(&mut self.0, ty, layer, use_bis.into(), info) }.to_result()
     }
 
@@ -75,6 +79,7 @@ impl BaseCode {
         let mut buffer_size = 0;
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -107,6 +112,7 @@ impl BaseCode {
         };
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -136,6 +142,7 @@ impl BaseCode {
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -165,6 +172,7 @@ impl BaseCode {
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -239,6 +247,7 @@ impl BaseCode {
         let mut buffer_size = 0;
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -272,6 +281,7 @@ impl BaseCode {
         };
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -301,6 +311,7 @@ impl BaseCode {
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
 
         let server_ip = EfiIpAddr::from(*server_ip);
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.mtftp)(
                 &mut self.0,
@@ -406,6 +417,7 @@ impl BaseCode {
         let dest_ip = EfiIpAddr::from(*dest_ip);
         let gateway_ip = gateway_ip.map(|ip| EfiIpAddr::from(*ip));
         let src_ip = src_ip.map(|ip| EfiIpAddr::from(*ip));
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.udp_write)(
                 &mut self.0,
@@ -470,6 +482,7 @@ impl BaseCode {
         let mut dest_ip_efi = dest_ip.as_ref().map(|ip| EfiIpAddr::from(**ip));
         let mut src_ip_efi = src_ip.as_ref().map(|ip| EfiIpAddr::from(**ip));
 
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.udp_read)(
                 &mut self.0,
@@ -505,12 +518,14 @@ impl BaseCode {
     /// Updates the IP receive filters of a network device and enables software
     /// filtering.
     pub fn set_ip_filter(&mut self, new_filter: &IpFilter) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_ip_filter)(&mut self.0, new_filter) }.to_result()
     }
 
     /// Uses the ARP protocol to resolve a MAC address.
     pub fn arp(&mut self, ip_addr: &IpAddr, mac_addr: Option<&mut EfiMacAddr>) -> Result {
         let ip_addr = EfiIpAddr::from(*ip_addr);
+        // SAFETY: The memory is valid.
         unsafe { (self.0.arp)(&mut self.0, &ip_addr, opt_mut_to_ptr(mac_addr)) }.to_result()
     }
 
@@ -524,6 +539,7 @@ impl BaseCode {
         new_tos: Option<u8>,
         new_make_callback: Option<bool>,
     ) -> Result {
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.set_parameters)(
                 &mut self.0,
@@ -546,6 +562,7 @@ impl BaseCode {
     ) -> Result {
         let new_station_ip = new_station_ip.map(|ip| EfiIpAddr::from(*ip));
         let new_subnet_mask = new_subnet_mask.map(|mask| EfiIpAddr::from(*mask));
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.set_station_ip)(
                 &mut self.0,
@@ -573,6 +590,7 @@ impl BaseCode {
         new_pxe_reply: Option<&Packet>,
         new_pxe_bis_reply: Option<&Packet>,
     ) -> Result {
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.set_packets)(
                 &mut self.0,
@@ -596,6 +614,7 @@ impl BaseCode {
     /// Returns a reference to the `Mode` struct.
     #[must_use]
     pub const fn mode(&self) -> &Mode {
+        // SAFETY: The memory is valid.
         unsafe { &*(self.0.mode.cast()) }
     }
 }
@@ -680,6 +699,7 @@ impl DiscoverInfo {
         }
 
         let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
+        // SAFETY: The memory is valid.
         unsafe {
             ptr_write_unaligned_and_add(&mut ptr, use_m_cast);
             ptr_write_unaligned_and_add(&mut ptr, use_b_cast);

@@ -251,6 +251,7 @@ impl<'buffers> NvmeResponse<'buffers> {
         if self.req.packet.transfer_buffer.is_null() {
             return None;
         }
+        // SAFETY: The memory is valid.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.req.packet.transfer_buffer.cast(),
@@ -268,6 +269,7 @@ impl<'buffers> NvmeResponse<'buffers> {
         if self.req.packet.meta_data_buffer.is_null() {
             return None;
         }
+        // SAFETY: The memory is valid.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.req.packet.meta_data_buffer.cast(),

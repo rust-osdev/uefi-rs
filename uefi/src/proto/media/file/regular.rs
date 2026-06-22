@@ -51,6 +51,7 @@ impl RegularFile {
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<usize> {
         let chunk_size = 1024 * 1024;
 
+        // SAFETY: The memory is valid.
         read_chunked(buffer, chunk_size, |buf, buf_size| unsafe {
             (self.imp().read)(self.imp(), buf_size, buf.cast())
         })
@@ -61,6 +62,7 @@ impl RegularFile {
     pub(super) fn read_unchunked(&mut self, buffer: &mut [u8]) -> Result<usize, Option<usize>> {
         let mut buffer_size = buffer.len();
         let status =
+            // SAFETY: The memory is valid.
             unsafe { (self.imp().read)(self.imp(), &mut buffer_size, buffer.as_mut_ptr().cast()) };
 
         status.to_result_with(
@@ -99,6 +101,7 @@ impl RegularFile {
     /// * [`Status::VOLUME_FULL`]
     pub fn write(&mut self, buffer: &[u8]) -> Result<(), usize> {
         let mut buffer_size = buffer.len();
+        // SAFETY: The memory is valid.
         unsafe { (self.imp().write)(self.imp(), &mut buffer_size, buffer.as_ptr().cast()) }
             .to_result_with_err(|_| buffer_size)
     }
@@ -112,6 +115,7 @@ impl RegularFile {
     /// * [`Status::DEVICE_ERROR`]
     pub fn get_position(&mut self) -> Result<u64> {
         let mut pos = 0u64;
+        // SAFETY: The memory is valid.
         unsafe { (self.imp().get_position)(self.imp(), &mut pos) }.to_result_with_val(|| pos)
     }
 
@@ -131,6 +135,7 @@ impl RegularFile {
     ///
     /// * [`Status::DEVICE_ERROR`]
     pub fn set_position(&mut self, position: u64) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.imp().set_position)(self.imp(), position) }.to_result()
     }
 }
@@ -174,6 +179,7 @@ where
         if status.is_success() {
             total_read_size += read_size;
             remaining_size -= read_size;
+            // SAFETY: The memory is valid.
             output_ptr = unsafe { output_ptr.add(read_size) };
 
             // Exit the loop if there's nothing left to read.
@@ -211,6 +217,7 @@ mod tests {
 
             let remaining_data_size = data.len() - *offset;
             let size_to_read = remaining_data_size.min(*buffer_size);
+            // SAFETY: The memory is valid.
             unsafe { buffer.copy_from(data.as_ptr().add(*offset), size_to_read) };
             *offset += size_to_read;
             *buffer_size = size_to_read;

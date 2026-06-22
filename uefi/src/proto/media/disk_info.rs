@@ -108,6 +108,7 @@ impl DiskInfo {
     /// - [`Status::BUFFER_TOO_SMALL`] The provided InquiryDataSize buffer is not large enough to store the required data.
     pub fn inquiry(&self, bfr: &mut [u8]) -> crate::Result<usize> {
         let mut len: u32 = bfr.len() as u32;
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.inquiry)(&self.0, bfr.as_mut_ptr().cast(), &mut len)
                 .to_result_with_val(|| len as usize)
@@ -129,6 +130,7 @@ impl DiskInfo {
     /// - [`Status::BUFFER_TOO_SMALL`] The provided IdentifyDataSize buffer is not large enough to store the required data.
     pub fn identify(&self, bfr: &mut [u8]) -> crate::Result<usize> {
         let mut len: u32 = bfr.len() as u32;
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.identify)(&self.0, bfr.as_mut_ptr().cast(), &mut len)
                 .to_result_with_val(|| len as usize)
@@ -151,6 +153,7 @@ impl DiskInfo {
     pub fn sense_data(&self, bfr: &mut [u8]) -> crate::Result<SenseDataInfo> {
         let mut len: u32 = bfr.len() as u32;
         let mut number: u8 = 0;
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.sense_data)(&self.0, bfr.as_mut_ptr().cast(), &mut len, &mut number)
                 .to_result_with_val(|| SenseDataInfo {
@@ -174,6 +177,7 @@ impl DiskInfo {
     pub fn bus_location(&self) -> crate::Result<DeviceLocationInfo> {
         let mut ide_channel: u32 = 0; // called ide, but also useful for other interfaces
         let mut ide_device: u32 = 0;
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.which_ide)(&self.0, &mut ide_channel, &mut ide_device).to_result_with_val(
                 || DeviceLocationInfo {

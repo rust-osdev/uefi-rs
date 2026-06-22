@@ -23,6 +23,7 @@ impl Directory {
     /// doing otherwise is unsafe.
     #[must_use]
     pub const unsafe fn new(handle: FileHandle) -> Self {
+        // SAFETY: The memory is valid.
         Self(unsafe { RegularFile::new(handle) })
     }
 
@@ -55,6 +56,7 @@ impl Directory {
             if last_directory_entry_read {
                 None
             } else {
+                // SAFETY: The memory is valid.
                 unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr().cast::<c_void>())) }
             }
         })

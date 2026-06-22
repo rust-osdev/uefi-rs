@@ -19,7 +19,7 @@ use core::slice;
 #[must_use]
 pub fn firmware_vendor() -> &'static CStr16 {
     let st = table::system_table_raw_panicking();
-    // SAFETY: valid per requirements of `set_system_table`.
+    // SAFETY: The system table pointer is live here.
     let st = unsafe { st.as_ref() };
 
     let vendor: *const Char16 = st.firmware_vendor.cast();
@@ -32,7 +32,7 @@ pub fn firmware_vendor() -> &'static CStr16 {
 #[must_use]
 pub fn firmware_revision() -> u32 {
     let st = table::system_table_raw_panicking();
-    // SAFETY: valid per requirements of `set_system_table`.
+    // SAFETY: The system table pointer is live here.
     let st = unsafe { st.as_ref() };
 
     st.firmware_revision
@@ -43,7 +43,7 @@ pub fn firmware_revision() -> u32 {
 #[must_use]
 pub fn uefi_revision() -> Revision {
     let st = table::system_table_raw_panicking();
-    // SAFETY: valid per requirements of `set_system_table`.
+    // SAFETY: The system table pointer is live here.
     let st = unsafe { st.as_ref() };
 
     st.header.revision
@@ -73,7 +73,7 @@ where
     F: FnMut(&[ConfigTableEntry]) -> R,
 {
     let st = table::system_table_raw_panicking();
-    // SAFETY: valid per requirements of `set_system_table`.
+    // SAFETY: The system table pointer is live here.
     let st = unsafe { st.as_ref() };
 
     let ptr: *const ConfigTableEntry = st.configuration_table.cast();
@@ -81,6 +81,7 @@ where
     let slice = if ptr.is_null() {
         &[]
     } else {
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts(ptr, len) }
     };
 
@@ -106,8 +107,7 @@ where
 
     let stdin: *mut Input = st.stdin.cast();
 
-    // SAFETY: `Input` is a `repr(transparent)` wrapper around the raw input
-    // type. The underlying pointer in the system table is assumed to be valid.
+    // SAFETY: The pointer is not null, aligned, and initialized.
     let stdin = unsafe { &mut *stdin };
 
     f(stdin)
@@ -124,7 +124,7 @@ where
     F: FnMut(&mut Output) -> R,
 {
     let st = table::system_table_raw_panicking();
-    // SAFETY: valid per requirements of `set_system_table`.
+    // SAFETY: The system table pointer is live here.
     let st = unsafe { st.as_ref() };
     // The I/O protocols cannot be used after exiting boot services.
     assert!(!st.boot_services.is_null(), "boot services are not active");
@@ -132,8 +132,7 @@ where
 
     let stdout: *mut Output = st.stdout.cast();
 
-    // SAFETY: `Output` is a `repr(transparent)` wrapper around the raw output
-    // type. The underlying pointer in the system table is assumed to be valid.
+    // SAFETY: The pointer is not null, aligned, and initialized.
     let stdout = unsafe { &mut *stdout };
 
     f(stdout)
@@ -150,7 +149,7 @@ where
     F: FnMut(&mut Output) -> R,
 {
     let st = table::system_table_raw_panicking();
-    // SAFETY: valid per requirements of `set_system_table`.
+    // SAFETY: The system table pointer is live here.
     let st = unsafe { st.as_ref() };
     // The I/O protocols cannot be used after exiting boot services.
     assert!(!st.boot_services.is_null(), "boot services are not active");
@@ -158,8 +157,7 @@ where
 
     let stderr: *mut Output = st.stderr.cast();
 
-    // SAFETY: `Output` is a `repr(transparent)` wrapper around the raw output
-    // type. The underlying pointer in the system table is assumed to be valid.
+    // SAFETY: The pointer is not null, aligned, and initialized.
     let stderr = unsafe { &mut *stderr };
 
     f(stderr)

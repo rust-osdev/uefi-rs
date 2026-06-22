@@ -307,6 +307,7 @@ impl<'a> ScsiResponse<'a> {
         if self.0.packet.in_data_buffer.is_null() {
             return None;
         }
+        // SAFETY: The memory is valid.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.0.packet.in_data_buffer.cast(),
@@ -327,6 +328,7 @@ impl<'a> ScsiResponse<'a> {
         if self.0.packet.sense_data.is_null() {
             return None;
         }
+        // SAFETY: The memory is valid.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.0.packet.sense_data.cast(),

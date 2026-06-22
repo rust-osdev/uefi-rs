@@ -147,6 +147,7 @@ impl Deref for PoolDevicePath {
     type Target = DevicePath;
 
     fn deref(&self) -> &Self::Target {
+        // SAFETY: The memory is valid.
         unsafe { DevicePath::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
@@ -159,6 +160,7 @@ impl Deref for PoolDevicePathNode {
     type Target = DevicePathNode;
 
     fn deref(&self) -> &Self::Target {
+        // SAFETY: The memory is valid.
         unsafe { DevicePathNode::from_ffi_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
@@ -205,6 +207,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathHeader {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         if size_of::<DevicePathHeader>() <= bytes.len() {
+            // SAFETY: The memory is valid.
             unsafe { Ok(&*bytes.as_ptr().cast::<DevicePathHeader>()) }
         } else {
             Err(ByteConversionError::InvalidLength)
@@ -253,9 +256,11 @@ impl DevicePathNode {
     /// that lifetime.
     #[must_use]
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
+        // SAFETY: The memory is valid.
         let header = unsafe { *ptr.cast::<DevicePathHeader>() };
 
         let data_len = usize::from(header.length()) - size_of::<DevicePathHeader>();
+        // SAFETY: The memory is valid.
         unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), data_len) }
     }
 
@@ -366,6 +371,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePathNode {
         let dp = <&DevicePathHeader>::try_from(bytes)?;
         let length = usize::from(dp.length());
         if length >= size_of::<DevicePathHeader>() && length <= bytes.len() {
+            // SAFETY: The memory is valid.
             unsafe { Ok(DevicePathNode::from_ffi_ptr(bytes.as_ptr().cast())) }
         } else {
             Err(ByteConversionError::InvalidLength)
@@ -504,10 +510,12 @@ pub struct DevicePath {
 
 impl ProtocolPointer for DevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        // SAFETY: The memory is valid.
         ptr_meta::from_raw_parts(ptr.cast(), unsafe { Self::size_in_bytes_from_ptr(ptr) })
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        // SAFETY: The memory is valid.
         ptr_meta::from_raw_parts_mut(ptr.cast(), unsafe { Self::size_in_bytes_from_ptr(ptr) })
     }
 }
@@ -520,12 +528,14 @@ impl DevicePath {
         let mut ptr = ptr.cast::<u8>();
         let mut total_size_in_bytes: usize = 0;
         loop {
+            // SAFETY: The memory is valid.
             let node = unsafe { DevicePathNode::from_ffi_ptr(ptr.cast::<FfiDevicePath>()) };
             let node_size_in_bytes = usize::from(node.length());
             total_size_in_bytes += node_size_in_bytes;
             if node.is_end_entire() {
                 break;
             }
+            // SAFETY: The memory is valid.
             ptr = unsafe { ptr.add(node_size_in_bytes) };
         }
 
@@ -570,6 +580,7 @@ impl DevicePath {
     /// that lifetime.
     #[must_use]
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
+        // SAFETY: The memory is valid.
         unsafe { &*Self::ptr_from_ffi(ptr.cast::<c_void>()) }
     }
 
@@ -701,6 +712,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DevicePath {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let len = DevicePath::size_in_bytes_from_slice(bytes)?;
+        // SAFETY: The memory is valid.
         unsafe { Ok(&*ptr_meta::from_raw_parts(bytes.as_ptr().cast(), len)) }
     }
 }
@@ -749,6 +761,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
         if rest.is_empty() {
             self.remaining_path = None;
         } else {
+            // SAFETY: The memory is valid.
             self.remaining_path = unsafe {
                 Some(&*ptr_meta::from_raw_parts(
                     rest.as_ptr().cast::<()>(),
@@ -757,6 +770,7 @@ impl<'a> Iterator for DevicePathInstanceIterator<'a> {
             };
         }
 
+        // SAFETY: The memory is valid.
         unsafe {
             Some(&*ptr_meta::from_raw_parts(
                 head.as_ptr().cast::<()>(),
@@ -792,6 +806,7 @@ impl<'a> Iterator for DevicePathNodeIterator<'a> {
         }
 
         let node =
+            // SAFETY: The memory is valid.
             unsafe { DevicePathNode::from_ffi_ptr(self.nodes.as_ptr().cast::<FfiDevicePath>()) };
 
         // Check if an early stop condition has been reached.
@@ -853,12 +868,14 @@ pub struct LoadedImageDevicePath(DevicePath);
 
 impl ProtocolPointer for LoadedImageDevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
+        // SAFETY: The memory is valid.
         ptr_meta::from_raw_parts(ptr.cast(), unsafe {
             DevicePath::size_in_bytes_from_ptr(ptr)
         })
     }
 
     unsafe fn mut_ptr_from_ffi(ptr: *mut c_void) -> *mut Self {
+        // SAFETY: The memory is valid.
         ptr_meta::from_raw_parts_mut(ptr.cast(), unsafe {
             DevicePath::size_in_bytes_from_ptr(ptr)
         })
@@ -916,6 +933,7 @@ fn open_text_protocol() -> Result<ScopedProtocol<DevicePathToText>, DevicePathTo
         .first()
         .ok_or(DevicePathToTextError::NoHandle)?;
 
+    // SAFETY: The memory is valid.
     unsafe {
         boot::open_protocol::<DevicePathToText>(
             OpenProtocolParams {
@@ -973,6 +991,7 @@ fn open_utility_protocol() -> Result<ScopedProtocol<DevicePathUtilities>, Device
         .first()
         .ok_or(DevicePathUtilitiesError::NoHandle)?;
 
+    // SAFETY: The memory is valid.
     unsafe {
         boot::open_protocol::<DevicePathUtilities>(
             OpenProtocolParams {
@@ -1043,6 +1062,7 @@ mod tests {
     #[test]
     fn test_device_path_nodes() {
         let raw_data = create_raw_device_path();
+        // SAFETY: The memory is valid.
         let dp = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
 
         // Check that the size is the sum of the nodes' lengths.
@@ -1067,6 +1087,7 @@ mod tests {
     #[test]
     fn test_device_path_instances() {
         let raw_data = create_raw_device_path();
+        // SAFETY: The memory is valid.
         let dp = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
 
         // Check the list's instance iter.
@@ -1101,6 +1122,7 @@ mod tests {
         assert_eq!(size_of::<&DevicePath>(), size_of::<&[u8]>());
 
         let raw_data = create_raw_device_path();
+        // SAFETY: The memory is valid.
         let dp = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
 
         // Relevant assertion to verify the transmute is fine.

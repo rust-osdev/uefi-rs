@@ -47,6 +47,7 @@ mod println;
 pub fn init() -> Result<()> {
     // Set up logging.
     #[cfg(feature = "logger")]
+    // SAFETY: Called exactly once here during crate init, before any logging.
     unsafe {
         logger::init();
     }

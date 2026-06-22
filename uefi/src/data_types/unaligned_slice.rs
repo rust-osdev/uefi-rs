@@ -61,6 +61,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     #[must_use]
     pub const fn get(&self, index: usize) -> Option<T> {
         if index < self.len {
+            // SAFETY: The source memory may be unaligned, so this uses unaligned access.
             Some(unsafe { self.data.add(index).read_unaligned() })
         } else {
             None
@@ -95,6 +96,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
         }
 
         for (i, elem) in dest.iter_mut().enumerate() {
+            // SAFETY: The source memory may be unaligned, so this uses unaligned access.
             *elem = unsafe { self.data.add(i).read_unaligned() };
         }
     }
@@ -118,6 +120,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
         }
 
         for (i, elem) in dest.iter_mut().enumerate() {
+            // SAFETY: The source memory may be unaligned, so this uses unaligned access.
             unsafe { elem.write(self.data.add(i).read_unaligned()) };
         }
     }
@@ -128,6 +131,7 @@ impl<'a, T: Copy> UnalignedSlice<'a, T> {
     pub fn to_vec(&self) -> Vec<T> {
         let len = self.len();
         let mut v = Vec::with_capacity(len);
+        // SAFETY: The memory is valid.
         unsafe {
             self.copy_to_maybe_uninit(v.spare_capacity_mut());
             v.set_len(len);
@@ -227,9 +231,11 @@ mod tests {
         let bytes = &bytes[1..];
         let slice_ptr: *const u32 = bytes.as_ptr().cast();
 
+        // SAFETY: The memory is valid.
         let slice: UnalignedSlice<u32> = unsafe { UnalignedSlice::new(slice_ptr, 0) };
         assert!(slice.is_empty());
 
+        // SAFETY: The memory is valid.
         let slice: UnalignedSlice<u32> = unsafe { UnalignedSlice::new(slice_ptr, 3) };
         assert!(!slice.is_empty());
         assert_eq!(slice.len(), 3);

@@ -77,6 +77,7 @@ pub(crate) fn parse(
     // Phase 1: determine total length
     let mut offset = 0;
     loop {
+        // SAFETY: The memory is valid.
         let tag = unsafe { core::ptr::read(base.add(offset)) };
         offset += match tag {
             PCI_RESTBL_QWORDADDRSPEC_TAG => 3 + 0x2B,
@@ -86,6 +87,7 @@ pub(crate) fn parse(
     }
 
     // Phase 2: parse descriptors from resource table
+    // SAFETY: The pointer is valid for the requested slice length.
     let mut bfr: &[u8] = unsafe { slice::from_raw_parts(base, offset) };
     let mut descriptors = Vec::new();
     while !bfr.is_empty() {

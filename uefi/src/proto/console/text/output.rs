@@ -31,6 +31,7 @@ pub struct Output(SimpleTextOutputProtocol);
 impl Output {
     /// Resets and clears the text output device hardware.
     pub fn reset(&mut self, extended: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended.into()) }.to_result()
     }
 
@@ -39,11 +40,13 @@ impl Output {
     /// The background is set to the current background color.
     /// The cursor is moved to (0, 0).
     pub fn clear(&mut self) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.clear_screen)(&mut self.0) }.to_result()
     }
 
     /// Writes a string to the output device.
     pub fn output_string(&mut self, string: &CStr16) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.output_string)(&mut self.0, string.as_ptr().cast()) }.to_result()
     }
 
@@ -65,6 +68,7 @@ impl Output {
     /// UEFI applications are encouraged to try to print a string even if it contains
     /// some unsupported characters.
     pub fn test_string(&mut self, string: &CStr16) -> Result<bool> {
+        // SAFETY: The memory is valid.
         match unsafe { (self.0.test_string)(&mut self.0, string.as_ptr().cast()) } {
             Status::UNSUPPORTED => Ok(false),
             other => other.to_result_with_val(|| true),
@@ -94,6 +98,7 @@ impl Output {
     fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
         let this: *const _ = &self.0;
+        // SAFETY: The memory is valid.
         unsafe { (self.0.query_mode)(this.cast_mut(), index, &mut columns, &mut rows) }
             .to_result_with_val(|| (columns, rows))
     }
@@ -113,6 +118,7 @@ impl Output {
 
     /// Sets a mode as current.
     pub fn set_mode(&mut self, mode: OutputMode) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_mode)(&mut self.0, mode.index) }.to_result()
     }
 
@@ -127,6 +133,7 @@ impl Output {
     /// The output device may not support this operation, in which case an
     /// `Unsupported` error will be returned.
     pub fn enable_cursor(&mut self, visible: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.enable_cursor)(&mut self.0, visible.into()) }.to_result()
     }
 
@@ -142,6 +149,7 @@ impl Output {
     ///
     /// This function will fail if the cursor's new position would exceed the screen's bounds.
     pub fn set_cursor_position(&mut self, column: usize, row: usize) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_cursor_position)(&mut self.0, column, row) }.to_result()
     }
 
@@ -156,6 +164,7 @@ impl Output {
         assert!(bgc < 8, "An invalid background color was requested");
 
         let attr = ((bgc & 0x7) << 4) | (fgc & 0xF);
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_attribute)(&mut self.0, attr) }.to_result()
     }
 
@@ -164,6 +173,7 @@ impl Output {
     const fn data(&self) -> &SimpleTextOutputMode {
         // Can't dereference mut pointers in a const function, so cast to const.
         let mode = self.0.mode.cast_const();
+        // SAFETY: The memory is valid.
         unsafe { &*mode }
     }
 }

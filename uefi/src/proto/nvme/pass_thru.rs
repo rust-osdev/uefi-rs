@@ -50,6 +50,7 @@ impl NvmePassThru {
     /// An instance of [`NvmePassThruMode`] describing the NVMe controller's capabilities.
     #[must_use]
     pub fn mode(&self) -> NvmePassThruMode {
+        // SAFETY: The memory is valid.
         let mut mode = unsafe { (*(*self.0.get()).mode).clone() };
         mode.io_align = mode.io_align.max(1); // 0 and 1 is the same, says UEFI spec
         mode
@@ -145,6 +146,7 @@ impl NvmeNamespace<'_> {
     /// For a full [`crate::proto::device_path::DevicePath`] pointing to this namespace on the
     /// corresponding NVMe controller.
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
+        // SAFETY: The memory is valid.
         unsafe {
             let mut path_ptr: *const DevicePathProtocol = ptr::null();
             ((*self.proto.get()).build_device_path)(
@@ -190,6 +192,7 @@ impl NvmeNamespace<'_> {
         req.cmd.nsid = self.namespace_id;
         req.packet.nvme_cmd = &req.cmd;
         req.packet.nvme_completion = &mut completion;
+        // SAFETY: The memory is valid.
         unsafe {
             ((*self.proto.get()).pass_thru)(
                 self.proto.get(),
@@ -217,6 +220,7 @@ impl<'a> Iterator for NvmeNamespaceIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let result =
+            // SAFETY: The memory is valid.
             unsafe { ((*self.proto.get()).get_next_namespace)(self.proto.get(), &mut self.prev) };
         match result {
             Status::SUCCESS => Some(NvmeNamespace {

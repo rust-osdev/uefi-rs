@@ -43,6 +43,7 @@ impl AtaPassThru {
     /// The [`AtaPassThruMode`] structure containing configuration details of the protocol.
     #[must_use]
     pub fn mode(&self) -> AtaPassThruMode {
+        // SAFETY: The memory is valid.
         let mut mode = unsafe { (*(*self.0.get()).mode).clone() };
         mode.io_align = mode.io_align.max(1); // 0 and 1 is the same, says UEFI spec
         mode
@@ -139,6 +140,7 @@ impl AtaDevice<'_> {
     /// - [`Status::DEVICE_ERROR`] A device error occurred while attempting to reset the specified ATA device.
     /// - [`Status::TIMEOUT`] A timeout occurred while attempting to reset the specified ATA device.
     pub fn reset(&mut self) -> crate::Result<()> {
+        // SAFETY: The memory is valid.
         unsafe {
             ((*self.proto.get()).reset_device)(self.proto.get(), self.port, self.pmp).to_result()
         }
@@ -149,6 +151,7 @@ impl AtaDevice<'_> {
     /// For a full [`crate::proto::device_path::DevicePath`] pointing to this device, this needs to be appended to
     /// the controller's device path.
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
+        // SAFETY: The memory is valid.
         unsafe {
             let mut path_ptr: *const DevicePathProtocol = ptr::null();
             ((*self.proto.get()).build_device_path)(
@@ -188,6 +191,7 @@ impl AtaDevice<'_> {
         mut req: AtaRequest<'req>,
     ) -> crate::Result<AtaResponse<'req>, AtaResponse<'req>> {
         req.packet.acb = &req.acb;
+        // SAFETY: The memory is valid.
         let result = unsafe {
             ((*self.proto.get()).pass_thru)(
                 self.proto.get(),
@@ -225,6 +229,7 @@ impl<'a> Iterator for AtaDeviceIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if self.end_of_port {
+                // SAFETY: The memory is valid.
                 let result = unsafe {
                     ((*self.proto.get()).get_next_port)(self.proto.get(), &mut self.prev_port)
                 };
@@ -243,6 +248,7 @@ impl<'a> Iterator for AtaDeviceIterator<'a> {
             //   But even when there is no detected port multiplier, there might be a device directly connected
             //   to the port! A port where the device is directly connected uses a pmp-value of 0xFFFF.
             let was_first = self.prev_pmp == 0xFFFF;
+            // SAFETY: The memory is valid.
             let result = unsafe {
                 ((*self.proto.get()).get_next_device)(
                     self.proto.get(),

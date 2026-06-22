@@ -194,6 +194,7 @@ impl ConfigurationString {
             .chunks_exact_mut(2)
             .for_each(|c| c.swap(0, 1));
         let data: &[Char16] =
+            // SAFETY: The pointer is valid for the requested slice length.
             unsafe { slice::from_raw_parts(bfr.as_slice().as_ptr().cast(), size_chars) };
         Some(CStr16::from_char16_with_nul(data).ok()?.to_string())
     }

@@ -28,6 +28,7 @@ pub use validation::PathError;
 pub(super) use validation::validate_path;
 
 /// The default separator for paths.
+// SAFETY: The memory is valid.
 pub const SEPARATOR: Char16 = unsafe { Char16::from_u16_unchecked('\\' as u16) };
 
 /// Stringified version of [`SEPARATOR`].
@@ -36,6 +37,7 @@ pub const SEPARATOR_STR: &CStr16 = cstr16!("\\");
 /// Deny list of characters for path components. UEFI supports FAT-like file
 /// systems. According to <https://en.wikipedia.org/wiki/Comparison_of_file_systems>,
 /// paths should not contain these symbols.
+// SAFETY: The memory is valid.
 pub const CHARACTER_DENY_LIST: [Char16; 10] = unsafe {
     [
         NUL_16,

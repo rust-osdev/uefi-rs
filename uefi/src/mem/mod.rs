@@ -38,6 +38,7 @@ impl Drop for PoolAllocation {
     fn drop(&mut self) {
         // Ignore errors returned by `free_pool` since we can't propagate them
         // from `drop`.
+        // SAFETY: This pointer was allocated by the matching UEFI allocator.
         let _ = unsafe { boot::free_pool(self.0) };
     }
 }

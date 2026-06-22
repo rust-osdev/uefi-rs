@@ -85,15 +85,18 @@ impl GraphicsOutput {
         let mut info_heap_ptr = ptr::null();
         // query_mode allocates a buffer and stores the heap ptr in the provided
         // variable. In this buffer, the queried data can be found.
+        // SAFETY: The memory is valid.
         unsafe { (self.0.query_mode)(&self.0, index, &mut info_sz, &mut info_heap_ptr) }
             .to_result_with_val(|| {
                 // Transform to owned info on the stack.
+                // SAFETY: The memory is valid.
                 let info = unsafe { *info_heap_ptr };
 
                 let info_heap_ptr = info_heap_ptr.cast::<u8>().cast_mut();
 
                 // User has no benefit from propagating this error. If this
                 // fails, it is an error of the UEFI implementation.
+                // SAFETY: This pointer was allocated by the matching UEFI allocator.
                 unsafe { boot::free_pool(NonNull::new(info_heap_ptr).unwrap()) }
                     .expect("buffer should be deallocatable");
 
@@ -120,6 +123,7 @@ impl GraphicsOutput {
     ///
     /// This function will invalidate the current framebuffer.
     pub fn set_mode(&mut self, mode: &Mode) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_mode)(&mut self.0, mode.index) }.to_result()
     }
 
@@ -128,6 +132,7 @@ impl GraphicsOutput {
     /// Every operation requires different parameters.
     pub fn blt(&mut self, op: BltOp) -> Result {
         // Demultiplex the operation type.
+        // SAFETY: The memory is valid.
         unsafe {
             match op {
                 BltOp::VideoFill {
@@ -296,6 +301,7 @@ impl GraphicsOutput {
     /// Returns the frame buffer information for the current mode.
     #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
+        // SAFETY: The memory is valid.
         unsafe { *self.mode().info.cast_const().cast::<ModeInfo>() }
     }
 
@@ -316,6 +322,7 @@ impl GraphicsOutput {
     }
 
     const fn mode(&self) -> &GraphicsOutputProtocolMode {
+        // SAFETY: The memory is valid.
         unsafe { &*self.0.mode.cast_const() }
     }
 }
@@ -594,6 +601,7 @@ impl FrameBuffer<'_> {
     #[inline]
     pub unsafe fn write_byte(&mut self, index: usize, value: u8) {
         debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
+        // SAFETY: The memory is valid.
         unsafe { self.base.add(index).write_volatile(value) }
     }
 
@@ -608,6 +616,7 @@ impl FrameBuffer<'_> {
     #[must_use]
     pub unsafe fn read_byte(&self, index: usize) -> u8 {
         debug_assert!(index < self.size, "Frame buffer accessed out of bounds");
+        // SAFETY: The memory is valid.
         unsafe { self.base.add(index).read_volatile() }
     }
 
@@ -629,6 +638,7 @@ impl FrameBuffer<'_> {
             index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr = self.base.add(index).cast::<T>();
             ptr.write_volatile(value)
@@ -654,6 +664,7 @@ impl FrameBuffer<'_> {
             index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
         );
+        // SAFETY: The source layout matches the target view.
         unsafe { (self.base.add(index) as *const T).read_volatile() }
     }
 }

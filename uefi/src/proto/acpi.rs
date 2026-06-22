@@ -49,6 +49,7 @@ impl AcpiTable {
         acpi_table_size: usize,
     ) -> Result<usize> {
         let mut table_key = 0usize;
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.install_acpi_table)(&self.0, acpi_table_ptr, acpi_table_size, &mut table_key)
         };
@@ -68,6 +69,7 @@ impl AcpiTable {
     /// [`Status::NOT_FOUND`]: crate::Status::NOT_FOUND
     /// [`Status::OUT_OF_RESOURCES`]: crate::Status::OUT_OF_RESOURCES
     pub fn uninstall_acpi_table(&self, table_key: usize) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.uninstall_acpi_table)(&self.0, table_key) }.to_result()
     }
 }

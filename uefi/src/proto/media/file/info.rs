@@ -45,6 +45,7 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
     /// struct.
     unsafe fn name_ptr(ptr: *mut u8) -> *mut Char16 {
         let offset_of_str = Self::name_offset();
+        // SAFETY: The memory is valid.
         unsafe { ptr.add(offset_of_str).cast::<Char16>() }
     }
 
@@ -95,12 +96,14 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
         // Create a pointer to the part of info where the name is
         // stored. Note that `info_ptr` is used rather than `storage` to
         // comply with Stacked Borrows.
+        // SAFETY: The memory is valid.
         let info_name_ptr = unsafe { Self::name_ptr(info_ptr.cast::<u8>()) };
 
         // Initialize the name slice.
+        // SAFETY: The memory is valid.
         unsafe { ptr::copy(name.as_ptr(), info_name_ptr, name_length_ucs2) };
 
-        // The struct is now valid and safe to dereference.
+        // SAFETY: The pointer is not null, aligned, and initialized.
         let info = unsafe { &mut *info_ptr };
         Ok(info)
     }
@@ -111,9 +114,12 @@ where
     T: InfoInternal + ?Sized,
 {
     unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self {
+        // SAFETY: The memory is valid.
         let name_ptr = unsafe { Self::name_ptr(ptr.cast::<u8>()) };
+        // SAFETY: The memory is valid.
         let name = unsafe { CStr16::from_ptr(name_ptr) };
         let name_len = name.as_slice_with_nul().len();
+        // SAFETY: The pointer is not null, aligned, and initialized.
         unsafe { &mut *ptr_meta::from_raw_parts_mut(ptr.cast::<()>(), name_len) }
     }
 }
@@ -191,6 +197,7 @@ impl FileInfo {
         attribute: FileAttribute,
         file_name: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
+        // SAFETY: The memory is valid.
         unsafe {
             Self::new_impl(storage, file_name, |ptr, size| {
                 (&raw mut (*ptr).size).write(size);
@@ -243,6 +250,7 @@ impl FileInfo {
     /// Name of the file
     #[must_use]
     pub fn file_name(&self) -> &CStr16 {
+        // SAFETY: The memory is valid.
         unsafe { CStr16::from_ptr(self.file_name.as_ptr()) }
     }
 
@@ -265,6 +273,7 @@ impl Align for FileInfo {
     }
 }
 
+// SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl Identify for FileInfo {
     const GUID: Guid = uefi_raw::protocol::file_system::FileInfo::ID;
 }
@@ -312,6 +321,7 @@ impl FileSystemInfo {
         block_size: u32,
         volume_label: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
+        // SAFETY: The memory is valid.
         unsafe {
             Self::new_impl(storage, volume_label, |ptr, size| {
                 (&raw mut (*ptr).size).write(size);
@@ -350,6 +360,7 @@ impl FileSystemInfo {
     /// Volume label
     #[must_use]
     pub fn volume_label(&self) -> &CStr16 {
+        // SAFETY: The memory is valid.
         unsafe { CStr16::from_ptr(self.volume_label.as_ptr()) }
     }
 }
@@ -360,6 +371,7 @@ impl Align for FileSystemInfo {
     }
 }
 
+// SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl Identify for FileSystemInfo {
     const GUID: Guid = uefi_raw::protocol::file_system::FileSystemInfo::ID;
 }
@@ -395,12 +407,14 @@ impl FileSystemVolumeLabel {
         storage: &'buf mut [u8],
         volume_label: &CStr16,
     ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
+        // SAFETY: The memory is valid.
         unsafe { Self::new_impl(storage, volume_label, |_ptr, _size| {}) }
     }
 
     /// Volume label
     #[must_use]
     pub fn volume_label(&self) -> &CStr16 {
+        // SAFETY: The memory is valid.
         unsafe { CStr16::from_ptr(self.volume_label.as_ptr()) }
     }
 }
@@ -411,6 +425,7 @@ impl Align for FileSystemVolumeLabel {
     }
 }
 
+// SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl Identify for FileSystemVolumeLabel {
     const GUID: Guid = uefi_raw::protocol::file_system::FileSystemVolumeLabel::ID;
 }
@@ -435,6 +450,7 @@ mod tests {
         assert_eq!(align_of_val(info), T::alignment());
         // Check the hardcoded name slice offset.
         assert_eq!(
+            // SAFETY: The memory is valid.
             unsafe {
                 name.as_ptr()
                     .cast::<u8>()

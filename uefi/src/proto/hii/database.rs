@@ -30,6 +30,7 @@ impl HiiDatabase {
             proto: &HiiDatabase,
             buf: &'a mut [u8],
         ) -> Result<&'a mut [u8], Error<Option<usize>>> {
+            // SAFETY: The memory is valid.
             unsafe {
                 let mut size = buf.len();
                 let status = {

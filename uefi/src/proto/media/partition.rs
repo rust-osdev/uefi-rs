@@ -258,6 +258,7 @@ impl PartitionInfo {
         }
 
         if { self.partition_type } == PartitionType::MBR {
+            // SAFETY: The memory is valid.
             Some(unsafe { &self.record.mbr })
         } else {
             None
@@ -273,6 +274,7 @@ impl PartitionInfo {
         }
 
         if { self.partition_type } == PartitionType::GPT {
+            // SAFETY: The memory is valid.
             Some(unsafe { &self.record.gpt })
         } else {
             None

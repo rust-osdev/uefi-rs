@@ -35,6 +35,7 @@ impl DiskIo {
     /// * [`Status::NO_MEDIA`]          There is no medium in the device.
     /// * [`Status::MEDIA_CHANGED`]     `media_id` is not for the current medium.
     pub fn read_disk(&self, media_id: u32, offset: u64, buffer: &mut [u8]) -> Result {
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.read_disk)(
                 &self.0,
@@ -61,6 +62,7 @@ impl DiskIo {
     /// * [`Status::MEDIA_CHANGED`]     `media_id` is not for the current medium.
     /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
     pub fn write_disk(&mut self, media_id: u32, offset: u64, buffer: &[u8]) -> Result {
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.write_disk)(
                 &mut self.0,
@@ -101,6 +103,7 @@ impl DiskIo2 {
     /// # Errors:
     /// * [`Status::DEVICE_ERROR`] The device reported an error while performing
     pub fn cancel(&mut self) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.cancel)(&mut self.0) }.to_result()
     }
 
@@ -133,6 +136,7 @@ impl DiskIo2 {
         buffer: *mut u8,
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.read_disk_ex)(&self.0, media_id, offset, token.cast(), len, buffer.cast())
         }
@@ -169,6 +173,7 @@ impl DiskIo2 {
         buffer: *const u8,
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.write_disk_ex)(
                 &mut self.0,
@@ -195,6 +200,7 @@ impl DiskIo2 {
     /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
     pub fn flush_disk(&mut self, token: Option<NonNull<DiskIo2Token>>) -> Result {
         let token = opt_nonnull_to_ptr(token);
+        // SAFETY: The memory is valid.
         unsafe { (self.0.flush_disk_ex)(&mut self.0, token.cast()) }.to_result()
     }
 }

@@ -162,6 +162,7 @@ impl TryFrom<Vec<u16>> for CString16 {
         // the types are compatible. The pattern used here matches the
         // example in the docs for `into_raw_parts`.
         let (ptr, len, cap) = vec_into_raw_parts(input);
+        // SAFETY: The memory is valid.
         let rebuilt = unsafe {
             let ptr = ptr.cast::<Char16>();
             Vec::from_raw_parts(ptr, len, cap)
@@ -205,6 +206,7 @@ impl ops::Deref for CString16 {
     type Target = CStr16;
 
     fn deref(&self) -> &CStr16 {
+        // SAFETY: The source layout matches the target view.
         unsafe { &*(ptr::from_ref(self.0.as_slice()) as *const CStr16) }
     }
 }

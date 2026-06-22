@@ -49,6 +49,7 @@ pub(crate) fn make_boxed<
     // Allocate the buffer on the heap.
     let heap_buf: *mut u8 = {
         {
+            // SAFETY: The memory is valid.
             let ptr = unsafe { alloc(layout) };
             if ptr.is_null() {
                 return Err(Status::OUT_OF_RESOURCES.into());
@@ -59,6 +60,7 @@ pub(crate) fn make_boxed<
 
     // Read the data into the provided buffer.
     let data: Result<&mut Data> = {
+        // SAFETY: The pointer is valid for the requested slice length.
         let buffer = unsafe { slice::from_raw_parts_mut(heap_buf, required_size) };
         fetch_data_fn(buffer).discard_errdata()
     };
@@ -67,11 +69,13 @@ pub(crate) fn make_boxed<
     let data: &mut Data = match data {
         Ok(data) => data,
         Err(err) => {
+            // SAFETY: The memory is valid.
             unsafe { dealloc(heap_buf, layout) };
             return Err(err);
         }
     };
 
+    // SAFETY: The memory is valid.
     let data = unsafe { Box::from_raw(data) };
     Ok(data)
 }
@@ -129,6 +133,7 @@ mod tests {
         buf[2] = 3;
         buf[3] = 4;
 
+        // SAFETY: The buffer is not null, aligned, and initialized.
         let data = unsafe { &mut *buf.as_mut_ptr().cast::<Data>() };
 
         Ok(data)

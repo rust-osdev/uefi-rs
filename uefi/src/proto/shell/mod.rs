@@ -37,11 +37,14 @@ impl<'a, T: ShellVarProvider + 'a> Iterator for Vars<'a, T> {
     // We iterate a list of NUL terminated CStr16s.
     // The list is terminated with a double NUL.
     fn next(&mut self) -> Option<Self::Item> {
+        // SAFETY: The memory is valid.
         let s = unsafe { CStr16::from_ptr(self.names) };
         if s.is_empty() {
             None
         } else {
+            // SAFETY: The memory is valid.
             self.names = unsafe { self.names.add(s.num_chars() + 1) };
+            // SAFETY: The handle is known to point to live storage here.
             Some((s, unsafe { self.protocol.as_ref().unwrap().var(s) }))
         }
     }
@@ -67,10 +70,12 @@ impl Shell {
     /// * [`Status::NOT_FOUND`] - Could not retrieve current directory
     pub fn current_dir(&self, file_system_mapping: Option<&CStr16>) -> Result<&CStr16> {
         let mapping_ptr: *const Char16 = file_system_mapping.map_or(ptr::null(), CStr16::as_ptr);
+        // SAFETY: The memory is valid.
         let cur_dir = unsafe { (self.0.get_cur_dir)(mapping_ptr.cast()) };
         if cur_dir.is_null() {
             Err(Error::new(Status::NOT_FOUND, ()))
         } else {
+            // SAFETY: The memory is valid.
             unsafe { Ok(CStr16::from_ptr(cur_dir.cast())) }
         }
     }
@@ -93,6 +98,7 @@ impl Shell {
     ) -> Result {
         let fs_ptr: *const Char16 = file_system.map_or(ptr::null(), |x| x.as_ptr());
         let dir_ptr: *const Char16 = directory.map_or(ptr::null(), |x| x.as_ptr());
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_cur_dir)(fs_ptr.cast(), dir_ptr.cast()) }.to_result()
     }
 
@@ -111,10 +117,12 @@ impl Shell {
     #[must_use]
     pub fn var(&self, name: &CStr16) -> Option<&CStr16> {
         let name_ptr: *const Char16 = name.as_ptr();
+        // SAFETY: The memory is valid.
         let var_val = unsafe { (self.0.get_env)(name_ptr.cast()) };
         if var_val.is_null() {
             None
         } else {
+            // SAFETY: The memory is valid.
             unsafe { Some(CStr16::from_ptr(var_val.cast())) }
         }
     }
@@ -126,6 +134,7 @@ impl Shell {
     /// * `Vars` - Iterator over the names of the environment variables
     #[must_use]
     pub fn vars(&self) -> Vars<'_, Self> {
+        // SAFETY: The memory is valid.
         let env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
         Vars {
             names: env_ptr.cast::<Char16>(),
@@ -149,6 +158,7 @@ impl Shell {
     pub fn set_var(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Result {
         let name_ptr: *const Char16 = name.as_ptr();
         let value_ptr: *const Char16 = value.as_ptr();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_env)(name_ptr.cast(), value_ptr.cast(), volatile.into()) }.to_result()
     }
 }

@@ -102,6 +102,7 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
+        // SAFETY: The memory is valid.
         unsafe { (self.register_periodic_callback)(self, processor_index, callback) }.to_result()
     }
 
@@ -126,6 +127,7 @@ impl DebugSupport {
         }
 
         // Safety: As we've validated the `processor_index`, this should always be safe
+        // SAFETY: The memory is valid.
         unsafe {
             (self.register_exception_callback)(self, processor_index, callback, exception_type)
         }
@@ -150,6 +152,7 @@ impl DebugSupport {
 
         // per the UEFI spec, this call should only return EFI_SUCCESS
         // Safety: As we've validated the `processor_index`, this should always be safe
+        // SAFETY: The memory is valid.
         unsafe { (self.invalidate_instruction_cache)(self, processor_index, start, length) }
             .to_result()
     }

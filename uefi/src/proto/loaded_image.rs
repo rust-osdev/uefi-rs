@@ -41,6 +41,7 @@ impl LoadedImage {
     /// Returns a handle to the storage device on which the image is located.
     #[must_use]
     pub fn device(&self) -> Option<Handle> {
+        // SAFETY: The memory is valid.
         unsafe { Handle::from_ptr(self.0.device_handle) }
     }
 
@@ -58,6 +59,7 @@ impl LoadedImage {
         if self.0.file_path.is_null() {
             None
         } else {
+            // SAFETY: The memory is valid.
             unsafe { Some(DevicePath::from_ffi_ptr(self.0.file_path.cast())) }
         }
     }
@@ -80,6 +82,7 @@ impl LoadedImage {
         {
             Err(LoadOptionsError::NotAligned)
         } else {
+            // SAFETY: The memory is valid.
             let s = unsafe {
                 slice::from_raw_parts(
                     self.0.load_options.cast::<u16>(),
@@ -105,6 +108,7 @@ impl LoadedImage {
         if self.0.load_options.is_null() {
             None
         } else {
+            // SAFETY: The memory is valid.
             unsafe {
                 Some(slice::from_raw_parts(
                     self.0.load_options.cast(),
@@ -156,6 +160,7 @@ impl LoadedImage {
         unload: extern "efiapi" fn(image_handle: Handle) -> Status,
     ) {
         let unload: unsafe extern "efiapi" fn(image_handle: uefi_raw::Handle) -> uefi_raw::Status =
+            // SAFETY: The memory is valid.
             unsafe { mem::transmute(unload) };
         self.0.unload = Some(unload);
     }

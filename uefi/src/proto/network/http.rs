@@ -33,6 +33,7 @@ impl Http {
     /// Receive HTTP Protocol configuration.
     pub fn get_mode_data(&mut self) -> uefi::Result<HttpConfigData> {
         let mut config_data = HttpConfigData::default();
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.get_mode_data)(&mut self.0, &mut config_data) };
         match status {
             Status::SUCCESS => Ok(config_data),
@@ -42,6 +43,7 @@ impl Http {
 
     /// Configure HTTP Protocol.  Must be called before sending HTTP requests.
     pub fn configure(&mut self, config_data: &HttpConfigData) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.configure)(&mut self.0, config_data) };
         debug!("http raw: configure({config_data:?}) -> {status}");
         match status {
@@ -52,10 +54,13 @@ impl Http {
 
     /// Send HTTP request.
     pub fn request(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.request)(&mut self.0, token) };
         debug!(
             "http raw: request(headers={}, body_len={}) -> {status}, token.status={}",
+            // SAFETY: The memory is valid.
             unsafe { (*token.message).header_count },
+            // SAFETY: The memory is valid.
             unsafe { (*token.message).body_length },
             token.status,
         );
@@ -67,6 +72,7 @@ impl Http {
 
     /// Cancel HTTP request.
     pub fn cancel(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.cancel)(&mut self.0, token) };
         match status {
             Status::SUCCESS => Ok(()),
@@ -76,9 +82,11 @@ impl Http {
 
     /// Receive HTTP response.
     pub fn response(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.response)(&mut self.0, token) };
         debug!(
             "http raw: response(body_len={}) -> {status}, token.status={}",
+            // SAFETY: The memory is valid.
             unsafe { (*token.message).body_length },
             token.status,
         );
@@ -90,6 +98,7 @@ impl Http {
 
     /// Poll network stack for updates.
     pub fn poll(&mut self) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.poll)(&mut self.0) };
         match status {
             Status::SUCCESS => Ok(()),
@@ -109,6 +118,7 @@ impl HttpBinding {
         let mut c_handle = ptr::null_mut();
         let status;
         let handle;
+        // SAFETY: The memory is valid.
         unsafe {
             status = (self.0.create_child)(&mut self.0, &mut c_handle);
             handle = Handle::from_ptr(c_handle);
@@ -121,6 +131,7 @@ impl HttpBinding {
 
     /// Destroy HTTP Protocol Handle.
     pub fn destroy_child(&mut self, handle: Handle) -> uefi::Result<()> {
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.destroy_child)(&mut self.0, handle.as_ptr()) };
         match status {
             Status::SUCCESS => Ok(()),
@@ -156,6 +167,7 @@ pub struct HttpHelper {
 impl HttpHelper {
     /// Create new HTTP helper instance for the given NIC handle.
     pub fn new(nic_handle: Handle) -> uefi::Result<Self> {
+        // SAFETY: The memory is valid.
         let mut binding = unsafe {
             boot::open_protocol::<HttpBinding>(
                 boot::OpenProtocolParams {
@@ -171,6 +183,7 @@ impl HttpHelper {
         let child_handle = binding.create_child()?;
         debug!("http: child handle ok");
 
+        // SAFETY: The memory is valid.
         let protocol_res = unsafe {
             boot::open_protocol::<Http>(
                 boot::OpenProtocolParams {
@@ -349,6 +362,7 @@ impl HttpHelper {
         for i in 0..rx_msg.header_count {
             let n;
             let v;
+            // SAFETY: The memory is valid.
             unsafe {
                 n = CStr::from_ptr((*rx_msg.header.add(i)).field_name.cast::<c_char>());
                 v = CStr::from_ptr((*rx_msg.header.add(i)).field_value.cast::<c_char>());

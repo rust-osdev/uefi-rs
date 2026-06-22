@@ -29,8 +29,11 @@ static LOGGER: Logger = Logger::new();
 /// disable() on exit from UEFI boot services.
 pub unsafe fn init() {
     // Connect the logger to stdout.
-    system::with_stdout(|stdout| unsafe {
-        LOGGER.set_output(stdout);
+    system::with_stdout(|stdout| {
+        // SAFETY: `with_stdout` hands out a live stdout handle for this call.
+        unsafe {
+            LOGGER.set_output(stdout);
+        }
     });
 
     // Set the logger.
@@ -70,6 +73,8 @@ impl DebugconWriter {
 impl core::fmt::Write for DebugconWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for &byte in s.as_bytes() {
+            // SAFETY: Port 0xe9 is a fixed debug output sink, and writing a byte
+            // has no aliasing or lifetime requirements.
             unsafe {
                 core::arch::asm!("outb %al, %dx", in("al") byte, in("dx") Self::IO_PORT, options(att_syntax))
             };
@@ -128,6 +133,7 @@ impl Logger {
 
     /// Disable the logger.
     pub fn disable(&self) {
+        // SAFETY: Passing a null pointer disables output without dereferencing it.
         unsafe { self.set_output(ptr::null_mut()) }
     }
 }
@@ -140,6 +146,8 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &log::Record) {
+        // SAFETY: `output()` returns either null or the live output pointer set
+        // by `set_output`.
         if let Some(writer) = unsafe { self.output().as_mut() } {
             // Ignore all errors. Since we're in the logger implementation we
             // can't log the error. We also don't want to panic, since logging
@@ -177,7 +185,11 @@ impl log::Log for Logger {
 }
 
 // The logger is not thread-safe, but the UEFI boot environment only uses one processor.
+// SAFETY: The only shared state is an atomic raw pointer, and UEFI boot services
+// run on a single processor here.
 unsafe impl Sync for Logger {}
+// SAFETY: The atomic pointer makes sharing and sending the logger itself sound
+// under the same single-processor assumption.
 unsafe impl Send for Logger {}
 
 /// Writer wrapper which prints a log level in front of every line of text

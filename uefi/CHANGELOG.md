@@ -1,6 +1,17 @@
 # uefi - [Unreleased]
 
 ## Added
+
+
+## Changed
+
+
+## Removed
+
+
+# uefi - v0.38.0 (2026-06-21)
+
+## Added
 - Added `proto::console::text::InputEx`.
 - Added `proto::pci::PciRootBridgeIo::{supported_attributes(), attributes(),
   set_attributes(), set_attributes_with_range()}`

@@ -1,6 +1,15 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+
+## Changed
+
+## Removed
+
+
+# uefi-raw - v0.15.0 (2026-06-21)
+
+## Added
 - Added `SimpleTextInputExProtocol`.
 - Added `PciRootBridgeIoProtocolAttributes`
 

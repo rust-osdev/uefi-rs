@@ -22,6 +22,7 @@ impl BlockIO {
     /// Pointer for block IO media.
     #[must_use]
     pub const fn media(&self) -> &BlockIOMedia {
+        // SAFETY: The memory is valid.
         unsafe { &*self.0.media.cast::<BlockIOMedia>() }
     }
 
@@ -35,6 +36,7 @@ impl BlockIO {
     /// * `Status::DEVICE_ERROR`  The block device is not functioning
     ///   correctly and could not be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
 
@@ -56,6 +58,7 @@ impl BlockIO {
     ///   proper alignment.
     pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
         let buffer_size = buffer.len();
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.read_blocks)(
                 &self.0,
@@ -87,6 +90,7 @@ impl BlockIO {
     ///   on proper alignment.
     pub fn write_blocks(&mut self, media_id: u32, lba: Lba, buffer: &[u8]) -> Result {
         let buffer_size = buffer.len();
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.write_blocks)(
                 &mut self.0,
@@ -105,6 +109,7 @@ impl BlockIO {
     /// * `Status::DEVICE_ERROR`          The device reported an error while attempting to write data.
     /// * `Status::NO_MEDIA`              There is no media in the device.
     pub fn flush_blocks(&mut self) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.flush_blocks)(&mut self.0) }.to_result()
     }
 }
@@ -217,6 +222,7 @@ impl BlockIO2 {
     /// Pointer for block IO media.
     #[must_use]
     pub const fn media(&self) -> &BlockIOMedia {
+        // SAFETY: The memory is valid.
         unsafe { &*self.0.media.cast::<BlockIOMedia>() }
     }
 
@@ -228,6 +234,7 @@ impl BlockIO2 {
     /// # Errors
     /// * [`Status::DEVICE_ERROR`] The block device is not functioning correctly and could not be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
 
@@ -260,6 +267,7 @@ impl BlockIO2 {
         buffer: *mut u8,
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
+        // SAFETY: The memory is valid.
         unsafe { (self.0.read_blocks_ex)(&self.0, media_id, lba, token.cast(), len, buffer.cast()) }
             .to_result()
     }
@@ -294,6 +302,7 @@ impl BlockIO2 {
         buffer: *const u8,
     ) -> Result {
         let token = opt_nonnull_to_ptr(token);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.write_blocks_ex)(&mut self.0, media_id, lba, token.cast(), len, buffer.cast())
         }
@@ -313,6 +322,7 @@ impl BlockIO2 {
     /// * [`Status::WRITE_PROTECTED`]   The device cannot be written to.
     pub fn flush_blocks_ex(&mut self, token: Option<NonNull<BlockIO2Token>>) -> Result {
         let token = opt_nonnull_to_ptr(token);
+        // SAFETY: The memory is valid.
         unsafe { (self.0.flush_blocks_ex)(&mut self.0, token.cast()) }.to_result()
     }
 }

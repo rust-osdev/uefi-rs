@@ -12,6 +12,7 @@ use {alloc::vec::Vec, core::mem::ManuallyDrop};
 ///
 /// See <https://github.com/rust-lang/rust/issues/63569>.
 pub const unsafe fn maybe_uninit_slice_assume_init_ref<T>(s: &[MaybeUninit<T>]) -> &[T] {
+    // SAFETY: The source layout matches the target view.
     unsafe { &*(ptr::from_ref(s) as *const [T]) }
 }
 

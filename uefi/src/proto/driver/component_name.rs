@@ -60,7 +60,9 @@ impl ComponentName1 {
     pub fn driver_name(&self, language: &str) -> Result<&CStr16> {
         let language = language_to_cstr(language)?;
         let mut driver_name = ptr::null();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.get_driver_name)(&self.0, language.as_ptr(), &mut driver_name) }
+            // SAFETY: The memory is valid.
             .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 
@@ -77,6 +79,7 @@ impl ComponentName1 {
     ) -> Result<&CStr16> {
         let language = language_to_cstr(language)?;
         let mut driver_name = ptr::null();
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_controller_name)(
                 &self.0,
@@ -86,6 +89,7 @@ impl ComponentName1 {
                 &mut driver_name,
             )
         }
+        // SAFETY: The memory is valid.
         .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 }
@@ -132,7 +136,9 @@ impl ComponentName2 {
     pub fn driver_name(&self, language: &str) -> Result<&CStr16> {
         let language = language_to_cstr(language)?;
         let mut driver_name = ptr::null();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.get_driver_name)(&self.0, language.as_ptr(), &mut driver_name) }
+            // SAFETY: The memory is valid.
             .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 
@@ -149,6 +155,7 @@ impl ComponentName2 {
     ) -> Result<&CStr16> {
         let language = language_to_cstr(language)?;
         let mut driver_name = ptr::null();
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_controller_name)(
                 &self.0,
@@ -158,6 +165,7 @@ impl ComponentName2 {
                 &mut driver_name,
             )
         }
+        // SAFETY: The memory is valid.
         .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 }
@@ -283,6 +291,7 @@ impl LanguageIter<'_> {
     ) -> core::result::Result<Self, LanguageError> {
         let mut index = 0;
         loop {
+            // SAFETY: The memory is valid.
             let c = unsafe { languages.add(index).read() };
             if c == 0 {
                 break;
@@ -294,6 +303,7 @@ impl LanguageIter<'_> {
         }
 
         Ok(Self {
+            // SAFETY: The pointer is valid for the requested slice length.
             languages: unsafe { slice::from_raw_parts(languages, index) },
             kind,
         })

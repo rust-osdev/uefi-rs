@@ -152,10 +152,12 @@ impl CStr8 {
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
         let mut len = 0;
+        // SAFETY: The memory is valid.
         while unsafe { *ptr.add(len) } != NUL_8 {
             len += 1
         }
         let ptr = ptr.cast::<u8>();
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1)) }
     }
 
@@ -166,6 +168,7 @@ impl CStr8 {
             if nul_pos + 1 != chars.len() {
                 return Err(FromSliceWithNulError::InteriorNul(nul_pos));
             }
+            // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
             Ok(unsafe { Self::from_bytes_with_nul_unchecked(chars) })
         } else {
             Err(FromSliceWithNulError::NotNulTerminated)
@@ -180,6 +183,7 @@ impl CStr8 {
     /// null-terminated string, with no interior null bytes.
     #[must_use]
     pub const unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
+        // SAFETY: The source layout matches the target view.
         unsafe { &*(ptr::from_ref(chars) as *const Self) }
     }
 
@@ -193,6 +197,7 @@ impl CStr8 {
     /// character.
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
+        // SAFETY: The source layout matches the target view.
         unsafe { &*(ptr::from_ref(&self.0) as *const [u8]) }
     }
 }
@@ -361,10 +366,12 @@ impl CStr16 {
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;
+        // SAFETY: The memory is valid.
         while unsafe { *ptr.add(len) } != NUL_16 {
             len += 1
         }
         let ptr = ptr.cast::<u16>();
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { Self::from_u16_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1)) }
     }
 
@@ -379,6 +386,7 @@ impl CStr16 {
             let chr =
                 Char16::try_from(code).map_err(|_| FromSliceUntilNulError::InvalidChar(pos))?;
             if chr == NUL_16 {
+                // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
                 return Ok(unsafe { Self::from_u16_with_nul_unchecked(&codes[..=pos]) });
             }
         }
@@ -394,6 +402,7 @@ impl CStr16 {
                     if pos != codes.len() - 1 {
                         return Err(FromSliceWithNulError::InteriorNul(pos));
                     } else {
+                        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
                         return Ok(unsafe { Self::from_u16_with_nul_unchecked(codes) });
                     }
                 }
@@ -414,6 +423,7 @@ impl CStr16 {
     /// null-terminated string, with no interior null characters.
     #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
+        // SAFETY: The source layout matches the target view.
         unsafe { &*(ptr::from_ref(codes) as *const Self) }
     }
 
@@ -430,6 +440,7 @@ impl CStr16 {
             .ok_or(FromSliceUntilNulError::NoNul)?;
 
         // Safety: the input is nul-terminated.
+        // SAFETY: The memory is valid.
         unsafe { Ok(Self::from_char16_with_nul_unchecked(&chars[..=end])) }
     }
 
@@ -446,6 +457,7 @@ impl CStr16 {
             // Verify the null character is at the end.
             if null_index == chars.len() - 1 {
                 // Safety: the input is null-terminated and has no interior nulls.
+                // SAFETY: The memory is valid.
                 Ok(unsafe { Self::from_char16_with_nul_unchecked(chars) })
             } else {
                 Err(FromSliceWithNulError::InteriorNul(null_index))
@@ -464,6 +476,7 @@ impl CStr16 {
     #[must_use]
     pub const unsafe fn from_char16_with_nul_unchecked(chars: &[Char16]) -> &Self {
         let ptr: *const [Char16] = chars;
+        // SAFETY: The source layout matches the target view.
         unsafe { &*(ptr as *const Self) }
     }
 
@@ -529,6 +542,7 @@ impl CStr16 {
             .ok_or(UnalignedCStr16Error::BufferTooSmall)?;
 
         src.copy_to_maybe_uninit(buf);
+        // SAFETY: The memory is valid.
         let buf = unsafe {
             // Safety: `copy_buf` fully initializes the slice.
             maybe_uninit_slice_assume_init_ref(buf)
@@ -587,6 +601,7 @@ impl CStr16 {
 
         // Safety: length is even and pointer is 2-byte aligned.
         let u16_slice =
+            // SAFETY: The pointer is valid for the requested slice length.
             unsafe { slice::from_raw_parts(bytes.as_ptr().cast::<u16>(), bytes.len() / 2) };
 
         Self::from_u16_with_nul(u16_slice)
@@ -620,6 +635,7 @@ impl CStr16 {
     /// Converts this C string to a u16 slice containing the trailing null.
     #[must_use]
     pub const fn to_u16_slice_with_nul(&self) -> &[u16] {
+        // SAFETY: The source layout matches the target view.
         unsafe { &*(ptr::from_ref(&self.0) as *const [u16]) }
     }
 
@@ -683,6 +699,7 @@ impl CStr16 {
     /// character.
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts(self.0.as_ptr().cast(), self.num_bytes()) }
     }
 }
@@ -809,6 +826,7 @@ impl Deref for PoolString {
     type Target = CStr16;
 
     fn deref(&self) -> &Self::Target {
+        // SAFETY: The memory is valid.
         unsafe { CStr16::from_ptr(self.0.as_ptr().as_ptr().cast()) }
     }
 }
@@ -866,6 +884,7 @@ mod tests {
     #[test]
     fn test_cstr8_from_cstr() {
         let msg = "hello world\0";
+        // SAFETY: The memory is valid.
         let cstr = unsafe { CStr::from_ptr(msg.as_ptr().cast()) };
         let cstr8: &CStr8 = TryFrom::try_from(cstr).unwrap();
         assert!(cstr8.eq_str_until_nul(msg));
@@ -1049,6 +1068,7 @@ mod tests {
     #[test]
     fn test_unaligned_cstr16() {
         let mut buf = [0u16; 6];
+        // SAFETY: The memory is valid.
         let us = unsafe {
             let ptr = buf.as_mut_ptr().cast::<u8>();
             // Intentionally create an unaligned u16 pointer. This
@@ -1184,12 +1204,14 @@ mod tests {
     fn test_cstr16_from_bytes_with_nul() {
         // Valid: "AB\0"
         let aligned: &[u16] = &[b'A' as u16, b'B' as u16, 0];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 6) };
         let s = CStr16::from_bytes_with_nul(bytes).unwrap();
         assert_eq!(s.to_u16_slice_with_nul(), &[65, 66, 0]);
 
         // Invalid: odd number of bytes.
         let aligned: &[u16] = &[b'A' as u16, 0];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 3) };
         assert_eq!(
             CStr16::from_bytes_with_nul(bytes),
@@ -1198,6 +1220,7 @@ mod tests {
 
         // Invalid: not null-terminated (last u16 is not NUL).
         let aligned: &[u16] = &[b'A' as u16, b'B' as u16];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 4) };
         assert_eq!(
             CStr16::from_bytes_with_nul(bytes),
@@ -1206,6 +1229,7 @@ mod tests {
 
         // Invalid: only the high byte of the terminator is zero (half-null).
         let aligned: &[u16] = &[b'A' as u16, 0x0100];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 4) };
         assert_eq!(
             CStr16::from_bytes_with_nul(bytes),
@@ -1214,6 +1238,7 @@ mod tests {
 
         // Invalid: interior null.
         let aligned: &[u16] = &[b'A' as u16, 0, b'B' as u16, 0];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 8) };
         assert_eq!(
             CStr16::from_bytes_with_nul(bytes),
@@ -1222,6 +1247,7 @@ mod tests {
 
         // Invalid: invalid UCS-2 character.
         let aligned: &[u16] = &[0xd800, 0];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 4) };
         assert_eq!(
             CStr16::from_bytes_with_nul(bytes),
@@ -1231,6 +1257,7 @@ mod tests {
         // Invalid: misaligned pointer. We simulate this by taking a byte slice
         // starting one byte into an aligned u16 buffer.
         let aligned: &[u16] = &[b'A' as u16, 0, 0];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>().add(1), 4) };
         assert_eq!(
             CStr16::from_bytes_with_nul(bytes),
@@ -1239,6 +1266,7 @@ mod tests {
 
         // Edge case: empty string (just a null terminator).
         let aligned: &[u16] = &[0];
+        // SAFETY: The pointer is valid for the requested slice length.
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 2) };
         let s = CStr16::from_bytes_with_nul(bytes).unwrap();
         assert!(s.is_empty());

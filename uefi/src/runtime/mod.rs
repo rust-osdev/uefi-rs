@@ -46,21 +46,25 @@ fn runtime_services_raw_panicking() -> NonNull<uefi_raw::table::runtime::Runtime
 /// Query the current time and date information.
 pub fn get_time() -> Result<Time> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let mut time = Time::invalid();
     let time_ptr: *mut Time = &mut time;
+    // SAFETY: The memory is valid.
     unsafe { (rt.get_time)(time_ptr.cast(), ptr::null_mut()) }.to_result_with_val(|| time)
 }
 
 /// Query the current time and date information and the RTC capabilities.
 pub fn get_time_and_caps() -> Result<(Time, TimeCapabilities)> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let mut time = Time::invalid();
     let time_ptr: *mut Time = &mut time;
     let mut caps = TimeCapabilities::default();
+    // SAFETY: The memory is valid.
     unsafe { (rt.get_time)(time_ptr.cast(), &mut caps) }.to_result_with_val(|| (time, caps))
 }
 
@@ -75,9 +79,11 @@ pub fn get_time_and_caps() -> Result<(Time, TimeCapabilities)> {
 /// use this function at the same time without synchronisation.
 pub unsafe fn set_time(time: &Time) -> Result {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let time: *const Time = time;
+    // SAFETY: The memory is valid.
     unsafe { (rt.set_time)(time.cast()) }.to_result()
 }
 
@@ -95,12 +101,14 @@ pub unsafe fn set_time(time: &Time) -> Result {
 ///   after exiting boot services.
 pub fn variable_exists(name: &CStr16, vendor: &VariableVendor) -> Result<bool> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let attributes = ptr::null_mut();
     let data = ptr::null_mut();
     let mut data_size = 0;
 
+    // SAFETY: The memory is valid.
     let status = unsafe {
         (rt.get_variable)(
             name.as_ptr().cast(),
@@ -144,10 +152,12 @@ pub fn get_variable<'buf>(
     buf: &'buf mut [u8],
 ) -> Result<(&'buf mut [u8], VariableAttributes), Option<usize>> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let mut attributes = VariableAttributes::empty();
     let mut data_size = buf.len();
+    // SAFETY: The memory is valid.
     let status = unsafe {
         (rt.get_variable)(
             name.as_ptr().cast(),
@@ -224,10 +234,12 @@ pub fn get_next_variable_key(
     vendor: &mut VariableVendor,
 ) -> Result<(), Option<usize>> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let mut name_size_in_bytes = size_of_val(name);
 
+    // SAFETY: The memory is valid.
     let status = unsafe {
         (rt.get_next_variable_name)(&mut name_size_in_bytes, name.as_mut_ptr(), &mut vendor.0)
     };
@@ -359,8 +371,10 @@ pub fn set_variable(
     data: &[u8],
 ) -> Result {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe {
         (rt.set_variable)(
             name.as_ptr().cast(),
@@ -402,6 +416,7 @@ pub fn delete_variable(name: &CStr16, vendor: &VariableVendor) -> Result {
 ///   supported on this platform, or the UEFI version is less than 2.0.
 pub fn query_variable_info(attributes: VariableAttributes) -> Result<VariableStorageInfo> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     if rt.header.revision < Revision::EFI_2_00 {
@@ -409,6 +424,7 @@ pub fn query_variable_info(attributes: VariableAttributes) -> Result<VariableSto
     }
 
     let mut info = VariableStorageInfo::default();
+    // SAFETY: The memory is valid.
     unsafe {
         (rt.query_variable_info)(
             attributes,
@@ -442,8 +458,10 @@ pub fn update_capsule(
     capsule_block_descriptors: &[CapsuleBlockDescriptor],
 ) -> Result {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe {
         (rt.update_capsule)(
             capsule_header_array.as_ptr().cast(),
@@ -470,9 +488,11 @@ pub fn update_capsule(
 ///   boot services.
 pub fn query_capsule_capabilities(capsule_header_array: &[&CapsuleHeader]) -> Result<CapsuleInfo> {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let mut info = CapsuleInfo::default();
+    // SAFETY: The memory is valid.
     unsafe {
         (rt.query_capsule_capabilities)(
             capsule_header_array.as_ptr().cast(),
@@ -499,12 +519,14 @@ pub fn query_capsule_capabilities(capsule_header_array: &[&CapsuleHeader]) -> Re
 /// This function never returns.
 pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     let (size, data) = data
         .map(|data| (data.len(), data.as_ptr()))
         .unwrap_or((0, ptr::null()));
 
+    // SAFETY: The memory is valid.
     unsafe { (rt.reset_system)(reset_type, status, size, data) }
 }
 
@@ -536,6 +558,7 @@ pub unsafe fn set_virtual_address_map(
     new_system_table_virtual_addr: *const uefi_raw::table::system::SystemTable,
 ) -> Result {
     let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let rt = unsafe { rt.as_ref() };
 
     // Unsafe Code Guidelines guarantees that there is no padding in an array or a slice
@@ -546,10 +569,12 @@ pub unsafe fn set_virtual_address_map(
     let entry_size = size_of::<MemoryDescriptor>();
     let entry_version = MemoryDescriptor::VERSION;
     let map_ptr = map.as_mut_ptr();
+    // SAFETY: The memory is valid.
     unsafe { (rt.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr) }
         .to_result()?;
 
     // Update the global system table pointer.
+    // SAFETY: The memory is valid.
     unsafe { table::set_system_table(new_system_table_virtual_addr) };
 
     Ok(())

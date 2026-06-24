@@ -28,12 +28,14 @@ impl ShellParameters {
     pub fn args(&self) -> impl Iterator<Item = &CStr16> {
         self.args_slice()
             .iter()
+            // SAFETY: The memory is valid.
             .map(|x| unsafe { CStr16::from_ptr(*x) })
     }
 
     /// Get a slice of the args, as Char16 pointers
     #[must_use]
     const fn args_slice(&self) -> &[*const Char16] {
+        // SAFETY: The memory is valid.
         unsafe {
             from_raw_parts(
                 self.0.argv.cast::<*const data_types::chars::Char16>(),

@@ -120,6 +120,7 @@ impl<'a> DevicePathBuilder<'a> {
                 vec.reserve(node_size);
                 let buf = &mut vec.spare_capacity_mut()[..node_size];
                 node.write_data(buf);
+                // SAFETY: The memory is valid.
                 unsafe {
                     vec.set_len(old_size + node_size);
                 }
@@ -138,6 +139,7 @@ impl<'a> DevicePathBuilder<'a> {
         let this = self.push(&end::Entire)?;
 
         let data: &[u8] = match &this.storage {
+            // SAFETY: The memory is valid.
             BuilderStorage::Buf { buf, offset } => unsafe {
                 maybe_uninit_slice_assume_init_ref(&buf[..*offset])
             },
@@ -146,6 +148,7 @@ impl<'a> DevicePathBuilder<'a> {
         };
 
         let ptr: *const () = data.as_ptr().cast();
+        // SAFETY: The memory is valid.
         Ok(unsafe { &*ptr_meta::from_raw_parts(ptr, data.len()) })
     }
 }
@@ -224,6 +227,7 @@ pub unsafe trait BuildNode {
     fn write_data(&self, out: &mut [MaybeUninit<u8>]);
 }
 
+// SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl BuildNode for &DevicePathNode {
     fn size_in_bytes(&self) -> Result<u16, BuildError> {
         Ok(self.header.length())
@@ -233,6 +237,7 @@ unsafe impl BuildNode for &DevicePathNode {
         let src: *const u8 = self.as_ffi_ptr().cast();
 
         let dst: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
+        // SAFETY: The memory is valid.
         unsafe {
             dst.copy_from_nonoverlapping(src, out.len());
         }

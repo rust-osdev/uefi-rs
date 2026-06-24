@@ -54,6 +54,7 @@ fn read_device_register_u32<T: Sized + Copy>(
     proto: &mut PciRootBridgeIo,
     addr: PciIoAddress,
 ) -> uefi::Result<T> {
+    // SAFETY: The memory is valid.
     unsafe {
         let raw = proto.pci().read_one::<u32>(addr)?;
         let reg: T = mem::transmute_copy(&raw);

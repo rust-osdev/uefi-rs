@@ -70,6 +70,7 @@ impl DevicePathToText {
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
     ) -> Result<PoolString> {
+        // SAFETY: The memory is valid.
         let text = unsafe {
             (self.0.convert_device_node_to_text)(
                 device_node.as_ffi_ptr().cast(),
@@ -77,6 +78,7 @@ impl DevicePathToText {
                 allow_shortcuts.0.into(),
             )
         };
+        // SAFETY: The memory is valid.
         unsafe { PoolString::new(text.cast()) }
     }
 
@@ -92,6 +94,7 @@ impl DevicePathToText {
         display_only: DisplayOnly,
         allow_shortcuts: AllowShortcuts,
     ) -> Result<PoolString> {
+        // SAFETY: The memory is valid.
         let text = unsafe {
             (self.0.convert_device_path_to_text)(
                 device_path.as_ffi_ptr().cast(),
@@ -99,6 +102,7 @@ impl DevicePathToText {
                 allow_shortcuts.0.into(),
             )
         };
+        // SAFETY: The memory is valid.
         unsafe { PoolString::new(text.cast()) }
     }
 }
@@ -126,6 +130,7 @@ impl DevicePathFromText {
         &self,
         text_device_node: &CStr16,
     ) -> Result<PoolDevicePathNode> {
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.convert_text_to_device_node)(text_device_node.as_ptr().cast());
             NonNull::new(ptr.cast_mut())
@@ -143,6 +148,7 @@ impl DevicePathFromText {
     ///
     /// [`OUT_OF_RESOURCES`]: Status::OUT_OF_RESOURCES
     pub fn convert_text_to_device_path(&self, text_device_path: &CStr16) -> Result<PoolDevicePath> {
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.convert_text_to_device_path)(text_device_path.as_ptr().cast());
             NonNull::new(ptr.cast_mut())

@@ -321,11 +321,15 @@ mod tests {
     fn test_ip_addr_conversion() {
         let core_addr = core::net::IpAddr::V4(core::net::Ipv4Addr::from(TEST_IPV4));
         let uefi_addr = IpAddress::from(core_addr);
-        assert_eq!(unsafe { uefi_addr.v4.0 }, TEST_IPV4);
+        // SAFETY: `IpAddress::from` constructed the IPv4 variant above.
+        let octets = unsafe { uefi_addr.v4.0 };
+        assert_eq!(octets, TEST_IPV4);
 
         let core_addr = core::net::IpAddr::V6(core::net::Ipv6Addr::from(TEST_IPV6));
         let uefi_addr = IpAddress::from(core_addr);
-        assert_eq!(unsafe { uefi_addr.v6.0 }, TEST_IPV6);
+        // SAFETY: `IpAddress::from` constructed the IPv6 variant above.
+        let octets = unsafe { uefi_addr.v6.0 };
+        assert_eq!(octets, TEST_IPV6);
     }
 
     /// Test conversions between `MacAddress` and octet arrays.
@@ -373,6 +377,7 @@ mod tests {
             let octets = [0_u8, 1, 2, 3];
             assert_eq!(Ipv4Address::from(octets), Ipv4Address(octets));
             let uefi_addr = IpAddress::from(octets);
+            // SAFETY: `from([u8; 4])` constructs the IPv4 variant.
             assert_eq!(&octets, &unsafe { uefi_addr.v4.octets() });
         }
         // octets -> Ipv6Address
@@ -380,6 +385,7 @@ mod tests {
             let octets = [0_u8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             assert_eq!(Ipv6Address::from(octets), Ipv6Address(octets));
             let uefi_addr = IpAddress::from(octets);
+            // SAFETY: `from([u8; 16])` constructs the IPv6 variant.
             assert_eq!(&octets, &unsafe { uefi_addr.v6.octets() });
         }
         // StdIpv4Addr -> Ipv4Address
@@ -387,26 +393,26 @@ mod tests {
             let octets = [7, 5, 3, 1];
             let core_ipv4_addr = core::net::Ipv4Addr::from(octets);
             assert_eq!(Ipv4Address::from(core_ipv4_addr).octets(), octets);
-            assert_eq!(
-                unsafe { IpAddress::from(core_ipv4_addr).v4.octets() },
-                octets
-            );
+            // SAFETY: The `Ipv4Addr` conversion selects the IPv4 variant.
+            let converted = unsafe { IpAddress::from(core_ipv4_addr).v4.octets() };
+            assert_eq!(converted, octets);
         }
         // StdIpv6Addr -> Ipv6Address
         {
             let octets = [7, 5, 3, 1, 6, 3, 8, 5, 2, 5, 2, 7, 3, 5, 2, 6];
             let core_ipv6_addr = core::net::Ipv6Addr::from(octets);
             assert_eq!(Ipv6Address::from(core_ipv6_addr).octets(), octets);
-            assert_eq!(
-                unsafe { IpAddress::from(core_ipv6_addr).v6.octets() },
-                octets
-            );
+            // SAFETY: The `Ipv6Addr` conversion selects the IPv6 variant.
+            let converted = unsafe { IpAddress::from(core_ipv6_addr).v6.octets() };
+            assert_eq!(converted, octets);
         }
         // StdIpAddr -> IpAddress
         {
             let octets = [8, 8, 2, 6];
             let core_ip_addr = core::net::IpAddr::from(octets);
-            assert_eq!(unsafe { IpAddress::from(core_ip_addr).v4.octets() }, octets);
+            // SAFETY: This `IpAddr` is built from four octets, so it is IPv4.
+            let converted = unsafe { IpAddress::from(core_ip_addr).v4.octets() };
+            assert_eq!(converted, octets);
         }
         // octets <-> MacAddress
         {
@@ -435,8 +441,9 @@ mod tests {
     #[test]
     fn test_uefi_flow() {
         fn efi_retrieve_efi_ip_addr(addr: *mut IpAddress, is_ipv6: bool) {
+            // SAFETY: The caller passes a valid, writable `IpAddress` pointer.
             let addr = unsafe { addr.as_mut().unwrap() };
-            // SAFETY: Alignment is guaranteed and memory is initialized.
+            // SAFETY: The selected variant is the one initialized by the caller.
             unsafe {
                 addr.v4.0[0] = 42;
                 addr.v4.0[1] = 42;
@@ -444,6 +451,7 @@ mod tests {
                 addr.v4.0[3] = 42;
             }
             if is_ipv6 {
+                // SAFETY: The IPv6 branch writes the bytes that the caller will read back.
                 unsafe {
                     addr.v6.0[14] = 42;
                     addr.v6.0[15] = 42;
@@ -454,6 +462,7 @@ mod tests {
         fn high_level_retrieve_ip(is_ipv6: bool) -> core::net::IpAddr {
             let mut efi_ip_addr = IpAddress::ZERO;
             efi_retrieve_efi_ip_addr(&mut efi_ip_addr, is_ipv6);
+            // SAFETY: The helper initialized the variant selected by `is_ipv6`.
             unsafe { efi_ip_addr.into_core_addr(is_ipv6) }
         }
 

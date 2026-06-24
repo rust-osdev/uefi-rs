@@ -44,6 +44,7 @@ impl MemoryProtection {
     ) -> Result<MemoryAttribute> {
         let mut attributes = MemoryAttribute::empty();
         let (base_address, length) = range_to_base_and_len(byte_region);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_memory_attributes)(&self.0, base_address, length, &mut attributes)
                 .to_result_with_val(|| attributes)
@@ -68,6 +69,7 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.set_memory_attributes)(&self.0, base_address, length, attributes).to_result()
         }
@@ -91,6 +93,7 @@ impl MemoryProtection {
         attributes: MemoryAttribute,
     ) -> Result {
         let (base_address, length) = range_to_base_and_len(byte_region);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.clear_memory_attributes)(&self.0, base_address, length, attributes).to_result()
         }

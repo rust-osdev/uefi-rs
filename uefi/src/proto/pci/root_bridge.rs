@@ -69,6 +69,7 @@ impl PciRootBridgeIo {
     /// - [`Status::DEVICE_ERROR`] The PCI posted write transactions were not flushed from the PCI host bridge
     ///   due to a hardware error.
     pub fn flush(&mut self) -> crate::Result<()> {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.flush)(&mut self.0).to_result() }
     }
 
@@ -77,6 +78,7 @@ impl PciRootBridgeIo {
     pub fn supported_attributes(&self) -> crate::Result<PciRootBridgeIoProtocolAttributes> {
         let mut supported = 0;
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_attributes)(&self.0, &mut supported, ptr::null_mut()).to_result_with_val(
                 || PciRootBridgeIoProtocolAttributes::from_bits_retain(supported),
@@ -88,6 +90,7 @@ impl PciRootBridgeIo {
     pub fn attributes(&self) -> crate::Result<PciRootBridgeIoProtocolAttributes> {
         let mut current = 0;
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_attributes)(&self.0, ptr::null_mut(), &mut current)
                 .to_result_with_val(|| PciRootBridgeIoProtocolAttributes::from_bits_retain(current))
@@ -104,6 +107,7 @@ impl PciRootBridgeIo {
         &mut self,
         attributes: PciRootBridgeIoProtocolAttributes,
     ) -> crate::Result {
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.set_attributes)(
                 &mut self.0,
@@ -132,6 +136,7 @@ impl PciRootBridgeIo {
         base: &mut u64,
         length: &mut u64,
     ) -> crate::Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_attributes)(&mut self.0, attributes.bits(), base, length).to_result() }
     }
 
@@ -152,6 +157,7 @@ impl PciRootBridgeIo {
         // The storage for the resource descriptors is allocated by this function. The caller must treat
         // the return buffer as read-only data, and the buffer must not be freed by the caller.
         let mut resources: *const c_void = ptr::null();
+        // SAFETY: The memory is valid.
         unsafe {
             ((self.0.configuration)(&self.0, &mut resources))
                 .to_result_with_val(|| configuration::parse(resources))
@@ -220,6 +226,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
     pub fn read_one<U: PciIoUnit>(&self, addr: S::Address) -> crate::Result<U> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
         let mut result = U::default();
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.read)(
                 self.proto,
@@ -243,6 +250,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
     /// - [`Status::OUT_OF_RESOURCES`] The write request could not be completed due to a lack of resources.
     pub fn write_one<U: PciIoUnit>(&self, addr: S::Address, data: U) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.write)(
                 self.proto,
@@ -266,6 +274,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
     /// - [`Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
     pub fn read<U: PciIoUnit>(&self, addr: S::Address, data: &mut [U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.read)(
                 self.proto,
@@ -289,6 +298,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
     /// - [`Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
     pub fn write<U: PciIoUnit>(&self, addr: S::Address, data: &[U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Normal);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.write)(
                 self.proto,
@@ -318,6 +328,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
         data: U,
     ) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fill);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.write)(
                 self.proto,
@@ -345,6 +356,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
     /// - [`Status::OUT_OF_RESOURCES`] The read operation could not be completed due to a lack of resources.
     pub fn fifo_read<U: PciIoUnit>(&self, addr: S::Address, data: &mut [U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fifo);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.read)(
                 self.proto,
@@ -372,6 +384,7 @@ impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
     /// - [`Status::OUT_OF_RESOURCES`] The write operation could not be completed due to a lack of resources.
     pub fn fifo_write<U: PciIoUnit>(&self, addr: S::Address, data: &[U]) -> crate::Result<()> {
         let width_mode = encode_io_mode_and_unit::<U>(super::PciIoMode::Fifo);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.io_access.write)(
                 self.proto,

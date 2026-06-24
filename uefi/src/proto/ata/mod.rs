@@ -340,6 +340,7 @@ impl<'a> AtaResponse<'a> {
     /// A reference to the [`AtaStatusBlock`] containing details about the status of the executed operation.
     #[must_use]
     pub const fn status(&self) -> &'a AtaStatusBlock {
+        // SAFETY: The memory is valid.
         unsafe {
             self.req
                 .asb
@@ -359,6 +360,7 @@ impl<'a> AtaResponse<'a> {
         if self.req.packet.in_data_buffer.is_null() {
             return None;
         }
+        // SAFETY: The memory is valid.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.req.packet.in_data_buffer.cast(),

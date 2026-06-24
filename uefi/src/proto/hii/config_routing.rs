@@ -29,6 +29,7 @@ impl HiiConfigRouting {
     ///
     /// Use `super::config_str::MultiConfigurationStringIter` to parse the returned `String`.
     pub fn export(&self) -> uefi::Result<String> {
+        // SAFETY: The memory is valid.
         unsafe {
             let mut results: *const Char16 = ptr::null();
             (self.0.export_config)(&self.0, &mut results)

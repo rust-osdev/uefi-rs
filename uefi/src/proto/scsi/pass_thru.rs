@@ -52,6 +52,7 @@ impl ExtScsiPassThru {
     /// The [`ExtScsiPassThruMode`] structure containing configuration details of the protocol.
     #[must_use]
     pub fn mode(&self) -> ExtScsiPassThruMode {
+        // SAFETY: The memory is valid.
         let mut mode = unsafe { (*(*self.0.get()).passthru_mode).clone() };
         mode.io_align = mode.io_align.max(1); // 0 and 1 is the same, says UEFI spec
         mode
@@ -114,6 +115,7 @@ impl ExtScsiPassThru {
     /// - [`Status::DEVICE_ERROR`] A device error occurred while attempting to reset the SCSI channel.
     /// - [`Status::TIMEOUT`] A timeout occurred while attempting to reset the SCSI channel.
     pub fn reset_channel(&mut self) -> crate::Result<()> {
+        // SAFETY: The memory is valid.
         unsafe { ((*self.0.get()).reset_channel)(self.0.get()).to_result() }
     }
 }
@@ -148,6 +150,7 @@ impl ScsiDevice<'_> {
     /// For a full [`crate::proto::device_path::DevicePath`] pointing to this device, this needs to be appended to
     /// the controller's device path.
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
+        // SAFETY: The memory is valid.
         unsafe {
             let mut path_ptr: *const DevicePathProtocol = ptr::null();
             ((*self.proto.get()).build_device_path)(
@@ -181,6 +184,7 @@ impl ScsiDevice<'_> {
     /// - [`Status::TIMEOUT`] A timeout occurred while attempting to reset the SCSI device specified
     ///   by `Target` and `Lun`.
     pub fn reset(&mut self) -> crate::Result<()> {
+        // SAFETY: The memory is valid.
         unsafe {
             ((*self.proto.get()).reset_target_lun)(
                 self.proto.get(),
@@ -223,6 +227,7 @@ impl ScsiDevice<'_> {
         &mut self,
         mut scsi_req: ScsiRequest<'req>,
     ) -> crate::Result<ScsiResponse<'req>> {
+        // SAFETY: The memory is valid.
         unsafe {
             ((*self.proto.get()).pass_thru)(
                 self.proto.get(),
@@ -249,6 +254,7 @@ impl<'a> Iterator for ScsiTargetLunIterator<'a> {
         // get_next_target_lun() takes the target as a double ptr, meaning that the spec allows
         // the implementation to return us a new buffer (most impls don't actually seem to do though)
         let mut target: *mut u8 = self.prev.0.as_mut_ptr();
+        // SAFETY: The memory is valid.
         let result = unsafe {
             ((*self.proto.get()).get_next_target_lun)(
                 self.proto.get(),
@@ -258,6 +264,7 @@ impl<'a> Iterator for ScsiTargetLunIterator<'a> {
         };
         if target != self.prev.0.as_mut_ptr() {
             // impl has returned us a new pointer instead of writing in our buffer, copy back
+            // SAFETY: The memory is valid.
             unsafe {
                 target.copy_to(self.prev.0.as_mut_ptr(), SCSI_TARGET_MAX_BYTES);
             }

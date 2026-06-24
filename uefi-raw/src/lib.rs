@@ -15,8 +15,10 @@
 #![deny(
     clippy::all,
     clippy::missing_const_for_fn,
+    clippy::missing_safety_doc,
     clippy::must_use_candidate,
     clippy::ptr_as_ptr,
+    clippy::undocumented_unsafe_blocks,
     clippy::use_self,
     missing_debug_implementations,
     unused

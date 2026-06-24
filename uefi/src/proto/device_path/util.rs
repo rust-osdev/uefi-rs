@@ -26,6 +26,7 @@ impl DevicePathUtilities {
     /// The size of the specified device path in bytes.
     #[must_use]
     pub fn get_size(&self, device_path: &DevicePath) -> usize {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.get_device_path_size)(device_path.as_ffi_ptr().cast()) }
     }
 
@@ -37,6 +38,7 @@ impl DevicePathUtilities {
     /// # Returns
     /// A [`PoolDevicePath`] instance created by cloning the given `path`.
     pub fn duplicate_path(&self, path: &DevicePath) -> crate::Result<PoolDevicePath> {
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.duplicate_device_path)(path.as_ffi_ptr().cast());
             NonNull::new(ptr.cast_mut())
@@ -59,6 +61,7 @@ impl DevicePathUtilities {
         path0: &DevicePath,
         path1: &DevicePath,
     ) -> crate::Result<PoolDevicePath> {
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr =
                 (self.0.append_device_path)(path0.as_ffi_ptr().cast(), path1.as_ffi_ptr().cast());
@@ -82,6 +85,7 @@ impl DevicePathUtilities {
         basepath: &DevicePath,
         node: &DevicePathNode,
     ) -> crate::Result<PoolDevicePath> {
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr =
                 (self.0.append_device_node)(basepath.as_ffi_ptr().cast(), node.as_ffi_ptr().cast());
@@ -105,6 +109,7 @@ impl DevicePathUtilities {
         basepath: &DevicePath,
         instance: &DevicePath,
     ) -> crate::Result<PoolDevicePath> {
+        // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.append_device_path_instance)(
                 basepath.as_ffi_ptr().cast(),

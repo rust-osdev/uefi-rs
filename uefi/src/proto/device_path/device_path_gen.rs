@@ -53,6 +53,7 @@ pub mod end {
 
             let node: *const DevicePathNode = node;
             let node: *const Instance = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -87,6 +88,7 @@ pub mod end {
 
             let node: *const DevicePathNode = node;
             let node: *const Entire = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -141,6 +143,7 @@ pub mod hardware {
 
             let node: *const DevicePathNode = node;
             let node: *const Pci = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -183,6 +186,7 @@ pub mod hardware {
 
             let node: *const DevicePathNode = node;
             let node: *const Pccard = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -241,6 +245,7 @@ pub mod hardware {
 
             let node: *const DevicePathNode = node;
             let node: *const MemoryMapped = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -276,7 +281,10 @@ pub mod hardware {
                     let ptr = &raw const self.vendor_defined_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -302,6 +310,7 @@ pub mod hardware {
 
             let node: *const DevicePathNode = node;
             let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -344,6 +353,7 @@ pub mod hardware {
 
             let node: *const DevicePathNode = node;
             let node: *const Controller = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -397,6 +407,7 @@ pub mod hardware {
 
             let node: *const DevicePathNode = node;
             let node: *const Bmc = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -455,6 +466,7 @@ pub mod acpi {
 
             let node: *const DevicePathNode = node;
             let node: *const Acpi = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -551,6 +563,7 @@ pub mod acpi {
 
             let node: *const DevicePathNode = node;
             let node: *const Expanded = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -571,7 +584,10 @@ pub mod acpi {
         pub fn adr(&self) -> UnalignedSlice<'_, u32> {
             let ptr: *const [u32] = &raw const self.adr;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
-            unsafe { UnalignedSlice::new(ptr.cast::<u32>(), len) }
+            #[expect(clippy::undocumented_unsafe_blocks)]
+            unsafe {
+                UnalignedSlice::new(ptr.cast::<u32>(), len)
+            }
         }
     }
 
@@ -582,7 +598,10 @@ pub mod acpi {
                     let ptr = &raw const self.adr;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u32>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -607,6 +626,7 @@ pub mod acpi {
 
             let node: *const DevicePathNode = node;
             let node: *const Adr = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -649,6 +669,7 @@ pub mod acpi {
 
             let node: *const DevicePathNode = node;
             let node: *const Nvdimm = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -824,6 +845,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Atapi = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -874,6 +896,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Scsi = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -926,6 +949,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const FibreChannel = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -978,6 +1002,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const FibreChannelEx = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1023,6 +1048,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Ieee1394 = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1073,6 +1099,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Usb = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1136,6 +1163,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Sata = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1175,7 +1203,10 @@ pub mod messaging {
         pub fn serial_number(&self) -> UnalignedSlice<'_, u16> {
             let ptr: *const [u16] = &raw const self.serial_number;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
-            unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
+            #[expect(clippy::undocumented_unsafe_blocks)]
+            unsafe {
+                UnalignedSlice::new(ptr.cast::<u16>(), len)
+            }
         }
     }
 
@@ -1189,7 +1220,10 @@ pub mod messaging {
                     let ptr = &raw const self.serial_number;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -1215,6 +1249,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const UsbWwid = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1257,6 +1292,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const DeviceLogicalUnit = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1331,6 +1367,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const UsbClass = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1373,6 +1410,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const I2o = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1424,6 +1462,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const MacAddress = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1523,6 +1562,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Ipv4 = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1622,6 +1662,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Ipv6 = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1664,6 +1705,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Vlan = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1740,6 +1782,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Infiniband = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1808,6 +1851,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Uart = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1843,7 +1887,10 @@ pub mod messaging {
                     let ptr = &raw const self.vendor_defined_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -1869,6 +1916,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1935,6 +1983,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const SasEx = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -1999,7 +2048,10 @@ pub mod messaging {
                     let ptr = &raw const self.iscsi_target_name;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2025,6 +2077,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Iscsi = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2079,6 +2132,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const NvmeNamespace = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2106,7 +2160,10 @@ pub mod messaging {
                     let ptr = &raw const self.value;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2132,6 +2189,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Uri = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2182,6 +2240,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Ufs = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2224,6 +2283,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Sd = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2266,6 +2326,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Bluetooth = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2308,6 +2369,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Wifi = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2350,6 +2412,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Emmc = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2400,6 +2463,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const BluetoothLe = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2425,7 +2489,10 @@ pub mod messaging {
         pub fn addresses(&self) -> UnalignedSlice<'_, IpAddress> {
             let ptr: *const [IpAddress] = &raw const self.addresses;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
-            unsafe { UnalignedSlice::new(ptr.cast::<IpAddress>(), len) }
+            #[expect(clippy::undocumented_unsafe_blocks)]
+            unsafe {
+                UnalignedSlice::new(ptr.cast::<IpAddress>(), len)
+            }
         }
     }
 
@@ -2437,7 +2504,10 @@ pub mod messaging {
                     let ptr = &raw const self.addresses;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<IpAddress>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2463,6 +2533,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const Dns = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2505,6 +2576,7 @@ pub mod messaging {
 
             let node: *const DevicePathNode = node;
             let node: *const NvdimmNamespace = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2542,7 +2614,10 @@ pub mod messaging {
                     let ptr = &raw const self.vendor_guid_and_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2569,6 +2644,7 @@ pub mod messaging {
             let node: *const DevicePathNode = node;
             let node: *const RestService =
                 ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2613,7 +2689,10 @@ pub mod messaging {
                     let ptr = &raw const self.subsystem_nqn;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2640,6 +2719,7 @@ pub mod messaging {
             let node: *const DevicePathNode = node;
             let node: *const NvmeOfNamespace =
                 ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2796,6 +2876,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const HardDrive = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2855,6 +2936,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const CdRom = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2890,7 +2972,10 @@ pub mod media {
                     let ptr = &raw const self.vendor_defined_data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2916,6 +3001,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const Vendor = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -2934,7 +3020,10 @@ pub mod media {
         pub fn path_name(&self) -> UnalignedSlice<'_, u16> {
             let ptr: *const [u16] = &raw const self.path_name;
             let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
-            unsafe { UnalignedSlice::new(ptr.cast::<u16>(), len) }
+            #[expect(clippy::undocumented_unsafe_blocks)]
+            unsafe {
+                UnalignedSlice::new(ptr.cast::<u16>(), len)
+            }
         }
     }
 
@@ -2945,7 +3034,10 @@ pub mod media {
                     let ptr = &raw const self.path_name;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u16>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -2971,6 +3063,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const FilePath = ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3013,6 +3106,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const Protocol = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3040,7 +3134,10 @@ pub mod media {
                     let ptr = &raw const self.data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -3067,6 +3164,7 @@ pub mod media {
             let node: *const DevicePathNode = node;
             let node: *const PiwgFirmwareFile =
                 ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3094,7 +3192,10 @@ pub mod media {
                     let ptr = &raw const self.data;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -3121,6 +3222,7 @@ pub mod media {
             let node: *const DevicePathNode = node;
             let node: *const PiwgFirmwareVolume =
                 ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3173,6 +3275,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const RelativeOffsetRange = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3239,6 +3342,7 @@ pub mod media {
 
             let node: *const DevicePathNode = node;
             let node: *const RamDisk = node.cast();
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3334,7 +3438,10 @@ pub mod bios_boot_spec {
                     let ptr = &raw const self.description_string;
                     let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                     let byte_len = size_of::<u8>() * len;
-                    unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
+                    #[expect(clippy::undocumented_unsafe_blocks)]
+                    unsafe {
+                        slice::from_raw_parts(ptr.cast::<u8>(), byte_len)
+                    }
                 })
                 .finish()
         }
@@ -3361,6 +3468,7 @@ pub mod bios_boot_spec {
             let node: *const DevicePathNode = node;
             let node: *const BootSpecification =
                 ptr_meta::from_raw_parts(node.cast(), dst_size / elem_size);
+            #[expect(clippy::undocumented_unsafe_blocks)]
             Ok(unsafe { &*node })
         }
     }
@@ -3657,6 +3765,7 @@ pub mod build {
         /// [`DevicePathInstance`]: device_path::DevicePathInstance
         #[derive(Debug)]
         pub struct Instance;
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Instance {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize;
@@ -3670,6 +3779,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::END, DeviceSubType::END_INSTANCE, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                 }
@@ -3681,6 +3791,7 @@ pub mod build {
         /// [`DevicePath`]: device_path::DevicePath
         #[derive(Debug)]
         pub struct Entire;
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Entire {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize;
@@ -3694,6 +3805,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::END, DeviceSubType::END_ENTIRE, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                 }
@@ -3713,6 +3825,7 @@ pub mod build {
             pub device: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Pci {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 6usize;
@@ -3729,6 +3842,7 @@ pub mod build {
                     DeviceSubType::HARDWARE_PCI,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -3750,6 +3864,7 @@ pub mod build {
             pub function: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Pccard {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 5usize;
@@ -3766,6 +3881,7 @@ pub mod build {
                     DeviceSubType::HARDWARE_PCCARD,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -3787,6 +3903,7 @@ pub mod build {
             pub end_address: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for MemoryMapped {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 24usize;
@@ -3803,6 +3920,7 @@ pub mod build {
                     DeviceSubType::HARDWARE_MEMORY_MAPPED,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -3830,6 +3948,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Vendor<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize + size_of_val(self.vendor_defined_data);
@@ -3846,6 +3965,7 @@ pub mod build {
                     DeviceSubType::HARDWARE_VENDOR,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -3870,6 +3990,7 @@ pub mod build {
             pub controller_number: u32,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Controller {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize;
@@ -3886,6 +4007,7 @@ pub mod build {
                     DeviceSubType::HARDWARE_CONTROLLER,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -3908,6 +4030,7 @@ pub mod build {
             pub base_address: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Bmc {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 13usize;
@@ -3924,6 +4047,7 @@ pub mod build {
                     DeviceSubType::HARDWARE_BMC,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -3953,6 +4077,7 @@ pub mod build {
             pub uid: u32,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Acpi {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 12usize;
@@ -3965,6 +4090,7 @@ pub mod build {
                 let out_ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(out);
                 let length = u16::try_from(size).unwrap();
                 let header = DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).cast::<u32>().write_unaligned(self.hid);
@@ -4002,6 +4128,7 @@ pub mod build {
             pub cid_str: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Expanded<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 16usize
@@ -4018,6 +4145,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI_EXPANDED, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     let mut dst_group_offset = 0;
@@ -4051,6 +4179,7 @@ pub mod build {
             pub adr: &'a AdrSlice,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Adr<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.adr);
@@ -4064,6 +4193,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI_ADR, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.adr
@@ -4081,6 +4211,7 @@ pub mod build {
             pub nfit_device_handle: u32,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Nvdimm {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize;
@@ -4094,6 +4225,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::ACPI, DeviceSubType::ACPI_NVDIMM, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4117,6 +4249,7 @@ pub mod build {
                 if slice.is_empty() {
                     None
                 } else {
+                    #[expect(clippy::undocumented_unsafe_blocks)]
                     let adr_slice: &Self = unsafe { core::mem::transmute(slice) };
                     Some(adr_slice)
                 }
@@ -4142,6 +4275,7 @@ pub mod build {
             pub logical_unit_number: u16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Atapi {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize;
@@ -4158,6 +4292,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_ATAPI,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4185,6 +4320,7 @@ pub mod build {
             pub logical_unit_number: u16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Scsi {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize;
@@ -4201,6 +4337,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_SCSI,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4224,6 +4361,7 @@ pub mod build {
             pub logical_unit_number: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for FibreChannel {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 24usize;
@@ -4240,6 +4378,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_FIBRE_CHANNEL,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
@@ -4264,6 +4403,7 @@ pub mod build {
             pub logical_unit_number: [u8; 8usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for FibreChannelEx {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 24usize;
@@ -4280,6 +4420,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_FIBRE_CHANNEL_EX,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
@@ -4303,6 +4444,7 @@ pub mod build {
             pub guid: [u8; 8usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Ieee1394 {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 16usize;
@@ -4319,6 +4461,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_1394,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
@@ -4339,6 +4482,7 @@ pub mod build {
             pub interface: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Usb {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 6usize;
@@ -4355,6 +4499,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_USB,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4383,6 +4528,7 @@ pub mod build {
             pub logical_unit_number: u16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Sata {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 10usize;
@@ -4399,6 +4545,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_SATA,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4430,6 +4577,7 @@ pub mod build {
             pub serial_number: &'a [u16],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for UsbWwid<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 10usize + size_of_val(self.serial_number);
@@ -4446,6 +4594,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_USB_WWID,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4478,6 +4627,7 @@ pub mod build {
             pub logical_unit_number: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for DeviceLogicalUnit {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 5usize;
@@ -4494,6 +4644,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_DEVICE_LOGICAL_UNIT,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4519,6 +4670,7 @@ pub mod build {
             pub device_protocol: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for UsbClass {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 11usize;
@@ -4535,6 +4687,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_USB_CLASS,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4568,6 +4721,7 @@ pub mod build {
             pub target_id: u32,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for I2o {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize;
@@ -4584,6 +4738,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_I2O,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4604,6 +4759,7 @@ pub mod build {
             pub interface_type: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for MacAddress {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 37usize;
@@ -4620,6 +4776,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_MAC_ADDRESS,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4656,6 +4813,7 @@ pub mod build {
             pub subnet_mask: [u8; 4usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Ipv4 {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 27usize;
@@ -4672,6 +4830,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_IPV4,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4732,6 +4891,7 @@ pub mod build {
             pub gateway_ip_address: [u8; 16usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Ipv6 {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 60usize;
@@ -4748,6 +4908,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_IPV6,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4793,6 +4954,7 @@ pub mod build {
             pub vlan_id: u16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Vlan {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 6usize;
@@ -4809,6 +4971,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_VLAN,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4836,6 +4999,7 @@ pub mod build {
             pub device_id: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Infiniband {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 48usize;
@@ -4852,6 +5016,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_INFINIBAND,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4891,6 +5056,7 @@ pub mod build {
             pub stop_bits: device_path::messaging::StopBits,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Uart {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 19usize;
@@ -4907,6 +5073,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_UART,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
@@ -4939,6 +5106,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Vendor<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize + size_of_val(self.vendor_defined_data);
@@ -4955,6 +5123,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_VENDOR,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -4985,6 +5154,7 @@ pub mod build {
             pub relative_target_port: u16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for SasEx {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 24usize;
@@ -5001,6 +5171,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_SCSI_SAS_EX,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5043,6 +5214,7 @@ pub mod build {
             pub iscsi_target_name: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Iscsi<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 18usize + size_of_val(self.iscsi_target_name);
@@ -5059,6 +5231,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_ISCSI,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5099,6 +5272,7 @@ pub mod build {
             pub ieee_extended_unique_identifier: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for NvmeNamespace {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 16usize;
@@ -5115,6 +5289,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_NVME_NAMESPACE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5136,6 +5311,7 @@ pub mod build {
             pub value: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Uri<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.value);
@@ -5152,6 +5328,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_URI,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.value
@@ -5171,6 +5348,7 @@ pub mod build {
             pub logical_unit_number: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Ufs {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 6usize;
@@ -5187,6 +5365,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_UFS,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5208,6 +5387,7 @@ pub mod build {
             pub slot_number: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Sd {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 5usize;
@@ -5224,6 +5404,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_SD,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5241,6 +5422,7 @@ pub mod build {
             pub device_address: [u8; 6usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Bluetooth {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 10usize;
@@ -5257,6 +5439,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_BLUETOOTH,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5274,6 +5457,7 @@ pub mod build {
             pub ssid: [u8; 32usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Wifi {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 36usize;
@@ -5290,6 +5474,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_WIFI,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5307,6 +5492,7 @@ pub mod build {
             pub slot_number: u8,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Emmc {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 5usize;
@@ -5323,6 +5509,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_EMMC,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5342,6 +5529,7 @@ pub mod build {
             pub address_type: device_path::messaging::BluetoothLeAddressType,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for BluetoothLe {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 11usize;
@@ -5358,6 +5546,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_BLUETOOTH_LE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5381,6 +5570,7 @@ pub mod build {
             pub addresses: &'a [IpAddress],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Dns<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 5usize + size_of_val(self.addresses);
@@ -5397,6 +5587,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_DNS,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5418,6 +5609,7 @@ pub mod build {
             pub uuid: [u8; 16usize],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for NvdimmNamespace {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize;
@@ -5434,6 +5626,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_NVDIMM_NAMESPACE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5457,6 +5650,7 @@ pub mod build {
             pub vendor_guid_and_data: Option<RestServiceVendorData<'a>>,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for RestService<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 6usize + self.build_size_vendor_guid_and_data();
@@ -5473,6 +5667,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_REST_SERVICE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5500,6 +5695,7 @@ pub mod build {
             pub subsystem_nqn: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for NvmeOfNamespace<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 21usize + size_of_val(self.subsystem_nqn);
@@ -5516,6 +5712,7 @@ pub mod build {
                     DeviceSubType::MESSAGING_NVME_OF_NAMESPACE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).cast::<u8>().write_unaligned(self.nidt);
@@ -5560,11 +5757,13 @@ pub mod build {
                     assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);
                     let (guid_out, data_out) = out.split_at_mut(size_of::<Guid>());
                     let guid_out_ptr: *mut Guid = maybe_uninit_slice_as_mut_ptr(guid_out).cast();
+                    #[expect(clippy::undocumented_unsafe_blocks)]
                     unsafe {
                         guid_out_ptr.write_unaligned(src.vendor_guid);
                     }
 
                     let data_out_ptr = maybe_uninit_slice_as_mut_ptr(data_out);
+                    #[expect(clippy::undocumented_unsafe_blocks)]
                     unsafe {
                         src.vendor_defined_data
                             .as_ptr()
@@ -5593,6 +5792,7 @@ pub mod build {
             pub partition_format: device_path::media::PartitionFormat,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for HardDrive {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 42usize;
@@ -5609,6 +5809,7 @@ pub mod build {
                     DeviceSubType::MEDIA_HARD_DRIVE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5651,6 +5852,7 @@ pub mod build {
             pub partition_size: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for CdRom {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 24usize;
@@ -5664,6 +5866,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_CD_ROM, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5691,6 +5894,7 @@ pub mod build {
             pub vendor_defined_data: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Vendor<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize + size_of_val(self.vendor_defined_data);
@@ -5704,6 +5908,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_VENDOR, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5728,6 +5933,7 @@ pub mod build {
             pub path_name: &'a CStr16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for FilePath<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.path_name);
@@ -5744,6 +5950,7 @@ pub mod build {
                     DeviceSubType::MEDIA_FILE_PATH,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.path_name
@@ -5761,6 +5968,7 @@ pub mod build {
             pub protocol_guid: Guid,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for Protocol {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 20usize;
@@ -5774,6 +5982,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_PROTOCOL, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5791,6 +6000,7 @@ pub mod build {
             pub data: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for PiwgFirmwareFile<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.data);
@@ -5807,6 +6017,7 @@ pub mod build {
                     DeviceSubType::MEDIA_PIWG_FIRMWARE_FILE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.data
@@ -5824,6 +6035,7 @@ pub mod build {
             pub data: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for PiwgFirmwareVolume<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 4usize + size_of_val(self.data);
@@ -5840,6 +6052,7 @@ pub mod build {
                     DeviceSubType::MEDIA_PIWG_FIRMWARE_VOLUME,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     self.data
@@ -5859,6 +6072,7 @@ pub mod build {
             pub ending_offset: u64,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for RelativeOffsetRange {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 24usize;
@@ -5875,6 +6089,7 @@ pub mod build {
                     DeviceSubType::MEDIA_RELATIVE_OFFSET_RANGE,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr.add(4usize).write_bytes(0, size_of::<u32>());
@@ -5903,6 +6118,7 @@ pub mod build {
             pub disk_instance: u16,
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for RamDisk {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 38usize;
@@ -5916,6 +6132,7 @@ pub mod build {
                 let length = u16::try_from(size).unwrap();
                 let header =
                     DevicePathHeader::new(DeviceType::MEDIA, DeviceSubType::MEDIA_RAM_DISK, length);
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr
@@ -5981,6 +6198,7 @@ pub mod build {
             pub description_string: &'a [u8],
         }
 
+        #[expect(clippy::undocumented_unsafe_blocks)]
         unsafe impl BuildNode for BootSpecification<'_> {
             fn size_in_bytes(&self) -> Result<u16, BuildError> {
                 let size = 8usize + size_of_val(self.description_string);
@@ -5997,6 +6215,7 @@ pub mod build {
                     DeviceSubType::BIOS_BOOT_SPECIFICATION,
                     length,
                 );
+                #[expect(clippy::undocumented_unsafe_blocks)]
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     out_ptr

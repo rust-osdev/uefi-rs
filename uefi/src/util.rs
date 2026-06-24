@@ -5,6 +5,7 @@ use core::ptr::{self, NonNull};
 /// Copy the bytes of `val` to `ptr`, then advance pointer to just after the
 /// newly-copied bytes.
 pub const unsafe fn ptr_write_unaligned_and_add<T>(ptr: &mut *mut u8, val: T) {
+    // SAFETY: The memory is valid.
     unsafe {
         ptr.cast::<T>().write_unaligned(val);
         *ptr = ptr.add(size_of::<T>());

@@ -74,6 +74,7 @@ pub trait File: Sized {
     ) -> Result<FileHandle> {
         let mut ptr = ptr::null_mut();
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.imp().open)(
                 self.imp(),
@@ -83,6 +84,7 @@ pub trait File: Sized {
                 attributes,
             )
         }
+        // SAFETY: The memory is valid.
         .to_result_with_val(|| unsafe { FileHandle::new(ptr) })
     }
 
@@ -97,6 +99,7 @@ pub trait File: Sized {
     ///
     /// * [`Status::WARN_DELETE_FAILURE`]
     fn delete(mut self) -> Result {
+        // SAFETY: The memory is valid.
         let result = unsafe { (self.imp().delete)(self.imp()) }.to_result();
         mem::forget(self);
         result
@@ -127,6 +130,7 @@ pub trait File: Sized {
     ) -> Result<&'buf mut Info, Option<usize>> {
         let mut buffer_size = buffer.len();
         Info::assert_aligned(buffer);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.imp().get_info)(
                 self.imp(),
@@ -136,6 +140,7 @@ pub trait File: Sized {
             )
         }
         .to_result_with(
+            // SAFETY: The memory is valid.
             || unsafe { Info::from_uefi(buffer.as_mut_ptr().cast::<c_void>()) },
             |s| {
                 if s == Status::BUFFER_TOO_SMALL {
@@ -172,6 +177,7 @@ pub trait File: Sized {
     fn set_info<Info: FileProtocolInfo + ?Sized>(&mut self, info: &Info) -> Result {
         let info_ptr = ptr::from_ref(info).cast::<c_void>();
         let info_size = size_of_val(info);
+        // SAFETY: The memory is valid.
         unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).to_result() }
     }
 
@@ -188,6 +194,7 @@ pub trait File: Sized {
     /// * [`Status::ACCESS_DENIED`]
     /// * [`Status::VOLUME_FULL`]
     fn flush(&mut self) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.imp().flush)(self.imp()) }.to_result()
     }
 
@@ -215,6 +222,7 @@ pub trait File: Sized {
 // Internal File helper methods to access the function pointer table.
 trait FileInternal: File {
     fn imp(&mut self) -> &mut FileProtocolV1 {
+        // SAFETY: The pointer is not null, aligned, and initialized.
         unsafe { &mut *self.handle().0 }
     }
 }
@@ -244,8 +252,10 @@ impl FileHandle {
 
         self.is_regular_file().map(|is_file| {
             if is_file {
+                // SAFETY: The memory is valid.
                 unsafe { Regular(RegularFile::new(self)) }
             } else {
+                // SAFETY: The memory is valid.
                 unsafe { Dir(Directory::new(self)) }
             }
         })
@@ -281,11 +291,13 @@ impl File for FileHandle {
     }
 
     fn is_regular_file(&self) -> Result<bool> {
+        // SAFETY: The pointer was checked for null just above.
         let this = unsafe { self.0.as_mut().unwrap() };
 
         // - get_position fails with EFI_UNSUPPORTED on directories
         // - result is an error if the underlying file was already closed or deleted.
         let mut pos = 0;
+        // SAFETY: The memory is valid.
         match unsafe { (this.get_position)(this, &mut pos) } {
             Status::SUCCESS => Ok(true),
             Status::UNSUPPORTED => Ok(false),
@@ -300,6 +312,7 @@ impl File for FileHandle {
 
 impl Drop for FileHandle {
     fn drop(&mut self) {
+        // SAFETY: The memory is valid.
         let result: Result = unsafe { (self.imp().close)(self.imp()) }.to_result();
         // The spec says this always succeeds.
         result.expect("Failed to close file");
@@ -360,6 +373,7 @@ mod tests {
         };
         let file_handle = FileHandle(&mut file_impl);
 
+        // SAFETY: The memory is valid.
         let mut file = unsafe { RegularFile::new(file_handle) };
         let info = file.get_boxed_info::<FileInfo>().unwrap();
         assert_eq!(info.file_size(), 123);
@@ -372,6 +386,7 @@ mod tests {
         buffer_size: *mut usize,
         buffer: *mut c_void,
     ) -> Status {
+        // SAFETY: The memory is valid.
         assert_eq!(unsafe { *information_type }, FileInfo::GUID);
 
         // Use a temporary buffer to get some file info, then copy that
@@ -392,12 +407,15 @@ mod tests {
         )
         .unwrap();
         let required_size = size_of_val(info);
+        // SAFETY: The memory is valid.
         if unsafe { *buffer_size } < required_size {
+            // SAFETY: The memory is valid.
             unsafe {
                 *buffer_size = required_size;
             }
             Status::BUFFER_TOO_SMALL
         } else {
+            // SAFETY: The memory is valid.
             unsafe {
                 ptr::copy_nonoverlapping(
                     core::ptr::from_ref::<FileInfo>(info).cast(),
@@ -405,6 +423,7 @@ mod tests {
                     required_size,
                 );
             }
+            // SAFETY: The memory is valid.
             unsafe {
                 *buffer_size = required_size;
             }

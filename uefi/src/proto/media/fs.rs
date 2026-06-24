@@ -53,7 +53,9 @@ impl SimpleFileSystem {
     /// * [`Status::MEDIA_CHANGED`]
     pub fn open_volume(&mut self) -> Result<Directory> {
         let mut ptr = ptr::null_mut();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.open_volume)(&mut self.0, &mut ptr) }
+            // SAFETY: The memory is valid.
             .to_result_with_val(|| unsafe { Directory::new(FileHandle::new(ptr.cast())) })
     }
 }

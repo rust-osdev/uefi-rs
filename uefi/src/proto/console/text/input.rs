@@ -26,6 +26,7 @@ impl Input {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
 
@@ -77,8 +78,10 @@ impl Input {
     pub fn read_key(&mut self) -> Result<Option<Key>> {
         let mut key = MaybeUninit::<InputKey>::uninit();
 
+        // SAFETY: The memory is valid.
         match unsafe { (self.0.read_key_stroke)(&mut self.0, key.as_mut_ptr()) } {
             Status::NOT_READY => Ok(None),
+            // SAFETY: The memory is valid.
             other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
     }
@@ -88,6 +91,7 @@ impl Input {
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_key_event(&self) -> Result<Event> {
+        // SAFETY: The memory is valid.
         unsafe { Event::from_ptr(self.0.wait_for_key) }.ok_or(Error::from(Status::UNSUPPORTED))
     }
 }
@@ -194,6 +198,7 @@ impl InputEx {
     ///
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
 
@@ -211,8 +216,10 @@ impl InputEx {
     pub fn read_key(&mut self) -> Result<Option<KeyData>> {
         let mut key = MaybeUninit::<RawKeyData>::uninit();
 
+        // SAFETY: The memory is valid.
         match unsafe { (self.0.read_key_stroke_ex)(&mut self.0, key.as_mut_ptr()) } {
             Status::NOT_READY => Ok(None),
+            // SAFETY: The memory is valid.
             other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
         }
     }
@@ -231,6 +238,7 @@ impl InputEx {
     /// - `Unsupported` if the device does not support the ability to have its
     ///   state set or the requested state change was not supported.
     pub fn set_state(&mut self, state: KeyToggleState) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_state)(&mut self.0, &state) }.to_result()
     }
 
@@ -239,6 +247,7 @@ impl InputEx {
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_key_event(&self) -> Result<Event> {
+        // SAFETY: The memory is valid.
         unsafe { Event::from_ptr(self.0.wait_for_key_ex) }.ok_or(Error::from(Status::UNSUPPORTED))
     }
 
@@ -282,6 +291,7 @@ impl InputEx {
             },
         };
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.register_key_notify)(&mut self.0, &raw_key_data, notify_function, &mut handle)
                 .to_result_with_val(|| KeyNotifyHandle(handle))
@@ -296,6 +306,7 @@ impl InputEx {
     ///
     /// - [`Status::INVALID_PARAMETER`] if the handle is not valid.
     pub fn unregister_key_notify(&mut self, handle: KeyNotifyHandle) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.unregister_key_notify)(&mut self.0, handle.0) }.to_result()
     }
 }

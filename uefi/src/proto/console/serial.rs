@@ -128,12 +128,14 @@ impl Serial {
     ///
     /// - [`Status::DEVICE_ERROR`]: serial device could not be reset.
     pub fn reset(&mut self) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0) }.to_result()
     }
 
     /// Returns the current I/O mode.
     #[must_use]
     pub const fn io_mode(&self) -> &IoMode {
+        // SAFETY: The memory is valid.
         unsafe { &*self.0.mode }
     }
 
@@ -157,6 +159,7 @@ impl Serial {
     ///   unsupported value
     /// - [`Status::DEVICE_ERROR`]: serial device is not functioning correctly
     pub fn set_attributes(&mut self, mode: &IoMode) -> Result {
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.set_attributes)(
                 &mut self.0,
@@ -178,6 +181,7 @@ impl Serial {
     /// - [`Status::DEVICE_ERROR`]: serial device is not functioning correctly
     pub fn get_control_bits(&self) -> Result<ControlBits> {
         let mut bits = ControlBits::empty();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.get_control_bits)(&self.0, &mut bits) }.to_result_with_val(|| bits)
     }
 
@@ -191,6 +195,7 @@ impl Serial {
     /// - [`Status::UNSUPPORTED`]: serial device does not support this operation
     /// - [`Status::DEVICE_ERROR`]: serial device is not functioning correctly
     pub fn set_control_bits(&mut self, bits: ControlBits) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_control_bits)(&mut self.0, bits) }.to_result()
     }
 
@@ -216,6 +221,7 @@ impl Serial {
     /// - [`Status::TIMEOUT`]: operation was stopped due to a timeout or overrun
     pub fn read(&mut self, buffer: &mut [u8]) -> Result<(), usize /* read bytes on timeout*/> {
         let mut buffer_size = buffer.len();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.read)(&mut self.0, &mut buffer_size, buffer.as_mut_ptr()) }.to_result_with(
             || {
                 // By spec: Either reads all requested bytes (and blocks) or
@@ -309,6 +315,7 @@ impl Serial {
     /// - [`Status::TIMEOUT`]: data write was stopped due to a timeout
     pub fn write(&mut self, data: &[u8]) -> Result<(), usize /* bytes written on timeout */> {
         let mut buffer_size = data.len();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.write)(&mut self.0, &mut buffer_size, data.as_ptr()) }.to_result_with(
             || {
                 // By spec: Either reads all requested bytes (and blocks) or
@@ -410,6 +417,7 @@ impl Serial {
         let ptr = &raw const self.0;
         // SAFETY: ptr is guaranteed to be not null and by checking the revision
         // we know the underlying allocation has the correct size.
+        // SAFETY: The memory is valid.
         let protocol = unsafe {
             ptr.cast::<SerialIoProtocol_1_1>()
                 .as_ref()

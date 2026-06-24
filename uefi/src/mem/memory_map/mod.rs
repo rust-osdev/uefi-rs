@@ -111,6 +111,7 @@ mod tests_mmap_artificial {
     fn buffer_to_map(buffer: &mut [MemoryDescriptor]) -> MemoryMapRefMut<'_> {
         let mmap_len = size_of_val(buffer);
         let mmap = {
+            // SAFETY: The pointer is valid for the requested slice length.
             unsafe { core::slice::from_raw_parts_mut(buffer.as_mut_ptr().cast::<u8>(), mmap_len) }
         };
 
@@ -261,6 +262,7 @@ mod tests_mmap_real {
     fn basic_functionality() {
         let mut buf = MMAP_RAW;
         let buf =
+            // SAFETY: The pointer is valid for the requested slice length.
             unsafe { slice::from_raw_parts_mut(buf.as_mut_ptr().cast::<u8>(), MMAP_META.map_size) };
         let mut mmap = MemoryMapRefMut::new(buf, MMAP_META).unwrap();
 

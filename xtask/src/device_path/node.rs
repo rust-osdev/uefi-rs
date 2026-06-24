@@ -212,6 +212,8 @@ impl Node {
                         let ptr = &raw const #field_val;
                         let (ptr, len) = ptr_meta::to_raw_parts(ptr);
                         let byte_len = size_of::<#slice_elem_ty>() * len;
+                        // SAFETY: The memory is valid.
+                        #[expect(clippy::undocumented_unsafe_blocks)] // quote!() is removing comments
                         unsafe { slice::from_raw_parts(ptr.cast::<u8>(), byte_len) }
                     })
                 } else {
@@ -289,6 +291,7 @@ impl Node {
                     // be safe for arbitrary byte patterns (see
                     // `BaseType::new`), and the overall node size has
                     // been verified above, so this conversion is safe.
+                    #[expect(clippy::undocumented_unsafe_blocks)] // quote!() is removing comments
                     Ok(unsafe { &*node })
                 }
             }
@@ -479,6 +482,8 @@ impl Node {
                     DeviceSubType::#sub_type,
                     length,
                 );
+                // SAFETY: The memory is valid.
+                #[expect(clippy::undocumented_unsafe_blocks)] // quote!() is removing comments
                 unsafe {
                     out_ptr.cast::<DevicePathHeader>().write_unaligned(header);
                     #(#copy_stmts)*
@@ -499,6 +504,9 @@ impl Node {
         let write_data_method = self.gen_builder_write_data_method();
 
         quote!(
+            // SAFETY: The implementation carefully takes care of the type
+            // layout and memory invariants.
+            #[expect(clippy::undocumented_unsafe_blocks)] // quote!() is removing comments
             unsafe impl BuildNode for #struct_ident #lifetime {
                 #size_in_bytes_method
 

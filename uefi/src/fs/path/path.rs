@@ -19,6 +19,7 @@ impl Path {
     /// Constructor.
     #[must_use]
     pub fn new<S: AsRef<CStr16> + ?Sized>(s: &S) -> &Self {
+        // SAFETY: The handle is known to point to live storage here.
         unsafe { &*(ptr::from_ref(s.as_ref()) as *const Self) }
     }
 

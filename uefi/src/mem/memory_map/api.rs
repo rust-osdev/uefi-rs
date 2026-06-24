@@ -56,6 +56,7 @@ pub trait MemoryMap: Debug + Index<usize, Output = MemoryDescriptor> {
             None
         } else {
             let offset = index * self.meta().desc_size;
+            // SAFETY: The memory is valid.
             unsafe {
                 self.buffer()
                     .as_ptr()
@@ -102,6 +103,7 @@ pub trait MemoryMapMut: MemoryMap + IndexMut<usize> {
             None
         } else {
             let offset = index * self.meta().desc_size;
+            // SAFETY: The memory is valid.
             unsafe {
                 self.buffer_mut()
                     .as_mut_ptr()

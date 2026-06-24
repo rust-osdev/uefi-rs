@@ -228,6 +228,7 @@ impl MemoryMapRefMut<'_> {
 
         // SAFETY: the data starting at `offset1` and `offset2` are valid
         // descriptors, and do not overlap.
+        // SAFETY: The memory is valid.
         unsafe {
             ptr::swap_nonoverlapping(base.add(offset1), base.add(offset2), self.meta.desc_size);
         }
@@ -312,6 +313,7 @@ impl MemoryMapBackingMemory {
         // If this panics, the UEFI implementation is broken.
         assert_eq!(memory_map_meta.map_size % memory_map_meta.desc_size, 0);
 
+        // SAFETY: The memory is valid.
         unsafe { Ok(Self::from_raw(ptr, len)) }
     }
 
@@ -331,6 +333,7 @@ impl MemoryMapBackingMemory {
     #[cfg(test)]
     pub(crate) fn from_slice(buffer: &mut [u8]) -> Self {
         let len = buffer.len();
+        // SAFETY: The memory is valid.
         unsafe { Self::from_raw(buffer.as_mut_ptr(), len) }
     }
 
@@ -368,6 +371,7 @@ impl MemoryMapBackingMemory {
 impl Drop for MemoryMapBackingMemory {
     fn drop(&mut self) {
         if boot::are_boot_services_active() {
+            // SAFETY: This pointer was allocated by the matching UEFI allocator.
             let res = unsafe { boot::free_pool(self.0.cast()) };
             if let Err(e) = res {
                 log::error!("Failed to deallocate memory map: {e:?}");
@@ -493,6 +497,7 @@ mod tests {
         let desc_size = size_of::<MemoryDescriptor>();
         let len = size_of_val(memory);
         let ptr = memory.as_mut_ptr().cast::<u8>();
+        // SAFETY: The pointer is valid for the requested slice length.
         let slice = unsafe { core::slice::from_raw_parts_mut(ptr, len) };
         let meta = MemoryMapMeta {
             map_size: len,
@@ -543,6 +548,7 @@ mod tests {
     fn memory_map_ref_mut_sorts_empty_map() {
         let mut memory: [MemoryDescriptor; 0] = [];
         let desc_size = size_of::<MemoryDescriptor>();
+        // SAFETY: The pointer is valid for the requested slice length.
         let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), 0) };
         let meta = MemoryMapMeta {
             map_size: 0,
@@ -562,6 +568,7 @@ mod tests {
     fn memory_map_ref_rejects_invalid_meta() {
         let mut memory = [MemoryDescriptor::default(); 2];
         let raw_len = size_of_val(&memory);
+        // SAFETY: The pointer is valid for the requested slice length.
         let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
         let desc_size = size_of::<MemoryDescriptor>();
         let base_meta = MemoryMapMeta {
@@ -627,6 +634,7 @@ mod tests {
         let desc_size = size_of::<MemoryDescriptor>();
         let map_size = BASE_MMAP_UNSORTED.len() * desc_size;
         let raw_len = size_of_val(&memory);
+        // SAFETY: The pointer is valid for the requested slice length.
         let raw = unsafe { core::slice::from_raw_parts_mut(memory.as_mut_ptr().cast(), raw_len) };
         let meta = MemoryMapMeta {
             map_size,
@@ -639,6 +647,7 @@ mod tests {
         let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
 
         assert_eq!(mmap.buffer().len(), map_size);
+        // SAFETY: The memory is valid.
         assert_eq!(unsafe { mmap.buffer_mut() }.len(), map_size);
     }
 }

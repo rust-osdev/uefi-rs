@@ -26,6 +26,7 @@ impl Pointer {
     /// # Errors
     /// - `DeviceError` if the device is malfunctioning and cannot be reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
     }
 
@@ -43,6 +44,7 @@ impl Pointer {
         let mut pointer_state = PointerState::default();
         let pointer_state_ptr: *mut _ = &mut pointer_state;
 
+        // SAFETY: The memory is valid.
         match unsafe { (self.0.get_state)(&mut self.0, pointer_state_ptr.cast()) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(pointer_state)),
@@ -54,12 +56,14 @@ impl Pointer {
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_input_event(&self) -> Result<Event> {
+        // SAFETY: The memory is valid.
         unsafe { Event::from_ptr(self.0.wait_for_input) }.ok_or(Error::from(Status::UNSUPPORTED))
     }
 
     /// Returns a reference to the pointer device information.
     #[must_use]
     pub const fn mode(&self) -> &PointerMode {
+        // SAFETY: The memory is valid.
         unsafe { &*self.0.mode.cast() }
     }
 }

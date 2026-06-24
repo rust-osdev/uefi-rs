@@ -150,6 +150,7 @@ impl PcrEventInputs {
 
         let mut ptr: *mut u8 = buffer.as_mut_ptr().cast();
 
+        // SAFETY: The memory is valid.
         unsafe {
             ptr_write_unaligned_and_add(&mut ptr, size_field);
             ptr_write_unaligned_and_add(
@@ -286,6 +287,7 @@ impl<'a> EventLogHeader<'a> {
 
         // Safety: we know the slice is big enough because we just
         // safely got the field after the slice (`vendor_info_size`).
+        // SAFETY: The memory is valid.
         let algorithm_digest_sizes = unsafe {
             let ptr: *const AlgorithmDigestSize = event.as_ptr().add(28).cast();
             AlgorithmDigestSizes(UnalignedSlice::new(ptr, number_of_algorithms))
@@ -330,6 +332,7 @@ impl EventLog<'_> {
     pub fn iter(&self) -> EventLogIter<'_> {
         if let Some(header) = self.header() {
             // Advance past the header
+            // SAFETY: The memory is valid.
             let location = unsafe { self.location.add(header.size_in_bytes) };
 
             EventLogIter {
@@ -356,6 +359,7 @@ impl EventLog<'_> {
         } else {
             // Safety: we trust that the protocol has given us a valid range
             // of memory to read from.
+            // SAFETY: The memory is valid.
             let event = unsafe { v1::PcrEvent::from_ptr(self.location) };
             EventLogHeader::new(event)
         }
@@ -443,9 +447,13 @@ pub struct PcrEvent<'a> {
 impl<'a> PcrEvent<'a> {
     unsafe fn from_ptr(ptr: *const u8, header: EventLogHeader<'a>) -> Option<Self> {
         let ptr_u32: *const u32 = ptr.cast();
+        // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let pcr_index = PcrIndex(unsafe { ptr_u32.read_unaligned() });
+        // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let event_type = EventType(unsafe { ptr_u32.add(1).read_unaligned() });
+        // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let digests_count = unsafe { ptr_u32.add(2).read_unaligned() };
+        // SAFETY: The memory is valid.
         let digests_ptr: *const u8 = unsafe { ptr.add(12) };
 
         // Get the byte size of the digests so that the digests iterator
@@ -453,17 +461,24 @@ impl<'a> PcrEvent<'a> {
         let mut digests_byte_size = 0;
         let mut elem_ptr = digests_ptr;
         for _ in 0..digests_count {
+            // SAFETY: The source memory may be unaligned, so this uses unaligned access.
             let algorithm_id = AlgorithmId(unsafe { elem_ptr.cast::<u16>().read_unaligned() });
             let alg_and_digest_size = size_of::<AlgorithmId>()
                 + usize::from(header.algorithm_digest_sizes.get_size(algorithm_id)?);
             digests_byte_size += alg_and_digest_size;
+            // SAFETY: The memory is valid.
             elem_ptr = unsafe { elem_ptr.add(alg_and_digest_size) };
         }
 
+        // SAFETY: The pointer is valid for the requested slice length.
         let digests = unsafe { slice::from_raw_parts(digests_ptr, digests_byte_size) };
+        // SAFETY: The memory is valid.
         let event_size_ptr = unsafe { digests_ptr.add(digests_byte_size) };
+        // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let event_size = usize_from_u32(unsafe { event_size_ptr.cast::<u32>().read_unaligned() });
+        // SAFETY: The memory is valid.
         let event_data_ptr = unsafe { event_size_ptr.add(4) };
+        // SAFETY: The pointer is valid for the requested slice length.
         let event_data = unsafe { slice::from_raw_parts(event_data_ptr, event_size) };
 
         Some(Self {
@@ -471,6 +486,7 @@ impl<'a> PcrEvent<'a> {
             event_type,
             digests,
             event_data,
+            // SAFETY: The memory is valid.
             next: unsafe { event_data_ptr.add(event_size) },
             algorithm_digest_sizes: header.algorithm_digest_sizes,
         })
@@ -533,6 +549,7 @@ impl<'a> Iterator for EventLogIter<'a> {
 
         // Safety: we trust that the protocol has given us a valid range
         // of memory to read from.
+        // SAFETY: The memory is valid.
         let event = unsafe { PcrEvent::from_ptr(self.location, self.header.clone()?)? };
 
         // If this is the last entry, set the location to null so that
@@ -561,6 +578,7 @@ impl Tcg {
     /// Get information about the protocol and TPM device.
     pub fn get_capability(&mut self) -> Result<BootServiceCapability> {
         let mut capability = BootServiceCapability::default();
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.get_capability)(&mut self.0, ptr::from_mut(&mut capability).cast())
                 .to_result_with_val(|| capability)
@@ -574,6 +592,7 @@ impl Tcg {
         let mut last_entry = 0;
         let mut truncated = Boolean::default();
 
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.get_event_log)(
                 &mut self.0,
@@ -585,6 +604,7 @@ impl Tcg {
         };
 
         if status.is_success() {
+            // SAFETY: The memory is valid.
             let log = unsafe {
                 v1::EventLog::new(
                     location as *const u8,
@@ -604,6 +624,7 @@ impl Tcg {
         let mut location = 0;
         let mut last_entry = 0;
         let mut truncated = Boolean::default();
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.get_event_log)(
                 &mut self.0,
@@ -637,6 +658,7 @@ impl Tcg {
     ) -> Result {
         let event: *const PcrEventInputs = event;
         let (event, _event_size) = ptr_meta::to_raw_parts(event);
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.hash_log_extend_event)(
                 &mut self.0,
@@ -669,6 +691,7 @@ impl Tcg {
         let output_parameter_block_len = u32::try_from(output_parameter_block.len())
             .map_err(|_| Error::from(Status::BAD_BUFFER_SIZE))?;
 
+        // SAFETY: The memory is valid.
         unsafe {
             (self.0.submit_command)(
                 &mut self.0,
@@ -686,6 +709,7 @@ impl Tcg {
     pub fn get_active_pcr_banks(&mut self) -> Result<HashAlgorithm> {
         let mut active_pcr_banks = Tcg2HashAlgorithmBitmap::empty();
 
+        // SAFETY: The memory is valid.
         let status = unsafe { (self.0.get_active_pcr_banks)(&mut self.0, &mut active_pcr_banks) };
 
         status.to_result_with_val(|| HashAlgorithm::from_bits_retain(active_pcr_banks.bits()))
@@ -696,6 +720,7 @@ impl Tcg {
     /// rebooted twice.
     pub fn set_active_pcr_banks(&mut self, active_pcr_banks: HashAlgorithm) -> Result {
         let active_pcr_banks = Tcg2HashAlgorithmBitmap::from_bits_retain(active_pcr_banks.bits());
+        // SAFETY: The memory is valid.
         unsafe { (self.0.set_active_pcr_banks)(&mut self.0, active_pcr_banks) }.to_result()
     }
 
@@ -712,6 +737,7 @@ impl Tcg {
         let mut operation_present = 0;
         let mut response = 0;
 
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (self.0.get_result_of_set_active_pcr_banks)(
                 &mut self.0,
@@ -758,6 +784,7 @@ mod tests {
         // Cast to a byte slice to check the data is exactly as expected.
         let event_ptr: *const PcrEventInputs = event;
         let event_ptr: *const u8 = event_ptr.cast();
+        // SAFETY: The pointer is valid for the requested slice length.
         let event_bytes = unsafe { slice::from_raw_parts(event_ptr, size_of_val(event)) };
 
         #[rustfmt::skip]
@@ -917,6 +944,7 @@ mod tests {
         let log = EventLog {
             _lifetime: PhantomData,
             location: bytes.as_ptr(),
+            // SAFETY: The memory is valid.
             last_entry: unsafe { bytes.as_ptr().add(267) },
             is_truncated: false,
         };

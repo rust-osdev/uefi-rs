@@ -74,6 +74,7 @@ impl LoadFile {
     ) -> Result<Box<[u8]>> {
         let fetch_data_fn = |buf: &'a mut [u8]| {
             let mut size = buf.len();
+            // SAFETY: The memory is valid.
             let status = unsafe {
                 (self.0.load_file)(
                     &raw mut self.0,
@@ -135,6 +136,7 @@ impl LoadFile2 {
     pub fn load_file<'a>(&mut self, file_path: &DevicePath) -> Result<Box<[u8]>> {
         let fetch_data_fn = |buf: &'a mut [u8]| {
             let mut size = buf.len();
+            // SAFETY: The memory is valid.
             let status = unsafe {
                 (self.0.load_file)(
                     &raw mut self.0,

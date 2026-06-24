@@ -29,12 +29,14 @@ impl Timestamp {
     /// Get the current value of the timestamp counter.
     #[must_use]
     pub fn get_timestamp(&self) -> u64 {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.get_timestamp)() }
     }
 
     /// Get the properties of the timestamp counter.
     pub fn get_properties(&self) -> Result<TimestampProperties> {
         let mut properties = TimestampProperties::default();
+        // SAFETY: The memory is valid.
         unsafe { (self.0.get_properties)(&mut properties) }.to_result_with_val(|| properties)
     }
 }
@@ -84,11 +86,13 @@ impl ResetNotification {
     /// }
     /// ```
     pub fn register_reset_notify(&mut self, reset_function: ResetSystemFn) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.register_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 
     /// Remove a reset notification function that was previously registered with [`ResetNotification::register_reset_notify`].
     pub fn unregister_reset_notify(&mut self, reset_function: ResetSystemFn) -> Result {
+        // SAFETY: The memory is valid.
         unsafe { (self.0.unregister_reset_notify)(&mut self.0, reset_function) }.to_result()
     }
 }

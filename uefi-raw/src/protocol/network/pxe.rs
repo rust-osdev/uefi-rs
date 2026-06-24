@@ -302,18 +302,24 @@ impl Debug for PxeBaseCodePacket {
 
 impl AsRef<[u8; 1472]> for PxeBaseCodePacket {
     fn as_ref(&self) -> &[u8; 1472] {
+        // SAFETY: The packet union is defined with `raw` as the byte view for
+        // the full storage, and any byte pattern is valid here.
         unsafe { &self.raw }
     }
 }
 
 impl AsRef<PxeBaseCodeDhcpV4Packet> for PxeBaseCodePacket {
     fn as_ref(&self) -> &PxeBaseCodeDhcpV4Packet {
+        // SAFETY: The caller chooses this view; the union stores the packet
+        // bytes in a layout compatible with the DHCPv4 packet type.
         unsafe { &self.dhcpv4 }
     }
 }
 
 impl AsRef<PxeBaseCodeDhcpV6Packet> for PxeBaseCodePacket {
     fn as_ref(&self) -> &PxeBaseCodeDhcpV6Packet {
+        // SAFETY: The caller chooses this view; the union stores the packet
+        // bytes in a layout compatible with the DHCPv6 packet type.
         unsafe { &self.dhcpv6 }
     }
 }

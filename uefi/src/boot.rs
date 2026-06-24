@@ -66,6 +66,7 @@ pub fn image_handle() -> Handle {
     let ptr = IMAGE_HANDLE.load(Ordering::Acquire);
     // Safety: the image handle must be valid. We know it is, because it was set
     // by `set_image_handle`, which has that same safety requirement.
+    // SAFETY: The memory is valid.
     unsafe { Handle::from_ptr(ptr) }.expect("set_image_handle has not been called")
 }
 
@@ -121,9 +122,11 @@ fn boot_services_raw_panicking() -> NonNull<uefi_raw::table::boot::BootServices>
 #[must_use]
 pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     TplGuard {
+        // SAFETY: The memory is valid.
         old_tpl: unsafe { (bt.raise_tpl)(tpl) },
     }
 }
@@ -158,6 +161,7 @@ pub fn allocate_pages(
     count: usize,
 ) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let (ty, initial_addr) = match allocation_type {
@@ -167,6 +171,7 @@ pub fn allocate_pages(
     };
 
     let mut addr1 = initial_addr;
+    // SAFETY: The memory is valid.
     unsafe { (bt.allocate_pages)(ty, memory_type, count, &mut addr1) }.to_result()?;
 
     // The UEFI spec allows `allocate_pages` to return a valid allocation at
@@ -181,9 +186,11 @@ pub fn allocate_pages(
     // not yet been freed, so if this allocation succeeds it should be at a
     // non-zero address.
     let mut addr2 = initial_addr;
+    // SAFETY: The memory is valid.
     let r = unsafe { (bt.allocate_pages)(ty, memory_type, count, &mut addr2) }.to_result();
 
     // Free the original allocation (ignoring errors).
+    // SAFETY: This pointer was allocated by the matching UEFI allocator.
     let _unused = unsafe { (bt.free_pages)(addr1, count) };
 
     // Return an error if the second allocation failed, or if it is still at
@@ -209,9 +216,11 @@ pub fn allocate_pages(
 /// * [`Status::INVALID_PARAMETER`]: `ptr` is not page aligned or is otherwise invalid.
 pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let addr = ptr.as_ptr() as PhysicalAddress;
+    // SAFETY: This pointer was allocated by the matching UEFI allocator.
     unsafe { (bt.free_pages)(addr, count) }.to_result()
 }
 
@@ -239,9 +248,11 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
 ///   [`MemoryType::UNACCEPTED`], or in the range <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
 pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut buffer = ptr::null_mut();
+    // SAFETY: The memory is valid.
     let ptr = unsafe { (bt.allocate_pool)(memory_type, size, &mut buffer) }
         .to_result_with_val(|| buffer)?;
 
@@ -260,8 +271,10 @@ pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>
 /// * [`Status::INVALID_PARAMETER`]: `ptr` is invalid.
 pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: This pointer was allocated by the matching UEFI allocator.
     unsafe { (bt.free_pool)(ptr.as_ptr()) }.to_result()
 }
 
@@ -274,6 +287,7 @@ pub unsafe fn free_pool(ptr: NonNull<u8>) -> Result {
 #[must_use]
 pub(crate) fn memory_map_size() -> MemoryMapMeta {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut map_size = 0;
@@ -281,6 +295,7 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
     let mut desc_size = 0;
     let mut desc_version = 0;
 
+    // SAFETY: The memory is valid.
     let status = unsafe {
         (bt.get_memory_map)(
             &mut map_size,
@@ -358,6 +373,7 @@ pub fn memory_map(mt: MemoryType) -> Result<MemoryMapOwned> {
 /// than the buffer, which is reflected by the return value.
 pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut map_size = buf.len();
@@ -372,6 +388,7 @@ pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
         "Memory map buffers must be aligned like a MemoryDescriptor"
     );
 
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.get_memory_map)(
             &mut map_size,
@@ -416,6 +433,7 @@ pub unsafe fn create_event(
     notify_ctx: Option<NonNull<c_void>>,
 ) -> Result<Event> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut event = ptr::null_mut();
@@ -423,14 +441,17 @@ pub unsafe fn create_event(
     // Safety: the argument types of the function pointers are defined
     // differently, but are compatible and can be safely transmuted.
     let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> =
+        // SAFETY: The memory is valid.
         unsafe { mem::transmute(notify_fn) };
 
     let notify_ctx = opt_nonnull_to_ptr(notify_ctx);
 
     // Now we're ready to call UEFI
+    // SAFETY: The memory is valid.
     unsafe { (bt.create_event)(event_ty, notify_tpl, notify_fn, notify_ctx, &mut event) }
         .to_result_with_val(
             // OK to unwrap: event is non-null for Status::SUCCESS.
+            // SAFETY: The memory is valid.
             || unsafe { Event::from_ptr(event) }.unwrap(),
         )
 }
@@ -484,6 +505,7 @@ pub unsafe fn create_event_ex(
     event_group: Option<NonNull<Guid>>,
 ) -> Result<Event> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     if bt.header.revision < Revision::EFI_2_00 {
@@ -495,8 +517,10 @@ pub unsafe fn create_event_ex(
     // Safety: the argument types of the function pointers are defined
     // differently, but are compatible and can be safely transmuted.
     let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> =
+        // SAFETY: The memory is valid.
         unsafe { mem::transmute(notify_fn) };
 
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.create_event_ex)(
             event_type,
@@ -509,6 +533,7 @@ pub unsafe fn create_event_ex(
     }
     .to_result_with_val(
         // OK to unwrap: event is non-null for Status::SUCCESS.
+        // SAFETY: The memory is valid.
         || unsafe { Event::from_ptr(event) }.unwrap(),
     )
 }
@@ -528,8 +553,10 @@ pub unsafe fn create_event_ex(
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
 pub fn check_event(event: &Event) -> Result<bool> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     let status = unsafe { (bt.check_event)(event.as_ptr()) };
     match status {
         Status::SUCCESS => Ok(true),
@@ -560,8 +587,10 @@ pub fn check_event(event: &Event) -> Result<bool> {
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
 pub fn signal_event(event: &Event) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.signal_event)(event.as_ptr()) }.to_result()
 }
 
@@ -577,8 +606,10 @@ pub fn signal_event(event: &Event) -> Result {
 /// allowed to return an error if needed.
 pub fn close_event(event: Event) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.close_event)(event.as_ptr()) }.to_result()
 }
 
@@ -591,6 +622,7 @@ pub fn close_event(event: Event) -> Result {
 /// [`TIMER`]: EventType::TIMER
 pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let time = trigger_time.to_100ns_steps();
@@ -599,6 +631,7 @@ pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
         TimerTrigger::Periodic(_) => TimerDelay::PERIODIC,
         TimerTrigger::Relative(_) => TimerDelay::RELATIVE,
     };
+    // SAFETY: The memory is valid.
     unsafe { (bt.set_timer)(event.as_ptr(), ty, time) }.to_result()
 }
 
@@ -637,12 +670,14 @@ pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
 pub fn wait_for_event(events: &mut [Event]) -> Result<usize, Option<usize>> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let number_of_events = events.len();
     let events: *mut uefi_raw::Event = events.as_mut_ptr().cast();
 
     let mut index = 0;
+    // SAFETY: The memory is valid.
     unsafe { (bt.wait_for_event)(number_of_events, events, &mut index) }.to_result_with(
         || index,
         |s| {
@@ -679,6 +714,7 @@ pub fn connect_controller(
     recursive: bool,
 ) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let driver_image: *const uefi_raw::Handle = if let Some(last) = driver_image.last() {
@@ -691,6 +727,7 @@ pub fn connect_controller(
         ptr::null()
     };
 
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.connect_controller)(
             controller.as_ptr(),
@@ -724,8 +761,10 @@ pub fn disconnect_controller(
     child: Option<Handle>,
 ) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.disconnect_controller)(
             controller.as_ptr(),
@@ -757,9 +796,11 @@ pub unsafe fn install_protocol_interface(
     interface: *const c_void,
 ) -> Result<Handle> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut handle = Handle::opt_to_ptr(handle);
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.install_protocol_interface)(
             &mut handle,
@@ -768,6 +809,7 @@ pub unsafe fn install_protocol_interface(
             interface,
         )
     }
+    // SAFETY: The memory is valid.
     .to_result_with_val(|| unsafe { Handle::from_ptr(handle) }.unwrap())
 }
 
@@ -796,8 +838,10 @@ pub unsafe fn reinstall_protocol_interface(
     new_interface: *const c_void,
 ) -> Result<()> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.reinstall_protocol_interface)(handle.as_ptr(), protocol, old_interface, new_interface)
     }
@@ -825,8 +869,10 @@ pub unsafe fn uninstall_protocol_interface(
     interface: *const c_void,
 ) -> Result<()> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.uninstall_protocol_interface)(handle.as_ptr(), protocol, interface).to_result() }
 }
 
@@ -847,9 +893,11 @@ pub fn register_protocol_notify(
     event: &Event,
 ) -> Result<SearchType<'static>> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut key = ptr::null();
+    // SAFETY: The memory is valid.
     unsafe { (bt.register_protocol_notify)(protocol, event.as_ptr(), &mut key) }.to_result_with_val(
         || {
             // OK to unwrap: key is non-null for Status::SUCCESS.
@@ -867,11 +915,13 @@ pub fn register_protocol_notify(
 /// * [`Status::OUT_OF_RESOURCES`]: out of memory.
 pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut protocols = ptr::null_mut();
     let mut count = 0;
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.protocols_per_handle)(handle.as_ptr(), &mut protocols, &mut count) }
         .to_result_with_val(|| ProtocolsPerHandle {
             count,
@@ -900,11 +950,13 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
     device_path: &mut &DevicePath,
 ) -> Result<Handle> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut handle = ptr::null_mut();
     let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
         device_path.as_ffi_ptr().cast();
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).to_result_with_val(
             || {
@@ -933,6 +985,7 @@ pub fn locate_handle<'buf>(
     buffer: &'buf mut [MaybeUninit<Handle>],
 ) -> Result<&'buf [Handle], Option<usize>> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     // Obtain the needed data from the parameters.
@@ -946,6 +999,7 @@ pub fn locate_handle<'buf>(
 
     let mut buffer_size = buffer.len() * size_of::<Handle>();
     let status =
+        // SAFETY: The memory is valid.
         unsafe { (bt.locate_handle)(ty, guid, key, &mut buffer_size, buffer.as_mut_ptr().cast()) };
 
     let num_handles = buffer_size / size_of::<Handle>();
@@ -977,6 +1031,7 @@ pub fn locate_handle<'buf>(
 /// * [`Status::OUT_OF_RESOURCES`]: out of memory.
 pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let (ty, guid, key) = match search_ty {
@@ -989,6 +1044,7 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
 
     let mut num_handles: usize = 0;
     let mut buffer: *mut uefi_raw::Handle = ptr::null_mut();
+    // SAFETY: The memory is valid.
     unsafe { (bt.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
         .to_result_with_val(|| HandleBuffer {
             count: num_handles,
@@ -1030,6 +1086,7 @@ pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
         .len();
 
     // Mark the returned number of elements as initialized.
+    // SAFETY: The memory is valid.
     unsafe {
         handles.set_len(num_handles);
     }
@@ -1114,9 +1171,11 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
     attributes: OpenProtocolAttributes,
 ) -> Result<ScopedProtocol<P>> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut interface = ptr::null_mut();
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.open_protocol)(
             params.handle.as_ptr(),
@@ -1131,6 +1190,7 @@ pub unsafe fn open_protocol<P: ProtocolPointer + ?Sized>(
         let interface = if interface.is_null() {
             None
         } else {
+            // SAFETY: The memory is valid.
             NonNull::new(unsafe { P::mut_ptr_from_ffi(interface) })
         };
         ScopedProtocol {
@@ -1162,6 +1222,7 @@ pub fn open_protocol_exclusive<P: ProtocolPointer + ?Sized>(
     // Safety: opening in exclusive mode with the correct agent
     // handle set ensures that the protocol cannot be modified or
     // removed while it is open, so this usage is safe.
+    // SAFETY: The memory is valid.
     unsafe {
         open_protocol::<P>(
             OpenProtocolParams {
@@ -1185,9 +1246,11 @@ pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) ->
     const TEST_PROTOCOL: u32 = 0x04;
 
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let mut interface = ptr::null_mut();
+    // SAFETY: The memory is valid.
     let status = unsafe {
         (bt.open_protocol)(
             params.handle.as_ptr(),
@@ -1234,11 +1297,13 @@ pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) ->
 ///   should not be started.
 pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Result<Handle> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let (boot_policy, device_path, source_buffer, source_size) = source.to_ffi_params();
 
     let mut image_handle = ptr::null_mut();
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.load_image)(
             boot_policy.into(),
@@ -1263,8 +1328,10 @@ pub fn load_image(parent_image_handle: Handle, source: LoadImageSource) -> Resul
 /// * [`Status::INVALID_PARAMETER`]: `image_handle` is not valid.
 pub fn unload_image(image_handle: Handle) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.unload_image)(image_handle.as_ptr()) }.to_result()
 }
 
@@ -1278,12 +1345,14 @@ pub fn unload_image(image_handle: Handle) -> Result {
 ///   should not be started.
 pub fn start_image(image_handle: Handle) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     // TODO: implement returning exit data to the caller.
     let mut exit_data_size: usize = 0;
     let mut exit_data: *mut u16 = ptr::null_mut();
 
+    // SAFETY: The memory is valid.
     unsafe {
         (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data).to_result()
     }
@@ -1308,8 +1377,10 @@ pub unsafe fn exit(
     exit_data: *mut Char16,
 ) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     let result = unsafe {
         (bt.exit)(
             image_handle.as_ptr(),
@@ -1325,6 +1396,7 @@ pub unsafe fn exit(
 /// Get the current memory map and exit boot services.
 unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<MemoryMapMeta> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     // Get the memory map.
@@ -1335,6 +1407,7 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
     // what boot services functions can be called. In UEFI 2.8 and earlier,
     // only `get_memory_map` and `exit_boot_services` are allowed. Starting
     // in UEFI 2.9 other memory allocation functions may also be called.
+    // SAFETY: The memory is valid.
     unsafe { (bt.exit_boot_services)(image_handle().as_ptr(), memory_map.map_key.0) }
         .to_result_with_val(|| memory_map)
 }
@@ -1415,6 +1488,7 @@ pub unsafe fn exit_boot_services(custom_memory_type: Option<MemoryType>) -> Memo
     // https://github.com/torvalds/linux/blob/e544a0743/drivers/firmware/efi/libstub/efi-stub-helper.c#L375
     let mut status = Status::ABORTED;
     for _ in 0..2 {
+        // SAFETY: The memory is valid.
         match unsafe { get_memory_map_and_exit_boot_services(buf.as_mut_slice()) } {
             Ok(memory_map) => {
                 return MemoryMapOwned::from_initialized_mem(buf, memory_map);
@@ -1452,8 +1526,10 @@ pub unsafe fn install_configuration_table(
     table_ptr: *const c_void,
 ) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.install_configuration_table)(guid_entry, table_ptr) }.to_result()
 }
 
@@ -1488,6 +1564,7 @@ pub fn set_watchdog_timer(
     data: Option<&mut [u16]>,
 ) -> Result {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let (data_len, data) = data
@@ -1500,6 +1577,7 @@ pub fn set_watchdog_timer(
         })
         .unwrap_or((0, ptr::null_mut()));
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.set_watchdog_timer)(timeout_in_seconds, watchdog_code, data_len, data) }
         .to_result()
 }
@@ -1507,10 +1585,12 @@ pub fn set_watchdog_timer(
 /// Stalls execution for the given duration.
 pub fn stall(duration: Duration) {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let microseconds = duration.as_micros() as usize;
 
+    // SAFETY: The memory is valid.
     unsafe {
         // No error conditions are defined in the spec for this function, so
         // ignore the status.
@@ -1550,9 +1630,11 @@ pub fn get_image_file_system(image_handle: Handle) -> Result<ScopedProtocol<Simp
 /// * [`Status::INVALID_PARAMETER`]
 pub fn calculate_crc32(data: &[u8]) -> Result<u32> {
     let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
     let mut crc = 0u32;
 
+    // SAFETY: The memory is valid.
     unsafe { (bt.calculate_crc32)(data.as_ptr().cast(), data.len(), &mut crc) }
         .to_result_with_val(|| crc)
 }
@@ -1567,6 +1649,7 @@ pub struct ProtocolsPerHandle {
 
 impl Drop for ProtocolsPerHandle {
     fn drop(&mut self) {
+        // SAFETY: This pointer was allocated by the matching UEFI allocator.
         let _ = unsafe { free_pool(self.protocols.cast::<u8>()) };
     }
 }
@@ -1585,6 +1668,7 @@ impl Deref for ProtocolsPerHandle {
         // * Protocol GUIDs should be constants or statics, so a 'static
         //   lifetime (of the individual pointers, not the overall slice) can be
         //   assumed.
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts(ptr, self.count) }
     }
 }
@@ -1599,6 +1683,7 @@ pub struct HandleBuffer {
 
 impl Drop for HandleBuffer {
     fn drop(&mut self) {
+        // SAFETY: This pointer was allocated by the matching UEFI allocator.
         let _ = unsafe { free_pool(self.buffer.cast::<u8>()) };
     }
 }
@@ -1607,6 +1692,7 @@ impl Deref for HandleBuffer {
     type Target = [Handle];
 
     fn deref(&self) -> &Self::Target {
+        // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts(self.buffer.as_ptr(), self.count) }
     }
 }
@@ -1657,8 +1743,10 @@ impl<P: Protocol + ?Sized + Display> Display for ScopedProtocol<P> {
 impl<P: Protocol + ?Sized> Drop for ScopedProtocol<P> {
     fn drop(&mut self) {
         let bt = boot_services_raw_panicking();
+        // SAFETY: The pointer is not null and we assume it to be initialized.
         let bt = unsafe { bt.as_ref() };
 
+        // SAFETY: The memory is valid.
         let status = unsafe {
             (bt.close_protocol)(
                 self.open_params.handle.as_ptr(),
@@ -1681,6 +1769,8 @@ impl<P: Protocol + ?Sized> Deref for ScopedProtocol<P> {
 
     #[track_caller]
     fn deref(&self) -> &Self::Target {
+        // SAFETY: `interface` is non-null and valid for the lifetime of this
+        // ScopedProtocol.
         unsafe { self.interface.unwrap().as_ref() }
     }
 }
@@ -1688,6 +1778,8 @@ impl<P: Protocol + ?Sized> Deref for ScopedProtocol<P> {
 impl<P: Protocol + ?Sized> DerefMut for ScopedProtocol<P> {
     #[track_caller]
     fn deref_mut(&mut self) -> &mut Self::Target {
+        // SAFETY: `interface` is non-null and valid for the lifetime of this
+        // ScopedProtocol.
         unsafe { self.interface.unwrap().as_mut() }
     }
 }
@@ -1697,6 +1789,8 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
     /// interface is null.
     #[must_use]
     pub fn get(&self) -> Option<&P> {
+        // SAFETY: `interface` is non-null and valid for the lifetime of this
+        // ScopedProtocol.
         self.interface.map(|p| unsafe { p.as_ref() })
     }
 
@@ -1704,6 +1798,8 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
     /// interface is null.
     #[must_use]
     pub fn get_mut(&mut self) -> Option<&mut P> {
+        // SAFETY: `interface` is non-null and valid for the lifetime of this
+        // ScopedProtocol.
         self.interface.map(|mut p| unsafe { p.as_mut() })
     }
 }
@@ -1727,8 +1823,10 @@ impl TplGuard {
 impl Drop for TplGuard {
     fn drop(&mut self) {
         let bt = boot_services_raw_panicking();
+        // SAFETY: The pointer is not null and we assume it to be initialized.
         let bt = unsafe { bt.as_ref() };
 
+        // SAFETY: The memory is valid.
         unsafe {
             (bt.restore_tpl)(self.old_tpl);
         }

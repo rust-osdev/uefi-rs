@@ -62,13 +62,15 @@ fn alloc_pool_aligned(memory_type: MemoryType, size: usize, align: usize) -> *mu
         offset = align;
     }
 
-    // Before returning the aligned allocation, store a pointer to the
-    // full unaligned allocation in the bytes just before the aligned
-    // allocation. We know we have at least eight bytes there due to
-    // adding `align` to the memory allocation size. We also know the
-    // write is appropriately aligned for a `*mut u8` pointer because
-    // `align_ptr` is aligned, and alignments are always powers of two
-    // (as enforced by the `Layout` type).
+    // SAFETY: `full_alloc_ptr` points to a valid allocation large enough for
+    // `size + align + size_of::<*mut u8>()`. Adding `offset` keeps
+    // `aligned_ptr` within that allocation and yields the requested alignment.
+    // The allocation size includes enough extra space to reserve the bytes
+    // immediately preceding `aligned_ptr`, where we store `full_alloc_ptr` so
+    // the original allocation can later be recovered. Because `aligned_ptr` is
+    // aligned and valid alignments are powers of two as enforced by `Layout`,
+    // the slot at `aligned_ptr.cast::<*mut u8>().sub(1)` is properly aligned
+    // for writing a `*mut u8`.
     unsafe {
         let aligned_ptr = full_alloc_ptr.add(offset);
         (aligned_ptr.cast::<*mut u8>()).sub(1).write(full_alloc_ptr);
@@ -100,6 +102,9 @@ const fn layout_allows_page_alloc_shortcut(layout: &Layout) -> bool {
 #[derive(Debug)]
 pub struct Allocator;
 
+// SAFETY: `alloc` delegates to UEFI's pool allocator, which returns correctly
+// aligned, non-aliasing memory. `dealloc` only frees pointers previously returned
+// by the matching `alloc` call with the same layout.
 unsafe impl GlobalAlloc for Allocator {
     /// Allocate memory using the UEFI boot services.
     ///
@@ -151,19 +156,23 @@ unsafe impl GlobalAlloc for Allocator {
                 // To spammy, but useful for manual testing.
                 // log::trace!("Taking PAGE_SIZE shortcut for layout={layout:?}");
                 let count = layout.size().div_ceil(PAGE_SIZE);
+                // SAFETY: This pointer was allocated by the matching UEFI allocator.
                 unsafe { boot::free_pages(ptr, count).unwrap() }
             }
             (false, 0..=8 /* UEFI default alignment */) => {
                 // Warning: this will panic after exiting boot services.
+                // SAFETY: This pointer was allocated by the matching UEFI allocator.
                 unsafe { boot::free_pool(ptr) }.unwrap();
             }
             (false, 9..) => {
                 let ptr = ptr.as_ptr().cast::<*mut u8>();
-                // Retrieve the pointer to the full allocation that was packed right
-                // before the aligned allocation in `alloc`.
+                // SAFETY: Retrieve the in-bounds pointer to the full allocation
+                // that was packed right before the aligned allocation in
+                // `alloc()`.
                 let actual_alloc_ptr = unsafe { ptr.sub(1).read() };
                 let ptr = NonNull::new(actual_alloc_ptr).unwrap();
                 // Warning: this will panic after exiting boot services.
+                // SAFETY: This pointer was allocated by the matching UEFI allocator.
                 unsafe { boot::free_pool(ptr) }.unwrap();
             }
         }

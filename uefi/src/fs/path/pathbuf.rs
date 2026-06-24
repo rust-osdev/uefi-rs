@@ -21,6 +21,7 @@ impl PathBuf {
 
     /// Constructor that replaces all occurrences of `/` with `\`.
     fn new_from_cstring16(mut string: CString16) -> Self {
+        // SAFETY: The memory is valid.
         const SEARCH: Char16 = unsafe { Char16::from_u16_unchecked('/' as u16) };
         string.replace_char(SEARCH, SEPARATOR);
         Self(string)
@@ -30,6 +31,7 @@ impl PathBuf {
     ///
     /// UNIX separators (`/`) will be replaced by [`SEPARATOR`] on the fly.
     pub fn push<P: AsRef<Path>>(&mut self, path: P) {
+        // SAFETY: The memory is valid.
         const SEARCH: Char16 = unsafe { Char16::from_u16_unchecked('/' as u16) };
 
         // do nothing on empty path

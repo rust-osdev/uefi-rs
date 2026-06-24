@@ -268,6 +268,8 @@ impl NodeField {
                 ret_val = quote!(
                     let ptr: *const [#slice_elem] = &raw const self.#field_name;
                     let (ptr, len): (*const (), usize) = ptr_meta::to_raw_parts(ptr);
+                    // SAFETY: The memory is valid.
+                   #[expect(clippy::undocumented_unsafe_blocks)] // quote!() is removing comments
                     unsafe {
                         UnalignedSlice::new(ptr.cast::<#slice_elem>(), len)
                     }

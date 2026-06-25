@@ -72,7 +72,7 @@ pub const EDKII_IOMMU_PROTOCOL_REVISION: u64 = 0x0001_0000;
 bitflags! {
     /// EDKII IOMMU attribute flags
     #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct EdkiiIommuAttribute: u64 {
         /// Memory is write-combined
         const MEMORY_WRITE_COMBINE   = 0x0080;
@@ -99,7 +99,7 @@ impl EdkiiIommuAttribute {
 bitflags! {
     /// EDKII IOMMU access flags for SetAttribute
     #[repr(transparent)]
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct EdkiiIommuAccess: u64 {
         /// Read access
         const READ  = 0x1;

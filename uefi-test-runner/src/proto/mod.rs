@@ -30,6 +30,9 @@ pub fn test() {
     usb::test();
     misc::test();
 
+    #[cfg(target_arch = "x86_64")]
+    iommu::test();
+
     // disable the ATA test on aarch64 for now. The aarch64 UEFI Firmware does not yet seem
     // to support SATA controllers (and providing an AtaPassThru protocol instance for them).
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -111,6 +114,8 @@ mod console;
 mod debug;
 mod device_path;
 mod driver;
+#[cfg(target_arch = "x86_64")]
+mod iommu;
 mod load;
 mod loaded_image;
 mod media;

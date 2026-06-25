@@ -425,6 +425,9 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
         UefiArch::IA32 | UefiArch::X86_64 => {
             // Use a modern machine.
             cmd.args(["-machine", "q35"]);
+            if arch == UefiArch::X86_64 {
+                cmd.args(["-device", "intel-iommu"]);
+            }
 
             // Multi-processor services protocol test needs exactly 4 CPUs.
             cmd.args(["-smp", "4"]);

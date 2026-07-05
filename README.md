@@ -78,6 +78,13 @@ most of the library's functionality.
 Check out the testing project's [`README.md`](uefi-test-runner/README.md) for
 prerequisites for running the tests.
 
+## Showcases
+
+- [`ratatuefi`] provides a [Ratatui] backend for the UEFI environment using `uefi`.
+
+- [`efimux`] is an EFI application for booting other EFI applications, written
+  with the aforementioned [`ratatuefi`] and therefore also `uefi`.
+
 ## Discuss and Contribute
 
 For general discussions, feel free to join us in our [Zulip] and ask
@@ -93,6 +100,9 @@ Licensed under either of [Apache License, Version 2.0][apache] or
 [MIT license][mit] at your option.
 
 [apache]: LICENSE-APACHE
+[`efimux`]: https://github.com/sermuns/efimux
 [mit]: LICENSE-MIT
+[`ratatuefi`]: https://github.com/sermuns/ratatuefi
+[Ratatui]: https://github.com/ratatui/ratatui
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 [Zulip]: https://rust-osdev.zulipchat.com

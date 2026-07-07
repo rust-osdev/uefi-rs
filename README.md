@@ -80,10 +80,15 @@ prerequisites for running the tests.
 
 ## Showcases
 
-- [`ratatuefi`] provides a [Ratatui] backend for the UEFI environment using `uefi`.
+_Selected show cases from community. Feel free to raise a PR and add yours!_
+
 
 - [`efimux`] is an EFI application for booting other EFI applications, written
   with the aforementioned [`ratatuefi`] and therefore also `uefi`.
+- [`ratatuefi`] provides a [Ratatui] backend for the UEFI environment using `uefi`.
+- [`uefirc`] is a graphical UEFI IRC client to connect to an IRC server, chat,
+  and read messages, all from the comfort of your motherboard's pre-boot
+  environment.
 
 ## Discuss and Contribute
 
@@ -99,10 +104,16 @@ Contributions in the form of a PR are also highly welcome. Check our
 Licensed under either of [Apache License, Version 2.0][apache] or
 [MIT license][mit] at your option.
 
+<!-- Normal links & references -->
+
 [apache]: LICENSE-APACHE
-[`efimux`]: https://github.com/sermuns/efimux
 [mit]: LICENSE-MIT
-[`ratatuefi`]: https://github.com/sermuns/ratatuefi
-[Ratatui]: https://github.com/ratatui/ratatui
 [UEFI]: https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
 [Zulip]: https://rust-osdev.zulipchat.com
+
+<!-- Show cases -->
+
+[`ratatuefi`]: https://github.com/sermuns/ratatuefi
+[Ratatui]: https://github.com/ratatui/ratatui
+[`efimux`]: https://github.com/sermuns/efimux
+[`uefirc`]: https://github.com/codyd51/uefirc

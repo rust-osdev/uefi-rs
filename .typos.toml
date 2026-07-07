@@ -17,6 +17,7 @@ extend-ignore-identifiers-re = [
 [default.extend-words]
 # ./uefi-test-runner/src/proto/device_path.rs:92:14
 HD = "HD"
+Ratatui = "Ratatui"
 
 [default.extend-identifiers]
 # We sometimes use "typ" as "type" is a reserved keyword

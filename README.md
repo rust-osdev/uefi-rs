@@ -80,12 +80,11 @@ prerequisites for running the tests.
 
 ## Showcases
 
-_Selected show cases from community. Feel free to raise a PR and add yours!_
+_Selected showcases from community. Feel free to raise a PR and add yours!_
 
-
+- [`ratatuefi`] provides a [Ratatui] backend for the UEFI environment using `uefi`.
 - [`efimux`] is an EFI application for booting other EFI applications, written
   with the aforementioned [`ratatuefi`] and therefore also `uefi`.
-- [`ratatuefi`] provides a [Ratatui] backend for the UEFI environment using `uefi`.
 - [`uefirc`] is a graphical UEFI IRC client to connect to an IRC server, chat,
   and read messages, all from the comfort of your motherboard's pre-boot
   environment.

@@ -1,6 +1,7 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `driver::{Driver, install}` to streamline driver development
 
 
 ## Changed

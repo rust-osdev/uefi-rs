@@ -120,6 +120,12 @@
 //! protocol, and see the [`proto`] module for protocol implementations. New
 //! protocols can be defined with the [`unsafe_protocol`] macro.
 //!
+//! ## Drivers
+//!
+//! UEFI defines a driver model which provides a modular framework for extending
+//! the firmware's capabilities. The [`driver`] module provides a high-level
+//! abstraction for implementing UEFI drivers in Rust.
+//!
 //! ## Optional Cargo crate features
 //!
 //! A list of recommended default features follows below.
@@ -290,6 +296,8 @@ extern crate uefi_raw;
 pub mod data_types;
 pub mod allocator;
 pub mod boot;
+#[cfg(feature = "alloc")]
+pub mod driver;
 #[cfg(feature = "alloc")]
 pub mod fs;
 pub mod helpers;

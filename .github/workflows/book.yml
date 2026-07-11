@@ -1,0 +1,43 @@
+name: Book
+
+on:
+  push:
+    branches: [ main ]
+
+# Adapted from:
+# https://github.com/rust-lang/mdBook/wiki/Automated-Deployment%3A-GitHub-Actions#github-pages-deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Install mdbook
+      run: |
+        mkdir mdbook
+        curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=./mdbook
+        echo `pwd`/mdbook >> $GITHUB_PATH
+    - name: Deploy GitHub Pages
+      run: |
+        cd book
+        mdbook build
+        git worktree add gh-pages gh-pages
+        git config user.name "Deploy from CI"
+        git config user.email ""
+        cd gh-pages
+        # Delete the ref to avoid keeping history.
+        git update-ref -d refs/heads/gh-pages
+        # Place the book under a "HEAD" directory so that we can later
+        # add other versions (e.g. "stable" or "v0.17") without breaking
+        # URLs.
+        rm -rf HEAD
+        mv ../book HEAD
+        git add HEAD
+        # Add an index in the root to redirect to HEAD. If we eventually
+        # serve multiple versions, this can be changed to a real index.
+        cp ../head_redirect.html index.html
+        git add index.html
+        # Commit and push.
+        git commit -m "Deploy $GITHUB_SHA to gh-pages"
+        git push --force

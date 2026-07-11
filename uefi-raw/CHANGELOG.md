@@ -7,6 +7,11 @@
 ## Removed
 
 
+# uefi-raw - v0.15.1 (2026-07-11)
+
+## Added
+- Added additional derives to IOMMU types.
+
 # uefi-raw - v0.15.0 (2026-06-21)
 
 ## Added

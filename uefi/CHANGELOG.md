@@ -1,13 +1,17 @@
 # uefi - [Unreleased]
 
 ## Added
-- Added `driver::{Driver, install}` to streamline driver development
-
 
 ## Changed
 
-
 ## Removed
+
+
+# uefi - v0.39.0 (2026-07-11)
+
+## Added
+- Added `driver::{Driver, install}` to streamline driver development.
+- Added `proto::dma::iommu::Iommu` for IOMMU-based DMA buffer management.
 
 
 # uefi - v0.38.0 (2026-06-21)
@@ -18,7 +22,6 @@
   set_attributes(), set_attributes_with_range()}`
 - Added `memory()` and `io()` address space access to `PciRootBridgeIo`
   protocol.
-- Added `proto::dma::iommu::Iommu` for IOMMU-based DMA buffer management.
 
 ## Changed
 - MSRV increased from 1.88 to 1.91.

@@ -1,6 +1,7 @@
 # uefi - [Unreleased]
 
 ## Added
+- Made memory map types `#[repr(C)]`
 
 ## Changed
 

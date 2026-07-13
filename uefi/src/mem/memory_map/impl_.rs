@@ -44,6 +44,7 @@ impl core::error::Error for MemoryMapError {}
 
 /// Implementation of [`MemoryMap`] for the given buffer.
 #[derive(Debug)]
+#[repr(C)]
 pub struct MemoryMapRef<'a> {
     buf: &'a [u8],
     meta: MemoryMapMeta,
@@ -107,6 +108,7 @@ impl Index<usize> for MemoryMapRef<'_> {
 
 /// Implementation of [`MemoryMapMut`] for the given buffer.
 #[derive(Debug)]
+#[repr(C)]
 pub struct MemoryMapRefMut<'a> {
     buf: &'a mut [u8],
     meta: MemoryMapMeta,
@@ -287,6 +289,7 @@ impl IndexMut<usize> for MemoryMapRefMut<'_> {
 ///
 /// [`boot::get_memory_map`]: crate::boot::get_memory_map
 #[derive(Debug)]
+#[repr(C)]
 pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);
 
 impl MemoryMapBackingMemory {
@@ -386,6 +389,7 @@ impl Drop for MemoryMapBackingMemory {
 
 /// Implementation of [`MemoryMapMut`] that owns the buffer on the UEFI heap.
 #[derive(Debug)]
+#[repr(C)]
 pub struct MemoryMapOwned {
     /// Backing memory, properly initialized at this point.
     pub(crate) buf: MemoryMapBackingMemory,

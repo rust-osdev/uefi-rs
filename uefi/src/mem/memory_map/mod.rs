@@ -66,6 +66,7 @@ pub struct MemoryMapKey(pub(crate) usize);
 /// called. All following invocations (hidden, subtle, and asynchronous ones)
 /// will likely invalidate this.
 #[derive(Copy, Clone, Debug)]
+#[repr(C)]
 pub struct MemoryMapMeta {
     /// The actual size of the map.
     pub map_size: usize,

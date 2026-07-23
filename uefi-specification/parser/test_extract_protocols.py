@@ -724,10 +724,96 @@ Second paragraph of the summary.
             self.assertIn(expected, names)
 
 
+class TestScanOrphanProtocolGuids(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.spec_dir = os.path.join(self.temp_dir.name, "spec")
+        os.makedirs(self.spec_dir)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _write(self, filename: str, content: str):
+        with open(os.path.join(self.spec_dir, filename), "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_finds_orphan_protocol_guid(self):
+        """A #define with _PROTOCOL_GUID in a non-protocol section is found."""
+        self._write(
+            "boot.rst",
+            """\
+Document Title
+==============
+
+Dummy Section
+-------------
+
+**Related Definitions**
+
+.. code-block::
+
+   #define EFI_HII_PACKAGE_LIST_PROTOCOL_GUID \\
+    {0x6a1ee763,0xd47a,0x43b4,\\
+      {0xaa,0xbe,0xef,0x1d,0xe2,0xab,0x56,0xfc}}
+""",
+        )
+        result = ep.scan_orphan_protocol_guids(
+            [os.path.join(self.spec_dir, "boot.rst")], set()
+        )
+        names = {p["name"] for p in result}
+        self.assertIn("EFI_HII_PACKAGE_LIST_PROTOCOL", names)
+
+    def test_skips_already_known_guids(self):
+        self._write(
+            "boot.rst",
+            """\
+Document Title
+==============
+
+Dummy Section
+-------------
+
+.. code-block::
+
+   #define EFI_KNOWN_PROTOCOL_GUID \\
+    {0x00000000,0x0000,0x0000,\\
+      {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01}}
+""",
+        )
+        result = ep.scan_orphan_protocol_guids(
+            [os.path.join(self.spec_dir, "boot.rst")],
+            {"00000000-0000-0000-0000-000000000001"},
+        )
+        self.assertEqual(len(result), 0)
+
+    def test_skips_non_protocol_guids(self):
+        self._write(
+            "defs.rst",
+            """\
+Document Title
+==============
+
+Dummy Section
+-------------
+
+.. code-block::
+
+   #define SOME_CERT_GUID \\
+    {0x00000000,0x0000,0x0000,\\
+      {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01}}
+""",
+        )
+        result = ep.scan_orphan_protocol_guids(
+            [os.path.join(self.spec_dir, "defs.rst")], set()
+        )
+        self.assertEqual(len(result), 0)
+
+
 class TestProtocolNamesExistInSpec(unittest.TestCase):
     """Integration test: every canonical protocol name must appear in the spec source files."""
 
-    SPEC_URL = "https://github.com/UEFI/UEFI-Specification-Release/archive/refs/heads/main.zip"
+    UEFI_SPEC_URL = "https://github.com/UEFI/UEFI-Specification-Release/archive/refs/heads/main.zip"
+    PI_SPEC_URL = "https://github.com/UEFI/PI-Specification-Release/archive/refs/heads/main.zip"
 
     @classmethod
     def setUpClass(cls):
@@ -738,30 +824,37 @@ class TestProtocolNamesExistInSpec(unittest.TestCase):
     def _download_and_index_spec(cls) -> str:
         import tempfile, urllib.request, zipfile
         with tempfile.TemporaryDirectory() as tmp:
-            zip_path = os.path.join(tmp, "spec.zip")
-            urllib.request.urlretrieve(cls.SPEC_URL, zip_path)
             all_text = []
-            with zipfile.ZipFile(zip_path) as zf:
-                for name in zf.namelist():
-                    if name.endswith(".rst"):
-                        all_text.append(zf.read(name).decode("utf-8", errors="replace"))
+            for url in (cls.UEFI_SPEC_URL, cls.PI_SPEC_URL):
+                zip_path = os.path.join(tmp, "spec.zip")
+                urllib.request.urlretrieve(url, zip_path)
+                with zipfile.ZipFile(zip_path) as zf:
+                    for name in zf.namelist():
+                        if name.endswith(".rst"):
+                            all_text.append(zf.read(name).decode("utf-8", errors="replace"))
             return "\n".join(all_text)
 
     @classmethod
     def _extract_protocols(cls) -> list[dict]:
         import tempfile, urllib.request, zipfile
         with tempfile.TemporaryDirectory() as tmp:
-            zip_path = os.path.join(tmp, "spec.zip")
-            urllib.request.urlretrieve(cls.SPEC_URL, zip_path)
-            with zipfile.ZipFile(zip_path) as zf:
-                zf.extractall(tmp)
-            root = os.path.join(tmp, os.listdir(tmp)[0])
             ep.REF_MAP.clear()
-            rst_files = ep.collect_rst_files(root)
-            ep.build_ref_map(rst_files)
+            all_rst = []
+            for url in (cls.UEFI_SPEC_URL, cls.PI_SPEC_URL):
+                zip_path = os.path.join(tmp, "spec.zip")
+                urllib.request.urlretrieve(url, zip_path)
+                with zipfile.ZipFile(zip_path) as zf:
+                    zf.extractall(tmp)
+                root = os.path.join(tmp, [d for d in os.listdir(tmp)
+                                          if os.path.isdir(os.path.join(tmp, d))][0])
+                all_rst.extend(ep.collect_rst_files(root))
+            ep.build_ref_map(all_rst)
             all_p = []
-            for f in rst_files:
+            for f in all_rst:
                 all_p.extend(ep.parse_rst_file(f))
+            known_guids = {p["guid"] for p in all_p}
+            # Also scan orphans
+            all_p.extend(ep.scan_orphan_protocol_guids(all_rst, known_guids))
             seen = set()
             unique = []
             for p in all_p:

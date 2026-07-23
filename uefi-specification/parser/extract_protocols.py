@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Extract UEFI protocol information from the UEFI Specification RST files.
 
-Downloads the spec source from GitHub, parses every RST file with
-docutils (not regex), and writes canonical name / GUID / summary
+Downloads both the UEFI and PI spec sources from GitHub, parses every RST
+file with docutils (not regex), and writes canonical name / GUID / summary
 for every protocol definition found.
 """
 
@@ -13,13 +13,14 @@ import urllib.request
 import zipfile
 
 from docutils.core import publish_doctree
-from docutils.nodes import section, title, subtitle, Text, literal_block, paragraph, target
+from docutils.nodes import section, title, subtitle, Text, paragraph, target
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
-SPEC_URL = "https://github.com/UEFI/UEFI-Specification-Release/archive/refs/heads/main.zip"
+UEFI_SPEC_URL = "https://github.com/UEFI/UEFI-Specification-Release/archive/refs/heads/main.zip"
+PI_SPEC_URL = "https://github.com/UEFI/PI-Specification-Release/archive/refs/heads/main.zip"
 OUTPUT_FILE = "uefi_protocols.txt"
 
 # Global reference map:  :ref:`name` -> section title
@@ -45,20 +46,18 @@ FIELD_MARKERS = {
 # ---------------------------------------------------------------------------
 
 
-def download_spec(temp_dir: str) -> str:
-    zip_path = os.path.join(temp_dir, "uefi-spec.zip")
-    print(f"Downloading UEFI spec from {SPEC_URL} ...")
-    urllib.request.urlretrieve(SPEC_URL, zip_path)
+def download_and_extract(url: str, temp_dir: str, output_dir_name: str) -> str:
+    zip_path = os.path.join(temp_dir, f"{output_dir_name}.zip")
+    print(f"Downloading {url} ...")
+    urllib.request.urlretrieve(url, zip_path)
     print("Download complete.")
-    return zip_path
-
-
-def extract_spec(zip_path: str, temp_dir: str) -> str:
+    dest = os.path.join(temp_dir, output_dir_name)
+    os.makedirs(dest, exist_ok=True)
     with zipfile.ZipFile(zip_path) as zf:
-        zf.extractall(temp_dir)
-    entries = [e for e in os.listdir(temp_dir) if os.path.isdir(os.path.join(temp_dir, e))]
+        zf.extractall(dest)
+    entries = [e for e in os.listdir(dest) if os.path.isdir(os.path.join(dest, e))]
     if len(entries) == 1:
-        return os.path.join(temp_dir, entries[0])
+        return os.path.join(dest, entries[0])
     raise RuntimeError(f"Unexpected archive structure: {entries}")
 
 
@@ -444,6 +443,66 @@ def build_ref_map(rst_files: list[str]):
 
 
 # ---------------------------------------------------------------------------
+# Orphan GUID scanner — protocols defined outside protocol sections
+# ---------------------------------------------------------------------------
+
+
+def scan_orphan_protocol_guids(rst_files: list[str], known_guids: set[str]) -> list[dict]:
+    """Scan all RST files for ``#define XXX_PROTOCOL_GUID`` in code blocks
+    not already captured by protocol section parsing.
+
+    This picks up protocols like ``EFI_HII_PACKAGE_LIST_PROTOCOL`` whose
+    GUID define lives inside a function description rather than a dedicated
+    protocol section.
+    """
+    found: list[dict] = []
+    seen_names: set[str] = set()
+    seen_guids: set[str] = set(known_guids)
+
+    # Find define lines and extract surrounding context for GUID parsing
+    define_line_pat = re.compile(r'#define\s+(\w+_PROTOCOL_GUID)\b')
+
+    for filepath in rst_files:
+        try:
+            with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+        except Exception:
+            continue
+
+        for m in define_line_pat.finditer(content):
+            define_name = m.group(1)
+            name = define_name.removesuffix("_GUID")
+
+            if not name.startswith("EFI_"):
+                continue
+            if name in seen_names:
+                continue
+
+            # Extract context from the define line onward for GUID parsing
+            start = m.start()
+            end = min(start + 2000, len(content))
+            context = content[start:end]
+
+            result = parse_guid_and_name_from_code_block(context)
+            if result is None or result[0] is None:
+                continue
+            guid, _ = result
+
+            if guid in seen_guids:
+                continue
+
+            seen_guids.add(guid)
+            seen_names.add(name)
+            found.append({
+                "name": name,
+                "guid": guid,
+                "summary": "",
+            })
+
+    return found
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -452,30 +511,43 @@ def main():
     with tempfile.TemporaryDirectory() as temp_dir:
         print(f"Using temporary directory: {temp_dir}")
 
-        zip_path = download_spec(temp_dir)
-        spec_dir = extract_spec(zip_path, temp_dir)
-        print(f"Extracted to: {spec_dir}")
+        # Download both specs
+        all_rst_files = []
+        for url, label in [(UEFI_SPEC_URL, "UEFI"), (PI_SPEC_URL, "PI")]:
+            spec_dir = download_and_extract(url, temp_dir, label.lower())
+            print(f"Extracted {label} spec to: {spec_dir}")
+            rst_files = collect_rst_files(spec_dir)
+            print(f"  Found {len(rst_files)} RST files.")
+            all_rst_files.extend(rst_files)
 
-        rst_files = collect_rst_files(spec_dir)
-        print(f"Found {len(rst_files)} RST files.")
+        print(f"\nTotal RST files: {len(all_rst_files)}")
 
         print("Building reference map...")
-        build_ref_map(rst_files)
+        build_ref_map(all_rst_files)
         print(f"Resolved {len(REF_MAP)} references.")
 
         all_protocols = []
-        for i, rst_file in enumerate(rst_files):
+        for i, rst_file in enumerate(all_rst_files):
             if (i + 1) % 50 == 0:
-                print(f"  Processed {i + 1}/{len(rst_files)} files...")
+                print(f"  Processed {i + 1}/{len(all_rst_files)} files...")
             all_protocols.extend(parse_rst_file(rst_file))
 
         # Deduplicate by name (keep first occurrence)
-        seen = set()
+        seen_names = set()
         unique_protocols = []
+        known_guids = set()
         for p in all_protocols:
-            if p["name"] not in seen:
-                seen.add(p["name"])
+            if p["name"] not in seen_names:
+                seen_names.add(p["name"])
+                known_guids.add(p["guid"])
                 unique_protocols.append(p)
+
+        # Scan for orphan protocol GUIDs not captured by section parsing
+        print(f"\nScanning for orphan protocol GUIDs in code blocks...")
+        orphans = scan_orphan_protocol_guids(all_rst_files, known_guids)
+        if orphans:
+            print(f"  Found {len(orphans)} additional protocol(s).")
+            unique_protocols.extend(orphans)
 
         unique_protocols.sort(key=lambda p: p["name"])
 

@@ -1048,7 +1048,7 @@ version = "0.19.0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
  "trybuild",
  "uefi",
 ]
@@ -1315,7 +1315,7 @@ dependencies = [
  "quote",
  "regex",
  "serde_json",
- "syn 2.0.119",
+ "syn 3.0.3",
  "tempfile",
  "walkdir",
 ]

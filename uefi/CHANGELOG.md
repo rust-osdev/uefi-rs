@@ -3,6 +3,7 @@
 ## Added
 
 ## Changed
+- Made memory map types `#[repr(C)]`
 
 ## Removed
 

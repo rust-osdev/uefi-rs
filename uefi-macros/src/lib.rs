@@ -186,7 +186,7 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
     // Strip any visibility modifiers.
     f.vis = Visibility::Inherited;
 
-    let unsafety = &f.sig.unsafety;
+    let safety = &f.sig.safety;
     let fn_ident = &f.sig.ident;
     let fn_output = &f.sig.output;
 
@@ -204,9 +204,9 @@ pub fn entry(args: TokenStream, input: TokenStream) -> TokenStream {
         // specifically in the function signature is incorrect.
         const _:
             // The expected fn pointer type.
-            #unsafety extern "efiapi" fn(#expected_args) -> ::uefi::Status =
+            #safety extern "efiapi" fn(#expected_args) -> ::uefi::Status =
             // Cast from a fn item to a function pointer.
-            #fn_ident as #unsafety extern "efiapi" fn(#expected_args) #fn_output;
+            #fn_ident as #safety extern "efiapi" fn(#expected_args) #fn_output;
     };
 
     let result = quote! {

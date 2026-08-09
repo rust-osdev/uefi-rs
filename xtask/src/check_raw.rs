@@ -18,7 +18,7 @@ use syn::spanned::Spanned;
 use syn::token::Comma;
 use syn::{
     Abi, Attribute, Field, Fields, FieldsNamed, FieldsUnnamed, File, Item, ItemConst, ItemMacro,
-    ItemStruct, ItemType, ItemUnion, LitInt, ReturnType, Type, TypeArray, TypeBareFn, TypePtr,
+    ItemStruct, ItemType, ItemUnion, LitInt, ReturnType, Type, TypeArray, TypeFnPtr, TypePtr,
     Visibility, parenthesized,
 };
 use walkdir::WalkDir;
@@ -242,7 +242,7 @@ fn get_reprs(attrs: &[ParsedAttr]) -> Vec<Repr> {
 }
 
 /// True if the function is `extern efiapi`.
-fn is_efiapi(f: &TypeBareFn) -> bool {
+fn is_efiapi(f: &TypeFnPtr) -> bool {
     if let Some(Abi {
         name: Some(name), ..
     }) = &f.abi
@@ -258,7 +258,7 @@ fn is_efiapi(f: &TypeBareFn) -> bool {
 fn check_type(ty: &Type, src: &Path) -> Result<(), Error> {
     match ty {
         Type::Array(TypeArray { elem, .. }) => check_type(elem, src),
-        Type::BareFn(f) => check_fn_ptr(f, src),
+        Type::FnPtr(f) => check_fn_ptr(f, src),
         Type::Never(_) => {
             // Allow.
             Ok(())
@@ -276,7 +276,7 @@ fn check_type(ty: &Type, src: &Path) -> Result<(), Error> {
 }
 
 /// Validate a function pointer.
-fn check_fn_ptr(f: &TypeBareFn, src: &Path) -> Result<(), Error> {
+fn check_fn_ptr(f: &TypeFnPtr, src: &Path) -> Result<(), Error> {
     // Require `extern efiapi`, except for c-variadics.
     if !is_efiapi(f) && f.variadic.is_none() {
         return Err(Error::new(ErrorKind::ForbiddenAbi, src, f));

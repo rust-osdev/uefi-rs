@@ -607,7 +607,7 @@ impl CStr16 {
         Self::from_u16_with_nul(u16_slice)
     }
 
-    /// Returns the inner pointer to this C16 string.
+    /// Returns the inner pointer to this [`CStr16`] string.
     #[must_use]
     pub const fn as_ptr(&self) -> *const Char16 {
         self.0.as_ptr()

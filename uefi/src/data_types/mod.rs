@@ -39,7 +39,7 @@ use core::ptr::{self, NonNull};
 #[cfg(doc)]
 use uefi_raw::Status;
 
-/// Opaque handle to an UEFI entity (protocol, image...), guaranteed to be non-null.
+/// Opaque handle to a UEFI entity (protocol, image, etc.), guaranteed to be non-null.
 ///
 /// If you need to have a nullable handle (for a custom UEFI FFI for example) use `Option<Handle>`.
 ///

@@ -14,8 +14,7 @@
 //!   to the uefi boot service stdout stream
 //! - default panic handler (feature `panic_handler`)
 //!
-//! **PLEASE NOTE** that these helpers are meant for the pre exit boot service
-//! epoch.
+//! **Note:** These helpers are meant for the pre-exit boot-services epoch.
 //!
 //! [print_macro]: uefi::print!
 //! [println_macro]: uefi::println!
@@ -37,8 +36,8 @@ mod println;
 ///
 /// This must be called as early as possible, before trying to use logging.
 ///
-/// **PLEASE NOTE** that these helpers are meant for the pre exit boot service
-/// epoch. Limited functionality might work after exiting them, such as logging
+/// **Note:** These helpers are meant for the pre-exit boot-services epoch.
+/// Limited functionality might work after exiting them, such as logging
 /// to the debugcon device.
 ///
 /// # Panics

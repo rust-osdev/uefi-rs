@@ -81,7 +81,7 @@ impl Path {
         Some(path)
     }
 
-    /// Returns of the path is empty.
+    /// Returns whether the path is empty.
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.to_cstr16().is_empty()

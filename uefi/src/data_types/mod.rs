@@ -87,7 +87,7 @@ impl Handle {
         NonNull::new(ptr).map(Self)
     }
 
-    /// Get the underlying raw pointer.
+    /// Returns the underlying raw pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.0.as_ptr()
@@ -191,7 +191,7 @@ impl Event {
         Self(self.0)
     }
 
-    /// Create an `Event` from a raw pointer.
+    /// Creates an `Event` from a raw pointer.
     ///
     /// # Safety
     ///
@@ -200,7 +200,7 @@ impl Event {
         NonNull::new(ptr).map(Self)
     }
 
-    /// Get the underlying raw pointer.
+    /// Returns the underlying raw pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *mut c_void {
         self.0.as_ptr()
@@ -231,13 +231,13 @@ pub trait Align {
         if r == 0 { 0 } else { Self::alignment() - r }
     }
 
-    /// Round `val` up so that it is aligned.
+    /// Rounds `val` up to the required alignment.
     #[must_use]
     fn round_up_to_alignment(val: usize) -> usize {
         val + Self::offset_up_to_alignment(val)
     }
 
-    /// Get a subslice of `buf` where the address of the first element
+    /// Returns a subslice of `buf` whose first element's address
     /// is aligned. Returns `None` if no element of the buffer is
     /// aligned.
     fn align_buf(buf: &mut [u8]) -> Option<&mut [u8]> {
@@ -245,7 +245,7 @@ pub trait Align {
         buf.get_mut(offset..)
     }
 
-    /// Assert that some storage is correctly aligned for this type
+    /// Asserts that some storage is correctly aligned for this type.
     fn assert_aligned(storage: &mut [u8]) {
         if !storage.is_empty() {
             assert_eq!(

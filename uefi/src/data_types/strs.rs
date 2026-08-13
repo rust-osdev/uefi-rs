@@ -257,7 +257,7 @@ impl<'a> TryFrom<&'a CStr> for &'a CStr8 {
     }
 }
 
-/// Get a Latin-1 character from a UTF-8 byte slice at the given offset.
+/// Returns a Latin-1 character from a UTF-8 byte slice at the given offset.
 ///
 /// Returns a pair containing the Latin-1 character and the number of bytes in
 /// the UTF-8 encoding of that character.
@@ -309,7 +309,7 @@ pub const fn str_num_latin1_chars(s: &str) -> usize {
     num_latin1_chars
 }
 
-/// Convert a `str` into a null-terminated Latin-1 character array.
+/// Converts a `str` into a null-terminated Latin-1 character array.
 ///
 /// Panics if the string cannot be encoded in Latin-1.
 ///
@@ -480,7 +480,7 @@ impl CStr16 {
         unsafe { &*(ptr as *const Self) }
     }
 
-    /// Convert a [`&str`] to a `&CStr16`, backed by a buffer.
+    /// Converts a [`str`] to a `&CStr16` backed by a buffer.
     ///
     /// The input string must contain only characters representable with
     /// UCS-2, and must not contain any null characters (even at the end of
@@ -491,7 +491,7 @@ impl CStr16 {
     ///
     /// # Examples
     ///
-    /// Convert the UTF-8 string "ABC" to a `&CStr16`:
+    /// Converts the UTF-8 string "ABC" to a `&CStr16`:
     ///
     /// ```
     /// use uefi::CStr16;
@@ -528,7 +528,7 @@ impl CStr16 {
         })
     }
 
-    /// Create a `&CStr16` from an [`UnalignedSlice`] using an aligned
+    /// Creates a `&CStr16` from an [`UnalignedSlice`] using an aligned
     /// buffer for storage. The lifetime of the output is tied to `buf`,
     /// not `src`.
     pub fn from_unaligned_slice<'buf>(
@@ -613,13 +613,13 @@ impl CStr16 {
         self.0.as_ptr()
     }
 
-    /// Get the underlying [`Char16`]s as slice without the trailing null.
+    /// Returns the underlying [`Char16`]s as a slice without the trailing null.
     #[must_use]
     pub fn as_slice(&self) -> &[Char16] {
         &self.0[..self.num_chars()]
     }
 
-    /// Get the underlying [`Char16`]s as slice including the trailing null.
+    /// Returns the underlying [`Char16`]s as a slice including the trailing null.
     #[must_use]
     pub const fn as_slice_with_nul(&self) -> &[Char16] {
         &self.0
@@ -639,7 +639,7 @@ impl CStr16 {
         unsafe { &*(ptr::from_ref(&self.0) as *const [u16]) }
     }
 
-    /// Returns an iterator over this C string
+    /// Returns an iterator over this C string.
     #[must_use]
     pub const fn iter(&self) -> CStr16Iter<'_> {
         CStr16Iter {
@@ -648,19 +648,19 @@ impl CStr16 {
         }
     }
 
-    /// Returns the number of characters without the trailing null. character
+    /// Returns the number of characters without the trailing null character.
     #[must_use]
     pub const fn num_chars(&self) -> usize {
         self.0.len() - 1
     }
 
-    /// Returns if the string is empty. This ignores the null character.
+    /// Returns whether the string is empty. This ignores the null character.
     #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.num_chars() == 0
     }
 
-    /// Get the number of bytes in the string (including the trailing null).
+    /// Returns the number of bytes in the string, including the trailing null.
     #[must_use]
     pub const fn num_bytes(&self) -> usize {
         self.0.len() * 2
@@ -806,7 +806,7 @@ impl PartialEq<CString16> for &CStr16 {
 pub struct PoolString(PoolAllocation);
 
 impl PoolString {
-    /// Create a [`PoolString`] from a [`CStr16`] residing in a buffer allocated
+    /// Creates a [`PoolString`] from a [`CStr16`] residing in a buffer allocated
     /// using [`allocate_pool()`][cbap].
     ///
     /// # Safety
@@ -832,7 +832,7 @@ impl Deref for PoolString {
 }
 
 impl UnalignedSlice<'_, u16> {
-    /// Create a [`CStr16`] from an [`UnalignedSlice`] using an aligned
+    /// Creates a [`CStr16`] from an [`UnalignedSlice`] using an aligned
     /// buffer for storage. The lifetime of the output is tied to `buf`,
     /// not `self`.
     pub fn to_cstr16<'buf>(
@@ -850,7 +850,8 @@ impl UnalignedSlice<'_, u16> {
 /// get the other direction (`right.eq_str_until_nul(&left)`) for free. Hence, the relation is
 /// reflexive.
 pub trait EqStrUntilNul<StrType: ?Sized> {
-    /// Checks if the provided Rust string `StrType` is equal to [Self] until the first null character
+    /// Checks whether the provided Rust string `StrType` equals [`Self`] until
+    /// the first null character.
     /// is found. An exception is the terminating null character of [Self] which is ignored.
     ///
     /// As soon as the first null character in either `&self` or `other` is found, this method returns.

@@ -70,7 +70,7 @@
 //!
 //! ## MSRV
 //!
-//! The minimum supported Rust version is currently 1.81.
+//! The minimum supported Rust version is currently 1.91.
 //! Our policy is to support at least the past two stable releases.
 //!
 //! # API/User Documentation, Documentation Structure, and other Resources
@@ -128,7 +128,7 @@
 //!
 //! ## Optional Cargo crate features
 //!
-//! A list of recommended default features follows below.
+//! Recommended features follow below.
 //!
 //! ### Feature List
 //!
@@ -170,7 +170,7 @@
 //! only unfold their potential when you invoke `uefi::helpers::init` as soon
 //! as possible in your application.
 //!
-//! ### Recommended Default Features
+//! ### Recommended Features
 //!
 //! In typical use-cases, the following features are useful for you:
 //! - Building a UEFI image:

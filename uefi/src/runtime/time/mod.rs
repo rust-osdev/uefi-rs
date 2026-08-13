@@ -53,7 +53,7 @@ pub struct TimeParams {
     /// Day in the range `1..=31`.
     pub day: u8,
 
-    /// Hour in the range `0.=23`.
+    /// Hour in the range `0..=23`.
     pub hour: u8,
 
     /// Minute in the range `0..=59`.

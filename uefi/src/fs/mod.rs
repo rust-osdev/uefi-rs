@@ -4,13 +4,13 @@
 //! module from Rust's standard library. The main export of this module is
 //! [`FileSystem`].
 //!
-//! # Difference to typical File System Abstractions
-//! Users perform actions on dedicated volumes: For example, the boot volume,
-//! such as a CD-rom, USB-stick, or any other storage device.
+//! # Differences from Typical File System Abstractions
 //!
-//! Unlike in the API of typical UNIX file system abstractions, there is
-//! no virtual file system. Unlike in Windows, there is no way to access volumes
-//! by a dedicated name.
+//! Operations act on dedicated volumes, such as a boot volume on a CD-ROM, USB
+//! drive, or other storage device.
+//!
+//! Unlike typical UNIX file system APIs, UEFI has no virtual file system.
+//! Unlike Windows, UEFI has no dedicated volume names.
 //!
 //! # Paths
 //! All paths are absolute and follow the FAT-like file system conventions for
@@ -40,13 +40,13 @@
 //! }
 //! ```
 //!
-//! # API Hints
+//! # API Notes
 //! There is no `File` abstraction as in the Rust `std` library. Instead, it is
 //! intended to work with the file system via dedicated functions, similar to
 //! the public functions of the `std::fs` module.
 //!
-//! There is no automatic synchronization of the file system for concurrent
-//! accesses. This is in the responsibility of the user.
+//! The file system does not automatically synchronize concurrent access; the
+//! caller is responsible for synchronization.
 //!
 //! [`cstr16!`]: crate::cstr16
 

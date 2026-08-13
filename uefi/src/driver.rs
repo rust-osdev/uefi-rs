@@ -34,7 +34,7 @@
 //!
 //! [cnct-ctrl]: crate::boot::connect_controller
 //!
-//! # Device vs. Bus Drivers
+//! # Device and Bus Drivers
 //!
 //! The UEFI driver model distinguishes between "device" and "bus" drivers.
 //! Device drivers manage a single device controller, while bus drivers manage a
@@ -46,7 +46,7 @@
 //! validated for use with) device drivers. Additional functionality may be
 //! added in the future to better support bus drivers.
 //!
-//! # References:
+//! # References
 //!
 //! * [UEFI Specification](https://uefi.org/specifications)
 //! * [EDKII Driver Writer's Guide](https://tianocore-docs.github.io/edk2-UefiDriverWritersGuide/draft/)

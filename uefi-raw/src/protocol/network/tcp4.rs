@@ -17,7 +17,7 @@ use core::fmt::{Debug, Formatter};
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4Protocol {
-    /// Get the current operational status.
+    /// Returns the current operational status.
     ///
     /// `get_mode_data` copies the current operational settings of
     /// this instance into user-supplied structs. This function can

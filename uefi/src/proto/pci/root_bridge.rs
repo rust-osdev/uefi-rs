@@ -21,7 +21,7 @@ use crate::Status;
 
 /// Protocol that provides access to the PCI Root Bridge I/O protocol.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 /// Provides the basic Memory, I/O, PCI configuration, and DMA interfaces that are
 /// used to abstract accesses to PCI controllers behind a PCI Root Bridge Controller.
 #[derive(Debug)]

@@ -13,7 +13,7 @@ use crate::{CStr16, StatusExt};
 
 /// The HII Configuration Routing Protocol.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 ///
 /// The EFI HII Configuration Routing Protocol manages the movement of configuration
 /// data from drivers to configuration applications. It then serves as the single point

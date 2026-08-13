@@ -25,7 +25,7 @@ pub type AtaPassThruMode = uefi_raw::protocol::ata::AtaPassThruMode;
 /// It is designed as a foundational layer, leaving higher-level abstractions responsible for implementing
 /// richer storage semantics, device-specific commands, and advanced use cases.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 /// Provides services that allow ATA commands to be sent to ATA Devices attached to an ATA controller. Packet-
 /// based commands would be sent to ATAPI devices only through the Extended SCSI Pass Thru Protocol. While
 /// the ATA_PASS_THRU interface would expose an interface to the underlying ATA devices on an ATA controller,
@@ -78,7 +78,7 @@ impl AtaPassThru {
 
     /// Iterate over all potential ATA devices on this channel.
     ///
-    /// # Warning
+    /// # Warnings
     /// Depending on the UEFI implementation, this does not only return all actually available devices.
     /// Most implementations instead return a list of all possible fully-qualified device addresses.
     /// You have to probe for availability yourself, using [`AtaDevice::execute_command`].
@@ -98,7 +98,7 @@ impl AtaPassThru {
 
 /// Represents an ATA device on a controller.
 ///
-/// # Warning
+/// # Warnings
 /// This is only a potentially valid device address. Verify it by probing for an actually
 /// available / connected device using [`AtaDevice::execute_command`] before doing anything meaningful.
 #[derive(Debug)]

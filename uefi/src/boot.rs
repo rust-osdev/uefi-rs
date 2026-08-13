@@ -1882,7 +1882,7 @@ pub enum OpenProtocolAttributes {
     /// attribute of `ByDriver`, then an attempt will be made to remove
     /// them by calling the driver's `Stop` function.
     ///
-    /// # Warning
+    /// # Warnings
     ///
     /// Opening an interface in exclusive mode can have surprising side
     /// effects. For example:
@@ -1907,7 +1907,7 @@ pub enum OpenProtocolAttributes {
     /// opened with an attribute of `ByDriver`, then an attempt will be
     /// made to remove them with `DisconnectController`.
     ///
-    /// # Warning
+    /// # Warnings
     ///
     /// See warning section of [`Exclusive`].
     ///

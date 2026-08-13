@@ -6,7 +6,7 @@
 //! Technically, a protocol is a `C` struct holding functions and/or data, with
 //! an associated [`GUID`].
 //!
-//! # About
+//! # Overview
 //! UEFI protocols are a structured collection of functions and/or data,
 //! identified by a [`GUID`], which defines an interface between components in
 //! the UEFI environment, such as between drivers, applications, or firmware

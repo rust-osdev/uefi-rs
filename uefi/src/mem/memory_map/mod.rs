@@ -8,19 +8,17 @@
 //! to guarantee a streamlined API across these types. We recommend to work with
 //! the specific implementation.
 //!
-//! # Usecase: Obtain UEFI Memory Map
+//! # Obtaining a UEFI Memory Map
 //!
-//! You can use [`boot::exit_boot_services`] or
-//! [`boot::memory_map`], which returns an properly initialized
-//! [`MemoryMapOwned`].
+//! Use [`boot::exit_boot_services`] or [`boot::memory_map`] to obtain a
+//! properly initialized [`MemoryMapOwned`].
 //!
-//! # Usecase: Parse Memory Slice as UEFI Memory Map
+//! # Parsing a Memory Slice as a UEFI Memory Map
 //!
-//! If you have a chunk of memory and want to parse it as UEFI memory map, which
-//! might be the case if a bootloader such as GRUB or Limine passes its boot
-//! information, you can use [`MemoryMapRef`] or [`MemoryMapRefMut`].
+//! To parse memory supplied by a bootloader such as GRUB or Limine as a UEFI
+//! memory map, use [`MemoryMapRef`] or [`MemoryMapRefMut`].
 //!
-//! # All relevant exports:
+//! # Relevant Exports
 //!
 //! - the traits [`MemoryMap`] and [`MemoryMapMut`],
 //! - the trait implementations [`MemoryMapOwned`], [`MemoryMapRef`], and

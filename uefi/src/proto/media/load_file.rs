@@ -19,7 +19,7 @@ use {
 /// Used to obtain files, that are primarily boot options, from arbitrary
 /// devices.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 /// The EFI_LOAD_FILE_PROTOCOL is a simple protocol used to obtain files from
 /// arbitrary devices.
 ///
@@ -97,7 +97,7 @@ impl LoadFile {
 /// The Load File2 protocol is used to obtain files from arbitrary devices that
 /// are not boot options.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 ///
 /// The EFI_LOAD_FILE2_PROTOCOL is a simple protocol used to obtain files from
 /// arbitrary devices that are not boot options. It is used by LoadImage() when

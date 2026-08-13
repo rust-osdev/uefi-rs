@@ -48,7 +48,7 @@ impl Time {
     /// Indicates the time should be interpreted as local time.
     pub const UNSPECIFIED_TIMEZONE: i16 = 0x07ff;
 
-    /// Create an invalid `Time` with all fields set to zero.
+    /// Creates an invalid `Time` with all fields set to zero.
     #[must_use]
     pub const fn invalid() -> Self {
         Self {

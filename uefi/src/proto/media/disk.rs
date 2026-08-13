@@ -24,12 +24,12 @@ pub struct DiskIo(DiskIoProtocol);
 impl DiskIo {
     /// Reads bytes from the disk device.
     ///
-    /// # Arguments:
+    /// # Arguments
     /// * `media_id` - ID of the medium to be read.
     /// * `offset` - Starting byte offset on the logical block I/O device to read from.
     /// * `buffer` - Pointer to a buffer to read into.
     ///
-    /// # Errors:
+    /// # Errors
     /// * [`Status::INVALID_PARAMETER`] The read request contains device addresses that are not valid for the device.
     /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the read operation.
     /// * [`Status::NO_MEDIA`]          There is no medium in the device.
@@ -50,12 +50,12 @@ impl DiskIo {
 
     /// Writes bytes to the disk device.
     ///
-    /// # Arguments:
+    /// # Arguments
     /// * `media_id` - ID of the medium to be written.
     /// * `offset` - Starting byte offset on the logical block I/O device to write to.
     /// * `buffer` - Pointer to a buffer to write from.
     ///
-    /// # Errors:
+    /// # Errors
     /// * [`Status::INVALID_PARAMETER`] The write request contains device addresses that are not valid for the device.
     /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the write operation.
     /// * [`Status::NO_MEDIA`]          There is no medium in the device.
@@ -100,7 +100,7 @@ pub struct DiskIo2(DiskIo2Protocol);
 impl DiskIo2 {
     /// Terminates outstanding asynchronous requests to the device.
     ///
-    /// # Errors:
+    /// # Errors
     /// * [`Status::DEVICE_ERROR`] The device reported an error while performing
     pub fn cancel(&mut self) -> Result {
         // SAFETY: The memory is valid.
@@ -109,7 +109,7 @@ impl DiskIo2 {
 
     /// Reads bytes from the disk device.
     ///
-    /// # Arguments:
+    /// # Arguments
     /// * `media_id` - ID of the medium to be read from.
     /// * `offset` - Starting byte offset on the logical block I/O device to read from.
     /// * `token` - Transaction token for asynchronous read.
@@ -121,7 +121,7 @@ impl DiskIo2 {
     /// Because of the asynchronous nature of the disk transaction, manual lifetime
     /// tracking is required.
     ///
-    /// # Errors:
+    /// # Errors
     /// * [`Status::INVALID_PARAMETER`] The read request contains device addresses that are not valid for the device.
     /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
     /// * [`Status::MEDIA_CHANGED`]     `media_id` is not for the current medium.
@@ -145,7 +145,7 @@ impl DiskIo2 {
 
     /// Writes bytes to the disk device.
     ///
-    /// # Arguments:
+    /// # Arguments
     /// * `media_id` - ID of the medium to write to.
     /// * `offset` - Starting byte offset on the logical block I/O device to write to.
     /// * `token` - Transaction token for asynchronous write.
@@ -157,7 +157,7 @@ impl DiskIo2 {
     /// Because of the asynchronous nature of the disk transaction, manual lifetime
     /// tracking is required.
     ///
-    /// # Errors:
+    /// # Errors
     /// * [`Status::INVALID_PARAMETER`] The write request contains device addresses that are not valid for the device.
     /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
     /// * [`Status::MEDIA_CHANGED`      `media_id` is not for the current medium.
@@ -189,10 +189,10 @@ impl DiskIo2 {
 
     /// Flushes all modified data to the physical device.
     ///
-    /// # Arguments:
+    /// # Arguments
     /// * `token` - Transaction token for the asynchronous flush.
     ///
-    /// # Errors:
+    /// # Errors
     /// * [`Status::OUT_OF_RESOURCES`]  The request could not be completed due to a lack of resources.
     /// * [`Status::MEDIA_CHANGED`]     The medium in the device has changed since the last access.
     /// * [`Status::NO_MEDIA`]          There is no medium in the device.

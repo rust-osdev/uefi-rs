@@ -37,7 +37,7 @@ impl SystemTable {
 }
 
 impl Default for SystemTable {
-    /// Create a `SystemTable` with most fields set to zero.
+    /// Creates a `SystemTable` with most fields set to zero.
     ///
     /// The only fields not set to zero are:
     /// * [`Header::signature`] is set to [`SystemTable::SIGNATURE`].

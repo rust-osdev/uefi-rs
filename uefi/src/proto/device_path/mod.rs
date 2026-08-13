@@ -247,7 +247,7 @@ pub struct DevicePathNode {
 }
 
 impl DevicePathNode {
-    /// Create a [`DevicePathNode`] reference from an opaque pointer.
+    /// Creates a [`DevicePathNode`] reference from an opaque pointer.
     ///
     /// # Safety
     ///
@@ -264,20 +264,20 @@ impl DevicePathNode {
         unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), data_len) }
     }
 
-    /// Cast to a [`FfiDevicePath`] pointer.
+    /// Casts this node to a [`FfiDevicePath`] pointer.
     #[must_use]
     pub const fn as_ffi_ptr(&self) -> *const FfiDevicePath {
         let ptr: *const Self = self;
         ptr.cast::<FfiDevicePath>()
     }
 
-    /// Type of device
+    /// Returns the device type.
     #[must_use]
     pub const fn device_type(&self) -> DeviceType {
         self.header.device_type()
     }
 
-    /// Sub type of device
+    /// Returns the device subtype.
     #[must_use]
     pub const fn sub_type(&self) -> DeviceSubType {
         self.header.sub_type()
@@ -289,13 +289,14 @@ impl DevicePathNode {
         (self.device_type(), self.sub_type())
     }
 
-    /// Size (in bytes) of the full [`DevicePathNode`], including the header.
+    /// Returns the size in bytes of the full [`DevicePathNode`], including the
+    /// header.
     #[must_use]
     pub const fn length(&self) -> u16 {
         self.header.length()
     }
 
-    /// True if this node ends an entire [`DevicePath`].
+    /// Returns whether this node ends an entire [`DevicePath`].
     #[must_use]
     pub fn is_end_entire(&self) -> bool {
         self.full_type() == (DeviceType::END, DeviceSubType::END_ENTIRE)
@@ -307,7 +308,7 @@ impl DevicePathNode {
         &self.data
     }
 
-    /// Convert from a generic [`DevicePathNode`] reference to an enum
+    /// Converts a generic [`DevicePathNode`] reference to an enum
     /// of more specific node types.
     pub fn as_enum(&self) -> Result<DevicePathNodeEnum<'_>, NodeConversionError> {
         DevicePathNodeEnum::try_from(self)
@@ -400,7 +401,7 @@ pub struct DevicePathInstance {
 }
 
 impl DevicePathInstance {
-    /// Get an iterator over the [`DevicePathNodes`] in this
+    /// Returns an iterator over the [`DevicePathNodes`] in this
     /// instance. Iteration ends when any [`DeviceType::END`] node is
     /// reached.
     ///
@@ -571,7 +572,7 @@ impl DevicePath {
         Ok(total_size_in_bytes)
     }
 
-    /// Create a [`DevicePath`] reference from an opaque pointer.
+    /// Creates a [`DevicePath`] reference from an opaque pointer.
     ///
     /// # Safety
     ///
@@ -584,13 +585,13 @@ impl DevicePath {
         unsafe { &*Self::ptr_from_ffi(ptr.cast::<c_void>()) }
     }
 
-    /// Cast to a [`FfiDevicePath`] pointer.
+    /// Casts this path to a [`FfiDevicePath`] pointer.
     #[must_use]
     pub const fn as_ffi_ptr(&self) -> *const FfiDevicePath {
         ptr::from_ref(self).cast()
     }
 
-    /// Get an iterator over the [`DevicePathInstance`]s in this path.
+    /// Returns an iterator over the [`DevicePathInstance`]s in this path.
     #[must_use]
     pub const fn instance_iter(&self) -> DevicePathInstanceIterator<'_> {
         DevicePathInstanceIterator {
@@ -598,7 +599,7 @@ impl DevicePath {
         }
     }
 
-    /// Get an iterator over the [`DevicePathNode`]s starting at
+    /// Returns an iterator over the [`DevicePathNode`]s starting at
     /// `self`. Iteration ends when a path is reached where
     /// [`is_end_entire`][DevicePathNode::is_end_entire] is true. That ending
     /// path is not returned by the iterator.
@@ -1010,7 +1011,7 @@ mod tests {
     use super::*;
     use alloc::vec::Vec;
 
-    /// Create a node to `path` from raw data.
+    /// Adds a node to `path` from raw data.
     fn add_node(path: &mut Vec<u8>, device_type: u8, sub_type: u8, node_data: &[u8]) {
         path.push(device_type);
         path.push(sub_type);
@@ -1022,7 +1023,7 @@ mod tests {
         path.extend(node_data);
     }
 
-    /// Create a test device path list as raw bytes.
+    /// Creates a test device path list as raw bytes.
     fn create_raw_device_path() -> Vec<u8> {
         let mut raw_data = Vec::new();
 
@@ -1048,7 +1049,7 @@ mod tests {
         raw_data
     }
 
-    /// Check that `node` has the expected content.
+    /// Checks that `node` has the expected content.
     fn check_node(node: &DevicePathNode, device_type: u8, sub_type: u8, node_data: &[u8]) {
         assert_eq!(node.device_type().0, device_type);
         assert_eq!(node.sub_type().0, sub_type);

@@ -34,7 +34,7 @@ pub type NvmeNamespaceId = u32;
 /// It is designed as a foundational layer, leaving higher-level abstractions responsible for implementing
 /// richer storage semantics, device-specific commands, and advanced use cases.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 /// The `EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL` provides essential functionality for interacting
 /// with NVMe controllers and namespaces. It allows sending NVMe commands to either the
 /// controller itself or specific namespaces within the controller.

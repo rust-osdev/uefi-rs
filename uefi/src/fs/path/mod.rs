@@ -2,18 +2,19 @@
 
 //! This module offers the [`Path`] and [`PathBuf`] abstractions.
 //!
-//! # Interoperability with Rust strings
+//! # Interoperability with Rust Strings
 //!
-//! For the interoperability with Rust strings, i.e., `String` and `str` from
-//! the standard library, the API is intended to transform these types first to
-//! `CString16` respectively `CStr16`. They do not directly translate to
-//! [`Path`] and [`PathBuf`].
+//! To use Rust strings - `String` and `str` - with this API, first convert them
+//! to [`CString16`] or [`CStr16`]. Rust strings do not directly convert to
+//! [`Path`] or [`PathBuf`].
 //!
 //! # Path Structure
 //!
 //! Paths use the [`SEPARATOR`] character as separator. Paths are absolute and
 //! do not contain `.` or `..` components. However, this can be implemented in
 //! the future.
+//!
+//! [`CString16`]: uefi::data_types::CString16
 
 mod path;
 mod pathbuf;

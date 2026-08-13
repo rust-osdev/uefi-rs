@@ -6,7 +6,7 @@
 //! The main export of this module is the `Logger` structure,
 //! which implements the `log` crate's trait `Log`.
 //!
-//! # Implementation details
+//! # Implementation Details
 //!
 //! The implementation is not the most efficient, since there is no buffering done,
 //! and the messages have to be converted from UTF-8 to UEFI's UCS-2.

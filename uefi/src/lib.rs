@@ -13,7 +13,7 @@
 //!
 //! # Minimal Example
 //!
-//! Minimal example for an UEFI application using functionality of the
+//! Minimal example for a UEFI application using functionality of the
 //! `uefi` crate:
 //!
 //! ```no_run
@@ -50,7 +50,7 @@
 //! by abstracting away much of the UEFI API complexity and by providing
 //! convenient wrappers. When we mention UEFI images, we are talking about UEFI
 //! applications, UEFI boot service drivers, and EFI runtime service drivers,
-//! which typically have the `.efi` file extension. For instance, an UEFI
+//! which typically have the `.efi` file extension. For instance, a UEFI
 //! application could be an OS-specific loader, similar to _GRUB_ or _Limine_.
 //!
 //! Additionally, you can use this crate in non-UEFI images (such as a kernel
@@ -70,7 +70,7 @@
 //!
 //! ## MSRV
 //!
-//! The minimum supported Rust version is currently 1.81.
+//! The minimum supported Rust version is currently 1.91.
 //! Our policy is to support at least the past two stable releases.
 //!
 //! # API/User Documentation, Documentation Structure, and other Resources
@@ -128,7 +128,7 @@
 //!
 //! ## Optional Cargo crate features
 //!
-//! A list of recommended default features follows below.
+//! Recommended features follow below.
 //!
 //! ### Feature List
 //!
@@ -149,8 +149,8 @@
 //!   dynamically allocate any memory. Note that even without that feature,
 //!   some code might use the internal UEFI allocator.
 //! - `jiff02`: Integration of [`runtime::Time`] with the `jiff` crate
-//!   (version 0.2 and possible above). Specifically, it integrates the time
-//!   struct with `DateTime` and `Zoned` via `TryFrom`.
+//!   (version 0.2). Specifically, it integrates the time struct with
+//!   `DateTime` and `Zoned` via `TryFrom`.
 //! - `logger`: Logging implementation for the standard [`log`] crate
 //!   that prints output to the UEFI console. No buffering is done; this
 //!   is not a high-performance logger.
@@ -158,7 +158,7 @@
 //!   to the debugcon device (available in QEMU or Cloud Hypervisor on x86).
 //! - `panic_handler`: Add a default panic handler that logs to `stdout`.
 //! - `time03`: Integration of [`Time`][time-struct] with the `time` crate
-//!   (version 0.3). Specifically, the covers [`TryFrom`] integration with
+//!   (version 0.3). Specifically, it provides [`TryFrom`] integration with
 //!   `PrimitiveDateTime` and `OffsetDateTime` of the `time` crate.
 //! - `unstable`: Enable functionality that depends on [unstable features] in
 //!   the Rust compiler (nightly version).
@@ -170,7 +170,7 @@
 //! only unfold their potential when you invoke `uefi::helpers::init` as soon
 //! as possible in your application.
 //!
-//! ### Recommended Default Features
+//! ### Recommended Features
 //!
 //! In typical use-cases, the following features are useful for you:
 //! - Building a UEFI image:
@@ -213,7 +213,7 @@
 //! ## `r-efi`
 //!
 //! [`r-efi`] provides Raw UEFI bindings without high-level convenience similar
-//! to our `uefi-raw` crate, which is part of this  project, but more
+//! to our `uefi-raw` crate, which is part of this project, but more
 //! feature-complete. It targets a lower-level than our `uefi` crate does.
 //!
 //! # License

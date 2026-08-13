@@ -9,7 +9,7 @@ use alloc::boxed::Box;
 /// Common skip dirs in UEFI/FAT-style file systems.
 pub const COMMON_SKIP_DIRS: &[&CStr16] = &[cstr16!("."), cstr16!("..")];
 
-/// Iterates over the entries of an UEFI directory. It returns boxed values of
+/// Iterates over the entries of a UEFI directory. It returns boxed values of
 /// type [`UefiFileInfo`].
 ///
 /// Note that on UEFI/FAT-style file systems, the root dir usually doesn't

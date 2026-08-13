@@ -15,13 +15,13 @@ use ptr_meta::Pointee;
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 pub trait FileProtocolInfo: Align + Identify + FromUefi {}
 
-/// Trait for going from an UEFI-originated pointer to a Rust reference
+/// Trait for going from a UEFI-originated pointer to a Rust reference
 ///
 /// This is trivial for `Sized` types, but requires some work when operating on
 /// dynamic-sized types like `NamedFileProtocolInfo`, as the second member of
 /// the fat pointer must be reconstructed using hidden UEFI-provided metadata.
 pub trait FromUefi {
-    /// Turn an UEFI-provided pointer-to-base into a (possibly fat) Rust reference
+    /// Turn a UEFI-provided pointer-to-base into a (possibly fat) Rust reference
     ///
     /// # Safety
     ///

@@ -86,7 +86,7 @@ pub unsafe fn set_image_handle(image_handle: Handle) {
     IMAGE_HANDLE.store(image_handle.as_ptr(), Ordering::Release);
 }
 
-/// Return true if boot services are active, false otherwise.
+/// Returns `true` if boot services are active and `false` otherwise.
 pub(crate) fn are_boot_services_active() -> bool {
     let Some(st) = table::system_table_raw() else {
         return false;
@@ -325,7 +325,7 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
     mmm
 }
 
-/// Stores the current UEFI memory map in an UEFI-heap allocated buffer
+/// Stores the current UEFI memory map in a UEFI-heap-allocated buffer
 /// and returns a [`MemoryMapOwned`].
 ///
 /// The implementation tries to mitigate some UEFI pitfalls, such as getting
@@ -1269,7 +1269,7 @@ pub fn test_protocol<P: ProtocolPointer + ?Sized>(params: OpenProtocolParams) ->
     }
 }
 
-/// Loads a UEFI image into memory and return a [`Handle`] to the image.
+/// Loads a UEFI image into memory and returns a [`Handle`] to the image.
 ///
 /// There are two ways to load the image: by copying raw image data
 /// from a source buffer, or by loading the image via the
@@ -1535,7 +1535,7 @@ pub unsafe fn install_configuration_table(
 
 /// Sets the watchdog timer.
 ///
-/// UEFI will start a 5-minute countdown after an UEFI image is loaded.  The
+/// UEFI will start a 5-minute countdown after a UEFI image is loaded. The
 /// image must either successfully load an OS and exit boot services in that
 /// time, or disable the watchdog.
 ///

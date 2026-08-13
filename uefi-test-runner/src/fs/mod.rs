@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Tests functionality from the `uefi::fs` module. See function [`test`].
+//! Tests functionality from the `uefi::fs` module. See function [`test()`].
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;

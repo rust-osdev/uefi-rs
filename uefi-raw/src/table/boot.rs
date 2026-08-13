@@ -246,7 +246,7 @@ pub struct BootServices {
 }
 
 bitflags! {
-    /// Flags describing the type of an UEFI event and its attributes.
+    /// Flags describing the type of a UEFI event and its attributes.
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
     #[repr(transparent)]
     pub struct EventType: u32 {

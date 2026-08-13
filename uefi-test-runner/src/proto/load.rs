@@ -77,10 +77,10 @@ unsafe fn uninstall_protocol(handle: Handle, guid: Guid, protocol: &mut CustomLo
 /// protocol leveraging our protocol abstraction.
 ///
 /// The way we are implementing the LoadFile(2) protocol is roughly what certain
-/// Linux loaders do so that Linux can find its initrd [0, 1].
+/// Linux loaders do so that Linux can find its initrd ([0], [1]).
 ///
-/// [0] https://github.com/u-boot/u-boot/commit/ec80b4735a593961fe701cc3a5d717d4739b0fd0#diff-1f940face4d1cf74f9d2324952759404d01ee0a81612b68afdcba6b49803bdbbR171
-/// [1] https://github.com/torvalds/linux/blob/ee9a43b7cfe2d8a3520335fea7d8ce71b8cabd9d/drivers/firmware/efi/libstub/efi-stub-helper.c#L550
+/// [0]: https://github.com/u-boot/u-boot/commit/ec80b4735a593961fe701cc3a5d717d4739b0fd0#diff-1f940face4d1cf74f9d2324952759404d01ee0a81612b68afdcba6b49803bdbbR171
+/// [1]: https://github.com/torvalds/linux/blob/ee9a43b7cfe2d8a3520335fea7d8ce71b8cabd9d/drivers/firmware/efi/libstub/efi-stub-helper.c#L550
 pub fn test() {
     let image = boot::image_handle();
 

@@ -212,7 +212,7 @@ pub enum CargoAction {
 
 /// Get a modified PATH to remove entries added by rustup. This is
 /// necessary on Windows, see
-/// https://github.com/rust-lang/rustup/issues/3031.
+/// <https://github.com/rust-lang/rustup/issues/3031>.
 fn sanitized_path(orig_path: OsString) -> OsString {
     // Modify the PATH to remove entries added by rustup. This is
     // necessary on Windows, see https://github.com/rust-lang/rustup/issues/3031.

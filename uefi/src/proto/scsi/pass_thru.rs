@@ -37,7 +37,7 @@ impl Default for ScsiTargetLun {
 /// It is designed as a foundational layer, leaving higher-level abstractions responsible for implementing
 /// richer storage semantics, device-specific commands, and advanced use cases.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 /// Provides services that allow SCSI Pass Thru commands to be sent to SCSI devices attached to a SCSI channel. It also
 /// allows packet-based commands (ATAPI cmds) to be sent to ATAPI devices attached to a ATA controller.
 #[derive(Debug)]
@@ -87,7 +87,7 @@ impl ExtScsiPassThru {
 
     /// Iterate over all potential SCSI devices on this channel.
     ///
-    /// # Warning
+    /// # Warnings
     /// Depending on the UEFI implementation, this does not only return all actually available devices.
     /// Most implementations instead return a list of all possible fully-qualified device addresses.
     /// You have to probe for availability yourself, using [`ScsiDevice::execute_command`].
@@ -124,7 +124,7 @@ impl ExtScsiPassThru {
 ///
 /// In the UEFI Specification, this corresponds to a (SCSI target, LUN) tuple.
 ///
-/// # Warning
+/// # Warnings
 /// This does not actually have to correspond to an actual device!
 /// You have to probe for availability before doing anything meaningful with it.
 #[derive(Clone, Debug)]

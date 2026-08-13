@@ -23,7 +23,7 @@ bitflags::bitflags! {
 
     /// Represents the `EFI_NVM_EXPRESS_PASS_THRU_ATTRIBUTES_*` defines from the UEFI specification.
     ///
-    /// # UEFI Specification Description
+    /// # UEFI Specification
     /// Tells if the interface is for physical NVM Express controllers or logical NVM Express controllers.
     ///
     /// Drivers for non-RAID NVM Express controllers will set both the `PHYSICAL` and the `LOGICAL` bit.

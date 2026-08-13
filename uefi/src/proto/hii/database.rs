@@ -15,7 +15,7 @@ use crate::{Error, StatusExt};
 /// This database contains internationalized strings, as well as a description of all
 /// supported BIOS settings, together with their logic (e.g.: option A blocks option B if value is `true`).
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 ///
 /// Database manager for HII-related data structures.
 #[derive(Debug)]

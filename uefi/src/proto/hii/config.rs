@@ -7,7 +7,7 @@ use uefi_raw::protocol::hii::config::{ConfigKeywordHandlerProtocol, HiiConfigAcc
 
 /// The HII Keyword Handler Protocol.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 ///
 /// This protocol provides the mechanism to set and get the values associated
 /// with a keyword exposed through a x-UEFI- prefixed configuration language namespace.
@@ -18,7 +18,7 @@ pub struct ConfigKeywordHandler(ConfigKeywordHandlerProtocol);
 
 /// The HII Configuration Access Protocol.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 ///
 /// This protocol is responsible for facilitating access to configuration data from HII.
 /// It is typically invoked by the HII Configuration Routing Protocol for handling

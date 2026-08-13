@@ -65,7 +65,7 @@ pub struct DeviceLocationInfo {
 /// Either use [`DiskInfo::interface`] to determine what should be possible, or simply
 /// try and handle the [`Status::UNSUPPORTED`] error return value.
 ///
-/// # UEFI Spec Description
+/// # UEFI Specification
 /// Provides the basic interfaces to abstract platform information regarding an IDE controller.
 ///
 /// [`Protocol`]: uefi::proto::Protocol

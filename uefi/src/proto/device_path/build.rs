@@ -153,7 +153,7 @@ impl<'a> DevicePathBuilder<'a> {
     }
 }
 
-/// Reference to the backup storage for [`DevicePathBuilder`]
+/// Backing storage borrowed by a [`DevicePathBuilder`].
 #[derive(Debug)]
 enum BuilderStorage<'a> {
     Buf {

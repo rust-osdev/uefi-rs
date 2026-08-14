@@ -262,7 +262,7 @@ impl GraphicsOutput {
         }
     }
 
-    /// Memory-safety check for accessing a region of the framebuffer
+    /// Checks that a frame-buffer region is in bounds.
     fn check_framebuffer_region(&self, coords: (usize, usize), dims: (usize, usize)) {
         let (width, height) = self.current_mode_info().resolution();
         assert!(
@@ -275,7 +275,7 @@ impl GraphicsOutput {
         );
     }
 
-    /// Memory-safety check for accessing a region of a user-provided buffer
+    /// Checks that a BLT buffer region is in bounds.
     fn check_blt_buffer_region(&self, region: BltRegion, dims: (usize, usize), buf_length: usize) {
         match region {
             BltRegion::Full => assert!(
@@ -305,7 +305,7 @@ impl GraphicsOutput {
         unsafe { *self.mode().info.cast_const().cast::<ModeInfo>() }
     }
 
-    /// Access the frame buffer directly
+    /// Returns direct access to the frame buffer.
     pub fn frame_buffer(&mut self) -> FrameBuffer<'_> {
         assert!(
             self.current_mode_info().pixel_format() != PixelFormat::BltOnly,
@@ -502,15 +502,15 @@ impl From<u32> for BltPixel {
 /// sub-rectangle of it, but require the stride to be known in the latter case.
 #[derive(Clone, Copy, Debug)]
 pub enum BltRegion {
-    /// Operate on the full `BltBuffer`
+    /// Operates on the full `BltBuffer`.
     Full,
 
-    /// Operate on a sub-rectangle of the `BltBuffer`
+    /// Operates on a sub-rectangle of the `BltBuffer`.
     SubRectangle {
-        /// Coordinate of the rectangle in the `BltBuffer`
+        /// Coordinates of the rectangle in the `BltBuffer`.
         coords: (usize, usize),
 
-        /// Stride (length of each row of the `BltBuffer`) in **pixels**
+        /// Row stride of the `BltBuffer` in pixels.
         px_stride: usize,
     },
 }
@@ -533,7 +533,7 @@ pub enum BltOp<'buf> {
         buffer: &'buf mut [BltPixel],
         /// Coordinates of the source rectangle, in the frame buffer.
         src: (usize, usize),
-        /// Location of the destination rectangle in the user-provided buffer
+        /// Destination rectangle in the caller-provided buffer.
         dest: BltRegion,
         /// Width / height of the rectangles.
         dims: (usize, usize),
@@ -562,7 +562,7 @@ pub enum BltOp<'buf> {
     },
 }
 
-/// Direct access to a memory-mapped frame buffer
+/// Direct access to a memory-mapped frame buffer.
 #[derive(Debug)]
 pub struct FrameBuffer<'gop> {
     base: *mut u8,
@@ -571,7 +571,7 @@ pub struct FrameBuffer<'gop> {
 }
 
 impl FrameBuffer<'_> {
-    /// Access the raw framebuffer pointer
+    /// Returns the raw frame-buffer pointer.
     ///
     /// To use this pointer safely and correctly, you must...
     /// - Honor the pixel format and stride specified by the mode info
@@ -585,7 +585,7 @@ impl FrameBuffer<'_> {
         self.base
     }
 
-    /// Query the framebuffer size in bytes
+    /// Returns the frame-buffer size in bytes.
     #[must_use]
     pub const fn size(&self) -> usize {
         self.size

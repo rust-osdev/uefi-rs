@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! HII Protocols
+//! UEFI HII protocols and data types.
 
 pub mod config;
 #[cfg(feature = "alloc")]

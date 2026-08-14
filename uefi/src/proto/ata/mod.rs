@@ -179,7 +179,8 @@ impl<'a> AtaRequestBuilder<'a> {
     }
 
     /// Configure the `device_head` field.
-    /// DEVICE
+    ///
+    /// This field contains the ATA DEVICE bit.
     #[must_use]
     pub const fn with_device_head(mut self, device_head: u8) -> Self {
         self.req.acb.device_head = device_head;

@@ -60,13 +60,13 @@ impl<'a> Iterator for ConfigurationStringIter<'a> {
 /// routing and identification information for UEFI components.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ConfigHdrSection {
-    /// UEFI ConfigurationString {GuidHdr} element
+    /// GUID header element of a UEFI configuration string.
     Guid,
-    /// UEFI ConfigurationString {NameHdr} element
+    /// Name header element of a UEFI configuration string.
     Name,
-    /// UEFI ConfigurationString {PathHdr} element
+    /// Path header element of a UEFI configuration string.
     Path,
-    /// UEFI ConfigurationString {DescHdr} element
+    /// Descriptor header element of a UEFI configuration string.
     DescHdr,
 }
 

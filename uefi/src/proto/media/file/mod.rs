@@ -343,13 +343,13 @@ pub enum FileType {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(u64)]
 pub enum FileMode {
-    /// The file can be read from
+    /// Opens the file for reading.
     Read = 1,
 
-    /// The file can be read from and written to
+    /// Opens the file for reading and writing.
     ReadWrite = 2 | 1,
 
-    /// The file can be read, written, and will be created if it does not exist
+    /// Opens the file for reading and writing, creating it if necessary.
     CreateReadWrite = (1 << 63) | 2 | 1,
 }
 

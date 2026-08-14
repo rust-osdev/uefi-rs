@@ -67,11 +67,11 @@ fn read_device_register_u32<T: Sized + Copy>(
 /// Error type used by the device path construction of [`PciTree`].
 #[derive(Debug)]
 pub enum PciDevicePathBuildError {
-    /// The given [`PciIoAddress`] was invalid or not path of the enumeration.
+    /// The address was invalid or not part of the enumeration.
     InvalidAddress,
-    /// Error while constructing the pci device DevicePath.
+    /// The PCI device path could not be built.
     PathBuildError(BuildError),
-    /// Error while
+    /// The Device Path Utilities protocol returned an error.
     DevicePathUtilitiesError(DevicePathUtilitiesError),
 }
 impl From<BuildError> for PciDevicePathBuildError {

@@ -199,21 +199,17 @@ impl Serial {
         unsafe { (self.0.set_control_bits)(&mut self.0, bits) }.to_result()
     }
 
-    /// Reads data from the device. This function has the raw semantics of the
-    /// underlying UEFI protocol.
+    /// Reads data from the device with the raw UEFI protocol semantics.
     ///
     /// The function will read bytes until either the buffer is full or a
     /// timeout or overrun error occurs.
     ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] for the device.
+    ///
     /// # Arguments
     ///
-    /// - `buffer`: buffer to fill
-    ///
-    /// # Tips
-    ///
-    /// Consider setting non-default properties via [`Self::set_attributes`]
-    /// and [`Self::set_control_bits`] matching your use-case. For more info,
-    /// please read the general [documentation](Self) of the protocol.
+    /// - `buffer`: Buffer to fill.
     ///
     /// # Errors
     ///
@@ -232,28 +228,23 @@ impl Serial {
         )
     }
 
-    /// Reads bytes into the provided buffer, blocking until it is full.
+    /// Reads bytes into `buffer`, blocking until it is full.
     ///
     /// Retries automatically on [`Status::TIMEOUT`], stalling briefly between
     /// attempts based on the current baud rate. A maximum retry limit prevents
     /// spinning forever in the unlikely event of a hardware fault.
     ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] for the device.
+    ///
     /// # Arguments
     ///
-    /// - `buffer`: buffer to fill
-    ///
-    /// # Tips
-    ///
-    /// Consider setting non-default properties via [`Self::set_attributes`]
-    /// and [`Self::set_control_bits`] matching your use-case. For more info,
-    /// please read the general [documentation](Self) of the protocol.
+    /// - `buffer`: Buffer to fill.
     ///
     /// # Errors
     ///
-    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
-    /// - [`Status::TIMEOUT`]: This timeout happens if the underlying device
-    ///   seem to stopped its normal operation and is only reported to prevent
-    ///   an endless loop.
+    /// - [`Status::DEVICE_ERROR`]: the serial device reported an error.
+    /// - [`Status::TIMEOUT`]: the device stopped making progress.
     pub fn read_exact(&mut self, buffer: &mut [u8]) -> Result<()> {
         // Chosen at will, tested on real hardware.
         const MAX_ZERO_PROGRESS: usize = 16;
@@ -293,21 +284,17 @@ impl Serial {
         Ok(())
     }
 
-    /// Writes data to this device. This function has the raw semantics of the
-    /// underlying UEFI protocol.
+    /// Writes data with the raw UEFI protocol semantics.
     ///
     /// The function will try to write all provided bytes in the configured
     /// timeout.
     ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] for the device.
+    ///
     /// # Arguments
     ///
-    /// - `data`: bytes to write
-    ///
-    /// # Tips
-    ///
-    /// Consider setting non-default properties via [`Self::set_attributes`]
-    /// and [`Self::set_control_bits`] matching your use-case. For more info,
-    /// please read the general [documentation](Self) of the protocol.
+    /// - `data`: Bytes to write.
     ///
     /// # Errors
     ///
@@ -326,28 +313,23 @@ impl Serial {
         )
     }
 
-    /// Writes all provided bytes, blocking until every byte has been sent.
+    /// Writes all bytes in `data`, blocking until every byte has been sent.
     ///
     /// Retries automatically on [`Status::TIMEOUT`], stalling briefly between
     /// attempts based on the current baud rate. A maximum retry limit prevents
     /// spinning forever in the unlikely event of a hardware fault.
     ///
+    /// Consider setting non-default properties via [`Self::set_attributes`]
+    /// and [`Self::set_control_bits`] for the device.
+    ///
     /// # Arguments
     ///
-    /// - `data`: bytes to write
-    ///
-    /// # Tips
-    ///
-    /// Consider setting non-default properties via [`Self::set_attributes`]
-    /// and [`Self::set_control_bits`] matching your use-case. For more info,
-    /// please read the general [documentation](Self) of the protocol.
+    /// - `data`: Bytes to write.
     ///
     /// # Errors
     ///
-    /// - [`Status::DEVICE_ERROR`]: serial device reported an error
-    /// - [`Status::TIMEOUT`]: This timeout happens if the underlying device
-    ///   seem to stopped its normal operation and is only reported to prevent
-    ///   an endless loop.
+    /// - [`Status::DEVICE_ERROR`]: the serial device reported an error.
+    /// - [`Status::TIMEOUT`]: the device stopped making progress.
     pub fn write_exact(&mut self, data: &[u8]) -> Result<()> {
         // Chosen at will, tested on real hardware.
         const MAX_ZERO_PROGRESS: usize = 16;

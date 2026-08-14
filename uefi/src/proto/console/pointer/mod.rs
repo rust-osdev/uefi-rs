@@ -20,11 +20,13 @@ impl Pointer {
     /// Resets the pointer device hardware.
     ///
     /// # Arguments
-    /// The `extended_verification` parameter is used to request that UEFI
-    /// performs an extended check and reset of the input device.
+    ///
+    /// - `extended_verification`: Requests an extended check and reset of the
+    ///   input device.
     ///
     /// # Errors
-    /// - `DeviceError` if the device is malfunctioning and cannot be reset.
+    /// - [`Status::DEVICE_ERROR`]: the device is malfunctioning and cannot be
+    ///   reset.
     pub fn reset(&mut self, extended_verification: bool) -> Result {
         // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&mut self.0, extended_verification.into()) }.to_result()
@@ -37,7 +39,7 @@ impl Pointer {
     /// interface in order to wait for input from the pointer device.
     ///
     /// # Errors
-    /// - `DeviceError` if there was an issue with the pointer device.
+    /// - [`Status::DEVICE_ERROR`]: the pointer device reported an error.
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {

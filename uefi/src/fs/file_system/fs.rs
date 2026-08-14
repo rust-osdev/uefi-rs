@@ -15,9 +15,9 @@ use uefi::boot::ScopedProtocol;
 /// Return type for public [`FileSystem`] operations.
 pub type FileSystemResult<T> = Result<T, Error>;
 
-/// High-level file-system abstraction for UEFI volumes with an API that is
-/// close to `std::fs`. It acts as convenient accessor around the
-/// [`SimpleFileSystemProtocol`].
+/// High-level file-system abstraction for UEFI volumes.
+///
+/// Its API resembles `std::fs` and wraps [`SimpleFileSystemProtocol`].
 ///
 /// Please refer to the [module documentation] for more information.
 ///
@@ -25,7 +25,7 @@ pub type FileSystemResult<T> = Result<T, Error>;
 pub struct FileSystem(ScopedProtocol<SimpleFileSystemProtocol>);
 
 impl FileSystem {
-    /// Constructor.
+    /// Creates a file-system accessor for `proto`.
     #[must_use]
     pub fn new(proto: impl Into<Self>) -> Self {
         proto.into()
@@ -35,6 +35,11 @@ impl FileSystem {
     ///
     /// If the file does not exist, `Ok(false)` is returned. If it cannot be
     /// determined whether the file exists or not, an error is returned.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot inspect the path.
     pub fn try_exists(&mut self, path: impl AsRef<Path>) -> FileSystemResult<bool> {
         match self.open(path.as_ref(), UefiFileMode::Read, false) {
             Ok(_) => Ok(true),
@@ -49,8 +54,14 @@ impl FileSystem {
         }
     }
 
-    /// Copies the contents of one file to another. Creates the destination file
-    /// if it doesn't exist and overwrites any content, if it exists.
+    /// Copies one file to another.
+    ///
+    /// The destination is created if necessary and overwritten if it exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if a file
+    /// operation fails.
     pub fn copy(
         &mut self,
         src_path: impl AsRef<Path>,
@@ -149,15 +160,24 @@ impl FileSystem {
         Ok(())
     }
 
-    /// Creates a new, empty directory at the provided path
+    /// Creates an empty directory at `path`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot create the directory.
     pub fn create_dir(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
         let path = path.as_ref();
         self.open(path, UefiFileMode::CreateReadWrite, true)
             .map(|_| ())
     }
 
-    /// Recursively create a directory and all of its parent components if they
-    /// are missing.
+    /// Creates a directory and any missing parents.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot inspect or create a directory.
     pub fn create_dir_all(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
         let path = path.as_ref();
 
@@ -181,8 +201,12 @@ impl FileSystem {
         Ok(())
     }
 
-    /// Given a path, query the file system to get information about a file,
-    /// directory, etc. Returns [`UefiFileInfo`].
+    /// Returns metadata for a file or directory.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot open the path or read its metadata.
     pub fn metadata(&mut self, path: impl AsRef<Path>) -> FileSystemResult<Box<UefiFileInfo>> {
         let path = path.as_ref();
         let mut file = self.open(path, UefiFileMode::Read, false)?;
@@ -195,7 +219,12 @@ impl FileSystem {
         })
     }
 
-    /// Read the entire contents of a file into a bytes vector.
+    /// Reads an entire file into a byte vector.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot open, inspect, or read the file.
     pub fn read(&mut self, path: impl AsRef<Path>) -> FileSystemResult<Vec<u8>> {
         let path = path.as_ref();
 
@@ -238,6 +267,11 @@ impl FileSystem {
     }
 
     /// Returns an iterator over the entries within a directory.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot open the directory.
     pub fn read_dir(&mut self, path: impl AsRef<Path>) -> FileSystemResult<UefiDirectoryIter> {
         let path = path.as_ref();
         let dir = self
@@ -255,12 +289,22 @@ impl FileSystem {
         Ok(UefiDirectoryIter::new(dir))
     }
 
-    /// Read the entire contents of a file into a Rust string.
+    /// Reads an entire UTF-8 file into a [`String`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path, [`Error::Io`] if firmware
+    /// cannot read the file, or [`Error::Utf8Encoding`] for invalid UTF-8.
     pub fn read_to_string(&mut self, path: impl AsRef<Path>) -> FileSystemResult<String> {
         String::from_utf8(self.read(path)?).map_err(Error::Utf8Encoding)
     }
 
     /// Removes an empty directory.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if the path
+    /// is not a directory or firmware cannot remove it.
     pub fn remove_dir(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
         let path = path.as_ref();
 
@@ -289,8 +333,12 @@ impl FileSystem {
         }
     }
 
-    /// Removes a directory at this path, after removing all its contents. Use
-    /// carefully!
+    /// Recursively removes a directory and all of its contents.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot enumerate or remove an entry.
     pub fn remove_dir_all(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
         let path = path.as_ref();
         for file_info in self
@@ -319,6 +367,11 @@ impl FileSystem {
     }
 
     /// Removes a file from the filesystem.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if the path
+    /// is not a file or firmware cannot remove it.
     pub fn remove_file(&mut self, path: impl AsRef<Path>) -> FileSystemResult<()> {
         let path = path.as_ref();
 
@@ -345,8 +398,12 @@ impl FileSystem {
         }
     }
 
-    /// Rename a file or directory to a new name, replacing the original file if
-    /// it already exists.
+    /// Renames a file, replacing the destination if it exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot copy or remove the file.
     pub fn rename(
         &mut self,
         src_path: impl AsRef<Path>,
@@ -356,9 +413,14 @@ impl FileSystem {
         self.remove_file(src_path)
     }
 
-    /// Write a slice as the entire contents of a file. This function will
-    /// create a file if it does not exist, and will entirely replace its
-    /// contents if it does.
+    /// Writes bytes as the entire contents of a file.
+    ///
+    /// The file is created if necessary and replaced if it exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Path`] for an invalid path or [`Error::Io`] if firmware
+    /// cannot create, write, or flush the file.
     pub fn write(
         &mut self,
         path: impl AsRef<Path>,

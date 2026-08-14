@@ -18,6 +18,12 @@ pub struct Rng(uefi_raw::protocol::rng::RngProtocol);
 
 impl Rng {
     /// Returns information about the random number generation implementation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot enumerate its algorithms. For
+    /// [`Status::BUFFER_TOO_SMALL`], the error payload contains the required
+    /// buffer size in bytes.
     pub fn get_info<'buf>(
         &mut self,
         algorithm_list: &'buf mut [RngAlgorithmType],
@@ -47,7 +53,17 @@ impl Rng {
         }
     }
 
-    /// Returns the next set of random numbers
+    /// Fills `buffer` with random bytes.
+    ///
+    /// # Arguments
+    ///
+    /// - `algorithm`: Requested algorithm, or `None` for the firmware default.
+    /// - `buffer`: Destination for the generated random bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the algorithm is unsupported or firmware cannot
+    /// generate the requested random data.
     pub fn get_rng(&mut self, algorithm: Option<RngAlgorithmType>, buffer: &mut [u8]) -> Result {
         let buffer_length = buffer.len();
 

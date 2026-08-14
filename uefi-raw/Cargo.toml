@@ -3,9 +3,9 @@ name = "uefi-raw"
 version = "0.15.1"
 readme = "README.md"
 description = """
-Raw UEFI types and bindings for protocols, boot, and runtime services. This can
-serve as base for an UEFI firmware implementation or a high-level wrapper to
-access UEFI functionality from an UEFI image.
+Raw UEFI types and bindings for protocols, boot services, and runtime services.
+They can serve as a base for UEFI firmware implementations or high-level
+wrappers.
 """
 
 authors.workspace = true

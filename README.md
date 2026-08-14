@@ -12,7 +12,7 @@ This crate makes it easy to develop Rust software that leverages **safe**,
 ![Stars](https://img.shields.io/github/stars/rust-osdev/uefi-rs)
 
 ![UEFI App running in QEMU](https://imgur.com/SFPSVuO.png)
-Screenshot of an application running in QEMU on an UEFI firmware that leverages
+Screenshot of an application running in QEMU on UEFI firmware that uses
 our Rust library.
 
 ## API and User Documentation

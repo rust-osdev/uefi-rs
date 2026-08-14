@@ -89,9 +89,7 @@ pub struct Boolean(pub u8);
 impl Boolean {
     /// [`Boolean`] representing `true`.
     ///
-    /// # Caution
-    ///
-    /// This is only one possible true bit pattern. In UEFI, every non-zero
+    /// This is only one possible true bit pattern. In UEFI, every nonzero
     /// bit pattern is treated as logical `true`.
     pub const TRUE: Self = Self(1);
 

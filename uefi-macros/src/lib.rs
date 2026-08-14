@@ -103,7 +103,7 @@ pub fn unsafe_protocol(args: TokenStream, input: TokenStream) -> TokenStream {
 /// The global system table pointer and global image handle will be set
 /// automatically.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```no_run
 /// #![no_main]

@@ -489,7 +489,7 @@ impl CStr16 {
     /// The backing buffer must be big enough to hold the converted string as
     /// well as a trailing null character.
     ///
-    /// # Examples
+    /// # Example
     ///
     /// Converts the UTF-8 string "ABC" to a `&CStr16`:
     ///
@@ -571,7 +571,7 @@ impl CStr16 {
     ///
     /// See [`FromSliceWithNulError`].
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```
     /// use uefi::CStr16;

@@ -19,8 +19,7 @@ pub fn _print(args: core::fmt::Arguments) {
 
 /// Prints to the standard output of the UEFI boot service console.
 ///
-/// # Usage
-/// Use this similar to `print!` from the Rust standard library, but only
+/// Use this like `print!` from the Rust standard library, but only
 /// as long as boot services have not been exited.
 ///
 /// You should never use this macro in a custom Logger ([`log::Log`] impl) to
@@ -29,7 +28,7 @@ pub fn _print(args: core::fmt::Arguments) {
 /// # Panics
 /// Will panic if the system table's `stdout` is not set, or if writing fails.
 ///
-/// # Examples
+/// # Example
 /// ```
 /// print!("");
 /// print!("Hello World\n");
@@ -43,8 +42,7 @@ macro_rules! print {
 /// Prints to the standard output of the UEFI boot service console, but with a
 /// newline.
 ///
-/// # Usage
-/// Use this similar to `println!` from the Rust standard library, but only
+/// Use this like `println!` from the Rust standard library, but only
 /// as long as boot services have not been exited.
 ///
 /// You should never use this macro in a custom Logger ([`log::Log`] impl) to
@@ -53,7 +51,7 @@ macro_rules! print {
 /// # Panics
 /// Will panic if the system table's `stdout` is not set, or if writing fails.
 ///
-/// # Examples
+/// # Example
 /// ```
 /// println!();
 /// println!("Hello World");

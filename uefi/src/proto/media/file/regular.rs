@@ -42,8 +42,6 @@ impl RegularFile {
     /// * [`Status::DEVICE_ERROR`]
     /// * [`Status::VOLUME_CORRUPTED`]
     ///
-    /// # Quirks
-    ///
     /// Some UEFI implementations have a bug where large reads will incorrectly
     /// return an error. This function avoids that bug by reading in chunks of
     /// no more than 1 MiB. This is handled internally within the function;

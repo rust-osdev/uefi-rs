@@ -41,7 +41,7 @@ impl core::error::Error for FromStrError {}
 /// For convenience, a [`CString16`] is comparable with `&str` and `String` from
 /// the standard library through the trait [`EqStrUntilNul`].
 ///
-/// # Examples
+/// # Example
 ///
 /// Round-trip conversion from a [`&str`] to a `CString16` and back:
 ///

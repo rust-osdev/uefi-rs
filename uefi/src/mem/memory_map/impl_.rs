@@ -281,8 +281,7 @@ impl IndexMut<usize> for MemoryMapRefMut<'_> {
 /// When this type is dropped and boot services are not exited yet, the memory
 /// is freed.
 ///
-/// # Usage
-/// The type is intended to be used like this:
+/// The type is intended to be used as follows:
 /// 1. create it using [`MemoryMapBackingMemory::new`]
 /// 2. pass it to [`boot::get_memory_map`]
 /// 3. construct a [`MemoryMapOwned`] from it

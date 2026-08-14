@@ -42,7 +42,7 @@ impl Input {
     ///
     /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```
     /// use log::info;

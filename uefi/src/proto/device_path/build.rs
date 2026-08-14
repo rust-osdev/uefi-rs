@@ -43,7 +43,7 @@ use alloc::vec::Vec;
 /// [`finalize`]: DevicePathBuilder::finalize
 /// [`push`]: DevicePathBuilder::push
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// use core::mem::MaybeUninit;

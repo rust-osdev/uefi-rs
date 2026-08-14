@@ -469,7 +469,6 @@ impl ToOwned for DevicePathInstance {
 ///
 /// See the [module-level documentation] for more details.
 ///
-/// # Usage
 /// This type implements [`Protocol`] and therefore can be used on any
 /// device handle to obtain generic path/location information concerning the
 /// physical device or logical device. If the handle does not logically map to a

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! UEFI character handling
+//! UEFI character handling.
 //!
-//! UEFI uses both Latin-1 and UCS-2 character encoding, this module implements
-//! support for the associated character types.
+//! UEFI uses both Latin-1 and UCS-2 encodings. This module provides the
+//! corresponding character types.
 
 use core::fmt::{self, Display, Formatter};
 
-/// Character conversion error
+/// Error converting a character to a UEFI character type.
 #[derive(Clone, Copy, Debug)]
 pub struct CharConversionError;
 
@@ -19,7 +19,7 @@ impl Display for CharConversionError {
 
 impl core::error::Error for CharConversionError {}
 
-/// A Latin-1 character
+/// Latin-1 character.
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Char8(u8);
@@ -71,10 +71,10 @@ impl PartialEq<char> for Char8 {
     }
 }
 
-/// Latin-1 version of the NUL character
+/// Latin-1 NUL character.
 pub const NUL_8: Char8 = Char8(0);
 
-/// An UCS-2 code point
+/// UCS-2 code point.
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Char16(u16);
@@ -83,13 +83,14 @@ impl Char16 {
     /// Creates a UCS-2 character from a Rust character without checks.
     ///
     /// # Safety
+    ///
     /// The caller must be sure that the character is valid.
     #[must_use]
     pub const unsafe fn from_u16_unchecked(val: u16) -> Self {
         Self(val)
     }
 
-    /// Checks if the value is within the ASCII range.
+    /// Returns whether the value is in the ASCII range.
     #[must_use]
     pub const fn is_ascii(&self) -> bool {
         self.0 <= 127
@@ -159,7 +160,7 @@ impl PartialEq<char> for Char16 {
     }
 }
 
-/// UCS-2 version of the NUL character
+/// UCS-2 NUL character.
 // SAFETY: The character is valid.
 pub const NUL_16: Char16 = unsafe { Char16::from_u16_unchecked(0) };
 

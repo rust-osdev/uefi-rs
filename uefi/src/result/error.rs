@@ -5,9 +5,9 @@
 use super::Status;
 use core::fmt::{Debug, Display};
 
-/// An UEFI-related error with optionally additional payload data. The error
-/// kind is encoded in the `status` field (see [`Status`]). Additional payload
-/// may be inside the `data` field.
+/// UEFI error with optional additional data.
+///
+/// [`Status`] identifies the error kind and `Data` carries contextual payload.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Error<Data: Debug = ()> {
     status: Status,
@@ -15,7 +15,7 @@ pub struct Error<Data: Debug = ()> {
 }
 
 impl<Data: Debug> Error<Data> {
-    /// Create an `Error`.
+    /// Creates an [`Error`].
     ///
     /// # Panics
     ///
@@ -25,17 +25,17 @@ impl<Data: Debug> Error<Data> {
         Self { status, data }
     }
 
-    /// Get error `Status`.
+    /// Returns the error status.
     pub const fn status(&self) -> Status {
         self.status
     }
 
-    /// Get error data.
+    /// Returns the error data.
     pub const fn data(&self) -> &Data {
         &self.data
     }
 
-    /// Split this error into its inner status and error data
+    /// Splits this error into its status and data.
     pub fn split(self) -> (Status, Data) {
         (self.status, self.data)
     }
@@ -56,11 +56,9 @@ impl<Data: Debug> Display for Error<Data> {
 }
 
 impl<Data: Debug> Error<Data> {
-    /// Transforms the generic payload of an error to `()`. This is useful if
-    /// you want
-    /// - to retain the erroneous status code,
-    /// - do not care about the payload, and
-    /// - refrain from generic type complexity in a higher API level.
+    /// Returns this error without its payload.
+    ///
+    /// This retains the status while simplifying the error type to [`Error<()>`].
     pub const fn to_err_without_payload(&self) -> Error<()> {
         Error {
             status: self.status,

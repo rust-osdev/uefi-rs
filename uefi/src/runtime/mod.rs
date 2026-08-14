@@ -68,7 +68,7 @@ pub fn get_time_and_caps() -> Result<(Time, TimeCapabilities)> {
     unsafe { (rt.get_time)(time_ptr.cast(), &mut caps) }.to_result_with_val(|| (time, caps))
 }
 
-/// Sets the current local time and date information
+/// Sets the current local time and date.
 ///
 /// During runtime, if a PC-AT CMOS device is present in the platform, the
 /// caller must synchronize access to the device before calling `set_time`.
@@ -402,8 +402,7 @@ pub fn delete_variable(name: &CStr16, vendor: &VariableVendor) -> Result {
     set_variable(name, vendor, VariableAttributes::empty(), &[])
 }
 
-/// Get information about UEFI variable storage space for the type
-/// of variable specified in `attributes`.
+/// Returns storage information for variables with `attributes`.
 ///
 /// This operation is only supported starting with UEFI 2.0.
 ///

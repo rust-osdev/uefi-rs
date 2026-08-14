@@ -902,8 +902,7 @@ pub fn register_protocol_notify(
     )
 }
 
-/// Get the list of protocol interface [`Guids`][Guid] that are installed
-/// on a [`Handle`].
+/// Returns the protocol interface [`Guid`]s installed on a [`Handle`].
 ///
 /// # Errors
 ///
@@ -1091,15 +1090,13 @@ pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
     Ok(handles)
 }
 
-/// Find an arbitrary handle that supports a particular [`Protocol`]. Returns
-/// [`NOT_FOUND`] if no handles support the protocol.
+/// Returns an arbitrary handle that supports a particular [`Protocol`].
 ///
 /// This method is a convenient wrapper around [`locate_handle_buffer`] for
 /// getting just one handle. This is useful when you don't care which handle the
 /// protocol is opened on. For example, [`DevicePathToText`] isn't tied to a
 /// particular device, so only a single handle is expected to exist.
 ///
-/// [`NOT_FOUND`]: Status::NOT_FOUND
 /// [`DevicePathToText`]: uefi::proto::device_path::text::DevicePathToText
 ///
 /// # Example

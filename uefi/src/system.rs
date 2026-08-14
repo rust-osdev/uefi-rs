@@ -28,7 +28,7 @@ pub fn firmware_vendor() -> &'static CStr16 {
     unsafe { CStr16::from_ptr(vendor) }
 }
 
-/// Get the firmware revision.
+/// Returns the firmware revision.
 #[must_use]
 pub fn firmware_revision() -> u32 {
     let st = table::system_table_raw_panicking();
@@ -38,7 +38,9 @@ pub fn firmware_revision() -> u32 {
     st.firmware_revision
 }
 
-/// Get the revision of the system table, which is defined to be the revision of
+/// Returns the system table's UEFI revision.
+///
+/// This is the revision of
 /// the UEFI specification implemented by the firmware.
 #[must_use]
 pub fn uefi_revision() -> Revision {
@@ -49,8 +51,9 @@ pub fn uefi_revision() -> Revision {
     st.header.revision
 }
 
-/// Call `f` with a slice of [`ConfigTableEntry`]. Each entry provides access to
-/// a vendor-specific table.
+/// Calls `f` with the system configuration table.
+///
+/// Each [`ConfigTableEntry`] provides access to a vendor-specific table.
 ///
 /// # Example
 ///
@@ -88,7 +91,7 @@ where
     f(slice)
 }
 
-/// Call `f` with the [`Input`] protocol attached to stdin.
+/// Calls `f` with the [`Input`] protocol attached to stdin.
 ///
 /// # Panics
 ///
@@ -113,7 +116,7 @@ where
     f(stdin)
 }
 
-/// Call `f` with the [`Output`] protocol attached to stdout.
+/// Calls `f` with the [`Output`] protocol attached to stdout.
 ///
 /// # Panics
 ///
@@ -138,7 +141,7 @@ where
     f(stdout)
 }
 
-/// Call `f` with the [`Output`] protocol attached to stderr.
+/// Calls `f` with the [`Output`] protocol attached to stderr.
 ///
 /// # Panics
 ///

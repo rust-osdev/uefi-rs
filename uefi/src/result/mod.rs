@@ -4,11 +4,11 @@
 
 use core::fmt::Debug;
 
-/// The error type that we use, essentially a status code + optional additional data
+/// UEFI status error with optional additional data.
 mod error;
 pub use error::Error;
 
-/// Definition of UEFI's standard status codes
+/// UEFI status code and conversion helpers.
 mod status;
 pub use status::{Status, StatusExt};
 
@@ -28,10 +28,10 @@ pub type Result<Output = (), ErrData = ()> = core::result::Result<Output, Error<
 
 /// Extension trait which provides some convenience methods for [`Result`].
 pub trait ResultExt<Output, ErrData: Debug> {
-    /// Extract the UEFI status from this result
+    /// Returns the UEFI status represented by this result.
     fn status(&self) -> Status;
 
-    /// Transform the ErrData value to ()
+    /// Discards any error payload.
     fn discard_errdata(self) -> Result<Output>;
 
     /// Calls `op` if the result contains a warning, otherwise returns

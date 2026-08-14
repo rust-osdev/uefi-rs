@@ -131,30 +131,28 @@ pub unsafe fn raise_tpl(tpl: Tpl) -> TplGuard {
     }
 }
 
-/// Allocates a consecutive set of memory pages using the UEFI allocator.
+/// Allocates consecutive pages using the UEFI allocator.
 ///
-/// The buffer will be [`PAGE_SIZE`] aligned. Callers are responsible for
-/// freeing the memory using [`free_pages`].
+/// The result is [`PAGE_SIZE`] aligned and must be freed with [`free_pages`].
+/// The returned memory is uninitialized; initialize it before reading it or
+/// creating a reference to it.
 ///
 /// # Arguments
+///
 /// - `allocation_type`: The [`AllocateType`] to choose the allocation strategy.
 /// - `memory_type`: The [`MemoryType`] used to persist the allocation in the
 ///   UEFI memory map. Typically, UEFI OS loaders should allocate memory of
 ///   type [`MemoryType::LOADER_DATA`].
-///- `count`: Number of pages to allocate.
-///
-/// # Safety
-///
-/// Using this function is safe, but it returns a raw pointer to uninitialized
-/// memory. The memory must be initialized before creating a reference to it
-/// or reading from it eventually.
+/// - `count`: Number of pages to allocate.
 ///
 /// # Errors
 ///
-/// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
-/// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
-///   [`MemoryType::UNACCEPTED`], or in the range <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
-/// * [`Status::NOT_FOUND`]: the requested pages could not be found.
+/// - [`Status::OUT_OF_RESOURCES`]: allocation failed.
+/// - [`Status::INVALID_PARAMETER`]: `memory_type` is
+///   [`MemoryType::PERSISTENT_MEMORY`],
+///   [`MemoryType::UNACCEPTED`], or in the range
+///   <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
+/// - [`Status::NOT_FOUND`]: the requested pages could not be found.
 pub fn allocate_pages(
     allocation_type: AllocateType,
     memory_type: MemoryType,
@@ -224,28 +222,26 @@ pub unsafe fn free_pages(ptr: NonNull<u8>, count: usize) -> Result {
     unsafe { (bt.free_pages)(addr, count) }.to_result()
 }
 
-/// Allocates a consecutive region of bytes using the UEFI allocator.
+/// Allocates bytes using the UEFI allocator.
 ///
-/// The buffer will be 8-byte aligned. Callers are responsible for freeing the
-/// memory using [`free_pool`].
+/// The result is eight-byte aligned and must be freed with [`free_pool`]. The
+/// returned memory is uninitialized; initialize it before reading it or
+/// creating a reference to it.
 ///
 /// # Arguments
+///
 /// - `memory_type`: The [`MemoryType`] used to persist the allocation in the
 ///   UEFI memory map. Typically, UEFI OS loaders should allocate memory of
 ///   type [`MemoryType::LOADER_DATA`].
-///- `size`: Number of bytes to allocate.
-///
-/// # Safety
-///
-/// Using this function is safe, but it returns a raw pointer to uninitialized
-/// memory. The memory must be initialized before creating a reference to it
-/// or reading from it eventually.
+/// - `size`: Number of bytes to allocate.
 ///
 /// # Errors
 ///
-/// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
-/// * [`Status::INVALID_PARAMETER`]: `mem_ty` is [`MemoryType::PERSISTENT_MEMORY`],
-///   [`MemoryType::UNACCEPTED`], or in the range <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
+/// - [`Status::OUT_OF_RESOURCES`]: allocation failed.
+/// - [`Status::INVALID_PARAMETER`]: `memory_type` is
+///   [`MemoryType::PERSISTENT_MEMORY`],
+///   [`MemoryType::UNACCEPTED`], or in the range
+///   <code>[MemoryType::MAX]..=0x6fff_ffff</code>.
 pub fn allocate_pool(memory_type: MemoryType, size: usize) -> Result<NonNull<u8>> {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.

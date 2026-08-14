@@ -134,13 +134,10 @@ impl IpAddress {
     /// Zeroed variant where all bytes are guaranteed to be initialized to zero.
     pub const ZERO: Self = Self { addr: [0; 4] };
 
-    /// Construct a new IPv4 address.
+    /// Constructs a new IPv4 address.
     ///
-    /// The type won't know that it is an IPv6 address and additional context
-    /// is needed.
-    ///
-    /// # Safety
-    /// The constructor only initializes the bytes needed for IPv4 addresses.
+    /// Only the IPv4 field is initialized; interpreting this value requires
+    /// external address-family information.
     #[must_use]
     pub const fn new_v4(octets: [u8; 4]) -> Self {
         Self {
@@ -148,10 +145,9 @@ impl IpAddress {
         }
     }
 
-    /// Construct a new IPv6 address.
+    /// Constructs a new IPv6 address.
     ///
-    /// The type won't know that it is an IPv6 address and additional context
-    /// is needed.
+    /// Interpreting this value requires external address-family information.
     #[must_use]
     pub const fn new_v6(octets: [u8; 16]) -> Self {
         Self {
@@ -159,16 +155,17 @@ impl IpAddress {
         }
     }
 
-    /// Transforms this EFI type to the Rust standard library's type
-    /// [`core::net::IpAddr`].
+    /// Converts this value to [`core::net::IpAddr`].
     ///
     /// # Arguments
-    /// - `is_ipv6`: Whether the internal data should be interpreted as IPv6 or
-    ///   IPv4 address.
+    ///
+    /// - `is_ipv6`: Interpret the internal data as IPv6 when `true` and IPv4
+    ///   otherwise.
     ///
     /// # Safety
+    ///
     /// Callers must ensure that the `v4` field is valid if `is_ipv6` is false,
-    /// and that the `v6` field is valid if `is_ipv6` is true
+    /// and that the `v6` field is valid if `is_ipv6` is true.
     #[must_use]
     pub unsafe fn into_core_addr(self, is_ipv6: bool) -> core::net::IpAddr {
         if is_ipv6 {

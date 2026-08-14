@@ -7,7 +7,7 @@ use core::ffi::c_void;
 use core::ops::RangeInclusive;
 
 bitflags::bitflags! {
-    /// EFI_FV_ATTRIBUTES
+    /// Firmware-volume capabilities and current state.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct FvAttributes: u64 {
@@ -64,7 +64,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    /// EFI_FV_FILE_ATTRIBUTES
+    /// Attributes of a firmware-volume file.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct FvFileAttributes: u32 {
@@ -75,7 +75,7 @@ bitflags::bitflags! {
 }
 
 newtype_enum! {
-    /// EFI_FV_WRITE_POLICY
+    /// Reliability policy for firmware-volume writes.
     pub enum FvWritePolicy: u32 => {
         EFI_FV_UNRELIABLE_WRITE = 0,
         EFI_FV_RELIABLE_WRITE = 1,
@@ -83,7 +83,7 @@ newtype_enum! {
 }
 
 newtype_enum! {
-    /// EFI_FV_FILETYPE
+    /// Type of a firmware-volume file.
     pub enum FvFiletype: u8 => {
         ALL = 0x00,
         RAW = 0x01,
@@ -112,7 +112,7 @@ impl FvFiletype {
 }
 
 newtype_enum! {
-    /// EFI_SECTION_TYPE
+    /// Type of a section in a firmware-volume file.
     pub enum SectionType: u8 => {
         ALL = 0x00,
         COMPRESSION = 0x01,
@@ -133,7 +133,7 @@ newtype_enum! {
     }
 }
 
-/// EFI_FV_WRITE_FILE_DATA
+/// Describes a file to write to a firmware volume.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FvWriteFileData {
@@ -144,7 +144,7 @@ pub struct FvWriteFileData {
     pub buffer_size: u32,
 }
 
-/// EFI_FIRMWARE_VOLUME2_PROTOCOL
+/// Firmware Volume 2 protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FirmwareVolume2Protocol {
@@ -204,7 +204,7 @@ impl FirmwareVolume2Protocol {
     pub const GUID: Guid = guid!("220e73b6-6bdb-4413-8405-b974b108619a");
 }
 
-/// EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL
+/// Firmware Volume Block 2 protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FirmwareVolumeBlock2Protocol {

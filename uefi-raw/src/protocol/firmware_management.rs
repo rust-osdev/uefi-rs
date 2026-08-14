@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Firmware update and reporting
+//! Raw firmware-management protocol and capsule types.
 
 use crate::{Char16, Guid, Status, guid, newtype_enum};
 use core::ffi::c_void;
 
 bitflags::bitflags! {
+    /// Features required to process a firmware-management capsule.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct CapsuleSupport: u64 {
@@ -14,7 +15,7 @@ bitflags::bitflags! {
     }
 }
 
-/// EFI_FIRMWARE_MANAGEMENT_CAPSULE_HEADER
+/// Header of a firmware-management capsule.
 #[derive(Debug)]
 #[repr(C, packed)]
 pub struct FirmwareManagementCapsuleHeader {
@@ -28,7 +29,7 @@ impl FirmwareManagementCapsuleHeader {
     pub const INIT_VERSION: u32 = 1;
 }
 
-/// EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER
+/// Header of an image embedded in a firmware-management capsule.
 #[derive(Debug)]
 #[repr(C, packed)]
 pub struct FirmwareManagementCapsuleImageHeader {
@@ -47,7 +48,7 @@ impl FirmwareManagementCapsuleImageHeader {
 }
 
 newtype_enum! {
-    /// FMP dependency expression opcodes (`EFI_FMP_DEP_*`)
+    /// Opcode in a firmware-management dependency expression.
     pub enum FmpDep: u8 => {
         PUSH_GUID = 0x00,
         PUSH_VERSION = 0x01,
@@ -67,7 +68,7 @@ newtype_enum! {
     }
 }
 
-/// EFI_FIRMWARE_IMAGE_DEP
+/// Variable-length firmware-image dependency expression.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FirmwareImageDep {
@@ -75,6 +76,7 @@ pub struct FirmwareImageDep {
 }
 
 bitflags::bitflags! {
+    /// Capabilities and current state of a firmware image.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct ImageAttributes: u64 {
@@ -90,6 +92,7 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     // Lower 16 bits are reserved for UEFI assignment.
     // Other bits are for vendor-specific compatibility checks.
+    /// Compatibility checks supported by a firmware image.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct ImageCompatibilities: u64 {
@@ -99,6 +102,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    /// Result of checking whether a firmware image can be updated.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct ImageUpdatable: u32 {
@@ -111,6 +115,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
+    /// Capabilities and current state of a firmware package.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct PackageAttributes: u64 {
@@ -120,7 +125,7 @@ bitflags::bitflags! {
     }
 }
 
-/// EFI_FIRMWARE_IMAGE_DESCRIPTOR
+/// Describes one firmware image managed by the protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FirmwareImageDescriptor {
@@ -145,7 +150,7 @@ impl FirmwareImageDescriptor {
     pub const VERSION: u32 = 4;
 }
 
-/// EFI_FIRMWARE_MANAGEMENT_PROTOCOL
+/// Firmware Management protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FirmwareManagementProtocol {

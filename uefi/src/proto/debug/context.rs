@@ -3,8 +3,7 @@
 // note from the spec:
 // When the context record field is larger than the register being stored in it, the upper bits of the
 // context record field are unused and ignored
-/// Universal EFI_SYSTEM_CONTEXT definition
-/// This is passed to debug callbacks
+/// Architecture-dependent processor context passed to debug callbacks.
 #[repr(C)]
 #[expect(missing_debug_implementations)]
 pub union SystemContext {
@@ -19,7 +18,7 @@ pub union SystemContext {
     aarch64: *mut SystemContextAARCH64,
 }
 
-/// System context for virtual EBC processors
+/// Processor context for the UEFI bytecode interpreter.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SystemContextEBC {
@@ -288,7 +287,7 @@ pub struct SystemContextIA32 {
     eax: u32,
 }
 
-/// FP / MMX / XMM registers for IA-32
+/// Floating-point, MMX, and XMM registers for IA-32.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct FxSaveStateIA32 {
@@ -329,7 +328,7 @@ pub struct FxSaveStateIA32 {
     reserved_11: [u8; 14 * 16],
 }
 
-/// System context for x64 processors
+/// Processor context for x86-64.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SystemContextX64 {
@@ -377,7 +376,7 @@ pub struct SystemContextX64 {
     r15: u64,
 }
 
-/// FP / MMX / XMM registers for X64
+/// Floating-point, MMX, and XMM registers for x86-64.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct FxSaveStateX64 {
@@ -543,7 +542,7 @@ pub struct SystemContextIPF {
     int_nat: u64, // nat bits for r1-r31
 }
 
-/// System context for ARM processors
+/// Processor context for 32-bit ARM.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SystemContextARM {
@@ -569,7 +568,7 @@ pub struct SystemContextARM {
     ifsr: u32,
 }
 
-/// System context for AARCH64 processors
+/// Processor context for AArch64.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SystemContextAARCH64 {

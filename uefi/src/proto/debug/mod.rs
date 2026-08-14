@@ -68,10 +68,10 @@ impl DebugSupport {
         self.isa
     }
 
-    /// Returns the maximum value that may be used for the processor_index parameter in
-    /// `register_periodic_callback()` and `register_exception_callback()`.
+    /// Returns the maximum processor index accepted by callback registration.
     ///
-    /// Note: Applications built with EDK2 (such as OVMF) always return `0` as of 2021-09-15
+    /// Applications built with EDK II, including OVMF, returned `0` as of
+    /// 2021-09-15.
     pub fn get_maximum_processor_index(&mut self) -> usize {
         // initially set to a canary value for testing purposes
         let mut max_processor_index: usize = usize::MAX;
@@ -87,9 +87,20 @@ impl DebugSupport {
     /// a specified `processor_index`. Will return `Status::INVALID_PARAMETER` if
     /// `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
     ///
-    /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
+    /// Applications built with EDK II, including OVMF, ignore `processor_index`.
+    ///
+    /// # Arguments
+    ///
+    /// - `processor_index`: Processor on which the callback runs.
+    /// - `callback`: Function to register, or `None` to remove the current one.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if `processor_index` is too large
+    /// or firmware rejects the callback.
     ///
     /// # Safety
+    ///
     /// No portion of the debug agent that runs in interrupt context may make any
     /// calls to EFI services or other protocol interfaces.
     pub unsafe fn register_periodic_callback(
@@ -111,9 +122,21 @@ impl DebugSupport {
     /// given `exception_type` and `processor_index`. Will return `Status::INVALID_PARAMETER`
     /// if `processor_index` exceeds the current maximum from `Self::get_maximum_processor_index`.
     ///
-    /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
+    /// Applications built with EDK II, including OVMF, ignore `processor_index`.
+    ///
+    /// # Arguments
+    ///
+    /// - `processor_index`: Processor whose exception is monitored.
+    /// - `callback`: Function to register, or `None` to remove the current one.
+    /// - `exception_type`: Exception that triggers the callback.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if `processor_index` is too large
+    /// or firmware rejects the callback.
     ///
     /// # Safety
+    ///
     /// No portion of the debug agent that runs in interrupt context may make any
     /// calls to EFI services or other protocol interfaces.
     pub unsafe fn register_exception_callback(
@@ -134,12 +157,24 @@ impl DebugSupport {
         .to_result()
     }
 
-    /// Invalidates processor instruction cache for a memory range for a given `processor_index`.
+    /// Invalidates a processor's instruction cache for a memory range.
     ///
-    /// Note: Applications built with EDK2 (such as OVMF) ignore the `processor_index` parameter
+    /// Applications built with EDK II, including OVMF, ignore `processor_index`.
+    ///
+    /// # Arguments
+    ///
+    /// - `processor_index`: Processor whose cache is invalidated.
+    /// - `start`: Start of the memory range.
+    /// - `length`: Length of the memory range in bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::INVALID_PARAMETER`] if `processor_index` or the memory
+    /// range is invalid.
     ///
     /// # Safety
-    /// `start` must be a c_void ptr to a valid memory address
+    ///
+    /// `start` must point to a valid memory range of at least `length` bytes.
     pub unsafe fn invalidate_instruction_cache(
         &mut self,
         processor_index: usize,
@@ -165,23 +200,23 @@ newtype_enum! {
 /// therefore modeling this C enum as a Rust enum (where the compiler must know
 /// about every variant in existence) would _not_ be safe.
 pub enum ProcessorArch: u32 => {
-    /// 32-bit x86 PC
+    /// Represents 32-bit x86.
     X86_32      = 0x014C,
-    /// 64-bit x86 PC
+    /// Represents 64-bit x86.
     X86_64      = 0x8664,
-    /// Intel Itanium
+    /// Represents Intel Itanium.
     ITANIUM     = 0x200,
-    /// UEFI Interpreter bytecode
+    /// Represents UEFI bytecode.
     EBC         = 0x0EBC,
-    /// ARM Thumb / Mixed
+    /// Represents 32-bit ARM or Thumb.
     ARM         = 0x01C2,
-    /// ARM 64-bit
+    /// Represents 64-bit ARM.
     AARCH_64    = 0xAA64,
-    /// RISC-V 32-bit
+    /// Represents 32-bit RISC-V.
     RISCV_32    = 0x5032,
-    /// RISC-V 64-bit
+    /// Represents 64-bit RISC-V.
     RISCV_64    = 0x5064,
-    /// RISC-V 128-bit
+    /// Represents 128-bit RISC-V.
     RISCV_128   = 0x5128,
 }}
 
@@ -213,13 +248,24 @@ pub struct DebugPort {
 
 impl DebugPort {
     /// Resets the debugport device.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot reset the device.
     pub fn reset(&self) -> Result {
         (self.reset)(self).to_result()
     }
 
-    /// Write data to the debugport device.
+    /// Writes data to the debug-port device.
     ///
-    /// Note: `timeout` is given in microseconds
+    /// # Arguments
+    ///
+    /// - `timeout`: Maximum wait in microseconds.
+    /// - `data`: Bytes to write.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error with the reported buffer size if the write fails.
     pub fn write(&self, timeout: u32, data: &[u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
 
@@ -235,9 +281,16 @@ impl DebugPort {
         )
     }
 
-    /// Read data from the debugport device.
+    /// Reads data from the debug-port device.
     ///
-    /// Note: `timeout` is given in microseconds
+    /// # Arguments
+    ///
+    /// - `timeout`: Maximum wait in microseconds.
+    /// - `data`: Buffer to fill.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error with the reported buffer size if the read fails.
     pub fn read(&self, timeout: u32, data: &mut [u8]) -> Result<(), usize> {
         let mut buffer_size = data.len();
 
@@ -253,7 +306,11 @@ impl DebugPort {
         )
     }
 
-    /// Check to see if any data is available to be read from the debugport device.
+    /// Checks whether the debug-port device has data available.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot query the device.
     pub fn poll(&self) -> Result {
         (self.poll)(self).to_result()
     }

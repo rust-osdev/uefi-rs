@@ -6,183 +6,183 @@
 pub struct ExceptionType(isize);
 
 impl ExceptionType {
-    /// Undefined Exception
+    /// Indicates an undefined EBC exception.
     pub const EXCEPT_EBC_UNDEFINED: Self = Self(0);
-    /// Divide-by-zero Error
+    /// Indicates an EBC divide-by-zero error.
     pub const EXCEPT_EBC_DIVIDE_ERROR: Self = Self(1);
-    /// Debug Exception
+    /// Indicates an EBC debug exception.
     pub const EXCEPT_EBC_DEBUG: Self = Self(2);
-    /// Breakpoint
+    /// Indicates an EBC breakpoint.
     pub const EXCEPT_EBC_BREAKPOINT: Self = Self(3);
-    /// Overflow
+    /// Indicates an EBC overflow.
     pub const EXCEPT_EBC_OVERFLOW: Self = Self(4);
-    /// Invalid Opcode
+    /// Indicates an invalid EBC opcode.
     pub const EXCEPT_EBC_INVALID_OPCODE: Self = Self(5);
-    /// Stack-Segment Fault
+    /// Indicates an EBC stack fault.
     pub const EXCEPT_EBC_STACK_FAULT: Self = Self(6);
-    /// Alignment Check
+    /// Indicates an EBC alignment check.
     pub const EXCEPT_EBC_ALIGNMENT_CHECK: Self = Self(7);
-    /// Instruction Encoding Exception
+    /// Indicates an EBC instruction-encoding exception.
     pub const EXCEPT_EBC_INSTRUCTION_ENCODING: Self = Self(8);
-    /// Bad Breakpoint Exception
+    /// Indicates an invalid EBC breakpoint.
     pub const EXCEPT_EBC_BAD_BREAK: Self = Self(9);
-    /// Single Step Exception
+    /// Indicates an EBC single-step exception.
     pub const EXCEPT_EBC_SINGLE_STEP: Self = Self(10);
 }
 
 #[cfg(target_arch = "x86")]
 impl ExceptionType {
-    /// Divide-by-zero Error
+    /// Indicates a divide-by-zero error.
     pub const EXCEPT_IA32_DIVIDE_ERROR: Self = Self(0);
-    /// Debug Exception
+    /// Indicates a debug exception.
     pub const EXCEPT_IA32_DEBUG: Self = Self(1);
-    /// Non-maskable Interrupt
+    /// Indicates a non-maskable interrupt.
     pub const EXCEPT_IA32_NMI: Self = Self(2);
-    /// Breakpoint
+    /// Indicates a breakpoint.
     pub const EXCEPT_IA32_BREAKPOINT: Self = Self(3);
-    /// Overflow
+    /// Indicates an overflow.
     pub const EXCEPT_IA32_OVERFLOW: Self = Self(4);
-    /// Bound Range Exceeded
+    /// Indicates that a bound range was exceeded.
     pub const EXCEPT_IA32_BOUND: Self = Self(5);
-    /// Invalid Opcode
+    /// Indicates an invalid opcode.
     pub const EXCEPT_IA32_INVALID_OPCODE: Self = Self(6);
-    /// Double Fault
+    /// Indicates a double fault.
     pub const EXCEPT_IA32_DOUBLE_FAULT: Self = Self(8);
-    /// Invalid TSS
+    /// Indicates an invalid task-state segment.
     pub const EXCEPT_IA32_INVALID_TSS: Self = Self(10);
-    /// Segment Not Present
+    /// Indicates a missing segment.
     pub const EXCEPT_IA32_SEG_NOT_PRESENT: Self = Self(11);
-    /// Stack-Segment Fault
+    /// Indicates a stack-segment fault.
     pub const EXCEPT_IA32_STACK_FAULT: Self = Self(12);
-    /// General Protection Fault
+    /// Indicates a general-protection fault.
     pub const EXCEPT_IA32_GP_FAULT: Self = Self(13);
-    /// Page Fault
+    /// Indicates a page fault.
     pub const EXCEPT_IA32_PAGE_FAULT: Self = Self(14);
-    /// x87 Floating-Point Exception
+    /// Indicates an x87 floating-point exception.
     pub const EXCEPT_IA32_FP_ERROR: Self = Self(16);
-    /// Alignment Check
+    /// Indicates an alignment check.
     pub const EXCEPT_IA32_ALIGNMENT_CHECK: Self = Self(17);
-    /// Machine Check
+    /// Indicates a machine check.
     pub const EXCEPT_IA32_MACHINE_CHECK: Self = Self(18);
-    /// SIMD Floating-Point Exception
+    /// Indicates a SIMD floating-point exception.
     pub const EXCEPT_IA32_SIMD: Self = Self(19);
 }
 
 #[cfg(target_arch = "x86_64")]
 impl ExceptionType {
-    /// Divide-by-zero Error
+    /// Indicates a divide-by-zero error.
     pub const EXCEPT_X64_DIVIDE_ERROR: Self = Self(0);
-    /// Debug Exception
+    /// Indicates a debug exception.
     pub const EXCEPT_X64_DEBUG: Self = Self(1);
-    /// Non-maskable Interrupt
+    /// Indicates a non-maskable interrupt.
     pub const EXCEPT_X64_NMI: Self = Self(2);
-    /// Breakpoint
+    /// Indicates a breakpoint.
     pub const EXCEPT_X64_BREAKPOINT: Self = Self(3);
-    /// Overflow
+    /// Indicates an overflow.
     pub const EXCEPT_X64_OVERFLOW: Self = Self(4);
-    /// Bound Range Exceeded
+    /// Indicates that a bound range was exceeded.
     pub const EXCEPT_X64_BOUND: Self = Self(5);
-    /// Invalid Opcode
+    /// Indicates an invalid opcode.
     pub const EXCEPT_X64_INVALID_OPCODE: Self = Self(6);
-    /// Double Fault
+    /// Indicates a double fault.
     pub const EXCEPT_X64_DOUBLE_FAULT: Self = Self(8);
-    /// Invalid TSS
+    /// Indicates an invalid task-state segment.
     pub const EXCEPT_X64_INVALID_TSS: Self = Self(10);
-    /// Segment Not Present
+    /// Indicates a missing segment.
     pub const EXCEPT_X64_SEG_NOT_PRESENT: Self = Self(11);
-    /// Stack-Segment Fault
+    /// Indicates a stack-segment fault.
     pub const EXCEPT_X64_STACK_FAULT: Self = Self(12);
-    /// General Protection Fault
+    /// Indicates a general-protection fault.
     pub const EXCEPT_X64_GP_FAULT: Self = Self(13);
-    /// Page Fault
+    /// Indicates a page fault.
     pub const EXCEPT_X64_PAGE_FAULT: Self = Self(14);
-    /// x87 Floating-Point Exception
+    /// Indicates an x87 floating-point exception.
     pub const EXCEPT_X64_FP_ERROR: Self = Self(16);
-    /// Alignment Check
+    /// Indicates an alignment check.
     pub const EXCEPT_X64_ALIGNMENT_CHECK: Self = Self(17);
-    /// Machine Check
+    /// Indicates a machine check.
     pub const EXCEPT_X64_MACHINE_CHECK: Self = Self(18);
-    /// SIMD Floating-Point Exception
+    /// Indicates a SIMD floating-point exception.
     pub const EXCEPT_X64_SIMD: Self = Self(19);
 }
 
 #[cfg(target_arch = "arm")]
 impl ExceptionType {
-    /// Processor reset
+    /// Indicates a processor reset.
     pub const EXCEPT_ARM_RESET: Self = Self(0);
-    /// Undefined instruction
+    /// Indicates an undefined instruction.
     pub const EXCEPT_ARM_UNDEFINED_INSTRUCTION: Self = Self(1);
-    /// Software Interrupt
+    /// Indicates a software interrupt.
     pub const EXCEPT_ARM_SOFTWARE_INTERRUPT: Self = Self(2);
-    /// Prefetch aborted
+    /// Indicates an aborted prefetch.
     pub const EXCEPT_ARM_PREFETCH_ABORT: Self = Self(3);
-    /// Data access memory abort
+    /// Indicates a data-access memory abort.
     pub const EXCEPT_ARM_DATA_ABORT: Self = Self(4);
-    /// Reserved
+    /// Represents the reserved exception value.
     pub const EXCEPT_ARM_RESERVED: Self = Self(5);
-    /// Normal interrupt
+    /// Indicates a normal interrupt.
     pub const EXCEPT_ARM_IRQ: Self = Self(6);
-    /// Fast interrupt
+    /// Indicates a fast interrupt.
     pub const EXCEPT_ARM_FIQ: Self = Self(7);
-    /// In the UEFI spec for "convenience", unsure if we'll need it. Set to `EXCEPT_ARM_FIQ`
+    /// Provides the maximum ARM exception value defined by UEFI.
     pub const MAX_ARM_EXCEPTION: Self = Self::EXCEPT_ARM_FIQ;
 }
 
 #[cfg(target_arch = "aarch64")]
 impl ExceptionType {
-    /// Synchronous exception, such as attempting to execute an invalid instruction
+    /// Indicates a synchronous exception, such as an invalid instruction.
     pub const EXCEPT_AARCH64_SYNCHRONOUS_EXCEPTIONS: Self = Self(0);
-    /// Normal interrupt
+    /// Indicates a normal interrupt.
     pub const EXCEPT_AARCH64_IRQ: Self = Self(1);
-    /// Fast interrupt
+    /// Indicates a fast interrupt.
     pub const EXCEPT_AARCH64_FIQ: Self = Self(2);
-    /// System Error
+    /// Indicates a system error.
     pub const EXCEPT_AARCH64_SERROR: Self = Self(3);
-    /// In the UEFI spec for "convenience", unsure if we'll need it. Set to `EXCEPT_AARCH64_SERROR`
+    /// Provides the maximum AArch64 exception value defined by UEFI.
     pub const MAX_AARCH64_EXCEPTION: Self = Self::EXCEPT_AARCH64_SERROR;
 }
 
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 impl ExceptionType {
-    /// Instruction misaligned
+    /// Indicates a misaligned instruction address.
     pub const EXCEPT_RISCV_INST_MISALIGNED: Self = Self(0);
-    /// Instruction access fault
+    /// Indicates an instruction-access fault.
     pub const EXCEPT_RISCV_INST_ACCESS_FAULT: Self = Self(1);
-    /// Illegal instruction
+    /// Indicates an illegal instruction.
     pub const EXCEPT_RISCV_ILLEGAL_INST: Self = Self(2);
-    /// Breakpoint
+    /// Indicates a breakpoint.
     pub const EXCEPT_RISCV_BREAKPOINT: Self = Self(3);
-    /// Load address misaligned
+    /// Indicates a misaligned load address.
     pub const EXCEPT_RISCV_LOAD_ADDRESS_MISALIGNED: Self = Self(4);
-    /// Load accept fault
+    /// Indicates a load-access fault.
     pub const EXCEPT_RISCV_LOAD_ACCESS_FAULT: Self = Self(5);
-    /// Store AMO address misaligned
+    /// Indicates a misaligned store or AMO address.
     pub const EXCEPT_RISCV_STORE_AMO_ADDRESS_MISALIGNED: Self = Self(6);
-    /// Store AMO access fault
+    /// Indicates a store or AMO access fault.
     pub const EXCEPT_RISCV_STORE_AMO_ACCESS_FAULT: Self = Self(7);
-    /// ECALL from User mode
+    /// Indicates an environment call from user mode.
     pub const EXCEPT_RISCV_ENV_CALL_FROM_UMODE: Self = Self(8);
-    /// ECALL from Supervisor mode
+    /// Indicates an environment call from supervisor mode.
     pub const EXCEPT_RISCV_ENV_CALL_FROM_SMODE: Self = Self(9);
-    /// ECALL from Machine mode
+    /// Indicates an environment call from machine mode.
     pub const EXCEPT_RISCV_ENV_CALL_FROM_MMODE: Self = Self(11);
-    /// Instruction page fault
+    /// Indicates an instruction page fault.
     pub const EXCEPT_RISCV_INST_PAGE_FAULT: Self = Self(12);
-    /// Load page fault
+    /// Indicates a load page fault.
     pub const EXCEPT_RISCV_LOAD_PAGE_FAULT: Self = Self(13);
-    /// Store AMO page fault
+    /// Indicates a store or AMO page fault.
     pub const EXCEPT_RISCV_STORE_AMO_PAGE_FAULT: Self = Self(15);
     // RISC-V interrupt types
-    /// Supervisor software interrupt
+    /// Indicates a supervisor software interrupt.
     pub const EXCEPT_RISCV_SUPERVISOR_SOFTWARE_INT: Self = Self(1);
-    /// Machine software interrupt
+    /// Indicates a machine software interrupt.
     pub const EXCEPT_RISCV_MACHINE_SOFTWARE_INT: Self = Self(3);
-    /// Supervisor timer interrupt
+    /// Indicates a supervisor timer interrupt.
     pub const EXCEPT_RISCV_SUPERVISOR_TIMER_INT: Self = Self(5);
-    /// Machine timer interrupt
+    /// Indicates a machine timer interrupt.
     pub const EXCEPT_RISCV_MACHINE_TIMER_INT: Self = Self(7);
-    /// Supervisor external interrupt
+    /// Indicates a supervisor external interrupt.
     pub const EXCEPT_RISCV_SUPERVISOR_EXTERNAL_INT: Self = Self(9);
-    /// Machine external interrupt
+    /// Indicates a machine external interrupt.
     pub const EXCEPT_RISCV_MACHINE_EXTERNAL_INT: Self = Self(11);
 }

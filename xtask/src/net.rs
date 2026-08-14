@@ -5,8 +5,9 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-/// Run a simple echo service that listens on UDP port 21572 and
-/// reverses the incoming messages.
+/// Runs a simple echo service on UDP port 21572.
+///
+/// The service reverses incoming messages.
 pub struct EchoService {
     stop_requested: Arc<Mutex<bool>>,
 

@@ -6,7 +6,7 @@ use std::process::{Command, Stdio};
 use std::thread;
 use syn::Attribute;
 
-/// Returns true if the attribute is a `#[doc = "..."]` attribute,
+/// Returns whether the attribute is a `#[doc = "..."]` attribute,
 /// otherwise returns false.
 pub fn is_doc_attr(attr: &Attribute) -> bool {
     attr.path().is_ident("doc")

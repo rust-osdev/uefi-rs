@@ -87,7 +87,9 @@ impl Node {
         self.fields.iter().filter(|field| field.is_slice()).count() > 1
     }
 
-    /// Calculate the static size of the packed structure. This should
+    /// Calculates the static size of the packed structure.
+    ///
+    /// This should
     /// give the same value as the `static_size` attribute.
     fn calculate_static_size(&self) -> usize {
         let header_size: usize = 4;
@@ -521,7 +523,9 @@ struct NodeAttr {
     sub_type: Option<String>,
 }
 
-/// Parse a `node` attribute. Returns `None` for any other attribute, or
+/// Parses a `node` attribute.
+///
+/// Returns `None` for any other attribute, or
 /// if the contents don't match the expected format.
 fn parse_node_attr(attr: &Attribute) -> Option<NodeAttr> {
     if !attr.path().is_ident("node") {
@@ -554,8 +558,7 @@ fn parse_node_attr(attr: &Attribute) -> Option<NodeAttr> {
     })
 }
 
-/// Returns `true` if the attribute is a valid `node` attribute, false
-/// otherwise.
+/// Returns whether the attribute is a valid `node` attribute.
 pub fn is_node_attr(attr: &Attribute) -> bool {
     parse_node_attr(attr).is_some()
 }

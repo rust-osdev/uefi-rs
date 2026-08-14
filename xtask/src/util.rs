@@ -36,7 +36,7 @@ pub fn command_to_string(cmd: &Command) -> String {
     parts.into_iter().collect::<Vec<_>>().join(" ")
 }
 
-/// Print a `Command` and run it, then check that it completes
+/// Prints and runs a command, then checks that it succeeds.
 /// successfully.
 pub fn run_cmd(mut cmd: Command) -> Result<()> {
     println!("run_cmd: '{}'", command_to_string(&cmd));

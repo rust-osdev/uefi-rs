@@ -136,8 +136,7 @@ impl Error {
     }
 }
 
-/// True if the visibility is public without restriction (i.e. just `pub`, not
-/// `pub(crate)` or similar).
+/// Returns whether visibility is unrestricted `pub`.
 fn is_pub(vis: &Visibility) -> bool {
     matches!(vis, Visibility::Public(_))
 }
@@ -158,8 +157,7 @@ enum Repr {
     Transparent,
 }
 
-/// A restricted view of `Attribute`, limited to just the attributes that are
-/// expected in `uefi-raw`.
+/// Restricted view of the attributes expected in `uefi-raw`.
 #[derive(Debug, Clone, Copy)]
 enum ParsedAttr {
     Allow(Allow),

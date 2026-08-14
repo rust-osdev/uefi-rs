@@ -95,12 +95,13 @@ fn check_system() {
 
 #[derive(Clone, Copy, Debug)]
 enum HostRequest {
-    /// Tell the host to take a screenshot and compare against the
+    /// Tells the host to compare a screenshot with the
     /// golden image.
     Screenshot(&'static str),
 
-    /// Tell the host that tests are complete. The host will consider
-    /// the tests failed if this message is not received.
+    /// Tells the host that testing is complete.
+    ///
+    /// The host considers the tests failed if this message is not received.
     TestsComplete,
 }
 
@@ -156,9 +157,9 @@ fn reconnect_serial_to_console(serial_handle: Handle) {
         .expect("failed to reconnect serial to console");
 }
 
-/// Send the `request` string to the host via the `serial` device, then
-/// wait up to 10 seconds to receive a reply. Returns an error if the
-/// reply is not `"OK\n"`.
+/// Sends a request to the host through the serial device.
+///
+/// The function waits up to 10 seconds for an `"OK\n"` reply.
 fn send_request_to_host(request: HostRequest) {
     let serial_handle =
         uefi::boot::get_handle_for_protocol::<Serial>().expect("Failed to get serial handle");

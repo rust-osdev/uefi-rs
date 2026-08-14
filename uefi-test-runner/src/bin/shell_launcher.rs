@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! This application launches the UEFI shell app and runs the main
-//! uefi-test-running app inside that shell. This allows testing of protocols
+//! Launches the main test application inside the UEFI shell.
+//!
+//! This allows testing of protocols
 //! that require the shell.
 //!
 //! Launching the shell this way (rather than directly making it the boot
@@ -22,7 +23,9 @@ use uefi::proto::device_path::build::{self, DevicePathBuilder};
 use uefi::proto::device_path::{DevicePath, DeviceSubType, DeviceType, LoadedImageDevicePath};
 use uefi::proto::loaded_image::LoadedImage;
 
-/// Get the device path of the shell app. This is the same as the
+/// Returns the device path of the shell application.
+///
+/// This is the same as the
 /// currently-loaded image's device path, but with the file path part changed.
 fn get_shell_app_device_path(storage: &mut Vec<u8>) -> &DevicePath {
     let loaded_image_device_path =

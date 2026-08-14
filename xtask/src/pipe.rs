@@ -15,7 +15,9 @@ pub struct Pipe {
 }
 
 impl Pipe {
-    /// Prepare to set up a two-way communication pipe. This is called
+    /// Prepares a two-way communication pipe.
+    ///
+    /// This is called
     /// before launching QEMU. On Unix this uses `mkfifo` to create two
     /// pipes; on Windows QEMU itself will create the duplex pipe.
     pub fn new(dir: &Path, base_name: &'static str) -> Result<Self> {

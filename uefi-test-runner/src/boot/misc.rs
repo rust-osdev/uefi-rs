@@ -137,7 +137,7 @@ fn test_watchdog() {
     boot::set_watchdog_timer(0, 0x10000, None).expect("Could not set watchdog timer");
 }
 
-/// Dummy protocol for tests
+/// Dummy protocol used by tests.
 #[unsafe_protocol("1a972918-3f69-4b5d-8cb4-cece2309c7f5")]
 struct TestProtocol {
     data: u32,

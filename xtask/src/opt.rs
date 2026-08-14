@@ -88,7 +88,7 @@ pub struct BuildOpt {
     #[clap(flatten)]
     pub build_mode: BuildModeOpt,
 
-    /// Build multiple times to check that different feature
+    /// Builds multiple times to check that different feature
     /// combinations work.
     #[clap(long, action)]
     pub feature_permutations: bool,
@@ -130,8 +130,9 @@ pub struct DocOpt {
     #[clap(long, action)]
     pub open: bool,
 
-    /// Tells whether private items should be documented. This is convenient to check for
-    /// broken intra-doc links in private items.
+    /// Controls whether private items are documented.
+    ///
+    /// This is useful for finding broken intra-doc links in private items.
     #[clap(long, action)]
     pub document_private_items: bool,
 

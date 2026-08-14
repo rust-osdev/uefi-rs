@@ -100,7 +100,7 @@ impl OvmfPaths {
         }
     }
 
-    /// Find path to OVMF files by the strategy documented for
+    /// Finds OVMF files using the strategy documented for
     /// [`Self::find_ovmf_file`].
     fn find(opt: &QemuOpt, arch: UefiArch) -> Result<Self> {
         let prebuilt_source = ovmf_prebuilt_source(arch);

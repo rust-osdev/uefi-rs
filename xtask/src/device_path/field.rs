@@ -154,7 +154,7 @@ pub enum GetFunc {
     /// Autogenerate the getter.
     Auto,
 
-    /// Autogenerate the getter, but call a custom function to get the
+    /// Autogenerates the getter but uses a custom function for the
     /// return value.
     Custom,
 }
@@ -294,7 +294,9 @@ impl NodeField {
         ))
     }
 
-    /// Generate code to calculate the size of DST fields. Returns
+    /// Generates code that calculates the size of DST fields.
+    ///
+    /// Returns
     /// `None` for non-DST fields.
     pub fn gen_builder_dynamic_size(&self) -> Option<TokenStream> {
         if self.attr.custom_build_size_impl {
@@ -356,8 +358,9 @@ impl Default for FieldNodeAttr {
 }
 
 impl FieldNodeAttr {
-    /// Parse a field `node` attribute as described in the
-    /// readme. Returns `None` if the attribute does not exactly match
+    /// Parses a field `node` attribute as described in the readme.
+    ///
+    /// Returns `None` if the attribute does not exactly match
     /// the expected format.
     fn from_attr(attr: &Attribute) -> Option<Self> {
         if !attr.path().is_ident("node") {

@@ -290,12 +290,12 @@ fn test_raw_disk_io(handle: Handle) {
     info!("Raw disk I/O succeeded");
 }
 
-/// Asynchronous disk I/O task context
+/// Context for an asynchronous disk I/O task.
 #[repr(C)]
 struct DiskIoTask {
-    /// Token for the transaction
+    /// Transaction token.
     token: DiskIo2Token,
-    /// Buffer holding the read data
+    /// Buffer that holds the read data.
     buffer: [u8; 512],
 }
 

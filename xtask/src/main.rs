@@ -193,7 +193,9 @@ fn run_vm_tests(opt: &QemuOpt) -> Result<()> {
     qemu::run_qemu(*opt.target, opt)
 }
 
-/// Run unit tests and doctests on the host. Most of uefi-rs is tested
+/// Runs unit tests and doctests on the host.
+///
+/// Most of uefi-rs is tested
 /// with VM tests, but a few things like macros and data types can be
 /// tested with regular tests.
 fn run_host_tests(test_opt: &TestOpt) -> Result<()> {

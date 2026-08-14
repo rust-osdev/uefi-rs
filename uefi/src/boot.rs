@@ -60,7 +60,7 @@ use {alloc::vec::Vec, uefi::ResultExt};
 /// only read by [`image_handle`].
 static IMAGE_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(ptr::null_mut());
 
-/// Get the [`Handle`] of the currently-executing image.
+/// Returns the [`Handle`] of the currently executing image.
 #[must_use]
 pub fn image_handle() -> Handle {
     let ptr = IMAGE_HANDLE.load(Ordering::Acquire);
@@ -1386,7 +1386,7 @@ pub unsafe fn exit(
     result.to_result()
 }
 
-/// Get the current memory map and exit boot services.
+/// Gets the current memory map and exits boot services.
 unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<MemoryMapMeta> {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.
@@ -1778,7 +1778,7 @@ impl<P: Protocol + ?Sized> DerefMut for ScopedProtocol<P> {
 }
 
 impl<P: Protocol + ?Sized> ScopedProtocol<P> {
-    /// Get the protocol interface data, or `None` if the open protocol's
+    /// Returns the protocol data, or `None` if the open protocol's
     /// interface is null.
     #[must_use]
     pub fn get(&self) -> Option<&P> {
@@ -1787,7 +1787,7 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
         self.interface.map(|p| unsafe { p.as_ref() })
     }
 
-    /// Get the protocol interface data, or `None` if the open protocol's
+    /// Returns the protocol data, or `None` if the open protocol's
     /// interface is null.
     #[must_use]
     pub fn get_mut(&mut self) -> Option<&mut P> {
@@ -2018,14 +2018,14 @@ pub enum AllocateType {
 /// The type of handle search to perform.
 #[derive(Debug, Copy, Clone)]
 pub enum SearchType<'guid> {
-    /// Return all handles present on the system.
+    /// Returns all handles present on the system.
     AllHandles,
     /// Returns all handles supporting a certain protocol, specified by its GUID.
     ///
     /// If the protocol implements the `Protocol` interface,
     /// you can use the `from_proto` function to construct a new `SearchType`.
     ByProtocol(&'guid Guid),
-    /// Return all handles that implement a protocol when an interface for that protocol
+    /// Returns all handles that implement a protocol when its interface
     /// is (re)installed.
     ByRegisterNotify(ProtocolSearchKey),
 }

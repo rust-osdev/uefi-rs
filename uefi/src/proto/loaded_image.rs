@@ -64,7 +64,7 @@ impl LoadedImage {
         }
     }
 
-    /// Get the load options of the image as a [`&CStr16`].
+    /// Returns the image's load options as a [`CStr16`].
     ///
     /// Load options are typically used to pass command-line options as
     /// a null-terminated UCS-2 string. This format is not required
@@ -93,7 +93,7 @@ impl LoadedImage {
         }
     }
 
-    /// Get the load options of the image as raw bytes.
+    /// Returns the image's load options as raw bytes.
     ///
     /// UEFI allows arbitrary binary data in load options, but typically
     /// the data is a null-terminated UCS-2 string. Use
@@ -118,7 +118,7 @@ impl LoadedImage {
         }
     }
 
-    /// Set the image data address and size.
+    /// Sets the image data address and size.
     ///
     /// This is useful in the following scenario:
     /// 1. Secure boot is enabled, so images loaded with `LoadImage` must be
@@ -165,7 +165,9 @@ impl LoadedImage {
         self.0.unload = Some(unload);
     }
 
-    /// Set the load options for the image. This can be used prior to
+    /// Sets the image's load options.
+    ///
+    /// This can be used prior to
     /// calling [`boot::start_image`] to control the command line
     /// passed to the image.
     ///

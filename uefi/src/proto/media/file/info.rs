@@ -49,7 +49,7 @@ trait InfoInternal: Align + ptr_meta::Pointee<Metadata = usize> {
         unsafe { ptr.add(offset_of_str).cast::<Char16>() }
     }
 
-    /// Create a new info type in user-provided storage.
+    /// Creates an information structure in caller-provided storage.
     ///
     /// The structure will be created in-place within the provided
     /// `storage` buffer. The alignment and size of the buffer is
@@ -177,7 +177,7 @@ pub struct FileInfo {
 }
 
 impl FileInfo {
-    /// Create a `FileInfo` structure
+    /// Creates a [`FileInfo`] structure.
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
@@ -304,7 +304,7 @@ pub struct FileSystemInfo {
 }
 
 impl FileSystemInfo {
-    /// Create a `FileSystemInfo` structure
+    /// Creates a [`FileSystemInfo`] structure.
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,
@@ -394,7 +394,7 @@ pub struct FileSystemVolumeLabel {
 }
 
 impl FileSystemVolumeLabel {
-    /// Create a `FileSystemVolumeLabel` structure
+    /// Creates a [`FileSystemVolumeLabel`] structure.
     ///
     /// The structure will be created in-place within the provided storage
     /// buffer. The buffer must be large enough to hold the data structure,

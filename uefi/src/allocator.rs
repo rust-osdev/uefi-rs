@@ -15,7 +15,7 @@ use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicU32, Ordering};
 use uefi_raw::table::boot::PAGE_SIZE;
 
-/// Get the memory type to use for allocation.
+/// Returns the memory type used for allocation.
 ///
 /// The first time this is called, the data type of the loaded image will be
 /// retrieved. That value is cached in a static and reused on subsequent

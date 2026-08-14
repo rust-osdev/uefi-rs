@@ -101,14 +101,14 @@ pub trait Protocol: Identify {}
 /// simply casts the pointer to the appropriate type. Protocols that
 /// are not sized must provide a custom implementation.
 pub trait ProtocolPointer: Protocol {
-    /// Create a const pointer to a [`Protocol`] from a [`c_void`] pointer.
+    /// Casts a [`c_void`] pointer to a const protocol pointer.
     ///
     /// # Safety
     ///
     /// The input pointer must point to valid data.
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self;
 
-    /// Create a mutable pointer to a [`Protocol`] from a [`c_void`] pointer.
+    /// Casts a [`c_void`] pointer to a mutable protocol pointer.
     ///
     /// # Safety
     ///

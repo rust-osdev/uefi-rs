@@ -183,7 +183,7 @@ pub struct GptPartitionEntry {
 }
 
 impl GptPartitionEntry {
-    /// Get the number of blocks in the partition. Returns `None` if the
+    /// Returns the partition's block count, or `None` if the
     /// end block is before the start block, or if the number doesn't
     /// fit in a `u64`.
     #[must_use]
@@ -249,7 +249,7 @@ impl PartitionInfo {
         self.system == 1
     }
 
-    /// Get the MBR partition record. Returns None if the partition
+    /// Returns the MBR partition record, or `None` if the partition
     /// type is not MBR.
     #[must_use]
     pub fn mbr_partition_record(&self) -> Option<&MbrPartitionRecord> {
@@ -265,7 +265,7 @@ impl PartitionInfo {
         }
     }
 
-    /// Get the GPT partition entry. Returns None if the partition
+    /// Returns the GPT partition entry, or `None` if the partition
     /// type is not GPT.
     #[must_use]
     pub fn gpt_partition_entry(&self) -> Option<&GptPartitionEntry> {

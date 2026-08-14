@@ -473,7 +473,7 @@ pub struct BltPixel {
 }
 
 impl BltPixel {
-    /// Create a new pixel from RGB values.
+    /// Creates a pixel from RGB values.
     #[must_use]
     pub const fn new(red: u8, green: u8, blue: u8) -> Self {
         Self {
@@ -605,7 +605,7 @@ impl FrameBuffer<'_> {
         unsafe { self.base.add(index).write_volatile(value) }
     }
 
-    /// Read the i-th byte of the frame buffer
+    /// Reads one byte at `index` from the frame buffer.
     ///
     /// # Safety
     ///
@@ -620,7 +620,7 @@ impl FrameBuffer<'_> {
         unsafe { self.base.add(index).read_volatile() }
     }
 
-    /// Write a value in the frame buffer, starting at the i-th byte
+    /// Writes a value to the frame buffer at `index`.
     ///
     /// We only recommend using this method with [u8; N] arrays. Once Rust has
     /// const generics, it will be deprecated and replaced with a write_bytes()

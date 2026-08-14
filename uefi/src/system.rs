@@ -15,7 +15,7 @@ use crate::table::{self, Revision};
 use crate::{CStr16, Char16};
 use core::slice;
 
-/// Get the firmware vendor string.
+/// Returns the firmware vendor string.
 #[must_use]
 pub fn firmware_vendor() -> &'static CStr16 {
     let st = table::system_table_raw_panicking();

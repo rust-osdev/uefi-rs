@@ -18,7 +18,7 @@ pub const COMMON_SKIP_DIRS: &[&CStr16] = &[cstr16!("."), cstr16!("..")];
 pub struct UefiDirectoryIter(UefiDirectoryHandle);
 
 impl UefiDirectoryIter {
-    /// Constructor.
+    /// Creates an iterator over `handle`.
     #[must_use]
     pub const fn new(handle: UefiDirectoryHandle) -> Self {
         Self(handle)

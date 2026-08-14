@@ -25,7 +25,7 @@ pub struct DmaBuffer<'a> {
 }
 
 impl<'a> DmaBuffer<'a> {
-    /// Create a new DmaBuffer from a raw pointer and page count.
+    /// Creates a DMA buffer from a raw pointer and page count.
     ///
     /// # Safety
     /// The caller must ensure that:
@@ -37,25 +37,25 @@ impl<'a> DmaBuffer<'a> {
         Self { ptr, pages, iommu }
     }
 
-    /// Get the raw pointer to the buffer.
+    /// Returns the buffer's raw pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *const c_void {
         self.ptr.cast_const()
     }
 
-    /// Get the raw mutable pointer to the buffer.
+    /// Returns the buffer's raw mutable pointer.
     #[must_use]
     pub const fn as_mut_ptr(&mut self) -> *mut c_void {
         self.ptr
     }
 
-    /// Get the number of pages in the buffer.
+    /// Returns the number of pages in the buffer.
     #[must_use]
     pub const fn pages(&self) -> usize {
         self.pages
     }
 
-    /// Get the size of the buffer in bytes.
+    /// Returns the buffer size in bytes.
     #[must_use]
     pub const fn size(&self) -> usize {
         self.pages * PAGE_SIZE
@@ -101,7 +101,7 @@ pub struct Mapping<'a, 'buf> {
 }
 
 impl<'a, 'buf> Mapping<'a, 'buf> {
-    /// Create a new Mapping from a raw pointer.
+    /// Creates a mapping from a raw pointer.
     ///
     /// # Safety
     /// The caller must ensure that:
@@ -122,13 +122,13 @@ impl<'a, 'buf> Mapping<'a, 'buf> {
         }
     }
 
-    /// Get the raw mapping pointer.
+    /// Returns the raw mapping pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *const c_void {
         self.ptr.cast_const()
     }
 
-    /// Get the raw mutable mapping pointer.
+    /// Returns the raw mutable mapping pointer.
     #[must_use]
     pub const fn as_mut_ptr(&mut self) -> *mut c_void {
         self.ptr

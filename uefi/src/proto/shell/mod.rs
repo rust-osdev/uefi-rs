@@ -181,7 +181,7 @@ mod tests {
         }
     }
 
-    /// Testing Vars struct
+    /// Test fixture for shell environment variables.
     #[test]
     fn test_vars() {
         // Empty Vars

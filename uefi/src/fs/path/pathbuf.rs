@@ -13,13 +13,13 @@ use core::fmt::{Display, Formatter};
 pub struct PathBuf(CString16);
 
 impl PathBuf {
-    /// Constructor.
+    /// Creates an empty path buffer.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Constructor that replaces all occurrences of `/` with `\`.
+    /// Creates a path buffer and converts `/` separators to `\`.
     fn new_from_cstring16(mut string: CString16) -> Self {
         // SAFETY: The memory is valid.
         const SEARCH: Char16 = unsafe { Char16::from_u16_unchecked('/' as u16) };

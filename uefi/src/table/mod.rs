@@ -16,7 +16,7 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 static SYSTEM_TABLE: AtomicPtr<uefi_raw::table::system::SystemTable> =
     AtomicPtr::new(ptr::null_mut());
 
-/// Get the raw system table pointer.
+/// Returns the raw system-table pointer.
 ///
 /// If called before `set_system_table` has been called, this will return `None`.
 pub fn system_table_raw() -> Option<NonNull<uefi_raw::table::system::SystemTable>> {
@@ -24,7 +24,9 @@ pub fn system_table_raw() -> Option<NonNull<uefi_raw::table::system::SystemTable
     NonNull::new(ptr)
 }
 
-/// Get the raw system table pointer. This may only be called after
+/// Returns the raw system-table pointer.
+///
+/// This may only be called after
 /// `set_system_table` has been used to set the global pointer.
 ///
 /// # Panics

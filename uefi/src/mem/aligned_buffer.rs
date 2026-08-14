@@ -52,21 +52,21 @@ impl AlignedBuffer {
         self.ptr.as_ptr()
     }
 
-    /// Get the underlying memory region as immutable slice.
+    /// Returns the underlying memory region as an immutable slice.
     #[must_use]
     pub const fn as_slice(&self) -> &[u8] {
         // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts(self.ptr(), self.size()) }
     }
 
-    /// Get the underlying memory region as mutable slice.
+    /// Returns the underlying memory region as a mutable slice.
     #[must_use]
     pub const fn as_slice_mut(&mut self) -> &mut [u8] {
         // SAFETY: The pointer is valid for the requested slice length.
         unsafe { slice::from_raw_parts_mut(self.ptr_mut(), self.size()) }
     }
 
-    /// Get the size of the aligned memory region managed by this instance.
+    /// Returns the size of the managed aligned memory region.
     #[must_use]
     pub const fn size(&self) -> usize {
         self.layout.size()

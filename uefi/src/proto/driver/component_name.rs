@@ -52,7 +52,7 @@ impl ComponentName1 {
         LanguageIter::new(self.0.supported_languages, LanguageIterKind::V1)
     }
 
-    /// Get the human-readable name of the driver in the given language.
+    /// Returns the human-readable driver name in the requested language.
     ///
     /// `language` must be one of the languages returned by [`supported_languages`].
     ///
@@ -66,7 +66,7 @@ impl ComponentName1 {
             .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 
-    /// Get the human-readable name of a controller in the given language.
+    /// Returns a controller name in the requested language.
     ///
     /// `language` must be one of the languages returned by [`supported_languages`].
     ///
@@ -128,7 +128,7 @@ impl ComponentName2 {
         LanguageIter::new(self.0.supported_languages, LanguageIterKind::V2)
     }
 
-    /// Get the human-readable name of the driver in the given language.
+    /// Returns the human-readable driver name in the requested language.
     ///
     /// `language` must be one of the languages returned by [`supported_languages`].
     ///
@@ -142,7 +142,7 @@ impl ComponentName2 {
             .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
     }
 
-    /// Get the human-readable name of a controller in the given language.
+    /// Returns a controller name in the requested language.
     ///
     /// `language` must be one of the languages returned by [`supported_languages`].
     ///
@@ -209,7 +209,7 @@ impl ComponentName {
         }
     }
 
-    /// Get the human-readable name of the driver in the given language.
+    /// Returns the human-readable driver name in the requested language.
     ///
     /// `language` must be one of the languages returned by [`supported_languages`].
     ///
@@ -221,7 +221,7 @@ impl ComponentName {
         }
     }
 
-    /// Get the human-readable name of a controller in the given language.
+    /// Returns a controller name in the requested language.
     ///
     /// `language` must be one of the languages returned by [`supported_languages`].
     ///

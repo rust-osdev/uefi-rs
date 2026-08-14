@@ -18,7 +18,7 @@ use crate::CStr16;
 pub struct ShellParameters(ShellParametersProtocol);
 
 impl ShellParameters {
-    /// Get the number of shell parameter arguments
+    /// Returns the number of shell arguments.
     #[must_use]
     pub const fn args_len(&self) -> usize {
         self.0.argc

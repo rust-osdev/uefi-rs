@@ -40,7 +40,7 @@ impl PciIoAddress {
         }
     }
 
-    /// Construct a new address with the bus address set to the given value
+    /// Creates an address with the given bus number.
     #[must_use]
     pub const fn with_bus(&self, bus: u8) -> Self {
         let mut addr = *self;
@@ -48,7 +48,7 @@ impl PciIoAddress {
         addr
     }
 
-    /// Construct a new address with the device address set to the given value
+    /// Creates an address with the given device number.
     #[must_use]
     pub const fn with_device(&self, dev: u8) -> Self {
         let mut addr = *self;
@@ -56,7 +56,7 @@ impl PciIoAddress {
         addr
     }
 
-    /// Construct a new address with the function address set to the given value
+    /// Creates an address with the given function number.
     #[must_use]
     pub const fn with_function(&self, fun: u8) -> Self {
         let mut addr = *self;

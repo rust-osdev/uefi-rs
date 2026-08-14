@@ -49,7 +49,7 @@ struct PciHeader1Register6 {
     secondary_latency_timer: u8,
 }
 
-/// Read the 4byte pci register with the given `addr` and cast it into the given structured representation.
+/// Reads a four-byte PCI register and converts it to `T`.
 fn read_device_register_u32<T: Sized + Copy>(
     proto: &mut PciRootBridgeIo,
     addr: PciIoAddress,
@@ -149,7 +149,7 @@ impl PciTree {
         self.devices.iter()
     }
 
-    /// Get the segment number of this PCI tree.
+    /// Returns the segment number of this PCI tree.
     #[must_use]
     pub const fn segment_nr(&self) -> u32 {
         self.segment

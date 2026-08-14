@@ -16,7 +16,7 @@ use core::ptr;
 pub struct Path(CStr16);
 
 impl Path {
-    /// Constructor.
+    /// Creates a path from a [`CStr16`].
     #[must_use]
     pub fn new<S: AsRef<CStr16> + ?Sized>(s: &S) -> &Self {
         // SAFETY: The handle is known to point to live storage here.

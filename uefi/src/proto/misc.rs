@@ -13,27 +13,29 @@ use crate::{Result, StatusExt};
 ///
 /// Protocol for retrieving a high-resolution timestamp counter.
 ///
-/// # Note
-/// If your UEFI firmware not support timestamp protocol which first added at
-/// UEFI spec 2.4 2013. you also could use `RDTSC` in rust, here is a demo
-/// [Slint-UI](https://github.com/slint-ui/slint/blob/2c0ba2bc0f151eba8d1fa17839fa2ac58832ca80/examples/uefi-demo/main.rs#L28-L62)
-/// who use uefi-rs.
+/// Firmware predating UEFI 2.4 may not support this protocol. On x86, `RDTSC`
+/// can provide an alternative; the [Slint UEFI demo] shows one implementation.
 ///
 /// [`Protocol`]: uefi::proto::Protocol
+/// [Slint UEFI demo]: https://github.com/slint-ui/slint/blob/2c0ba2bc0f151eba8d1fa17839fa2ac58832ca80/examples/uefi-demo/main.rs#L28-L62
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(TimestampProtocol::GUID)]
 pub struct Timestamp(TimestampProtocol);
 
 impl Timestamp {
-    /// Get the current value of the timestamp counter.
+    /// Returns the current timestamp-counter value.
     #[must_use]
     pub fn get_timestamp(&self) -> u64 {
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_timestamp)() }
     }
 
-    /// Get the properties of the timestamp counter.
+    /// Returns the timestamp-counter properties.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot report the counter properties.
     pub fn get_properties(&self) -> Result<TimestampProperties> {
         let mut properties = TimestampProperties::default();
         // SAFETY: The memory is valid.

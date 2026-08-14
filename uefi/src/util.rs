@@ -28,7 +28,7 @@ pub const fn usize_from_u32(val: u32) -> usize {
     val as usize
 }
 
-/// Get the raw pointer from `opt`, defaulting to `null_mut`.
+/// Returns the raw pointer in `opt`, or null for `None`.
 pub fn opt_nonnull_to_ptr<T>(opt: Option<NonNull<T>>) -> *mut T {
     opt.map(NonNull::as_ptr).unwrap_or(ptr::null_mut())
 }

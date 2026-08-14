@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! TCPv4 Protocol
+//! Raw TCPv4 protocol and data types.
 //!
 //! This module provides the TCPv4 Protocol interface definitions. The
 //! TCPv4 Protocol provides services to send and receive data streams
@@ -14,6 +14,7 @@ use crate::{Boolean, Event, Guid, Handle, Ipv4Address, Status, guid, newtype_enu
 use core::ffi::c_void;
 use core::fmt::{Debug, Formatter};
 
+/// TCPv4 protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4Protocol {
@@ -32,8 +33,7 @@ pub struct Tcp4Protocol {
         simple_network_mode: *mut NetworkMode,
     ) -> Status,
 
-    /// Initialize or brutally reset the operational parameters for
-    /// this instance.
+    /// Initializes or immediately resets this instance's parameters.
     ///
     /// No other [`Tcp4Protocol`] operation can be executed by this
     /// instance until it is configured properly. For an active
@@ -93,8 +93,7 @@ pub struct Tcp4Protocol {
         gateway_address: *const Ipv4Address,
     ) -> Status,
 
-    /// Initiate a nonblocking TCP connection request for an active
-    /// TCP instance.
+    /// Initiates a nonblocking connection for an active TCP instance.
     ///
     /// `connect` initiates an active open to the remote peer
     /// configured in the current TCP instance if it is configured as
@@ -111,8 +110,7 @@ pub struct Tcp4Protocol {
     pub connect:
         unsafe extern "efiapi" fn(this: *mut Self, token: *mut Tcp4ConnectionToken) -> Status,
 
-    /// Listen on the passive instance to accept an incoming
-    /// connection request. This is a nonblocking operation.
+    /// Queues a nonblocking accept operation on a passive instance.
     ///
     /// The `accept` function initiates an asynchronous accept request
     /// to wait for an incoming connection on the passive TCP
@@ -142,8 +140,7 @@ pub struct Tcp4Protocol {
     /// data is sent out or some error occurs.
     pub transmit: unsafe extern "efiapi" fn(this: *mut Self, token: *mut Tcp4IoToken) -> Status,
 
-    /// Places an asynchronous receive request into the receiving
-    /// queue.
+    /// Queues an asynchronous receive request.
     ///
     /// `receive` places a completion token into the receive packet
     /// queue. This function is always asynchronous. The caller must
@@ -165,8 +162,7 @@ pub struct Tcp4Protocol {
     /// to not be re-entered.
     pub receive: unsafe extern "efiapi" fn(this: *mut Self, token: *mut Tcp4IoToken) -> Status,
 
-    /// Disconnect a TCP connection gracefully or reset a TCP
-    /// connection. This function is a nonblocking operation.
+    /// Queues a graceful disconnect or connection reset.
     ///
     /// Initiate an asynchronous close token to TCP driver. After
     /// `close` is called, any buffered transmission data will be sent
@@ -181,8 +177,7 @@ pub struct Tcp4Protocol {
     pub close:
         unsafe extern "efiapi" fn(this: *mut Self, close_token: *mut Tcp4CloseToken) -> Status,
 
-    /// Abort an asynchronous connection, listen, transmission or
-    /// receive request.
+    /// Aborts one or all asynchronous requests.
     ///
     /// The `cancel` function aborts a pending connection, listen,
     /// transmit or receive request. If `completion_token` is not
@@ -228,6 +223,7 @@ impl Tcp4Protocol {
 }
 
 newtype_enum! {
+    /// State of a TCPv4 connection.
     pub enum Tcp4ConnectionState: i32 => {
         CLOSED = 0,
         LISTEN = 1,
@@ -243,6 +239,7 @@ newtype_enum! {
     }
 }
 
+/// Configuration of a TCPv4 instance.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4ConfigData {
@@ -256,6 +253,7 @@ pub struct Tcp4ConfigData {
     pub control_option: *mut Tcp4Option,
 }
 
+/// Local and remote endpoints of a TCPv4 instance.
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct Tcp4AccessPoint {
@@ -275,6 +273,7 @@ pub struct Tcp4AccessPoint {
     pub active_flag: Boolean,
 }
 
+/// Optional tuning parameters for a TCPv4 instance.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4Option {
@@ -310,6 +309,7 @@ pub struct Tcp4Option {
     pub enable_path_mtu_discovery: Boolean,
 }
 
+/// Completion event and status for a TCPv4 operation.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4CompletionToken {
@@ -319,12 +319,14 @@ pub struct Tcp4CompletionToken {
     pub status: Status,
 }
 
+/// Completion token for an active connection request.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4ConnectionToken {
     pub completion_token: Tcp4CompletionToken,
 }
 
+/// Completion token for a passive connection request.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4ListenToken {
@@ -335,6 +337,7 @@ pub struct Tcp4ListenToken {
     pub new_child_handle: Handle,
 }
 
+/// Completion token for a TCPv4 I/O operation.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4IoToken {
@@ -344,7 +347,9 @@ pub struct Tcp4IoToken {
     pub packet: Tcp4Packet,
 }
 
+/// Completion token for closing a TCPv4 connection.
 #[derive(Debug)]
+/// Receive or transmit packet attached to an I/O token.
 #[repr(C)]
 pub struct Tcp4CloseToken {
     /// Completion token for the close operation.
@@ -369,6 +374,7 @@ impl Debug for Tcp4Packet {
     }
 }
 
+/// One buffer in a fragmented TCPv4 packet.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4FragmentData {
@@ -379,6 +385,7 @@ pub struct Tcp4FragmentData {
     pub fragment_buf: *mut u8,
 }
 
+/// Buffers and metadata for a TCPv4 receive operation.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4ReceiveData {
@@ -400,6 +407,7 @@ pub struct Tcp4ReceiveData {
     pub fragment_table: [Tcp4FragmentData; 0],
 }
 
+/// Buffers and metadata for a TCPv4 transmit operation.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4TransmitData {
@@ -423,6 +431,7 @@ pub struct Tcp4TransmitData {
     pub fragment_table: [Tcp4FragmentData; 0],
 }
 
+/// Remote endpoint of an established TCPv4 child connection.
 #[derive(Debug)]
 #[repr(C)]
 pub struct Tcp4ClientConnectionModeParams {

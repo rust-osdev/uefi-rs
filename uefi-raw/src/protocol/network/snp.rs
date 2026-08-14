@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! Raw Simple Network protocol and data types.
+
 use core::ffi;
 
 use bitflags::bitflags;
 
 use crate::{Boolean, Event, Guid, IpAddress, MacAddress, Status, guid, newtype_enum};
 
+/// Simple Network protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct SimpleNetworkProtocol {
@@ -84,7 +87,7 @@ impl SimpleNetworkProtocol {
 }
 
 bitflags! {
-    /// Flags to pass to receive_filters to enable/disable reception of some kinds of packets.
+    /// Packet classes accepted by the receive filter.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct ReceiveFlags: u32 {
@@ -102,8 +105,7 @@ bitflags! {
 }
 
 bitflags! {
-    /// Flags returned by get_interrupt_status to indicate which interrupts have fired on the
-    /// interface since the last call.
+    /// Interrupts reported since the previous status query.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct InterruptStatus: u32 {
@@ -118,13 +120,10 @@ bitflags! {
     }
 }
 
-/// Network Statistics
+/// Statistics reported by the Simple Network protocol.
 ///
-/// The description of statistics on the network with the SNP's `statistics` function
-/// is returned in this structure
-///
-/// Any of these statistics may or may not be available on the device. So, all the
-/// retriever functions of the statistics return `None` when a statistic is not supported
+/// Individual statistics may be unavailable. Each accessor returns `None` for
+/// a statistic that the device does not support.
 #[repr(C)]
 #[derive(Default, Debug)]
 pub struct NetworkStatistics {
@@ -157,14 +156,14 @@ pub struct NetworkStatistics {
 }
 
 impl NetworkStatistics {
-    /// Any statistic value of -1 is not available
+    /// Returns whether a statistic is available.
     const fn available(&self, stat: u64) -> bool {
         stat as i64 != -1
     }
 
-    /// Takes a statistic and converts it to an option
+    /// Converts a raw statistic to an optional value.
     ///
-    /// When the statistic is not available, `None` is returned
+    /// An unavailable statistic produces `None`.
     const fn to_option(&self, stat: u64) -> Option<u64> {
         match self.available(stat) {
             true => Some(stat),
@@ -172,237 +171,217 @@ impl NetworkStatistics {
         }
     }
 
-    /// The total number of frames received, including error frames
-    /// and dropped frames
+    /// Returns all received frames, including errors and drops.
     #[must_use]
     pub const fn rx_total_frames(&self) -> Option<u64> {
         self.to_option(self.rx_total_frames)
     }
 
-    /// The total number of good frames received and copied
-    /// into receive buffers
+    /// Returns valid frames copied into receive buffers.
     #[must_use]
     pub const fn rx_good_frames(&self) -> Option<u64> {
         self.to_option(self.rx_good_frames)
     }
 
-    /// The number of frames below the minimum length for the
-    /// communications device
+    /// Returns frames below the device's minimum length.
     #[must_use]
     pub const fn rx_undersize_frames(&self) -> Option<u64> {
         self.to_option(self.rx_undersize_frames)
     }
 
-    /// The number of frames longer than the maximum length for
-    /// the communications length device
+    /// Returns frames above the device's maximum length.
     #[must_use]
     pub const fn rx_oversize_frames(&self) -> Option<u64> {
         self.to_option(self.rx_oversize_frames)
     }
 
-    /// The number of valid frames that were dropped because
-    /// the receive buffers were full
+    /// Returns valid frames dropped because receive buffers were full.
     #[must_use]
     pub const fn rx_dropped_frames(&self) -> Option<u64> {
         self.to_option(self.rx_dropped_frames)
     }
 
-    /// The number of valid unicast frames received and not dropped
+    /// Returns valid unicast frames received without being dropped.
     #[must_use]
     pub const fn rx_unicast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_unicast_frames)
     }
 
-    /// The number of valid broadcast frames received and not dropped
+    /// Returns valid broadcast frames received without being dropped.
     #[must_use]
     pub const fn rx_broadcast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_broadcast_frames)
     }
 
-    /// The number of valid multicast frames received and not dropped
+    /// Returns valid multicast frames received without being dropped.
     #[must_use]
     pub const fn rx_multicast_frames(&self) -> Option<u64> {
         self.to_option(self.rx_multicast_frames)
     }
 
-    /// Number of frames with CRC or alignment errors
+    /// Returns received frames with CRC or alignment errors.
     #[must_use]
     pub const fn rx_crc_error_frames(&self) -> Option<u64> {
         self.to_option(self.rx_crc_error_frames)
     }
 
-    /// The total number of bytes received including frames with errors
-    /// and dropped frames
+    /// Returns all received bytes, including errors and drops.
     #[must_use]
     pub const fn rx_total_bytes(&self) -> Option<u64> {
         self.to_option(self.rx_total_bytes)
     }
 
-    /// The total number of frames transmitted including frames
-    /// with errors and dropped frames
+    /// Returns all transmitted frames, including errors and drops.
     #[must_use]
     pub const fn tx_total_frames(&self) -> Option<u64> {
         self.to_option(self.tx_total_frames)
     }
 
-    /// The total number of valid frames transmitted and copied
-    /// into receive buffers
+    /// Returns valid frames accepted for transmission.
     #[must_use]
     pub const fn tx_good_frames(&self) -> Option<u64> {
         self.to_option(self.tx_good_frames)
     }
 
-    /// The number of frames below the minimum length for
-    /// the media. This would be less than 64 for Ethernet
+    /// Returns frames below the medium's minimum length.
     #[must_use]
     pub const fn tx_undersize_frames(&self) -> Option<u64> {
         self.to_option(self.tx_undersize_frames)
     }
 
-    /// The number of frames longer than the maximum length for
-    /// the media. This would be 1500 for Ethernet
+    /// Returns frames above the medium's maximum length.
     #[must_use]
     pub const fn tx_oversize_frames(&self) -> Option<u64> {
         self.to_option(self.tx_oversize_frames)
     }
 
-    /// The number of valid frames that were dropped because
-    /// received buffers were full
+    /// Returns valid transmit frames dropped because buffers were full.
     #[must_use]
     pub const fn tx_dropped_frames(&self) -> Option<u64> {
         self.to_option(self.tx_dropped_frames)
     }
 
-    /// The number of valid unicast frames transmitted and not
-    /// dropped
+    /// Returns valid unicast frames transmitted without being dropped.
     #[must_use]
     pub const fn tx_unicast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_unicast_frames)
     }
 
-    /// The number of valid broadcast frames transmitted and
-    /// not dropped
+    /// Returns valid broadcast frames transmitted without being dropped.
     #[must_use]
     pub const fn tx_broadcast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_broadcast_frames)
     }
 
-    /// The number of valid multicast frames transmitted
-    /// and not dropped
+    /// Returns valid multicast frames transmitted without being dropped.
     #[must_use]
     pub const fn tx_multicast_frames(&self) -> Option<u64> {
         self.to_option(self.tx_multicast_frames)
     }
 
-    /// The number of transmitted frames with CRC or
-    /// alignment errors
+    /// Returns transmitted frames with CRC or alignment errors.
     #[must_use]
     pub const fn tx_crc_error_frames(&self) -> Option<u64> {
         self.to_option(self.tx_crc_error_frames)
     }
 
-    /// The total number of bytes transmitted including
-    /// error frames and dropped frames
+    /// Returns all transmitted bytes, including errors and drops.
     #[must_use]
     pub const fn tx_total_bytes(&self) -> Option<u64> {
         self.to_option(self.tx_total_bytes)
     }
 
-    /// The number of collisions detected on this subnet
+    /// Returns collisions detected on the subnet.
     #[must_use]
     pub const fn collisions(&self) -> Option<u64> {
         self.to_option(self.collisions)
     }
 
-    /// The number of frames destined for unsupported protocol
+    /// Returns frames for unsupported network protocols.
     #[must_use]
     pub const fn unsupported_protocol(&self) -> Option<u64> {
         self.to_option(self.unsupported_protocol)
     }
 
-    /// The number of valid frames received that were duplicated
+    /// Returns valid received frames that were duplicates.
     #[must_use]
     pub const fn rx_duplicated_frames(&self) -> Option<u64> {
         self.to_option(self.rx_duplicated_frames)
     }
 
-    /// The number of encrypted frames received that failed
-    /// to decrypt
+    /// Returns encrypted frames that failed decryption.
     #[must_use]
     pub const fn rx_decrypt_error_frames(&self) -> Option<u64> {
         self.to_option(self.rx_decrypt_error_frames)
     }
 
-    /// The number of frames that failed to transmit after
-    /// exceeding the retry limit
+    /// Returns frames that exceeded the transmit retry limit.
     #[must_use]
     pub const fn tx_error_frames(&self) -> Option<u64> {
         self.to_option(self.tx_error_frames)
     }
 
-    /// The number of frames that transmitted successfully
-    /// after more than one attempt
+    /// Returns frames transmitted successfully after a retry.
     #[must_use]
     pub const fn tx_retry_frames(&self) -> Option<u64> {
         self.to_option(self.tx_retry_frames)
     }
 }
 
-/// Information about the current configuration of an interface obtained by the
-/// [`SimpleNetworkProtocol`].
+/// Current configuration of a Simple Network interface.
 #[repr(C)]
 #[derive(Debug)]
 pub struct NetworkMode {
-    /// Reports the current state of the network interface
+    /// Current state of the network interface.
     pub state: NetworkState,
-    /// The size of the network interface's hardware address in bytes
+    /// Hardware-address size in bytes.
     pub hw_address_size: u32,
-    /// The size of the network interface's media header in bytes
+    /// Media-header size in bytes.
     pub media_header_size: u32,
-    /// The maximum size of the packets supported by the network interface in bytes
+    /// Maximum supported packet size in bytes.
     pub max_packet_size: u32,
-    /// The size of the NVRAM device attached to the network interface in bytes
+    /// Attached NVRAM size in bytes.
     pub nv_ram_size: u32,
-    /// The size that must be used for all NVRAM reads and writes
+    /// Required granularity of NVRAM reads and writes.
     pub nv_ram_access_size: u32,
-    /// The multicast receive filter settings supported by the network interface
+    /// Supported receive-filter settings.
     pub receive_filter_mask: u32,
-    /// The current multicast receive filter settings
+    /// Active receive-filter settings.
     pub receive_filter_setting: u32,
-    /// The maximum number of multicast address receive filters supported by the driver
+    /// Maximum number of multicast-address filters.
     pub max_mcast_filter_count: u32,
-    /// The current number of multicast address receive filters
+    /// Number of active multicast-address filters.
     pub mcast_filter_count: u32,
-    /// The array containing the addresses of the current multicast address receive filters
+    /// Active multicast-address filters.
     pub mcast_filter: [MacAddress; 16],
-    /// The current hardware MAC address for the network interface
+    /// Current hardware MAC address.
     pub current_address: MacAddress,
-    /// The current hardware MAC address for broadcast packets
+    /// Hardware MAC address used for broadcasts.
     pub broadcast_address: MacAddress,
-    /// The permanent hardware MAC address for the network interface
+    /// Permanent hardware MAC address.
     pub permanent_address: MacAddress,
-    /// The interface type of the network interface
+    /// Network interface type.
     pub if_type: u8,
-    /// Tells if the MAC address can be changed
+    /// Whether the MAC address can be changed.
     pub mac_address_changeable: Boolean,
-    /// Tells if the network interface can transmit more than one packet at a time
+    /// Whether multiple packets can be transmitted concurrently.
     pub multiple_tx_supported: Boolean,
-    /// Tells if the presence of the media can be determined
+    /// Whether media presence can be detected.
     pub media_present_supported: Boolean,
-    /// Tells if media are connected to the network interface
+    /// Whether media are connected to the interface.
     pub media_present: Boolean,
 }
 
 newtype_enum! {
     /// The state of a network interface.
     pub enum NetworkState: u32 => {
-        /// The interface has been stopped
+        /// The interface is stopped.
         STOPPED = 0,
-        /// The interface has been started
+        /// The interface is started.
         STARTED = 1,
-        /// The interface has been initialized
+        /// The interface is initialized.
         INITIALIZED = 2,
-        /// No state can have a number higher than this
+        /// Sentinel above every valid state.
         MAX_STATE = 3,
     }
 }

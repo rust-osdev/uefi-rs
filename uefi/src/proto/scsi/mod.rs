@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! SCSI Bus specific protocols.
+//! SCSI bus protocols.
 
 use crate::mem::{AlignedBuffer, AlignmentError};
 use core::alloc::LayoutError;
@@ -11,19 +11,16 @@ use uefi_raw::protocol::scsi::{
     ScsiIoDataDirection, ScsiIoHostAdapterStatus, ScsiIoScsiRequestPacket, ScsiIoTargetStatus,
 };
 
-#[cfg(doc)]
-use crate::Status;
-
 pub mod pass_thru;
 
-/// Represents the data direction for a SCSI request.
+/// Data direction for a SCSI request.
 ///
-/// Used to specify whether the request involves reading, writing, or bidirectional data transfer.
+/// Specifies whether a request reads, writes, or transfers data bidirectionally.
 pub type ScsiRequestDirection = uefi_raw::protocol::scsi::ScsiIoDataDirection;
 
 /// Represents a SCSI request packet.
 ///
-/// This structure encapsulates the necessary data for sending a command to a SCSI device.
+/// Contains the command and buffers needed to communicate with a SCSI device.
 #[derive(Debug)]
 pub struct ScsiRequest<'a> {
     packet: ScsiIoScsiRequestPacket,
@@ -35,20 +32,21 @@ pub struct ScsiRequest<'a> {
     _phantom: PhantomData<&'a u8>,
 }
 
-/// A builder for constructing [`ScsiRequest`] instances.
+/// Builder for constructing [`ScsiRequest`] values.
 ///
-/// Provides a safe and ergonomic interface for configuring SCSI request packets, including timeout,
-/// data buffers, and command descriptor blocks.
+/// Its methods configure the timeout, data buffers, sense buffer, and command
+/// descriptor block (CDB).
 #[derive(Debug)]
 pub struct ScsiRequestBuilder<'a> {
     req: ScsiRequest<'a>,
 }
 impl ScsiRequestBuilder<'_> {
-    /// Creates a new instance with the specified data direction and alignment.
+    /// Creates a new request builder.
     ///
     /// # Arguments
-    /// - `direction`: Specifies the direction of data transfer (READ, WRITE, or BIDIRECTIONAL).
-    /// - `io_align`: Specifies the required alignment for data buffers. (SCSI Controller specific!)
+    ///
+    /// - `direction`: Direction of data transfer for the request.
+    /// - `io_align`: Controller I/O buffer alignment requirement.
     #[must_use]
     pub fn new(direction: ScsiRequestDirection, io_align: u32) -> Self {
         Self {
@@ -85,7 +83,9 @@ impl ScsiRequestBuilder<'_> {
     /// - MODE_SENSE
     ///
     /// # Arguments
-    /// - `io_align`: Specifies the required alignment for data buffers.
+    ///
+    /// - `io_align`: Controller I/O buffer alignment requirement.
+    ///
     #[must_use]
     pub fn read(io_align: u32) -> Self {
         Self::new(ScsiIoDataDirection::READ, io_align)
@@ -98,7 +98,9 @@ impl ScsiRequestBuilder<'_> {
     /// - MODE_SELECT
     ///
     /// # Arguments
-    /// - `io_align`: Specifies the required alignment for data buffers.
+    ///
+    /// - `io_align`: Controller I/O buffer alignment requirement.
+    ///
     #[must_use]
     pub fn write(io_align: u32) -> Self {
         Self::new(ScsiIoDataDirection::WRITE, io_align)
@@ -110,7 +112,9 @@ impl ScsiRequestBuilder<'_> {
     /// - SEND DIAGNOSTIC
     ///
     /// # Arguments
-    /// - `io_align`: Specifies the required alignment for data buffers.
+    ///
+    /// - `io_align`: Controller I/O buffer alignment requirement.
+    ///
     #[must_use]
     pub fn bidirectional(io_align: u32) -> Self {
         Self::new(ScsiIoDataDirection::BIDIRECTIONAL, io_align)
@@ -120,14 +124,8 @@ impl ScsiRequestBuilder<'_> {
 impl<'a> ScsiRequestBuilder<'a> {
     /// Sets a timeout for the SCSI request.
     ///
-    /// # Arguments
-    /// - `timeout`: A [`Duration`] representing the maximum time allowed for the request.
-    ///   The value is converted to 100-nanosecond units.
-    ///
-    /// # Description
-    /// By default (without calling this method, or by calling with [`Duration::ZERO`]),
-    /// SCSI requests have no timeout.
-    /// Setting a timeout here will cause SCSI commands to potentially fail with [`Status::TIMEOUT`].
+    /// Sets this request's timeout in 100-nanosecond units. A zero duration
+    /// disables the timeout.
     #[must_use]
     pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.req.packet.timeout = (timeout.as_nanos() / 100) as u64;
@@ -137,17 +135,15 @@ impl<'a> ScsiRequestBuilder<'a> {
     // # IN BUFFER
     // ########################################################################################
 
-    /// Uses a user-supplied buffer for reading data from the device.
+    /// Uses a caller-provided buffer to receive data from the device.
     ///
     /// # Arguments
-    /// - `bfr`: A mutable reference to an [`AlignedBuffer`] that will be used to store data read from the device.
     ///
-    /// # Returns
-    /// `Result<Self, AlignmentError>` indicating success or an alignment issue with the provided buffer.
+    /// - `bfr`: Buffer in which to receive data.
     ///
-    /// # Description
-    /// This method checks the alignment of the buffer against the protocol's requirements and assigns it to
-    /// the `in_data_buffer` of the underlying `ScsiRequest`.
+    /// # Errors
+    ///
+    /// Returns an error if `bfr` does not satisfy the required alignment.
     pub fn use_read_buffer(mut self, bfr: &'a mut AlignedBuffer) -> Result<Self, AlignmentError> {
         // check alignment of externally supplied buffer
         bfr.check_alignment(self.req.io_align as usize)?;
@@ -157,13 +153,16 @@ impl<'a> ScsiRequestBuilder<'a> {
         Ok(self)
     }
 
-    /// Adds a newly allocated read buffer to the built SCSI request.
+    /// Allocates a read buffer for the SCSI request.
     ///
     /// # Arguments
-    /// - `len`: The size of the buffer (in bytes) to allocate for receiving data.
     ///
-    /// # Returns
-    /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
+    /// - `len`: Number of bytes to allocate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the buffer cannot be allocated with the required
+    /// alignment.
     pub fn with_read_buffer(mut self, len: usize) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(len, self.req.io_align as usize)?;
         self.req.packet.in_data_buffer = bfr.ptr_mut().cast();
@@ -175,13 +174,16 @@ impl<'a> ScsiRequestBuilder<'a> {
     // # SENSE BUFFER
     // ########################################################################################
 
-    /// Adds a newly allocated sense buffer to the built SCSI request.
+    /// Allocates a sense-data buffer for the SCSI request.
     ///
     /// # Arguments
-    /// - `len`: The size of the buffer (in bytes) to allocate for receiving sense data.
     ///
-    /// # Returns
-    /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
+    /// - `len`: Number of bytes to allocate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the buffer cannot be allocated with the required
+    /// alignment.
     pub fn with_sense_buffer(mut self, len: u8) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(len as usize, self.req.io_align as usize)?;
         self.req.packet.sense_data = bfr.ptr_mut().cast();
@@ -193,17 +195,15 @@ impl<'a> ScsiRequestBuilder<'a> {
     // # WRITE BUFFER
     // ########################################################################################
 
-    /// Uses a user-supplied buffer for writing data to the device.
+    /// Uses a caller-provided buffer to send data to the device.
     ///
     /// # Arguments
-    /// - `bfr`: A mutable reference to an [`AlignedBuffer`] containing the data to be written to the device.
     ///
-    /// # Returns
-    /// `Result<Self, AlignmentError>` indicating success or an alignment issue with the provided buffer.
+    /// - `bfr`: Buffer containing the data to send.
     ///
-    /// # Description
-    /// This method checks the alignment of the buffer against the protocol's requirements and assigns it to
-    /// the `out_data_buffer` of the underlying `ScsiRequest`.
+    /// # Errors
+    ///
+    /// Returns an error if `bfr` does not satisfy the required alignment.
     pub fn use_write_buffer(mut self, bfr: &'a mut AlignedBuffer) -> Result<Self, AlignmentError> {
         // check alignment of externally supplied buffer
         bfr.check_alignment(self.req.io_align as usize)?;
@@ -213,14 +213,16 @@ impl<'a> ScsiRequestBuilder<'a> {
         Ok(self)
     }
 
-    /// Adds a newly allocated write buffer to the built SCSI request that is filled from the
-    /// given data buffer. (Done for memory alignment and lifetime purposes)
+    /// Allocates an aligned write buffer and copies `data` into it.
     ///
     /// # Arguments
-    /// - `data`: A slice of bytes representing the data to be written.
     ///
-    /// # Returns
-    /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
+    /// - `data`: Data to copy into the request buffer.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the buffer cannot be allocated with the required
+    /// alignment.
     pub fn with_write_data(mut self, data: &[u8]) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(data.len(), self.req.io_align as usize)?;
         bfr.copy_from_slice(data);
@@ -233,16 +235,19 @@ impl<'a> ScsiRequestBuilder<'a> {
     // # COMMAND BUFFER
     // ########################################################################################
 
-    /// Uses a user-supplied Command Data Block (CDB) buffer.
+    /// Uses a caller-provided command descriptor block (CDB).
     ///
     /// # Arguments
-    /// - `data`: A mutable reference to an [`AlignedBuffer`] containing the CDB to be sent to the device.
     ///
-    /// # Returns
-    /// `Result<Self, AlignmentError>` indicating success or an alignment issue with the provided buffer.
+    /// - `data`: CDB to attach to the request.
     ///
-    /// # Notes
-    /// The maximum length of a CDB is 255 bytes.
+    /// # Errors
+    ///
+    /// Returns an error if `data` does not satisfy the required alignment.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `data` is longer than 255 bytes.
     pub fn use_command_buffer(
         mut self,
         data: &'a mut AlignedBuffer,
@@ -256,17 +261,20 @@ impl<'a> ScsiRequestBuilder<'a> {
         Ok(self)
     }
 
-    /// Adds a newly allocated Command Data Block (CDB) buffer to the built SCSI request that is filled from the
-    /// given data buffer. (Done for memory alignment and lifetime purposes)
+    /// Allocates an aligned command descriptor block and copies `data` into it.
     ///
     /// # Arguments
-    /// - `data`: A slice of bytes representing the command to be sent.
     ///
-    /// # Returns
-    /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
+    /// - `data`: CDB to copy into the request.
     ///
-    /// # Notes
-    /// The maximum length of a CDB is 255 bytes.
+    /// # Errors
+    ///
+    /// Returns an error if the buffer cannot be allocated with the required
+    /// alignment.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `data` is longer than 255 bytes.
     pub fn with_command_data(mut self, data: &[u8]) -> Result<Self, LayoutError> {
         assert!(data.len() <= 255);
         let mut bfr = AlignedBuffer::from_size_align(data.len(), self.req.io_align as usize)?;
@@ -277,31 +285,22 @@ impl<'a> ScsiRequestBuilder<'a> {
         Ok(self)
     }
 
-    /// Build the final `ScsiRequest`.
-    ///
-    /// # Returns
-    /// A fully-configured [`ScsiRequest`] ready for execution.
+    /// Builds the configured [`ScsiRequest`].
     #[must_use]
     pub fn build(self) -> ScsiRequest<'a> {
         self.req
     }
 }
 
-/// Represents the response of a SCSI request.
+/// Response returned after executing a SCSI request.
 ///
-/// This struct encapsulates the results of a SCSI operation, including data buffers
-/// for read and sense data, as well as status codes returned by the host adapter and target device.
+/// Contains read and sense-data buffers together with status codes from the
+/// host adapter and target device.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct ScsiResponse<'a>(ScsiRequest<'a>);
 impl<'a> ScsiResponse<'a> {
-    /// Retrieves the buffer containing data read from the device (if any).
-    ///
-    /// # Returns
-    /// `Option<&[u8]>`: A slice of the data read from the device, or `None` if no read buffer was assigned.
-    ///
-    /// # Safety
-    /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
+    /// Returns data read from the device, if a read buffer was assigned.
     #[must_use]
     pub const fn read_buffer(&self) -> Option<&'a [u8]> {
         if self.0.packet.in_data_buffer.is_null() {
@@ -316,13 +315,7 @@ impl<'a> ScsiResponse<'a> {
         }
     }
 
-    /// Retrieves the buffer containing sense data returned by the device (if any).
-    ///
-    /// # Returns
-    /// `Option<&[u8]>`: A slice of the sense data, or `None` if no sense data buffer was assigned.
-    ///
-    /// # Safety
-    /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
+    /// Returns sense data from the device, if a sense buffer was assigned.
     #[must_use]
     pub const fn sense_data(&self) -> Option<&'a [u8]> {
         if self.0.packet.sense_data.is_null() {
@@ -337,19 +330,13 @@ impl<'a> ScsiResponse<'a> {
         }
     }
 
-    /// Retrieves the status of the host adapter after executing the SCSI request.
-    ///
-    /// # Returns
-    /// [`ScsiIoHostAdapterStatus`]: The status code indicating the result of the operation from the host adapter.
+    /// Returns the host adapter's status after executing the request.
     #[must_use]
     pub const fn host_adapter_status(&self) -> ScsiIoHostAdapterStatus {
         self.0.packet.host_adapter_status
     }
 
-    /// Retrieves the status of the target device after executing the SCSI request.
-    ///
-    /// # Returns
-    /// [`ScsiIoTargetStatus`]: The status code returned by the target device.
+    /// Returns the target device's status after executing the request.
     #[must_use]
     pub const fn target_status(&self) -> ScsiIoTargetStatus {
         self.0.packet.target_status

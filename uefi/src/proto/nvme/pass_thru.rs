@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! NVM Express Pass Thru Protocol.
+//! NVM Express Pass Thru protocol.
 
 use super::{NvmeRequest, NvmeResponse};
 use crate::StatusExt;
@@ -14,10 +14,9 @@ use uefi_raw::Status;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 use uefi_raw::protocol::nvme::{NvmExpressCompletion, NvmExpressPassThruProtocol};
 
-/// Nvme Pass Thru Protocol Mode structure.
+/// NVMe Pass Thru mode.
 ///
-/// This contains information regarding the specific capabilities and requirements
-/// of the NVMe controller, such as buffer alignment constraints.
+/// Describes controller capabilities and requirements such as buffer alignment.
 pub type NvmePassThruMode = uefi_raw::protocol::nvme::NvmExpressPassThruMode;
 
 /// Identifier for an NVMe namespace.
@@ -30,9 +29,9 @@ pub type NvmeNamespaceId = u32;
 /// One protocol instance corresponds to one NVMe controller
 /// (which, most of the time, corresponds to one SSD).
 ///
-/// This API offers a safe and convenient, yet still low-level interface to NVMe devices.
-/// It is designed as a foundational layer, leaving higher-level abstractions responsible for implementing
-/// richer storage semantics, device-specific commands, and advanced use cases.
+/// This is a safe, convenient, but still low-level interface. Higher-level
+/// abstractions remain responsible for storage semantics and device-specific
+/// commands.
 ///
 /// # UEFI Specification
 /// The `EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL` provides essential functionality for interacting
@@ -44,10 +43,7 @@ pub type NvmeNamespaceId = u32;
 pub struct NvmePassThru(UnsafeCell<NvmExpressPassThruProtocol>);
 
 impl NvmePassThru {
-    /// Retrieves the mode of the NVMe Pass Thru protocol.
-    ///
-    /// # Returns
-    /// An instance of [`NvmePassThruMode`] describing the NVMe controller's capabilities.
+    /// Returns the NVMe Pass Thru mode.
     #[must_use]
     pub fn mode(&self) -> NvmePassThruMode {
         // SAFETY: The memory is valid.
@@ -56,40 +52,32 @@ impl NvmePassThru {
         mode
     }
 
-    /// Retrieves the alignment requirements for I/O buffers.
-    ///
-    /// # Returns
-    /// An alignment value (in bytes) that all I/O buffers must adhere to for successful operation.
+    /// Returns the required I/O buffer alignment in bytes.
     #[must_use]
     pub fn io_align(&self) -> u32 {
         self.mode().io_align
     }
 
-    /// Allocates an I/O buffer with the necessary alignment for this NVMe Controller.
+    /// Allocates an I/O buffer with the alignment required by this controller.
     ///
-    /// You can alternatively do this yourself using the [`AlignedBuffer`] helper directly.
-    /// The `nvme` api will validate that your buffers have the correct alignment and error
-    /// if they don't.
+    /// Callers can instead allocate an [`AlignedBuffer`] directly. NVMe request
+    /// builders validate user-provided buffer alignment.
     ///
     /// # Arguments
-    /// - `len`: The size (in bytes) of the buffer to allocate.
     ///
-    /// # Returns
-    /// [`AlignedBuffer`] containing the allocated memory.
+    /// - `len`: Number of bytes to allocate.
     ///
     /// # Errors
-    /// This method can fail due to alignment or memory allocation issues.
+    ///
+    /// Returns an error if the buffer cannot be allocated with the required
+    /// alignment.
     pub fn alloc_io_buffer(&self, len: usize) -> Result<AlignedBuffer, LayoutError> {
         AlignedBuffer::from_size_align(len, self.io_align() as usize)
     }
 
-    /// Iterate over all valid namespaces on this NVMe controller.
+    /// Returns an iterator over all valid namespaces on this NVMe controller.
     ///
-    /// This ignores the 0-namespaces, which corresponds to the controller itself.
-    /// The iterator yields [`NvmeNamespace`] instances representing individual namespaces.
-    ///
-    /// # Returns
-    /// A [`NvmeNamespaceIterator`] for iterating through the namespaces.
+    /// This omits namespace zero, which represents the controller itself.
     #[must_use]
     pub const fn iter_namespaces(&self) -> NvmeNamespaceIterator<'_> {
         NvmeNamespaceIterator {
@@ -98,11 +86,8 @@ impl NvmePassThru {
         }
     }
 
-    /// Get the controller namespace (id = 0).
-    /// This can be used to send ADMIN commands.
-    ///
-    /// # Returns
-    /// A [`NvmeNamespace`] addressing the controller (nsid = 0).
+    /// Returns the controller namespace (ID 0), which can receive admin
+    /// commands.
     #[must_use]
     pub const fn controller(&self) -> NvmeNamespace<'_> {
         NvmeNamespace {
@@ -111,10 +96,7 @@ impl NvmePassThru {
         }
     }
 
-    /// Get the broadcast namespace (id = 0xffffffff).
-    ///
-    /// # Returns
-    /// A [`NvmeNamespace`] with nsid = 0xffffffff.
+    /// Returns the broadcast namespace (ID `0xffff_ffff`).
     #[must_use]
     pub const fn broadcast(&self) -> NvmeNamespace<'_> {
         NvmeNamespace {
@@ -126,8 +108,8 @@ impl NvmePassThru {
 
 /// Represents one namespace on an NVMe controller.
 ///
-/// A namespace is a shard of storage that the controller can be partitioned into.
-/// Typically, consumer devices only have a single namespace where all the data resides (id 1).
+/// A namespace is a partition of the controller's storage. Consumer devices
+/// typically expose one namespace with ID 1.
 #[derive(Debug)]
 pub struct NvmeNamespace<'a> {
     proto: &'a UnsafeCell<NvmExpressPassThruProtocol>,
@@ -135,16 +117,20 @@ pub struct NvmeNamespace<'a> {
 }
 
 impl NvmeNamespace<'_> {
-    /// Retrieves the namespace identifier (NSID) associated with this NVMe namespace.
+    /// Returns this namespace's identifier (NSID).
     #[must_use]
     pub const fn namespace_id(&self) -> NvmeNamespaceId {
         self.namespace_id
     }
 
-    /// Get the final device path node for this namespace.
+    /// Returns the final device path node for this namespace.
     ///
-    /// For a full [`crate::proto::device_path::DevicePath`] pointing to this namespace on the
-    /// corresponding NVMe controller.
+    /// Append this node to the controller's device path to form a complete
+    /// [`crate::proto::device_path::DevicePath`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot build the node or allocation fails.
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
         // SAFETY: The memory is valid.
         unsafe {
@@ -161,28 +147,16 @@ impl NvmeNamespace<'_> {
         }
     }
 
-    /// Sends an NVM Express command to this namespace (Namespace ID ≥ 1).
-    ///
-    /// # Arguments
-    /// - `req`: The [`NvmeRequest`] containing the command and associated data to send to the namespace.
-    ///
-    /// # Returns
-    /// - [`NvmeResponse`] containing the results of the operation, such as data and status.
+    /// Sends an NVM Express command to this namespace.
     ///
     /// # Errors
-    /// - [`Status::BAD_BUFFER_SIZE`] The NVM Express Command Packet was not executed. The number
-    ///   of bytes that could be transferred is returned in `TransferLength`.
-    /// - [`Status::NOT_READY`] The NVM Express Command Packet could not be sent because the controller
-    ///   is not ready. The caller may retry later.
-    /// - [`Status::DEVICE_ERROR`] A device error occurred while attempting to send the NVM Express
-    ///   Command Packet. Additional status information is available in `NvmeCompletion`.
-    /// - [`Status::INVALID_PARAMETER`] The Namespace ID or the contents of the Command Packet are invalid.
-    ///   The NVM Express Command Packet was not sent, and no additional status information is available.
-    /// - [`Status::UNSUPPORTED`] The command described by the NVM Express Command Packet is not supported
-    ///   by the NVM Express controller. The Command Packet was not sent, and no additional status
-    ///   information is available.
-    /// - [`Status::TIMEOUT`] A timeout occurred while executing the NVM Express Command Packet.
-    ///   Additional status information is available in `NvmeCompletion`.
+    /// - [`Status::BAD_BUFFER_SIZE`]: a buffer exceeds the allowed transfer
+    ///   size.
+    /// - [`Status::NOT_READY`]: the controller is not ready; retry later.
+    /// - [`Status::DEVICE_ERROR`]: the controller reported an error.
+    /// - [`Status::INVALID_PARAMETER`]: the namespace ID or request is invalid.
+    /// - [`Status::UNSUPPORTED`]: the controller does not support the command.
+    /// - [`Status::TIMEOUT`]: the command timed out.
     pub fn execute_command<'req>(
         &mut self,
         mut req: NvmeRequest<'req>,
@@ -207,8 +181,7 @@ impl NvmeNamespace<'_> {
 
 /// An iterator over the namespaces of an NVMe controller.
 ///
-/// The iterator yields [`NvmeNamespace`] instances, each representing one namespace
-/// on the NVMe controller.
+/// Each item represents one namespace on the controller.
 #[derive(Debug)]
 pub struct NvmeNamespaceIterator<'a> {
     proto: &'a UnsafeCell<NvmExpressPassThruProtocol>,

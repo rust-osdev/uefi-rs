@@ -7,11 +7,12 @@ use core::ffi::c_void;
 
 use crate::newtype_enum;
 
-/// EDKII IOMMU Protocol GUID
 impl EdkiiIommuProtocol {
+    /// EDK II IOMMU protocol GUID.
     pub const GUID: Guid = guid!("4e939de9-d948-4b0f-88ed-e6e1ce517c1e");
 }
 
+/// EDK II IOMMU protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct EdkiiIommuProtocol {
@@ -47,63 +48,63 @@ pub struct EdkiiIommuProtocol {
 }
 
 newtype_enum! {
-    /// IOMMU Operation for Map (matches EDKII_IOMMU_OPERATION)
+    /// DMA operation passed to the IOMMU mapping function.
     pub enum EdkiiIommuOperation: u32 => {
-        /// A read operation from system memory by a bus master that is not capable of producing PCI dual address cycles.
+        /// Reads system memory without PCI dual-address cycles.
         BUS_MASTER_READ = 0,
-        /// A write operation to system memory by a bus master that is not capable of producing PCI dual address cycles.
+        /// Writes system memory without PCI dual-address cycles.
         BUS_MASTER_WRITE = 1,
-        /// Provides both read and write access to system memory by both the processor and a bus master that is not capable of producing PCI dual address cycles.
+        /// Shares a buffer without PCI dual-address cycles.
         BUS_MASTER_COMMON_BUFFER = 2,
-        /// A read operation from system memory by a bus master that is capable of producing PCI dual address cycles.
+        /// Reads system memory with PCI dual-address cycles.
         BUS_MASTER_READ64 = 3,
-        /// A write operation to system memory by a bus master that is capable of producing PCI dual address cycles.
+        /// Writes system memory with PCI dual-address cycles.
         BUS_MASTER_WRITE64 = 4,
-        /// Provides both read and write access to system memory by both the processor and a bus master that is capable of producing PCI dual address cycles.
+        /// Shares a buffer with PCI dual-address cycles.
         BUS_MASTER_COMMON_BUFFER64 = 5,
-        /// Maximum value (not a valid operation, for bounds checking)
+        /// Sentinel used for bounds checking; not a valid operation.
         MAXIMUM = 6,
     }
 }
 
-/// EDKII IOMMU protocol revision constant
+/// EDK II IOMMU protocol revision.
 pub const EDKII_IOMMU_PROTOCOL_REVISION: u64 = 0x0001_0000;
 
 bitflags! {
-    /// EDKII IOMMU attribute flags
+    /// EDK II IOMMU memory attributes.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct EdkiiIommuAttribute: u64 {
-        /// Memory is write-combined
+        /// Uses write-combined memory.
         const MEMORY_WRITE_COMBINE   = 0x0080;
-        /// Memory is cached
+        /// Uses cached memory.
         const MEMORY_CACHED          = 0x0800;
-        /// Dual address cycle supported
+        /// Supports PCI dual-address cycles.
         const DUAL_ADDRESS_CYCLE     = 0x8000;
     }
 }
 
 impl EdkiiIommuAttribute {
-    /// Valid attributes for allocate_buffer
+    /// Attributes accepted by `allocate_buffer`.
     pub const VALID_FOR_ALLOCATE_BUFFER: Self = Self::from_bits_truncate(
         Self::MEMORY_WRITE_COMBINE.bits()
             | Self::MEMORY_CACHED.bits()
             | Self::DUAL_ADDRESS_CYCLE.bits(),
     );
 
-    /// Invalid attributes for allocate_buffer (all bits except valid)
+    /// Attributes rejected by `allocate_buffer`.
     pub const INVALID_FOR_ALLOCATE_BUFFER: Self =
         Self::from_bits_truncate(!Self::VALID_FOR_ALLOCATE_BUFFER.bits());
 }
 
 bitflags! {
-    /// EDKII IOMMU access flags for SetAttribute
+    /// Access permissions passed to `set_attribute`.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct EdkiiIommuAccess: u64 {
-        /// Read access
+        /// Grants read access.
         const READ  = 0x1;
-        /// Write access
+        /// Grants write access.
         const WRITE = 0x2;
     }
 }

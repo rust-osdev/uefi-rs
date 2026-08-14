@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! EFI Shell Protocol v2.2
+//! Raw bindings for EFI Shell Protocol 2.2.
 
 use core::ffi::c_void;
 
@@ -12,7 +12,7 @@ use super::shell_params::ShellFileHandle;
 
 use bitflags::bitflags;
 
-/// List Entry for File Lists
+/// Link in a shell file list.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ListEntry {
@@ -20,7 +20,7 @@ pub struct ListEntry {
     pub b_link: *mut Self,
 }
 
-/// ShellFileInfo for File Lists
+/// Entry in a shell file list.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ShellFileInfo {
@@ -33,18 +33,18 @@ pub struct ShellFileInfo {
 }
 
 bitflags! {
-    /// Specifies the source of the component name
+    /// Sources from which to obtain a component name.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct ShellDeviceNameFlags: u32 {
-        /// Use Component Name
+        /// Uses the Component Name protocols.
         const USE_COMPONENT_NAME = 0x0000001;
-        /// Use Device Path
+        /// Uses the device path.
         const USE_DEVICE_PATH = 0x0000002;
     }
 }
 
-/// Shell Protocol
+/// EFI Shell protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ShellProtocol {

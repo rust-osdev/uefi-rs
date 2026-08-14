@@ -10,33 +10,33 @@ bitflags! {
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
     pub struct ControlBits: u32 {
-        /// Clear to send
+        /// Indicates that the remote device is clear to send.
         const CLEAR_TO_SEND = 0x10;
-        /// Data set ready
+        /// Indicates that the remote device is ready.
         const DATA_SET_READY = 0x20;
-        /// Indicates that a phone line is ringing
+        /// Indicates that a phone line is ringing.
         const RING_INDICATE = 0x40;
-        /// Indicates the connection is still connected
+        /// Indicates that the connection is active.
         const CARRIER_DETECT = 0x80;
-        /// The input buffer is empty
+        /// Indicates that the input buffer is empty.
         const INPUT_BUFFER_EMPTY = 0x100;
-        /// The output buffer is empty
+        /// Indicates that the output buffer is empty.
         const OUTPUT_BUFFER_EMPTY = 0x200;
 
-        /// Terminal is ready for communications
+        /// Marks the terminal as ready for communication.
         const DATA_TERMINAL_READY = 0x1;
-        /// Request the device to send data
+        /// Requests that the device send data.
         const REQUEST_TO_SEND = 0x2;
-        /// Enable hardware loop-back
+        /// Enables hardware loopback.
         const HARDWARE_LOOPBACK_ENABLE = 0x1000;
-        /// Enable software loop-back
+        /// Enables software loopback.
         const SOFTWARE_LOOPBACK_ENABLE = 0x2000;
-        /// Allow the hardware to handle flow control
+        /// Allows the hardware to handle flow control.
         const HARDWARE_FLOW_CONTROL_ENABLE = 0x4000;
 
         /// Bitmask of the control bits that can be set.
         ///
-        /// Up to date as of UEFI 2.7 / Serial protocol v1
+        /// This list is current as of UEFI 2.7 and Serial I/O protocol 1.0.
         const SETTABLE =
             ControlBits::DATA_TERMINAL_READY.bits()
             | ControlBits::REQUEST_TO_SEND.bits()
@@ -46,9 +46,9 @@ bitflags! {
     }
 }
 
-/// Structure representing the device's current parameters.
+/// Current serial device parameters.
 ///
-/// The default values for all UART-like devices is:
+/// The default values for all UART-like devices are:
 /// - 115,200 baud
 /// - 1 byte receive FIFO
 /// - 1'000'000 microsecond timeout
@@ -67,7 +67,7 @@ pub struct SerialIoMode {
     pub timeout: u32,
     /// Device's baud rate, or 0 if unknown.
     pub baud_rate: u64,
-    /// Size in character's of the device's buffer.
+    /// Receive FIFO depth in characters.
     pub receive_fifo_depth: u32,
     /// Number of data bits in each character.
     pub data_bits: u32,
@@ -129,17 +129,17 @@ impl SerialIoProtocol_1_1 {
 newtype_enum! {
     /// The parity of the device.
     pub enum Parity: u32 => {
-        /// Device default
+        /// Uses the device default.
         DEFAULT = 0,
-        /// No parity
+        /// Disables parity.
         NONE = 1,
-        /// Even parity
+        /// Uses even parity.
         EVEN = 2,
-        /// Odd parity
+        /// Uses odd parity.
         ODD = 3,
-        /// Mark parity
+        /// Uses mark parity.
         MARK = 4,
-        /// Space parity
+        /// Uses space parity.
         SPACE = 5,
     }
 }
@@ -147,13 +147,13 @@ newtype_enum! {
 newtype_enum! {
     /// Number of stop bits per character.
     pub enum StopBits: u32 => {
-        /// Device default
+        /// Uses the device default.
         DEFAULT = 0,
-        /// 1 stop bit
+        /// Uses one stop bit.
         ONE = 1,
-        /// 1.5 stop bits
+        /// Uses one and a half stop bits.
         ONE_FIVE = 2,
-        /// 2 stop bits
+        /// Uses two stop bits.
         TWO = 3,
     }
 }

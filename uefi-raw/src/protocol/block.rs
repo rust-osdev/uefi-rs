@@ -6,7 +6,7 @@ use core::ffi::c_void;
 /// Logical block address.
 pub type Lba = u64;
 
-/// Media information structure
+/// Describes block media.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct BlockIoMedia {
@@ -28,7 +28,9 @@ pub struct BlockIoMedia {
     pub optimal_transfer_length_granularity: u32,
 }
 
+/// Block I/O protocol.
 #[derive(Debug)]
+/// Completion token for an asynchronous block I/O operation.
 #[repr(C)]
 pub struct BlockIoProtocol {
     pub revision: u64,
@@ -62,6 +64,7 @@ pub struct BlockIo2Token {
     pub transaction_status: Status,
 }
 
+/// Block I/O 2 protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct BlockIo2Protocol {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! HII Protocols
+//! Raw HII protocols and data types.
 
 pub mod config;
 pub mod database;
@@ -12,16 +12,23 @@ pub mod string;
 
 use crate::{Char16, Guid, newtype_enum};
 
+/// Handle to packages registered with the HII database.
 pub type HiiHandle = *mut core::ffi::c_void;
 
+/// Identifier of a question in a form package.
 pub type QuestionId = u16;
+/// Identifier of an image in an image package.
 pub type ImageId = u16;
+/// Identifier of a string in a string package.
 pub type StringId = u16;
+/// Identifier of a form in a form package.
 pub type FormId = u16;
+/// Identifier of a variable store in a form package.
 pub type VarstoreId = u16;
+/// Identifier of an animation in an animation package.
 pub type AnimationId = u16;
 
-/// EFI_HII_PACKAGE_HEADER
+/// Raw HII package header.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiPackageHeader {
@@ -29,7 +36,7 @@ pub struct HiiPackageHeader {
     pub data: [u8; 0],
 }
 
-/// EFI_HII_PACKAGE_LIST_HEADER
+/// Raw HII package-list header.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiPackageListHeader {
@@ -38,7 +45,7 @@ pub struct HiiPackageListHeader {
 }
 
 newtype_enum! {
-    /// EFI_KEY: A physical key on a keyboard.
+    /// Physical key on a keyboard.
     pub enum Key: u32 => {
         LCTRL = 0,
         A0 = 1,
@@ -160,7 +167,7 @@ newtype_enum! {
 
 // NOTE: This has no associated type in UEFI; They are all top-level defines.
 newtype_enum! {
-    /// Key modifier values
+    /// Key modifier value.
     pub enum Modifier: u16 => {
         NULL = 0x0000,
         LEFT_CONTROL = 0x0001,
@@ -207,7 +214,7 @@ newtype_enum! {
     }
 }
 
-/// EFI_KEY_DESCRIPTOR
+/// Keyboard key descriptor.
 #[derive(Debug)]
 #[repr(C)]
 pub struct KeyDescriptor {

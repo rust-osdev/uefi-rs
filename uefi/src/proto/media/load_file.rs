@@ -42,26 +42,26 @@ impl LoadFile {
     /// Causes the driver to load a specified file.
     ///
     /// # Arguments
-    /// - `file_path` The device specific path of the file to load.
-    /// - `boot_policy` The [`BootPolicy`] to use.
+    ///
+    /// - `file_path`: Device-specific path of the file to load.
+    /// - `boot_policy`: Policy used to locate and load the file.
     ///
     /// # Errors
-    /// - [`Status::SUCCESS`] The file was loaded.
-    /// - [`Status::UNSUPPORTED`] The device does not support the
+    /// - [`Status::UNSUPPORTED`]: the device does not support the
     ///   provided BootPolicy.
-    /// - [`Status::INVALID_PARAMETER`] FilePath is not a valid device
+    /// - [`Status::INVALID_PARAMETER`]: `file_path` is not a valid device
     ///   path, or BufferSize is NULL.
-    /// - [`Status::NO_MEDIA`] No medium was present to load the file.
-    /// - [`Status::DEVICE_ERROR`] The file was not loaded due to a
+    /// - [`Status::NO_MEDIA`]: no medium is present.
+    /// - [`Status::DEVICE_ERROR`]: the file was not loaded due to a
     ///   device error.
-    /// - [`Status::NO_RESPONSE`] The remote system did not respond.
-    /// - [`Status::NOT_FOUND`] The file was not found.
-    /// - [`Status::ABORTED`] The file load process was manually
+    /// - [`Status::NO_RESPONSE`]: the remote system did not respond.
+    /// - [`Status::NOT_FOUND`]: the file was not found.
+    /// - [`Status::ABORTED`]: the file load process was manually
     ///   cancelled.
-    /// - [`Status::BUFFER_TOO_SMALL`] The BufferSize is too small to
+    /// - [`Status::BUFFER_TOO_SMALL`]: the supplied buffer is too small to
     ///   read the current directory entry. BufferSize has been updated with the
     ///   size needed to complete the request.
-    /// - [`Status::WARN_FILE_SYSTEM`] The resulting Buffer contains
+    /// - [`Status::WARN_FILE_SYSTEM`]: the resulting buffer contains
     ///   UEFI-compliant file system.
     ///
     /// [`BootPolicy`]: uefi::proto::BootPolicy
@@ -114,21 +114,21 @@ impl LoadFile2 {
     /// Causes the driver to load a specified file.
     ///
     /// # Arguments
-    /// - `file_path` The device specific path of the file to load.
+    ///
+    /// - `file_path`: Device-specific path of the file to load.
     ///
     /// # Errors
-    /// - [`Status::SUCCESS`] The file was loaded.
-    /// - [`Status::UNSUPPORTED`] BootPolicy is TRUE.
-    /// - [`Status::INVALID_PARAMETER`] FilePath is not a valid device
+    /// - [`Status::UNSUPPORTED`]: the boot policy is `true`.
+    /// - [`Status::INVALID_PARAMETER`]: `file_path` is not a valid device
     ///   path, or BufferSize is NULL.
-    /// - [`Status::NO_MEDIA`] No medium was present to load the file.
-    /// - [`Status::DEVICE_ERROR`] The file was not loaded due to a
+    /// - [`Status::NO_MEDIA`]: no medium is present.
+    /// - [`Status::DEVICE_ERROR`]: the file was not loaded due to a
     ///   device error.
-    /// - [`Status::NO_RESPONSE`] The remote system did not respond.
-    /// - [`Status::NOT_FOUND`] The file was not found.
-    /// - [`Status::ABORTED`] The file load process was manually
+    /// - [`Status::NO_RESPONSE`]: the remote system did not respond.
+    /// - [`Status::NOT_FOUND`]: the file was not found.
+    /// - [`Status::ABORTED`]: the file load process was manually
     ///   cancelled.
-    /// - [`Status::BUFFER_TOO_SMALL`] The BufferSize is too small to
+    /// - [`Status::BUFFER_TOO_SMALL`]: the supplied buffer is too small to
     ///   read the current directory entry. BufferSize has been updated with the
     ///   size needed to complete the request.
     #[cfg(feature = "alloc")]

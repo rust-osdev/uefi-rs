@@ -13,25 +13,26 @@ use crate::{Error, Result, Status, StatusExt};
 pub struct RegularFile(FileHandle);
 
 impl RegularFile {
-    /// A special position used to seek to the end of a file with `set_position()`.
+    /// Position used by [`Self::set_position`] to seek to the end of a file.
     pub const END_OF_FILE: u64 = u64::MAX;
 
-    /// Coverts a `FileHandle` into a `RegularFile` without checking the file kind.
+    /// Converts a [`FileHandle`] without checking that it is a regular file.
+    ///
     /// # Safety
-    /// This function should only be called on handles which ARE NOT directories,
-    /// doing otherwise is unsafe.
+    ///
+    /// `handle` must not represent a directory.
     #[must_use]
     pub const unsafe fn new(handle: FileHandle) -> Self {
         Self(handle)
     }
 
-    /// Read data from file.
+    /// Reads data from the file.
     ///
-    /// Try to read as much as possible into `buffer`. Returns the number of bytes that were
-    /// actually read.
+    /// Attempts to fill `buffer` and returns the number of bytes read.
     ///
     /// # Arguments
-    /// * `buffer`  The target buffer of the read operation
+    ///
+    /// - `buffer`: Destination buffer for the file data.
     ///
     /// # Errors
     ///
@@ -79,15 +80,16 @@ impl RegularFile {
         )
     }
 
-    /// Write data to file
+    /// Writes data to the file.
     ///
-    /// Write `buffer` to file, increment the file pointer.
+    /// Writing advances the file position.
     ///
     /// If an error occurs, returns the number of bytes that were actually written. If no error
     /// occurred, the entire buffer is guaranteed to have been written successfully.
     ///
     /// # Arguments
-    /// * `buffer`  Buffer to write to file
+    ///
+    /// - `buffer`: Data to write to the file.
     ///
     /// # Errors
     ///
@@ -106,7 +108,7 @@ impl RegularFile {
             .to_result_with_err(|_| buffer_size)
     }
 
-    /// Get the file's current position
+    /// Returns the file's current position.
     ///
     /// # Errors
     ///
@@ -119,15 +121,16 @@ impl RegularFile {
         unsafe { (self.imp().get_position)(self.imp(), &mut pos) }.to_result_with_val(|| pos)
     }
 
-    /// Sets the file's current position
+    /// Sets the file's current position.
     ///
     /// Set the position of this file handle to the absolute position specified by `position`.
     ///
     /// Seeking past the end of the file is allowed, it will trigger file growth on the next write.
-    /// Using a position of RegularFile::END_OF_FILE will seek to the end of the file.
+    /// Using [`RegularFile::END_OF_FILE`] seeks to the end of the file.
     ///
     /// # Arguments
-    /// * `position` The new absolution position of the file handle
+    ///
+    /// - `position`: New absolute file position.
     ///
     /// # Errors
     ///

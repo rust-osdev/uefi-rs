@@ -9,10 +9,10 @@ use uefi_raw::protocol::disk::DiskInfoProtocol;
 #[cfg(doc)]
 use crate::Status;
 
-/// Enum representing the interface type of the disk.
+/// Interface used by a disk device.
 ///
-/// This protocol abstracts various disk interfaces, including IDE, USB, AHCI, NVME, and more.
-/// Unknown indicates an unrecognized or not yet implemented interface type.
+/// [`DiskInfoInterface::Unknown`] represents an unrecognized or unsupported
+/// interface.
 #[derive(Debug, Eq, PartialEq)]
 pub enum DiskInfoInterface {
     /// Unrecognized or unsupported interface.
@@ -33,16 +33,16 @@ pub enum DiskInfoInterface {
     SDMMC,
 }
 
-/// Structure containing metadata about the result for a call to [`DiskInfo::sense_data`].
+/// Metadata returned by [`DiskInfo::sense_data`].
 #[derive(Debug)]
 pub struct SenseDataInfo {
-    /// Amount of bytes returned by the [`DiskInfo::sense_data`].
+    /// Number of bytes returned by [`DiskInfo::sense_data`].
     pub bytes: usize,
-    /// Number of sense data messages contained in the resulting buffer from calling [`DiskInfo::sense_data`].
+    /// Number of sense-data records written to the result buffer.
     pub number: u8,
 }
 
-/// Structure containing information about the physical device location on the bus.
+/// Physical location of a device on its bus.
 ///
 /// This is not supported by all interface types.
 #[derive(Debug)]
@@ -75,10 +75,7 @@ pub struct DeviceLocationInfo {
 pub struct DiskInfo(DiskInfoProtocol);
 
 impl DiskInfo {
-    /// Retrieves the interface type of the disk device.
-    ///
-    /// # Returns
-    /// [`DiskInfoInterface`] value representing the disk interface (e.g., IDE, USB, NVME, etc.).
+    /// Returns the disk device's interface type.
     #[must_use]
     pub const fn interface(&self) -> DiskInfoInterface {
         match self.0.interface {
@@ -96,16 +93,17 @@ impl DiskInfo {
     /// Performs an inquiry command on the disk device.
     ///
     /// # Arguments
-    /// - `bfr`: A mutable byte buffer to store the inquiry data.
+    ///
+    /// - `bfr`: Buffer in which to store the inquiry data.
     ///
     /// # Returns
-    /// Length of the response (amount of bytes that were written to the given buffer).
+    ///
+    /// Returns the number of bytes written to `bfr`.
     ///
     /// # Errors
-    /// - [`Status::SUCCESS`] The command was accepted without any errors.
-    /// - [`Status::NOT_FOUND`] The device does not support this data class.
-    /// - [`Status::DEVICE_ERROR`] An error occurred while reading the InquiryData from the device.
-    /// - [`Status::BUFFER_TOO_SMALL`] The provided InquiryDataSize buffer is not large enough to store the required data.
+    /// - [`Status::NOT_FOUND`]: the device does not support inquiry data.
+    /// - [`Status::DEVICE_ERROR`]: the device reported an error.
+    /// - [`Status::BUFFER_TOO_SMALL`]: `bfr` is too small.
     pub fn inquiry(&self, bfr: &mut [u8]) -> crate::Result<usize> {
         let mut len: u32 = bfr.len() as u32;
         // SAFETY: The memory is valid.
@@ -118,16 +116,17 @@ impl DiskInfo {
     /// Performs an identify command on the disk device.
     ///
     /// # Arguments
-    /// - `bfr`: A mutable byte buffer to store the identification data.
+    ///
+    /// - `bfr`: Buffer in which to store the identification data.
     ///
     /// # Returns
-    /// Length of the response (amount of bytes that were written to the given buffer).
+    ///
+    /// Returns the number of bytes written to `bfr`.
     ///
     /// # Errors
-    /// - [`Status::SUCCESS`] The command was accepted without any errors.
-    /// - [`Status::NOT_FOUND`] The device does not support this data class.
-    /// - [`Status::DEVICE_ERROR`] An error occurred while reading the IdentifyData from the device.
-    /// - [`Status::BUFFER_TOO_SMALL`] The provided IdentifyDataSize buffer is not large enough to store the required data.
+    /// - [`Status::NOT_FOUND`]: the device does not support identify data.
+    /// - [`Status::DEVICE_ERROR`]: the device reported an error.
+    /// - [`Status::BUFFER_TOO_SMALL`]: `bfr` is too small.
     pub fn identify(&self, bfr: &mut [u8]) -> crate::Result<usize> {
         let mut len: u32 = bfr.len() as u32;
         // SAFETY: The memory is valid.
@@ -140,16 +139,17 @@ impl DiskInfo {
     /// Retrieves sense data from the disk device.
     ///
     /// # Arguments
-    /// - `bfr`: A mutable byte buffer to store the sense data.
+    ///
+    /// - `bfr`: Buffer in which to store the sense data.
     ///
     /// # Returns
-    /// [`SenseDataInfo`] struct containing the number of bytes of sense data and the number of sense data structures.
+    ///
+    /// Returns the byte count and number of sense-data records written.
     ///
     /// # Errors
-    /// - [`Status::SUCCESS`] The command was accepted without any errors.
-    /// - [`Status::NOT_FOUND`] The device does not support this data class.
-    /// - [`Status::DEVICE_ERROR`] An error occurred while reading the SenseData from the device.
-    /// - [`Status::BUFFER_TOO_SMALL`] The provided SenseDataSize buffer is not large enough to store the required data.
+    /// - [`Status::NOT_FOUND`]: the device does not support sense data.
+    /// - [`Status::DEVICE_ERROR`]: the device reported an error.
+    /// - [`Status::BUFFER_TOO_SMALL`]: `bfr` is too small.
     pub fn sense_data(&self, bfr: &mut [u8]) -> crate::Result<SenseDataInfo> {
         let mut len: u32 = bfr.len() as u32;
         let mut number: u8 = 0;
@@ -165,15 +165,12 @@ impl DiskInfo {
 
     /// Retrieves the physical location of the device on the bus.
     ///
-    /// This operation provides information about the channel and device identifiers, which can
-    /// help determine the device's physical connection point.
-    ///
-    /// # Returns
-    /// [`DeviceLocationInfo`] struct containing the channel and device numbers.
+    /// This operation provides the channel and device identifiers that identify
+    /// the device's physical connection point.
     ///
     /// # Errors
-    /// - [`Status::SUCCESS`] The `IdeChannel` and `IdeDevice` values are valid.
-    /// - [`Status::UNSUPPORTED`] Not supported by this disk's interface type.
+    /// - [`Status::UNSUPPORTED`]: the disk interface does not expose a bus
+    ///   location.
     pub fn bus_location(&self) -> crate::Result<DeviceLocationInfo> {
         let mut ide_channel: u32 = 0; // called ide, but also useful for other interfaces
         let mut ide_device: u32 = 0;

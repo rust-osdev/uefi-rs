@@ -17,27 +17,27 @@ use {crate::mem::make_boxed, alloc::boxed::Box};
 pub struct Directory(RegularFile);
 
 impl Directory {
-    /// Coverts a `FileHandle` into a `Directory` without checking the file type.
+    /// Converts a [`FileHandle`] without checking that it is a directory.
+    ///
     /// # Safety
-    /// This function should only be called on files which ARE directories,
-    /// doing otherwise is unsafe.
+    ///
+    /// `handle` must represent a directory.
     #[must_use]
     pub const unsafe fn new(handle: FileHandle) -> Self {
         // SAFETY: The memory is valid.
         Self(unsafe { RegularFile::new(handle) })
     }
 
-    /// Read the next directory entry.
+    /// Reads the next directory entry.
     ///
-    /// Try to read the next directory entry into `buffer`. If the buffer is too small, report the
-    /// required buffer size as part of the error. If there are no more directory entries, return
-    /// an empty optional.
+    /// If `buffer` is too small, the error contains the required size. Returns
+    /// `None` after the final entry.
     ///
-    /// The input buffer must be correctly aligned for a `FileInfo`. You can query the required
-    /// alignment through the `Align` trait (`<FileInfo as Align>::alignment()`).
+    /// The buffer must satisfy [`FileInfo`]'s [`Align`] requirement.
     ///
     /// # Arguments
-    /// * `buffer`  The target buffer of the read operation
+    ///
+    /// - `buffer`: Destination buffer for the next directory entry.
     ///
     /// # Errors
     ///
@@ -62,8 +62,10 @@ impl Directory {
         })
     }
 
-    /// Wrapper around [`Self::read_entry`] that returns an owned copy of the data. It has the same
-    /// implications and requirements. On failure, the payload of `Err` is `()´.
+    /// Reads the next directory entry into an owned allocation.
+    ///
+    /// This has the same behavior as [`Self::read_entry`], but discards the
+    /// required-size error payload.
     #[cfg(feature = "alloc")]
     pub fn read_entry_boxed(&mut self) -> Result<Option<Box<FileInfo>>> {
         let read_entry_res = self.read_entry(&mut []);
@@ -84,7 +86,7 @@ impl Directory {
         Ok(Some(file_info))
     }
 
-    /// Start over the process of enumerating directory entries
+    /// Restarts directory entry enumeration.
     ///
     /// # Errors
     ///

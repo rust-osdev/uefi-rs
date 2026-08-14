@@ -40,12 +40,14 @@ pub trait File: Sized {
     #[doc(hidden)]
     fn handle(&mut self) -> &mut FileHandle;
 
-    /// Try to open a file relative to this file.
+    /// Opens a file relative to this file.
     ///
     /// # Arguments
-    /// * `filename`    Path of file to open, relative to this file
-    /// * `open_mode`   The mode to open the file with
-    /// * `attributes`  Only valid when `FILE_MODE_CREATE` is used as a mode
+    ///
+    /// - `filename`: Path to open, relative to this file.
+    /// - `open_mode`: Mode in which to open the file.
+    /// - `attributes`: Attributes for a newly created file; only used with
+    ///   [`FileMode::CreateReadWrite`].
     ///
     /// # Errors
     ///
@@ -88,10 +90,10 @@ pub trait File: Sized {
         .to_result_with_val(|| unsafe { FileHandle::new(ptr) })
     }
 
-    /// Close this file handle. Same as dropping this structure.
+    /// Closes this file handle. Equivalent to dropping it.
     fn close(self) {}
 
-    /// Closes and deletes this file
+    /// Closes and deletes this file.
     ///
     /// # Warnings
     ///
@@ -105,15 +107,16 @@ pub trait File: Sized {
         result
     }
 
-    /// Queries some information about a file
+    /// Queries information about a file.
     ///
-    /// The information will be written into a user-provided buffer.
-    /// If the buffer is too small, the required buffer size will be returned as part of the error.
+    /// The information is written into a caller-provided buffer. If the buffer
+    /// is too small, the error contains the required size.
     ///
-    /// The buffer must be aligned on an `<Info as Align>::alignment()` boundary.
+    /// The buffer must satisfy `Info`'s [`crate::data_types::Align`] requirement.
     ///
     /// # Arguments
-    /// * `buffer`  Buffer that the information should be written into
+    ///
+    /// - `buffer`: Destination buffer for the requested information.
     ///
     /// # Errors
     ///
@@ -152,15 +155,14 @@ pub trait File: Sized {
         )
     }
 
-    /// Sets some information about a file
+    /// Sets information about a file.
     ///
-    /// There are various restrictions on the information that may be modified using this method.
-    /// The simplest one is that it is usually not possible to call it on read-only media. Further
-    /// restrictions specific to a given information type are described in the corresponding
-    /// `FileProtocolInfo` type documentation.
+    /// The corresponding [`FileProtocolInfo`] implementation documents which
+    /// fields may be modified. Read-only media generally rejects changes.
     ///
     /// # Arguments
-    /// * `info`  Info that should be set for the file
+    ///
+    /// - `info`: Information to apply to the file.
     ///
     /// # Errors
     ///
@@ -181,7 +183,7 @@ pub trait File: Sized {
         unsafe { (self.imp().set_info)(self.imp(), &Info::GUID, info_size, info_ptr).to_result() }
     }
 
-    /// Flushes all modified data associated with the file handle to the device
+    /// Flushes all modified data associated with the file handle to the device.
     ///
     /// # Errors
     ///
@@ -198,7 +200,7 @@ pub trait File: Sized {
         unsafe { (self.imp().flush)(self.imp()) }.to_result()
     }
 
-    /// Read the dynamically allocated info for a file.
+    /// Reads dynamically allocated information for a file.
     #[cfg(feature = "alloc")]
     fn get_boxed_info<Info: FileProtocolInfo + ?Sized + Debug>(&mut self) -> Result<Box<Info>> {
         let fetch_data_fn = |buf| self.get_info::<Info>(buf);
@@ -206,16 +208,22 @@ pub trait File: Sized {
         Ok(file_info)
     }
 
-    /// Returns if the underlying file is a regular file.
-    /// The result is an error if the underlying file was already closed or deleted.
+    /// Returns whether the underlying file is a regular file.
     ///
     /// UEFI file system protocol only knows "regular files" and "directories".
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file was already closed or deleted.
     fn is_regular_file(&self) -> Result<bool>;
 
-    /// Returns if the underlying file is a directory.
-    /// The result is an error if the underlying file was already closed or deleted.
+    /// Returns whether the underlying file is a directory.
     ///
     /// UEFI file system protocol only knows "regular files" and "directories".
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file was already closed or deleted.
     fn is_directory(&self) -> Result<bool>;
 }
 

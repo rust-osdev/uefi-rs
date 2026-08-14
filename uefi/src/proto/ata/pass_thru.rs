@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! ATA Pass Thru Protocol.
+//! ATA Pass Thru protocol.
 
 use super::{AtaRequest, AtaResponse};
 use crate::StatusExt;
@@ -21,9 +21,9 @@ pub type AtaPassThruMode = uefi_raw::protocol::ata::AtaPassThruMode;
 ///
 /// One protocol instance represents one ATA controller connected to the machine.
 ///
-/// This API offers a safe and convenient, yet still low-level interface to ATA devices.
-/// It is designed as a foundational layer, leaving higher-level abstractions responsible for implementing
-/// richer storage semantics, device-specific commands, and advanced use cases.
+/// This API offers a safe, convenient, but still low-level interface to ATA
+/// devices. Higher-level abstractions remain responsible for storage
+/// semantics and device-specific commands.
 ///
 /// # UEFI Specification
 /// Provides services that allow ATA commands to be sent to ATA Devices attached to an ATA controller. Packet-
@@ -37,10 +37,7 @@ pub type AtaPassThruMode = uefi_raw::protocol::ata::AtaPassThruMode;
 pub struct AtaPassThru(UnsafeCell<AtaPassThruProtocol>);
 
 impl AtaPassThru {
-    /// Retrieves the mode structure for the Extended SCSI Pass Thru protocol.
-    ///
-    /// # Returns
-    /// The [`AtaPassThruMode`] structure containing configuration details of the protocol.
+    /// Returns the ATA Pass Thru mode.
     #[must_use]
     pub fn mode(&self) -> AtaPassThruMode {
         // SAFETY: The memory is valid.
@@ -49,42 +46,36 @@ impl AtaPassThru {
         mode
     }
 
-    /// Retrieves the I/O buffer alignment required by this SCSI channel.
-    ///
-    /// # Returns
-    /// - A `u32` value representing the required I/O alignment in bytes.
+    /// Returns the required I/O buffer alignment in bytes.
     #[must_use]
     pub fn io_align(&self) -> u32 {
         self.mode().io_align
     }
 
-    /// Allocates an I/O buffer with the necessary alignment for this ATA Controller.
+    /// Allocates an I/O buffer with the alignment required by this controller.
     ///
-    /// You can alternatively do this yourself using the [`AlignedBuffer`] helper directly.
-    /// The `ata` api will validate that your buffers have the correct alignment and error
-    /// if they don't.
+    /// Callers can instead allocate an [`AlignedBuffer`] directly. ATA request
+    /// builders validate user-provided buffer alignment.
     ///
     /// # Arguments
-    /// - `len`: The size (in bytes) of the buffer to allocate.
     ///
-    /// # Returns
-    /// [`AlignedBuffer`] containing the allocated memory.
+    /// - `len`: Number of bytes to allocate.
     ///
     /// # Errors
-    /// This method can fail due to alignment or memory allocation issues.
+    ///
+    /// Returns an error if the buffer cannot be allocated with the required
+    /// alignment.
     pub fn alloc_io_buffer(&self, len: usize) -> Result<AlignedBuffer, LayoutError> {
         AlignedBuffer::from_size_align(len, self.io_align() as usize)
     }
 
-    /// Iterate over all potential ATA devices on this channel.
+    /// Returns an iterator over all potential ATA devices on this channel.
     ///
     /// # Warnings
-    /// Depending on the UEFI implementation, this does not only return all actually available devices.
-    /// Most implementations instead return a list of all possible fully-qualified device addresses.
-    /// You have to probe for availability yourself, using [`AtaDevice::execute_command`].
     ///
-    /// # Returns
-    /// [`AtaDeviceIterator`] to iterate through connected ATA devices.
+    /// Firmware may return every possible fully qualified device address, not
+    /// only addresses with a connected device. Probe each address with
+    /// [`AtaDevice::execute_command`].
     #[must_use]
     pub const fn iter_devices(&self) -> AtaDeviceIterator<'_> {
         AtaDeviceIterator {
@@ -99,8 +90,9 @@ impl AtaPassThru {
 /// Represents an ATA device on a controller.
 ///
 /// # Warnings
-/// This is only a potentially valid device address. Verify it by probing for an actually
-/// available / connected device using [`AtaDevice::execute_command`] before doing anything meaningful.
+///
+/// This is only a potentially valid device address. Probe it with
+/// [`AtaDevice::execute_command`] before use.
 #[derive(Debug)]
 pub struct AtaDevice<'a> {
     proto: &'a UnsafeCell<AtaPassThruProtocol>,
@@ -111,9 +103,8 @@ pub struct AtaDevice<'a> {
 impl AtaDevice<'_> {
     /// Returns the port number of the device.
     ///
-    /// # Details
-    /// - For SATA: This is the port number on the motherboard or controller.
-    /// - For IDE: This is `0` for the primary bus and `1` for the secondary bus.
+    /// For SATA, this is the port on the motherboard or controller. For IDE,
+    /// `0` is the primary bus and `1` is the secondary bus.
     #[must_use]
     pub const fn port(&self) -> u16 {
         self.port
@@ -121,10 +112,9 @@ impl AtaDevice<'_> {
 
     /// Returns the port multiplier port (PMP) number for the device.
     ///
-    /// # Details
-    /// - For SATA: `0xFFFF` indicates a direct connection to the port, while other values
-    ///   indicate the port number on a port-multiplier device.
-    /// - For IDE: `0` represents the master device, and `1` represents the slave device.
+    /// For SATA, `0xFFFF` indicates a direct connection; other values identify
+    /// a port on a port-multiplier device. For IDE, `0` is the master and `1`
+    /// is the slave device.
     #[must_use]
     pub const fn port_multiplier_port(&self) -> u16 {
         self.pmp
@@ -132,13 +122,13 @@ impl AtaDevice<'_> {
 
     /// Resets the ATA device.
     ///
-    /// This method attempts to reset the specified ATA device, restoring it to its default state.
+    /// This restores the device to its default state.
     ///
     /// # Errors
-    /// - [`Status::UNSUPPORTED`] The ATA controller does not support a device reset operation.
-    /// - [`Status::INVALID_PARAMETER`] The `Port` or `PortMultiplierPort` values are invalid.
-    /// - [`Status::DEVICE_ERROR`] A device error occurred while attempting to reset the specified ATA device.
-    /// - [`Status::TIMEOUT`] A timeout occurred while attempting to reset the specified ATA device.
+    /// - [`Status::UNSUPPORTED`]: the controller does not support device reset.
+    /// - [`Status::INVALID_PARAMETER`]: the port or PMP value is invalid.
+    /// - [`Status::DEVICE_ERROR`]: the device reported an error.
+    /// - [`Status::TIMEOUT`]: the reset timed out.
     pub fn reset(&mut self) -> crate::Result<()> {
         // SAFETY: The memory is valid.
         unsafe {
@@ -146,10 +136,14 @@ impl AtaDevice<'_> {
         }
     }
 
-    /// Get the final device path node for this device.
+    /// Returns the final device path node for this device.
     ///
-    /// For a full [`crate::proto::device_path::DevicePath`] pointing to this device, this needs to be appended to
-    /// the controller's device path.
+    /// Append this node to the controller's device path to form a complete
+    /// [`crate::proto::device_path::DevicePath`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot build the node or allocation fails.
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
         // SAFETY: The memory is valid.
         unsafe {
@@ -169,22 +163,20 @@ impl AtaDevice<'_> {
 
     /// Executes a command on the device.
     ///
-    /// # Arguments
-    /// - `req`: The request structure containing details about the command to execute.
-    ///
-    /// # Returns
-    /// [`AtaResponse`] containing the results of the operation, such as data and status.
+    /// On failure, the error contains an [`AtaResponse`] with any status and
+    /// transfer information produced by the controller.
     ///
     /// # Errors
-    /// - [`Status::BAD_BUFFER_SIZE`] The ATA command was not executed because the buffer size exceeded the allowed transfer size.
-    ///   The number of bytes that could be transferred is returned in `InTransferLength` or `OutTransferLength`.
-    /// - [`Status::NOT_READY`] The ATA command could not be sent because too many commands are already queued. Retry the operation later.
-    /// - [`Status::DEVICE_ERROR`] A device error occurred while attempting to send the ATA command. Refer to `Asb` for additional status details.
-    /// - [`Status::INVALID_PARAMETER`] The `Port`, `PortMultiplierPort`, or the contents of `Acb` are invalid.
-    ///   The command was not sent, and no additional status information is available.
-    /// - [`Status::UNSUPPORTED`] The host adapter does not support the command described by the ATA command.
-    ///   The command was not sent, and no additional status information is available.
-    /// - [`Status::TIMEOUT`] A timeout occurred while waiting for the ATA command to execute. Refer to `Asb` for additional status details.
+    ///
+    /// - [`Status::BAD_BUFFER_SIZE`]: the buffer exceeds the allowed transfer
+    ///   size.
+    /// - [`Status::NOT_READY`]: too many commands are queued; retry later.
+    /// - [`Status::DEVICE_ERROR`]: the device reported an error.
+    /// - [`Status::INVALID_PARAMETER`]: the port, PMP, or command block is
+    ///   invalid.
+    /// - [`Status::UNSUPPORTED`]: the host adapter does not support the
+    ///   command.
+    /// - [`Status::TIMEOUT`]: the command timed out.
     #[expect(clippy::result_large_err)]
     pub fn execute_command<'req>(
         &mut self,

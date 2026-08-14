@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! UEFI Configuration String parsing according to Spec 35.2.1
+//! UEFI configuration string parsing as defined by specification section 35.2.1.
 
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
@@ -14,13 +14,13 @@ use crate::mem::AlignedBuffer;
 use crate::proto::device_path::DevicePath;
 use crate::{CStr16, Char16};
 
-/// A helper struct to split and parse a UEFI Configuration String.
+/// Iterator over the fields of a UEFI configuration string.
 ///
 /// Configuration strings consist of key-value pairs separated by `&`. Keys
 /// and values are separated by `=`. This struct provides an iterator for
 /// easy traversal of the key-value pairs.
 ///
-/// For reasons of developer sanity, this is operating on &str instead of &CStr16.
+/// This operates on `&str` rather than [`CStr16`] for easier parsing.
 #[derive(Debug)]
 pub struct ConfigurationStringIter<'a> {
     bfr: &'a str,
@@ -54,7 +54,7 @@ impl<'a> Iterator for ConfigurationStringIter<'a> {
     }
 }
 
-/// Enum representing different sections of a UEFI Configuration Header.
+/// Section of a UEFI configuration header.
 ///
 /// These sections include GUID, Name, and Path elements, which provide
 /// routing and identification information for UEFI components.
@@ -70,8 +70,7 @@ pub enum ConfigHdrSection {
     DescHdr,
 }
 
-/// Enum representing possible parsing errors encountered when processing
-/// UEFI Configuration Strings.
+/// Error encountered while parsing a UEFI configuration string.
 #[derive(Debug)]
 pub enum ParseError {
     /// Error while parsing the UEFI {ConfigHdr} configuration string section.
@@ -82,17 +81,17 @@ pub enum ParseError {
     BlockConfig,
 }
 
-/// Represents an individual element within a UEFI Configuration String.
+/// Element within a UEFI configuration string.
 ///
 /// Each element contains an offset, width, and value, defining the data
 /// stored at specific memory locations within the configuration.
 #[derive(Debug, Default)]
 pub struct ConfigurationStringElement {
-    /// Byte offset in the configuration block
+    /// Byte offset in the configuration block.
     pub offset: u64,
-    /// Length of the value starting at offset
+    /// Length of `value` at [`Self::offset`].
     pub width: u64,
-    /// Value bytes
+    /// Value bytes.
     pub value: Vec<u8>,
     // TODO
     // nvconfig: HashMap<String, Vec<u8>>,
@@ -108,21 +107,21 @@ mod keys {
     pub const WIDTH: &str = "WIDTH";
 }
 
-/// A full UEFI Configuration String representation.
+/// Parsed UEFI configuration string.
 ///
 /// This structure contains routing information such as GUID and device path,
 /// along with the parsed configuration elements.
 #[derive(Debug)]
 pub struct ConfigurationString {
-    /// GUID used for identifying the configuration
+    /// GUID identifying the configuration.
     pub guid: Guid,
-    /// Name field (optional identifier)
+    /// Configuration name.
     pub name: String,
-    /// Associated UEFI device path
+    /// Associated UEFI device path.
     pub device_path: Box<DevicePath>,
     /// Identifier of a configuration declared in the corresponding IFR.
     pub alt_cfg_id: Option<u16>,
-    /// Parsed UEFI {ConfigElement} sections
+    /// Parsed UEFI `{ConfigElement}` sections.
     pub elements: Vec<ConfigurationStringElement>,
 }
 
@@ -134,15 +133,13 @@ impl ConfigurationString {
         parse_fn().ok_or(err)
     }
 
-    /// Parses a hexadecimal string into an iterator of bytes.
+    /// Parses `hex` into an iterator of bytes.
+    ///
+    /// Invalid byte pairs are returned as zero.
     ///
     /// # Arguments
     ///
-    /// * `hex` - The hexadecimal string representing binary data.
-    ///
-    /// # Returns
-    ///
-    /// An iterator over bytes.
+    /// - `hex`: Hexadecimal representation of the bytes.
     #[must_use]
     pub fn parse_bytes_from_hex(hex: &str) -> impl DoubleEndedIterator<Item = u8> {
         hex.as_bytes().chunks(2).map(|chunk| {
@@ -151,15 +148,15 @@ impl ConfigurationString {
         })
     }
 
-    /// Converts a hexadecimal string representation into a numeric value.
+    /// Parses `data` as a one-, two-, four-, or eight-byte number.
     ///
     /// # Arguments
     ///
-    /// * `data` - The hexadecimal string to convert.
+    /// - `data`: Big-endian hexadecimal representation of the number.
     ///
     /// # Returns
     ///
-    /// An `Option<u64>` representing the parsed number.
+    /// Returns `None` when the decoded length is unsupported.
     #[must_use]
     pub fn parse_number_from_hex(data: &str) -> Option<u64> {
         let data: Vec<_> = Self::parse_bytes_from_hex(data).collect();
@@ -172,15 +169,15 @@ impl ConfigurationString {
         }
     }
 
-    /// Converts a hexadecimal string into a UTF-16 string.
+    /// Parses `data` as a UTF-16 string.
     ///
     /// # Arguments
     ///
-    /// * `data` - The hexadecimal representation of a string.
+    /// - `data`: Hexadecimal representation of the UTF-16 bytes.
     ///
     /// # Returns
     ///
-    /// An `Option<String>` containing the parsed string.
+    /// Returns `None` if the representation or resulting string is invalid.
     #[must_use]
     pub fn parse_string_from_hex(data: &str) -> Option<String> {
         if !data.len().is_multiple_of(2) {
@@ -199,22 +196,30 @@ impl ConfigurationString {
         Some(CStr16::from_char16_with_nul(data).ok()?.to_string())
     }
 
-    /// Parses a hexadecimal string into a UEFI GUID.
+    /// Parses `data` as a UEFI GUID.
     ///
     /// # Arguments
     ///
-    /// * `data` - The hexadecimal GUID representation.
+    /// - `data`: Hexadecimal representation of the GUID bytes.
     ///
     /// # Returns
     ///
-    /// An `Option<Guid>` containing the parsed GUID.
+    /// Returns `None` unless `data` decodes to exactly 16 bytes.
     #[must_use]
     pub fn parse_guid_from_hex(data: &str) -> Option<Guid> {
         let v: Vec<_> = Self::parse_bytes_from_hex(data).collect();
         Some(Guid::from_bytes(v.try_into().ok()?))
     }
 
-    /// Parse an instance of `Peekable<ConfigurationStringIter>` from the given kv-pair iterator.
+    /// Parses a configuration string from its key-value fields.
+    ///
+    /// # Arguments
+    ///
+    /// - `splitter`: Remaining key-value fields.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParseError`] for a missing or malformed section.
     fn parse_from(
         splitter: &mut Peekable<ConfigurationStringIter<'_>>,
     ) -> Result<Self, ParseError> {

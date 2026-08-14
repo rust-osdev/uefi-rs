@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! EFI Shell Protocol v2.2
+//! EFI Shell Protocol version 2.2.
 
 use crate::proto::unsafe_protocol;
 use crate::{CStr16, Char16, Error, Result, Status, StatusExt};
@@ -9,26 +9,26 @@ use core::marker::PhantomData;
 use core::ptr;
 use uefi_raw::protocol::shell::ShellProtocol;
 
-/// Shell Protocol
+/// EFI Shell protocol.
 #[derive(Debug)]
 #[repr(transparent)]
 #[unsafe_protocol(ShellProtocol::GUID)]
 pub struct Shell(ShellProtocol);
 
-/// Trait for implementing the var function
+/// Provides access to shell environment variables.
 pub trait ShellVarProvider {
-    /// Gets the value of the specified environment variable
+    /// Returns the value of `name`, if it exists.
     fn var(&self, name: &CStr16) -> Option<&CStr16>;
 }
 
-/// Iterator over the names of environmental variables obtained from the Shell protocol.
+/// Iterator over shell environment variable names and values.
 #[derive(Debug)]
 pub struct Vars<'a, T: ShellVarProvider> {
-    /// Char16 containing names of environment variables
+    /// Pointer to the current environment variable name.
     names: *const Char16,
-    /// Reference to Shell Protocol
+    /// Environment variable provider.
     protocol: *const T,
-    /// Marker to attach a lifetime to `Vars`
+    /// Associates the iterator with the returned strings.
     _marker: PhantomData<&'a CStr16>,
 }
 
@@ -51,23 +51,23 @@ impl<'a, T: ShellVarProvider + 'a> Iterator for Vars<'a, T> {
 }
 
 impl ShellVarProvider for Shell {
-    /// Gets the value of the specified environment variable
+    /// Returns the value of `name`, if it exists.
     fn var(&self, name: &CStr16) -> Option<&CStr16> {
         self.var(name)
     }
 }
 
 impl Shell {
-    /// Returns the current directory on the specified device.
+    /// Returns a current directory maintained by the shell.
     ///
     /// # Arguments
     ///
-    /// * `file_system_mapping` - The file system mapping for which to get
-    ///   the current directory
+    /// - `file_system_mapping`: Mapping whose directory to return. `None`
+    ///   selects the current working directory.
     ///
     /// # Errors
     ///
-    /// * [`Status::NOT_FOUND`] - Could not retrieve current directory
+    /// - [`Status::NOT_FOUND`]: the requested current directory does not exist.
     pub fn current_dir(&self, file_system_mapping: Option<&CStr16>) -> Result<&CStr16> {
         let mapping_ptr: *const Char16 = file_system_mapping.map_or(ptr::null(), CStr16::as_ptr);
         // SAFETY: The memory is valid.
@@ -80,17 +80,18 @@ impl Shell {
         }
     }
 
-    /// Changes the current directory on the specified device
+    /// Changes a current directory maintained by the shell.
     ///
     /// # Arguments
     ///
-    /// * `file_system` - File system's mapped name.
-    /// * `directory` - Directory on the device specified by
-    ///   `file_system`.
+    /// - `file_system`: Mapping to change. `None` selects the current working
+    ///   directory or the mapping included in `directory`.
+    /// - `directory`: Directory to select. `None` changes only the current
+    ///   file-system mapping.
     ///
     /// # Errors
     ///
-    /// * [`Status::NOT_FOUND`] - The directory does not exist
+    /// - [`Status::NOT_FOUND`]: the directory does not exist.
     pub fn set_current_dir(
         &self,
         file_system: Option<&CStr16>,
@@ -102,18 +103,11 @@ impl Shell {
         unsafe { (self.0.set_cur_dir)(fs_ptr.cast(), dir_ptr.cast()) }.to_result()
     }
 
-    /// Gets the value of the specified environment variable
+    /// Returns the value of the environment variable `name`, if it exists.
     ///
     /// # Arguments
     ///
-    /// * `name` - The environment variable name of which to retrieve the
-    ///   value.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(<env_value>)` - &CStr16 containing the value of the
-    ///   environment variable
-    /// * `None` - If environment variable does not exist
+    /// - `name`: Environment variable name.
     #[must_use]
     pub fn var(&self, name: &CStr16) -> Option<&CStr16> {
         let name_ptr: *const Char16 = name.as_ptr();
@@ -127,11 +121,7 @@ impl Shell {
         }
     }
 
-    /// Gets an iterator over the names of all environment variables
-    ///
-    /// # Returns
-    ///
-    /// * `Vars` - Iterator over the names of the environment variables
+    /// Returns an iterator over all environment variable names.
     #[must_use]
     pub fn vars(&self) -> Vars<'_, Self> {
         // SAFETY: The memory is valid.
@@ -143,18 +133,16 @@ impl Shell {
         }
     }
 
-    /// Sets the environment variable
+    /// Sets the environment variable `name` to `value`.
+    ///
+    /// An empty `value` deletes an existing variable. `volatile` controls
+    /// whether the value survives a system reset.
     ///
     /// # Arguments
     ///
-    /// * `name` - The environment variable for which to set the value
-    /// * `value` - The new value of the environment variable
-    /// * `volatile` - Indicates whether the variable is volatile or
-    ///   not
-    ///
-    /// # Returns
-    ///
-    /// * `Status::SUCCESS` - The variable was successfully set
+    /// - `name`: Environment variable name.
+    /// - `value`: New value, or an empty string to delete the variable.
+    /// - `volatile`: Whether the variable is volatile.
     pub fn set_var(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Result {
         let name_ptr: *const Char16 = name.as_ptr();
         let value_ptr: *const Char16 = value.as_ptr();

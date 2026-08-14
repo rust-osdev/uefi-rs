@@ -171,12 +171,11 @@ impl PciTree {
             .cloned()
     }
 
-    /// Construct a device path for the given PCI `addr` and append it to the given `root_path`.
+    /// Constructs a device path for `addr` below `root_path`.
     ///
     /// # Arguments
-    /// - `root_path`: The [`DevicePath`] instance corresponding to the [`PciRootBridgeIo`] instance that
-    ///   produced this [`PciTree`]. This path is prepended to the generated device paths.
-    /// - `addr`: [`PciIoAddress`] of the device
+    /// - `root_path`: Path of the [`PciRootBridgeIo`] that produced this tree.
+    /// - `addr`: Address of the PCI device.
     pub fn device_path(
         &self,
         root_path: &DevicePath,

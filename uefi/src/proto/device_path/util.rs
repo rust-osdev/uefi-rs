@@ -16,27 +16,19 @@ use uefi_raw::protocol::device_path::DevicePathUtilitiesProtocol;
 pub struct DevicePathUtilities(DevicePathUtilitiesProtocol);
 
 impl DevicePathUtilities {
-    /// Retrieves the size of the specified device path in bytes, including the
+    /// Returns the size of `device_path` in bytes, including its
     /// end-of-device-path node.
-    ///
-    /// # Arguments
-    /// - `device_path`: A reference to the [`DevicePath`] whose size is to be determined.
-    ///
-    /// # Returns
-    /// The size of the specified device path in bytes.
     #[must_use]
     pub fn get_size(&self, device_path: &DevicePath) -> usize {
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_device_path_size)(device_path.as_ffi_ptr().cast()) }
     }
 
-    /// Create a new device path by cloning the given `path` into newly allocated memory.
+    /// Clones `path` into a newly allocated [`PoolDevicePath`].
     ///
-    /// # Arguments
-    /// - `path`: A reference to the device path to clone.
+    /// # Errors
     ///
-    /// # Returns
-    /// A [`PoolDevicePath`] instance created by cloning the given `path`.
+    /// Returns [`Status::OUT_OF_RESOURCES`] if allocation fails.
     pub fn duplicate_path(&self, path: &DevicePath) -> crate::Result<PoolDevicePath> {
         // SAFETY: The memory is valid.
         unsafe {
@@ -47,15 +39,11 @@ impl DevicePathUtilities {
         }
     }
 
-    /// Creates a new device path by appending the second device path to the first.
+    /// Appends `path1` to `path0` in a newly allocated [`PoolDevicePath`].
     ///
-    /// # Arguments
-    /// - `path0`: A reference to the base device path.
-    /// - `path1`: A reference to the device path to append.
+    /// # Errors
     ///
-    /// # Returns
-    /// A [`PoolDevicePath`] instance containing the newly created device path,
-    /// or an error if memory could not be allocated.
+    /// Returns [`Status::OUT_OF_RESOURCES`] if allocation fails.
     pub fn append_path(
         &self,
         path0: &DevicePath,
@@ -71,15 +59,11 @@ impl DevicePathUtilities {
         }
     }
 
-    /// Creates a new device path by appending a device node to the base device path.
+    /// Appends `node` to `basepath` in a newly allocated [`PoolDevicePath`].
     ///
-    /// # Arguments
-    /// - `basepath`: A reference to the base device path.
-    /// - `node`: A reference to the device node to append.
+    /// # Errors
     ///
-    /// # Returns
-    /// A [`PoolDevicePath`] instance containing the newly created device path,
-    /// or an error if memory could not be allocated.
+    /// Returns [`Status::OUT_OF_RESOURCES`] if allocation fails.
     pub fn append_node(
         &self,
         basepath: &DevicePath,
@@ -95,15 +79,11 @@ impl DevicePathUtilities {
         }
     }
 
-    /// Creates a new device path by appending the specified device path instance to the base path.
+    /// Appends `instance` to `basepath` in a newly allocated [`PoolDevicePath`].
     ///
-    /// # Arguments
-    /// - `basepath`: A reference to the base device path.
-    /// - `instance`: A reference to the device path instance to append.
+    /// # Errors
     ///
-    /// # Returns
-    /// A [`PoolDevicePath`] instance containing the newly created device path,
-    /// or an error if memory could not be allocated.
+    /// Returns [`Status::OUT_OF_RESOURCES`] if allocation fails.
     pub fn append_instance(
         &self,
         basepath: &DevicePath,

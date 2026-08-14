@@ -2,7 +2,7 @@
 
 #![cfg(feature = "alloc")]
 
-//! HTTP Protocol.
+//! UEFI HTTP protocol.
 //!
 //! See [`Http`].
 
@@ -22,7 +22,7 @@ use uefi_raw::protocol::network::http::{
     HttpRequestData, HttpResponseData, HttpStatusCode, HttpToken, HttpV4AccessPoint, HttpVersion,
 };
 
-/// HTTP [`Protocol`]. Send HTTP Requests.
+/// Sends and receives HTTP messages through the UEFI HTTP protocol.
 ///
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
@@ -30,7 +30,11 @@ use uefi_raw::protocol::network::http::{
 pub struct Http(HttpProtocol);
 
 impl Http {
-    /// Receive HTTP Protocol configuration.
+    /// Returns the current HTTP configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot report the configuration.
     pub fn get_mode_data(&mut self) -> uefi::Result<HttpConfigData> {
         let mut config_data = HttpConfigData::default();
         // SAFETY: The memory is valid.
@@ -41,7 +45,14 @@ impl Http {
         }
     }
 
-    /// Configure HTTP Protocol.  Must be called before sending HTTP requests.
+    /// Configures the HTTP protocol.
+    ///
+    /// This must be called before sending requests.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware rejects the configuration or cannot
+    /// initialize the network stack.
     pub fn configure(&mut self, config_data: &HttpConfigData) -> uefi::Result<()> {
         // SAFETY: The memory is valid.
         let status = unsafe { (self.0.configure)(&mut self.0, config_data) };
@@ -52,7 +63,12 @@ impl Http {
         }
     }
 
-    /// Send HTTP request.
+    /// Queues an HTTP request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the token is invalid or firmware cannot queue the
+    /// request.
     pub fn request(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
         // SAFETY: The memory is valid.
         let status = unsafe { (self.0.request)(&mut self.0, token) };
@@ -70,7 +86,12 @@ impl Http {
         }
     }
 
-    /// Cancel HTTP request.
+    /// Cancels an HTTP transaction.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the token is invalid or firmware cannot cancel the
+    /// transaction.
     pub fn cancel(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
         // SAFETY: The memory is valid.
         let status = unsafe { (self.0.cancel)(&mut self.0, token) };
@@ -80,7 +101,12 @@ impl Http {
         }
     }
 
-    /// Receive HTTP response.
+    /// Queues an HTTP response operation.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the token is invalid or firmware cannot queue the
+    /// response operation.
     pub fn response(&mut self, token: &mut HttpToken) -> uefi::Result<()> {
         // SAFETY: The memory is valid.
         let status = unsafe { (self.0.response)(&mut self.0, token) };
@@ -96,7 +122,11 @@ impl Http {
         }
     }
 
-    /// Poll network stack for updates.
+    /// Polls the network stack for progress.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the protocol is not configured or polling fails.
     pub fn poll(&mut self) -> uefi::Result<()> {
         // SAFETY: The memory is valid.
         let status = unsafe { (self.0.poll)(&mut self.0) };
@@ -107,13 +137,17 @@ impl Http {
     }
 }
 
-/// HTTP Service Binding Protocol.
+/// HTTP service-binding protocol.
 #[derive(Debug)]
 #[unsafe_protocol(HttpProtocol::SERVICE_BINDING_GUID)]
 pub struct HttpBinding(ServiceBindingProtocol);
 
 impl HttpBinding {
-    /// Create HTTP Protocol Handle.
+    /// Creates a child handle with an HTTP protocol instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot create the child handle.
     pub fn create_child(&mut self) -> uefi::Result<Handle> {
         let mut c_handle = ptr::null_mut();
         let status;
@@ -129,7 +163,12 @@ impl HttpBinding {
         }
     }
 
-    /// Destroy HTTP Protocol Handle.
+    /// Destroys an HTTP child handle.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `handle` is not a child of this binding or firmware
+    /// cannot destroy it.
     pub fn destroy_child(&mut self, handle: Handle) -> uefi::Result<()> {
         // SAFETY: The memory is valid.
         let status = unsafe { (self.0.destroy_child)(&mut self.0, handle.as_ptr()) };
@@ -140,20 +179,20 @@ impl HttpBinding {
     }
 }
 
-/// Representation of the underlying UEFI HTTP response.
+/// Response returned by [`HttpHelper`].
 ///
 /// Helper type for [`HttpHelper`].
 #[derive(Debug)]
 pub struct HttpHelperResponse {
-    /// HTTP Status
+    /// HTTP status code.
     pub status: HttpStatusCode,
-    /// HTTP Response Headers
+    /// HTTP response headers.
     pub headers: Vec<(String, String)>,
     /// Partial or entire HTTP body, depending on context.
     pub body: Vec<u8>,
 }
 
-/// HTTP Helper, makes using the [HTTP] [`Protocol`] more convenient.
+/// Convenience wrapper around the UEFI [HTTP] [`Protocol`].
 ///
 /// [HTTP]: Http
 /// [`Protocol`]: uefi::proto::Protocol
@@ -165,7 +204,12 @@ pub struct HttpHelper {
 }
 
 impl HttpHelper {
-    /// Create new HTTP helper instance for the given NIC handle.
+    /// Creates an HTTP helper for a network-interface handle.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the service binding cannot be opened, a child cannot
+    /// be created, or its HTTP protocol cannot be opened.
     pub fn new(nic_handle: Handle) -> uefi::Result<Self> {
         // SAFETY: The memory is valid.
         let mut binding = unsafe {
@@ -207,7 +251,12 @@ impl HttpHelper {
         })
     }
 
-    /// Configure the HTTP Protocol with some sane defaults.
+    /// Configures the HTTP protocol with IPv4 defaults.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware rejects the configuration or cannot
+    /// initialize the network stack.
     pub fn configure(&mut self) -> uefi::Result<()> {
         let ip4 = HttpV4AccessPoint {
             use_default_addr: true.into(),
@@ -227,7 +276,22 @@ impl HttpHelper {
         Ok(())
     }
 
-    /// Send HTTP request
+    /// Sends an HTTP request and waits for completion.
+    ///
+    /// # Arguments
+    ///
+    /// - `method`: HTTP method to send.
+    /// - `url`: Absolute URL, including a host component.
+    /// - `body`: Optional request body.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the URL has no host, firmware rejects the request,
+    /// or polling fails.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `url` cannot be represented as a null-terminated UCS-2 string.
     pub fn request(
         &mut self,
         method: HttpMethod,
@@ -299,24 +363,40 @@ impl HttpHelper {
         Ok(())
     }
 
-    /// Send HTTP GET request
+    /// Sends an HTTP GET request and waits for completion.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors documented by [`Self::request`].
     pub fn request_get(&mut self, url: &str) -> uefi::Result<()> {
         self.request(HttpMethod::GET, url, None)?;
         Ok(())
     }
 
-    /// Send HTTP HEAD request
+    /// Sends an HTTP HEAD request and waits for completion.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors documented by [`Self::request`].
     pub fn request_head(&mut self, url: &str) -> uefi::Result<()> {
         self.request(HttpMethod::HEAD, url, None)?;
         Ok(())
     }
 
-    /// Receive the start of the http response, the headers and (parts of) the
-    /// body.
+    /// Receives the response status, headers, and initial body data.
     ///
     /// Depending on the HTTP response, its length, its encoding, and its
     /// transmission method (chunked or not), users may have to call
     /// [`Self::response_more`] afterward.
+    ///
+    /// # Arguments
+    ///
+    /// - `expect_body`: Whether to allocate a buffer for initial body data.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot receive the response or polling
+    /// fails.
     pub fn response_first(&mut self, expect_body: bool) -> uefi::Result<HttpHelperResponse> {
         let mut rx_rsp = HttpResponseData {
             status_code: HttpStatusCode::STATUS_UNSUPPORTED,
@@ -383,8 +463,11 @@ impl HttpHelper {
         Ok(rsp)
     }
 
-    /// Try to receive more of the HTTP response and append any new data to the
-    /// provided  `body` vector.
+    /// Appends the next response-body chunk to `body`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if firmware cannot receive more data or polling fails.
     pub fn response_more<'a>(&mut self, body: &'a mut Vec<u8>) -> uefi::Result<&'a [u8]> {
         let mut body_recv_buffer = vec![0; 16 * 1024];
         let mut rx_msg = HttpMessage {

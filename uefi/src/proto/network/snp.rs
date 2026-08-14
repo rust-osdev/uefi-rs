@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Simple Network Protocol
+//! UEFI Simple Network protocol.
 //!
 //! Provides a packet level interface to a network adapter.
 //! Once the adapter is initialized, the protocol provides services that allows
@@ -33,42 +33,79 @@ pub use uefi_raw::protocol::network::snp::{
 pub struct SimpleNetwork(SimpleNetworkProtocol);
 
 impl SimpleNetwork {
-    /// Change the state of a network from "Stopped" to "Started".
+    /// Changes the network state from stopped to started.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not stopped or cannot be started.
     pub fn start(&self) -> Result {
         // SAFETY: The memory is valid.
         unsafe { (self.0.start)(&self.0) }.to_result()
     }
 
-    /// Change the state of a network interface from "Started" to "Stopped".
+    /// Changes the network state from started to stopped.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not started or cannot be stopped.
     pub fn stop(&self) -> Result {
         // SAFETY: The memory is valid.
         unsafe { (self.0.stop)(&self.0) }.to_result()
     }
 
-    /// Reset a network adapter and allocate the transmit and receive buffers
-    /// required by the network interface; optionally, also request allocation of
-    /// additional transmit and receive buffers.
+    /// Initializes the network adapter and its transmit and receive buffers.
+    ///
+    /// # Arguments
+    ///
+    /// - `extra_rx_buffer_size`: Additional receive-buffer bytes to allocate.
+    /// - `extra_tx_buffer_size`: Additional transmit-buffer bytes to allocate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not started or initialization fails.
     pub fn initialize(&self, extra_rx_buffer_size: usize, extra_tx_buffer_size: usize) -> Result {
         // SAFETY: The memory is valid.
         unsafe { (self.0.initialize)(&self.0, extra_rx_buffer_size, extra_tx_buffer_size) }
             .to_result()
     }
 
-    /// Reset a network adapter and reinitialize it with the parameters that were
-    /// provided in the previous call to `initialize`.
+    /// Reinitializes the adapter with its previous parameters.
+    ///
+    /// # Arguments
+    ///
+    /// - `extended_verification`: Whether to perform additional diagnostics.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not initialized or reset fails.
     pub fn reset(&self, extended_verification: bool) -> Result {
         // SAFETY: The memory is valid.
         unsafe { (self.0.reset)(&self.0, Boolean::from(extended_verification)) }.to_result()
     }
 
-    /// Reset a network adapter, leaving it in a state that is safe
-    /// for another driver to initialize
+    /// Shuts down the adapter for use by another driver.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not initialized or shutdown fails.
     pub fn shutdown(&self) -> Result {
         // SAFETY: The memory is valid.
         unsafe { (self.0.shutdown)(&self.0) }.to_result()
     }
 
     /// Manage the multicast receive filters of a network.
+    ///
+    /// # Arguments
+    ///
+    /// - `enable`: Receive filters to enable.
+    /// - `disable`: Receive filters to disable.
+    /// - `reset_mcast_filter`: Whether to clear the multicast filter list first.
+    /// - `mcast_filter`: Multicast addresses to add to the filter list.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the flags or addresses are invalid, unsupported, or
+    /// cannot be applied.
     pub fn receive_filters(
         &self,
         enable: ReceiveFlags,
@@ -96,6 +133,15 @@ impl SimpleNetwork {
     }
 
     /// Modify or reset the current station address, if supported.
+    ///
+    /// # Arguments
+    ///
+    /// - `reset`: Whether to restore the permanent station address.
+    /// - `new`: New station address when `reset` is `false`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if changing the address is unsupported or fails.
     pub fn station_address(&self, reset: bool, new: Option<&EfiMacAddr>) -> Result {
         // SAFETY: The memory is valid.
         unsafe {
@@ -109,6 +155,10 @@ impl SimpleNetwork {
     }
 
     /// Reset statistics on a network interface.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if statistics are unsupported or cannot be reset.
     pub fn reset_statistics(&self) -> Result {
         // SAFETY: The memory is valid.
         unsafe {
@@ -123,6 +173,10 @@ impl SimpleNetwork {
     }
 
     /// Collect statistics on a network interface.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if statistics are unsupported or cannot be read.
     pub fn collect_statistics(&self) -> Result<NetworkStatistics> {
         let mut stats_table: NetworkStatistics = Default::default();
         let mut stats_size = size_of::<NetworkStatistics>();
@@ -138,7 +192,16 @@ impl SimpleNetwork {
         status.to_result_with_val(|| stats_table)
     }
 
-    /// Convert a multicast IP address to a multicast HW MAC Address.
+    /// Converts a multicast IP address to a hardware MAC address.
+    ///
+    /// # Arguments
+    ///
+    /// - `ipv6`: Whether `ip` is interpreted as an IPv6 address.
+    /// - `ip`: Multicast address to convert.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the address is invalid or conversion is unsupported.
     pub fn mcast_ip_to_mac(&self, ipv6: bool, ip: IpAddr) -> Result<EfiMacAddr> {
         let mut mac_address = EfiMacAddr([0; 32]);
         let ip = EfiIpAddr::from(ip);
@@ -154,8 +217,12 @@ impl SimpleNetwork {
         status.to_result_with_val(|| mac_address)
     }
 
-    /// Reads data from the NVRAM device attached to the network interface into
-    /// the provided `dst_buffer`.
+    /// Reads network-interface NVRAM into `dst_buffer`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is invalid, NVRAM is unsupported, or the
+    /// read fails.
     pub fn read_nv_data(&self, offset: usize, dst_buffer: &mut [u8]) -> Result {
         // SAFETY: The memory is valid.
         unsafe {
@@ -170,8 +237,12 @@ impl SimpleNetwork {
         .to_result()
     }
 
-    /// Writes data into the NVRAM device attached to the network interface from
-    /// the provided `src_buffer`.
+    /// Writes `src_buffer` to network-interface NVRAM.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is invalid, NVRAM is unsupported or
+    /// read-only, or the write fails.
     pub fn write_nv_data(&self, offset: usize, src_buffer: &[u8]) -> Result {
         // SAFETY: The memory is valid.
         unsafe {
@@ -187,8 +258,12 @@ impl SimpleNetwork {
         .to_result()
     }
 
-    /// Read the current interrupt status and recycled transmit buffer
-    /// status from a network interface.
+    /// Returns the current network interrupt status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not initialized or status cannot be
+    /// read.
     pub fn get_interrupt_status(&self) -> Result<InterruptStatus> {
         let mut interrupt_status = InterruptStatus::empty();
         let status =
@@ -197,8 +272,12 @@ impl SimpleNetwork {
         status.to_result_with_val(|| interrupt_status)
     }
 
-    /// Read the current recycled transmit buffer status from a
-    /// network interface.
+    /// Returns the next recycled transmit buffer, if available.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the interface is not initialized or status cannot be
+    /// read.
     pub fn get_recycled_transmit_buffer_status(&self) -> Result<Option<NonNull<u8>>> {
         let mut tx_buf: *mut c_void = ptr::null_mut();
         // SAFETY: The memory is valid.
@@ -232,6 +311,11 @@ impl SimpleNetwork {
     ///   `0x0800` (IPv4) or `0x0806` (ARP).
     ///
     /// [ethertype]: https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml#ieee-802-numbers-1
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the packet parameters are invalid, the transmit queue
+    /// is full, or transmission fails.
     pub fn transmit(
         &self,
         header_size: usize,
@@ -257,7 +341,20 @@ impl SimpleNetwork {
 
     /// Receive a packet from a network interface.
     ///
-    /// On success, returns the size of bytes of the received packet.
+    /// On success, returns the number of bytes received.
+    ///
+    /// # Arguments
+    ///
+    /// - `buffer`: Destination for the packet, including its media header.
+    /// - `header_size`: Optional output for the media-header size.
+    /// - `src_addr`: Optional output for the source hardware address.
+    /// - `dest_addr`: Optional output for the destination hardware address.
+    /// - `protocol`: Optional output for the network protocol.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if no packet is ready, `buffer` is too small, or receive
+    /// fails.
     pub fn receive(
         &self,
         buffer: &mut [u8],
@@ -284,8 +381,12 @@ impl SimpleNetwork {
 
     /// Event that fires once a packet is available to be received.
     ///
-    /// On QEMU, this event seems to never fire; it is suggested to verify that your implementation
-    /// of UEFI properly implements this event before using it.
+    /// On QEMU, this event seems to never fire. Verify that the target firmware
+    /// implements it correctly before relying on it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::UNSUPPORTED`] if firmware provides no event.
     pub fn wait_for_packet_event(&self) -> Result<Event> {
         // SAFETY: The memory is valid.
         unsafe { Event::from_ptr(self.0.wait_for_packet) }.ok_or(Error::from(Status::UNSUPPORTED))

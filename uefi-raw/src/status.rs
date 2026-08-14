@@ -84,7 +84,7 @@ pub enum Status: usize => {
     SECURITY_VIOLATION      = Self::ERROR_BIT | 26,
     /// A CRC error was detected.
     CRC_ERROR               = Self::ERROR_BIT | 27,
-    /// Beginning or end of media was reached
+    /// The beginning or end of the medium was reached.
     END_OF_MEDIA            = Self::ERROR_BIT | 28,
     /// The end of the file was reached.
     END_OF_FILE             = Self::ERROR_BIT | 31,
@@ -93,7 +93,7 @@ pub enum Status: usize => {
     /// The security status of the data is unknown or compromised and
     /// the data must be updated or replaced to restore a valid security status.
     COMPROMISED_DATA        = Self::ERROR_BIT | 33,
-    /// There is an address conflict address allocation
+    /// Address allocation encountered an IP address conflict.
     IP_ADDRESS_CONFLICT     = Self::ERROR_BIT | 34,
     /// A HTTP error occurred during the network operation.
     HTTP_ERROR              = Self::ERROR_BIT | 35,

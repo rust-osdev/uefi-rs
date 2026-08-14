@@ -283,7 +283,7 @@ bitflags! {
 newtype_enum! {
 /// Interface type of a protocol interface.
 pub enum InterfaceType: u32 => {
-    /// Native interface
+    /// Native protocol interface.
     NATIVE_INTERFACE = 0,
 }}
 
@@ -301,7 +301,7 @@ bitflags! {
         const WRITE_COMBINE = 0x2;
         /// Supports write-through.
         const WRITE_THROUGH = 0x4;
-        /// Support write-back.
+        /// Supports write-back.
         const WRITE_BACK = 0x8;
         /// Supports marking as uncacheable, exported and
         /// supports the "fetch and add" semaphore mechanism.
@@ -404,7 +404,7 @@ pub enum MemoryType: u32 => {
     RESERVED                =  0,
     /// The code portions of a loaded UEFI application.
     LOADER_CODE             =  1,
-    /// The data portions of a loaded UEFI applications,
+    /// The data portions of a loaded UEFI application,
     /// as well as any memory allocated by it.
     LOADER_DATA             =  2,
     /// Code of the boot drivers.
@@ -450,10 +450,15 @@ impl MemoryType {
     /// Range reserved for OS loaders.
     pub const RESERVED_FOR_OS_LOADER: RangeInclusive<u32> = 0x8000_0000..=0xffff_ffff;
 
-    /// Construct a custom `MemoryType`. Values in the range `0x8000_0000..=0xffff_ffff` are free for use if you are
-    /// an OS loader.
+    /// Constructs an OS-loader-defined memory type.
+    ///
+    /// Values in `0x8000_0000..=0xffff_ffff` are reserved for OS loaders.
     ///
     /// **Warning**: Some EFI firmware versions (e.g., OVMF r11337) may crash or [behave incorrectly](https://wiki.osdev.org/UEFI#My_bootloader_hangs_if_I_use_user_defined_EFI_MEMORY_TYPE_values) when using a custom `MemoryType`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `value` is below `0x8000_0000`.
     #[must_use]
     pub const fn custom(value: u32) -> Self {
         assert!(value >= 0x80000000);

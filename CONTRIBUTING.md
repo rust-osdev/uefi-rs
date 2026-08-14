@@ -36,6 +36,27 @@ This repository follows Rust's [standard style][style], the same one imposed by 
 
 You can apply the standard style to the whole package by running `cargo fmt --all`.
 
+### Rustdoc
+
+Start each rustdoc comment with a short, complete summary sentence. The summary
+should normally fit on one line and must not exceed two lines at 80 columns.
+Put additional explanation in a separate paragraph.
+
+Use standard sections for API contracts:
+
+- Use `# Arguments` when parameters need explanation beyond their names and
+  types. Describe parameters as ``- `name`: description.``
+- Use `# Returns` when the return value is not clear from the summary and type.
+- Use `# Errors` for meaningful failure conditions of fallible APIs. Link to
+  specific UEFI status values where applicable, and do not list successful
+  statuses.
+- Use `# Panics` and `# Safety` for their respective contracts.
+- Use `# Example` for one example and `# Examples` for multiple examples.
+
+Prefer these sections over embedding contract details in general prose. Avoid
+generic `# Description` and `# Details` sections; put that information in the
+introductory paragraphs instead.
+
 [style]: https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md
 
 ## UEFI pitfalls

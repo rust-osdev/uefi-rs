@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Bindings for HII String protocols and data types
+//! Raw HII string protocol.
 
 use super::font::FontInfo;
 use super::{HiiHandle, StringId};
 use crate::{Char8, Char16, Guid, Status, guid};
 
-/// EFI_HII_STRING_PROTOCOL
+/// HII string protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiStringProtocol {

@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Bindings for HII Font protocols and data types
+//! Raw HII font protocols and data types.
 
 use super::image::ImageOutput;
 use super::{HiiHandle, StringId};
 use crate::protocol::console::GraphicsOutputBltPixel;
 use crate::{Char8, Char16, Guid, Status, guid};
 
+/// Handle used to enumerate HII fonts.
 pub type FontHandle = *mut core::ffi::c_void;
 
+/// Dimensions and positioning of an HII glyph.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiGlyphInfo {
@@ -20,7 +22,7 @@ pub struct HiiGlyphInfo {
 }
 
 bitflags::bitflags! {
-    /// EFI_FONT_INFO_MASK
+    /// Selects which font properties are significant.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct FontInfoMask: u32 {
@@ -38,7 +40,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    /// EFI_HII_FONT_STYLE
+    /// HII font styles.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct HiiFontStyle: u32 {
@@ -56,7 +58,7 @@ impl HiiFontStyle {
     pub const NORMAL: Self = Self::empty();
 }
 
-/// EFI_FONT_INFO
+/// Name, size, and style of an HII font.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FontInfo {
@@ -65,7 +67,7 @@ pub struct FontInfo {
     pub font_name: [Char16; 0],
 }
 
-/// EFI_FONT_DISPLAY_INFO
+/// Font and colors used to render text.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FontDisplayInfo {
@@ -76,7 +78,7 @@ pub struct FontDisplayInfo {
 }
 
 bitflags::bitflags! {
-    /// EFI_HII_OUT_FLAGS
+    /// Controls how HII text is rendered.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct HiiOutFlags: u32 {
@@ -91,7 +93,7 @@ bitflags::bitflags! {
     }
 }
 
-/// EFI_HII_ROW_INFO
+/// Layout information for one rendered row.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiRowInfo {
@@ -102,7 +104,7 @@ pub struct HiiRowInfo {
     pub baseline_offset: usize,
 }
 
-/// EFI_HII_FONT_PROTOCOL
+/// HII font protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiFontProtocol {
@@ -153,7 +155,7 @@ impl HiiFontProtocol {
 }
 
 // NOTE: This protocol is declared in the UEFI spec, but not defined in edk2.
-/// EFI_HII_FONT_EX_PROTOCOL
+/// Extended HII font protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiFontExProtocol {

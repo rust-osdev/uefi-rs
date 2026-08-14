@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Popup protocol
+//! Raw HII popup protocol.
 
 use super::{HiiHandle, StringId};
 use crate::{Guid, Status, guid, newtype_enum};
 
 newtype_enum! {
-    /// EFI_HII_POPUP_STYLE
+    /// Visual style of an HII popup.
     pub enum HiiPopupStyle: u32 => {
         INFO = 0,
         WARNING = 1,
@@ -15,7 +15,7 @@ newtype_enum! {
 }
 
 newtype_enum! {
-    /// EFI_HII_POPUP_TYPE
+    /// Buttons displayed by an HII popup.
     pub enum HiiPopupType: u32 => {
         OK = 0,
         OK_CANCEL = 1,
@@ -25,7 +25,7 @@ newtype_enum! {
 }
 
 newtype_enum! {
-    /// EFI_HII_POPUP_SELECTION
+    /// Button selected in an HII popup.
     pub enum HiiPopupSelection: u32 => {
         OK = 0,
         CANCEL = 1,
@@ -34,7 +34,7 @@ newtype_enum! {
     }
 }
 
-/// EFI_HII_POPUP_PROTOCOL
+/// HII popup protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiPopupProtocol {

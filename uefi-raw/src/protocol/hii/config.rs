@@ -9,7 +9,7 @@ use super::{FormId, QuestionId, StringId};
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
 
-/// EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL
+/// HII configuration keyword-handler protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ConfigKeywordHandlerProtocol {
@@ -34,7 +34,7 @@ impl ConfigKeywordHandlerProtocol {
 }
 
 newtype_enum! {
-    /// Type of action taken by the form browser
+    /// Action taken by the form browser.
     #[derive(Default)]
     pub enum BrowserAction: usize => {
         /// Called before the browser changes the value in the display (for questions which have a value)
@@ -71,6 +71,7 @@ newtype_enum! {
     }
 }
 
+/// Time value stored in an internal forms representation.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiTime {
@@ -79,6 +80,7 @@ pub struct HiiTime {
     pub second: u8,
 }
 
+/// Date value stored in an internal forms representation.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiDate {
@@ -87,6 +89,7 @@ pub struct HiiDate {
     pub day: u8,
 }
 
+/// Reference value stored in an internal forms representation.
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiRef {
@@ -96,6 +99,7 @@ pub struct HiiRef {
     pub string_id: StringId,
 }
 
+/// Value stored in an internal forms representation.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union IfrTypeValue {
@@ -115,7 +119,7 @@ impl core::fmt::Debug for IfrTypeValue {
     }
 }
 
-/// EFI_HII_CONFIG_ACCESS_PROTOCOL
+/// HII configuration-access protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiConfigAccessProtocol {
@@ -144,7 +148,7 @@ impl HiiConfigAccessProtocol {
     pub const GUID: Guid = guid!("330d4706-f2a0-4e4f-a369-b66fa8d54385");
 }
 
-/// EFI_HII_CONFIG_ROUTING_PROTOCOL
+/// HII configuration-routing protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiConfigRoutingProtocol {

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Bindings for HII Database Protocol
+//! Raw HII database protocol and data types.
 
 use super::{HiiHandle, HiiPackageHeader, HiiPackageListHeader, KeyDescriptor};
 use crate::{Guid, Handle, Status, guid, newtype_enum};
 
-/// EFI_HII_KEYBOARD_LAYOUT
+/// Header and descriptors of an HII keyboard layout.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiKeyboardLayout {
@@ -17,7 +17,7 @@ pub struct HiiKeyboardLayout {
 }
 
 newtype_enum! {
-    /// EFI_HII_DATABASE_NOTIFY_TYPE
+    /// HII package-list changes that trigger a notification.
     pub enum HiiDatabaseNotifyType: usize => {
         NEW_PACK = 1 << 0,
         REMOVE_PACK = 1 << 1,
@@ -26,7 +26,7 @@ newtype_enum! {
     }
 }
 
-/// EFI_HII_DATABASE_NOTIFY
+/// Callback invoked for an HII package-list change.
 pub type HiiDatabaseNotifyFn = unsafe extern "efiapi" fn(
     package_type: u8,
     package_guid: *const Guid,
@@ -35,7 +35,7 @@ pub type HiiDatabaseNotifyFn = unsafe extern "efiapi" fn(
     notify_type: HiiDatabaseNotifyType,
 ) -> Status;
 
-/// EFI_HII_DATABASE_PROTOCOL
+/// HII database protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiDatabaseProtocol {

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Form Browser protocol
+//! Raw HII Form Browser protocol.
 
 use super::{FormId, HiiHandle};
 use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
 
-/// EFI_SCREEN_DESCRIPTOR
+/// Screen region in which to display a form.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ScreenDescriptor {
@@ -43,7 +43,7 @@ newtype_enum! {
     }
 }
 
-/// EFI_FORM_BROWSER2_PROTOCOL
+/// HII Form Browser 2 protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct FormBrowser2Protocol {

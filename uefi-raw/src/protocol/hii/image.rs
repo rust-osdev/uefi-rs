@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Bindings for HII Image protocols and data types
+//! Raw HII image protocols and data types.
 
 use super::{HiiHandle, ImageId};
 use crate::protocol::console::{GraphicsOutputBltPixel, GraphicsOutputProtocol};
@@ -8,7 +8,7 @@ use crate::{Guid, Status, guid};
 use core::fmt;
 
 bitflags::bitflags! {
-    /// EFI_HII_DRAW_FLAGS
+    /// Controls how an HII image is drawn.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct HiiDrawFlags: u32 {
@@ -25,6 +25,7 @@ impl HiiDrawFlags {
 }
 
 bitflags::bitflags! {
+    /// Controls interpretation of an image's bitmap.
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct ImageInputFlags: u32 {
@@ -32,7 +33,7 @@ bitflags::bitflags! {
     }
 }
 
-/// EFI_IMAGE_INPUT
+/// Bitmap supplied to an HII image protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ImageInput {
@@ -42,6 +43,7 @@ pub struct ImageInput {
     pub bitmap: *const GraphicsOutputBltPixel,
 }
 
+/// Destination of an HII image drawing operation.
 #[repr(C)]
 pub union ImageOutputDest {
     pub bitmap: *mut GraphicsOutputBltPixel,
@@ -69,7 +71,7 @@ impl Default for ImageOutputDest {
     }
 }
 
-/// EFI_IMAGE_OUTPUT
+/// Output target and dimensions for an HII image operation.
 #[derive(Debug)]
 #[repr(C)]
 pub struct ImageOutput {
@@ -78,7 +80,7 @@ pub struct ImageOutput {
     pub image: ImageOutputDest,
 }
 
-/// EFI_HII_IMAGE_PROTOCOL
+/// HII image protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiImageProtocol {
@@ -123,7 +125,7 @@ impl HiiImageProtocol {
     pub const GUID: Guid = guid!("31a6406a-6bdf-4e46-b2a2-ebaa89c40920");
 }
 
-/// EFI_HII_IMAGE_EX_PROTOCOL
+/// Extended HII image protocol.
 #[derive(Debug)]
 #[repr(C)]
 pub struct HiiImageExProtocol {

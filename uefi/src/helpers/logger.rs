@@ -6,8 +6,6 @@
 //! The main export of this module is the `Logger` structure,
 //! which implements the `log` crate's trait `Log`.
 //!
-//! # Implementation Details
-//!
 //! The implementation is not the most efficient, since there is no buffering done,
 //! and the messages have to be converted from UTF-8 to UEFI's UCS-2.
 //!
@@ -20,13 +18,14 @@ use core::fmt::{self, Write};
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
 
-/// Global logger object
+/// Global logger instance.
 static LOGGER: Logger = Logger::new();
 
-/// Set up logging
+/// Enables the global logger.
 ///
-/// This is unsafe because you must arrange for the logger to be reset with
-/// disable() on exit from UEFI boot services.
+/// # Safety
+///
+/// The caller must call [`disable`] before exiting UEFI boot services.
 pub unsafe fn init() {
     // Connect the logger to stdout.
     system::with_stdout(|stdout| {
@@ -43,6 +42,7 @@ pub unsafe fn init() {
     log::set_max_level(log::STATIC_MAX_LEVEL);
 }
 
+/// Disables the global logger.
 pub fn disable() {
     LOGGER.disable();
 }
@@ -106,13 +106,13 @@ impl Logger {
         }
     }
 
-    /// Get the output pointer (may be null).
+    /// Returns the output pointer, which may be null.
     #[must_use]
     fn output(&self) -> *mut Output {
         self.writer.load(Ordering::Acquire)
     }
 
-    /// Set the [`Output`] to which the logger will write.
+    /// Sets the [`Output`] to which the logger writes.
     ///
     /// If a null pointer is passed for `output`, this method is equivalent to
     /// calling [`disable`].
@@ -131,7 +131,7 @@ impl Logger {
         self.writer.store(output, Ordering::Release);
     }
 
-    /// Disable the logger.
+    /// Disables the logger.
     pub fn disable(&self) {
         // SAFETY: Passing a null pointer disables output without dereferencing it.
         unsafe { self.set_output(ptr::null_mut()) }
@@ -192,7 +192,7 @@ unsafe impl Sync for Logger {}
 // under the same single-processor assumption.
 unsafe impl Send for Logger {}
 
-/// Writer wrapper which prints a log level in front of every line of text
+/// Writer that prefixes every line with its log level.
 ///
 /// This is less easy than it sounds because...
 ///

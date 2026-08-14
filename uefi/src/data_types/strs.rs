@@ -17,14 +17,13 @@ use core::{ptr, slice};
 #[cfg(feature = "alloc")]
 use super::CString16;
 
-/// Error converting from a slice (which can contain interior nuls) to a string
-/// type.
+/// Error converting a slice that may contain interior nulls to a string.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FromSliceUntilNulError {
     /// An invalid character was encountered before the end of the slice.
     InvalidChar(usize),
 
-    /// The does not contain a nul character.
+    /// The slice does not contain a null character.
     NoNul,
 }
 
@@ -39,17 +38,16 @@ impl Display for FromSliceUntilNulError {
 
 impl core::error::Error for FromSliceUntilNulError {}
 
-/// Error converting from a slice (which cannot contain interior nuls) to a
-/// string type.
+/// Error converting a null-terminated slice to a string.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FromSliceWithNulError {
-    /// An invalid character was encountered before the end of the slice
+    /// An invalid character was encountered before the end of the slice.
     InvalidChar(usize),
 
-    /// A null character was encountered before the end of the slice
+    /// A null character was encountered before the end of the slice.
     InteriorNul(usize),
 
-    /// The slice was not null-terminated
+    /// The slice was not null-terminated.
     NotNulTerminated,
 
     /// Slice is not aligned to a 16-bit boundary.
@@ -81,8 +79,7 @@ pub enum UnalignedCStr16Error {
     /// The data was not null-terminated.
     NotNulTerminated,
 
-    /// The buffer is not big enough to hold the entire string and
-    /// trailing null character.
+    /// The buffer cannot hold the entire string and its trailing null.
     BufferTooSmall,
 }
 
@@ -102,14 +99,13 @@ impl core::error::Error for UnalignedCStr16Error {}
 /// Error returned by [`CStr16::from_str_with_buf`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FromStrWithBufError {
-    /// An invalid character was encountered before the end of the string
+    /// An invalid character was encountered before the end of the string.
     InvalidChar(usize),
 
-    /// A null character was encountered in the string
+    /// A null character was encountered in the string.
     InteriorNul(usize),
 
-    /// The buffer is not big enough to hold the entire string and
-    /// trailing null character
+    /// The buffer cannot hold the entire string and its trailing null.
     BufferTooSmall,
 }
 
@@ -142,12 +138,12 @@ impl core::error::Error for FromStrWithBufError {}
 pub struct CStr8([Char8]);
 
 impl CStr8 {
-    /// Takes a raw pointer to a null-terminated Latin-1 string and wraps it in a CStr8 reference.
+    /// Wraps a raw null-terminated Latin-1 string in a [`CStr8`] reference.
     ///
     /// # Safety
     ///
     /// The function will start accessing memory from `ptr` until the first
-    /// null byte. It's the callers responsibility to ensure `ptr` points to
+    /// null byte. It is the caller's responsibility to ensure `ptr` points to
     /// a valid null-terminated string in accessible memory.
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
@@ -161,7 +157,13 @@ impl CStr8 {
         unsafe { Self::from_bytes_with_nul_unchecked(slice::from_raw_parts(ptr, len + 1)) }
     }
 
-    /// Creates a CStr8 reference from bytes.
+    /// Creates a [`CStr8`] reference from null-terminated bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FromSliceWithNulError::InteriorNul`] if a null occurs before
+    /// the end, or [`FromSliceWithNulError::NotNulTerminated`] if the final byte
+    /// is not null.
     pub fn from_bytes_with_nul(chars: &[u8]) -> Result<&Self, FromSliceWithNulError> {
         let nul_pos = chars.iter().position(|&c| c == 0);
         if let Some(nul_pos) = nul_pos {
@@ -175,11 +177,11 @@ impl CStr8 {
         }
     }
 
-    /// Unsafely creates a CStr8 reference from bytes.
+    /// Creates a [`CStr8`] reference from bytes without validation.
     ///
     /// # Safety
     ///
-    /// It's the callers responsibility to ensure chars is a valid Latin-1
+    /// It is the caller's responsibility to ensure `chars` is a valid Latin-1
     /// null-terminated string, with no interior null bytes.
     #[must_use]
     pub const unsafe fn from_bytes_with_nul_unchecked(chars: &[u8]) -> &Self {
@@ -187,14 +189,13 @@ impl CStr8 {
         unsafe { &*(ptr::from_ref(chars) as *const Self) }
     }
 
-    /// Returns the inner pointer to this CStr8.
+    /// Returns the string's inner pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *const Char8 {
         self.0.as_ptr()
     }
 
-    /// Returns the underlying bytes as slice including the terminating null
-    /// character.
+    /// Returns the underlying bytes, including the terminating null.
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
         // SAFETY: The source layout matches the target view.
@@ -356,12 +357,12 @@ pub const fn str_to_latin1<const N: usize>(s: &str) -> [u8; N] {
 pub struct CStr16([Char16]);
 
 impl CStr16 {
-    /// Wraps a raw UEFI string with a safe C string wrapper
+    /// Wraps a raw UEFI string in a [`CStr16`] reference.
     ///
     /// # Safety
     ///
     /// The function will start accessing memory from `ptr` until the first
-    /// null character. It's the callers responsibility to ensure `ptr` points to
+    /// null character. It is the caller's responsibility to ensure `ptr` points to
     /// a valid string, in accessible memory.
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
@@ -393,8 +394,12 @@ impl CStr16 {
         Err(FromSliceUntilNulError::NoNul)
     }
 
-    /// Creates a `&CStr16` from a u16 slice, if the slice contains exactly
-    /// one terminating null-byte and all chars are valid UCS-2 chars.
+    /// Creates a [`CStr16`] from a null-terminated `u16` slice.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the slice contains invalid UCS-2, has an interior
+    /// null, or is not null-terminated.
     pub fn from_u16_with_nul(codes: &[u16]) -> Result<&Self, FromSliceWithNulError> {
         for (pos, &code) in codes.iter().enumerate() {
             match code.try_into() {
@@ -419,7 +424,7 @@ impl CStr16 {
     ///
     /// # Safety
     ///
-    /// It's the callers responsibility to ensure chars is a valid UCS-2
+    /// It is the caller's responsibility to ensure `codes` is a valid UCS-2
     /// null-terminated string, with no interior null characters.
     #[must_use]
     pub const unsafe fn from_u16_with_nul_unchecked(codes: &[u16]) -> &Self {
@@ -427,7 +432,7 @@ impl CStr16 {
         unsafe { &*(ptr::from_ref(codes) as *const Self) }
     }
 
-    /// Creates a `&CStr16` from a [`Char16`] slice, stopping at the first nul character.
+    /// Creates a [`CStr16`] from a [`Char16`] slice up to its first null.
     ///
     /// # Errors
     ///
@@ -444,8 +449,12 @@ impl CStr16 {
         unsafe { Ok(Self::from_char16_with_nul_unchecked(&chars[..=end])) }
     }
 
-    /// Creates a `&CStr16` from a [`Char16`] slice, if the slice is
-    /// null-terminated and has no interior null characters.
+    /// Creates a [`CStr16`] from a null-terminated [`Char16`] slice.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the slice has an interior null or is not
+    /// null-terminated.
     pub fn from_char16_with_nul(chars: &[Char16]) -> Result<&Self, FromSliceWithNulError> {
         // Fail early if the input is empty.
         if chars.is_empty() {
@@ -471,7 +480,7 @@ impl CStr16 {
     ///
     /// # Safety
     ///
-    /// It's the callers responsibility to ensure chars is null-terminated and
+    /// It is the caller's responsibility to ensure `chars` is null-terminated and
     /// has no interior null characters.
     #[must_use]
     pub const unsafe fn from_char16_with_nul_unchecked(chars: &[Char16]) -> &Self {
@@ -499,6 +508,11 @@ impl CStr16 {
     /// let mut buf = [0; 4];
     /// CStr16::from_str_with_buf("ABC", &mut buf).unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `input` contains invalid UCS-2 or a null character,
+    /// or if `buf` is too small for the converted string and trailing null.
     pub fn from_str_with_buf<'a>(
         input: &str,
         buf: &'a mut [u16],
@@ -528,9 +542,14 @@ impl CStr16 {
         })
     }
 
-    /// Creates a `&CStr16` from an [`UnalignedSlice`] using an aligned
-    /// buffer for storage. The lifetime of the output is tied to `buf`,
-    /// not `src`.
+    /// Copies an unaligned UCS-2 string into `buf` and returns a [`CStr16`].
+    ///
+    /// The returned string borrows `buf`, not `src`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `buf` is too small or the source is not a valid,
+    /// null-terminated UCS-2 string without interior nulls.
     pub fn from_unaligned_slice<'buf>(
         src: &UnalignedSlice<'_, u16>,
         buf: &'buf mut [MaybeUninit<u16>],
@@ -672,12 +691,12 @@ impl CStr16 {
         self.0.iter().all(|c| c.is_ascii())
     }
 
-    /// Writes each [`Char16`] as a [`char`] (4 bytes long in Rust language) into the buffer.
-    /// It is up to the implementer of [`core::fmt::Write`] to convert the char to a string
-    /// with proper encoding/charset. For example, in the case of [`alloc::string::String`]
-    /// all Rust chars (UTF-32) get converted to UTF-8.
+    /// Writes each [`Char16`] to a formatting buffer as a [`char`].
     ///
-    /// ## Example
+    /// The [`core::fmt::Write`] implementation determines the output encoding.
+    /// For example, [`alloc::string::String`] encodes the characters as UTF-8.
+    ///
+    /// # Example
     ///
     /// ```ignore
     /// let firmware_vendor_c16_str: CStr16 = ...;
@@ -695,8 +714,7 @@ impl CStr16 {
         Ok(())
     }
 
-    /// Returns the underlying bytes as slice including the terminating null
-    /// character.
+    /// Returns the underlying bytes, including the terminating null.
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
         // SAFETY: The pointer is valid for the requested slice length.
@@ -806,13 +824,16 @@ impl PartialEq<CString16> for &CStr16 {
 pub struct PoolString(PoolAllocation);
 
 impl PoolString {
-    /// Creates a [`PoolString`] from a [`CStr16`] residing in a buffer allocated
-    /// using [`allocate_pool()`][cbap].
+    /// Takes ownership of a pool-allocated [`CStr16`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Status::OUT_OF_RESOURCES`] if `text` is null.
     ///
     /// # Safety
     ///
     /// The caller must ensure that the buffer points to a valid [`CStr16`] and
-    /// resides in a buffer allocated using [`allocate_pool()`][cbap]
+    /// resides in a buffer allocated using [`allocate_pool()`][cbap].
     ///
     /// [cbap]: crate::boot::allocate_pool()
     pub unsafe fn new(text: *const Char16) -> crate::Result<Self> {
@@ -832,9 +853,14 @@ impl Deref for PoolString {
 }
 
 impl UnalignedSlice<'_, u16> {
-    /// Creates a [`CStr16`] from an [`UnalignedSlice`] using an aligned
-    /// buffer for storage. The lifetime of the output is tied to `buf`,
-    /// not `self`.
+    /// Copies this unaligned string into `buf` and returns a [`CStr16`].
+    ///
+    /// The returned string borrows `buf`, not `self`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `buf` is too small or this slice is not a valid,
+    /// null-terminated UCS-2 string without interior nulls.
     pub fn to_cstr16<'buf>(
         &self,
         buf: &'buf mut [MaybeUninit<u16>],
@@ -843,18 +869,17 @@ impl UnalignedSlice<'_, u16> {
     }
 }
 
-/// The EqStrUntilNul trait helps to compare Rust strings against UEFI string types (UCS-2 strings).
+/// Compares Rust strings with null-terminated UEFI strings.
 ///
 /// The given generic implementation of this trait enables us that we only have to
 /// implement one direction (`left.eq_str_until_nul(&right)`) for each UEFI string type and we
 /// get the other direction (`right.eq_str_until_nul(&left)`) for free. Hence, the relation is
 /// reflexive.
 pub trait EqStrUntilNul<StrType: ?Sized> {
-    /// Checks whether the provided Rust string `StrType` equals [`Self`] until
-    /// the first null character.
-    /// is found. An exception is the terminating null character of [Self] which is ignored.
+    /// Compares `other` with this string up to the first null character.
     ///
-    /// As soon as the first null character in either `&self` or `other` is found, this method returns.
+    /// The terminating null in [`Self`] is ignored. Comparison stops at the
+    /// first null in either string.
     /// Note that Rust strings are allowed to contain null bytes that do not terminate the string.
     /// Although this is rather unusual, you can compare `"foo\0bar"` with an instance of [Self].
     /// In that case, only `foo"` is compared against [Self] (if [Self] is long enough).

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Module for UEFI time-related types and definitions and convenience and
-//! abstractions build around these.
+//! UEFI time types and conversions.
 
 #[cfg(feature = "time03")]
 pub use integration_common::TimeConversionError;
@@ -74,8 +73,7 @@ pub struct TimeParams {
     pub daylight: Daylight,
 }
 
-/// Error returned by [`Time`] methods. A bool value of `true` means
-/// the specified field is outside its valid range.
+/// Reports which fields of a [`Time`] are outside their valid ranges.
 #[expect(missing_docs)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct TimeError {
@@ -132,8 +130,11 @@ impl Time {
     /// Unspecified Timezone/local time.
     const UNSPECIFIED_TIMEZONE: i16 = uefi_raw::time::Time::UNSPECIFIED_TIMEZONE;
 
-    /// Create a `Time` value. If a field is not in the valid range,
-    /// [`TimeError`] is returned.
+    /// Creates a validated [`Time`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TimeError`] with each out-of-range field marked.
     pub fn new(params: TimeParams) -> core::result::Result<Self, TimeError> {
         let time = Self(uefi_raw::time::Time {
             year: params.year,
@@ -152,9 +153,10 @@ impl Time {
         time.is_valid().map(|_| time)
     }
 
-    /// Create an invalid `Time` with all fields set to zero. This can
-    /// be used with [`FileInfo`] to indicate a field should not be
-    /// updated when calling [`File::set_info`].
+    /// Creates an invalid [`Time`] with every field set to zero.
+    ///
+    /// This value can be used with [`FileInfo`] to leave a field unchanged when
+    /// calling [`File::set_info`].
     ///
     /// [`FileInfo`]: uefi::proto::media::file::FileInfo
     /// [`File::set_info`]: uefi::proto::media::file::File::set_info
@@ -163,7 +165,11 @@ impl Time {
         Self(uefi_raw::time::Time::invalid())
     }
 
-    /// `Ok()` if all fields are within valid ranges, `Err(TimeError)` otherwise.
+    /// Validates that every field is in its required range.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TimeError`] with each out-of-range field marked.
     pub fn is_valid(&self) -> core::result::Result<(), TimeError> {
         let mut err = TimeError::default();
         if !(1900..=9999).contains(&self.year()) {

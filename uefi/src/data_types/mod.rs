@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Data type definitions
+//! Core UEFI data types.
 //!
-//! This module defines the basic data types that are used throughout uefi-rs
+//! These types are used throughout `uefi-rs`.
 
 pub mod chars;
 
@@ -178,7 +178,7 @@ impl Handle {
 pub struct Event(NonNull<c_void>);
 
 impl Event {
-    /// Clone this `Event`
+    /// Clones this event without tracking the duplicate handle.
     ///
     /// # Safety
     /// When an event is closed by calling [`boot::close_event`], that event and ALL references
@@ -218,10 +218,10 @@ impl Event {
 /// of the buffer must be checked. The `Align` trait makes that possible by
 /// allowing the appropriate alignment to be manually specified.
 pub trait Align {
-    /// Required memory alignment for this type
+    /// Returns the required memory alignment for this type.
     fn alignment() -> usize;
 
-    /// Calculate the offset from `val` necessary to make it aligned,
+    /// Calculates the offset needed to align `val`, rounding up.
     /// rounding up. For example, if `val` is 1 and the alignment is 8,
     /// this will return 7. Returns 0 if `val == 0`.
     #[must_use]
@@ -237,9 +237,7 @@ pub trait Align {
         val + Self::offset_up_to_alignment(val)
     }
 
-    /// Returns a subslice of `buf` whose first element's address
-    /// is aligned. Returns `None` if no element of the buffer is
-    /// aligned.
+    /// Returns the aligned suffix of `buf`, if one exists.
     fn align_buf(buf: &mut [u8]) -> Option<&mut [u8]> {
         let offset = buf.as_ptr().align_offset(Self::alignment());
         buf.get_mut(offset..)

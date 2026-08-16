@@ -44,6 +44,32 @@ macro_rules! cstr8 {
     }};
 }
 
+/// Encodes a char literal as a [`Char16`].
+///
+/// The encoding is done at compile time, so the result can be used in a
+/// `const` item.
+///
+/// # Example
+///
+/// ```
+/// use uefi::{CStr8, cstr8};
+///
+/// const S: &CStr8 = cstr8!("ÿ");
+/// assert_eq!(S.as_bytes(), [255, 0]);
+/// ```
+///
+/// [`Char16`]: crate::Char16
+#[macro_export]
+macro_rules! char16 {
+    ($s:literal) => {{
+        const C: $crate::Char16 = match $crate::Char16::try_from_char($s) {
+            Ok(c) => c,
+            Err(_) => panic!("input contains a character which cannot be represented in UCS-2"),
+        };
+        C
+    }};
+}
+
 /// Encode a string literal as a [`&CStr16`].
 ///
 /// The encoding is done at compile time, so the result can be used in a

@@ -47,7 +47,7 @@ impl Input {
     /// ```
     /// use log::info;
     /// use uefi::proto::console::text::{Input, Key, ScanCode};
-    /// use uefi::{boot, Char16, Result, ResultExt};
+    /// use uefi::{boot, char16, Result, ResultExt};
     ///
     /// fn read_keyboard_events(input: &mut Input) -> Result {
     ///     loop {
@@ -55,7 +55,7 @@ impl Input {
     ///         let mut events = [input.wait_for_key_event().unwrap()];
     ///         boot::wait_for_event(&mut events).discard_errdata()?;
     ///
-    ///         let u_key = Char16::try_from('u').unwrap();
+    ///         let u_key = char16!('u');
     ///         match input.read_key()? {
     ///             // Example of handling a printable key: print a message when
     ///             // the 'u' key is pressed.

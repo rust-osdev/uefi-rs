@@ -10,6 +10,7 @@ fn parse_boot_information_efi_mmap() {
     let mut mmap_source = [
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
+            reserved: 0,
             phys_start: 0x3000,
             virt_start: 0x3000,
             page_count: 1,
@@ -17,6 +18,7 @@ fn parse_boot_information_efi_mmap() {
         },
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
+            reserved: 0,
             phys_start: 0x2000,
             virt_start: 0x2000,
             page_count: 1,
@@ -24,6 +26,7 @@ fn parse_boot_information_efi_mmap() {
         },
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
+            reserved: 0,
             phys_start: 0x1000,
             virt_start: 0x1000,
             page_count: 1,

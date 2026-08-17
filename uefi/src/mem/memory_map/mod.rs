@@ -133,6 +133,7 @@ mod tests_mmap_artificial {
 
         const BASE: MemoryDescriptor = MemoryDescriptor {
             ty: TY,
+            reserved: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,
@@ -170,6 +171,7 @@ mod tests_mmap_artificial {
         const TY: MemoryType = MemoryType::RESERVED;
 
         const BASE: MemoryDescriptor = MemoryDescriptor {
+            reserved: 0,
             ty: TY,
             phys_start: 0,
             virt_start: 0,
@@ -274,6 +276,7 @@ mod tests_mmap_real {
         let expected = [
             MemoryDescriptor {
                 ty: MemoryType::BOOT_SERVICES_CODE,
+                reserved: 0,
                 phys_start: 0x0,
                 virt_start: 0x0,
                 page_count: 0x1,
@@ -284,6 +287,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
+                reserved: 0,
                 phys_start: 0x1000,
                 virt_start: 0x0,
                 page_count: 0x86,
@@ -294,6 +298,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::BOOT_SERVICES_DATA,
+                reserved: 0,
                 phys_start: 0x87000,
                 virt_start: 0x0,
                 page_count: 0x1,
@@ -304,6 +309,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
+                reserved: 0,
                 phys_start: 0x88000,
                 virt_start: 0x0,
                 page_count: 0x18,
@@ -314,6 +320,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
+                reserved: 0,
                 phys_start: 0x100000,
                 virt_start: 0x0,
                 page_count: 0x700,
@@ -324,6 +331,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::ACPI_NON_VOLATILE,
+                reserved: 0,
                 phys_start: 0x800000,
                 virt_start: 0x0,
                 page_count: 0x8,
@@ -334,6 +342,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
+                reserved: 0,
                 phys_start: 0x808000,
                 virt_start: 0x0,
                 page_count: 0x3,
@@ -344,6 +353,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::ACPI_NON_VOLATILE,
+                reserved: 0,
                 phys_start: 0x80b000,
                 virt_start: 0x0,
                 page_count: 0x1,
@@ -354,6 +364,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::CONVENTIONAL,
+                reserved: 0,
                 phys_start: 0x80c000,
                 virt_start: 0x0,
                 page_count: 0x4,
@@ -364,6 +375,7 @@ mod tests_mmap_real {
             },
             MemoryDescriptor {
                 ty: MemoryType::ACPI_NON_VOLATILE,
+                reserved: 0,
                 phys_start: 0x810000,
                 virt_start: 0x0,
                 page_count: 0xf0,

@@ -5,38 +5,89 @@ Pull requests, issues and suggestions are welcome!
 The UEFI spec is huge, so there might be some omissions or some missing features.
 You should follow the existing project structure when adding new items.
 
-See the top-level [README](../README.md) for details of using `cargo xtask` to
-build and test the project.
+See the top-level [README](README.md) for details about the repository and
+`cargo xtask` commands.
 
-Make some changes in your favourite editor / IDE:
-I use [VS Code][code] with the [RLS][rls] extension.
+## Development workflow
 
-Test your changes:
+Run the relevant checks locally before opening a pull request:
 
 ```shell
-cargo xtask run
+cargo xtask build
+cargo xtask test # unit tests
+cargo xtask run # integration test using QEMU
 ```
 
-The line above will open a QEMU window where the test harness will run some tests.
+Upstream CI is the final validation.
 
-Any contributions are also expected to pass [Clippy][clippy]'s static analysis,
-which you can run as follows:
+## Code and documentation style
+
+Write clean, maintainable code and follow the Rust style enforced by `rustfmt`
+and Clippy. Check style with:
 
 ```shell
+cargo xtask fmt
 cargo xtask clippy
+cargo xtask doc
 ```
 
-[clippy]: https://github.com/rust-lang-nursery/rust-clippy
-[code]: https://code.visualstudio.com/
-[rls]: https://github.com/rust-lang-nursery/rls-vscode
+For all new and changed code, add documentation and comments where they
+**provide additional value**:
 
-## Style guide
+* **Rustdoc** explains the API to its users.
+* **Inline comments** explain the code to the reader, especially *why* it is
+  written that way.
+* **Commit messages** explain the broader context of a change (for more
+  information on commit messages, see below).
 
-This repository follows Rust's [standard style][style], the same one imposed by `rustfmt`.
+Before adding a helper or an external dependency, first look for an appropriate
+solution in `core`. Avoid new external dependencies when a standard library
+solution is suitable.
 
-You can apply the standard style to the whole package by running `cargo fmt --all`.
+### Rustdoc
 
-[style]: https://github.com/rust-lang-nursery/fmt-rfcs/blob/master/guide/guide.md
+Start each rustdoc comment with a short, complete summary sentence. The summary
+should normally fit on one line and must not exceed two lines at 80 columns.
+Put additional explanation in a separate paragraph, if necessary.
+
+Use standard sections for API contracts:
+
+- Use `# Arguments` when parameters need explanation beyond their names and
+  types. Describe parameters as ``- `name`: description.``
+- Use `# Returns` when the return value is not clear from the summary and type.
+- Use `# Errors` for meaningful failure conditions of fallible APIs. Link to
+  specific UEFI status values where applicable.
+- Use `# Panics` and `# Safety` for their respective contracts.
+- Use `# Example` for one example and `# Examples` for multiple examples.
+
+## AI-assisted contributions
+
+If an LLM or other AI meaningfully assisted a contribution, disclose that in the
+commit message and/or pull request description. A human contributor must review
+and understand the submitted code and remains responsible for it. Submitting a
+large AI-generated change without that understanding is not acceptable.
+
+## Commits and pull requests
+
+Write commits that form a logical, **reviewable** path from the initial state to
+the final state. Keep the final history compact and concise: squash incidental
+fixups and other intermediate states before opening a pull request.
+
+Use this subject format for commits:
+
+```text
+component: single line description
+
+<optional body explaining _why_ the change is needed>
+```
+
+Add a commit-message body that explains the important motivation when it is not
+trivial or **why** a change is needed. In the pull request, briefly repeat your
+motivation. It is okay to forward the reviewer to the commit messages, which
+are the source of truth.
+
+We highly encourage a line width limit of 72 characters for commit message, but
+we do not enforce it.
 
 ## UEFI pitfalls
 

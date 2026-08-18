@@ -2,7 +2,7 @@
 
 use crate::fs::SEPARATOR;
 use crate::fs::path::Path;
-use crate::{CStr16, CString16, Char16};
+use crate::{CStr16, CString16, Char16, char16};
 use core::fmt::{Display, Formatter};
 
 /// A path buffer similar to the `PathBuf` of the standard library, but based on
@@ -21,8 +21,7 @@ impl PathBuf {
 
     /// Constructor that replaces all occurrences of `/` with `\`.
     fn new_from_cstring16(mut string: CString16) -> Self {
-        // SAFETY: The memory is valid.
-        const SEARCH: Char16 = unsafe { Char16::from_u16_unchecked('/' as u16) };
+        const SEARCH: Char16 = char16!('/');
         string.replace_char(SEARCH, SEPARATOR);
         Self(string)
     }
@@ -31,8 +30,7 @@ impl PathBuf {
     ///
     /// UNIX separators (`/`) will be replaced by [`SEPARATOR`] on the fly.
     pub fn push<P: AsRef<Path>>(&mut self, path: P) {
-        // SAFETY: The memory is valid.
-        const SEARCH: Char16 = unsafe { Char16::from_u16_unchecked('/' as u16) };
+        const SEARCH: Char16 = char16!('/');
 
         // do nothing on empty path
         if path.as_ref().is_empty() {

@@ -7,8 +7,10 @@
 
 use core::fmt::{self, Display, Formatter};
 
+use crate::char16;
+
 /// Character conversion error
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CharConversionError;
 
 impl Display for CharConversionError {
@@ -80,6 +82,18 @@ pub const NUL_8: Char8 = Char8(0);
 pub struct Char16(u16);
 
 impl Char16 {
+    /// Creates a UCS-2 character from a Rust character.
+    ///
+    /// Same as `<Char16 as TryFrom<char>>::try_from` but usable in a const context.
+    pub const fn try_from_char(value: char) -> Result<Self, CharConversionError> {
+        let code_point = value as u32;
+        if code_point > (u16::MAX as u32) {
+            Err(CharConversionError)
+        } else {
+            Ok(Self(code_point as u16))
+        }
+    }
+
     /// Creates a UCS-2 character from a Rust character without checks.
     ///
     /// # Safety
@@ -160,8 +174,7 @@ impl PartialEq<char> for Char16 {
 }
 
 /// UCS-2 version of the NUL character
-// SAFETY: The character is valid.
-pub const NUL_16: Char16 = unsafe { Char16::from_u16_unchecked(0) };
+pub const NUL_16: Char16 = char16!('\0');
 
 #[cfg(test)]
 mod tests {
@@ -169,13 +182,22 @@ mod tests {
 
     #[test]
     fn test_char8_from_char() {
-        assert_eq!(Char8::try_from('A').unwrap(), Char8(0x41));
+        assert_eq!(Char8::try_from('A'), Ok(Char8(0x41)));
+        assert_eq!(Char8::try_from('ꋃ'), Err(CharConversionError {}));
     }
 
     #[test]
     fn test_char16_from_char() {
-        assert_eq!(Char16::try_from('A').unwrap(), Char16(0x41));
-        assert_eq!(Char16::try_from('ꋃ').unwrap(), Char16(0xa2c3));
+        assert_eq!(Char16::try_from('A'), Ok(Char16(0x41)));
+        assert_eq!(Char16::try_from('ꋃ'), Ok(Char16(0xa2c3)));
+        assert_eq!(Char16::try_from('😀'), Err(CharConversionError {}));
+    }
+
+    #[test]
+    fn test_char16_try_from_char() {
+        assert_eq!(Char16::try_from_char('A'), Ok(Char16(0x41)));
+        assert_eq!(Char16::try_from_char('ꋃ'), Ok(Char16(0xa2c3)));
+        assert_eq!(Char16::try_from_char('😀'), Err(CharConversionError {}));
     }
 
     /// Test that `Char8` and `Char16` can be directly compared with `char`.

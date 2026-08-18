@@ -253,7 +253,7 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CString16 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cstr16;
+    use crate::{char16, cstr16};
     use alloc::string::String;
     use alloc::vec;
 
@@ -261,7 +261,7 @@ mod tests {
     fn test_cstring16_from_str() {
         assert_eq!(
             CString16::try_from("x").unwrap(),
-            CString16(vec![Char16::try_from('x').unwrap(), NUL_16])
+            CString16(vec![char16!('x'), NUL_16])
         );
 
         assert_eq!(CString16::try_from("😀"), Err(FromStrError::InvalidChar));
@@ -331,14 +331,7 @@ mod tests {
         let owned: CString16 = s1.to_owned();
         let s2: &CStr16 = owned.borrow();
         assert_eq!(s1, s2);
-        assert_eq!(
-            owned.0,
-            [
-                Char16::try_from('a').unwrap(),
-                Char16::try_from('b').unwrap(),
-                NUL_16
-            ]
-        );
+        assert_eq!(owned.0, [char16!('a'), char16!('b'), NUL_16]);
     }
 
     /// This tests the following UCS-2 string functions:
@@ -351,12 +344,12 @@ mod tests {
         let mut str1 = CString16::new();
         assert_eq!(str1.num_bytes(), 2, "Should have null character");
         assert_eq!(str1.num_chars(), 0);
-        str1.push(Char16::try_from('h').unwrap());
-        str1.push(Char16::try_from('i').unwrap());
+        str1.push(char16!('h'));
+        str1.push(char16!('i'));
         assert_eq!(str1.num_chars(), 2);
 
         let mut str2 = CString16::new();
-        str2.push(Char16::try_from('!').unwrap());
+        str2.push(char16!('!'));
 
         str2.push_str(str1.as_ref());
         assert_eq!(str2.num_chars(), 3);
@@ -374,8 +367,8 @@ mod tests {
     #[test]
     fn test_char_replace_all_in_place() {
         let mut input = CString16::try_from("foo/bar/foobar//").unwrap();
-        let search = Char16::try_from('/').unwrap();
-        let replace = Char16::try_from('\\').unwrap();
+        let search = char16!('/');
+        let replace = char16!('\\');
         input.replace_char(search, replace);
 
         let input = String::from(&input);

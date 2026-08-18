@@ -4,6 +4,7 @@
 
 ## Changed
 - Made memory map types `#[repr(C)]`
+- Added `char16!` const-compatible macro as convenient replacement for `Char16::try_from().unwrap()`
 
 ## Removed
 

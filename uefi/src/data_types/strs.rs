@@ -877,7 +877,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{cstr8, cstr16};
+    use crate::{char16, cstr8, cstr16};
     use alloc::format;
     use alloc::string::String;
 
@@ -958,31 +958,19 @@ mod tests {
 
         // Invalid: no nul character.
         assert_eq!(
-            CStr16::from_char16_until_nul(&[
-                Char16::try_from('a').unwrap(),
-                Char16::try_from('b').unwrap(),
-            ]),
+            CStr16::from_char16_until_nul(&[char16!('a'), char16!('b'),]),
             Err(FromSliceUntilNulError::NoNul)
         );
 
         // Valid: trailing nul.
         assert_eq!(
-            CStr16::from_char16_until_nul(&[
-                Char16::try_from('a').unwrap(),
-                Char16::try_from('b').unwrap(),
-                NUL_16,
-            ]),
+            CStr16::from_char16_until_nul(&[char16!('a'), char16!('b'), NUL_16,]),
             Ok(cstr16!("ab"))
         );
 
         // Valid: interior nul.
         assert_eq!(
-            CStr16::from_char16_until_nul(&[
-                Char16::try_from('a').unwrap(),
-                NUL_16,
-                Char16::try_from('b').unwrap(),
-                NUL_16
-            ]),
+            CStr16::from_char16_until_nul(&[char16!('a'), NUL_16, char16!('b'), NUL_16]),
             Ok(cstr16!("a"))
         );
     }
@@ -997,31 +985,19 @@ mod tests {
 
         // Invalid: interior null.
         assert_eq!(
-            CStr16::from_char16_with_nul(&[
-                Char16::try_from('a').unwrap(),
-                NUL_16,
-                Char16::try_from('b').unwrap(),
-                NUL_16
-            ]),
+            CStr16::from_char16_with_nul(&[char16!('a'), NUL_16, char16!('b'), NUL_16]),
             Err(FromSliceWithNulError::InteriorNul(1))
         );
 
         // Invalid: no trailing null.
         assert_eq!(
-            CStr16::from_char16_with_nul(&[
-                Char16::try_from('a').unwrap(),
-                Char16::try_from('b').unwrap(),
-            ]),
+            CStr16::from_char16_with_nul(&[char16!('a'), char16!('b'),]),
             Err(FromSliceWithNulError::NotNulTerminated)
         );
 
         // Valid.
         assert_eq!(
-            CStr16::from_char16_with_nul(&[
-                Char16::try_from('a').unwrap(),
-                Char16::try_from('b').unwrap(),
-                NUL_16,
-            ]),
+            CStr16::from_char16_with_nul(&[char16!('a'), char16!('b'), NUL_16,]),
             Ok(cstr16!("ab"))
         );
     }
@@ -1109,11 +1085,8 @@ mod tests {
     #[test]
     fn test_cstr16_as_slice() {
         let string: &CStr16 = cstr16!("a");
-        assert_eq!(string.as_slice(), &[Char16::try_from('a').unwrap()]);
-        assert_eq!(
-            string.as_slice_with_nul(),
-            &[Char16::try_from('a').unwrap(), NUL_16]
-        );
+        assert_eq!(string.as_slice(), &[char16!('a')]);
+        assert_eq!(string.as_slice_with_nul(), &[char16!('a'), NUL_16]);
     }
 
     #[test]

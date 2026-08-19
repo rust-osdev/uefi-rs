@@ -471,7 +471,6 @@ mod tests {
     const BASE_MMAP_UNSORTED: [MemoryDescriptor; 3] = [
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
-            reserved: 0,
             phys_start: 0x3000,
             virt_start: 0x3000,
             page_count: 1,
@@ -479,7 +478,6 @@ mod tests {
         },
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
-            reserved: 0,
             phys_start: 0x2000,
             virt_start: 0x2000,
             page_count: 1,
@@ -487,7 +485,6 @@ mod tests {
         },
         MemoryDescriptor {
             ty: MemoryType::CONVENTIONAL,
-            reserved: 0,
             phys_start: 0x1000,
             virt_start: 0x1000,
             page_count: 1,

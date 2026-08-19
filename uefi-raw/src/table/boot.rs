@@ -364,8 +364,6 @@ bitflags! {
 pub struct MemoryDescriptor {
     /// Type of memory occupying this range.
     pub ty: MemoryType,
-    /// Reserved field that must be set to 0.
-    pub reserved: u32,
     // Implicit 32-bit padding.
     /// Starting physical address.
     pub phys_start: PhysicalAddress,
@@ -386,7 +384,6 @@ impl Default for MemoryDescriptor {
     fn default() -> Self {
         Self {
             ty: MemoryType::RESERVED,
-            reserved: 0,
             phys_start: 0,
             virt_start: 0,
             page_count: 0,

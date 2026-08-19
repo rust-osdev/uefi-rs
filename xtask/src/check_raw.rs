@@ -323,7 +323,12 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
 }
 
 /// List with allowed combinations of representations (see [`Repr`]).
-const ALLOWED_REPRS: &[&[Repr]] = &[&[Repr::C], &[Repr::C, Repr::Packed], &[Repr::Transparent]];
+const ALLOWED_REPRS: &[&[Repr]] = &[
+    &[Repr::C],
+    &[Repr::C, Repr::Packed],
+    &[Repr::Align(8), Repr::C],
+    &[Repr::Transparent],
+];
 
 fn check_type_attrs(attrs: &[Attribute], spanned: &dyn Spanned, src: &Path) -> Result<(), Error> {
     let attrs = parse_attrs(attrs, src)?;
@@ -398,9 +403,17 @@ fn check_macro(item: &ItemMacro, src: &Path) -> Result<(), Error> {
     Ok(())
 }
 
+/// True if the item is an anonymous compile-time assertion.
+fn is_anonymous_unit_const(item: &ItemConst) -> bool {
+    item.ident == "_" && matches!(&*item.ty, Type::Tuple(tuple) if tuple.elems.is_empty())
+}
+
 /// Validate a top-level item.
 fn check_item(item: &Item, src: &Path) -> Result<(), Error> {
     match item {
+        Item::Const(item) if is_anonymous_unit_const(item) => {
+            // Allow compile-time assertions such as ABI layout checks.
+        }
         Item::Const(ItemConst { vis, ty, .. }) => {
             if !is_pub(vis) {
                 return Err(Error::new(ErrorKind::MissingPub, src, item));
@@ -514,6 +527,30 @@ mod tests {
     }
 
     #[test]
+    fn test_anonymous_unit_const() {
+        // Compile-time assertions do not form part of the public API.
+        assert!(
+            check_item(
+                &parse_quote! {
+                    const _: () = {
+                        assert!(true);
+                    };
+                },
+                src(),
+            )
+            .is_ok()
+        );
+
+        // Named constants must remain public.
+        check_item_err(
+            parse_quote! {
+                const PRIVATE: () = ();
+            },
+            ErrorKind::MissingPub,
+        );
+    }
+
+    #[test]
     fn test_macro() {
         // bitflags `repr` must be transparent.
         check_item_err(
@@ -597,6 +634,20 @@ mod tests {
             check_struct(
                 &parse_quote! {
                     #[repr(C)]
+                    pub struct S {
+                        pub f: u32,
+                    }
+                },
+                src(),
+            )
+            .is_ok()
+        );
+
+        // Valid `repr(C, align(8))` struct.
+        assert!(
+            check_struct(
+                &parse_quote! {
+                    #[repr(C, align(8))]
                     pub struct S {
                         pub f: u32,
                     }

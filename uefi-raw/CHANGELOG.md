@@ -4,7 +4,7 @@
 
 ## Changed
 - **Breaking**: `MemoryDescriptor` now has a new member to ensure correct
-  padding on 32-bit targets.
+  layout on all non-UEFI 32-bit targets.
 
 ## Removed
 

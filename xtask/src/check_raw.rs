@@ -403,9 +403,17 @@ fn check_macro(item: &ItemMacro, src: &Path) -> Result<(), Error> {
     Ok(())
 }
 
+/// True if the item is an anonymous compile-time assertion.
+fn is_anonymous_unit_const(item: &ItemConst) -> bool {
+    item.ident == "_" && matches!(&*item.ty, Type::Tuple(tuple) if tuple.elems.is_empty())
+}
+
 /// Validate a top-level item.
 fn check_item(item: &Item, src: &Path) -> Result<(), Error> {
     match item {
+        Item::Const(item) if is_anonymous_unit_const(item) => {
+            // Allow compile-time assertions such as ABI layout checks.
+        }
         Item::Const(ItemConst { vis, ty, .. }) => {
             if !is_pub(vis) {
                 return Err(Error::new(ErrorKind::MissingPub, src, item));
@@ -515,6 +523,30 @@ mod tests {
                 pub fn x() {}
             },
             ErrorKind::ForbiddenItemKind(ItemKind::Other),
+        );
+    }
+
+    #[test]
+    fn test_anonymous_unit_const() {
+        // Compile-time assertions do not form part of the public API.
+        assert!(
+            check_item(
+                &parse_quote! {
+                    const _: () = {
+                        assert!(true);
+                    };
+                },
+                src(),
+            )
+            .is_ok()
+        );
+
+        // Named constants must remain public.
+        check_item_err(
+            parse_quote! {
+                const PRIVATE: () = ();
+            },
+            ErrorKind::MissingPub,
         );
     }
 

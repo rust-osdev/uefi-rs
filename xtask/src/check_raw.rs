@@ -323,7 +323,12 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
 }
 
 /// List with allowed combinations of representations (see [`Repr`]).
-const ALLOWED_REPRS: &[&[Repr]] = &[&[Repr::C], &[Repr::C, Repr::Packed], &[Repr::Transparent]];
+const ALLOWED_REPRS: &[&[Repr]] = &[
+    &[Repr::C],
+    &[Repr::C, Repr::Packed],
+    &[Repr::Align(8), Repr::C],
+    &[Repr::Transparent],
+];
 
 fn check_type_attrs(attrs: &[Attribute], spanned: &dyn Spanned, src: &Path) -> Result<(), Error> {
     let attrs = parse_attrs(attrs, src)?;
@@ -597,6 +602,20 @@ mod tests {
             check_struct(
                 &parse_quote! {
                     #[repr(C)]
+                    pub struct S {
+                        pub f: u32,
+                    }
+                },
+                src(),
+            )
+            .is_ok()
+        );
+
+        // Valid `repr(C, align(8))` struct.
+        assert!(
+            check_struct(
+                &parse_quote! {
+                    #[repr(C, align(8))]
                     pub struct S {
                         pub f: u32,
                     }

@@ -14,6 +14,9 @@
 - `proto::usb::io::UsbIo::supported_languages` no longer returns a slice with
   twice the actual number of language IDs, whose second half was an
   out-of-bounds read.
+- `proto::network::pxe::DiscoverInfo::new_in_buffer` now accounts for the
+  alignment padding before the server list in its buffer size check.
+  Previously, an exactly-sized buffer was written 2 bytes out of bounds.
 
 ## Removed
 

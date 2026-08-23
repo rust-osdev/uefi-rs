@@ -71,7 +71,7 @@ newtype_enum! {
     }
 }
 
-#[repr(C)]
+#[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiTime {
     pub hour: u8,
@@ -79,7 +79,7 @@ pub struct HiiTime {
     pub second: u8,
 }
 
-#[repr(C)]
+#[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiDate {
     pub year: u16,
@@ -87,7 +87,7 @@ pub struct HiiDate {
     pub day: u8,
 }
 
-#[repr(C)]
+#[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct HiiRef {
     pub question_id: QuestionId,
@@ -96,7 +96,13 @@ pub struct HiiRef {
     pub string_id: StringId,
 }
 
-#[repr(C)]
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiRef>() == 22);
+    assert!(align_of::<HiiRef>() == 1);
+};
+
+#[repr(C, packed)]
 #[derive(Copy, Clone)]
 pub union IfrTypeValue {
     pub u8: u8,           // EFI_IFR_TYPE_NUM_SIZE_8
@@ -109,6 +115,13 @@ pub union IfrTypeValue {
     pub string: StringId, // EFI_IFR_TYPE_STRING, EFI_IFR_TYPE_ACTION
     pub hii_ref: HiiRef,  // EFI_IFR_TYPE_REF
 }
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<IfrTypeValue>() == 22);
+    assert!(align_of::<IfrTypeValue>() == 1);
+};
+
 impl core::fmt::Debug for IfrTypeValue {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("EfiIfrTypeValue").finish()

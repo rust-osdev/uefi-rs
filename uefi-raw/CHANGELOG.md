@@ -11,6 +11,8 @@
 - **Breaking**: `HiiKeyboardLayout` and `KeyDescriptor` are now packed to
   match the layout mandated by the UEFI specification. Previously, all
   `HiiKeyboardLayout` fields after `layout_length` were at wrong offsets.
+- **Breaking**: `IfrTypeValue`, `HiiRef`, `HiiTime`, and `HiiDate` are now
+  packed to match the size and alignment mandated by the UEFI specification.
 
 ## Removed
 

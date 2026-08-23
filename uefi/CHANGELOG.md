@@ -22,6 +22,11 @@
 - **Breaking:** `proto::pi::mp::ProcessorInformation` now contains the
   `extended_information` field mandated by the PI specification. Previously,
   the struct was 24 bytes too small, which firmware could write past.
+- **Breaking:** The revision-gated media fields `lowest_aligned_lba`,
+  `logical_blocks_per_physical_block`, and
+  `optimal_transfer_length_granularity` moved from `BlockIOMedia` to
+  `BlockIO` and return `None` if the protocol revision does not include
+  them. Previously, they read past the media structure on old revisions.
 
 ## Removed
 

@@ -5,6 +5,8 @@
 ## Changed
 - **Breaking**: `MemoryDescriptor` now has a new member to ensure correct
   layout on all non-UEFI 32-bit targets.
+- **Breaking**: Corrected the `volatile` parameter of
+  `ShellProtocol::get_alias` from `Boolean` to `*mut Boolean`.
 - **Breaking**: The USB descriptor types in `protocol::usb` are now packed to
   match their layout in the USB specification. `ConfigDescriptor` and
   `EndpointDescriptor` previously had a too-large `size_of`.

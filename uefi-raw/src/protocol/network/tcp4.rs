@@ -422,12 +422,3 @@ pub struct Tcp4TransmitData {
     /// NOTE: this is a flexible array member.
     pub fragment_table: [Tcp4FragmentData; 0],
 }
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct Tcp4ClientConnectionModeParams {
-    /// Remote IP address for the connection.
-    pub remote_ip: Ipv4Address,
-    /// Remote port for the connection.
-    pub remote_port: u16,
-}

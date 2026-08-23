@@ -19,6 +19,8 @@
   packed to match the size and alignment mandated by the UEFI specification.
 
 ## Removed
+- **Breaking**: Removed `Tcp4ClientConnectionModeParams`. The type is not part
+  of the UEFI specification; use `Tcp4AccessPoint` instead.
 
 
 # uefi-raw - v0.15.1 (2026-07-11)

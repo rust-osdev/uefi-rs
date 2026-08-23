@@ -30,6 +30,9 @@
 - `DevicePath::to_pool`, `append_path`, and `append_node` now locate the
   `DevicePathUtilities` protocol by its own GUID instead of the
   `DevicePathToText` GUID.
+- `UnicodeCollation::str_to_fat` now zeroes the output buffer before the
+  conversion. Previously, the result could contain garbage from the
+  uninitialized buffer, or reference one byte past its end.
 
 ## Removed
 

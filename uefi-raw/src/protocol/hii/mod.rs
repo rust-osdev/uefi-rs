@@ -208,8 +208,8 @@ newtype_enum! {
 }
 
 /// EFI_KEY_DESCRIPTOR
-#[derive(Debug)]
-#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+#[repr(C, packed)]
 pub struct KeyDescriptor {
     pub key: Key,
     pub unicode: Char16,
@@ -219,3 +219,9 @@ pub struct KeyDescriptor {
     pub modifier: u16,
     pub affected_attribute: u16,
 }
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<KeyDescriptor>() == 16);
+    assert!(align_of::<KeyDescriptor>() == 1);
+};

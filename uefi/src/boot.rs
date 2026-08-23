@@ -1567,18 +1567,19 @@ pub fn set_watchdog_timer(
     // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
-    let (data_len, data) = data
+    let (data_size, data) = data
         .map(|d| {
             assert!(
                 d.contains(&0),
                 "Watchdog data must start with a null-terminated string"
             );
-            (d.len(), d.as_mut_ptr())
+            // The spec defines the data size in bytes, not in u16 units.
+            (size_of_val(d), d.as_mut_ptr())
         })
         .unwrap_or((0, ptr::null_mut()));
 
     // SAFETY: The memory is valid.
-    unsafe { (bt.set_watchdog_timer)(timeout_in_seconds, watchdog_code, data_len, data) }
+    unsafe { (bt.set_watchdog_timer)(timeout_in_seconds, watchdog_code, data_size, data) }
         .to_result()
 }
 

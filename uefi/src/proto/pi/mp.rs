@@ -49,6 +49,12 @@ pub struct ProcessorCount {
     pub enabled: usize,
 }
 
+/// Flag for [`MpServices::get_processor_info`] requesting the extended
+/// topology in [`ProcessorInformation::extended_information`].
+///
+/// Corresponds to `CPU_V2_EXTENDED_TOPOLOGY` in the PI specification.
+pub const CPU_V2_EXTENDED_TOPOLOGY: usize = 1 << 24;
+
 /// Information about processor on the platform.
 #[repr(C)]
 #[derive(Default, Debug)]
@@ -59,6 +65,13 @@ pub struct ProcessorInformation {
     status_flag: StatusFlag,
     /// Physical location of the processor.
     pub location: CpuPhysicalLocation,
+    /// Extended physical location of the processor.
+    ///
+    /// Only filled by the firmware if [`CPU_V2_EXTENDED_TOPOLOGY`] is set in
+    /// the processor number passed to [`MpServices::get_processor_info`].
+    // The PI spec wraps this in EXTENDED_PROCESSOR_INFORMATION, a union with
+    // Location2 as its only member; the wrapper is skipped here.
+    pub extended_information: CpuPhysicalLocation2,
 }
 
 impl ProcessorInformation {
@@ -90,6 +103,27 @@ pub struct CpuPhysicalLocation {
     /// the cartridge of the processor.
     pub package: u32,
     /// Zero-based physical core number within package of the processor.
+    pub core: u32,
+    /// Zero-based logical thread number within core of the processor.
+    pub thread: u32,
+}
+
+/// Information about the 6-level physical location of the processor.
+///
+/// Corresponds to `EFI_CPU_PHYSICAL_LOCATION2` in the PI specification.
+#[repr(C)]
+#[derive(Default, Debug)]
+pub struct CpuPhysicalLocation2 {
+    /// Zero-based physical package number that identifies
+    /// the cartridge of the processor.
+    pub package: u32,
+    /// Zero-based physical module number within package of the processor.
+    pub module: u32,
+    /// Zero-based physical tile number within module of the processor.
+    pub tile: u32,
+    /// Zero-based physical die number within tile of the processor.
+    pub die: u32,
+    /// Zero-based physical core number within die of the processor.
     pub core: u32,
     /// Zero-based logical thread number within core of the processor.
     pub thread: u32,
@@ -156,6 +190,9 @@ impl MpServices {
     }
 
     /// Gets detailed information on the requested processor at the instant this call is made.
+    ///
+    /// Set [`CPU_V2_EXTENDED_TOPOLOGY`] in `processor_number` to also
+    /// retrieve [`ProcessorInformation::extended_information`].
     pub fn get_processor_info(&self, processor_number: usize) -> Result<ProcessorInformation> {
         let mut pi: ProcessorInformation = Default::default();
         (self.get_processor_info)(self, processor_number, &mut pi).to_result_with_val(|| pi)

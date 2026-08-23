@@ -1,6 +1,8 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `proto::pi::mp::{CpuPhysicalLocation2, CPU_V2_EXTENDED_TOPOLOGY}` for
+  the extended processor topology.
 
 ## Changed
 - Made memory map types `#[repr(C)]`
@@ -17,6 +19,9 @@
 - `proto::network::pxe::DiscoverInfo::new_in_buffer` now accounts for the
   alignment padding before the server list in its buffer size check.
   Previously, an exactly-sized buffer was written 2 bytes out of bounds.
+- **Breaking:** `proto::pi::mp::ProcessorInformation` now contains the
+  `extended_information` field mandated by the PI specification. Previously,
+  the struct was 24 bytes too small, which firmware could write past.
 
 ## Removed
 

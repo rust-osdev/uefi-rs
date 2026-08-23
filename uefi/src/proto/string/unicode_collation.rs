@@ -132,6 +132,10 @@ impl UnicodeCollation {
         if s.as_slice_with_nul().len() > buf.len() {
             return Err(StrConversionError::BufferTooSmall);
         }
+        // The protocol only writes the converted characters and no NUL
+        // terminator; the remaining buffer keeps its previous content.
+        // Pre-zero the buffer so the result is NUL-terminated.
+        buf.fill(0);
         // SAFETY: The memory is valid.
         let failed = unsafe {
             (self.0.str_to_fat)(
@@ -144,21 +148,15 @@ impl UnicodeCollation {
         if bool::from(failed) {
             Err(StrConversionError::ConversionFailed)
         } else {
-            // After the conversion, there is a possibility that the converted string
-            // is smaller than the original `s` string.
-            // When the converted string is smaller, there will be a bunch of trailing
-            // nulls.
-            // To remove all those trailing nulls:
-            let mut last_null_index = buf.len() - 1;
-            for i in (0..buf.len()).rev() {
-                if buf[i] != 0 {
-                    last_null_index = i + 1;
-                    break;
-                }
-            }
+            // The conversion writes at most one byte per input character
+            // and never a NUL, so the first NUL terminates the result.
+            let end = buf
+                .iter()
+                .position(|&b| b == 0)
+                .expect("conversion should leave the pre-zeroed NUL of the input intact");
             // SAFETY: The pointer is valid for the requested slice length.
-            let buf = unsafe { core::slice::from_raw_parts(buf.as_ptr(), last_null_index + 1) };
-            // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
+            let buf = unsafe { core::slice::from_raw_parts(buf.as_ptr(), end + 1) };
+            // SAFETY: The slice ends with the first NUL, so there are no interior NULs.
             Ok(unsafe { CStr8::from_bytes_with_nul_unchecked(buf) })
         }
     }

@@ -36,6 +36,9 @@
   Use the new `parse_le_bytes_from_hex` for number values;
   `parse_bytes_from_hex` is unchanged and remains correct for byte streams
   such as `GUID`, `NAME`, and `PATH`.
+- `UnicodeCollation::str_to_fat` now zeroes the output buffer before the
+  conversion. Previously, the result could contain garbage from the
+  uninitialized buffer, or reference one byte past its end.
 
 ## Removed
 

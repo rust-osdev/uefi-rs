@@ -1,6 +1,8 @@
 # uefi-raw - [Unreleased]
 
 ## Added
+- Added the revision constants `BlockIoProtocol::{REVISION, REVISION_2,
+  REVISION_3}`.
 
 ## Changed
 - **Breaking**: `MemoryDescriptor` now has a new member to ensure correct

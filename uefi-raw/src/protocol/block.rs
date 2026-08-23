@@ -53,6 +53,14 @@ pub struct BlockIoProtocol {
 
 impl BlockIoProtocol {
     pub const GUID: Guid = guid!("964e5b21-6459-11d2-8e39-00a0c969723b");
+
+    // Revision 1 is only indirectly defined in the spec, but present in edk2.
+    /// EFI_BLOCK_IO_PROTOCOL_REVISION
+    pub const REVISION: u64 = 0x0001_0000;
+    /// EFI_BLOCK_IO_PROTOCOL_REVISION2
+    pub const REVISION_2: u64 = 0x0002_0001;
+    /// EFI_BLOCK_IO_PROTOCOL_REVISION3
+    pub const REVISION_3: u64 = (2 << 16) | 31;
 }
 
 #[repr(C)]

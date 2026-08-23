@@ -18,7 +18,7 @@ newtype_enum! {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct DeviceRequest {
     pub request_type: u8,
     pub request: u8,
@@ -26,6 +26,11 @@ pub struct DeviceRequest {
     pub index: u16,
     pub length: u16,
 }
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<DeviceRequest>() == 8);
+};
 
 bitflags! {
     #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -55,7 +60,7 @@ pub type AsyncUsbTransferCallback = unsafe extern "efiapi" fn(
 ) -> Status;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct DeviceDescriptor {
     pub length: u8,
     pub descriptor_type: u8,
@@ -73,8 +78,13 @@ pub struct DeviceDescriptor {
     pub num_configurations: u8,
 }
 
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<DeviceDescriptor>() == 18);
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct ConfigDescriptor {
     pub length: u8,
     pub descriptor_type: u8,
@@ -86,8 +96,13 @@ pub struct ConfigDescriptor {
     pub max_power: u8,
 }
 
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<ConfigDescriptor>() == 9);
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct InterfaceDescriptor {
     pub length: u8,
     pub descriptor_type: u8,
@@ -100,8 +115,13 @@ pub struct InterfaceDescriptor {
     pub interface: u8,
 }
 
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<InterfaceDescriptor>() == 9);
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(C)]
+#[repr(C, packed)]
 pub struct EndpointDescriptor {
     pub length: u8,
     pub descriptor_type: u8,
@@ -110,3 +130,8 @@ pub struct EndpointDescriptor {
     pub max_packet_size: u16,
     pub interval: u8,
 }
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<EndpointDescriptor>() == 7);
+};

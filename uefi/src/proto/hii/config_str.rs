@@ -143,7 +143,7 @@ impl ConfigurationString {
     /// # Returns
     ///
     /// An iterator over bytes.
-    #[must_use]
+    #[must_use = "iterators are lazy and do nothing unless consumed"]
     pub fn parse_bytes_from_hex(hex: &str) -> impl DoubleEndedIterator<Item = u8> {
         hex.as_bytes().chunks(2).map(|chunk| {
             let chunk = str::from_utf8(chunk).unwrap_or_default();
@@ -190,6 +190,7 @@ impl ConfigurationString {
         let size_chars = size_bytes / 2;
         let mut bfr = AlignedBuffer::from_size_align(size_bytes, 2).ok()?;
         bfr.copy_from_iter(Self::parse_bytes_from_hex(data).chain([0, 0]));
+        #[expect(clippy::chunks_exact_to_as_chunks)]
         bfr.as_slice_mut()
             .chunks_exact_mut(2)
             .for_each(|c| c.swap(0, 1));

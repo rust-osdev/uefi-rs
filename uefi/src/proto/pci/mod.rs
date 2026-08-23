@@ -27,6 +27,10 @@ pub struct PciIoAddress {
     pub ext_reg: u32,
 }
 
+// The address is converted to/from a raw u64 value; ensure both have the
+// same size.
+const _: () = assert!(size_of::<PciIoAddress>() == size_of::<u64>());
+
 impl PciIoAddress {
     /// Create address pointing to the device identified by `bus`, `dev` and `fun` ids.
     #[must_use]
@@ -170,7 +174,6 @@ mod tests {
     #[test]
     #[expect(clippy::unusual_byte_groupings)]
     fn test_pci_ioaddr_raw_conversion() {
-        assert_eq!(size_of::<u64>(), size_of::<PciIoAddress>());
         let srcaddr = PciIoAddress {
             reg: 0x11,
             fun: 0x33,

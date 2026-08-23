@@ -110,6 +110,17 @@ mod tests {
         }
     }
 
+    // Some basic sanity checks of the helper types so that we can catch
+    // problems early that miri would detect otherwise.
+    const _: () = {
+        assert!(size_of::<SomeData>() == 4);
+        assert!(align_of::<SomeData>() == 1);
+        // The size is 16 instead of 4, as in Rust the size is always a
+        // multiple of the alignment.
+        assert!(size_of::<SomeDataAlign16>() == 16);
+        assert!(align_of::<SomeDataAlign16>() == 16);
+    };
+
     /// Function that behaves like the other UEFI functions. It takes a
     /// mutable reference to a buffer memory that represents a [`SomeData`]
     /// instance.
@@ -137,20 +148,6 @@ mod tests {
         let data = unsafe { &mut *buf.as_mut_ptr().cast::<Data>() };
 
         Ok(data)
-    }
-
-    // Some basic sanity checks so that we can catch problems early that miri would detect
-    // otherwise.
-    #[test]
-    fn test_some_data_type_size_constraints() {
-        assert_eq!(size_of::<SomeData>(), 4);
-        assert_eq!(SomeData::alignment(), 1);
-        assert_eq!(
-            size_of::<SomeDataAlign16>(),
-            16,
-            "The size must be 16 instead of 4, as in Rust the runtime size is a multiple of the alignment."
-        );
-        assert_eq!(SomeDataAlign16::alignment(), 16);
     }
 
     // Tests `uefi_function_stub_read` which is the foundation for the `test_make_boxed_utility`

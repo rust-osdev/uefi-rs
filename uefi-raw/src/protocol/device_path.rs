@@ -64,6 +64,13 @@ pub struct DevicePathProtocol {
     // followed by payload (dynamically sized)
 }
 
+// Ensure ABI guarantees for DevicePathProtocol. The struct is naturally
+// packed; thus, we don't need to explicitly specify `packed`.
+const _: () = {
+    assert!(size_of::<DevicePathProtocol>() == 4);
+    assert!(align_of::<DevicePathProtocol>() == 1);
+};
+
 impl DevicePathProtocol {
     pub const GUID: Guid = guid!("09576e91-6d3f-11d2-8e39-00a0c969723b");
 
@@ -299,17 +306,4 @@ pub struct DevicePathUtilitiesProtocol {
 
 impl DevicePathUtilitiesProtocol {
     pub const GUID: Guid = guid!("0379be4e-d706-437d-b037-edb82fb772a4");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Test that ensures the struct is packed. Thus, we don't need to
-    /// explicitly specify `packed`.
-    #[test]
-    fn abi() {
-        assert_eq!(size_of::<DevicePathProtocol>(), 4);
-        assert_eq!(align_of::<DevicePathProtocol>(), 1);
-    }
 }

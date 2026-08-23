@@ -61,7 +61,7 @@ pub struct ShellProtocol {
         volatile: Boolean,
     ) -> Status,
     pub get_alias:
-        unsafe extern "efiapi" fn(alias: *const Char16, volatile: Boolean) -> *const Char16,
+        unsafe extern "efiapi" fn(alias: *const Char16, volatile: *mut Boolean) -> *const Char16,
     pub set_alias: unsafe extern "efiapi" fn(
         command: *const Char16,
         alias: *const Char16,

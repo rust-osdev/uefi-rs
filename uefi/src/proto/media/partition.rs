@@ -98,52 +98,52 @@ bitflags::bitflags! {
         const RESERVED_FOR_PARTITION_TYPE = 0xffff_0000_0000_0000;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_0 = 1 << 47;
+        const TYPE_SPECIFIC_BIT_0 = 1 << 48;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_1 = 1 << 48;
+        const TYPE_SPECIFIC_BIT_1 = 1 << 49;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_2 = 1 << 49;
+        const TYPE_SPECIFIC_BIT_2 = 1 << 50;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_3 = 1 << 50;
+        const TYPE_SPECIFIC_BIT_3 = 1 << 51;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_4 = 1 << 51;
+        const TYPE_SPECIFIC_BIT_4 = 1 << 52;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_5 = 1 << 52;
+        const TYPE_SPECIFIC_BIT_5 = 1 << 53;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_6 = 1 << 53;
+        const TYPE_SPECIFIC_BIT_6 = 1 << 54;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_7 = 1 << 54;
+        const TYPE_SPECIFIC_BIT_7 = 1 << 55;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_8 = 1 << 55;
+        const TYPE_SPECIFIC_BIT_8 = 1 << 56;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_9 = 1 << 56;
+        const TYPE_SPECIFIC_BIT_9 = 1 << 57;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_10 = 1 << 57;
+        const TYPE_SPECIFIC_BIT_10 = 1 << 58;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_11 = 1 << 58;
+        const TYPE_SPECIFIC_BIT_11 = 1 << 59;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_12 = 1 << 59;
+        const TYPE_SPECIFIC_BIT_12 = 1 << 60;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_13 = 1 << 60;
+        const TYPE_SPECIFIC_BIT_13 = 1 << 61;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_14 = 1 << 61;
+        const TYPE_SPECIFIC_BIT_14 = 1 << 62;
 
         /// The meaning of this bit depends on the partition type.
-        const TYPE_SPECIFIC_BIT_15 = 1 << 62;
+        const TYPE_SPECIFIC_BIT_15 = 1 << 63;
     }
 }
 
@@ -291,5 +291,28 @@ mod tests {
         let attr: GptPartitionAttributes =
             GptPartitionAttributes::from_bits_retain(0xabcd_0000_0000_0007);
         assert_eq!(attr.type_specific_bits(), 0xabcd);
+    }
+
+    /// Check that the type-specific bit constants cover exactly the
+    /// reserved range, bits 48 to 63.
+    #[test]
+    fn test_type_specific_bits() {
+        let all = GptPartitionAttributes::TYPE_SPECIFIC_BIT_0
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_1
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_2
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_3
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_4
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_5
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_6
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_7
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_8
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_9
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_10
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_11
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_12
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_13
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_14
+            | GptPartitionAttributes::TYPE_SPECIFIC_BIT_15;
+        assert_eq!(all, GptPartitionAttributes::RESERVED_FOR_PARTITION_TYPE);
     }
 }

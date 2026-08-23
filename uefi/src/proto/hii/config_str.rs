@@ -151,7 +151,34 @@ impl ConfigurationString {
         })
     }
 
+    /// Parses the hexadecimal string of a number into its little-endian
+    /// byte representation.
+    ///
+    /// Numbers in configuration strings have arbitrary length and are
+    /// transferred most-significant hex digit first (UEFI 2.11, 35.2.1),
+    /// so digits are grouped into bytes from the least-significant end.
+    /// This matches `GetValueOfNumber` of the EDK2 reference
+    /// implementation.
+    ///
+    /// # Arguments
+    ///
+    /// * `hex` - The hexadecimal string representing a number.
+    ///
+    /// # Returns
+    ///
+    /// An iterator over the number's bytes, least-significant byte first.
+    #[must_use]
+    pub fn parse_le_bytes_from_hex(hex: &str) -> impl DoubleEndedIterator<Item = u8> {
+        hex.as_bytes().rchunks(2).map(|chunk| {
+            let chunk = str::from_utf8(chunk).unwrap_or_default();
+            u8::from_str_radix(chunk, 16).unwrap_or_default()
+        })
+    }
+
     /// Converts a hexadecimal string representation into a numeric value.
+    ///
+    /// Numbers in configuration strings have arbitrary length and are
+    /// transferred most-significant hex digit first (UEFI 2.11, 35.2.1).
     ///
     /// # Arguments
     ///
@@ -159,17 +186,15 @@ impl ConfigurationString {
     ///
     /// # Returns
     ///
-    /// An `Option<u64>` representing the parsed number.
+    /// An `Option<u64>` representing the parsed number. `None` if the
+    /// string is not a valid hexadecimal number or exceeds the `u64` range.
     #[must_use]
     pub fn parse_number_from_hex(data: &str) -> Option<u64> {
-        let data: Vec<_> = Self::parse_bytes_from_hex(data).collect();
-        match data.len() {
-            8 => Some(u64::from_be_bytes(data.try_into().unwrap())),
-            4 => Some(u32::from_be_bytes(data.try_into().unwrap()) as u64),
-            2 => Some(u16::from_be_bytes(data.try_into().unwrap()) as u64),
-            1 => Some(u8::from_be_bytes(data.try_into().unwrap()) as u64),
-            _ => None,
+        // from_str_radix would also accept a leading sign.
+        if !data.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return None;
         }
+        u64::from_str_radix(data, 16).ok()
     }
 
     /// Converts a hexadecimal string into a UTF-16 string.
@@ -262,11 +287,11 @@ impl ConfigurationString {
                 }
                 _ => return Err(ParseError::BlockName),
             };
-            // The uefi specification declares `VALUE` as being a "number" of arbitrary length.
-            // And numbers have to be endianness-corrected. Thus, the bytes represented by a value's
-            // hex string of arbitrary length have to be reversed to account for that weird encoding.
+            // The uefi specification declares `VALUE` as being a "number" of
+            // arbitrary length, transferred most-significant digit first, and
+            // block values are stored little-endian.
             let value = match splitter.next() {
-                Some((keys::VALUE, Some(data))) => Self::parse_bytes_from_hex(data).rev().collect(),
+                Some((keys::VALUE, Some(data))) => Self::parse_le_bytes_from_hex(data).collect(),
                 _ => return Err(ParseError::BlockConfig),
             };
 
@@ -334,6 +359,29 @@ mod tests {
     use crate::proto::hii::config_str::{ConfigurationString, MultiConfigurationStringIter};
     use alloc::vec::Vec;
     use core::str::FromStr;
+
+    /// Numbers have arbitrary length; odd digit counts must group hex
+    /// digits into bytes from the least-significant end.
+    #[test]
+    fn parse_odd_length_numbers() {
+        assert_eq!(ConfigurationString::parse_number_from_hex("0"), Some(0));
+        assert_eq!(
+            ConfigurationString::parse_number_from_hex("1d8"),
+            Some(0x1d8)
+        );
+        assert_eq!(
+            ConfigurationString::parse_number_from_hex("112233445566"),
+            Some(0x1122_3344_5566)
+        );
+        assert_eq!(ConfigurationString::parse_number_from_hex(""), None);
+        assert_eq!(ConfigurationString::parse_number_from_hex("+1"), None);
+        assert_eq!(ConfigurationString::parse_number_from_hex("xy"), None);
+
+        let bytes: Vec<u8> = ConfigurationString::parse_le_bytes_from_hex("1d8").collect();
+        assert_eq!(bytes, [0xd8, 0x01]);
+        let bytes: Vec<u8> = ConfigurationString::parse_le_bytes_from_hex("1122334455").collect();
+        assert_eq!(bytes, [0x55, 0x44, 0x33, 0x22, 0x11]);
+    }
 
     #[test]
     fn parse_single() {

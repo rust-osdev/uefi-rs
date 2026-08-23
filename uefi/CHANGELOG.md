@@ -30,6 +30,12 @@
 - `DevicePath::to_pool`, `append_path`, and `append_node` now locate the
   `DevicePathUtilities` protocol by its own GUID instead of the
   `DevicePathToText` GUID.
+- `proto::hii::config_str::ConfigurationString` now parses numbers of
+  arbitrary length as mandated by the spec. Previously, odd-length numbers
+  (e.g. `OFFSET=1d8`) were misparsed and some even lengths were rejected.
+  Use the new `parse_le_bytes_from_hex` for number values;
+  `parse_bytes_from_hex` is unchanged and remains correct for byte streams
+  such as `GUID`, `NAME`, and `PATH`.
 
 ## Removed
 

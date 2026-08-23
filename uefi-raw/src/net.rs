@@ -130,6 +130,20 @@ pub union IpAddress {
     pub v6: Ipv6Address,
 }
 
+// Ensure ABI guarantees for IpAddress.
+const _: () = {
+    #[repr(C, packed)]
+    struct PackedHelper<T>(T);
+
+    assert!(align_of::<IpAddress>() == 4);
+    assert!(size_of::<IpAddress>() == 16);
+
+    // The type must be usable in a packed struct, even when it is normally
+    // 4 byte aligned.
+    assert!(align_of::<PackedHelper<IpAddress>>() == 1);
+    assert!(size_of::<PackedHelper<IpAddress>>() == 16);
+};
+
 impl IpAddress {
     /// Zeroed variant where all bytes are guaranteed to be initialized to zero.
     pub const ZERO: Self = Self { addr: [0; 4] };
@@ -353,20 +367,6 @@ mod tests {
         assert_eq!(efi_mac_addr.octets(), efi_octets);
         assert_eq!(<[u8; 6]>::from(efi_mac_addr), ethernet_octets);
         assert_eq!(efi_mac_addr.into_ethernet_addr(), ethernet_octets);
-    }
-
-    // Ensure that our IpAddress type can be put into a packed struct,
-    // even when it is normally 4 byte aligned.
-    #[test]
-    fn test_efi_ip_address_abi() {
-        #[repr(C, packed)]
-        struct PackedHelper<T>(T);
-
-        assert_eq!(align_of::<IpAddress>(), 4);
-        assert_eq!(size_of::<IpAddress>(), 16);
-
-        assert_eq!(align_of::<PackedHelper<IpAddress>>(), 1);
-        assert_eq!(size_of::<PackedHelper<IpAddress>>(), 16);
     }
 
     /// Tests the From-impls from the documentation.

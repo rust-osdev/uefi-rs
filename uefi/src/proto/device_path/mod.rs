@@ -509,6 +509,10 @@ pub struct DevicePath {
     data: [u8],
 }
 
+// References to the DST are transmuted from/to slice references; ensure
+// both have the same fat-pointer layout.
+const _: () = assert!(size_of::<&DevicePath>() == size_of::<&[u8]>());
+
 impl ProtocolPointer for DevicePath {
     unsafe fn ptr_from_ffi(ptr: *const c_void) -> *const Self {
         // SAFETY: The memory is valid.
@@ -1119,9 +1123,6 @@ mod tests {
 
     #[test]
     fn test_to_owned() {
-        // Relevant assertion to verify the transmute is fine.
-        assert_eq!(size_of::<&DevicePath>(), size_of::<&[u8]>());
-
         let raw_data = create_raw_device_path();
         // SAFETY: The memory is valid.
         let dp = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };

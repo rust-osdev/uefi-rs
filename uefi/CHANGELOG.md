@@ -27,6 +27,9 @@
   `optimal_transfer_length_granularity` moved from `BlockIOMedia` to
   `BlockIO` and return `None` if the protocol revision does not include
   them. Previously, they read past the media structure on old revisions.
+- `DevicePath::to_pool`, `append_path`, and `append_node` now locate the
+  `DevicePathUtilities` protocol by its own GUID instead of the
+  `DevicePathToText` GUID.
 
 ## Removed
 

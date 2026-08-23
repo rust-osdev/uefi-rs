@@ -991,7 +991,7 @@ impl core::error::Error for DevicePathUtilitiesError {
 #[cfg(feature = "alloc")]
 fn open_utility_protocol() -> Result<ScopedProtocol<DevicePathUtilities>, DevicePathUtilitiesError>
 {
-    let &handle = boot::locate_handle_buffer(SearchType::ByProtocol(&DevicePathToText::GUID))
+    let &handle = boot::locate_handle_buffer(SearchType::ByProtocol(&DevicePathUtilities::GUID))
         .map_err(DevicePathUtilitiesError::CantLocateHandleBuffer)?
         .first()
         .ok_or(DevicePathUtilitiesError::NoHandle)?;

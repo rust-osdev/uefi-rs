@@ -567,6 +567,7 @@ pub struct SystemContextARM {
     dfsr: u32,
     dfar: u32,
     ifsr: u32,
+    ifar: u32,
 }
 
 /// System context for AARCH64 processors

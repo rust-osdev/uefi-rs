@@ -9,6 +9,11 @@
   mandated by the spec.
 - **Breaking:** The `GptPartitionAttributes::TYPE_SPECIFIC_BIT_*` constants
   now cover bits 48 to 63 as mandated by the spec, instead of bits 47 to 62.
+- `boot::set_watchdog_timer` now passes the watchdog data size in bytes, as
+  mandated by the spec. Previously, firmware only saw half of the data.
+- `proto::usb::io::UsbIo::supported_languages` no longer returns a slice with
+  twice the actual number of language IDs, whose second half was an
+  out-of-bounds read.
 
 ## Removed
 

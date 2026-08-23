@@ -39,6 +39,7 @@ fn is_testdrive_present() -> bool {
                 let bfr = result.read_buffer().unwrap();
                 // ATA uses wchar16 big endian strings for serial numbers
                 let mut serial_bfr = [0u8; 20];
+                #[expect(clippy::chunks_exact_to_as_chunks)]
                 bfr[20..40]
                     .chunks_exact(2)
                     .zip(serial_bfr.chunks_exact_mut(2))

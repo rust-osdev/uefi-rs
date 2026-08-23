@@ -1984,28 +1984,20 @@ impl LoadImageSource<'_> {
         *const u8, /* buffer */
         usize,     /* buffer length */
     ) {
-        let boot_policy;
-        let device_path;
-        let source_buffer;
-        let source_size;
-        match self {
+        let (boot_policy, device_path, source_buffer, source_size) = match self {
             LoadImageSource::FromBuffer { buffer, file_path } => {
                 // Boot policy is ignored when loading from source buffer.
-                boot_policy = BootPolicy::default();
-
-                device_path = file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null());
-                source_buffer = buffer.as_ptr();
-                source_size = buffer.len();
+                (
+                    BootPolicy::default(),
+                    file_path.map(|p| p.as_ffi_ptr()).unwrap_or(ptr::null()),
+                    buffer.as_ptr(),
+                    buffer.len(),
+                )
             }
             LoadImageSource::FromDevicePath {
                 device_path: d_path,
                 boot_policy: b_policy,
-            } => {
-                boot_policy = *b_policy;
-                device_path = d_path.as_ffi_ptr();
-                source_buffer = ptr::null();
-                source_size = 0;
-            }
+            } => (*b_policy, d_path.as_ffi_ptr(), ptr::null(), 0),
         };
         (boot_policy, device_path, source_buffer, source_size)
     }

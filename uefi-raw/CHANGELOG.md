@@ -8,6 +8,9 @@
 - **Breaking**: The USB descriptor types in `protocol::usb` are now packed to
   match their layout in the USB specification. `ConfigDescriptor` and
   `EndpointDescriptor` previously had a too-large `size_of`.
+- **Breaking**: `HiiKeyboardLayout` and `KeyDescriptor` are now packed to
+  match the layout mandated by the UEFI specification. Previously, all
+  `HiiKeyboardLayout` fields after `layout_length` were at wrong offsets.
 
 ## Removed
 

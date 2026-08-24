@@ -21,5 +21,5 @@ quote = "1.0.9"
 syn = { version = "3.0.0", features = ["full"] }
 
 [dev-dependencies]
-trybuild = "1.0.61"
+trybuild = "1.0.120"
 uefi = { path = "../uefi", default-features = false }

@@ -101,6 +101,10 @@ impl PxeBaseCodeProtocol {
 }
 
 newtype_enum! {
+    /// PXE bootstrap server type used during discovery.
+    ///
+    /// The newtype representation preserves vendor-defined and future values
+    /// that are not represented by the associated constants.
     pub enum PxeBaseCodeBootType: u16 => {
         BOOTSTRAP = 0,
         MS_WINNT_RIS = 1,
@@ -160,18 +164,20 @@ pub struct PxeBaseCodeDiscoverInfo {
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeSrvlist {
-    // TODO add newtype
-    pub server_type: u16,
+    /// Bootstrap type provided by this server.
+    pub server_type: PxeBaseCodeBootType,
     pub accept_any_response: Boolean,
     pub reserved: u8,
     pub ip_addr: IpAddress,
 }
 
 impl PxeBaseCodeSrvlist {
-    /// Construct a [`PxeBaseCodeSrvlist`] for a boot server reply type. If `ip_addr` is not `None`,
-    /// only boot server replies matching the provided IP address will be accepted.
+    /// Construct a [`PxeBaseCodeSrvlist`] for a boot server reply type.
+    ///
+    /// If `ip_addr` is not `None`, only boot server replies matching the
+    /// provided IP address will be accepted.
     #[must_use]
-    pub fn new(server_type: u16, ip_addr: Option<IpAddress>) -> Self {
+    pub fn new(server_type: PxeBaseCodeBootType, ip_addr: Option<IpAddress>) -> Self {
         Self {
             server_type,
             accept_any_response: Boolean::from(ip_addr.is_none()),
@@ -189,6 +195,19 @@ impl PxeBaseCodeSrvlist {
         } else {
             Some(&self.ip_addr)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn server_list_preserves_vendor_boot_type() {
+        let vendor_boot_type = PxeBaseCodeBootType(32768);
+        let server = PxeBaseCodeSrvlist::new(vendor_boot_type, None);
+
+        assert_eq!(server.server_type, vendor_boot_type);
     }
 }
 

@@ -5,6 +5,8 @@
   REVISION_3}`.
 
 ## Changed
+- **Breaking**: `PxeBaseCodeSrvlist::server_type` and
+  `PxeBaseCodeSrvlist::new` now use `PxeBaseCodeBootType` instead of `u16`.
 - **Breaking**: `MemoryDescriptor` now has a new member to ensure correct
   layout on all non-UEFI 32-bit targets.
 - **Breaking**: Corrected the `volatile` parameter of

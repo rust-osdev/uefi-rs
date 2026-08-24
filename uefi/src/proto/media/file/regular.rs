@@ -177,6 +177,10 @@ where
         let status = read(output_ptr, &mut read_size);
 
         if status.is_success() {
+            // Never trust a firmware-reported length larger than what we
+            // requested; otherwise the pointer/size arithmetic below would
+            // run out of bounds.
+            let read_size = read_size.min(requested_read_size);
             total_read_size += read_size;
             remaining_size -= read_size;
             // SAFETY: The memory is valid.
@@ -281,5 +285,19 @@ mod tests {
         let mut buffer = [0; 10];
         assert_eq!(read_chunked(&mut buffer, 10, read), Ok(0));
         assert_eq!(buffer, [0; 10]);
+    }
+
+    // Regression test: a callback (i.e. firmware) reporting a read length
+    // larger than requested must not cause `remaining_size` to underflow or
+    // `output_ptr` to walk out of bounds. The over-reported length is clamped.
+    #[test]
+    fn test_file_read_chunked_over_report() {
+        // A misbehaving read that always reports 2 bytes more than requested.
+        let read = |_buf: *mut u8, buf_size: &mut usize| {
+            *buf_size += 2;
+            Status::SUCCESS
+        };
+        let mut buffer = [0u8; 8];
+        assert_eq!(read_chunked(&mut buffer, 4, read), Ok(8));
     }
 }

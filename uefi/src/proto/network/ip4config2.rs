@@ -91,18 +91,21 @@ impl Ip4Config2 {
     /// Get current interface configuration.
     pub fn get_interface_info(&mut self) -> uefi::Result<Ip4Config2InterfaceInfo> {
         let data = self.get_data(Ip4Config2DataType::INTERFACE_INFO)?;
-        let info: &Ip4Config2InterfaceInfo =
-            // SAFETY: The memory is valid.
-            unsafe { &*(data.as_ptr().cast::<Ip4Config2InterfaceInfo>()) };
+        if data.len() < size_of::<Ip4Config2InterfaceInfo>() {
+            return Err(Status::BAD_BUFFER_SIZE.into());
+        }
+        // SAFETY: `data` holds at least a full `Ip4Config2InterfaceInfo`.
+        let info = unsafe {
+            data.as_ptr()
+                .cast::<Ip4Config2InterfaceInfo>()
+                // The buffer is a `Vec<u8>` and thus only byte-aligned, while
+                // `Ip4Config2InterfaceInfo` has a larger alignment.
+                .read_unaligned()
+        };
         Ok(Ip4Config2InterfaceInfo {
-            name: info.name,
-            if_type: info.if_type,
-            hw_addr_size: info.hw_addr_size,
-            hw_addr: info.hw_addr,
-            station_addr: info.station_addr,
-            subnet_mask: info.subnet_mask,
             route_table_size: 0,
             route_table: core::ptr::null_mut(),
+            ..info
         })
     }
 

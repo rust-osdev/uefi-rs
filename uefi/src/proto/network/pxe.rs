@@ -672,11 +672,14 @@ pub struct DiscoverInfo {
     must_use_list: bool,
     server_m_cast_ip: EfiIpAddr,
     ip_cnt: u16,
+    _padding: [u8; 2],
     srv_list: [Server],
 }
 
 impl DiscoverInfo {
     /// Create a `DiscoverInfo`.
+    ///
+    /// The `buffer` must be at least aligned to four bytes.
     pub fn new_in_buffer<'buf>(
         buffer: &'buf mut [MaybeUninit<u8>],
         use_m_cast: bool,
@@ -689,13 +692,15 @@ impl DiscoverInfo {
         let server_count = srv_list.len();
         assert!(server_count <= u16::MAX as usize, "too many servers");
 
-        let required_size = size_of::<bool>() * 4
-            + size_of::<EfiIpAddr>()
-            + size_of::<u16>()
-            + size_of_val(srv_list);
+        let required_size = Self::base_struct_size() + size_of_val(srv_list);
 
         if buffer.len() < required_size {
             return Err(Status::BUFFER_TOO_SMALL.into());
+        }
+
+        // Alignment check.
+        if buffer.as_ptr().align_offset(Self::base_struct_alignment()) != 0 {
+            return Err(Status::INVALID_PARAMETER.into());
         }
 
         let mut ptr: *mut u8 = maybe_uninit_slice_as_mut_ptr(buffer);
@@ -716,9 +721,17 @@ impl DiscoverInfo {
             Ok(&mut *ptr)
         }
     }
-}
 
-impl DiscoverInfo {
+    /// Returns the fixed size of the structure without the dynamic portion.
+    const fn base_struct_size() -> usize {
+        size_of::<bool>() * 4 + size_of::<EfiIpAddr>() + size_of::<u16>() + 2 /* padding before server list */
+    }
+
+    /// Alignment of the base struct.
+    const fn base_struct_alignment() -> usize {
+        4
+    }
+
     /// Returns whether discovery should use multicast.
     #[must_use]
     pub const fn use_m_cast(&self) -> bool {
@@ -1105,3 +1118,50 @@ impl Display for ReadDirParseError {
 }
 
 impl core::error::Error for ReadDirParseError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[repr(C, align(4))]
+    struct Aligned4<T>(T);
+
+    // It is not trivial to do these checks for a dynamically sized type in
+    // const evaluation, therefore we use a unit test.
+    #[test]
+    fn abi_of_discover_info() {
+        let mut buffer = Aligned4([MaybeUninit::new(0_u8); 100]);
+        let info = DiscoverInfo::new_in_buffer(
+            &mut buffer.0,
+            false,
+            false,
+            false,
+            false,
+            EfiIpAddr::new_v4([0; 4]),
+            &[],
+        )
+        .unwrap();
+
+        assert_eq!(size_of_val(info), DiscoverInfo::base_struct_size());
+        assert_eq!(align_of_val(info), DiscoverInfo::base_struct_alignment());
+        // As in EDK2
+        assert_eq!(4, DiscoverInfo::base_struct_alignment());
+
+        let server_list = [Server::new(123, None), Server::new(456, None)];
+        let info = DiscoverInfo::new_in_buffer(
+            &mut buffer.0,
+            false,
+            false,
+            false,
+            false,
+            EfiIpAddr::new_v4([0; 4]),
+            &server_list,
+        )
+        .unwrap();
+
+        assert_eq!(
+            size_of_val(info),
+            DiscoverInfo::base_struct_size() + size_of_val(&server_list)
+        );
+    }
+}

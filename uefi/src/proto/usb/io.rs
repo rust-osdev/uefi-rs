@@ -2,7 +2,7 @@
 
 //! USB I/O protocol.
 
-use core::ffi;
+use core::{ffi, slice};
 
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::usb::io::UsbIoProtocol;
@@ -289,9 +289,10 @@ impl UsbIo {
                 &mut lang_id_table_size,
             )
         }
-        // SAFETY: The memory is valid.
-        .to_result_with_val(|| unsafe {
-            core::slice::from_raw_parts(lang_id_table_ptr, usize::from(lang_id_table_size))
+        .to_result_with_val(|| {
+            let char_count = usize::from(lang_id_table_size) / size_of::<u16>();
+            // SAFETY: The memory is valid.
+            unsafe { slice::from_raw_parts(lang_id_table_ptr, char_count) }
         })
     }
 

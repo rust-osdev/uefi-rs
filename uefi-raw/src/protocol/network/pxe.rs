@@ -160,6 +160,7 @@ pub struct PxeBaseCodeDiscoverInfo {
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeSrvlist {
+    // TODO add newtype
     pub server_type: u16,
     pub accept_any_response: Boolean,
     pub reserved: u8,

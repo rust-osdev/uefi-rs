@@ -4,7 +4,7 @@ use core::ffi::c_void;
 use core::ptr;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use core::time::Duration;
-use uefi::proto::pi::mp::MpServices;
+use uefi::proto::pi::mp::{CPU_V2_EXTENDED_TOPOLOGY, MpServices};
 use uefi::{Status, boot};
 
 /// Number of cores qemu is configured to have
@@ -26,6 +26,7 @@ pub fn test() {
 
     test_get_number_of_processors(mp_support);
     test_get_processor_info(mp_support);
+    test_get_processor_info_extended(mp_support);
     test_startup_all_aps(mp_support);
     test_startup_this_ap(mp_support);
     test_enable_disable_ap(mp_support);
@@ -51,6 +52,19 @@ fn test_get_processor_info(mps: &MpServices) {
     let cpu1 = mps.get_processor_info(1).unwrap();
     let cpu2 = mps.get_processor_info(2).unwrap();
 
+    for cpu in [&cpu0, &cpu1, &cpu2] {
+        info!(
+            "CPU {}: bsp={}, enabled={}, healthy={}, location=(package={}, core={}, thread={})",
+            cpu.processor_id,
+            cpu.is_bsp(),
+            cpu.is_enabled(),
+            cpu.is_healthy(),
+            cpu.location.package,
+            cpu.location.core,
+            cpu.location.thread
+        );
+    }
+
     // Check that processor_id fields are sane
     assert_eq!(cpu0.processor_id, 0);
     assert_eq!(cpu1.processor_id, 1);
@@ -68,6 +82,46 @@ fn test_get_processor_info(mps: &MpServices) {
 
     // Enable second CPU back
     mps.enable_disable_ap(1, true, None).unwrap();
+}
+
+/// Requesting the extended topology makes the firmware fill the whole
+/// spec-defined struct, including `extended_information`. This mainly
+/// guards the struct layout: if the Rust struct is too small, the
+/// firmware write corrupts the stack; if a field is misplaced, the
+/// value checks below fail.
+fn test_get_processor_info_extended(mps: &MpServices) {
+    for i in 0..NUM_CPUS {
+        let info = mps.get_processor_info(i).unwrap();
+        let ext_info = mps
+            .get_processor_info(CPU_V2_EXTENDED_TOPOLOGY | i)
+            .unwrap();
+
+        // Bit 24 is a flag, not part of the processor index.
+        assert_eq!(ext_info.processor_id, info.processor_id);
+
+        // Both locations are derived from the same APIC ID, and qemu
+        // reports a flat topology without module/tile/die levels, so the
+        // shared fields must match. All CPUs except one have a non-zero
+        // package or core number, so these checks also prove that the
+        // firmware really filled the pre-zeroed extended fields.
+        let location2 = &ext_info.extended_information;
+        info!(
+            "CPU {}: extended location: package={}, module={}, tile={}, die={}, core={}, thread={}",
+            ext_info.processor_id,
+            location2.package,
+            location2.module,
+            location2.tile,
+            location2.die,
+            location2.core,
+            location2.thread
+        );
+        assert_eq!(location2.package, info.location.package);
+        assert_eq!(location2.module, 0);
+        assert_eq!(location2.tile, 0);
+        assert_eq!(location2.die, 0);
+        assert_eq!(location2.core, info.location.core);
+        assert_eq!(location2.thread, info.location.thread);
+    }
 }
 
 extern "efiapi" fn proc_increment_atomic(arg: *mut c_void) {

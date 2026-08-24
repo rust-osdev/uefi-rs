@@ -92,5 +92,14 @@ pub fn test() {
             uc.str_to_fat(s, &mut buf).unwrap(),
             CStr8::from_bytes_with_nul(b"HELLOWORLD!\0").unwrap()
         );
+
+        // The protocol writes only the converted characters (the space is
+        // skipped) and no NUL terminator. Ensure stale buffer content
+        // neither ends up in the result nor breaks its termination.
+        let mut buf = [0xff; 13];
+        assert_eq!(
+            uc.str_to_fat(s, &mut buf).unwrap(),
+            CStr8::from_bytes_with_nul(b"HELLOWORLD!\0").unwrap()
+        );
     }
 }

@@ -1,6 +1,8 @@
 # uefi - [Unreleased]
 
 ## Added
+- Added `proto::pi::mp::{CpuPhysicalLocation2, CPU_V2_EXTENDED_TOPOLOGY}` for
+  the extended processor topology.
 
 ## Changed
 - Made memory map types `#[repr(C)]`
@@ -17,6 +19,20 @@
 - `proto::network::pxe::DiscoverInfo::new_in_buffer` now accounts for the
   alignment padding before the server list in its buffer size check.
   Previously, an exactly-sized buffer was written 2 bytes out of bounds.
+- **Breaking:** `proto::pi::mp::ProcessorInformation` now contains the
+  `extended_information` field mandated by the PI specification. Previously,
+  the struct was 24 bytes too small, which firmware could write past.
+- **Breaking:** The revision-gated media fields `lowest_aligned_lba`,
+  `logical_blocks_per_physical_block`, and
+  `optimal_transfer_length_granularity` moved from `BlockIOMedia` to
+  `BlockIO` and return `None` if the protocol revision does not include
+  them. Previously, they read past the media structure on old revisions.
+- `DevicePath::to_pool`, `append_path`, and `append_node` now locate the
+  `DevicePathUtilities` protocol by its own GUID instead of the
+  `DevicePathToText` GUID.
+- `UnicodeCollation::str_to_fat` now zeroes the output buffer before the
+  conversion. Previously, the result could contain garbage from the
+  uninitialized buffer, or reference one byte past its end.
 
 ## Removed
 

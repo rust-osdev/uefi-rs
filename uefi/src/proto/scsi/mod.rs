@@ -294,7 +294,7 @@ impl<'a> ScsiRequestBuilder<'a> {
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct ScsiResponse<'a>(ScsiRequest<'a>);
-impl<'a> ScsiResponse<'a> {
+impl ScsiResponse<'_> {
     /// Retrieves the buffer containing data read from the device (if any).
     ///
     /// # Returns
@@ -303,7 +303,7 @@ impl<'a> ScsiResponse<'a> {
     /// # Safety
     /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
     #[must_use]
-    pub const fn read_buffer(&self) -> Option<&'a [u8]> {
+    pub const fn read_buffer(&self) -> Option<&[u8]> {
         if self.0.packet.in_data_buffer.is_null() {
             return None;
         }
@@ -324,7 +324,7 @@ impl<'a> ScsiResponse<'a> {
     /// # Safety
     /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
     #[must_use]
-    pub const fn sense_data(&self) -> Option<&'a [u8]> {
+    pub const fn sense_data(&self) -> Option<&[u8]> {
         if self.0.packet.sense_data.is_null() {
             return None;
         }

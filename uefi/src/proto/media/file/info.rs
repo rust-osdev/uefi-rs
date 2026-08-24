@@ -8,6 +8,7 @@ use core::ffi::c_void;
 use core::fmt::{self, Display, Formatter};
 use core::ptr;
 use ptr_meta::Pointee;
+use uefi_raw::Boolean;
 
 /// Common trait for data structures that can be used with
 /// `File::set_info()` or `File::get_info()`.
@@ -296,7 +297,7 @@ impl FileProtocolInfo for FileInfo {}
 #[repr(C)]
 pub struct FileSystemInfo {
     size: u64,
-    read_only: bool,
+    read_only: Boolean,
     volume_size: u64,
     free_space: u64,
     block_size: u32,
@@ -325,7 +326,7 @@ impl FileSystemInfo {
         unsafe {
             Self::new_impl(storage, volume_label, |ptr, size| {
                 (&raw mut (*ptr).size).write(size);
-                (&raw mut (*ptr).read_only).write(read_only);
+                (&raw mut (*ptr).read_only).write(Boolean::from(read_only));
                 (&raw mut (*ptr).volume_size).write(volume_size);
                 (&raw mut (*ptr).free_space).write(free_space);
                 (&raw mut (*ptr).block_size).write(block_size);
@@ -336,7 +337,7 @@ impl FileSystemInfo {
     /// Truth that the volume only supports read access
     #[must_use]
     pub const fn read_only(&self) -> bool {
-        self.read_only
+        self.read_only.is_true()
     }
 
     /// Number of bytes managed by the file system
@@ -540,7 +541,7 @@ mod tests {
         assert_eq!(info.size, 64);
         assert_eq!(info.size, size_of_val(info) as u64);
 
-        assert_eq!(info.read_only, read_only);
+        assert_eq!(info.read_only(), read_only);
         assert_eq!(info.volume_size, volume_size);
         assert_eq!(info.free_space, free_space);
         assert_eq!(info.block_size, block_size);

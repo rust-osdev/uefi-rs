@@ -3,6 +3,8 @@
 ## Added
 - Added the revision constants `BlockIoProtocol::{REVISION, REVISION_2,
   REVISION_3}`.
+- Added `Boolean::is_true()` and  `Boolean::is_false()` for a quick conversion
+  of an EFI boolean to a Rust boolean.
 
 ## Changed
 - **Breaking**: `MemoryDescriptor` now has a new member to ensure correct

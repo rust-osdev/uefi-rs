@@ -402,8 +402,10 @@ impl MemoryMapOwned {
     /// (stored inside the provided buffer) and the corresponding
     /// [`MemoryMapMeta`].
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
-        assert!(meta.desc_size >= size_of::<MemoryDescriptor>());
-        let len = meta.entry_count();
+        // Validate `desc_size` fully: besides being large enough, it must be a
+        // multiple of the descriptor alignment. Otherwise descriptors past the
+        // first would be accessed through misaligned references.
+        let len = validate_meta(meta).expect("The memory map metadata should be valid");
         Self { buf, meta, len }
     }
 }

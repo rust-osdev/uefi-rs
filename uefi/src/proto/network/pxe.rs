@@ -1147,7 +1147,11 @@ mod tests {
         // As in EDK2
         assert_eq!(4, DiscoverInfo::base_struct_alignment());
 
-        let server_list = [Server::new(123, None), Server::new(456, None)];
+        let server_list = [
+            Server::new(BootstrapType::BOOTSTRAP, None),
+            Server::new(BootstrapType::REDHAT_BOOT, None),
+        ];
+        assert_eq!(server_list[1].server_type, BootstrapType::REDHAT_BOOT);
         let info = DiscoverInfo::new_in_buffer(
             &mut buffer.0,
             false,

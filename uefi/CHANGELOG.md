@@ -5,7 +5,6 @@
   the extended processor topology.
 
 ## Changed
-- Made memory map types `#[repr(C)]`
 - Added `char16!` const-compatible macro as convenient replacement for `Char16::try_from().unwrap()`
 - `proto::debug::SystemContextARM` now contains the trailing `IFAR` field
   mandated by the spec.

@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+
+# uefi - v0.40.0 (2026-08-25)
+
 ## Added
 - Added `proto::pi::mp::{CpuPhysicalLocation2, CPU_V2_EXTENDED_TOPOLOGY}` for
   the extended processor topology.

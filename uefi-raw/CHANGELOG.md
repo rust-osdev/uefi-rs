@@ -1,5 +1,8 @@
 # uefi-raw - [Unreleased]
 
+
+# uefi-raw - v0.16.0 (2026-08-25)
+
 ## Added
 - Added the revision constants `BlockIoProtocol::{REVISION, REVISION_2,
   REVISION_3}`.

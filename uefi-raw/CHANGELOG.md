@@ -19,6 +19,9 @@
   `HiiKeyboardLayout` fields after `layout_length` were at wrong offsets.
 - **Breaking**: `IfrTypeValue`, `HiiRef`, `HiiTime`, and `HiiDate` are now
   packed to match the size and alignment mandated by the UEFI specification.
+- **Breaking**: Changed `PxeBaseCodeSrvlist::server_type` from `u16` to
+  `PxeBaseCodeBootType`. Accordingly, `PxeBaseCodeSrvlist::new` takes a
+  `PxeBaseCodeBootType` as its first argument.
 
 ## Removed
 

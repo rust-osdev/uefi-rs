@@ -32,6 +32,9 @@
 - `UnicodeCollation::str_to_fat` now zeroes the output buffer before the
   conversion. Previously, the result could contain garbage from the
   uninitialized buffer, or reference one byte past its end.
+- **Breaking:** The `proto::network::pxe::Server::server_type` field and the
+  first parameter of `Server::new` changed from `u16` to the `BootstrapType`
+  newtype.
 
 ## Removed
 

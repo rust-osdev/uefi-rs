@@ -1027,7 +1027,7 @@ dependencies = [
 
 [[package]]
 name = "uefi"
-version = "0.39.0"
+version = "0.40.0"
 dependencies = [
  "bitflags 2.13.1",
  "cfg-if",
@@ -1055,7 +1055,7 @@ dependencies = [
 
 [[package]]
 name = "uefi-raw"
-version = "0.15.1"
+version = "0.16.0"
 dependencies = [
  "bitflags 2.13.1",
  "uguid",

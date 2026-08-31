@@ -2,11 +2,11 @@
 
 ## Added
 - Exported `data_types::FromSliceUntilNulError`.
+- Added `proto::pci::PciIo`.
 
 ## Changed
 - **Breaking**: Changed `Server::server_type` and the `server_type` parameter
   of `Server::new` from `u16` to `BootstrapType`.
-
 
 # uefi - v0.40.0 (2026-08-25)
 

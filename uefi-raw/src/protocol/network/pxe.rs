@@ -160,8 +160,7 @@ pub struct PxeBaseCodeDiscoverInfo {
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct PxeBaseCodeSrvlist {
-    // TODO add newtype
-    pub server_type: u16,
+    pub server_type: PxeBaseCodeBootType,
     pub accept_any_response: Boolean,
     pub reserved: u8,
     pub ip_addr: IpAddress,
@@ -171,7 +170,7 @@ impl PxeBaseCodeSrvlist {
     /// Construct a [`PxeBaseCodeSrvlist`] for a boot server reply type. If `ip_addr` is not `None`,
     /// only boot server replies matching the provided IP address will be accepted.
     #[must_use]
-    pub fn new(server_type: u16, ip_addr: Option<IpAddress>) -> Self {
+    pub fn new(server_type: PxeBaseCodeBootType, ip_addr: Option<IpAddress>) -> Self {
         Self {
             server_type,
             accept_any_response: Boolean::from(ip_addr.is_none()),

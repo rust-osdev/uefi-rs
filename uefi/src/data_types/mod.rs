@@ -19,8 +19,8 @@ pub use guid::{Guid, Identify};
 #[cfg(feature = "alloc")]
 pub use owned_strs::{CString16, FromStrError};
 pub use strs::{
-    CStr8, CStr16, EqStrUntilNul, FromSliceWithNulError, FromStrWithBufError, PoolString,
-    UnalignedCStr16Error,
+    CStr8, CStr16, EqStrUntilNul, FromSliceUntilNulError, FromSliceWithNulError,
+    FromStrWithBufError, PoolString, UnalignedCStr16Error,
 };
 /// These functions are used in the implementation of the [`cstr8!`] macro.
 ///

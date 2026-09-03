@@ -1,5 +1,8 @@
 # uefi - [Unreleased]
 
+## Added
+- Exported `data_types::FromSliceUntilNulError`.
+
 ## Changed
 - **Breaking**: Changed `Server::server_type` and the `server_type` parameter
   of `Server::new` from `u16` to `BootstrapType`.

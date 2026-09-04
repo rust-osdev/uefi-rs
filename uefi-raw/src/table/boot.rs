@@ -326,6 +326,11 @@ bitflags! {
         /// This memory region is capable of being protected with the CPU's memory
         /// cryptography capabilities.
         const CPU_CRYPTO = 0x8_0000;
+        /// This memory region is capable of being hot-plugged (added or
+        /// removed at runtime). The OS should only use it for allocations
+        /// that can be relocated or freed, so that the region can be taken
+        /// offline.
+        const HOT_PLUGGABLE = 0x10_0000;
         /// This memory must be mapped by the OS when a runtime service is called.
         const RUNTIME = 0x8000_0000_0000_0000;
         /// This memory region is described with additional ISA-specific memory

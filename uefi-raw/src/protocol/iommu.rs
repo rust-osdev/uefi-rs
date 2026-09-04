@@ -93,7 +93,7 @@ impl EdkiiIommuAttribute {
 
     /// Invalid attributes for allocate_buffer (all bits except valid)
     pub const INVALID_FOR_ALLOCATE_BUFFER: Self =
-        Self::from_bits_truncate(!Self::VALID_FOR_ALLOCATE_BUFFER.bits());
+        Self::from_bits_retain(!Self::VALID_FOR_ALLOCATE_BUFFER.bits());
 }
 
 bitflags! {

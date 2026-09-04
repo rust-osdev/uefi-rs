@@ -1,5 +1,13 @@
 # uefi-raw - [Unreleased]
 
+## Added
+- Added `MemoryAttribute::HOT_PLUGGABLE` (UEFI 2.11).
+- Added `HttpStatusCode::STATUS_429_TOO_MANY_REQUESTS` (UEFI 2.11).
+- Added the missing attributes `EFI_PCI_ATTRIBUTE_IO`,
+  `EFI_PCI_ATTRIBUTE_MEMORY`, `EFI_PCI_ATTRIBUTE_BUS_MASTER`,
+  `EFI_PCI_ATTRIBUTE_EMBEDDED_DEVICE`, and `EFI_PCI_ATTRIBUTE_EMBEDDED_ROM`
+  to `PciRootBridgeIoProtocolAttributes`.
+
 ## Changed
 - **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for
 `PxeBaseCodeSrvlist::server_type` and for the `server_type` parameter of

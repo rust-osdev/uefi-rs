@@ -4,6 +4,8 @@
 - **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for
 `PxeBaseCodeSrvlist::server_type` and for the `server_type` parameter of
 `PxeBaseCodeSrvlist::new`.
+- **Breaking**: Changed `this` parameter of `SimplePointerProtocol::get_state`
+from `*mut Self` to `*const Self`.
 
 
 # uefi-raw - v0.16.0 (2026-08-25)

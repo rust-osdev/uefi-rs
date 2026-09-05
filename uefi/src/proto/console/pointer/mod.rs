@@ -45,7 +45,7 @@ impl Pointer {
         let pointer_state_ptr: *mut _ = &mut pointer_state;
 
         // SAFETY: The memory is valid.
-        match unsafe { (self.0.get_state)(&mut self.0, pointer_state_ptr.cast()) } {
+        match unsafe { (self.0.get_state)(&self.0, pointer_state_ptr.cast()) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(pointer_state)),
         }

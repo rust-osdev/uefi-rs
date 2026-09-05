@@ -203,7 +203,7 @@ pub struct SimplePointerState {
 pub struct SimplePointerProtocol {
     pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
     pub get_state:
-        unsafe extern "efiapi" fn(this: *mut Self, state: *mut SimplePointerState) -> Status,
+        unsafe extern "efiapi" fn(this: *const Self, state: *mut SimplePointerState) -> Status,
     pub wait_for_input: Event,
     pub mode: *const SimplePointerMode,
 }

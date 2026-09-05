@@ -4,12 +4,17 @@
 
 use core::cmp::Ordering;
 
+use uefi_raw::protocol::pci::io::PciIoProtocolWidth;
 use uefi_raw::protocol::pci::root_bridge::PciRootBridgeIoProtocolWidth;
 
 pub mod configuration;
 #[cfg(feature = "alloc")]
 pub mod enumeration;
+pub mod io;
 pub mod root_bridge;
+
+pub use io::PciIo;
+pub use root_bridge::PciRootBridgeIo;
 
 /// IO Address for PCI/register IO operations
 #[repr(C, packed)]
@@ -163,6 +168,14 @@ fn encode_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciRootBridgeIoProt
 
         _ => unreachable!("Illegal PCI IO-Mode / Unit combination"),
     }
+}
+
+// `PciIoProtocolWidth` and `PciRootBridgeIoProtocolWidth` are two distinct `uefi-raw` newtype
+// enums, but they encode the exact same UINT8..FILL_UINT64 discriminant layout (0..=11) per the
+// UEFI spec. Rather than duplicating the mode/unit-size match twice, derive one from the other's
+// raw discriminant.
+fn encode_pci_io_mode_and_unit<U: PciIoUnit>(mode: PciIoMode) -> PciIoProtocolWidth {
+    PciIoProtocolWidth(encode_io_mode_and_unit::<U>(mode).0)
 }
 
 #[cfg(test)]

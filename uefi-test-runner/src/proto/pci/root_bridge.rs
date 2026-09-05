@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use super::get_open_protocol;
 use alloc::collections::btree_set::BTreeSet;
 use alloc::string::ToString;
-use uefi::Handle;
-use uefi::boot::{OpenProtocolAttributes, OpenProtocolParams, ScopedProtocol, image_handle};
-use uefi::proto::ProtocolPointer;
 use uefi::proto::device_path::DevicePath;
 use uefi::proto::device_path::text::{AllowShortcuts, DisplayOnly};
 use uefi::proto::pci::root_bridge::PciRootBridgeIo;
@@ -176,16 +174,6 @@ fn test_attributes() {
         unsafe { pci_proto.set_attributes(supported_attributes).unwrap() }
         unsafe { pci_proto.set_attributes(current_attributes).unwrap() }
     }
-}
-
-fn get_open_protocol<P: ProtocolPointer + ?Sized>(handle: Handle) -> ScopedProtocol<P> {
-    let open_opts = OpenProtocolParams {
-        handle,
-        agent: image_handle(),
-        controller: None,
-    };
-    let open_attrs = OpenProtocolAttributes::GetProtocol;
-    unsafe { uefi::boot::open_protocol(open_opts, open_attrs).unwrap() }
 }
 
 fn decode_bar(bar: u32, next_bar: Option<u32>) -> Bar {

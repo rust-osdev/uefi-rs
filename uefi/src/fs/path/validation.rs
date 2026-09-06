@@ -53,11 +53,7 @@ pub fn validate_path<P: AsRef<Path>>(path: P) -> Result<(), PathError> {
     for component in path.components() {
         if component.is_empty() {
             return Err(PathError::EmptyComponent);
-        } else if let Some(char) = component
-            .as_slice()
-            .iter()
-            .find(|c| CHARACTER_DENY_LIST.contains(c))
-        {
+        } else if let Some(char) = component.iter().find(|c| CHARACTER_DENY_LIST.contains(c)) {
             return Err(PathError::IllegalChar(*char));
         }
     }

@@ -4,6 +4,7 @@
 - Exported `data_types::FromSliceUntilNulError`.
 - Added `proto::console::pointer::AbsolutePointer` protocol.
 - Added `CString::clear` and `PathBuf::clear` functions.
+- Added `CString16::extend` function.
 
 ## Changed
 - **Breaking**: Changed `Server::server_type` and the `server_type` parameter

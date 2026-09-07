@@ -312,11 +312,11 @@ fn build_esp_dir(opt: &QemuOpt, ovmf_paths: &OvmfPaths) -> Result<PathBuf> {
         let src_path = build_dir.join("examples").join(format!("{example}.efi"));
         fs_err::copy(src_path, boot_dir.join(boot_file_name))?;
     } else {
-        // For the test-runner, launch the `shell_launcher` binary first. That
+        // For the test-runner, launch the `shell-launcher` binary first. That
         // will then launch the UEFI shell, and run the `uefi-test-runner`
         // inside the shell. This allows the test-runner to test protocols that
         // use the shell.
-        let shell_launcher = build_dir.join("shell_launcher.efi");
+        let shell_launcher = build_dir.join("shell-launcher.efi");
         fs_err::copy(shell_launcher, boot_dir.join(boot_file_name))?;
 
         fs_err::copy(&ovmf_paths.shell, boot_dir.join("shell.efi"))?;

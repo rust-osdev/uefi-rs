@@ -10,7 +10,7 @@ use syn::{Attribute, Ident, Item, ItemMod, ItemStruct};
 pub struct DeviceType(Ident);
 
 impl DeviceType {
-    pub fn module_ident(&self) -> &Ident {
+    pub const fn module_ident(&self) -> &Ident {
         &self.0
     }
 
@@ -141,8 +141,8 @@ impl NodeGroup {
     }
 
     /// Generate the `DevicePathNodeEnum` enum.
-    pub fn gen_node_enum(groups: &[NodeGroup]) -> TokenStream {
-        let variant_name = |module: &NodeGroup, node: &Node| {
+    pub fn gen_node_enum(groups: &[Self]) -> TokenStream {
+        let variant_name = |module: &Self, node: &Node| {
             Ident::new(
                 &format!("{}{}", module.device_type.camel_name(), node.struct_ident),
                 Span::call_site(),
@@ -226,10 +226,10 @@ fn remove_build_attr(item: &mut Item) {
 /// attribute. Return the item as an `&ItemStruct` if so, otherwise
 /// return None.
 fn get_node_struct(item: &Item) -> Option<&ItemStruct> {
-    if let Item::Struct(item) = item {
-        if item.attrs.iter().any(is_node_attr) {
-            return Some(item);
-        }
+    if let Item::Struct(item) = item
+        && item.attrs.iter().any(is_node_attr)
+    {
+        return Some(item);
     }
     None
 }

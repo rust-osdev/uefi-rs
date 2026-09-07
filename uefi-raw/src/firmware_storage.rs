@@ -2,6 +2,8 @@
 
 //! Types related to firmware storage.
 
+#![expect(missing_docs)]
+
 use crate::Guid;
 use bitflags::bitflags;
 

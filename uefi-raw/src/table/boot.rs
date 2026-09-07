@@ -13,10 +13,19 @@ use core::mem::offset_of;
 use core::ops::RangeInclusive;
 
 newtype_enum! {
+    /// The type of allocation to perform.
     pub enum AllocateType: u32 => {
+        /// Allocate any available range of pages that satisfies the request.
+        ///
+        /// On input, the address pointed to by the memory parameter is ignored.
         ANY_PAGES = 0,
+        /// Allocate any available range of pages whose uppermost address is
+        /// less than or equal to the address pointed to by the memory passed
+        /// parameter.
         MAX_ADDRESS = 1,
+        /// Allocate pages at the address pointed to by the memory parameter.
         ADDRESS = 2,
+        /// .
         MAX_ALLOCATE_TYPE = 3,
     }
 }
@@ -24,6 +33,7 @@ newtype_enum! {
 /// Table of pointers to all the boot services.
 #[derive(Debug)]
 #[repr(C)]
+#[expect(missing_docs)]
 pub struct BootServices {
     pub header: Header,
 
@@ -487,6 +497,7 @@ impl MemoryType {
 
 #[derive(Debug)]
 #[repr(C)]
+#[expect(missing_docs)]
 pub struct OpenProtocolInformationEntry {
     pub agent_handle: Handle,
     pub controller_handle: Handle,
@@ -526,9 +537,21 @@ pub enum Tpl: usize => {
 pub const PAGE_SIZE: usize = 4096;
 
 newtype_enum! {
+    /// The type of time that is specified.
     pub enum TimerDelay: i32 => {
+        /// The event's timer setting is to be cancelled and no timer trigger
+        /// is to be set.
+        ///
+        /// TriggerTime is ignored when canceling a timer.
         CANCEL = 0,
+        /// The event is to be signaled periodically at TriggerTime intervals
+        /// from the current time.
+        ///
+        /// This is the only timer trigger type for which the event timer does
+        /// not need to be reset for each notification. All other timer trigger
+        /// types are "one shot".
         PERIODIC = 1,
+        /// The event is to be signaled in the configured amount of 100ns units.
         RELATIVE = 2,
     }
 }

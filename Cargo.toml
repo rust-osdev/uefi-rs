@@ -29,10 +29,6 @@ time = { version = "0.3", default-features = false }
 uguid = "2.2.1"
 
 [workspace.lints]
-cargo = {
-  # Template crate does not need it.
-  missing_lints_inheritance = "allow"
-}
 clippy = {
   # Groups
   "all" = "deny",

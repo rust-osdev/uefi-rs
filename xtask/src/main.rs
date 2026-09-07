@@ -1,20 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-#![deny(
-    clippy::all,
-    clippy::absolute_paths,
-    clippy::missing_const_for_fn,
-    clippy::must_use_candidate,
-    clippy::missing_safety_doc,
-    clippy::ptr_as_ptr,
-    clippy::ref_as_ptr,
-    clippy::undocumented_unsafe_blocks,
-    clippy::use_self,
-    missing_debug_implementations,
-    // missing_docs,
-    unsafe_op_in_unsafe_fn,
-    unused
-)]
 #![expect(missing_docs)]
 
 mod arch;

@@ -5,6 +5,9 @@ publish = false
 
 edition.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = "1.0.51"
 clap = { version = "4.4.0", default-features = false, features = ["derive", "help", "usage", "std", "env"] }

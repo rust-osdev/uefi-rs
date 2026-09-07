@@ -28,6 +28,32 @@ qemu-exit = { version = "4.0.0" }
 time = { version = "0.3", default-features = false }
 uguid = "2.2.1"
 
+[workspace.lints]
+cargo = {
+  # Template crate does not need it.
+  missing_lints_inheritance = "allow"
+}
+clippy = {
+  # Groups
+  "all" = "deny",
+
+  # Individual
+  "absolute_paths" = "deny",
+  "missing_const_for_fn" = "deny",
+  "missing_safety_doc" = "deny",
+  "must_use_candidate" = "deny",
+  "ptr_as_ptr" = "deny",
+  "ref_as_ptr" = "deny",
+  "undocumented_unsafe_blocks" = "deny",
+  "use_self" = "deny",
+}
+rust = {
+  "missing_debug_implementations" = "deny",
+  "missing_docs" = "deny",
+  "unsafe_op_in_unsafe_fn" = "deny",
+  "unused" = "deny",
+}
+
 [patch.crates-io]
 uefi = { path = "uefi" }
 uefi-macros = { path = "uefi-macros" }

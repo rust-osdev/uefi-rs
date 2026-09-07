@@ -61,6 +61,14 @@ impl CString16 {
         Self(vec![NUL_16])
     }
 
+    /// Truncates this string, removing all contents except for the mandatory NUL.
+    ///
+    /// While this means the string will have a length of zero, it does not touch its capacity.
+    pub fn clear(&mut self) {
+        self.0.clear();
+        self.0.push(NUL_16);
+    }
+
     /// Inserts a character at the end of the string, right before the null
     /// character.
     ///
@@ -373,5 +381,17 @@ mod tests {
 
         let input = String::from(&input);
         assert_eq!(input, "foo\\bar\\foobar\\\\")
+    }
+
+    #[test]
+    fn test_clear() {
+        let mut str = CString16::try_from("a").unwrap();
+        assert_eq!(str.0, [char16!('a'), NUL_16]);
+
+        str.clear();
+        assert_eq!(str.0, [NUL_16]);
+
+        str.clear();
+        assert_eq!(str.0, [NUL_16]);
     }
 }

@@ -19,6 +19,11 @@ impl PathBuf {
         Self::default()
     }
 
+    /// Truncates the path to zero length.
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+
     /// Constructor that replaces all occurrences of `/` with `\`.
     fn new_from_cstring16(mut string: CString16) -> Self {
         const SEARCH: Char16 = char16!('/');
@@ -184,5 +189,18 @@ mod tests {
 
         assert_eq!(pathbuf2, pathbuf2);
         assert_ne!(pathbuf1, pathbuf2);
+    }
+
+    #[test]
+    fn clear() {
+        let mut pathbuf = PathBuf::new();
+        pathbuf.push(cstr16!("first"));
+        assert_eq!(cstr16!("first"), pathbuf.to_cstr16());
+
+        pathbuf.clear();
+        assert_eq!(cstr16!(""), pathbuf.to_cstr16());
+
+        pathbuf.clear();
+        assert_eq!(cstr16!(""), pathbuf.to_cstr16());
     }
 }

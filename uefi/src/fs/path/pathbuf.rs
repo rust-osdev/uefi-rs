@@ -3,7 +3,7 @@
 use crate::fs::SEPARATOR;
 use crate::fs::path::Path;
 use crate::{CStr16, CString16, Char16, char16};
-use core::fmt::{Display, Formatter};
+use core::fmt::{self, Display, Formatter};
 
 /// A path buffer similar to the `PathBuf` of the standard library, but based on
 /// [`CString16`] strings and [`SEPARATOR`] as separator.
@@ -62,7 +62,7 @@ impl PartialEq for PathBuf {
 }
 
 impl Display for PathBuf {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Display::fmt(self.to_cstr16(), f)
     }
 }

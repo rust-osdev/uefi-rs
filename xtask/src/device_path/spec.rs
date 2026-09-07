@@ -304,7 +304,7 @@ mod acpi {
             } else {
                 // Safety: `AdrSlice` has the same repr as `[u32]`.
                 #[expect(clippy::undocumented_unsafe_blocks)] // quote!() is removing comments
-                let adr_slice: &Self = unsafe { core::mem::transmute(slice) };
+                let adr_slice: &Self = unsafe { mem::transmute(slice) };
                 Some(adr_slice)
             }
         }

@@ -5,6 +5,7 @@
 use core::ffi::c_void;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
+use core::slice;
 
 use uefi_raw::table::boot::PAGE_SIZE;
 
@@ -68,7 +69,7 @@ impl<'a> Deref for DmaBuffer<'a> {
     fn deref(&self) -> &[u8] {
         // SAFETY: `DmaBuffer::from_raw` requires `ptr` to be valid for
         // `pages * PAGE_SIZE` bytes for this buffer's lifetime.
-        unsafe { core::slice::from_raw_parts(self.ptr.cast(), self.pages * PAGE_SIZE) }
+        unsafe { slice::from_raw_parts(self.ptr.cast(), self.pages * PAGE_SIZE) }
     }
 }
 
@@ -76,7 +77,7 @@ impl<'a> DerefMut for DmaBuffer<'a> {
     fn deref_mut(&mut self) -> &mut [u8] {
         // SAFETY: `&mut self` guarantees unique access to the owned DMA buffer,
         // whose raw memory is valid for `pages * PAGE_SIZE` bytes.
-        unsafe { core::slice::from_raw_parts_mut(self.ptr.cast::<u8>(), self.pages * PAGE_SIZE) }
+        unsafe { slice::from_raw_parts_mut(self.ptr.cast::<u8>(), self.pages * PAGE_SIZE) }
     }
 }
 

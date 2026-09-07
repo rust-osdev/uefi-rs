@@ -2,7 +2,9 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Error, Event, Result, Status, StatusExt};
+use core::ffi::c_void;
 use core::mem::MaybeUninit;
+use core::ptr;
 use uefi_raw::protocol::console::{
     InputKey, KeyData as RawKeyData, KeyNotifyFn, KeyShiftState, KeyState as RawKeyState,
     KeyToggleState, SimpleTextInputExProtocol, SimpleTextInputProtocol,
@@ -265,7 +267,7 @@ impl InputEx {
         key_data: KeyData,
         notify_function: KeyNotifyFn,
     ) -> Result<KeyNotifyHandle> {
-        let mut handle = core::ptr::null_mut();
+        let mut handle = ptr::null_mut();
 
         // We must convert our high-level KeyData back to the raw format the firmware expects
         let raw_key_data = RawKeyData {
@@ -314,7 +316,7 @@ impl InputEx {
 /// A handle to a registered key notification.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct KeyNotifyHandle(*mut core::ffi::c_void);
+pub struct KeyNotifyHandle(*mut c_void);
 
 /// A key read from the console and associated keyboard state.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

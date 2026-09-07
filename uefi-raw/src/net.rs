@@ -9,6 +9,7 @@
 //! - [`Ipv6Address`]
 
 use core::fmt::{self, Debug, Display, Formatter};
+use core::net as core_net;
 
 /// An IPv4 internet protocol address.
 ///
@@ -30,13 +31,13 @@ impl Ipv4Address {
     }
 }
 
-impl From<core::net::Ipv4Addr> for Ipv4Address {
-    fn from(ip: core::net::Ipv4Addr) -> Self {
+impl From<core_net::Ipv4Addr> for Ipv4Address {
+    fn from(ip: core_net::Ipv4Addr) -> Self {
         Self(ip.octets())
     }
 }
 
-impl From<Ipv4Address> for core::net::Ipv4Addr {
+impl From<Ipv4Address> for core_net::Ipv4Addr {
     fn from(ip: Ipv4Address) -> Self {
         Self::from(ip.0)
     }
@@ -50,7 +51,7 @@ impl From<[u8; 4]> for Ipv4Address {
 
 impl Display for Ipv4Address {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let ip = core::net::Ipv4Addr::from(*self);
+        let ip = core_net::Ipv4Addr::from(*self);
         write!(f, "{}", ip)
     }
 }
@@ -75,13 +76,13 @@ impl Ipv6Address {
     }
 }
 
-impl From<core::net::Ipv6Addr> for Ipv6Address {
-    fn from(ip: core::net::Ipv6Addr) -> Self {
+impl From<core_net::Ipv6Addr> for Ipv6Address {
+    fn from(ip: core_net::Ipv6Addr) -> Self {
         Self(ip.octets())
     }
 }
 
-impl From<Ipv6Address> for core::net::Ipv6Addr {
+impl From<Ipv6Address> for core_net::Ipv6Addr {
     fn from(ip: Ipv6Address) -> Self {
         Self::from(ip.0)
     }
@@ -95,7 +96,7 @@ impl From<[u8; 16]> for Ipv6Address {
 
 impl Display for Ipv6Address {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let ip = core::net::Ipv6Addr::from(*self);
+        let ip = core_net::Ipv6Addr::from(*self);
         write!(f, "{}", ip)
     }
 }
@@ -184,13 +185,13 @@ impl IpAddress {
     /// Callers must ensure that the `v4` field is valid if `is_ipv6` is false,
     /// and that the `v6` field is valid if `is_ipv6` is true
     #[must_use]
-    pub unsafe fn into_core_addr(self, is_ipv6: bool) -> core::net::IpAddr {
+    pub unsafe fn into_core_addr(self, is_ipv6: bool) -> core_net::IpAddr {
         if is_ipv6 {
             // SAFETY: Caller assumes that the underlying data is initialized.
-            core::net::IpAddr::V6(core::net::Ipv6Addr::from(unsafe { self.v6.octets() }))
+            core_net::IpAddr::V6(core_net::Ipv6Addr::from(unsafe { self.v6.octets() }))
         } else {
             // SAFETY: Caller assumes that the underlying data is initialized.
-            core::net::IpAddr::V4(core::net::Ipv4Addr::from(unsafe { self.v4.octets() }))
+            core_net::IpAddr::V4(core_net::Ipv4Addr::from(unsafe { self.v4.octets() }))
         }
     }
 }
@@ -210,23 +211,23 @@ impl Default for IpAddress {
     }
 }
 
-impl From<core::net::IpAddr> for IpAddress {
-    fn from(t: core::net::IpAddr) -> Self {
+impl From<core_net::IpAddr> for IpAddress {
+    fn from(t: core_net::IpAddr) -> Self {
         match t {
-            core::net::IpAddr::V4(ip) => Self::new_v4(ip.octets()),
-            core::net::IpAddr::V6(ip) => Self::new_v6(ip.octets()),
+            core_net::IpAddr::V4(ip) => Self::new_v4(ip.octets()),
+            core_net::IpAddr::V6(ip) => Self::new_v6(ip.octets()),
         }
     }
 }
 
-impl From<core::net::Ipv4Addr> for IpAddress {
-    fn from(value: core::net::Ipv4Addr) -> Self {
+impl From<core_net::Ipv4Addr> for IpAddress {
+    fn from(value: core_net::Ipv4Addr) -> Self {
         Self::new_v4(value.octets())
     }
 }
 
-impl From<core::net::Ipv6Addr> for IpAddress {
-    fn from(value: core::net::Ipv6Addr) -> Self {
+impl From<core_net::Ipv6Addr> for IpAddress {
+    fn from(value: core_net::Ipv6Addr) -> Self {
         Self::new_v6(value.octets())
     }
 }
@@ -312,34 +313,34 @@ mod tests {
         101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
     ];
 
-    /// Test round-trip conversion between `Ipv4Address` and `core::net::Ipv4Addr`.
+    /// Test round-trip conversion between [`Ipv4Address`] and [`core_net::Ipv4Addr`].
     #[test]
     fn test_ip_addr4_conversion() {
         let uefi_addr = Ipv4Address(TEST_IPV4);
-        let core_addr = core::net::Ipv4Addr::from(uefi_addr);
+        let core_addr = core_net::Ipv4Addr::from(uefi_addr);
         assert_eq!(uefi_addr, Ipv4Address::from(core_addr));
     }
 
-    /// Test round-trip conversion between `Ipv6Address` and `core::net::Ipv6Addr`.
+    /// Test round-trip conversion between [`Ipv6Address`] and [`core_net::Ipv6Addr`].
     #[test]
     fn test_ip_addr6_conversion() {
         let uefi_addr = Ipv6Address(TEST_IPV6);
-        let core_addr = core::net::Ipv6Addr::from(uefi_addr);
+        let core_addr = core_net::Ipv6Addr::from(uefi_addr);
         assert_eq!(uefi_addr, Ipv6Address::from(core_addr));
     }
 
-    /// Test conversion from `core::net::IpAddr` to `IpvAddress`.
+    /// Test conversion from [`core_net::IpAddr`] to [`IpvAddress`].
     ///
     /// Note that conversion in the other direction is not possible.
     #[test]
     fn test_ip_addr_conversion() {
-        let core_addr = core::net::IpAddr::V4(core::net::Ipv4Addr::from(TEST_IPV4));
+        let core_addr = core_net::IpAddr::V4(core_net::Ipv4Addr::from(TEST_IPV4));
         let uefi_addr = IpAddress::from(core_addr);
         // SAFETY: `IpAddress::from` constructed the IPv4 variant above.
         let octets = unsafe { uefi_addr.v4.0 };
         assert_eq!(octets, TEST_IPV4);
 
-        let core_addr = core::net::IpAddr::V6(core::net::Ipv6Addr::from(TEST_IPV6));
+        let core_addr = core_net::IpAddr::V6(core_net::Ipv6Addr::from(TEST_IPV6));
         let uefi_addr = IpAddress::from(core_addr);
         // SAFETY: `IpAddress::from` constructed the IPv6 variant above.
         let octets = unsafe { uefi_addr.v6.0 };
@@ -391,7 +392,7 @@ mod tests {
         // StdIpv4Addr -> Ipv4Address
         {
             let octets = [7, 5, 3, 1];
-            let core_ipv4_addr = core::net::Ipv4Addr::from(octets);
+            let core_ipv4_addr = core_net::Ipv4Addr::from(octets);
             assert_eq!(Ipv4Address::from(core_ipv4_addr).octets(), octets);
             // SAFETY: The `Ipv4Addr` conversion selects the IPv4 variant.
             let converted = unsafe { IpAddress::from(core_ipv4_addr).v4.octets() };
@@ -400,7 +401,7 @@ mod tests {
         // StdIpv6Addr -> Ipv6Address
         {
             let octets = [7, 5, 3, 1, 6, 3, 8, 5, 2, 5, 2, 7, 3, 5, 2, 6];
-            let core_ipv6_addr = core::net::Ipv6Addr::from(octets);
+            let core_ipv6_addr = core_net::Ipv6Addr::from(octets);
             assert_eq!(Ipv6Address::from(core_ipv6_addr).octets(), octets);
             // SAFETY: The `Ipv6Addr` conversion selects the IPv6 variant.
             let converted = unsafe { IpAddress::from(core_ipv6_addr).v6.octets() };
@@ -409,7 +410,7 @@ mod tests {
         // StdIpAddr -> IpAddress
         {
             let octets = [8, 8, 2, 6];
-            let core_ip_addr = core::net::IpAddr::from(octets);
+            let core_ip_addr = core_net::IpAddr::from(octets);
             // SAFETY: This `IpAddr` is built from four octets, so it is IPv4.
             let converted = unsafe { IpAddress::from(core_ip_addr).v4.octets() };
             assert_eq!(converted, octets);
@@ -459,7 +460,7 @@ mod tests {
             }
         }
 
-        fn high_level_retrieve_ip(is_ipv6: bool) -> core::net::IpAddr {
+        fn high_level_retrieve_ip(is_ipv6: bool) -> core_net::IpAddr {
             let mut efi_ip_addr = IpAddress::ZERO;
             efi_retrieve_efi_ip_addr(&mut efi_ip_addr, is_ipv6);
             // SAFETY: The helper initialized the variant selected by `is_ipv6`.
@@ -467,16 +468,16 @@ mod tests {
         }
 
         let ipv4_addr = high_level_retrieve_ip(false);
-        let ipv4_addr: core::net::Ipv4Addr = match ipv4_addr {
-            core::net::IpAddr::V4(ipv4_addr) => ipv4_addr,
-            core::net::IpAddr::V6(_) => panic!("should not happen"),
+        let ipv4_addr: core_net::Ipv4Addr = match ipv4_addr {
+            core_net::IpAddr::V4(ipv4_addr) => ipv4_addr,
+            core_net::IpAddr::V6(_) => panic!("should not happen"),
         };
         assert_eq!(ipv4_addr.octets(), [42, 42, 42, 42]);
 
         let ipv6_addr = high_level_retrieve_ip(true);
-        let ipv6_addr: core::net::Ipv6Addr = match ipv6_addr {
-            core::net::IpAddr::V6(ipv6_addr) => ipv6_addr,
-            core::net::IpAddr::V4(_) => panic!("should not happen"),
+        let ipv6_addr: core_net::Ipv6Addr = match ipv6_addr {
+            core_net::IpAddr::V6(ipv6_addr) => ipv6_addr,
+            core_net::IpAddr::V4(_) => panic!("should not happen"),
         };
         let expected = [42, 42, 42, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 42];
         assert_eq!(ipv6_addr.octets(), expected);

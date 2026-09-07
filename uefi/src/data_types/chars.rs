@@ -5,6 +5,7 @@
 //! UEFI uses both Latin-1 and UCS-2 character encoding, this module implements
 //! support for the associated character types.
 
+use core::error;
 use core::fmt::{self, Display, Formatter};
 
 use crate::char16;
@@ -19,7 +20,7 @@ impl Display for CharConversionError {
     }
 }
 
-impl core::error::Error for CharConversionError {}
+impl error::Error for CharConversionError {}
 
 /// A Latin-1 character
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
@@ -162,7 +163,7 @@ impl fmt::Display for Char16 {
         if let Ok(c) = u32::from(self.0).try_into() {
             <char as fmt::Display>::fmt(&c, f)
         } else {
-            write!(f, "{}", core::char::REPLACEMENT_CHARACTER)
+            write!(f, "{}", char::REPLACEMENT_CHARACTER)
         }
     }
 }

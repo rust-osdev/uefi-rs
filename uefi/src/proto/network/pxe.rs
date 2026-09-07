@@ -11,6 +11,7 @@ use core::iter::from_fn;
 use core::mem::MaybeUninit;
 use core::net::{IpAddr, Ipv4Addr};
 use core::ptr::{self, null, null_mut};
+use core::{error, result, str};
 use ptr_meta::Pointee;
 use uefi::proto::network::EfiMacAddr;
 use uefi_raw::protocol::network::pxe::{
@@ -166,7 +167,7 @@ impl BaseCode {
         server_ip: &IpAddr,
         directory_name: &CStr8,
         buffer: &'a mut [u8],
-    ) -> Result<impl Iterator<Item = core::result::Result<TftpFileInfo<'a>, ReadDirParseError>> + 'a>
+    ) -> Result<impl Iterator<Item = result::Result<TftpFileInfo<'a>, ReadDirParseError>> + 'a>
     {
         let buffer_ptr = buffer.as_mut_ptr().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
@@ -204,7 +205,7 @@ impl BaseCode {
             let information_string = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, information_string) = information_string.split_last().unwrap();
             let information_string =
-                core::str::from_utf8(information_string).map_err(|_| ReadDirParseError)?;
+                str::from_utf8(information_string).map_err(|_| ReadDirParseError)?;
 
             let (size, rest) = information_string
                 .split_once(' ')
@@ -305,7 +306,7 @@ impl BaseCode {
         server_ip: &IpAddr,
         buffer: &'a mut [u8],
         info: &MtftpInfo,
-    ) -> Result<impl Iterator<Item = core::result::Result<MtftpFileInfo<'a>, ReadDirParseError>> + 'a>
+    ) -> Result<impl Iterator<Item = result::Result<MtftpFileInfo<'a>, ReadDirParseError>> + 'a>
     {
         let buffer_ptr = buffer.as_mut_ptr().cast();
         let mut buffer_size = u64::try_from(buffer.len()).expect("buffer length should fit in u64");
@@ -342,7 +343,7 @@ impl BaseCode {
 
             let multicast_ip = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, multicast_ip) = multicast_ip.split_last().unwrap();
-            let multicast_ip = core::str::from_utf8(multicast_ip).map_err(|_| ReadDirParseError)?;
+            let multicast_ip = str::from_utf8(multicast_ip).map_err(|_| ReadDirParseError)?;
             let mut octets = multicast_ip.split('.');
             let mut buffer = [0; 4];
             for b in buffer.iter_mut() {
@@ -359,7 +360,7 @@ impl BaseCode {
             let information_string = iterator.next().ok_or(ReadDirParseError)?;
             let (_null_terminator, information_string) = information_string.split_last().unwrap();
             let information_string =
-                core::str::from_utf8(information_string).map_err(|_| ReadDirParseError)?;
+                str::from_utf8(information_string).map_err(|_| ReadDirParseError)?;
 
             let (size, rest) = information_string
                 .split_once(' ')
@@ -714,7 +715,7 @@ impl DiscoverInfo {
             ptr_write_unaligned_and_add(&mut ptr, server_count as u16);
 
             ptr = ptr.add(2); // Align server list (4-byte alignment).
-            core::ptr::copy(srv_list.as_ptr(), ptr.cast(), server_count);
+            ptr::copy(srv_list.as_ptr(), ptr.cast(), server_count);
 
             let ptr: *mut Self =
                 ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast(), server_count);
@@ -1117,7 +1118,7 @@ impl Display for ReadDirParseError {
     }
 }
 
-impl core::error::Error for ReadDirParseError {}
+impl error::Error for ReadDirParseError {}
 
 #[cfg(test)]
 mod tests {

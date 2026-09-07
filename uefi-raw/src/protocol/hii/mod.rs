@@ -11,8 +11,9 @@ pub mod popup;
 pub mod string;
 
 use crate::{Char16, Guid, newtype_enum};
+use core::ffi;
 
-pub type HiiHandle = *mut core::ffi::c_void;
+pub type HiiHandle = *mut ffi::c_void;
 
 pub type QuestionId = u16;
 pub type ImageId = u16;

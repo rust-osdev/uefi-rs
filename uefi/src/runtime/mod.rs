@@ -19,6 +19,8 @@ use core::fmt::Debug;
 use core::fmt::{self, Display, Formatter};
 use core::ptr::{self, NonNull};
 use uefi_raw::table::boot::MemoryDescriptor;
+use uefi_raw::table::runtime::RuntimeServices;
+use uefi_raw::table::system::SystemTable;
 
 #[cfg(feature = "alloc")]
 use {
@@ -36,7 +38,7 @@ pub use uefi_raw::table::runtime::{
 };
 pub use uefi_raw::time::Daylight;
 
-fn runtime_services_raw_panicking() -> NonNull<uefi_raw::table::runtime::RuntimeServices> {
+fn runtime_services_raw_panicking() -> NonNull<RuntimeServices> {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.
     let st = unsafe { st.as_ref() };
@@ -555,7 +557,7 @@ pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
 ///   current memory map.
 pub unsafe fn set_virtual_address_map(
     map: &mut [MemoryDescriptor],
-    new_system_table_virtual_addr: *const uefi_raw::table::system::SystemTable,
+    new_system_table_virtual_addr: *const SystemTable,
 ) -> Result {
     let rt = runtime_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.

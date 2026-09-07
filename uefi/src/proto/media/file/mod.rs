@@ -18,7 +18,7 @@ use crate::{CStr16, Result, Status, StatusExt};
 use core::ffi::c_void;
 use core::fmt::Debug;
 use core::{mem, ptr};
-use uefi_raw::protocol::file_system::FileProtocolV1;
+use uefi_raw::protocol::file_system::{FileMode as RawFileMode, FileProtocolV1};
 
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
@@ -80,7 +80,7 @@ pub trait File: Sized {
                 self.imp(),
                 &mut ptr,
                 filename.as_ptr().cast(),
-                uefi_raw::protocol::file_system::FileMode::from_bits_truncate(open_mode as u64),
+                RawFileMode::from_bits_truncate(open_mode as u64),
                 attributes,
             )
         }
@@ -418,7 +418,7 @@ mod tests {
             // SAFETY: The memory is valid.
             unsafe {
                 ptr::copy_nonoverlapping(
-                    core::ptr::from_ref::<FileInfo>(info).cast(),
+                    ptr::from_ref::<FileInfo>(info).cast(),
                     buffer,
                     required_size,
                 );
@@ -435,7 +435,7 @@ mod tests {
         _this: *mut FileProtocolV1,
         _new_handle: *mut *mut FileProtocolV1,
         _filename: *const uefi_raw::Char16,
-        _open_mode: uefi_raw::protocol::file_system::FileMode,
+        _open_mode: RawFileMode,
         _attributes: FileAttribute,
     ) -> Status {
         Status::UNSUPPORTED

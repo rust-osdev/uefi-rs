@@ -70,7 +70,7 @@ impl DebugconWriter {
     any(target_arch = "x86", target_arch = "x86_64"),
     feature = "log-debugcon"
 ))]
-impl core::fmt::Write for DebugconWriter {
+impl Write for DebugconWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for &byte in s.as_bytes() {
             // SAFETY: Port 0xe9 is a fixed debug output sink, and writing a byte

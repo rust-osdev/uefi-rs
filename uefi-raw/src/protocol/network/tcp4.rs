@@ -12,6 +12,7 @@ use crate::protocol::network::ip4::Ip4ModeData;
 use crate::protocol::network::snp::NetworkMode;
 use crate::{Boolean, Event, Guid, Handle, Ipv4Address, Status, guid, newtype_enum};
 use core::ffi::c_void;
+use core::fmt;
 use core::fmt::{Debug, Formatter};
 
 #[derive(Debug)]
@@ -364,7 +365,7 @@ pub union Tcp4Packet {
 }
 
 impl Debug for Tcp4Packet {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Tcp4Packet").finish()
     }
 }

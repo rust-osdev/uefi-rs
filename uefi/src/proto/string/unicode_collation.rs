@@ -9,6 +9,7 @@ use crate::data_types::{CStr8, CStr16};
 use crate::proto::unsafe_protocol;
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
+use core::{error, slice};
 use uefi_raw::protocol::string::UnicodeCollationProtocol;
 
 /// Unicode Collation [`Protocol`].
@@ -155,7 +156,7 @@ impl UnicodeCollation {
                 .position(|&b| b == 0)
                 .expect("conversion should leave the pre-zeroed NUL of the input intact");
             // SAFETY: The pointer is valid for the requested slice length.
-            let buf = unsafe { core::slice::from_raw_parts(buf.as_ptr(), end + 1) };
+            let buf = unsafe { slice::from_raw_parts(buf.as_ptr(), end + 1) };
             // SAFETY: The slice ends with the first NUL, so there are no interior NULs.
             Ok(unsafe { CStr8::from_bytes_with_nul_unchecked(buf) })
         }
@@ -184,4 +185,4 @@ impl Display for StrConversionError {
     }
 }
 
-impl core::error::Error for StrConversionError {}
+impl error::Error for StrConversionError {}

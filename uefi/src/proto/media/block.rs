@@ -7,6 +7,7 @@ use core::ptr::NonNull;
 use crate::proto::unsafe_protocol;
 use crate::util::opt_nonnull_to_ptr;
 use crate::{Event, Result, Status, StatusExt};
+use uefi_raw::protocol::block::BlockIoMedia;
 
 pub use uefi_raw::protocol::block::{BlockIo2Protocol, BlockIoProtocol, Lba};
 
@@ -163,7 +164,7 @@ impl BlockIO {
 /// Media information structure
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct BlockIOMedia(uefi_raw::protocol::block::BlockIoMedia);
+pub struct BlockIOMedia(BlockIoMedia);
 
 impl BlockIOMedia {
     /// The current media ID.

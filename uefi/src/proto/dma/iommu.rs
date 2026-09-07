@@ -7,6 +7,7 @@ use crate::mem::memory_map::MemoryType;
 use crate::proto::unsafe_protocol;
 use crate::{Handle, Result, Status, StatusExt};
 use core::ffi::c_void;
+use core::ptr;
 use uefi_raw::table::boot::AllocateType;
 
 pub use crate::proto::dma::{DmaBuffer, Mapping};
@@ -78,7 +79,7 @@ impl Iommu {
 
         let mut number_of_bytes = number_of_bytes;
 
-        let mut mapping_raw: *mut c_void = core::ptr::null_mut();
+        let mut mapping_raw: *mut c_void = ptr::null_mut();
         let mut device_address: u64 = 0;
 
         let host_address: *mut c_void = host_buffer.as_mut_ptr();
@@ -127,7 +128,7 @@ impl Iommu {
         pages: usize,
         attributes: EdkiiIommuAttribute,
     ) -> Result<DmaBuffer<'_>> {
-        let mut host_address: *mut c_void = core::ptr::null_mut();
+        let mut host_address: *mut c_void = ptr::null_mut();
 
         // Per spec, AllocateType is ignored by the IOMMU allocate_buffer implementation.
         let allocate_type = AllocateType::ANY_PAGES;

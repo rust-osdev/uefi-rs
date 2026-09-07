@@ -79,7 +79,7 @@ impl SimpleNetwork {
         let filter_count = mcast_filter.map(|filters| filters.len()).unwrap_or(0);
         let filters = mcast_filter
             .map(|filters| filters.as_ptr())
-            .unwrap_or(core::ptr::null_mut());
+            .unwrap_or(ptr::null_mut());
 
         // SAFETY: The memory is valid.
         unsafe {

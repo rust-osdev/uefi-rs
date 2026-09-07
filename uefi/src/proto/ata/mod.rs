@@ -6,8 +6,8 @@ use crate::mem::{AlignedBuffer, AlignmentError};
 use crate::util::usize_from_u32;
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
-use core::ptr;
 use core::time::Duration;
+use core::{ptr, slice};
 use uefi_raw::protocol::ata::{
     AtaCommandBlock, AtaPassThruCommandPacket, AtaPassThruLength, AtaStatusBlock,
 };
@@ -362,7 +362,7 @@ impl AtaResponse<'_> {
         }
         // SAFETY: The memory is valid.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.req.packet.in_data_buffer.cast(),
                 self.req.packet.in_transfer_length as usize,
             ))

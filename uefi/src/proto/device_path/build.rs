@@ -11,6 +11,7 @@ pub use crate::proto::device_path::device_path_gen::build::*;
 
 use crate::polyfill::{maybe_uninit_slice_as_mut_ptr, maybe_uninit_slice_assume_init_ref};
 use crate::proto::device_path::{DevicePath, DevicePathNode};
+use core::error;
 use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
 
@@ -195,7 +196,7 @@ impl Display for BuildError {
     }
 }
 
-impl core::error::Error for BuildError {}
+impl error::Error for BuildError {}
 
 /// Trait for types that can be used to build a node via
 /// [`DevicePathBuilder::push`].

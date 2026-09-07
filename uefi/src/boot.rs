@@ -43,16 +43,20 @@ use crate::proto::{BootPolicy, Protocol, ProtocolPointer};
 use crate::runtime::{self, ResetType};
 use crate::table::Revision;
 use crate::util::opt_nonnull_to_ptr;
-use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt, table};
+use crate::{Char16, Error, Event, Guid, Handle, Result, Status, StatusExt, helpers, table};
 use core::ffi::c_void;
-use core::fmt::{Display, Formatter};
+use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
 use core::time::Duration;
 use core::{mem, slice};
-use uefi_raw::table::boot::{AllocateType as RawAllocateType, InterfaceType, TimerDelay};
+use uefi_raw::protocol::device_path::DevicePathProtocol;
+use uefi_raw::table::boot::{
+    AllocateType as RawAllocateType, BootServices, EventNotifyFn as RawEventNotifyFn,
+    InterfaceType, TimerDelay,
+};
 #[cfg(feature = "alloc")]
 use {alloc::vec::Vec, uefi::ResultExt};
 
@@ -98,7 +102,7 @@ pub(crate) fn are_boot_services_active() -> bool {
     !st.boot_services.is_null()
 }
 
-fn boot_services_raw_panicking() -> NonNull<uefi_raw::table::boot::BootServices> {
+fn boot_services_raw_panicking() -> NonNull<BootServices> {
     let st = table::system_table_raw_panicking();
     // SAFETY: valid per requirements of `set_system_table`.
     let st = unsafe { st.as_ref() };
@@ -440,7 +444,7 @@ pub unsafe fn create_event(
 
     // Safety: the argument types of the function pointers are defined
     // differently, but are compatible and can be safely transmuted.
-    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> =
+    let notify_fn: Option<RawEventNotifyFn> =
         // SAFETY: The memory is valid.
         unsafe { mem::transmute(notify_fn) };
 
@@ -516,7 +520,7 @@ pub unsafe fn create_event_ex(
 
     // Safety: the argument types of the function pointers are defined
     // differently, but are compatible and can be safely transmuted.
-    let notify_fn: Option<uefi_raw::table::boot::EventNotifyFn> =
+    let notify_fn: Option<RawEventNotifyFn> =
         // SAFETY: The memory is valid.
         unsafe { mem::transmute(notify_fn) };
 
@@ -954,8 +958,7 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
     let bt = unsafe { bt.as_ref() };
 
     let mut handle = ptr::null_mut();
-    let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
-        device_path.as_ffi_ptr().cast();
+    let mut device_path_ptr: *const DevicePathProtocol = device_path.as_ffi_ptr().cast();
     // SAFETY: The memory is valid.
     unsafe {
         (bt.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).to_result_with_val(
@@ -1478,7 +1481,7 @@ pub unsafe fn exit_boot_services(custom_memory_type: Option<MemoryType>) -> Memo
     // LOADER_DATA is the default and also used by the Linux kernel:
     // https://elixir.bootlin.com/linux/v6.13.7/source/drivers/firmware/efi/libstub/mem.c#L24
     let memory_type = custom_memory_type.unwrap_or(MemoryType::LOADER_DATA);
-    crate::helpers::exit();
+    helpers::exit();
 
     let mut buf = MemoryMapBackingMemory::new(memory_type).expect("Failed to allocate memory");
 
@@ -1729,7 +1732,7 @@ impl<P: Protocol + ?Sized> ScopedProtocol<P> {
 
 // Forward Display impl to inner protocol:
 impl<P: Protocol + ?Sized + Display> Display for ScopedProtocol<P> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.get() {
             Some(proto) => {
                 write!(f, "{proto}")

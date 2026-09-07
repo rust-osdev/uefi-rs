@@ -10,6 +10,7 @@
 use super::Path;
 use crate::Char16;
 use crate::fs::CHARACTER_DENY_LIST;
+use core::error;
 use core::fmt::{self, Display, Formatter};
 
 /// Errors related to file paths.
@@ -40,7 +41,7 @@ impl Display for PathError {
     }
 }
 
-impl core::error::Error for PathError {}
+impl error::Error for PathError {}
 
 /// Validates a path for the needs of the [`fs`] module.
 ///

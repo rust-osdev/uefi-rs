@@ -16,7 +16,7 @@ use crate::proto::device_path::{
 };
 use crate::{Guid, guid};
 use bitflags::bitflags;
-use core::{fmt, slice};
+use core::{fmt, mem, slice};
 use ptr_meta::Pointee;
 use uefi_raw::IpAddress;
 /// Device path nodes for [`DeviceType::END`].
@@ -4250,7 +4250,7 @@ pub mod build {
                     None
                 } else {
                     #[expect(clippy::undocumented_unsafe_blocks)]
-                    let adr_slice: &Self = unsafe { core::mem::transmute(slice) };
+                    let adr_slice: &Self = unsafe { mem::transmute(slice) };
                     Some(adr_slice)
                 }
             }

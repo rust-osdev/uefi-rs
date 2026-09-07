@@ -15,7 +15,7 @@ use uefi_raw::protocol::ata::AtaPassThruProtocol;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 
 /// Mode structure with controller-specific information.
-pub type AtaPassThruMode = uefi_raw::protocol::ata::AtaPassThruMode;
+pub use uefi_raw::protocol::ata::AtaPassThruMode;
 
 /// The ATA Pass Thru Protocol.
 ///

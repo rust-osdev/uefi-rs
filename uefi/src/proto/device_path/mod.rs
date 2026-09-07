@@ -113,7 +113,7 @@ use crate::proto::{ProtocolPointer, unsafe_protocol};
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
 use core::ops::Deref;
-use core::ptr;
+use core::{error, ptr};
 use ptr_meta::Pointee;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
 #[cfg(feature = "alloc")]
@@ -919,8 +919,8 @@ impl Display for DevicePathToTextError {
     }
 }
 
-impl core::error::Error for DevicePathToTextError {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+impl error::Error for DevicePathToTextError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::CantLocateHandleBuffer(e) => Some(e),
             Self::CantOpenProtocol(e) => Some(e),
@@ -976,8 +976,8 @@ impl Display for DevicePathUtilitiesError {
     }
 }
 
-impl core::error::Error for DevicePathUtilitiesError {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+impl error::Error for DevicePathUtilitiesError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::CantLocateHandleBuffer(e) => Some(e),
             Self::CantOpenProtocol(e) => Some(e),

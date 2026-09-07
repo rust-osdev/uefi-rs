@@ -80,7 +80,7 @@ fn gen_uefi_code_as_string(groups: &[NodeGroup]) -> Result<String> {
             NodeConversionError,
         };
         use crate::mem::memory_map::MemoryType;
-        use core::{fmt, slice};
+        use core::{fmt, mem, slice};
         use ptr_meta::Pointee;
         use uefi_raw::IpAddress;
 

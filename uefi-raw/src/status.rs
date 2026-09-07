@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::newtype_enum;
+use core::fmt;
 use core::fmt::Debug;
 
 newtype_enum! {
@@ -125,8 +126,8 @@ impl Status {
     }
 }
 
-impl core::fmt::Display for Status {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(self, f)
     }
 }

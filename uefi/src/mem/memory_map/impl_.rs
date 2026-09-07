@@ -5,10 +5,10 @@
 
 use super::*;
 use crate::boot;
-use core::fmt::{Debug, Display, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 use core::ops::{Index, IndexMut};
-use core::ptr;
 use core::ptr::NonNull;
+use core::{error, ptr};
 use uefi_raw::PhysicalAddress;
 
 const fn validate_meta(meta: MemoryMapMeta) -> Result<usize, MemoryMapError> {
@@ -35,12 +35,12 @@ pub enum MemoryMapError {
 }
 
 impl Display for MemoryMapError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Debug::fmt(self, f)
     }
 }
 
-impl core::error::Error for MemoryMapError {}
+impl error::Error for MemoryMapError {}
 
 /// Implementation of [`MemoryMap`] for the given buffer.
 #[derive(Debug)]

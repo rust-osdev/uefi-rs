@@ -12,10 +12,12 @@ use core::fmt::{self, Display, Formatter};
 use core::mem::MaybeUninit;
 use core::ops::Deref;
 use core::ptr::NonNull;
-use core::{ptr, slice};
+use core::{error, ptr, slice};
 
 #[cfg(feature = "alloc")]
 use super::CString16;
+#[cfg(feature = "alloc")]
+use alloc::string::String;
 
 /// Error converting from a slice (which can contain interior nuls) to a string
 /// type.
@@ -37,7 +39,7 @@ impl Display for FromSliceUntilNulError {
     }
 }
 
-impl core::error::Error for FromSliceUntilNulError {}
+impl error::Error for FromSliceUntilNulError {}
 
 /// Error converting from a slice (which cannot contain interior nuls) to a
 /// string type.
@@ -67,7 +69,7 @@ impl Display for FromSliceWithNulError {
     }
 }
 
-impl core::error::Error for FromSliceWithNulError {}
+impl error::Error for FromSliceWithNulError {}
 
 /// Error returned by [`CStr16::from_unaligned_slice`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -97,7 +99,7 @@ impl Display for UnalignedCStr16Error {
     }
 }
 
-impl core::error::Error for UnalignedCStr16Error {}
+impl error::Error for UnalignedCStr16Error {}
 
 /// Error returned by [`CStr16::from_str_with_buf`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -123,7 +125,7 @@ impl Display for FromStrWithBufError {
     }
 }
 
-impl core::error::Error for FromStrWithBufError {}
+impl error::Error for FromStrWithBufError {}
 
 /// A null-terminated Latin-1 string.
 ///
@@ -688,7 +690,7 @@ impl CStr16 {
     /// ```
     ///
     /// [`alloc::string::String`]: https://doc.rust-lang.org/nightly/alloc/string/struct.String.html
-    pub fn as_str_in_buf(&self, buf: &mut dyn core::fmt::Write) -> core::fmt::Result {
+    pub fn as_str_in_buf(&self, buf: &mut dyn fmt::Write) -> fmt::Result {
         for c16 in self.iter() {
             buf.write_char(char::from(*c16))?;
         }
@@ -717,7 +719,7 @@ impl Borrow<[u8]> for CStr16 {
 }
 
 #[cfg(feature = "alloc")]
-impl From<&CStr16> for alloc::string::String {
+impl From<&CStr16> for String {
     fn from(value: &CStr16) -> Self {
         value
             .as_slice()

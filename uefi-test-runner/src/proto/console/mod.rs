@@ -11,7 +11,8 @@ pub fn test() {
         serial::test();
         gop::test();
     }
-    pointer::test();
+    pointer::test_pointer();
+    pointer::test_absolute_pointer();
 }
 
 mod gop;

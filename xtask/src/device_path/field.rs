@@ -191,11 +191,11 @@ impl NodeField {
         out
     }
 
-    pub fn is_slice(&self) -> bool {
+    pub const fn is_slice(&self) -> bool {
         self.slice_elem_ty().is_some()
     }
 
-    pub fn slice_elem_ty(&self) -> Option<&BaseType> {
+    pub const fn slice_elem_ty(&self) -> Option<&BaseType> {
         if let PackedType::Slice(slice) = &self.packed_ty {
             Some(slice)
         } else {

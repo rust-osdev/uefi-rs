@@ -138,7 +138,7 @@ impl Error {
 
 /// True if the visibility is public without restriction (i.e. just `pub`, not
 /// `pub(crate)` or similar).
-fn is_pub(vis: &Visibility) -> bool {
+const fn is_pub(vis: &Visibility) -> bool {
     matches!(vis, Visibility::Public(_))
 }
 
@@ -246,11 +246,11 @@ fn is_efiapi(f: &TypeFnPtr) -> bool {
     if let Some(Abi {
         name: Some(name), ..
     }) = &f.abi
+        && name.value() == "efiapi"
     {
-        if name.value() == "efiapi" {
-            return true;
-        }
+        return true;
     }
+
     false
 }
 
@@ -310,10 +310,10 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
         }
 
         // Ensure field name doesn't start with `_`.
-        if let Some(ident) = &field.ident {
-            if ident.to_string().starts_with('_') {
-                return Err(Error::new(ErrorKind::UnderscoreField, src, ident));
-            }
+        if let Some(ident) = &field.ident
+            && ident.to_string().starts_with('_')
+        {
+            return Err(Error::new(ErrorKind::UnderscoreField, src, ident));
         }
 
         // Ensure a valid field type.
@@ -478,10 +478,10 @@ pub fn check_raw() -> Result<()> {
         let entry = entry?;
         let path = entry.path();
 
-        if let Some(ext) = path.extension() {
-            if ext == "rs" {
-                check_file(path)?;
-            }
+        if let Some(ext) = path.extension()
+            && ext == "rs"
+        {
+            check_file(path)?;
         }
     }
 

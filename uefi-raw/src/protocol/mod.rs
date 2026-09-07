@@ -23,6 +23,9 @@
 //!
 //! [`GUID`]: crate::Guid
 
+// Not every type or field needs to be documented.
+#![expect(missing_docs)]
+
 pub mod acpi;
 pub mod ata;
 pub mod block;

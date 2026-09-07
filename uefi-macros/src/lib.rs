@@ -1,8 +1,24 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! Procedural macros for the `uefi` crate.
+
 #![recursion_limit = "128"]
 
-extern crate proc_macro;
+#![deny(
+    clippy::all,
+    clippy::absolute_paths,
+    clippy::missing_const_for_fn,
+    clippy::must_use_candidate,
+    clippy::missing_safety_doc,
+    clippy::ptr_as_ptr,
+    clippy::ref_as_ptr,
+    clippy::undocumented_unsafe_blocks,
+    clippy::use_self,
+    missing_debug_implementations,
+    missing_docs,
+    unsafe_op_in_unsafe_fn,
+    unused
+)]
 
 use proc_macro::TokenStream;
 
@@ -17,9 +33,6 @@ use syn::{
 macro_rules! err {
     ($span:expr, $message:expr $(,)?) => {
         Error::new($span.span(), $message).to_compile_error()
-    };
-    ($span:expr, $message:expr, $($args:expr),*) => {
-        Error::new($span.span(), format!($message, $($args),*)).to_compile_error()
     };
 }
 

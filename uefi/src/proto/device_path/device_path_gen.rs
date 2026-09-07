@@ -5744,12 +5744,10 @@ pub mod build {
 
         impl RestService<'_> {
             fn build_size_vendor_guid_and_data(&self) -> usize {
-                if let Some(src) = &self.vendor_guid_and_data {
+                self.vendor_guid_and_data.as_ref().map_or(0, |src| {
                     assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);
                     size_of::<Guid>() + size_of_val(src.vendor_defined_data)
-                } else {
-                    0
-                }
+                })
             }
 
             fn build_vendor_guid_and_data(&self, out: &mut [MaybeUninit<u8>]) {

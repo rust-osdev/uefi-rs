@@ -200,11 +200,7 @@ pub fn allocate_pages(
     // Return an error if the second allocation failed, or if it is still at
     // address zero. Otherwise, return a pointer to the second allocation.
     r?;
-    if let Some(ptr) = NonNull::new(addr2 as *mut u8) {
-        Ok(ptr)
-    } else {
-        Err(Status::OUT_OF_RESOURCES.into())
-    }
+    NonNull::new(addr2 as *mut u8).ok_or_else(|| Status::OUT_OF_RESOURCES.into())
 }
 
 /// Frees memory pages allocated by [`allocate_pages`].
@@ -721,15 +717,13 @@ pub fn connect_controller(
     // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
-    let driver_image: *const uefi_raw::Handle = if let Some(last) = driver_image.last() {
+    let driver_image: *const uefi_raw::Handle = driver_image.last().map_or(ptr::null(), |last| {
         assert!(
             last.is_none(),
             "driver_image parameter must be terminated with None"
         );
         driver_image.as_ptr().cast()
-    } else {
-        ptr::null()
-    };
+    });
 
     // SAFETY: The memory is valid.
     unsafe {

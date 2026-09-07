@@ -105,12 +105,11 @@ impl BaseCode {
         filename: &CStr8,
         buffer: Option<&mut [u8]>,
     ) -> Result<u64> {
-        let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
-            let buffer_size = u64::try_from(buffer.len()).unwrap();
-            (buffer.as_mut_ptr().cast(), buffer_size, Boolean::FALSE)
-        } else {
-            (null_mut(), 0, Boolean::TRUE)
-        };
+        let (buffer_ptr, mut buffer_size, dont_use_buffer) =
+            buffer.map_or((null_mut(), 0, Boolean::TRUE), |buffer| {
+                let buffer_size = u64::try_from(buffer.len()).unwrap();
+                (buffer.as_mut_ptr().cast(), buffer_size, Boolean::FALSE)
+            });
 
         let server_ip = EfiIpAddr::from(*server_ip);
         // SAFETY: The memory is valid.
@@ -274,12 +273,11 @@ impl BaseCode {
         buffer: Option<&mut [u8]>,
         info: &MtftpInfo,
     ) -> Result<u64> {
-        let (buffer_ptr, mut buffer_size, dont_use_buffer) = if let Some(buffer) = buffer {
-            let buffer_size = u64::try_from(buffer.len()).unwrap();
-            (buffer.as_mut_ptr().cast(), buffer_size, Boolean::FALSE)
-        } else {
-            (null_mut(), 0, Boolean::TRUE)
-        };
+        let (buffer_ptr, mut buffer_size, dont_use_buffer) =
+            buffer.map_or((null_mut(), 0, Boolean::TRUE), |buffer| {
+                let buffer_size = u64::try_from(buffer.len()).unwrap();
+                (buffer.as_mut_ptr().cast(), buffer_size, Boolean::FALSE)
+            });
 
         let server_ip = EfiIpAddr::from(*server_ip);
         // SAFETY: The memory is valid.
@@ -407,13 +405,10 @@ impl BaseCode {
         header: Option<&[u8]>,
         buffer: &[u8],
     ) -> Result {
-        let header_size_tmp;
-        let (header_size, header_ptr) = if let Some(header) = header {
-            header_size_tmp = header.len();
+        let header_size_tmp = header.as_ref().map_or(0, |header| header.len());
+        let (header_size, header_ptr) = header.map_or((None, null()), |header| {
             (Some(&header_size_tmp), header.as_ptr().cast())
-        } else {
-            (None, null())
-        };
+        });
 
         let dest_ip = EfiIpAddr::from(*dest_ip);
         let gateway_ip = gateway_ip.map(|ip| EfiIpAddr::from(*ip));
@@ -470,13 +465,10 @@ impl BaseCode {
         header: Option<&mut [u8]>,
         buffer: &mut [u8],
     ) -> Result<usize> {
-        let header_size_tmp;
-        let (header_size, header_ptr) = if let Some(header) = header {
-            header_size_tmp = header.len();
+        let header_size_tmp = header.as_ref().map_or(0, |header| header.len());
+        let (header_size, header_ptr) = header.map_or((null(), null_mut()), |header| {
             (ptr::from_ref(&header_size_tmp), header.as_mut_ptr().cast())
-        } else {
-            (null(), null_mut())
-        };
+        });
 
         let mut buffer_size = buffer.len();
 

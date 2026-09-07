@@ -455,18 +455,19 @@ impl CStr16 {
         }
 
         // Find the index of the first null char.
-        if let Some(null_index) = chars.iter().position(|c| *c == NUL_16) {
-            // Verify the null character is at the end.
-            if null_index == chars.len() - 1 {
-                // Safety: the input is null-terminated and has no interior nulls.
-                // SAFETY: The memory is valid.
-                Ok(unsafe { Self::from_char16_with_nul_unchecked(chars) })
-            } else {
-                Err(FromSliceWithNulError::InteriorNul(null_index))
-            }
-        } else {
-            Err(FromSliceWithNulError::NotNulTerminated)
-        }
+        chars.iter().position(|c| *c == NUL_16).map_or(
+            Err(FromSliceWithNulError::NotNulTerminated),
+            |null_index| {
+                // Verify the null character is at the end.
+                if null_index == chars.len() - 1 {
+                    // Safety: the input is null-terminated and has no interior nulls.
+                    // SAFETY: The memory is valid.
+                    Ok(unsafe { Self::from_char16_with_nul_unchecked(chars) })
+                } else {
+                    Err(FromSliceWithNulError::InteriorNul(null_index))
+                }
+            },
+        )
     }
 
     /// Unsafely creates a `&CStr16` from a `Char16` slice.

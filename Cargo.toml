@@ -32,6 +32,10 @@ uguid = "2.2.1"
 clippy = {
   # Groups
   "all" = "deny",
+  "correctness" = "deny",
+  "complexity" = "deny",
+  "style" = "deny",
+  "suspicious" = "deny",
 
   # Individual
   "absolute_paths" = "deny",

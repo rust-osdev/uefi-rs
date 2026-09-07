@@ -74,11 +74,7 @@ impl BaseType {
     }
 
     pub fn is_u8(&self) -> bool {
-        if let Some(ident) = self.path.get_ident() {
-            ident == "u8"
-        } else {
-            false
-        }
+        self.path.get_ident().is_some_and(|ident| ident == "u8")
     }
 }
 
@@ -146,7 +142,7 @@ enum BuildType {
     Custom(Type),
 }
 
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum GetFunc {
     /// No getter will be generated.
     None,

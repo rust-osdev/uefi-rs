@@ -52,10 +52,7 @@ impl Rng {
     pub fn get_rng(&mut self, algorithm: Option<RngAlgorithmType>, buffer: &mut [u8]) -> Result {
         let buffer_length = buffer.len();
 
-        let algo = match algorithm.as_ref() {
-            None => ptr::null(),
-            Some(algo) => ptr::from_ref(algo),
-        };
+        let algo = algorithm.as_ref().map_or(ptr::null(), ptr::from_ref);
 
         // SAFETY: The memory is valid.
         unsafe {

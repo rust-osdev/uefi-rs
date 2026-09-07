@@ -94,7 +94,8 @@ impl Input {
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_key_event(&self) -> Result<Event> {
         // SAFETY: The memory is valid.
-        unsafe { Event::from_ptr(self.0.wait_for_key) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_key) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 }
 
@@ -108,6 +109,7 @@ pub enum Key {
     Special(ScanCode),
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<InputKey> for Key {
     fn from(k: InputKey) -> Self {
         if k.scan_code == ScanCode::NULL.0 {
@@ -250,7 +252,8 @@ impl InputEx {
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_key_event(&self) -> Result<Event> {
         // SAFETY: The memory is valid.
-        unsafe { Event::from_ptr(self.0.wait_for_key_ex) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_key_ex) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 
     /// Registers a function to be called when a specified key sequence is typed.

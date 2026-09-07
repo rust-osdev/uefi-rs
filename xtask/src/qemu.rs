@@ -521,7 +521,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     File::create(&scsi_test_disk)?.set_len(1024 * 1024 * 10)?;
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("if=none,id=scsidisk0,format=raw,file=");
-    drive_arg.push(scsi_test_disk.clone());
+    drive_arg.push(scsi_test_disk);
     cmd.arg(drive_arg);
     cmd.arg("-device"); // attach disk to SCSI controller
     cmd.arg("scsi-hd,drive=scsidisk0,vendor=uefi-rs,product=ExtScsiPassThru");
@@ -531,7 +531,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     File::create(&nvme_test_disk)?.set_len(1024 * 1024 * 10)?;
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("if=none,id=nvmedisk0,format=raw,file=");
-    drive_arg.push(nvme_test_disk.clone());
+    drive_arg.push(nvme_test_disk);
     cmd.arg(drive_arg);
     cmd.arg("-device");
     cmd.arg("nvme,drive=nvmedisk0,serial=uefi-rsNvmePassThru");
@@ -541,7 +541,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     create_mbr_test_disk(&ata_test_disk)?;
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("if=none,format=raw,id=satadisk0,file=");
-    drive_arg.push(ata_test_disk.clone());
+    drive_arg.push(ata_test_disk);
     cmd.arg(drive_arg);
     cmd.arg("-device");
     cmd.arg("ide-hd,drive=satadisk0,bus=ide.2,serial=AtaPassThru,model=AtaPassThru");

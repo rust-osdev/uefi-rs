@@ -275,11 +275,9 @@ impl Iterator for OutputModeIter<'_> {
         if index < self.max {
             self.current += 1;
 
-            if let Ok(dims) = self.output.query_mode(index) {
-                Some(OutputMode { index, dims })
-            } else {
-                self.next()
-            }
+            self.output
+                .query_mode(index)
+                .map_or_else(|_| self.next(), |dims| Some(OutputMode { index, dims }))
         } else {
             None
         }

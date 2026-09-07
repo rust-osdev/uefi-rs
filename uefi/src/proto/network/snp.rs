@@ -288,7 +288,8 @@ impl SimpleNetwork {
     /// of UEFI properly implements this event before using it.
     pub fn wait_for_packet_event(&self) -> Result<Event> {
         // SAFETY: The memory is valid.
-        unsafe { Event::from_ptr(self.0.wait_for_packet) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_packet) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 
     /// Returns a reference to the Simple Network mode.

@@ -11,7 +11,7 @@ use core::fmt::{self, Display, Formatter};
 use crate::char16;
 
 /// Character conversion error
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CharConversionError;
 
 impl Display for CharConversionError {
@@ -122,6 +122,7 @@ impl TryFrom<char> for Char16 {
     }
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<Char16> for char {
     fn from(char: Char16) -> Self {
         u32::from(char.0).try_into().unwrap()
@@ -134,11 +135,7 @@ impl TryFrom<u16> for Char16 {
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         // We leverage char's TryFrom<u32> impl for Unicode validity checking
         let res: Result<char, _> = u32::from(value).try_into();
-        if let Ok(ch) = res {
-            ch.try_into()
-        } else {
-            Err(CharConversionError)
-        }
+        res.map_or(Err(CharConversionError), |ch| ch.try_into())
     }
 }
 

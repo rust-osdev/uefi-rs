@@ -287,7 +287,7 @@ impl IndexMut<usize> for MemoryMapRefMut<'_> {
 ///
 /// [`boot::get_memory_map`]: crate::boot::get_memory_map
 #[derive(Debug)]
-pub(crate) struct MemoryMapBackingMemory(NonNull<[u8]>);
+pub struct MemoryMapBackingMemory(NonNull<[u8]>);
 
 impl MemoryMapBackingMemory {
     /// Constructs a new [`MemoryMapBackingMemory`].

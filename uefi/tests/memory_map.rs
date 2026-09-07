@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! Memory map API testing.
+
 use uefi::mem::memory_map::*;
 
 /// This test imitates a kernel that receives the UEFI memory map as boot

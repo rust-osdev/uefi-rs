@@ -5,10 +5,11 @@
 use crate::mem::{AlignedBuffer, AlignmentError};
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
-use core::ptr;
 use core::time::Duration;
+use core::{ptr, slice};
 use uefi_raw::protocol::nvme::{
-    NvmExpressCommand, NvmExpressCommandCdwValidity, NvmExpressPassThruCommandPacket,
+    NvmExpressCommand, NvmExpressCommandCdwValidity, NvmExpressCompletion,
+    NvmExpressPassThruCommandPacket, NvmExpressQueueType,
 };
 
 pub mod pass_thru;
@@ -18,11 +19,11 @@ pub mod pass_thru;
 /// This structure contains various fields related to the status and results
 /// of an executed command, including fields for error codes, specific command IDs,
 /// and general state of the NVMe device.
-pub type NvmeCompletion = uefi_raw::protocol::nvme::NvmExpressCompletion;
+pub type NvmeCompletion = NvmExpressCompletion;
 
 /// Type of queues an NVMe command can be placed into
 /// (Which queue a command should be placed into depends on the command)
-pub type NvmeQueueType = uefi_raw::protocol::nvme::NvmExpressQueueType;
+pub type NvmeQueueType = NvmExpressQueueType;
 
 /// Represents a request for executing an NVMe command.
 ///
@@ -253,7 +254,7 @@ impl NvmeResponse<'_> {
         }
         // SAFETY: The memory is valid.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.req.packet.transfer_buffer.cast(),
                 self.req.packet.transfer_length as usize,
             ))
@@ -271,7 +272,7 @@ impl NvmeResponse<'_> {
         }
         // SAFETY: The memory is valid.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.req.packet.meta_data_buffer.cast(),
                 self.req.packet.meta_data_length as usize,
             ))

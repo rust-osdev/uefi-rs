@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-#![allow(clippy::collapsible_if)]
+#![expect(missing_docs)]
 
 mod arch;
 mod cargo;
@@ -373,7 +373,7 @@ fn format_file_headers(fmt_opt: &FmtOpt) -> Result<()> {
     if !output.status.success() {
         bail!("command failed: {}", output.status);
     }
-    let mut paths: Vec<&str> = std::str::from_utf8(&output.stdout)?.lines().collect();
+    let mut paths: Vec<&str> = str::from_utf8(&output.stdout)?.lines().collect();
 
     // Filter out excluded paths.
     paths.retain(|path| {

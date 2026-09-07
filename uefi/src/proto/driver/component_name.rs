@@ -10,7 +10,7 @@ use crate::boot::{self, ScopedProtocol};
 use crate::proto::unsafe_protocol;
 use crate::{CStr16, Error, Handle, Result, Status, StatusExt};
 use core::fmt::{self, Debug, Display, Formatter};
-use core::{ptr, slice};
+use core::{error, ptr, result, slice, str};
 use uefi_raw::protocol::driver::ComponentName2Protocol;
 
 /// Component Name1 [`Protocol`].
@@ -46,9 +46,7 @@ impl ComponentName1 {
     /// English is encoded as "eng".
     ///
     /// [ISO 639-2]: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-    pub const fn supported_languages(
-        &self,
-    ) -> core::result::Result<LanguageIter<'_>, LanguageError> {
+    pub const fn supported_languages(&self) -> result::Result<LanguageIter<'_>, LanguageError> {
         LanguageIter::new(self.0.supported_languages, LanguageIterKind::V1)
     }
 
@@ -122,9 +120,7 @@ impl ComponentName2 {
     /// as "en".
     ///
     /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
-    pub const fn supported_languages(
-        &self,
-    ) -> core::result::Result<LanguageIter<'_>, LanguageError> {
+    pub const fn supported_languages(&self) -> result::Result<LanguageIter<'_>, LanguageError> {
         LanguageIter::new(self.0.supported_languages, LanguageIterKind::V2)
     }
 
@@ -202,7 +198,7 @@ impl ComponentName {
     ///
     /// [ISO 639-2]: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
     /// [RFC 4646]: https://www.rfc-editor.org/rfc/rfc4646
-    pub fn supported_languages(&self) -> core::result::Result<LanguageIter<'_>, LanguageError> {
+    pub fn supported_languages(&self) -> result::Result<LanguageIter<'_>, LanguageError> {
         match self {
             Self::V1(cn1) => cn1.supported_languages(),
             Self::V2(cn2) => cn2.supported_languages(),
@@ -240,7 +236,7 @@ impl ComponentName {
 }
 
 impl Debug for ComponentName {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::V1(_) => f.debug_tuple("V1").finish(),
             Self::V2(_) => f.debug_tuple("V2").finish(),
@@ -268,7 +264,7 @@ impl Display for LanguageError {
     }
 }
 
-impl core::error::Error for LanguageError {}
+impl error::Error for LanguageError {}
 
 #[derive(Debug, PartialEq)]
 enum LanguageIterKind {
@@ -288,7 +284,7 @@ impl LanguageIter<'_> {
     const fn new(
         languages: *const u8,
         kind: LanguageIterKind,
-    ) -> core::result::Result<Self, LanguageError> {
+    ) -> result::Result<Self, LanguageError> {
         let mut index = 0;
         loop {
             // SAFETY: The memory is valid.
@@ -341,7 +337,7 @@ impl<'a> Iterator for LanguageIter<'a> {
         }
 
         // OK to unwrap because we already checked the string is ASCII.
-        Some(core::str::from_utf8(lang).unwrap())
+        Some(str::from_utf8(lang).unwrap())
     }
 }
 

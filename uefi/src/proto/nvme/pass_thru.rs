@@ -12,13 +12,15 @@ use core::ptr::{self, NonNull};
 use uefi_macros::unsafe_protocol;
 use uefi_raw::Status;
 use uefi_raw::protocol::device_path::DevicePathProtocol;
-use uefi_raw::protocol::nvme::{NvmExpressCompletion, NvmExpressPassThruProtocol};
+use uefi_raw::protocol::nvme::{
+    NvmExpressCompletion, NvmExpressPassThruMode, NvmExpressPassThruProtocol,
+};
 
 /// Nvme Pass Thru Protocol Mode structure.
 ///
 /// This contains information regarding the specific capabilities and requirements
 /// of the NVMe controller, such as buffer alignment constraints.
-pub type NvmePassThruMode = uefi_raw::protocol::nvme::NvmExpressPassThruMode;
+pub type NvmePassThruMode = NvmExpressPassThruMode;
 
 /// Identifier for an NVMe namespace.
 ///

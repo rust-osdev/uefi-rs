@@ -10,19 +10,8 @@
 //!
 //! [`uefi`]: https://crates.io/crates/uefi
 
-#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(
-    clippy::all,
-    clippy::missing_const_for_fn,
-    clippy::missing_safety_doc,
-    clippy::must_use_candidate,
-    clippy::ptr_as_ptr,
-    clippy::undocumented_unsafe_blocks,
-    clippy::use_self,
-    missing_debug_implementations,
-    unused
-)]
+#![no_std]
 
 mod enums;
 

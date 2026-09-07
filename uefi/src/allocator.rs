@@ -27,13 +27,10 @@ fn get_memory_type() -> MemoryType {
 
     let memory_type = MEMORY_TYPE.load(Ordering::Acquire);
     if memory_type == MemoryType::RESERVED.0 {
-        let memory_type = if let Ok(loaded_image) =
-            boot::open_protocol_exclusive::<LoadedImage>(boot::image_handle())
-        {
-            loaded_image.data_type()
-        } else {
-            MemoryType::LOADER_DATA
-        };
+        let memory_type = boot::open_protocol_exclusive::<LoadedImage>(boot::image_handle())
+            .map_or(MemoryType::LOADER_DATA, |loaded_image| {
+                loaded_image.data_type()
+            });
         MEMORY_TYPE.store(memory_type.0, Ordering::Release);
         memory_type
     } else {

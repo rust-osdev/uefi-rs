@@ -4,6 +4,7 @@ use crate::platform;
 use crate::qemu::Io;
 use anyhow::Result;
 use fs_err::{File, OpenOptions};
+use nix::{sys, unistd};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
@@ -29,9 +30,9 @@ impl Pipe {
             // Windows.
             #[cfg(unix)]
             {
-                let mode = nix::sys::stat::Mode::from_bits(0o666).unwrap();
-                nix::unistd::mkfifo(&input_path, mode)?;
-                nix::unistd::mkfifo(&output_path, mode)?;
+                let mode = sys::stat::Mode::from_bits(0o666).unwrap();
+                unistd::mkfifo(&input_path, mode)?;
+                unistd::mkfifo(&output_path, mode)?;
             }
 
             Ok(Self {

@@ -13,6 +13,7 @@ use regex::bytes::Regex;
 use serde_json::{Value, json};
 use std::env;
 use std::ffi::OsString;
+use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -33,7 +34,7 @@ const OVMF_PREBUILT_IA32_SOURCE: Source = Source::EDK2_STABLE202508_R1;
 /// Directory into which the prebuilts will be download (relative to the repo root).
 const OVMF_PREBUILT_DIR: &str = "target/ovmf";
 
-fn ovmf_prebuilt_source(arch: UefiArch) -> Source {
+const fn ovmf_prebuilt_source(arch: UefiArch) -> Source {
     match arch {
         UefiArch::IA32 => OVMF_PREBUILT_IA32_SOURCE,
         UefiArch::AArch64 | UefiArch::X86_64 => OVMF_PREBUILT_SOURCE,
@@ -517,20 +518,20 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
 
     // Third (SCSI) disk for ExtScsiPassThru tests
     let scsi_test_disk = tmp_dir.join("test_disk2.empty.img");
-    std::fs::File::create(&scsi_test_disk)?.set_len(1024 * 1024 * 10)?;
+    File::create(&scsi_test_disk)?.set_len(1024 * 1024 * 10)?;
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("if=none,id=scsidisk0,format=raw,file=");
-    drive_arg.push(scsi_test_disk.clone());
+    drive_arg.push(scsi_test_disk);
     cmd.arg(drive_arg);
     cmd.arg("-device"); // attach disk to SCSI controller
     cmd.arg("scsi-hd,drive=scsidisk0,vendor=uefi-rs,product=ExtScsiPassThru");
 
     // Fourth (NVMe) disk for NvmePassThru tests
     let nvme_test_disk = tmp_dir.join("test_disk3.empty.img");
-    std::fs::File::create(&nvme_test_disk)?.set_len(1024 * 1024 * 10)?;
+    File::create(&nvme_test_disk)?.set_len(1024 * 1024 * 10)?;
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("if=none,id=nvmedisk0,format=raw,file=");
-    drive_arg.push(nvme_test_disk.clone());
+    drive_arg.push(nvme_test_disk);
     cmd.arg(drive_arg);
     cmd.arg("-device");
     cmd.arg("nvme,drive=nvmedisk0,serial=uefi-rsNvmePassThru");
@@ -540,7 +541,7 @@ pub fn run_qemu(arch: UefiArch, opt: &QemuOpt) -> Result<()> {
     create_mbr_test_disk(&ata_test_disk)?;
     cmd.arg("-drive");
     let mut drive_arg = OsString::from("if=none,format=raw,id=satadisk0,file=");
-    drive_arg.push(ata_test_disk.clone());
+    drive_arg.push(ata_test_disk);
     cmd.arg(drive_arg);
     cmd.arg("-device");
     cmd.arg("ide-hd,drive=satadisk0,bus=ide.2,serial=AtaPassThru,model=AtaPassThru");

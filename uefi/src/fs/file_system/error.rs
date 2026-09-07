@@ -2,6 +2,7 @@
 
 use crate::fs::{PathBuf, PathError};
 use alloc::string::FromUtf8Error;
+use core::error;
 use core::fmt::{self, Debug, Display, Formatter};
 
 /// All errors that can happen when working with the [`FileSystem`].
@@ -96,8 +97,8 @@ impl From<PathError> for Error {
     }
 }
 
-impl core::error::Error for Error {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::Io(err) => Some(err),
             Self::Path(err) => Some(err),
@@ -106,8 +107,8 @@ impl core::error::Error for Error {
     }
 }
 
-impl core::error::Error for IoError {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+impl error::Error for IoError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.uefi_error)
     }
 }

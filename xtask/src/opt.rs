@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::ops::Deref;
 use std::path::PathBuf;
 
-#[derive(Clone, Copy, Debug, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub enum TpmVersion {
     V1,
     V2,

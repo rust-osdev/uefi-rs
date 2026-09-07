@@ -2,7 +2,7 @@
 
 //! USB I/O protocol.
 
-use core::{ffi, slice};
+use core::{ffi, mem, ptr, slice};
 
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::usb::io::UsbIoProtocol;
@@ -32,7 +32,7 @@ impl UsbIo {
         timeout: u32,
     ) -> Result<(), UsbTransferStatus> {
         let (direction, buffer_ptr, length) = match transfer {
-            ControlTransfer::None => (DataDirection::NO_DATA, core::ptr::null_mut(), 0),
+            ControlTransfer::None => (DataDirection::NO_DATA, ptr::null_mut(), 0),
             ControlTransfer::DataIn(buffer) => (
                 DataDirection::DATA_IN,
                 buffer.as_ptr().cast_mut(),
@@ -228,7 +228,7 @@ impl UsbIo {
     /// of configurations.
     pub fn device_descriptor(&mut self) -> Result<DeviceDescriptor> {
         // SAFETY: The C descriptor is immediately filled by firmware.
-        let mut device_descriptor = unsafe { core::mem::zeroed() };
+        let mut device_descriptor = unsafe { mem::zeroed() };
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_device_descriptor)(&mut self.0, &mut device_descriptor) }
@@ -238,7 +238,7 @@ impl UsbIo {
     /// Returns information about the active configuration of the USB device.
     pub fn config_descriptor(&mut self) -> Result<ConfigDescriptor> {
         // SAFETY: The C descriptor is immediately filled by firmware.
-        let mut config_descriptor = unsafe { core::mem::zeroed() };
+        let mut config_descriptor = unsafe { mem::zeroed() };
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_config_descriptor)(&mut self.0, &mut config_descriptor) }
@@ -248,7 +248,7 @@ impl UsbIo {
     /// Returns information about the interface of the USB device.
     pub fn interface_descriptor(&mut self) -> Result<InterfaceDescriptor> {
         // SAFETY: The C descriptor is immediately filled by firmware.
-        let mut interface_descriptor = unsafe { core::mem::zeroed() };
+        let mut interface_descriptor = unsafe { mem::zeroed() };
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_interface_descriptor)(&mut self.0, &mut interface_descriptor) }
@@ -258,7 +258,7 @@ impl UsbIo {
     /// Returns information about the interface of the USB device.
     pub fn endpoint_descriptor(&mut self, endpoint: u8) -> Result<EndpointDescriptor> {
         // SAFETY: The C descriptor is immediately filled by firmware.
-        let mut endpoint_descriptor = unsafe { core::mem::zeroed() };
+        let mut endpoint_descriptor = unsafe { mem::zeroed() };
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_endpoint_descriptor)(&mut self.0, endpoint, &mut endpoint_descriptor) }
@@ -267,7 +267,7 @@ impl UsbIo {
 
     /// Returns the string associated with `string_id` in the language associated with `lang_id`.
     pub fn string_descriptor(&mut self, lang_id: u16, string_id: u8) -> Result<PoolString> {
-        let mut string_ptr = core::ptr::null_mut();
+        let mut string_ptr = ptr::null_mut();
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_string_descriptor)(&mut self.0, lang_id, string_id, &mut string_ptr) }
@@ -278,7 +278,7 @@ impl UsbIo {
 
     /// Returns all of the language ID codes that the USB device supports.
     pub fn supported_languages(&mut self) -> Result<&[u16]> {
-        let mut lang_id_table_ptr = core::ptr::null_mut();
+        let mut lang_id_table_ptr = ptr::null_mut();
         let mut lang_id_table_size = 0;
 
         // SAFETY: The memory is valid.

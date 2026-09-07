@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+//! # UEFI System Table
+
 use crate::protocol::console::{SimpleTextInputProtocol, SimpleTextOutputProtocol};
 use crate::table::Header;
 use crate::table::boot::BootServices;
@@ -10,6 +12,7 @@ use core::ptr;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[repr(C)]
+#[expect(missing_docs)]
 pub struct SystemTable {
     pub header: Header,
 
@@ -33,6 +36,7 @@ pub struct SystemTable {
 }
 
 impl SystemTable {
+    /// Signature of the system table's [`Header`].
     pub const SIGNATURE: u64 = 0x5453_5953_2049_4249;
 }
 

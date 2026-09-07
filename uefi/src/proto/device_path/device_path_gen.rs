@@ -16,7 +16,7 @@ use crate::proto::device_path::{
 };
 use crate::{Guid, guid};
 use bitflags::bitflags;
-use core::{fmt, slice};
+use core::{fmt, mem, slice};
 use ptr_meta::Pointee;
 use uefi_raw::IpAddress;
 /// Device path nodes for [`DeviceType::END`].
@@ -4250,7 +4250,7 @@ pub mod build {
                     None
                 } else {
                     #[expect(clippy::undocumented_unsafe_blocks)]
-                    let adr_slice: &Self = unsafe { core::mem::transmute(slice) };
+                    let adr_slice: &Self = unsafe { mem::transmute(slice) };
                     Some(adr_slice)
                 }
             }
@@ -5744,12 +5744,10 @@ pub mod build {
 
         impl RestService<'_> {
             fn build_size_vendor_guid_and_data(&self) -> usize {
-                if let Some(src) = &self.vendor_guid_and_data {
+                self.vendor_guid_and_data.as_ref().map_or(0, |src| {
                     assert!(self.service_type == device_path::messaging::RestServiceType::VENDOR);
                     size_of::<Guid>() + size_of_val(src.vendor_defined_data)
-                } else {
-                    0
-                }
+                })
             }
 
             fn build_vendor_guid_and_data(&self, out: &mut [MaybeUninit<u8>]) {

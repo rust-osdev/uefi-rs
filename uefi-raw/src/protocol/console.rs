@@ -4,7 +4,7 @@ pub mod serial;
 
 use crate::{Boolean, Char16, Event, Guid, PhysicalAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
-use core::ptr;
+use core::{ffi, ptr};
 
 bitflags! {
     /// Absolute pointer device attributes.
@@ -132,10 +132,10 @@ pub struct SimpleTextInputExProtocol {
         this: *mut Self,
         key_data: *const KeyData,
         notification_fn: KeyNotifyFn,
-        notify_handle: *mut *mut core::ffi::c_void,
+        notify_handle: *mut *mut ffi::c_void,
     ) -> Status,
     pub unregister_key_notify:
-        unsafe extern "efiapi" fn(this: *mut Self, notify_handle: *mut core::ffi::c_void) -> Status,
+        unsafe extern "efiapi" fn(this: *mut Self, notify_handle: *mut ffi::c_void) -> Status,
 }
 
 impl SimpleTextInputExProtocol {

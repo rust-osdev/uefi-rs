@@ -5,7 +5,7 @@
 
 use crate::fs::path::{PathBuf, SEPARATOR};
 use crate::{CStr16, CString16};
-use core::fmt::{Display, Formatter};
+use core::fmt::{self, Display, Formatter};
 use core::ptr;
 
 /// A path similar to the `Path` of the standard library, but based on
@@ -97,7 +97,7 @@ impl Path {
 }
 
 impl Display for Path {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Display::fmt(self.to_cstr16(), f)
     }
 }

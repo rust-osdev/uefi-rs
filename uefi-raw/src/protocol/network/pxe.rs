@@ -4,6 +4,7 @@ use crate::{Boolean, Char8, Guid, IpAddress, MacAddress, Status, guid, newtype_e
 use bitflags::bitflags;
 use core::ffi::c_void;
 use core::fmt::{self, Debug, Display, Formatter};
+use core::{error, net};
 
 #[derive(Debug)]
 #[repr(C)]
@@ -440,7 +441,7 @@ pub struct PxeBaseCodeIpFilter {
 
 impl PxeBaseCodeIpFilter {
     #[must_use]
-    pub fn new(filters: PxeBaseCodeIpFilterFlags, ip_list: &[core::net::IpAddr]) -> Self {
+    pub fn new(filters: PxeBaseCodeIpFilterFlags, ip_list: &[net::IpAddr]) -> Self {
         assert!(ip_list.len() <= 8);
 
         let ip_cnt = ip_list.len() as u8;
@@ -530,7 +531,7 @@ impl Display for PxeBaseCodeIcmpError {
     }
 }
 
-impl core::error::Error for PxeBaseCodeIcmpError {}
+impl error::Error for PxeBaseCodeIcmpError {}
 
 /// In the C API, this is an anonymous union inside the definition of
 /// `EFI_PXE_BASE_CODE_ICMP_ERROR`.
@@ -574,4 +575,4 @@ impl Display for PxeBaseCodeTftpError {
     }
 }
 
-impl core::error::Error for PxeBaseCodeTftpError {}
+impl error::Error for PxeBaseCodeTftpError {}

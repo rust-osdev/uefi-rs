@@ -55,7 +55,7 @@
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
 use crate::{Result, StatusExt, boot};
-use core::fmt::{Debug, Formatter};
+use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
 use uefi_raw::protocol::console::{
@@ -449,7 +449,7 @@ impl Iterator for ModeIter<'_> {
 }
 
 impl Debug for ModeIter<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("ModeIter")
             .field("current", &self.current)
             .field("max", &self.max)

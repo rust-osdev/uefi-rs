@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-#![recursion_limit = "128"]
+//! Procedural macros for the `uefi` crate.
 
-extern crate proc_macro;
+#![recursion_limit = "128"]
 
 use proc_macro::TokenStream;
 
@@ -17,9 +17,6 @@ use syn::{
 macro_rules! err {
     ($span:expr, $message:expr $(,)?) => {
         Error::new($span.span(), $message).to_compile_error()
-    };
-    ($span:expr, $message:expr, $($args:expr),*) => {
-        Error::new($span.span(), format!($message, $($args),*)).to_compile_error()
     };
 }
 

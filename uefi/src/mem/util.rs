@@ -18,7 +18,7 @@ use core::slice;
 ///   buffer size is sufficient, and
 /// - return a mutable typed reference that points to the same memory as the input buffer on
 ///   success.
-pub(crate) fn make_boxed<
+pub fn make_boxed<
     'a,
     // The UEFI data structure.
     Data: Align + ?Sized + Debug + 'a,

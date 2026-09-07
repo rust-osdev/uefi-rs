@@ -76,11 +76,7 @@ impl Node {
     }
 
     fn is_dst(&self) -> bool {
-        if let Some(last) = self.fields.last() {
-            last.is_slice()
-        } else {
-            false
-        }
+        self.fields.last().is_some_and(|last| last.is_slice())
     }
 
     fn has_dst_group(&self) -> bool {

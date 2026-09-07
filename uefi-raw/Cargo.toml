@@ -17,6 +17,9 @@ repository.workspace = true
 # Hence, it is okay to not use the workspace MSRV.
 rust-version = "1.85.1"
 
+[lints]
+workspace = true
+
 [dependencies]
 bitflags.workspace = true
 uguid.workspace = true

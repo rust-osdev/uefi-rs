@@ -5,6 +5,7 @@
 use crate::proto::unsafe_protocol;
 use crate::{Result, Status, StatusExt};
 use core::ptr;
+use uefi_raw::protocol::rng::RngProtocol;
 
 pub use uefi_raw::protocol::rng::RngAlgorithmType;
 
@@ -13,8 +14,8 @@ pub use uefi_raw::protocol::rng::RngAlgorithmType;
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[repr(transparent)]
-#[unsafe_protocol(uefi_raw::protocol::rng::RngProtocol::GUID)]
-pub struct Rng(uefi_raw::protocol::rng::RngProtocol);
+#[unsafe_protocol(RngProtocol::GUID)]
+pub struct Rng(RngProtocol);
 
 impl Rng {
     /// Returns information about the random number generation implementation.
@@ -51,10 +52,7 @@ impl Rng {
     pub fn get_rng(&mut self, algorithm: Option<RngAlgorithmType>, buffer: &mut [u8]) -> Result {
         let buffer_length = buffer.len();
 
-        let algo = match algorithm.as_ref() {
-            None => ptr::null(),
-            Some(algo) => ptr::from_ref(algo),
-        };
+        let algo = algorithm.as_ref().map_or(ptr::null(), ptr::from_ref);
 
         // SAFETY: The memory is valid.
         unsafe {

@@ -74,11 +74,7 @@ impl BaseType {
     }
 
     pub fn is_u8(&self) -> bool {
-        if let Some(ident) = self.path.get_ident() {
-            ident == "u8"
-        } else {
-            false
-        }
+        self.path.get_ident().is_some_and(|ident| ident == "u8")
     }
 }
 
@@ -146,7 +142,7 @@ enum BuildType {
     Custom(Type),
 }
 
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum GetFunc {
     /// No getter will be generated.
     None,
@@ -191,11 +187,11 @@ impl NodeField {
         out
     }
 
-    pub fn is_slice(&self) -> bool {
+    pub const fn is_slice(&self) -> bool {
         self.slice_elem_ty().is_some()
     }
 
-    pub fn slice_elem_ty(&self) -> Option<&BaseType> {
+    pub const fn slice_elem_ty(&self) -> Option<&BaseType> {
         if let PackedType::Slice(slice) = &self.packed_ty {
             Some(slice)
         } else {

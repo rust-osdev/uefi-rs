@@ -16,6 +16,7 @@ use core::ffi::c_void;
 /// UEFI OS loader and OS have taken control of the platform.
 #[derive(Debug)]
 #[repr(C)]
+#[expect(missing_docs)]
 pub struct RuntimeServices {
     pub header: Header,
     pub get_time:

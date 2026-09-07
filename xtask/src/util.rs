@@ -8,7 +8,7 @@ use std::process::Command;
 /// Example: "VAR=val program --arg1 arg2".
 pub fn command_to_string(cmd: &Command) -> String {
     // Format env vars as "name=val".
-    let mut parts = cmd
+    let parts = cmd
         .get_envs()
         // Filter out variables that are set or cleared by
         // `fix_nested_cargo_env`, as they would clutter the output.
@@ -24,16 +24,11 @@ pub fn command_to_string(cmd: &Command) -> String {
                 val.unwrap_or_default().to_string_lossy()
             )
         })
-        .collect::<Vec<_>>();
-
-    // Add the program name.
-    parts.push(cmd.get_program().to_string_lossy().to_string());
-
-    // Add each argument.
-    parts.extend(cmd.get_args().map(|arg| arg.to_string_lossy().to_string()));
+        .chain([cmd.get_program().to_string_lossy().to_string()])
+        .chain(cmd.get_args().map(|arg| arg.to_string_lossy().to_string()));
 
     // Join the vars, program, and arguments into a single string.
-    parts.into_iter().collect::<Vec<_>>().join(" ")
+    parts.collect::<Vec<_>>().join(" ")
 }
 
 /// Print a `Command` and run it, then check that it completes

@@ -8,6 +8,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use core::net::Ipv4Addr;
+use core::ptr;
 use core::time::Duration;
 use log::{debug, trace};
 use uefi::boot::ScopedProtocol;
@@ -62,7 +63,7 @@ impl Ip4Config2 {
         // call #1: figure return buffer size
         // SAFETY: The memory is valid.
         let status = unsafe {
-            let null = core::ptr::null_mut();
+            let null = ptr::null_mut();
             (self.0.get_data)(&mut self.0, data_type, &mut data_size, null)
         };
         if status != Status::BUFFER_TOO_SMALL {
@@ -104,7 +105,7 @@ impl Ip4Config2 {
         };
         Ok(Ip4Config2InterfaceInfo {
             route_table_size: 0,
-            route_table: core::ptr::null_mut(),
+            route_table: ptr::null_mut(),
             ..info
         })
     }

@@ -207,15 +207,9 @@ impl MpServices {
         event: Option<Event>,
         timeout: Option<Duration>,
     ) -> Result {
-        let timeout_arg = match timeout {
-            Some(timeout) => timeout.as_micros().try_into().unwrap(),
-            None => 0,
-        };
+        let timeout_arg = timeout.map_or(0, |timeout| timeout.as_micros().try_into().unwrap());
 
-        let event_arg = match event {
-            Some(event) => event.as_ptr(),
-            None => ptr::null_mut(),
-        };
+        let event_arg = event.map_or(ptr::null_mut(), |event| event.as_ptr());
 
         (self.startup_all_aps)(
             self,
@@ -238,15 +232,9 @@ impl MpServices {
         event: Option<Event>,
         timeout: Option<Duration>,
     ) -> Result {
-        let timeout_arg = match timeout {
-            Some(timeout) => timeout.as_micros().try_into().unwrap(),
-            None => 0,
-        };
+        let timeout_arg = timeout.map_or(0, |timeout| timeout.as_micros().try_into().unwrap());
 
-        let event_arg = match event {
-            Some(event) => event.as_ptr(),
-            None => ptr::null_mut(),
-        };
+        let event_arg = event.map_or(ptr::null_mut(), |event| event.as_ptr());
 
         (self.startup_this_ap)(
             self,
@@ -274,16 +262,12 @@ impl MpServices {
         enable_ap: bool,
         healthy: Option<bool>,
     ) -> Result {
-        let health_flag_raw: u32;
-        let health_flag_ptr = match healthy {
-            Some(healthy) => {
-                let mut sf = StatusFlag::empty();
-                sf.set(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT, healthy);
-                health_flag_raw = sf.bits();
-                &health_flag_raw
-            }
-            None => ptr::null(),
-        };
+        let health_flag_raw = healthy.map(|healthy| {
+            let mut sf = StatusFlag::empty();
+            sf.set(StatusFlag::PROCESSOR_HEALTH_STATUS_BIT, healthy);
+            sf.bits()
+        });
+        let health_flag_ptr = health_flag_raw.as_ref().map_or(ptr::null(), ptr::from_ref);
         (self.enable_disable_ap)(self, processor_number, enable_ap, health_flag_ptr).to_result()
     }
 

@@ -2,6 +2,7 @@
 
 //! Bindings for HII protocols relating to system configuration.
 
+use core::fmt;
 use core::fmt::Debug;
 
 use super::form_browser::BrowserActionRequest;
@@ -122,8 +123,8 @@ const _: () = {
     assert!(align_of::<IfrTypeValue>() == 1);
 };
 
-impl core::fmt::Debug for IfrTypeValue {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Debug for IfrTypeValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("EfiIfrTypeValue").finish()
     }
 }

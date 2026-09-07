@@ -5,8 +5,8 @@
 use crate::mem::{AlignedBuffer, AlignmentError};
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
-use core::ptr;
 use core::time::Duration;
+use core::{ptr, slice};
 use uefi_raw::protocol::scsi::{
     ScsiIoDataDirection, ScsiIoHostAdapterStatus, ScsiIoScsiRequestPacket, ScsiIoTargetStatus,
 };
@@ -19,7 +19,7 @@ pub mod pass_thru;
 /// Represents the data direction for a SCSI request.
 ///
 /// Used to specify whether the request involves reading, writing, or bidirectional data transfer.
-pub type ScsiRequestDirection = uefi_raw::protocol::scsi::ScsiIoDataDirection;
+pub type ScsiRequestDirection = ScsiIoDataDirection;
 
 /// Represents a SCSI request packet.
 ///
@@ -309,7 +309,7 @@ impl ScsiResponse<'_> {
         }
         // SAFETY: The memory is valid.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.0.packet.in_data_buffer.cast(),
                 self.0.packet.in_transfer_length as usize,
             ))
@@ -330,7 +330,7 @@ impl ScsiResponse<'_> {
         }
         // SAFETY: The memory is valid.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.0.packet.sense_data.cast(),
                 self.0.packet.sense_data_length as usize,
             ))

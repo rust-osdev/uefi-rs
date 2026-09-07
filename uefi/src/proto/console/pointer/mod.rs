@@ -65,7 +65,8 @@ impl Pointer {
         // SAFETY:
         // 1. If null (unsupported), `Event::from_ptr` safely returns `None`.
         // 2. If non-null, the UEFI spec guarantees the driver created a valid `EFI_EVENT`.
-        unsafe { Event::from_ptr(self.0.wait_for_input) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_input) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 
     /// Returns a reference to the pointer device information.
@@ -161,7 +162,8 @@ impl AbsolutePointer {
         // SAFETY:
         // 1. If null (unsupported), `Event::from_ptr` safely returns `None`.
         // 2. If non-null, the UEFI spec guarantees the driver created a valid `EFI_EVENT`.
-        unsafe { Event::from_ptr(self.0.wait_for_input) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_input) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 
     /// Returns a reference to the pointer device information.

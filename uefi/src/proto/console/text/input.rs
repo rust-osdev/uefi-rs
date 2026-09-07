@@ -2,7 +2,9 @@
 
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Error, Event, Result, Status, StatusExt};
+use core::ffi::c_void;
 use core::mem::MaybeUninit;
+use core::ptr;
 use uefi_raw::protocol::console::{
     InputKey, KeyData as RawKeyData, KeyNotifyFn, KeyShiftState, KeyState as RawKeyState,
     KeyToggleState, SimpleTextInputExProtocol, SimpleTextInputProtocol,
@@ -92,7 +94,8 @@ impl Input {
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_key_event(&self) -> Result<Event> {
         // SAFETY: The memory is valid.
-        unsafe { Event::from_ptr(self.0.wait_for_key) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_key) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 }
 
@@ -106,6 +109,7 @@ pub enum Key {
     Special(ScanCode),
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<InputKey> for Key {
     fn from(k: InputKey) -> Self {
         if k.scan_code == ScanCode::NULL.0 {
@@ -248,7 +252,8 @@ impl InputEx {
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn wait_for_key_event(&self) -> Result<Event> {
         // SAFETY: The memory is valid.
-        unsafe { Event::from_ptr(self.0.wait_for_key_ex) }.ok_or(Error::from(Status::UNSUPPORTED))
+        unsafe { Event::from_ptr(self.0.wait_for_key_ex) }
+            .ok_or_else(|| Error::from(Status::UNSUPPORTED))
     }
 
     /// Registers a function to be called when a specified key sequence is typed.
@@ -265,7 +270,7 @@ impl InputEx {
         key_data: KeyData,
         notify_function: KeyNotifyFn,
     ) -> Result<KeyNotifyHandle> {
-        let mut handle = core::ptr::null_mut();
+        let mut handle = ptr::null_mut();
 
         // We must convert our high-level KeyData back to the raw format the firmware expects
         let raw_key_data = RawKeyData {
@@ -314,7 +319,7 @@ impl InputEx {
 /// A handle to a registered key notification.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct KeyNotifyHandle(*mut core::ffi::c_void);
+pub struct KeyNotifyHandle(*mut c_void);
 
 /// A key read from the console and associated keyboard state.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

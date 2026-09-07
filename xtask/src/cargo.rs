@@ -21,7 +21,7 @@ impl Package {
     fn name(self) -> &'static str {
         match self {
             Self::Uefi => "uefi",
-            Self::UefiApp => "uefi_app",
+            Self::UefiApp => "uefi-app",
             Self::UefiMacros => "uefi-macros",
             Self::UefiRaw => "uefi-raw",
             Self::UefiTestRunner => "uefi-test-runner",

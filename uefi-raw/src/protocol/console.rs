@@ -325,3 +325,14 @@ newtype_enum! {
         GRAPHICS_OUTPUT_BLT_OPERATION_MAX = 4,
     }
 }
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[repr(C)]
+pub struct EdidDiscoveredProtocol {
+    pub size_of_edid: u32,
+    pub edid: *const u8,
+}
+
+impl EdidDiscoveredProtocol {
+    pub const GUID: Guid = guid!("1c0c34f6-d380-41fa-a049-8ad06c1a66aa");
+}

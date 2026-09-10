@@ -2,9 +2,11 @@
 
 use crate::{HostRequest, send_request_to_host};
 use uefi::boot::{self, OpenProtocolAttributes, OpenProtocolParams};
-use uefi::proto::console::gop::{BltOp, BltPixel, FrameBuffer, GraphicsOutput, PixelFormat};
+use uefi::proto::console::gop::{
+    BltOp, BltPixel, EdidDiscovered, FrameBuffer, GraphicsOutput, PixelFormat,
+};
 
-pub unsafe fn test() {
+pub unsafe fn gop_test() {
     info!("Running graphics output protocol test");
     let handle =
         boot::get_handle_for_protocol::<GraphicsOutput>().expect("missing GraphicsOutput protocol");
@@ -105,4 +107,21 @@ fn draw_fb(gop: &mut GraphicsOutput) {
 
     fill_rectangle((50, 30), (150, 600), [250, 128, 64]);
     fill_rectangle((400, 120), (750, 450), [16, 128, 255]);
+}
+
+pub fn test_edid_discovered() {
+    info!("Running EDID discovered protocol test");
+
+    let Ok(handle) = boot::get_handle_for_protocol::<EdidDiscovered>() else {
+        info!("No EdidDiscovered protocol handle found, skipping EDID test");
+        return;
+    };
+
+    let edid = boot::open_protocol_exclusive::<EdidDiscovered>(handle)
+        .expect("failed to open EdidDiscovered protocol");
+
+    match edid.edid() {
+        Some(bytes) => info!("Discovered EDID: {} bytes", bytes.len()),
+        None => info!("EdidDiscovered protocol present but no EDID was discovered"),
+    }
 }

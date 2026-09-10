@@ -59,8 +59,8 @@ use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
 use uefi_raw::protocol::console::{
-    GraphicsOutputBltOperation, GraphicsOutputBltPixel, GraphicsOutputModeInformation,
-    GraphicsOutputProtocol, GraphicsOutputProtocolMode,
+    EdidDiscoveredProtocol, GraphicsOutputBltOperation, GraphicsOutputBltPixel,
+    GraphicsOutputModeInformation, GraphicsOutputProtocol, GraphicsOutputProtocolMode,
 };
 
 pub use uefi_raw::protocol::console::PixelBitmask;
@@ -666,5 +666,40 @@ impl FrameBuffer<'_> {
         );
         // SAFETY: The source layout matches the target view.
         unsafe { (self.base.add(index) as *const T).read_volatile() }
+    }
+}
+
+/// EDID Discovered [`Protocol`]. Exposes the EDID information that was
+/// discovered for the device backing a [`GraphicsOutput`] handle.
+///
+/// This protocolis installed on the same handle as [`GraphicsOutput`], since
+/// both are produced by the same output device driver.
+///
+/// [`Protocol`]: uefi::proto::Protocol
+/// [`GraphicsOutput`]: crate::proto::console::gop::GraphicsOutput
+#[derive(Debug)]
+#[repr(transparent)]
+#[unsafe_protocol(EdidDiscoveredProtocol::GUID)]
+pub struct EdidDiscovered(EdidDiscoveredProtocol);
+
+impl EdidDiscovered {
+    /// Get the discovered EDID as raw bytes.
+    ///
+    /// Return `None` if no EDID was discovered for this display device.
+    #[must_use]
+    pub const fn edid(&self) -> Option<&[u8]> {
+        if self.0.edid.is_null() {
+            None
+        } else {
+            // SAFETY:
+            // The memory is valid for `size_of_edid` bytes for the
+            // lifetime of the protocol, matching the lifetime of `&self`.
+            unsafe {
+                Some(core::slice::from_raw_parts(
+                    self.0.edid,
+                    usize_from_u32(self.0.size_of_edid),
+                ))
+            }
+        }
     }
 }

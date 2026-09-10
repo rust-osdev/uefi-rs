@@ -3,6 +3,7 @@
 ## Added
 - Exported `data_types::FromSliceUntilNulError`.
 - Added `proto::console::pointer::AbsolutePointer` protocol.
+- Added `proto::console::gop::EdidDiscovered` protocol.
 
 ## Changed
 - **Breaking**: Changed `Server::server_type` and the `server_type` parameter

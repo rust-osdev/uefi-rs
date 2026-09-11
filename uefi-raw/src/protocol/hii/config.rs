@@ -4,10 +4,11 @@
 
 use core::fmt::Debug;
 
+use super::QuestionId;
 use super::form_browser::BrowserActionRequest;
-use super::{FormId, QuestionId, StringId};
+use super::ifr::IfrTypeValue;
 use crate::protocol::device_path::DevicePathProtocol;
-use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
+use crate::{Char16, Guid, Status, guid, newtype_enum};
 
 /// EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL
 #[derive(Debug)]
@@ -68,63 +69,6 @@ newtype_enum! {
         DEFAULT_HARDWARE = 0x3000,
         /// Represents firmware-defined default values within a range of possible store identifiers.
         DEFAULT_FIRMWARE = 0x4000,
-    }
-}
-
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
-pub struct HiiTime {
-    pub hour: u8,
-    pub minute: u8,
-    pub second: u8,
-}
-
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
-pub struct HiiDate {
-    pub year: u16,
-    pub month: u8,
-    pub day: u8,
-}
-
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
-pub struct HiiRef {
-    pub question_id: QuestionId,
-    pub form_id: FormId,
-    pub guid: Guid,
-    pub string_id: StringId,
-}
-
-// Compile-time ABI check.
-const _: () = {
-    assert!(size_of::<HiiRef>() == 22);
-    assert!(align_of::<HiiRef>() == 1);
-};
-
-#[repr(C, packed)]
-#[derive(Copy, Clone)]
-pub union IfrTypeValue {
-    pub u8: u8,           // EFI_IFR_TYPE_NUM_SIZE_8
-    pub u16: u16,         // EFI_IFR_TYPE_NUM_SIZE_16
-    pub u32: u32,         // EFI_IFR_TYPE_NUM_SIZE_32
-    pub u64: u64,         // EFI_IFR_TYPE_NUM_SIZE_64
-    pub b: Boolean,       // EFI_IFR_TYPE_BOOLEAN
-    pub time: HiiTime,    // EFI_IFR_TYPE_TIME
-    pub date: HiiDate,    // EFI_IFR_TYPE_DATE
-    pub string: StringId, // EFI_IFR_TYPE_STRING, EFI_IFR_TYPE_ACTION
-    pub hii_ref: HiiRef,  // EFI_IFR_TYPE_REF
-}
-
-// Compile-time ABI check.
-const _: () = {
-    assert!(size_of::<IfrTypeValue>() == 22);
-    assert!(align_of::<IfrTypeValue>() == 1);
-};
-
-impl core::fmt::Debug for IfrTypeValue {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("EfiIfrTypeValue").finish()
     }
 }
 

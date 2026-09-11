@@ -61,6 +61,14 @@ impl CString16 {
         Self(vec![NUL_16])
     }
 
+    /// Truncates this string, removing all contents except for the mandatory NUL.
+    ///
+    /// While this means the string will have a length of zero, it does not touch its capacity.
+    pub fn clear(&mut self) {
+        self.0.clear();
+        self.0.push(NUL_16);
+    }
+
     /// Inserts a character at the end of the string, right before the null
     /// character.
     ///
@@ -79,10 +87,7 @@ impl CString16 {
     /// Extends the string with the given [`CStr16`]. The null character is
     /// automatically kept at the end.
     pub fn push_str(&mut self, str: &CStr16) {
-        str.as_slice()
-            .iter()
-            .copied()
-            .for_each(|char| self.push(char));
+        self.extend(str.as_slice());
     }
 
     /// Replaces all chars in the string with the replace value in-place.
@@ -115,6 +120,14 @@ impl CString16 {
 impl Default for CString16 {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<'a> Extend<&'a Char16> for CString16 {
+    /// Extends the string with the contents of an iterator. The null
+    /// character is automatically kept at the end.
+    fn extend<T: IntoIterator<Item = &'a Char16>>(&mut self, iter: T) {
+        iter.into_iter().copied().for_each(|char| self.push(char));
     }
 }
 
@@ -337,7 +350,7 @@ mod tests {
     /// This tests the following UCS-2 string functions:
     /// - runtime constructor
     /// - len()
-    /// - push() / push_str()
+    /// - push() / push_str() / extend()
     /// - to rust string
     #[test]
     fn test_push_str() {
@@ -352,10 +365,11 @@ mod tests {
         str2.push(char16!('!'));
 
         str2.push_str(str1.as_ref());
-        assert_eq!(str2.num_chars(), 3);
+        str2.extend(&[char16!('!')]);
+        assert_eq!(str2.num_chars(), 4);
 
         let rust_str = String::from(&str2);
-        assert_eq!(rust_str, "!hi");
+        assert_eq!(rust_str, "!hi!");
     }
 
     #[test]
@@ -373,5 +387,17 @@ mod tests {
 
         let input = String::from(&input);
         assert_eq!(input, "foo\\bar\\foobar\\\\")
+    }
+
+    #[test]
+    fn test_clear() {
+        let mut str = CString16::try_from("a").unwrap();
+        assert_eq!(str.0, [char16!('a'), NUL_16]);
+
+        str.clear();
+        assert_eq!(str.0, [NUL_16]);
+
+        str.clear();
+        assert_eq!(str.0, [NUL_16]);
     }
 }

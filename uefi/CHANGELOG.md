@@ -3,11 +3,15 @@
 ## Added
 - Exported `data_types::FromSliceUntilNulError`.
 - Added `proto::console::pointer::AbsolutePointer` protocol.
+- Added `CString::clear` and `PathBuf::clear` functions.
+- Added `CString16::extend` function.
 
 ## Changed
 - **Breaking**: Changed `Server::server_type` and the `server_type` parameter
   of `Server::new` from `u16` to `BootstrapType`.
-
+- **Breaking**: Changed `fs::path::Components::Item` from `CString16` to `&[Char16]`,
+  which avoids heap allocation during iteration. Users can use the recently added
+  `CString16::extend` function to add a `&[Char16]` value to a `CString16`.
 
 # uefi - v0.40.0 (2026-08-25)
 

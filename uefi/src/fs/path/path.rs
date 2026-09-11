@@ -4,7 +4,7 @@
 #![allow(clippy::module_inception)]
 
 use crate::fs::path::{PathBuf, SEPARATOR};
-use crate::{CStr16, CString16};
+use crate::{CStr16, CString16, Char16};
 use core::fmt::{Display, Formatter};
 use core::ptr;
 
@@ -74,7 +74,7 @@ impl Path {
                     if !acc.is_empty() && *acc.as_slice().last().unwrap() != SEPARATOR {
                         acc.push(SEPARATOR);
                     }
-                    acc.push_str(next.as_ref());
+                    acc.extend(next);
                     acc
                 });
         let path = PathBuf::from(path);
@@ -121,10 +121,8 @@ pub struct Components<'a> {
     i: usize,
 }
 
-impl Iterator for Components<'_> {
-    // Attention. We can't iterate over &'Ctr16, as we would break any guarantee
-    // made for the terminating null character.
-    type Item = CString16;
+impl<'a> Iterator for Components<'a> {
+    type Item = &'a [Char16];
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.path.is_empty() {
@@ -156,12 +154,10 @@ impl Iterator for Components<'_> {
         } else {
             // select the next component and build an owned string
             let part = &self.path.as_slice()[self.i..self.i + len];
-            let mut string = CString16::new();
-            part.iter().for_each(|c| string.push(*c));
 
             // +1: skip the separator
             self.i = progress + 1;
-            Some(string)
+            Some(part)
         }
     }
 }
@@ -231,38 +227,46 @@ mod tests {
     fn components_iter() {
         let path = Path::new(cstr16!("foo\\bar\\hello"));
         let components = path.components().collect::<Vec<_>>();
-        let components: Vec<&CStr16> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
-        let expected: &[&CStr16] = &[cstr16!("foo"), cstr16!("bar"), cstr16!("hello")];
+        let components: Vec<&[Char16]> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
+        let expected: &[&[Char16]] = &[
+            cstr16!("foo").as_slice(),
+            cstr16!("bar").as_slice(),
+            cstr16!("hello").as_slice(),
+        ];
         assert_eq!(components.as_slice(), expected);
 
         // In case there is a leading slash, it should be ignored.
         let path = Path::new(cstr16!("\\foo\\bar\\hello"));
         let components = path.components().collect::<Vec<_>>();
-        let components: Vec<&CStr16> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
-        let expected: &[&CStr16] = &[cstr16!("foo"), cstr16!("bar"), cstr16!("hello")];
+        let components: Vec<&[Char16]> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
+        let expected: &[&[Char16]] = &[
+            cstr16!("foo").as_slice(),
+            cstr16!("bar").as_slice(),
+            cstr16!("hello").as_slice(),
+        ];
         assert_eq!(components.as_slice(), expected);
 
         // empty path iteration should be just fine
         let empty_cstring16 = CString16::try_from("").unwrap();
         let path = Path::new(empty_cstring16.as_ref());
         let components = path.components().collect::<Vec<_>>();
-        let expected: &[CString16] = &[];
+        let expected: &[&[Char16]] = &[];
         assert_eq!(components.as_slice(), expected);
 
         // test empty path
         let _path = Path::new(cstr16!());
         let path = Path::new(cstr16!(""));
         let components = path.components().collect::<Vec<_>>();
-        let components: Vec<&CStr16> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
-        let expected: &[&CStr16] = &[];
+        let components: Vec<&[Char16]> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
+        let expected: &[&[Char16]] = &[];
         assert_eq!(components.as_slice(), expected);
 
         // test path that has only root component. Treated as empty path by
         // the components iterator.
         let path = Path::new(cstr16!("\\"));
         let components = path.components().collect::<Vec<_>>();
-        let components: Vec<&CStr16> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
-        let expected: &[&CStr16] = &[];
+        let components: Vec<&[Char16]> = components.iter().map(|x| x.as_ref()).collect::<Vec<_>>();
+        let expected: &[&[Char16]] = &[];
         assert_eq!(components.as_slice(), expected);
     }
 

@@ -15,6 +15,9 @@
 - Fixed undefined behavior in `PciRootBridgeIo::{pci, memory, io}`. The
   returned `PciIoAccess` held a mutable reference into the protocol instance
   while passing a pointer to the whole instance to the firmware.
+- Fixed undefined behavior in `boot::memory_map`, which trusted the map
+  size reported by the firmware. Sorting a map larger than its buffer
+  read out of bounds.
 
 # uefi - v0.40.0 (2026-08-25)
 

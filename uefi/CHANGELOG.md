@@ -24,6 +24,10 @@
 - Added the missing `repr(transparent)` to the `Http`, `HttpBinding` and
   `Ip4Config2` protocol wrappers, which are created by casting a raw
   pointer provided by the firmware.
+- Fixed undefined behavior when parsing TCG event logs. Iteration now
+  stops at the last entry instead of walking past the log, an event
+  digest count larger than the log header allows is rejected, and the
+  header offset arithmetic no longer overflows on 32-bit targets.
 
 # uefi - v0.40.0 (2026-08-25)
 

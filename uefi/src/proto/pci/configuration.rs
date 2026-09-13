@@ -63,8 +63,13 @@ pub struct QwordAddressSpaceDescriptor {
 
 /// Parses a list of QWORD Address Space Descriptors from a raw memory region.
 /// Stops when it encounters an End Tag descriptor (type 0x79).
+///
+/// # Safety
+///
+/// `base` must be non-null and point to a descriptor list that is terminated
+/// by an End Tag descriptor.
 #[cfg(feature = "alloc")]
-pub(crate) fn parse(
+pub(crate) unsafe fn parse(
     base: *const core::ffi::c_void,
 ) -> alloc::vec::Vec<QwordAddressSpaceDescriptor> {
     use alloc::slice;
@@ -130,7 +135,8 @@ mod tests {
             16, 0, 0, 0, 0, 0, 138, 43, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 121, 0,
         ];
-        let configuration = super::parse(BFR.as_ptr().cast());
+        // SAFETY: The test buffer ends with an End Tag descriptor.
+        let configuration = unsafe { super::parse(BFR.as_ptr().cast()) };
         assert_eq!(configuration.len(), 4);
         let (mut cnt_mem, mut cnt_io, mut cnt_bus) = (0, 0, 0);
         for entry in &configuration {

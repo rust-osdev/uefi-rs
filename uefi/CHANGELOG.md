@@ -66,6 +66,8 @@
   write through a pointer derived from a shared reference, and in
   `UsbIo::supported_languages`, which built a slice from a null
   pointer.
+- Fixed undefined behavior in `PciRootBridgeIo::configuration`, which
+  parsed a null resource descriptor list returned by the firmware.
 
 # uefi - v0.40.0 (2026-08-25)
 

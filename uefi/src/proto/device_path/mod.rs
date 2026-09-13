@@ -254,12 +254,19 @@ impl DevicePathNode {
     /// The input pointer must point to valid data. That data must
     /// remain valid for the lifetime `'a`, and cannot be mutated during
     /// that lifetime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node's length is smaller than the size of
+    /// [`DevicePathHeader`], which violates the UEFI specification.
     #[must_use]
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
         // SAFETY: The memory is valid.
         let header = unsafe { *ptr.cast::<DevicePathHeader>() };
 
-        let data_len = usize::from(header.length()) - size_of::<DevicePathHeader>();
+        let data_len = usize::from(header.length())
+            .checked_sub(size_of::<DevicePathHeader>())
+            .expect("device path node length should cover the node header");
         // SAFETY: The memory is valid.
         unsafe { &*ptr_meta::from_raw_parts(ptr.cast(), data_len) }
     }
@@ -583,6 +590,11 @@ impl DevicePath {
     /// The input pointer must point to valid data. That data must
     /// remain valid for the lifetime `'a`, and cannot be mutated during
     /// that lifetime.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any node's length is smaller than the size of
+    /// [`DevicePathHeader`], see [`DevicePathNode::from_ffi_ptr`].
     #[must_use]
     pub unsafe fn from_ffi_ptr<'a>(ptr: *const FfiDevicePath) -> &'a Self {
         // SAFETY: The memory is valid.
@@ -1202,6 +1214,24 @@ mod tests {
         ];
 
         assert!(<&DevicePath>::try_from(raw_data.as_slice()).is_err());
+    }
+
+    /// A node length below the header size violates the spec. The raw
+    /// pointer path must panic instead of underflowing the data length.
+    #[test]
+    #[should_panic(expected = "device path node length should cover the node header")]
+    fn test_device_path_from_ffi_ptr_rejects_zero_node_length() {
+        let raw_data = [0xa0, 0xb0, 0x00, 0x00];
+        // SAFETY: The memory is valid.
+        let _ = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
+    }
+
+    #[test]
+    #[should_panic(expected = "device path node length should cover the node header")]
+    fn test_device_path_from_ffi_ptr_rejects_short_node_length() {
+        let raw_data = [0xa0, 0xb0, 0x03, 0x00];
+        // SAFETY: The memory is valid.
+        let _ = unsafe { DevicePath::from_ffi_ptr(raw_data.as_ptr().cast()) };
     }
 
     /// Test converting from `&DevicePathNode` to a specific node type.

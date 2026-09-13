@@ -28,6 +28,9 @@
   stops at the last entry instead of walking past the log, an event
   digest count larger than the log header allows is rejected, and the
   header offset arithmetic no longer overflows on 32-bit targets.
+- Fixed undefined behavior in `DevicePathNode::from_ffi_ptr` and the
+  functions built on it, which underflowed the node length for nodes
+  shorter than the node header. They now panic instead.
 
 # uefi - v0.40.0 (2026-08-25)
 

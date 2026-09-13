@@ -33,11 +33,9 @@ impl UsbIo {
     ) -> Result<(), UsbTransferStatus> {
         let (direction, buffer_ptr, length) = match transfer {
             ControlTransfer::None => (DataDirection::NO_DATA, core::ptr::null_mut(), 0),
-            ControlTransfer::DataIn(buffer) => (
-                DataDirection::DATA_IN,
-                buffer.as_ptr().cast_mut(),
-                buffer.len(),
-            ),
+            ControlTransfer::DataIn(buffer) => {
+                (DataDirection::DATA_IN, buffer.as_mut_ptr(), buffer.len())
+            }
             ControlTransfer::DataOut(buffer) => (
                 DataDirection::DATA_OUT,
                 buffer.as_ptr().cast_mut(),
@@ -121,7 +119,7 @@ impl UsbIo {
             (self.0.bulk_transfer)(
                 &mut self.0,
                 endpoint | 0x80,
-                buffer.as_ptr().cast_mut().cast::<ffi::c_void>(),
+                buffer.as_mut_ptr().cast::<ffi::c_void>(),
                 &mut length,
                 timeout,
                 &mut status,
@@ -172,7 +170,7 @@ impl UsbIo {
             (self.0.sync_interrupt_transfer)(
                 &mut self.0,
                 endpoint | 0x80,
-                buffer.as_ptr().cast_mut().cast::<ffi::c_void>(),
+                buffer.as_mut_ptr().cast::<ffi::c_void>(),
                 &mut length,
                 timeout,
                 &mut status,
@@ -290,9 +288,15 @@ impl UsbIo {
             )
         }
         .to_result_with_val(|| {
-            let char_count = usize::from(lang_id_table_size) / size_of::<u16>();
-            // SAFETY: The memory is valid.
-            unsafe { slice::from_raw_parts(lang_id_table_ptr, char_count) }
+            let lang_count = usize::from(lang_id_table_size) / size_of::<u16>();
+            // A device without string descriptors has no language table and
+            // the firmware may report it as NULL.
+            if lang_id_table_ptr.is_null() || lang_count == 0 {
+                &[]
+            } else {
+                // SAFETY: The memory is valid.
+                unsafe { slice::from_raw_parts(lang_id_table_ptr, lang_count) }
+            }
         })
     }
 
@@ -314,4 +318,198 @@ pub enum ControlTransfer<'buffer> {
     DataIn(&'buffer mut [u8]),
     /// The USB control transfer has an output data phase.
     DataOut(&'buffer [u8]),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Status;
+    use core::ptr;
+    use uefi_raw::Boolean;
+    use uefi_raw::protocol::usb::AsyncUsbTransferCallback;
+
+    /// Byte the mocked device sends on every receive transfer.
+    const RX_BYTE: u8 = 0xAB;
+
+    /// Mock of `control_transfer`. Fills the whole data buffer for DATA_IN
+    /// transfers.
+    ///
+    /// # Safety
+    /// `data` must be valid for writing `data_length` bytes.
+    unsafe extern "efiapi" fn mock_control_transfer(
+        _: *mut UsbIoProtocol,
+        _: *mut DeviceRequest,
+        direction: DataDirection,
+        _: u32,
+        data: *mut ffi::c_void,
+        data_length: usize,
+        _: *mut UsbTransferStatus,
+    ) -> Status {
+        if direction == DataDirection::DATA_IN {
+            // SAFETY: Guaranteed by the caller.
+            unsafe { data.cast::<u8>().write_bytes(RX_BYTE, data_length) };
+        }
+        Status::SUCCESS
+    }
+
+    /// Mock of `bulk_transfer` and `sync_interrupt_transfer`. Fills the
+    /// whole data buffer for receive transfers (endpoint bit 7 set).
+    ///
+    /// # Safety
+    /// `data` must be valid for writing `*data_length` bytes.
+    unsafe extern "efiapi" fn mock_sync_transfer(
+        _: *mut UsbIoProtocol,
+        endpoint: u8,
+        data: *mut ffi::c_void,
+        data_length: *mut usize,
+        _: usize,
+        _: *mut UsbTransferStatus,
+    ) -> Status {
+        if endpoint & 0x80 != 0 {
+            // SAFETY: Guaranteed by the caller.
+            unsafe { data.cast::<u8>().write_bytes(RX_BYTE, *data_length) };
+        }
+        Status::SUCCESS
+    }
+
+    /// Mock of `get_supported_languages` for a device without string
+    /// descriptors: no language table at all.
+    ///
+    /// # Safety
+    /// `lang_id_table` and `table_size` must be valid for writing.
+    unsafe extern "efiapi" fn mock_no_supported_languages(
+        _: *mut UsbIoProtocol,
+        lang_id_table: *mut *mut u16,
+        table_size: *mut u16,
+    ) -> Status {
+        // SAFETY: Guaranteed by the caller.
+        unsafe {
+            *lang_id_table = ptr::null_mut();
+            *table_size = 0;
+        }
+        Status::SUCCESS
+    }
+
+    // Stubs for the operations the tests do not exercise.
+
+    extern "efiapi" fn stub_async_interrupt_transfer(
+        _: *mut UsbIoProtocol,
+        _: u8,
+        _: Boolean,
+        _: usize,
+        _: usize,
+        _: AsyncUsbTransferCallback,
+        _: *mut ffi::c_void,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_isochronous_transfer(
+        _: *mut UsbIoProtocol,
+        _: u8,
+        _: *mut ffi::c_void,
+        _: usize,
+        _: *mut UsbTransferStatus,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_async_isochronous_transfer(
+        _: *mut UsbIoProtocol,
+        _: u8,
+        _: *mut ffi::c_void,
+        _: usize,
+        _: AsyncUsbTransferCallback,
+        _: *mut ffi::c_void,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_get_device_descriptor(
+        _: *mut UsbIoProtocol,
+        _: *mut DeviceDescriptor,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_get_config_descriptor(
+        _: *mut UsbIoProtocol,
+        _: *mut ConfigDescriptor,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_get_interface_descriptor(
+        _: *mut UsbIoProtocol,
+        _: *mut InterfaceDescriptor,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_get_endpoint_descriptor(
+        _: *mut UsbIoProtocol,
+        _: u8,
+        _: *mut EndpointDescriptor,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_get_string_descriptor(
+        _: *mut UsbIoProtocol,
+        _: u16,
+        _: u8,
+        _: *mut *mut uefi_raw::Char16,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_port_reset(_: *mut UsbIoProtocol) -> Status {
+        unimplemented!()
+    }
+
+    const fn mock_protocol() -> UsbIoProtocol {
+        UsbIoProtocol {
+            control_transfer: mock_control_transfer,
+            bulk_transfer: mock_sync_transfer,
+            async_interrupt_transfer: stub_async_interrupt_transfer,
+            sync_interrupt_transfer: mock_sync_transfer,
+            isochronous_transfer: stub_isochronous_transfer,
+            async_isochronous_transfer: stub_async_isochronous_transfer,
+            get_device_descriptor: stub_get_device_descriptor,
+            get_config_descriptor: stub_get_config_descriptor,
+            get_interface_descriptor: stub_get_interface_descriptor,
+            get_endpoint_descriptor: stub_get_endpoint_descriptor,
+            get_string_descriptor: stub_get_string_descriptor,
+            get_supported_languages: mock_no_supported_languages,
+            port_reset: stub_port_reset,
+        }
+    }
+
+    /// The receive transfers hand the firmware a pointer into the caller's
+    /// buffer, which the firmware writes through. This test is mainly useful
+    /// under Miri, which checks that the pointer grants write access.
+    #[test]
+    fn test_receive_writes_through_buffer_ptr() {
+        let mut usb = UsbIo(mock_protocol());
+
+        let mut buffer = [0; 4];
+        usb.control_transfer(0, 0, 0, 0, ControlTransfer::DataIn(&mut buffer), 0)
+            .unwrap();
+        assert_eq!(buffer, [RX_BYTE; 4]);
+
+        let mut buffer = [0; 4];
+        assert_eq!(usb.sync_bulk_receive(1, &mut buffer, 0).unwrap(), 4);
+        assert_eq!(buffer, [RX_BYTE; 4]);
+
+        let mut buffer = [0; 4];
+        assert_eq!(usb.sync_interrupt_receive(1, &mut buffer, 0).unwrap(), 4);
+        assert_eq!(buffer, [RX_BYTE; 4]);
+    }
+
+    /// A device without string descriptors reports no language table.
+    #[test]
+    fn test_supported_languages_empty() {
+        let mut usb = UsbIo(mock_protocol());
+        assert_eq!(usb.supported_languages().unwrap(), &[]);
+    }
 }

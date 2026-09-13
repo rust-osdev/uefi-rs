@@ -61,6 +61,11 @@
   now take `&mut self`. The firmware may update the media structure
   during a read, which conflicted with the shared reference returned by
   `media`.
+- Fixed undefined behavior in `UsbIo::{control_transfer,
+  sync_bulk_receive, sync_interrupt_receive}`, which let the firmware
+  write through a pointer derived from a shared reference, and in
+  `UsbIo::supported_languages`, which built a slice from a null
+  pointer.
 
 # uefi - v0.40.0 (2026-08-25)
 

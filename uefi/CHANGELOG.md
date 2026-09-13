@@ -47,6 +47,10 @@
   `ComponentName::{driver_name, controller_name}`,
   `ComponentName::supported_languages` and `HiiConfigRouting::export`,
   which dereferenced null pointers returned by the firmware.
+- Fixed undefined behavior in `LoadFile::load_file`,
+  `LoadFile2::load_file` and `HiiDatabase::export_all_raw`, which
+  returned a buffer with an uninitialized tail if the firmware wrote
+  less than it reported.
 
 # uefi - v0.40.0 (2026-08-25)
 

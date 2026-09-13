@@ -10,6 +10,7 @@ use crate::proto::pci::configuration::QwordAddressSpaceDescriptor;
 use alloc::vec::Vec;
 #[cfg(feature = "alloc")]
 use core::ffi::c_void;
+use core::marker::PhantomData;
 use core::ptr;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::pci::root_bridge::{
@@ -38,29 +39,20 @@ impl PciRootBridgeIo {
 
     /// Access PCI controller registers in the configuration space on this root bridge.
     pub const fn pci(&mut self) -> PciIoAccess<'_, PciConfigurationSpace> {
-        PciIoAccess {
-            proto: &mut self.0,
-            io_access: &mut self.0.pci,
-            _address_space: PciConfigurationSpace,
-        }
+        let io_access = self.0.pci;
+        PciIoAccess::new(&mut self.0, io_access, PciConfigurationSpace)
     }
 
     /// Access PCI controller registers in the memory space on this root bridge.
     pub const fn memory(&mut self) -> PciIoAccess<'_, PciMemorySpace> {
-        PciIoAccess {
-            proto: &mut self.0,
-            io_access: &mut self.0.mem,
-            _address_space: PciMemorySpace,
-        }
+        let io_access = self.0.mem;
+        PciIoAccess::new(&mut self.0, io_access, PciMemorySpace)
     }
 
     /// Access PCI controller registers in the I/O space on this root bridge.
     pub const fn io(&mut self) -> PciIoAccess<'_, PciIoSpace> {
-        PciIoAccess {
-            proto: &mut self.0,
-            io_access: &mut self.0.io,
-            _address_space: PciIoSpace,
-        }
+        let io_access = self.0.io;
+        PciIoAccess::new(&mut self.0, io_access, PciIoSpace)
     }
 
     /// Flush all PCI posted write transactions from a PCI host bridge to system memory.
@@ -207,11 +199,31 @@ impl PciRootBridgeIo {
 #[derive(Debug)]
 pub struct PciIoAccess<'a, S: PciIoAddressSpace> {
     proto: *mut PciRootBridgeIoProtocol,
-    io_access: &'a mut PciRootBridgeIoAccess,
+    // The firmware receives `proto` on every call and may access any part of
+    // the protocol instance through it. Hence, this must not hold a reference
+    // into the instance across the call. Instead, it keeps a copy of the
+    // function pointers it needs.
+    io_access: PciRootBridgeIoAccess,
+    _lifetime: PhantomData<&'a mut PciRootBridgeIoProtocol>,
     _address_space: S,
 }
 
-impl<S: PciIoAddressSpace> PciIoAccess<'_, S> {
+impl<'a, S: PciIoAddressSpace> PciIoAccess<'a, S> {
+    /// Takes `proto` as a reference rather than as a raw pointer to tie `'a`
+    /// to the exclusive borrow of the protocol instance.
+    const fn new(
+        proto: &'a mut PciRootBridgeIoProtocol,
+        io_access: PciRootBridgeIoAccess,
+        address_space: S,
+    ) -> Self {
+        Self {
+            proto: ptr::from_mut(proto),
+            io_access,
+            _lifetime: PhantomData,
+            _address_space: address_space,
+        }
+    }
+
     /// Reads a single value of type `U` from the specified PCI address.
     ///
     /// # Arguments
@@ -434,4 +446,201 @@ pub trait PciIoAddressSpace: private::Sealed {
 
 mod private {
     pub trait Sealed {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Status;
+    use core::ffi::c_void;
+    use uefi_raw::PhysicalAddress;
+    use uefi_raw::protocol::pci::root_bridge::{
+        PciRootBridgeIoProtocolOperation, PciRootBridgeIoProtocolWidth,
+    };
+    use uefi_raw::table::boot::{AllocateType, MemoryType};
+
+    /// Segment number of the mocked root bridge.
+    const SEGMENT: u32 = 0x1234_5678;
+
+    /// Mock of `PciRootBridgeIoAccess::read`.
+    ///
+    /// Firmware owns the protocol instance and is free to access any of its
+    /// fields through `this`. The mock does the same.
+    ///
+    /// # Safety
+    /// `this` must point to a valid protocol instance and `buffer` must be
+    /// valid for writing one `u32`.
+    unsafe extern "efiapi" fn mock_read(
+        this: *mut PciRootBridgeIoProtocol,
+        width: PciRootBridgeIoProtocolWidth,
+        _address: u64,
+        count: usize,
+        buffer: *mut c_void,
+    ) -> Status {
+        if width != PciRootBridgeIoProtocolWidth::UINT32 || count != 1 {
+            return Status::INVALID_PARAMETER;
+        }
+        // SAFETY: Guaranteed by the caller.
+        let this = unsafe { &*this };
+        // SAFETY: Guaranteed by the caller.
+        unsafe { buffer.cast::<u32>().write(this.segment_number) };
+        Status::SUCCESS
+    }
+
+    /// Mock of `PciRootBridgeIoAccess::write`. See [`mock_read`].
+    ///
+    /// # Safety
+    /// `this` must point to a valid protocol instance and `buffer` must be
+    /// valid for reading one `u32`.
+    unsafe extern "efiapi" fn mock_write(
+        this: *mut PciRootBridgeIoProtocol,
+        width: PciRootBridgeIoProtocolWidth,
+        _address: u64,
+        count: usize,
+        buffer: *const c_void,
+    ) -> Status {
+        if width != PciRootBridgeIoProtocolWidth::UINT32 || count != 1 {
+            return Status::INVALID_PARAMETER;
+        }
+        // SAFETY: Guaranteed by the caller.
+        let this = unsafe { &*this };
+        // SAFETY: Guaranteed by the caller.
+        let value = unsafe { buffer.cast::<u32>().read() };
+        if value == this.segment_number {
+            Status::SUCCESS
+        } else {
+            Status::DEVICE_ERROR
+        }
+    }
+
+    const MOCK_ACCESS: PciRootBridgeIoAccess = PciRootBridgeIoAccess {
+        read: mock_read,
+        write: mock_write,
+    };
+
+    // Stubs for the operations the test does not exercise.
+
+    extern "efiapi" fn stub_poll(
+        _: *mut PciRootBridgeIoProtocol,
+        _: PciRootBridgeIoProtocolWidth,
+        _: u64,
+        _: u64,
+        _: u64,
+        _: u64,
+        _: *mut u64,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_copy_mem(
+        _: *mut PciRootBridgeIoProtocol,
+        _: PciRootBridgeIoProtocolWidth,
+        _: u64,
+        _: u64,
+        _: usize,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_map(
+        _: *const PciRootBridgeIoProtocol,
+        _: PciRootBridgeIoProtocolOperation,
+        _: *const c_void,
+        _: *mut usize,
+        _: *mut PhysicalAddress,
+        _: *mut *mut c_void,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_unmap(_: *const PciRootBridgeIoProtocol, _: *const c_void) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_allocate_buffer(
+        _: *const PciRootBridgeIoProtocol,
+        _: AllocateType,
+        _: MemoryType,
+        _: usize,
+        _: *mut *const c_void,
+        _: u64,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_free_buffer(
+        _: *const PciRootBridgeIoProtocol,
+        _: usize,
+        _: *const c_void,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_flush(_: *mut PciRootBridgeIoProtocol) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_get_attributes(
+        _: *const PciRootBridgeIoProtocol,
+        _: *mut u64,
+        _: *mut u64,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_set_attributes(
+        _: *mut PciRootBridgeIoProtocol,
+        _: u64,
+        _: *mut u64,
+        _: *mut u64,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_configuration(
+        _: *const PciRootBridgeIoProtocol,
+        _: *mut *const c_void,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    const fn mock_protocol() -> PciRootBridgeIoProtocol {
+        PciRootBridgeIoProtocol {
+            parent_handle: ptr::null_mut(),
+            poll_mem: stub_poll,
+            poll_io: stub_poll,
+            mem: MOCK_ACCESS,
+            io: MOCK_ACCESS,
+            pci: MOCK_ACCESS,
+            copy_mem: stub_copy_mem,
+            map: stub_map,
+            unmap: stub_unmap,
+            allocate_buffer: stub_allocate_buffer,
+            free_buffer: stub_free_buffer,
+            flush: stub_flush,
+            get_attributes: stub_get_attributes,
+            set_attributes: stub_set_attributes,
+            configuration: stub_configuration,
+            segment_number: SEGMENT,
+        }
+    }
+
+    /// Each accessor hands a pointer to the whole protocol instance to the
+    /// firmware callee, which may access any part of it. This test is mainly
+    /// useful under Miri, which checks that this does not violate the
+    /// aliasing rules.
+    #[test]
+    fn test_pci_io_access_aliasing() {
+        let mut root = PciRootBridgeIo(mock_protocol());
+        let addr = PciIoAddress::new(0, 0, 0);
+
+        assert_eq!(root.pci().read_one::<u32>(addr).unwrap(), SEGMENT);
+        root.pci().write_one(addr, SEGMENT).unwrap();
+
+        assert_eq!(root.memory().read_one::<u32>(0).unwrap(), SEGMENT);
+        root.memory().write_one(0, SEGMENT).unwrap();
+
+        assert_eq!(root.io().read_one::<u32>(0).unwrap(), SEGMENT);
+        root.io().write_one(0, SEGMENT).unwrap();
+    }
 }

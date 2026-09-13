@@ -31,6 +31,9 @@
 - Fixed undefined behavior in `DevicePathNode::from_ffi_ptr` and the
   functions built on it, which underflowed the node length for nodes
   shorter than the node header. They now panic instead.
+- Fixed undefined behavior in `AlignedBuffer`, which exposed
+  uninitialized memory through its safe accessors and allocated with a
+  zero-size layout for an empty buffer.
 
 # uefi - v0.40.0 (2026-08-25)
 

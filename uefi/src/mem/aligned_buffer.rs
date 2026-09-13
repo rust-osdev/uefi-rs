@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use alloc::alloc::{Layout, LayoutError, alloc, dealloc};
+use alloc::alloc::{Layout, LayoutError, alloc_zeroed, dealloc};
 use core::error::Error;
+use core::num::NonZero;
 use core::ptr::NonNull;
 use core::{fmt, slice};
 
@@ -18,6 +19,8 @@ pub struct AlignedBuffer {
 impl AlignedBuffer {
     /// Allocate a new memory region with the requested len and alignment.
     ///
+    /// The memory is zero-initialized.
+    ///
     /// # Panics
     /// This method panics when the allocation fails (e.g. due to an out of memory situation).
     pub fn from_size_align(len: usize, alignment: usize) -> Result<Self, LayoutError> {
@@ -27,13 +30,24 @@ impl AlignedBuffer {
 
     /// Allocate a new memory region with the requested layout.
     ///
+    /// The memory is zero-initialized.
+    ///
     /// # Panics
     /// This method panics when the allocation fails (e.g. due to an out of memory situation).
     #[must_use]
     pub fn from_layout(layout: Layout) -> Self {
-        // SAFETY: The memory is valid.
-        let ptr = unsafe { alloc(layout) };
-        let ptr = NonNull::new(ptr).expect("Allocation failed");
+        let ptr = if layout.size() == 0 {
+            // `GlobalAlloc` forbids zero-size layouts. A dangling but aligned
+            // pointer is all that a zero-length slice needs.
+            let align = NonZero::new(layout.align()).expect("layout alignment should be non-zero");
+            NonNull::without_provenance(align)
+        } else {
+            // The safe accessors (`as_slice`, `iter`, ...) hand out `&[u8]`
+            // over the whole region, so it must be initialized from the start.
+            // SAFETY: The layout has a non-zero size.
+            let ptr = unsafe { alloc_zeroed(layout) };
+            NonNull::new(ptr).expect("Allocation failed")
+        };
         Self { ptr, layout }
     }
 
@@ -113,7 +127,11 @@ impl AlignedBuffer {
 
 impl Drop for AlignedBuffer {
     fn drop(&mut self) {
-        // SAFETY: The memory is valid.
+        // Zero-size buffers were never allocated, see `from_layout`.
+        if self.layout.size() == 0 {
+            return;
+        }
+        // SAFETY: The memory was allocated with this layout.
         unsafe {
             dealloc(self.ptr_mut(), self.layout);
         }
@@ -153,6 +171,30 @@ mod tests {
                 assert_eq!(buffer.ptr() as usize % request_alignment, 0);
                 assert_eq!(buffer.size(), request_len);
             }
+        }
+    }
+
+    /// A fresh buffer must be readable through the safe accessors, so its
+    /// memory must be initialized (Miri catches a read of uninitialized
+    /// memory here otherwise).
+    #[test]
+    fn test_fresh_buffer_is_zeroed() {
+        let bfr = AlignedBuffer::from_size_align(8, 8).unwrap();
+        assert_eq!(bfr.as_slice(), [0; 8]);
+    }
+
+    /// A zero-size buffer must not hit the allocator (zero-size layouts are
+    /// not allowed by `GlobalAlloc`), but must still behave like an empty,
+    /// aligned buffer.
+    #[test]
+    fn test_zero_size() {
+        for request_alignment in [1, 8, 64] {
+            let mut bfr = AlignedBuffer::from_size_align(0, request_alignment).unwrap();
+            assert_eq!(bfr.size(), 0);
+            assert!(bfr.as_slice().is_empty());
+            assert!(bfr.as_slice_mut().is_empty());
+            bfr.check_alignment(request_alignment).unwrap();
+            bfr.copy_from_slice(&[]);
         }
     }
 

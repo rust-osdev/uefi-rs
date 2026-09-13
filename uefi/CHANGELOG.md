@@ -34,6 +34,19 @@
 - Fixed undefined behavior in `AlignedBuffer`, which exposed
   uninitialized memory through its safe accessors and allocated with a
   zero-size layout for an empty buffer.
+- Fixed undefined behavior in the internal `make_boxed` helper, which
+  deallocated with a layout that did not match the allocation when the
+  firmware reported a larger size than it wrote. This affects
+  `get_boxed_info`, `read_entry_boxed`, `get_variable_boxed`,
+  `load_file` and `HiiDatabase::export_all_raw`.
+- Fixed undefined behavior in `boot::locate_handle`,
+  `boot::locate_handle_buffer`, `boot::protocols_per_handle` and
+  `boot::locate_device_path`, which turned null pointers returned by the
+  firmware into handles or references.
+- Fixed undefined behavior in `Shell::vars`, `ShellParameters::args`,
+  `ComponentName::{driver_name, controller_name}`,
+  `ComponentName::supported_languages` and `HiiConfigRouting::export`,
+  which dereferenced null pointers returned by the firmware.
 
 # uefi - v0.40.0 (2026-08-25)
 

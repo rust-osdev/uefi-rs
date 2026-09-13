@@ -134,10 +134,19 @@ impl Shell {
     /// * `Vars` - Iterator over the names of the environment variables
     #[must_use]
     pub fn vars(&self) -> Vars<'_, Self> {
+        // The shell returns NULL instead of a list if there are no
+        // variables or if it fails to allocate the list.
+        static EMPTY_LIST: [u16; 1] = [0];
+
         // SAFETY: The memory is valid.
         let env_ptr = unsafe { (self.0.get_env)(ptr::null()) };
+        let names = if env_ptr.is_null() {
+            EMPTY_LIST.as_ptr().cast::<Char16>()
+        } else {
+            env_ptr.cast::<Char16>()
+        };
         Vars {
-            names: env_ptr.cast::<Char16>(),
+            names,
             protocol: self,
             _marker: PhantomData,
         }
@@ -168,7 +177,26 @@ mod tests {
     use super::*;
     use alloc::collections::BTreeMap;
     use alloc::vec::Vec;
+    use core::mem::MaybeUninit;
     use uefi::cstr16;
+
+    /// Mock of `ShellProtocol::get_env` that returns no variable list.
+    unsafe extern "efiapi" fn mock_get_env_null(
+        _name: *const uefi_raw::Char16,
+    ) -> *const uefi_raw::Char16 {
+        ptr::null()
+    }
+
+    #[test]
+    fn test_vars_null_list() {
+        // Only `get_env` is called, so leave the other fields uninitialised.
+        let mut raw = MaybeUninit::<ShellProtocol>::uninit();
+        // SAFETY: Writes one field of the allocated value.
+        unsafe { (&raw mut (*raw.as_mut_ptr()).get_env).write(mock_get_env_null) };
+        // SAFETY: `Shell` is a transparent wrapper and only reads `get_env`.
+        let shell = unsafe { &*raw.as_ptr().cast::<Shell>() };
+        assert_eq!(shell.vars().count(), 0);
+    }
 
     struct ShellMock<'a> {
         inner: BTreeMap<&'a CStr16, &'a CStr16>,

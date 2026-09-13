@@ -35,6 +35,10 @@ impl ShellParameters {
     /// Get a slice of the args, as Char16 pointers
     #[must_use]
     const fn args_slice(&self) -> &[*const Char16] {
+        // The EDK2 shell sets `argv` to NULL for an empty command line.
+        if self.0.argv.is_null() || self.0.argc == 0 {
+            return &[];
+        }
         // SAFETY: The memory is valid.
         unsafe {
             from_raw_parts(
@@ -42,5 +46,26 @@ impl ShellParameters {
                 self.0.argc,
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::ptr;
+
+    #[test]
+    fn test_args_null_argv() {
+        let raw = ShellParametersProtocol {
+            argv: ptr::null(),
+            argc: 0,
+            std_in: ptr::null_mut(),
+            std_out: ptr::null_mut(),
+            std_err: ptr::null_mut(),
+        };
+        // SAFETY: `ShellParameters` is a transparent wrapper.
+        let params = unsafe { &*ptr::from_ref(&raw).cast::<ShellParameters>() };
+        assert_eq!(params.args_len(), 0);
+        assert_eq!(params.args().count(), 0);
     }
 }

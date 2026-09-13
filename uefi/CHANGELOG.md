@@ -68,6 +68,8 @@
   pointer.
 - Fixed undefined behavior in `PciRootBridgeIo::configuration`, which
   parsed a null resource descriptor list returned by the firmware.
+- Fixed undefined behavior in `Iommu::allocate_buffer`, whose returned
+  `DmaBuffer` exposed uninitialized memory as `[u8]`.
 
 # uefi - v0.40.0 (2026-08-25)
 

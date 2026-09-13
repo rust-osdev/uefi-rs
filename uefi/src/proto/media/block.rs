@@ -102,7 +102,7 @@ impl BlockIO {
     ///   the device.
     /// * `Status::INVALID_PARAMETER`  The read request contains LBAs that are not valid, or the buffer is not on
     ///   proper alignment.
-    pub fn read_blocks(&self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
+    pub fn read_blocks(&mut self, media_id: u32, lba: Lba, buffer: &mut [u8]) -> Result {
         let buffer_size = buffer.len();
         // SAFETY: The memory is valid.
         unsafe {
@@ -287,7 +287,7 @@ impl BlockIO2 {
     /// * [`Status::DEVICE_ERROR`]      The device reported an error while performing the read operation.
     /// * [`Status::BAD_BUFFER_SIZE`]   The buffer size parameter is not a multiple of the intrinsic block size of the device.
     pub unsafe fn read_blocks_ex(
-        &self,
+        &mut self,
         media_id: u32,
         lba: Lba,
         token: Option<NonNull<BlockIO2Token>>,

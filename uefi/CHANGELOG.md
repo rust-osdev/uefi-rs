@@ -51,6 +51,16 @@
   `LoadFile2::load_file` and `HiiDatabase::export_all_raw`, which
   returned a buffer with an uninitialized tail if the firmware wrote
   less than it reported.
+- **Breaking**: Changed `FromUefi::from_uefi` to a safe function that
+  takes the buffer and the number of bytes written by the firmware, and
+  returns a `Result`. It previously built a reference that could exceed
+  the buffer and trusted the firmware to NUL-terminate the name. The
+  required size reported by `File::get_info` now includes the trailing
+  padding of the requested type.
+- **Breaking**: `BlockIO::read_blocks` and `BlockIO2::read_blocks_ex`
+  now take `&mut self`. The firmware may update the media structure
+  during a read, which conflicted with the shared reference returned by
+  `media`.
 
 # uefi - v0.40.0 (2026-08-25)
 

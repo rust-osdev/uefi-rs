@@ -12,6 +12,9 @@
 - **Breaking**: Changed `fs::path::Components::Item` from `CString16` to `&[Char16]`,
   which avoids heap allocation during iteration. Users can use the recently added
   `CString16::extend` function to add a `&[Char16]` value to a `CString16`.
+- Fixed undefined behavior in `PciRootBridgeIo::{pci, memory, io}`. The
+  returned `PciIoAccess` held a mutable reference into the protocol instance
+  while passing a pointer to the whole instance to the firmware.
 
 # uefi - v0.40.0 (2026-08-25)
 

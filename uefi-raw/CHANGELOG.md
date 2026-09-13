@@ -15,7 +15,8 @@
 `PxeBaseCodeSrvlist::new`.
 - **Breaking**: Changed `this` parameter of `SimplePointerProtocol::get_state`
 from `*mut Self` to `*const Self`.
-
+- Fixed undefined behavior in `IpAddress::new_v4` and the corresponding
+  `From` impl, which left 12 of the 16 union bytes uninitialized.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

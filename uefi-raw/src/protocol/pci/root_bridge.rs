@@ -65,7 +65,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub struct PciRootBridgeIoAccess {
     pub read: unsafe extern "efiapi" fn(

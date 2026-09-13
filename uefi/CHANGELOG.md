@@ -70,6 +70,9 @@
   parsed a null resource descriptor list returned by the firmware.
 - Fixed undefined behavior in `Iommu::allocate_buffer`, whose returned
   `DmaBuffer` exposed uninitialized memory as `[u8]`.
+- Fixed undefined behavior in `BaseCode::udp_read`, which let the
+  firmware write through a pointer derived from a shared reference, and
+  in `DiscoverInfo::new_in_buffer`, which left padding uninitialized.
 
 # uefi - v0.40.0 (2026-08-25)
 

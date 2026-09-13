@@ -469,10 +469,16 @@ impl BaseCode {
         header: Option<&mut [u8]>,
         buffer: &mut [u8],
     ) -> Result<usize> {
-        let header_size_tmp;
+        let mut header_size_tmp;
         let (header_size, header_ptr) = if let Some(header) = header {
             header_size_tmp = header.len();
-            (ptr::from_ref(&header_size_tmp), header.as_mut_ptr().cast())
+            // The spec declares `HeaderSize` as an IN parameter, but EDK2
+            // writes the actual header size back through it. The pointer
+            // must therefore carry write permission.
+            (
+                ptr::from_mut(&mut header_size_tmp).cast_const(),
+                header.as_mut_ptr().cast(),
+            )
         } else {
             (null(), null_mut())
         };
@@ -712,8 +718,9 @@ impl DiscoverInfo {
             ptr_write_unaligned_and_add(&mut ptr, must_use_list);
             ptr_write_unaligned_and_add(&mut ptr, server_m_cast_ip);
             ptr_write_unaligned_and_add(&mut ptr, server_count as u16);
-
-            ptr = ptr.add(2); // Align server list (4-byte alignment).
+            // Align server list (4-byte alignment). The padding is a field
+            // of the struct and must be initialized, e.g. `Debug` reads it.
+            ptr_write_unaligned_and_add(&mut ptr, [0_u8; 2]);
             core::ptr::copy(srv_list.as_ptr(), ptr.cast(), server_count);
 
             let ptr: *mut Self =
@@ -1166,5 +1173,27 @@ mod tests {
             size_of_val(info),
             DiscoverInfo::base_struct_size() + size_of_val(&server_list)
         );
+    }
+
+    // Miri fails if `new_in_buffer` leaves any byte of the returned struct
+    // uninitialized.
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn discover_info_fully_initialized() {
+        use alloc::format;
+
+        let mut buffer = Aligned4([MaybeUninit::<u8>::uninit(); 100]);
+        let info = DiscoverInfo::new_in_buffer(
+            &mut buffer.0,
+            false,
+            false,
+            false,
+            false,
+            EfiIpAddr::new_v4([0; 4]),
+            &[Server::new(BootstrapType(123), None)],
+        )
+        .unwrap();
+
+        assert!(format!("{info:?}").contains("DiscoverInfo"));
     }
 }

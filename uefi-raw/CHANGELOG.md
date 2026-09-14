@@ -29,6 +29,11 @@ from `*mut Self` to `*const Self`.
   `Usb2HostControllerProtocol::async_interrupt_transfer` to
   `Option<AsyncUsbTransferCallback>`. The specification marks it `OPTIONAL`;
   NULL cancels the transfer.
+- **Breaking**: Changed the `target` parameter of
+  `ExtScsiPassThruProtocol::get_target_lun` (from `*mut *const u8`) and
+  `ScsiIoProtocol::get_device_location` (from `*mut *mut u8`) to `*const *mut
+  u8`. The firmware writes the target ID into the caller-provided array and
+  only reads the pointer to it.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

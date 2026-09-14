@@ -99,6 +99,11 @@ from `*mut Self` to `*const Self`.
   `HiiConfigRoutingProtocol::{extract_config, export_config, block_to_config,
   get_alt_cfg}`) from `*mut *const` to `*mut *mut Char16`. The caller owns and
   must free them.
+- **Breaking**: Changed the inner pointer of the outputs
+  `BootServices::register_protocol_notify` (`registration`),
+  `BootServices::open_protocol_information` (`entry_buffer`) and
+  `RuntimeServices::convert_pointer` (`address`) from `*const` to `*mut`,
+  matching the non-const C declarations.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

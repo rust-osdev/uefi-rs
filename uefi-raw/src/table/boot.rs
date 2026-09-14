@@ -99,7 +99,7 @@ pub struct BootServices {
     pub register_protocol_notify: unsafe extern "efiapi" fn(
         protocol: *const Guid,
         event: Event,
-        registration: *mut *const c_void,
+        registration: *mut *mut c_void,
     ) -> Status,
     pub locate_handle: unsafe extern "efiapi" fn(
         search_ty: i32,
@@ -181,7 +181,7 @@ pub struct BootServices {
     pub open_protocol_information: unsafe extern "efiapi" fn(
         handle: Handle,
         protocol: *const Guid,
-        entry_buffer: *mut *const OpenProtocolInformationEntry,
+        entry_buffer: *mut *mut OpenProtocolInformationEntry,
         entry_count: *mut usize,
     ) -> Status,
 

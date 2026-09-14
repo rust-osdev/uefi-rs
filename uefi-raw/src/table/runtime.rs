@@ -34,7 +34,7 @@ pub struct RuntimeServices {
         virtual_map: *const MemoryDescriptor,
     ) -> Status,
     pub convert_pointer:
-        unsafe extern "efiapi" fn(debug_disposition: usize, address: *mut *const c_void) -> Status,
+        unsafe extern "efiapi" fn(debug_disposition: usize, address: *mut *mut c_void) -> Status,
     pub get_variable: unsafe extern "efiapi" fn(
         variable_name: *const Char16,
         vendor_guid: *const Guid,

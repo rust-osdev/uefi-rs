@@ -107,6 +107,11 @@
   use after free.
 - Fixed `Output::current_mode` and `Output::modes`, which passed a pointer
   derived from a shared reference to the firmware as `*mut`.
+- `ScopedProtocol`, `TplGuard`, `HandleBuffer`, `ProtocolsPerHandle` and
+  the types backed by pool memory such as `PoolString` no longer panic
+  in release builds when dropped after boot services have exited. The
+  cleanup is skipped, as the resources are gone together with the boot
+  services. Debug builds still assert that boot services are active.
 
 # uefi - v0.40.0 (2026-08-25)
 

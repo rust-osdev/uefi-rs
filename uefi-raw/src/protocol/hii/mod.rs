@@ -21,21 +21,33 @@ pub type FormId = u16;
 pub type VarstoreId = u16;
 pub type AnimationId = u16;
 
-/// EFI_HII_PACKAGE_HEADER
-#[derive(Debug)]
-#[repr(C)]
+/// `EFI_HII_PACKAGE_HEADER`
+#[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
 pub struct HiiPackageHeader {
     pub length_and_type: u32,
     pub data: [u8; 0],
 }
 
-/// EFI_HII_PACKAGE_LIST_HEADER
-#[derive(Debug)]
-#[repr(C)]
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiPackageHeader>() == 4);
+    assert!(align_of::<HiiPackageHeader>() == 1);
+};
+
+/// `EFI_HII_PACKAGE_LIST_HEADER`
+#[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
 pub struct HiiPackageListHeader {
     pub package_list_guid: Guid,
     pub package_length: u32,
 }
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiPackageListHeader>() == 20);
+    assert!(align_of::<HiiPackageListHeader>() == 1);
+};
 
 newtype_enum! {
     /// EFI_KEY: A physical key on a keyboard.

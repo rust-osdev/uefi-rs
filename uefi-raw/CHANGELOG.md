@@ -111,6 +111,8 @@ from `*mut Self` to `*const Self`.
   c_void` like the other opaque handles.
 - **Breaking**: `HiiRef`, `HiiTime`, and `HiiDate` are moved from
   `protocol::hii::config` to `protocol::hii`.
+- **Breaking**: `HiiPackageListHeader` and `HiiPackageHeader` are now packed
+  to match the layout mandated by the UEFI specification.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

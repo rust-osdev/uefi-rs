@@ -120,6 +120,8 @@
   panic when the conversion to text fails, for example because the
   device path to text protocol is not installed. They print the size
   instead.
+- Fixed a memory leak in `HttpHelper::response_first`, which did not
+  free the response headers allocated by the driver.
 
 # uefi - v0.40.0 (2026-08-25)
 

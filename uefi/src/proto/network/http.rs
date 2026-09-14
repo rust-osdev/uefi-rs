@@ -10,10 +10,10 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::ffi::{CStr, c_char, c_void};
-use core::ptr;
+use core::ptr::{self, NonNull};
 use log::debug;
 
-use uefi::boot::ScopedProtocol;
+use uefi::boot::{self, ScopedProtocol};
 use uefi::prelude::*;
 use uefi::proto::unsafe_protocol;
 use uefi_raw::protocol::driver::ServiceBindingProtocol;
@@ -211,6 +211,33 @@ pub struct HttpHelper {
     protocol: Option<ScopedProtocol<Http>>,
 }
 
+/// Frees the headers of a response message.
+///
+/// The driver allocates the header array as well as each field name and
+/// value from the pool, and the caller has to free all of them.
+///
+/// # Safety
+///
+/// `msg` must be a response message filled by the driver.
+unsafe fn free_response_headers(msg: &HttpMessage) {
+    let Some(headers) = NonNull::new(msg.header) else {
+        return;
+    };
+    for i in 0..msg.header_count {
+        // SAFETY: The driver wrote `header_count` entries.
+        let header = unsafe { &*headers.as_ptr().add(i) };
+        for field in [header.field_name, header.field_value] {
+            if let Some(field) = NonNull::new(field.cast_mut()) {
+                // SAFETY: The string was allocated by the matching UEFI
+                // allocator.
+                let _ = unsafe { boot::free_pool(field.cast()) };
+            }
+        }
+    }
+    // SAFETY: The array was allocated by the matching UEFI allocator.
+    let _ = unsafe { boot::free_pool(headers.cast()) };
+}
+
 impl HttpHelper {
     /// Create new HTTP helper instance for the given NIC handle.
     pub fn new(nic_handle: Handle) -> uefi::Result<Self> {
@@ -382,6 +409,8 @@ impl HttpHelper {
         debug!("http: response: {status} / {:?}", rx_rsp.status_code);
 
         if status != Status::SUCCESS && status != Status::HTTP_ERROR {
+            // SAFETY: `rx_msg` was filled by the driver.
+            unsafe { free_response_headers(&rx_msg) };
             return Err(status.into());
         };
 
@@ -400,6 +429,8 @@ impl HttpHelper {
                 String::from(v.to_str().unwrap()),
             ));
         }
+        // SAFETY: `rx_msg` was filled by the driver.
+        unsafe { free_response_headers(&rx_msg) };
 
         debug!("http: body: {}/{}", rx_msg.body_length, body.len());
 

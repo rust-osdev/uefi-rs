@@ -568,7 +568,7 @@ mod tests {
         _: AllocateType,
         _: MemoryType,
         _: usize,
-        _: *mut *const c_void,
+        _: *mut *mut c_void,
         _: u64,
     ) -> Status {
         unimplemented!()

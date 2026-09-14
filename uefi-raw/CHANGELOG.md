@@ -77,6 +77,10 @@ from `*mut Self` to `*const Self`.
   `GraphicsOutputProtocolMode::info` and
   `Ip4Config2InterfaceInfo::route_table` from `*mut` to `*const`, matching the
   other mode pointers in the crate.
+- **Breaking**: Changed the `host_addr` parameter of
+  `PciRootBridgeIoProtocol::allocate_buffer` from `*mut *const c_void` to
+  `*mut *mut c_void`. The allocated buffer is writable memory owned by the
+  caller.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

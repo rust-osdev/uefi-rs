@@ -58,7 +58,7 @@ pub struct BootServices {
         ty: EventType,
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
-        notify_ctx: *mut c_void,
+        notify_ctx: *const c_void,
         out_event: *mut Event,
     ) -> Status,
     pub set_timer:
@@ -240,7 +240,7 @@ pub struct BootServices {
         ty: EventType,
         notify_tpl: Tpl,
         notify_fn: Option<EventNotifyFn>,
-        notify_ctx: *mut c_void,
+        notify_ctx: *const c_void,
         event_group: *const Guid,
         out_event: *mut Event,
     ) -> Status,
@@ -289,7 +289,7 @@ pub enum InterfaceType: u32 => {
 }}
 
 /// Raw event notification function.
-pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c_void);
+pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *const c_void);
 
 bitflags! {
     /// Flags describing the capabilities of a memory range.

@@ -67,6 +67,10 @@ from `*mut Self` to `*const Self`.
 - **Breaking**: Changed the `notify_handle` parameter of
   `SimpleTextInputExProtocol::unregister_key_notify` from `*mut` to `*const
   c_void`.
+- **Breaking**: Changed the event notification context from `*mut c_void` to
+  `*const c_void` in `EventNotifyFn` and in the `notify_ctx` parameter of
+  `BootServices::{create_event, create_event_ex}`. The firmware passes the
+  pointer through unchanged.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

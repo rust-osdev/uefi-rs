@@ -9,7 +9,8 @@ use uefi_macros::unsafe_protocol;
 use uefi_raw::Char16;
 use uefi_raw::protocol::hii::config::HiiConfigRoutingProtocol;
 
-use crate::{CStr16, Status, StatusExt};
+use crate::data_types::PoolString;
+use crate::{Status, StatusExt};
 
 /// The HII Configuration Routing Protocol.
 ///
@@ -34,13 +35,15 @@ impl HiiConfigRouting {
     /// * [`Status::NOT_FOUND`] - The firmware reported success but did not
     ///   provide a result string.
     pub fn export(&self) -> uefi::Result<String> {
-        let mut results: *const Char16 = ptr::null();
+        let mut results: *mut Char16 = ptr::null_mut();
         // SAFETY: The memory is valid.
         unsafe { (self.0.export_config)(&self.0, &mut results) }.to_result()?;
         if results.is_null() {
             return Err(Status::NOT_FOUND.into());
         }
-        // SAFETY: The firmware provided a NUL-terminated string.
-        Ok(unsafe { CStr16::from_ptr(results.cast()) }.to_string())
+        // SAFETY: The firmware allocated the NUL-terminated string from the
+        // pool; `PoolString` frees it.
+        let results = unsafe { PoolString::new(results.cast()) }?;
+        Ok(results.to_string())
     }
 }

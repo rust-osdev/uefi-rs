@@ -25,7 +25,7 @@ pub struct ConfigKeywordHandlerProtocol {
         keyword_string: *const Char16,
         progress: *mut *const Char16,
         progress_err: *mut u32,
-        results: *mut *const Char16,
+        results: *mut *mut Char16,
     ) -> Status,
 }
 
@@ -136,7 +136,7 @@ pub struct HiiConfigAccessProtocol {
         this: *const Self,
         request: *const Char16,
         progress: *mut *const Char16,
-        results: *mut *const Char16,
+        results: *mut *mut Char16,
     ) -> Status,
     pub route_config: unsafe extern "efiapi" fn(
         this: *const Self,
@@ -165,10 +165,10 @@ pub struct HiiConfigRoutingProtocol {
         this: *const Self,
         config_request: *const Char16,
         progress: *mut *const Char16,
-        results: *mut *const Char16,
+        results: *mut *mut Char16,
     ) -> Status,
     pub export_config:
-        unsafe extern "efiapi" fn(this: *const Self, results: *mut *const Char16) -> Status,
+        unsafe extern "efiapi" fn(this: *const Self, results: *mut *mut Char16) -> Status,
     pub route_config: unsafe extern "efiapi" fn(
         this: *const Self,
         configuration: *const Char16,
@@ -179,7 +179,7 @@ pub struct HiiConfigRoutingProtocol {
         config_request: *const Char16,
         block: *const u8,
         block_size: usize,
-        config: *mut *const Char16,
+        config: *mut *mut Char16,
         progress: *mut *const Char16,
     ) -> Status,
     pub config_to_block: unsafe extern "efiapi" fn(
@@ -196,7 +196,7 @@ pub struct HiiConfigRoutingProtocol {
         name: *const Char16,
         device_path: *const DevicePathProtocol,
         alt_cfg_id: *const Char16,
-        alt_cfg_resp: *mut *const Char16,
+        alt_cfg_resp: *mut *mut Char16,
     ) -> Status,
 }
 

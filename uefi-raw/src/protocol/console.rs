@@ -221,7 +221,7 @@ pub struct GraphicsOutputProtocol {
         *const Self,
         mode_number: u32,
         size_of_info: *mut usize,
-        info: *mut *const GraphicsOutputModeInformation,
+        info: *mut *mut GraphicsOutputModeInformation,
     ) -> Status,
     pub set_mode: unsafe extern "efiapi" fn(*mut Self, mode_number: u32) -> Status,
     pub blt: unsafe extern "efiapi" fn(

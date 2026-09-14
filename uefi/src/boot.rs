@@ -913,12 +913,12 @@ pub fn register_protocol_notify(
     // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
-    let mut key = ptr::null();
+    let mut key = ptr::null_mut();
     // SAFETY: The memory is valid.
     unsafe { (bt.register_protocol_notify)(protocol, event.as_ptr(), &mut key) }.to_result_with_val(
         || {
             // OK to unwrap: key is non-null for Status::SUCCESS.
-            SearchType::ByRegisterNotify(ProtocolSearchKey(NonNull::new(key.cast_mut()).unwrap()))
+            SearchType::ByRegisterNotify(ProtocolSearchKey(NonNull::new(key).unwrap()))
         },
     )
 }

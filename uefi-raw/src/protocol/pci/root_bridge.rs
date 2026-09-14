@@ -130,7 +130,7 @@ pub struct PciRootBridgeIoProtocol {
         alloc_ty: AllocateType,
         memory_ty: MemoryType,
         pages: usize,
-        host_addr: *mut *const c_void,
+        host_addr: *mut *mut c_void,
         attributes: u64,
     ) -> Status,
     pub free_buffer: unsafe extern "efiapi" fn(

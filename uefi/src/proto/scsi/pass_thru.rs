@@ -152,7 +152,7 @@ impl ScsiDevice<'_> {
     pub fn path_node(&self) -> crate::Result<PoolDevicePathNode> {
         // SAFETY: The memory is valid.
         unsafe {
-            let mut path_ptr: *const DevicePathProtocol = ptr::null();
+            let mut path_ptr: *mut DevicePathProtocol = ptr::null_mut();
             ((*self.proto.get()).build_device_path)(
                 self.proto.get(),
                 self.target().as_ptr(),
@@ -160,7 +160,7 @@ impl ScsiDevice<'_> {
                 &mut path_ptr,
             )
             .to_result()?;
-            NonNull::new(path_ptr.cast_mut())
+            NonNull::new(path_ptr)
                 .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }

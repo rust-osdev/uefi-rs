@@ -210,7 +210,7 @@ pub struct ExtScsiPassThruProtocol {
         this: *const Self,
         target: *const u8,
         lun: u64,
-        device_path: *mut *const DevicePathProtocol,
+        device_path: *mut *mut DevicePathProtocol,
     ) -> Status,
     pub get_target_lun: unsafe extern "efiapi" fn(
         this: *const Self,

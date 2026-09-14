@@ -77,6 +77,38 @@ from `*mut Self` to `*const Self`.
   `GraphicsOutputProtocolMode::info` and
   `Ip4Config2InterfaceInfo::route_table` from `*mut` to `*const`, matching the
   other mode pointers in the crate.
+- **Breaking**: Changed the `host_addr` parameter of
+  `PciRootBridgeIoProtocol::allocate_buffer` from `*mut *const c_void` to
+  `*mut *mut c_void`. The allocated buffer is writable memory owned by the
+  caller.
+- **Breaking**: Changed the return type of the pool-allocating functions of
+  `DevicePathUtilitiesProtocol`, `DevicePathToTextProtocol` and
+  `DevicePathFromTextProtocol` from `*const` to `*mut`. The caller owns and
+  must free the result.
+- **Breaking**: Changed the `device_path` output of
+  `ExtScsiPassThruProtocol::build_device_path`,
+  `AtaPassThruProtocol::build_device_path` and
+  `NvmExpressPassThruProtocol::build_device_path` from `*mut *const` to `*mut
+  *mut DevicePathProtocol`. The caller owns and must free the result.
+- **Breaking**: Changed the `info` output of
+  `GraphicsOutputProtocol::query_mode` from `*mut *const` to `*mut *mut
+  GraphicsOutputModeInformation`. The caller owns and must free the buffer.
+- **Breaking**: Changed the callee-allocated result strings of the HII
+  configuration protocols (`ConfigKeywordHandlerProtocol::get_data`,
+  `HiiConfigAccessProtocol::extract_config`,
+  `HiiConfigRoutingProtocol::{extract_config, export_config, block_to_config,
+  get_alt_cfg}`) from `*mut *const` to `*mut *mut Char16`. The caller owns and
+  must free them.
+- **Breaking**: Changed the inner pointer of the outputs
+  `BootServices::register_protocol_notify` (`registration`),
+  `BootServices::open_protocol_information` (`entry_buffer`) and
+  `RuntimeServices::convert_pointer` (`address`) from `*const` to `*mut`,
+  matching the non-const C declarations.
+- **Breaking**: Changed the callee-allocated results of
+  `ShellProtocol::{get_device_path_from_file_path,
+  get_file_path_from_device_path, get_file_info}` from `*const` to `*mut` (the
+  caller must free them), and `ShellFileHandle` from `*const c_void` to `*mut
+  c_void` like the other opaque handles.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

@@ -82,7 +82,7 @@ impl GraphicsOutput {
     /// device and the set of active video output devices supports.
     fn query_mode(&self, index: u32) -> Result<Mode> {
         let mut info_sz = 0;
-        let mut info_heap_ptr = ptr::null();
+        let mut info_heap_ptr = ptr::null_mut();
         // query_mode allocates a buffer and stores the heap ptr in the provided
         // variable. In this buffer, the queried data can be found.
         // SAFETY: The memory is valid.
@@ -99,7 +99,7 @@ impl GraphicsOutput {
             None
         };
 
-        let info_heap_ptr = info_heap_ptr.cast::<u8>().cast_mut();
+        let info_heap_ptr = info_heap_ptr.cast::<u8>();
 
         // User has no benefit from propagating this error. If this
         // fails, it is an error of the UEFI implementation.

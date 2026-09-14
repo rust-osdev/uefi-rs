@@ -81,6 +81,19 @@
   returned a `CStr16` covering the whole output buffer and thus violated
   the invariants of that type when the buffer was larger than the
   string.
+- Fixed undefined behavior in the ATA, NVMe and SCSI pass-thru response
+  accessors, which trusted the transfer length reported by the firmware
+  and could return a slice pointing past the buffer.
+- Fixed undefined behavior in `HttpHelper::{request, response_first,
+  response_more}`, which left a token pointing into a dead stack frame
+  when polling failed, and passed the response data to the driver
+  through a read-only pointer.
+- **Breaking**: `PointerMode` and `PointerState` are now re-exports of
+  `SimplePointerMode` and `SimplePointerState` from `uefi-raw`, instead
+  of duplicates that declared the firmware's `BOOLEAN` fields as Rust
+  `bool`. Reading those as `bool` was undefined behavior for any value
+  other than 0 and 1. The fields are now named as in the specification;
+  convert a button with `bool::from`.
 
 # uefi - v0.40.0 (2026-08-25)
 

@@ -28,6 +28,11 @@ pub type ScsiRequestDirection = uefi_raw::protocol::scsi::ScsiIoDataDirection;
 pub struct ScsiRequest<'a> {
     packet: ScsiIoScsiRequestPacket,
     io_align: u32,
+    /// Capacity of the buffer the firmware was given. The firmware reports
+    /// how much it transferred in the packet, but a bogus value must not
+    /// produce an out-of-bounds slice.
+    in_data_capacity: usize,
+    sense_data_capacity: usize,
     in_data_buffer: Option<AlignedBuffer>,
     out_data_buffer: Option<AlignedBuffer>,
     sense_data_buffer: Option<AlignedBuffer>,
@@ -53,6 +58,8 @@ impl ScsiRequestBuilder<'_> {
     pub fn new(direction: ScsiRequestDirection, io_align: u32) -> Self {
         Self {
             req: ScsiRequest {
+                in_data_capacity: 0,
+                sense_data_capacity: 0,
                 in_data_buffer: None,
                 out_data_buffer: None,
                 sense_data_buffer: None,
@@ -152,6 +159,7 @@ impl<'a> ScsiRequestBuilder<'a> {
         // check alignment of externally supplied buffer
         bfr.check_alignment(self.req.io_align as usize)?;
         self.req.in_data_buffer = None;
+        self.req.in_data_capacity = bfr.size();
         self.req.packet.in_data_buffer = bfr.ptr_mut().cast();
         self.req.packet.in_transfer_length = bfr.size() as u32;
         Ok(self)
@@ -166,6 +174,7 @@ impl<'a> ScsiRequestBuilder<'a> {
     /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
     pub fn with_read_buffer(mut self, len: usize) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(len, self.req.io_align as usize)?;
+        self.req.in_data_capacity = bfr.size();
         self.req.packet.in_data_buffer = bfr.ptr_mut().cast();
         self.req.packet.in_transfer_length = bfr.size() as u32;
         self.req.in_data_buffer = Some(bfr);
@@ -184,6 +193,7 @@ impl<'a> ScsiRequestBuilder<'a> {
     /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
     pub fn with_sense_buffer(mut self, len: u8) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(len as usize, self.req.io_align as usize)?;
+        self.req.sense_data_capacity = bfr.size();
         self.req.packet.sense_data = bfr.ptr_mut().cast();
         self.req.packet.sense_data_length = len;
         self.req.sense_data_buffer = Some(bfr);
@@ -307,11 +317,16 @@ impl ScsiResponse<'_> {
         if self.0.packet.in_data_buffer.is_null() {
             return None;
         }
-        // SAFETY: The memory is valid.
+        // The firmware reports the transferred length; clamp it so that a
+        // bogus value cannot produce an out-of-bounds slice.
+        let reported = self.0.packet.in_transfer_length as usize;
+        let cap = self.0.in_data_capacity;
+        let len = if reported < cap { reported } else { cap };
+        // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.0.packet.in_data_buffer.cast(),
-                self.0.packet.in_transfer_length as usize,
+                len,
             ))
         }
     }
@@ -328,11 +343,16 @@ impl ScsiResponse<'_> {
         if self.0.packet.sense_data.is_null() {
             return None;
         }
-        // SAFETY: The memory is valid.
+        // The firmware reports how much sense data it wrote; clamp it so
+        // that a bogus value cannot produce an out-of-bounds slice.
+        let reported = self.0.packet.sense_data_length as usize;
+        let cap = self.0.sense_data_capacity;
+        let len = if reported < cap { reported } else { cap };
+        // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.0.packet.sense_data.cast(),
-                self.0.packet.sense_data_length as usize,
+                len,
             ))
         }
     }

@@ -108,6 +108,51 @@ impl Http {
     }
 }
 
+/// A token that was handed to the firmware by [`Http::request`] or
+/// [`Http::response`] and has not completed yet.
+struct PendingToken<'a> {
+    http: &'a mut Http,
+    token: &'a mut HttpToken,
+}
+
+impl<'a> PendingToken<'a> {
+    /// Sends the request described by `token`.
+    fn request(http: &'a mut Http, token: &'a mut HttpToken) -> uefi::Result<Self> {
+        http.request(token)?;
+        Ok(Self { http, token })
+    }
+
+    /// Starts receiving the response described by `token`.
+    fn response(http: &'a mut Http, token: &'a mut HttpToken) -> uefi::Result<Self> {
+        http.response(token)?;
+        Ok(Self { http, token })
+    }
+
+    /// Polls the network stack until the token completes and returns its
+    /// final status.
+    fn wait(self) -> uefi::Result<Status> {
+        let mut polls = 0;
+        while self.token.status == Status::NOT_READY {
+            self.http.poll()?;
+            polls += 1;
+        }
+        debug!(
+            "http: token completed after {polls} polls with {}",
+            self.token.status
+        );
+        Ok(self.token.status)
+    }
+}
+
+impl Drop for PendingToken<'_> {
+    fn drop(&mut self) {
+        if self.token.status == Status::NOT_READY {
+            // Nothing sensible can be done if cancelling fails.
+            let _ = self.http.cancel(self.token);
+        }
+    }
+}
+
 /// HTTP Service Binding Protocol.
 #[derive(Debug)]
 #[unsafe_protocol(HttpProtocol::SERVICE_BINDING_GUID)]
@@ -276,24 +321,12 @@ impl HttpHelper {
         };
 
         let p = self.protocol.as_mut().unwrap();
-        p.request(&mut tx_token)?;
+        let pending = PendingToken::request(p, &mut tx_token)?;
         debug!("http: request sent ok");
 
-        let mut polls = 0;
-        loop {
-            if tx_token.status != Status::NOT_READY {
-                break;
-            }
-            polls += 1;
-            p.poll()?;
-        }
-        debug!(
-            "http: request token completed after {polls} polls with {}",
-            tx_token.status
-        );
-
-        if tx_token.status != Status::SUCCESS {
-            return Err(tx_token.status.into());
+        let status = pending.wait()?;
+        if status != Status::SUCCESS {
+            return Err(status.into());
         };
 
         debug!("http: request status ok");
@@ -326,7 +359,10 @@ impl HttpHelper {
 
         let mut body = vec![0; if expect_body { 16 * 1024 } else { 0 }];
         let mut rx_msg = HttpMessage::default();
-        rx_msg.data.response = &mut rx_rsp;
+        // The firmware writes the status code through this pointer, so it
+        // must carry write permission although the field is `*const` in the
+        // spec.
+        rx_msg.data.response = ptr::from_mut(&mut rx_rsp).cast_const();
         rx_msg.body_length = body.len();
         rx_msg.body = if !body.is_empty() {
             body.as_mut_ptr()
@@ -341,22 +377,12 @@ impl HttpHelper {
         };
 
         let p = self.protocol.as_mut().unwrap();
-        p.response(&mut rx_token)?;
+        let status = PendingToken::response(p, &mut rx_token)?.wait()?;
 
-        loop {
-            if rx_token.status != Status::NOT_READY {
-                break;
-            }
-            p.poll()?;
-        }
+        debug!("http: response: {status} / {:?}", rx_rsp.status_code);
 
-        debug!(
-            "http: response: {} / {:?}",
-            rx_token.status, rx_rsp.status_code
-        );
-
-        if rx_token.status != Status::SUCCESS && rx_token.status != Status::HTTP_ERROR {
-            return Err(rx_token.status.into());
+        if status != Status::SUCCESS && status != Status::HTTP_ERROR {
+            return Err(status.into());
         };
 
         debug!("http: headers: {}", rx_msg.header_count);
@@ -402,19 +428,12 @@ impl HttpHelper {
         };
 
         let p = self.protocol.as_mut().unwrap();
-        p.response(&mut rx_token)?;
+        let status = PendingToken::response(p, &mut rx_token)?.wait()?;
 
-        loop {
-            if rx_token.status != Status::NOT_READY {
-                break;
-            }
-            p.poll()?;
-        }
+        debug!("http: response: {status}");
 
-        debug!("http: response: {}", rx_token.status);
-
-        if rx_token.status != Status::SUCCESS {
-            return Err(rx_token.status.into());
+        if status != Status::SUCCESS {
+            return Err(status.into());
         };
 
         debug!(

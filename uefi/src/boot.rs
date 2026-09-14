@@ -939,11 +939,22 @@ pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
 
     // SAFETY: The memory is valid.
     unsafe { (bt.protocols_per_handle)(handle.as_ptr(), &mut protocols, &mut count) }
-        .to_result_with_val(|| ProtocolsPerHandle {
-            count,
-            protocols: NonNull::new(protocols)
-                .expect("protocols_per_handle must not return a null pointer"),
-        })
+        .to_result()?;
+    // Constructed first so that `Drop` frees the pool buffer if the check
+    // below fails.
+    let guids = ProtocolsPerHandle {
+        count,
+        protocols: NonNull::new(protocols)
+            .expect("protocols_per_handle must not return a null pointer"),
+    };
+
+    // `Deref` yields references to the GUIDs, so a null entry must be
+    // rejected first.
+    // SAFETY: The firmware initialized `count` entries in the buffer.
+    if unsafe { contains_null(protocols, count) } {
+        return Err(Status::INVALID_PARAMETER.into());
+    }
+    Ok(guids)
 }
 
 /// Locates the handle of a device on the [`DevicePath`] that supports the
@@ -962,6 +973,8 @@ pub fn protocols_per_handle(handle: Handle) -> Result<ProtocolsPerHandle> {
 /// # Errors
 ///
 /// * [`Status::NOT_FOUND`]: no matching handles.
+/// * [`Status::INVALID_PARAMETER`]: the firmware reported success but
+///   returned a null remaining device path.
 pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
     device_path: &mut &DevicePath,
 ) -> Result<Handle> {
@@ -973,15 +986,32 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
     let mut device_path_ptr: *const uefi_raw::protocol::device_path::DevicePathProtocol =
         device_path.as_ffi_ptr().cast();
     // SAFETY: The memory is valid.
-    unsafe {
-        (bt.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle).to_result_with_val(
-            || {
-                *device_path = DevicePath::from_ffi_ptr(device_path_ptr.cast());
-                // OK to unwrap: handle is non-null for Status::SUCCESS.
-                Handle::from_ptr(handle).unwrap()
-            },
-        )
+    unsafe { (bt.locate_device_path)(&P::GUID, &mut device_path_ptr, &mut handle) }.to_result()?;
+
+    // `from_ffi_ptr` reads the node header, so a null pointer must be
+    // rejected before it is dereferenced.
+    if device_path_ptr.is_null() {
+        return Err(Status::INVALID_PARAMETER.into());
     }
+    // SAFETY: The firmware returned a non-null pointer to a device path.
+    *device_path = unsafe { DevicePath::from_ffi_ptr(device_path_ptr.cast()) };
+    // SAFETY: The handle was returned by the firmware.
+    // OK to unwrap: handle is non-null for Status::SUCCESS.
+    Ok(unsafe { Handle::from_ptr(handle) }.unwrap())
+}
+
+/// Returns whether any of the `count` pointers starting at `ptr` is null.
+///
+/// Used to validate pointer arrays returned by the firmware before they are
+/// exposed as [`Handle`]s or references, which must not be null.
+///
+/// # Safety
+///
+/// `ptr` must be valid for reads of `count` initialized pointers.
+unsafe fn contains_null<T>(ptr: *const *const T, count: usize) -> bool {
+    // SAFETY: Guaranteed by the caller.
+    let ptrs = unsafe { slice::from_raw_parts(ptr, count) };
+    ptrs.iter().any(|p| p.is_null())
 }
 
 /// Enumerates all [`Handle`]s installed on the system which match a certain
@@ -996,6 +1026,7 @@ pub fn locate_device_path<P: ProtocolPointer + ?Sized>(
 /// * [`Status::NOT_FOUND`]: no matching handles found.
 /// * [`Status::BUFFER_TOO_SMALL`]: the buffer is not large enough. The required
 ///   size (in number of handles, not bytes) will be returned in the error data.
+/// * [`Status::INVALID_PARAMETER`]: the firmware returned a null handle.
 pub fn locate_handle<'buf>(
     search_ty: SearchType,
     buffer: &'buf mut [MaybeUninit<Handle>],
@@ -1023,7 +1054,14 @@ pub fn locate_handle<'buf>(
     match status {
         Status::SUCCESS => {
             let buffer = &buffer[..num_handles];
-            // SAFETY: the entries up to `num_handles` have been initialized.
+            // `Handle` wraps `NonNull`, so a null entry must be rejected
+            // before the entries are exposed as handles.
+            // SAFETY: The firmware initialized the entries up to `num_handles`.
+            if unsafe { contains_null(buffer.as_ptr().cast::<*const c_void>(), num_handles) } {
+                return Err(Error::new(Status::INVALID_PARAMETER, None));
+            }
+            // SAFETY: The entries up to `num_handles` have been initialized
+            // and are non-null.
             let handles = unsafe { maybe_uninit_slice_assume_init_ref(buffer) };
             Ok(handles)
         }
@@ -1045,6 +1083,7 @@ pub fn locate_handle<'buf>(
 ///
 /// * [`Status::NOT_FOUND`]: no matching handles.
 /// * [`Status::OUT_OF_RESOURCES`]: out of memory.
+/// * [`Status::INVALID_PARAMETER`]: the firmware returned a null handle.
 pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.
@@ -1062,11 +1101,22 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
     let mut buffer: *mut uefi_raw::Handle = ptr::null_mut();
     // SAFETY: The memory is valid.
     unsafe { (bt.locate_handle_buffer)(ty, guid, key, &mut num_handles, &mut buffer) }
-        .to_result_with_val(|| HandleBuffer {
-            count: num_handles,
-            buffer: NonNull::new(buffer.cast())
-                .expect("locate_handle_buffer must not return a null pointer"),
-        })
+        .to_result()?;
+    // Constructed first so that `Drop` frees the pool buffer if the check
+    // below fails.
+    let handles = HandleBuffer {
+        count: num_handles,
+        buffer: NonNull::new(buffer.cast())
+            .expect("locate_handle_buffer must not return a null pointer"),
+    };
+
+    // `Handle` wraps `NonNull`, so a null entry must be rejected before
+    // `Deref` exposes the entries as handles.
+    // SAFETY: The firmware initialized `num_handles` entries in the buffer.
+    if unsafe { contains_null(buffer.cast::<*const c_void>(), num_handles) } {
+        return Err(Status::INVALID_PARAMETER.into());
+    }
+    Ok(handles)
 }
 
 /// Returns all the handles implementing a certain [`Protocol`].
@@ -1074,6 +1124,7 @@ pub fn locate_handle_buffer(search_ty: SearchType) -> Result<HandleBuffer> {
 /// # Errors
 ///
 /// * [`Status::NOT_FOUND`]: no matching handles.
+/// * [`Status::INVALID_PARAMETER`]: the firmware returned a null handle.
 #[cfg(feature = "alloc")]
 pub fn find_handles<P: ProtocolPointer + ?Sized>() -> Result<Vec<Handle>> {
     // Search by protocol.
@@ -1681,7 +1732,9 @@ impl Deref for ProtocolsPerHandle {
         //
         // * The firmware is assumed to provide a correctly-aligned pointer and
         //   array length.
-        // * The firmware is assumed to provide valid GUID pointers.
+        // * The GUID pointers were checked to be non-null in
+        //   `protocols_per_handle`. The firmware is assumed to provide valid
+        //   GUIDs behind them.
         // * Protocol GUIDs should be constants or statics, so a 'static
         //   lifetime (of the individual pointers, not the overall slice) can be
         //   assumed.
@@ -1709,7 +1762,8 @@ impl Deref for HandleBuffer {
     type Target = [Handle];
 
     fn deref(&self) -> &Self::Target {
-        // SAFETY: The pointer is valid for the requested slice length.
+        // SAFETY: The pointer is valid for the requested slice length and the
+        // entries were checked to be non-null in `locate_handle_buffer`.
         unsafe { slice::from_raw_parts(self.buffer.as_ptr(), self.count) }
     }
 }

@@ -51,7 +51,7 @@ impl UsbIo {
             request_type
         };
 
-        let mut device_request = DeviceRequest {
+        let device_request = DeviceRequest {
             request_type,
             request,
             value,
@@ -64,7 +64,7 @@ impl UsbIo {
         unsafe {
             (self.0.control_transfer)(
                 &mut self.0,
-                &mut device_request,
+                &device_request,
                 direction,
                 timeout,
                 buffer_ptr.cast::<ffi::c_void>(),
@@ -338,7 +338,7 @@ mod tests {
     /// `data` must be valid for writing `data_length` bytes.
     unsafe extern "efiapi" fn mock_control_transfer(
         _: *mut UsbIoProtocol,
-        _: *mut DeviceRequest,
+        _: *const DeviceRequest,
         direction: DataDirection,
         _: u32,
         data: *mut ffi::c_void,
@@ -399,7 +399,7 @@ mod tests {
         _: usize,
         _: usize,
         _: Option<AsyncUsbTransferCallback>,
-        _: *mut ffi::c_void,
+        _: *const ffi::c_void,
     ) -> Status {
         unimplemented!()
     }
@@ -420,7 +420,7 @@ mod tests {
         _: *mut ffi::c_void,
         _: usize,
         _: AsyncUsbTransferCallback,
-        _: *mut ffi::c_void,
+        _: *const ffi::c_void,
     ) -> Status {
         unimplemented!()
     }

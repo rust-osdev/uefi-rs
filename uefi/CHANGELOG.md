@@ -131,6 +131,13 @@
 - **Breaking**: `SimpleNetwork::transmit` now takes the packet as `&mut [u8]`.
   The firmware writes the media header into the buffer when `header_size` is
   nonzero, which was undefined behavior with the shared slice.
+- **Breaking**: `boot::create_event_ex` now takes the event group as
+  `Option<&Guid>` instead of `Option<NonNull<Guid>>`.
+- Relaxed `boot::wait_for_event` to take `&[Event]` instead of `&mut [Event]`
+  and `boot::exit` to take `*const Char16` instead of `*mut Char16`. The
+  firmware only reads these inputs.
+- Relaxed `runtime::set_virtual_address_map` to take `&[MemoryDescriptor]`
+  instead of `&mut [MemoryDescriptor]`. The firmware only reads the map.
 
 # uefi - v0.40.0 (2026-08-25)
 

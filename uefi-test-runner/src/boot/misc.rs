@@ -60,8 +60,8 @@ fn test_timer() {
         TimerTrigger::Relative(Duration::from_nanos(5_000)),
     )
     .unwrap();
-    let mut events = [unsafe { timer_event.unsafe_clone() }];
-    assert_eq!(boot::wait_for_event(&mut events).unwrap(), 0);
+    let events = [unsafe { timer_event.unsafe_clone() }];
+    assert_eq!(boot::wait_for_event(&events).unwrap(), 0);
 
     boot::close_event(timer_event).unwrap();
 }

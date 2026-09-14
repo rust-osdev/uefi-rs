@@ -43,6 +43,30 @@ from `*mut Self` to `*const Self`.
   pointer), `write_file` takes a `*const` buffer, `get_guid_name` returns a
   `*const` name that points into the shell, and `ShellFileInfo::{full_name,
   file_name}` are `*const`.
+- **Breaking**: Changed the read-only inputs of the USB protocols from `*mut`
+  to `*const`: the `request` parameter of `UsbIoProtocol::control_transfer`,
+  the `data` parameter of `AsyncUsbTransferCallback`, and the `context`
+  parameters of the asynchronous transfer functions and the callback.
+- **Breaking**: Changed the read-only inputs `BootServices::create_event_ex`
+  (`event_group`), `BootServices::wait_for_event` (`events`),
+  `BootServices::exit` (`exit_data`) and `BootServices::locate_protocol`
+  (`registration`) from `*mut` to `*const`.
+- **Breaking**: Changed the `virtual_map` parameter of
+  `RuntimeServices::set_virtual_address_map` from `*mut` to `*const
+  MemoryDescriptor`.
+- **Breaking**: Changed the read-only inputs of `EdkiiIommuProtocol` from
+  `*mut` to `*const c_void`: the `host_address` parameter of `map` and
+  `free_buffer`, and the `mapping` parameter of `set_attribute` and `unmap`.
+- **Breaking**: Changed the `buffer` parameter of
+  `FirmwareVolumeBlock2Protocol::write` from `*mut u8` to `*const u8`.
+- **Breaking**: Fixed the pointer mutability of `Dhcp4Protocol`: the
+  `seed_packet` and `delete_list` parameters of `build` and the `packet`
+  parameter of `parse` are `*const`, and the `new_packet` output of the DHCP4
+  callback is `*mut *mut Dhcp4Packet` because the driver takes ownership of
+  the returned packet.
+- **Breaking**: Changed the `notify_handle` parameter of
+  `SimpleTextInputExProtocol::unregister_key_notify` from `*mut` to `*const
+  c_void`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

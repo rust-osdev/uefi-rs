@@ -112,6 +112,8 @@
   in release builds when dropped after boot services have exited. The
   cleanup is skipped, as the resources are gone together with the boot
   services. Debug builds still assert that boot services are active.
+- `boot::start_image` now frees the exit data buffer that the started
+  image may hand back. It was leaked before.
 
 # uefi - v0.40.0 (2026-08-25)
 

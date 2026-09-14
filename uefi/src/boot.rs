@@ -1420,9 +1420,17 @@ pub fn start_image(image_handle: Handle) -> Result {
     let mut exit_data: *mut u16 = ptr::null_mut();
 
     // SAFETY: The memory is valid.
-    unsafe {
-        (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data).to_result()
+    let status =
+        unsafe { (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data) };
+
+    // The image allocates the exit data from the pool and the caller of
+    // `start_image` must free it.
+    if let Some(exit_data) = NonNull::new(exit_data) {
+        // SAFETY: The buffer was allocated by the matching UEFI allocator.
+        let _ = unsafe { free_pool(exit_data.cast()) };
     }
+
+    status.to_result()
 }
 
 /// Exits the UEFI application and returns control to the UEFI component

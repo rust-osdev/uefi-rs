@@ -236,7 +236,7 @@ pub struct FirmwareVolumeBlock2Protocol {
         lba: Lba,
         offset: usize,
         num_bytes: *mut usize,
-        buffer: *mut u8,
+        buffer: *const u8,
     ) -> Status,
     // TODO: Change to efiapi (https://github.com/rust-lang/rust/issues/100189)
     pub erase_blocks: unsafe extern "C" fn(this: *const Self, ...) -> Status,

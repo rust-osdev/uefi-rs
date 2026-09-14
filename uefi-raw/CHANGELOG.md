@@ -57,6 +57,8 @@ from `*mut Self` to `*const Self`.
 - **Breaking**: Changed the read-only inputs of `EdkiiIommuProtocol` from
   `*mut` to `*const c_void`: the `host_address` parameter of `map` and
   `free_buffer`, and the `mapping` parameter of `set_attribute` and `unmap`.
+- **Breaking**: Changed the `buffer` parameter of
+  `FirmwareVolumeBlock2Protocol::write` from `*mut u8` to `*const u8`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

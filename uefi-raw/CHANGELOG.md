@@ -24,6 +24,11 @@ from `*mut Self` to `*const Self`.
   async_isochronous_transfer}` from `*const *const c_void` to `*const *mut
   c_void`. The buffers are `IN OUT`; the controller writes received data into
   them.
+- **Breaking**: Changed the callback parameter of
+  `UsbIoProtocol::async_interrupt_transfer` and
+  `Usb2HostControllerProtocol::async_interrupt_transfer` to
+  `Option<AsyncUsbTransferCallback>`. The specification marks it `OPTIONAL`;
+  NULL cancels the transfer.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

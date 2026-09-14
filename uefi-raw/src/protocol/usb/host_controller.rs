@@ -160,7 +160,7 @@ pub struct Usb2HostControllerProtocol {
         polling_interval: usize,
         data_length: usize,
         translator: *const TransactionTranslator,
-        callback_function: AsyncUsbTransferCallback,
+        callback_function: Option<AsyncUsbTransferCallback>,
         context: *mut ffi::c_void,
     ) -> Status,
     pub sync_interrupt_transfer: unsafe extern "efiapi" fn(

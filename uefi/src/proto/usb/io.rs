@@ -398,7 +398,7 @@ mod tests {
         _: Boolean,
         _: usize,
         _: usize,
-        _: AsyncUsbTransferCallback,
+        _: Option<AsyncUsbTransferCallback>,
         _: *mut ffi::c_void,
     ) -> Status {
         unimplemented!()

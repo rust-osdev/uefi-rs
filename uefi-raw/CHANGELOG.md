@@ -90,6 +90,9 @@ from `*mut Self` to `*const Self`.
   `AtaPassThruProtocol::build_device_path` and
   `NvmExpressPassThruProtocol::build_device_path` from `*mut *const` to `*mut
   *mut DevicePathProtocol`. The caller owns and must free the result.
+- **Breaking**: Changed the `info` output of
+  `GraphicsOutputProtocol::query_mode` from `*mut *const` to `*mut *mut
+  GraphicsOutputModeInformation`. The caller owns and must free the buffer.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

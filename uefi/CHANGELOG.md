@@ -99,6 +99,10 @@
   get_recycled_transmit_buffer_status}` now take `&mut self`. The firmware
   updates the network mode during these calls, which conflicted with the
   shared reference returned by `mode`.
+- **Breaking**: `Shell::set_current_dir` and `Shell::set_var` now take
+  `&mut self`. The shell frees the strings returned by `current_dir` and
+  `var` when the value changes, so holding one across the setter was a
+  use after free.
 
 # uefi - v0.40.0 (2026-08-25)
 

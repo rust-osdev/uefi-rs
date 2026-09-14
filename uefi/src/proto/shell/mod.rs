@@ -65,6 +65,9 @@ impl Shell {
     /// * `file_system_mapping` - The file system mapping for which to get
     ///   the current directory
     ///
+    /// The returned string is owned by the shell and is valid until the
+    /// current directory changes, see [`Self::set_current_dir`].
+    ///
     /// # Errors
     ///
     /// * [`Status::NOT_FOUND`] - Could not retrieve current directory
@@ -92,7 +95,7 @@ impl Shell {
     ///
     /// * [`Status::NOT_FOUND`] - The directory does not exist
     pub fn set_current_dir(
-        &self,
+        &mut self,
         file_system: Option<&CStr16>,
         directory: Option<&CStr16>,
     ) -> Result {
@@ -114,6 +117,9 @@ impl Shell {
     /// * `Some(<env_value>)` - &CStr16 containing the value of the
     ///   environment variable
     /// * `None` - If environment variable does not exist
+    ///
+    /// The returned string is owned by the shell and is valid until the
+    /// variable changes, see [`Self::set_var`].
     #[must_use]
     pub fn var(&self, name: &CStr16) -> Option<&CStr16> {
         let name_ptr: *const Char16 = name.as_ptr();
@@ -164,7 +170,7 @@ impl Shell {
     /// # Returns
     ///
     /// * `Status::SUCCESS` - The variable was successfully set
-    pub fn set_var(&self, name: &CStr16, value: &CStr16, volatile: bool) -> Result {
+    pub fn set_var(&mut self, name: &CStr16, value: &CStr16, volatile: bool) -> Result {
         let name_ptr: *const Char16 = name.as_ptr();
         let value_ptr: *const Char16 = value.as_ptr();
         // SAFETY: The memory is valid.

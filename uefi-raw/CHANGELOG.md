@@ -43,6 +43,10 @@ from `*mut Self` to `*const Self`.
   pointer), `write_file` takes a `*const` buffer, `get_guid_name` returns a
   `*const` name that points into the shell, and `ShellFileInfo::{full_name,
   file_name}` are `*const`.
+- **Breaking**: Changed the read-only inputs of the USB protocols from `*mut`
+  to `*const`: the `request` parameter of `UsbIoProtocol::control_transfer`,
+  the `data` parameter of `AsyncUsbTransferCallback`, and the `context`
+  parameters of the asynchronous transfer functions and the callback.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

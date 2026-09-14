@@ -14,7 +14,7 @@ use super::{
 pub struct UsbIoProtocol {
     pub control_transfer: unsafe extern "efiapi" fn(
         this: *mut Self,
-        request: *mut DeviceRequest,
+        request: *const DeviceRequest,
         direction: DataDirection,
         timeout: u32,
         data: *mut ffi::c_void,
@@ -36,7 +36,7 @@ pub struct UsbIoProtocol {
         polling_interval: usize,
         data_length: usize,
         interrupt_callback: Option<AsyncUsbTransferCallback>,
-        context: *mut ffi::c_void,
+        context: *const ffi::c_void,
     ) -> Status,
     pub sync_interrupt_transfer: unsafe extern "efiapi" fn(
         this: *mut Self,
@@ -59,7 +59,7 @@ pub struct UsbIoProtocol {
         data: *mut ffi::c_void,
         data_length: usize,
         isochronous_callback: AsyncUsbTransferCallback,
-        context: *mut ffi::c_void,
+        context: *const ffi::c_void,
     ) -> Status,
     pub get_device_descriptor: unsafe extern "efiapi" fn(
         this: *mut Self,

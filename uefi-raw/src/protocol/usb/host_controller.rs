@@ -161,7 +161,7 @@ pub struct Usb2HostControllerProtocol {
         data_length: usize,
         translator: *const TransactionTranslator,
         callback_function: Option<AsyncUsbTransferCallback>,
-        context: *mut ffi::c_void,
+        context: *const ffi::c_void,
     ) -> Status,
     pub sync_interrupt_transfer: unsafe extern "efiapi" fn(
         this: *mut Self,
@@ -199,7 +199,7 @@ pub struct Usb2HostControllerProtocol {
         data_length: usize,
         translator: *const TransactionTranslator,
         isochronous_callback: AsyncUsbTransferCallback,
-        context: *mut ffi::c_void,
+        context: *const ffi::c_void,
     ) -> Status,
     pub get_root_hub_port_status: unsafe extern "efiapi" fn(
         this: *mut Self,

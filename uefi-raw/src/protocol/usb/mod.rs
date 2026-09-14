@@ -53,9 +53,9 @@ impl UsbTransferStatus {
 }
 
 pub type AsyncUsbTransferCallback = unsafe extern "efiapi" fn(
-    data: *mut ffi::c_void,
+    data: *const ffi::c_void,
     data_length: usize,
-    context: *mut ffi::c_void,
+    context: *const ffi::c_void,
     status: UsbTransferStatus,
 ) -> Status;
 

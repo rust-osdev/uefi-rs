@@ -1,5 +1,7 @@
 # uefi-macros - [Unreleased]
 
+# uefi-macros - v0.20 (2026-09-14)
+
 ## Added
 
 ## Changed

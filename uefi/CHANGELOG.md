@@ -31,6 +31,41 @@
 - Fixed undefined behavior in `DevicePathNode::from_ffi_ptr` and the
   functions built on it, which underflowed the node length for nodes
   shorter than the node header. They now panic instead.
+- Fixed undefined behavior in `AlignedBuffer`, which exposed
+  uninitialized memory through its safe accessors and allocated with a
+  zero-size layout for an empty buffer.
+- Fixed undefined behavior in the internal `make_boxed` helper, which
+  deallocated with a layout that did not match the allocation when the
+  firmware reported a larger size than it wrote. This affects
+  `get_boxed_info`, `read_entry_boxed`, `get_variable_boxed`,
+  `load_file` and `HiiDatabase::export_all_raw`.
+- Fixed undefined behavior in `boot::locate_handle`,
+  `boot::locate_handle_buffer`, `boot::protocols_per_handle` and
+  `boot::locate_device_path`, which turned null pointers returned by the
+  firmware into handles or references.
+- Fixed undefined behavior in `Shell::vars`, `ShellParameters::args`,
+  `ComponentName::{driver_name, controller_name}`,
+  `ComponentName::supported_languages` and `HiiConfigRouting::export`,
+  which dereferenced null pointers returned by the firmware.
+- Fixed undefined behavior in `LoadFile::load_file`,
+  `LoadFile2::load_file` and `HiiDatabase::export_all_raw`, which
+  returned a buffer with an uninitialized tail if the firmware wrote
+  less than it reported.
+- **Breaking**: Changed `FromUefi::from_uefi` to a safe function that
+  takes the buffer and the number of bytes written by the firmware, and
+  returns a `Result`. It previously built a reference that could exceed
+  the buffer and trusted the firmware to NUL-terminate the name. The
+  required size reported by `File::get_info` now includes the trailing
+  padding of the requested type.
+- **Breaking**: `BlockIO::read_blocks` and `BlockIO2::read_blocks_ex`
+  now take `&mut self`. The firmware may update the media structure
+  during a read, which conflicted with the shared reference returned by
+  `media`.
+- Fixed undefined behavior in `UsbIo::{control_transfer,
+  sync_bulk_receive, sync_interrupt_receive}`, which let the firmware
+  write through a pointer derived from a shared reference, and in
+  `UsbIo::supported_languages`, which built a slice from a null
+  pointer.
 
 # uefi - v0.40.0 (2026-08-25)
 

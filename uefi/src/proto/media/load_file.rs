@@ -84,7 +84,11 @@ impl LoadFile {
                     buf.as_mut_ptr().cast(),
                 )
             };
-            status.to_result_with_err(|_| Some(size)).map(|_| buf)
+            // The firmware may write less than it announced, so only return
+            // the part it actually filled.
+            status
+                .to_result_with_err(|_| Some(size))
+                .map(|_| &mut buf[..size])
         };
 
         let file: Box<[u8]> = make_boxed::<[u8], _>(fetch_data_fn)?;

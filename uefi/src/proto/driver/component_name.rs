@@ -62,8 +62,9 @@ impl ComponentName1 {
         let mut driver_name = ptr::null();
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_driver_name)(&self.0, language.as_ptr(), &mut driver_name) }
-            // SAFETY: The memory is valid.
-            .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+            .to_result()?;
+        // SAFETY: The firmware wrote NULL or a valid string pointer.
+        unsafe { name_from_ptr(driver_name) }
     }
 
     /// Get the human-readable name of a controller in the given language.
@@ -89,8 +90,9 @@ impl ComponentName1 {
                 &mut driver_name,
             )
         }
-        // SAFETY: The memory is valid.
-        .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+        .to_result()?;
+        // SAFETY: The firmware wrote NULL or a valid string pointer.
+        unsafe { name_from_ptr(driver_name) }
     }
 }
 
@@ -138,8 +140,9 @@ impl ComponentName2 {
         let mut driver_name = ptr::null();
         // SAFETY: The memory is valid.
         unsafe { (self.0.get_driver_name)(&self.0, language.as_ptr(), &mut driver_name) }
-            // SAFETY: The memory is valid.
-            .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+            .to_result()?;
+        // SAFETY: The firmware wrote NULL or a valid string pointer.
+        unsafe { name_from_ptr(driver_name) }
     }
 
     /// Get the human-readable name of a controller in the given language.
@@ -165,8 +168,9 @@ impl ComponentName2 {
                 &mut driver_name,
             )
         }
-        // SAFETY: The memory is valid.
-        .to_result_with_val(|| unsafe { CStr16::from_ptr(driver_name.cast()) })
+        .to_result()?;
+        // SAFETY: The firmware wrote NULL or a valid string pointer.
+        unsafe { name_from_ptr(driver_name) }
     }
 }
 
@@ -289,6 +293,14 @@ impl LanguageIter<'_> {
         languages: *const u8,
         kind: LanguageIterKind,
     ) -> core::result::Result<Self, LanguageError> {
+        // Firmware that reports no languages leaves the pointer null.
+        if languages.is_null() {
+            return Ok(Self {
+                languages: &[],
+                kind,
+            });
+        }
+
         let mut index = 0;
         loop {
             // SAFETY: The memory is valid.
@@ -363,6 +375,23 @@ fn language_to_cstr(language: &str) -> Result<LanguageCStr> {
     Ok(lang_cstr)
 }
 
+/// Converts a name pointer written by the firmware to a string.
+///
+/// Firmware that reports success without providing a name violates the
+/// spec. Report this as [`Status::NOT_FOUND`] instead of dereferencing NULL.
+///
+/// # Safety
+///
+/// `ptr` must be NULL or point to a NUL-terminated string that is valid for
+/// the returned lifetime.
+unsafe fn name_from_ptr<'a>(ptr: *const u16) -> Result<&'a CStr16> {
+    if ptr.is_null() {
+        return Err(Error::from(Status::NOT_FOUND));
+    }
+    // SAFETY: Guaranteed by the caller.
+    Ok(unsafe { CStr16::from_ptr(ptr.cast()) })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -431,6 +460,43 @@ mod tests {
         assert_eq!(
             LanguageIter::new(data.as_ptr(), V2).err().unwrap(),
             LanguageError::Ascii { index: 3 },
+        );
+    }
+
+    /// Mock of `ComponentName2Protocol::get_driver_name` that reports
+    /// success without providing a name.
+    unsafe extern "efiapi" fn mock_get_driver_name_null(
+        _this: *const ComponentName2Protocol,
+        _language: *const u8,
+        driver_name: *mut *const u16,
+    ) -> Status {
+        // SAFETY: Guaranteed by the caller.
+        unsafe { driver_name.write(ptr::null()) };
+        Status::SUCCESS
+    }
+
+    extern "efiapi" fn stub_get_controller_name(
+        _: *const ComponentName2Protocol,
+        _: uefi_raw::Handle,
+        _: uefi_raw::Handle,
+        _: *const u8,
+        _: *mut *const u16,
+    ) -> Status {
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_driver_name_null_on_success() {
+        let raw = ComponentName2Protocol {
+            get_driver_name: mock_get_driver_name_null,
+            get_controller_name: stub_get_controller_name,
+            supported_languages: c"en".as_ptr().cast(),
+        };
+        // SAFETY: `ComponentName2` is a transparent wrapper.
+        let cn = unsafe { &*ptr::from_ref(&raw).cast::<ComponentName2>() };
+        assert_eq!(
+            cn.driver_name("en").unwrap_err().status(),
+            Status::NOT_FOUND
         );
     }
 

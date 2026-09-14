@@ -37,6 +37,12 @@ from `*mut Self` to `*const Self`.
 - **Breaking**: Changed `HttpRequestOrResponse::response` and
   `HttpAccessPoint::{ipv4_node, ipv6_node}` from `*const` to `*mut`. The
   driver writes the status code and the access point through these pointers.
+- **Breaking**: Fixed the pointer mutability of several `ShellProtocol` items
+  to match the EDK2 header: `free_file_list` and `remove_dup_in_file_list`
+  take `*mut *mut ShellFileInfo` (the shell frees the list and clears the
+  pointer), `write_file` takes a `*const` buffer, `get_guid_name` returns a
+  `*const` name that points into the shell, and `ShellFileInfo::{full_name,
+  file_name}` are `*const`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

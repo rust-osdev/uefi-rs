@@ -54,6 +54,9 @@ from `*mut Self` to `*const Self`.
 - **Breaking**: Changed the `virtual_map` parameter of
   `RuntimeServices::set_virtual_address_map` from `*mut` to `*const
   MemoryDescriptor`.
+- **Breaking**: Changed the read-only inputs of `EdkiiIommuProtocol` from
+  `*mut` to `*const c_void`: the `host_address` parameter of `map` and
+  `free_buffer`, and the `mapping` parameter of `set_attribute` and `unmap`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

@@ -88,6 +88,12 @@
   response_more}`, which left a token pointing into a dead stack frame
   when polling failed, and passed the response data to the driver
   through a read-only pointer.
+- **Breaking**: `PointerMode` and `PointerState` are now re-exports of
+  `SimplePointerMode` and `SimplePointerState` from `uefi-raw`, instead
+  of duplicates that declared the firmware's `BOOLEAN` fields as Rust
+  `bool`. Reading those as `bool` was undefined behavior for any value
+  other than 0 and 1. The fields are now named as in the specification;
+  convert a button with `bool::from`.
 
 # uefi - v0.40.0 (2026-08-25)
 

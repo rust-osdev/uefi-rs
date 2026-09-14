@@ -2,6 +2,10 @@
 
 //! Pointer device access.
 
+pub use uefi_raw::protocol::console::{
+    SimplePointerMode as PointerMode, SimplePointerState as PointerState,
+};
+
 use crate::proto::unsafe_protocol;
 use crate::{Error, Event, Result, Status, StatusExt};
 use uefi_raw::protocol::console::{
@@ -45,15 +49,14 @@ impl Pointer {
     ///
     /// [`boot::wait_for_event`]: crate::boot::wait_for_event
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
-        let mut pointer_state = PointerState::default();
-        let pointer_state_ptr: *mut _ = &mut pointer_state;
+        let mut state = PointerState::default();
 
         // SAFETY: We have an exclusive reference to `self`, `&self.0` is a
-        // valid protocol pointer and `pointer_state_ptr` is a valid pointer to
-        // stack memory initialized to receive the output.
-        match unsafe { (self.0.get_state)(&self.0, pointer_state_ptr.cast()) } {
+        // valid protocol pointer and `&mut state` is a valid pointer to stack
+        // memory initialized to receive the output.
+        match unsafe { (self.0.get_state)(&self.0, &mut state) } {
             Status::NOT_READY => Ok(None),
-            other => other.to_result_with_val(|| Some(pointer_state)),
+            other => other.to_result_with_val(|| Some(state)),
         }
     }
 
@@ -71,38 +74,10 @@ impl Pointer {
     /// Returns a reference to the pointer device information.
     #[must_use]
     pub const fn mode(&self) -> &PointerMode {
-        // SAFETY:
-        // 1. `mode` points to valid, initialized memory for the lifetime of the
-        //    protocol, matching the lifetime of `&self`.
-        // 2. `PointerMode` is `#[repr(C)]` with exact same size, field offsets,
-        //    and alignment as `SimplePointerMode`.
-        unsafe { &*self.0.mode.cast() }
+        // SAFETY: `mode` points to valid, initialized memory for the lifetime
+        // of the protocol, matching the lifetime of `&self`.
+        unsafe { &*self.0.mode }
     }
-}
-
-/// Information about this pointer device.
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct PointerMode {
-    /// The pointer device's resolution on the X/Y/Z axis in counts/mm.
-    /// If a value is 0, then the device does _not_ support that axis.
-    pub resolution: [u64; 3],
-    /// Whether the devices has a left button / right button.
-    pub has_button: [bool; 2],
-}
-
-/// The relative change in the pointer's state.
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
-#[repr(C)]
-pub struct PointerState {
-    /// The relative movement on the X/Y/Z axis.
-    ///
-    /// If `PointerMode` indicates an axis is not supported, it must be ignored.
-    pub relative_movement: [i32; 3],
-    /// Whether the left / right mouse button is currently pressed.
-    ///
-    /// If `PointerMode` indicates a button is not supported, it must be ignored.
-    pub button: [bool; 2],
 }
 
 /// Absolute Pointer [`Protocol`]. Provides coordinate pointing (e.g. touchscreens, tablets).
@@ -167,11 +142,8 @@ impl AbsolutePointer {
     /// Returns a reference to the pointer device information.
     #[must_use]
     pub const fn mode(&self) -> &AbsolutePointerMode {
-        // SAFETY:
-        // 1. `mode` points to valid, initialized memory for the lifetime of the
-        //    protocol, matching the lifetime of `&self`.
-        // 2. `PointerMode` is `#[repr(C)]` with exact same size, field offsets,
-        //    and alignment as `SimplePointerMode`.
+        // SAFETY: `mode` points to valid, initialized memory for the lifetime
+        // of the protocol, matching the lifetime of `&self`.
         unsafe { &*self.0.mode }
     }
 }

@@ -116,6 +116,10 @@
   image may hand back. It was leaked before.
 - `FileHandle` no longer panics in `drop` when the firmware fails to
   close the file. The error is logged instead.
+- The `Display` impls of `DevicePath` and `DevicePathNode` no longer
+  panic when the conversion to text fails, for example because the
+  device path to text protocol is not installed. They print the size
+  instead.
 
 # uefi - v0.40.0 (2026-08-25)
 

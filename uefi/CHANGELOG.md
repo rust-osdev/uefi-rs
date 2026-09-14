@@ -1,5 +1,20 @@
 # uefi - [Unreleased]
 
+# uefi - v0.41.0 (2026-09-14)
+
+This release contains many small fixes for panics and undefined behavior on
+unexpected input from the firmware or the network, and aligns the pointer
+types of `uefi-raw` with the IN/OUT/CONST qualifiers of the UEFI
+specification.
+
+Most of these changes come from a large-scale LLM-assisted analysis with
+Claude Code (Fable 5.1). We thank Anthropic for sponsoring @phip1611's work
+on the security and reliability of open source software, in particular
+uefi-rs and its related crates.
+
+We use LLMs to find problems, not to write code we do not understand. Nothing
+unreviewed lands in this crate.
+
 ## Added
 - Exported `data_types::FromSliceUntilNulError`.
 - Added `proto::console::pointer::AbsolutePointer` protocol.

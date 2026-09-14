@@ -94,6 +94,17 @@
   `bool`. Reading those as `bool` was undefined behavior for any value
   other than 0 and 1. The fields are now named as in the specification;
   convert a button with `bool::from`.
+- **Breaking**: `SimpleNetwork::{start, stop, initialize, reset, shutdown,
+  receive_filters, station_address, get_interrupt_status,
+  get_recycled_transmit_buffer_status}` now take `&mut self`. The firmware
+  updates the network mode during these calls, which conflicted with the
+  shared reference returned by `mode`.
+- **Breaking**: `Shell::set_current_dir` and `Shell::set_var` now take
+  `&mut self`. The shell frees the strings returned by `current_dir` and
+  `var` when the value changes, so holding one across the setter was a
+  use after free.
+- Fixed `Output::current_mode` and `Output::modes`, which passed a pointer
+  derived from a shared reference to the firmware as `*mut`.
 
 # uefi - v0.40.0 (2026-08-25)
 

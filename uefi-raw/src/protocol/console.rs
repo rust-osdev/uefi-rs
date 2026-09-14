@@ -160,7 +160,7 @@ pub struct SimpleTextOutputProtocol {
     pub output_string: unsafe extern "efiapi" fn(this: *mut Self, string: *const Char16) -> Status,
     pub test_string: unsafe extern "efiapi" fn(this: *mut Self, string: *const Char16) -> Status,
     pub query_mode: unsafe extern "efiapi" fn(
-        this: *mut Self,
+        this: *const Self,
         mode: usize,
         columns: *mut usize,
         rows: *mut usize,

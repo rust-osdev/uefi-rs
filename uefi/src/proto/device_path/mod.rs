@@ -253,7 +253,8 @@ impl DevicePathNode {
     ///
     /// The input pointer must point to valid data. That data must
     /// remain valid for the lifetime `'a`, and cannot be mutated during
-    /// that lifetime.
+    /// that lifetime. The length of the node is taken from its header, so
+    /// the memory must be readable for at least that many bytes.
     ///
     /// # Panics
     ///
@@ -589,7 +590,10 @@ impl DevicePath {
     ///
     /// The input pointer must point to valid data. That data must
     /// remain valid for the lifetime `'a`, and cannot be mutated during
-    /// that lifetime.
+    /// that lifetime. The length of the path is determined by walking its
+    /// nodes up to the end-entire node, so the data must contain one. A
+    /// path without it makes this function read past its end, which is
+    /// undefined behavior.
     ///
     /// # Panics
     ///

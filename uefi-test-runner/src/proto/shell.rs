@@ -5,7 +5,7 @@ use uefi::proto::shell::Shell;
 use uefi::{Error, Status, boot, cstr16};
 
 /// Test `current_dir()` and `set_current_dir()`
-pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
+pub fn test_current_dir(shell: &mut ScopedProtocol<Shell>) {
     /* Test setting and getting current file system and current directory */
     let fs_var = cstr16!("fs0:");
     let dir_var = cstr16!("/");
@@ -101,7 +101,7 @@ pub fn test_current_dir(shell: &ScopedProtocol<Shell>) {
 }
 
 /// Test `var()`, `vars()`, and `set_var()`
-pub fn test_var(shell: &ScopedProtocol<Shell>) {
+pub fn test_var(shell: &mut ScopedProtocol<Shell>) {
     /* Test retrieving list of environment variable names */
     let mut cur_env_vec = shell.vars();
     assert_eq!(cur_env_vec.next().unwrap().0, cstr16!("path"));
@@ -147,9 +147,9 @@ pub fn test() {
 
     let handle = boot::get_handle_for_protocol::<Shell>().expect("No Shell handles");
 
-    let shell =
+    let mut shell =
         boot::open_protocol_exclusive::<Shell>(handle).expect("Failed to open Shell protocol");
 
-    test_current_dir(&shell);
-    test_var(&shell);
+    test_current_dir(&mut shell);
+    test_var(&mut shell);
 }

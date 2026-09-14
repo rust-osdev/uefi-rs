@@ -148,7 +148,10 @@ impl CStr8 {
     ///
     /// The function will start accessing memory from `ptr` until the first
     /// null byte. It's the callers responsibility to ensure `ptr` points to
-    /// a valid null-terminated string in accessible memory.
+    /// a valid null-terminated string in accessible memory. Nothing bounds
+    /// the search, so a string without a terminator makes this function
+    /// read past its end, which is undefined behavior. The memory must
+    /// stay valid and unchanged for the lifetime `'ptr`.
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char8) -> &'ptr Self {
         let mut len = 0;
@@ -362,7 +365,10 @@ impl CStr16 {
     ///
     /// The function will start accessing memory from `ptr` until the first
     /// null character. It's the callers responsibility to ensure `ptr` points to
-    /// a valid string, in accessible memory.
+    /// a valid string, in accessible memory. Nothing bounds the search, so a
+    /// string without a terminator makes this function read past its end,
+    /// which is undefined behavior. The memory must stay valid and
+    /// unchanged for the lifetime `'ptr`.
     #[must_use]
     pub unsafe fn from_ptr<'ptr>(ptr: *const Char16) -> &'ptr Self {
         let mut len = 0;

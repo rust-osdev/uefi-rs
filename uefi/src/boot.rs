@@ -1420,9 +1420,17 @@ pub fn start_image(image_handle: Handle) -> Result {
     let mut exit_data: *mut u16 = ptr::null_mut();
 
     // SAFETY: The memory is valid.
-    unsafe {
-        (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data).to_result()
+    let status =
+        unsafe { (bt.start_image)(image_handle.as_ptr(), &mut exit_data_size, &mut exit_data) };
+
+    // The image allocates the exit data from the pool and the caller of
+    // `start_image` must free it.
+    if let Some(exit_data) = NonNull::new(exit_data) {
+        // SAFETY: The buffer was allocated by the matching UEFI allocator.
+        let _ = unsafe { free_pool(exit_data.cast()) };
     }
+
+    status.to_result()
 }
 
 /// Exits the UEFI application and returns control to the UEFI component
@@ -1520,9 +1528,9 @@ unsafe fn get_memory_map_and_exit_boot_services(buf: &mut [u8]) -> Result<Memory
 ///   includes the [`Output`] protocols attached to stdout/stderr. The
 ///   caller must ensure that no protocol references remain.
 /// * The pool allocator is not usable after exiting boot services. Types
-///   such as [`PoolString`] which call [`free_pool`] on drop
-///   must be cleaned up before calling `exit_boot_services`, or leaked to
-///   avoid drop ever being called.
+///   such as [`PoolString`] which call [`free_pool`] on drop must be
+///   dropped before. A later drop skips the call and panics in debug
+///   builds.
 /// * All data in the memory map marked as
 ///   [`MemoryType::BOOT_SERVICES_CODE`] and
 ///   [`MemoryType::BOOT_SERVICES_DATA`] will become free memory.
@@ -1717,8 +1725,15 @@ pub struct ProtocolsPerHandle {
 
 impl Drop for ProtocolsPerHandle {
     fn drop(&mut self) {
-        // SAFETY: This pointer was allocated by the matching UEFI allocator.
-        let _ = unsafe { free_pool(self.protocols.cast::<u8>()) };
+        let active = are_boot_services_active();
+        debug_assert!(
+            active,
+            "ProtocolsPerHandle dropped after exiting boot services"
+        );
+        if active {
+            // SAFETY: This pointer was allocated by the matching UEFI allocator.
+            let _ = unsafe { free_pool(self.protocols.cast::<u8>()) };
+        }
     }
 }
 
@@ -1753,8 +1768,12 @@ pub struct HandleBuffer {
 
 impl Drop for HandleBuffer {
     fn drop(&mut self) {
-        // SAFETY: This pointer was allocated by the matching UEFI allocator.
-        let _ = unsafe { free_pool(self.buffer.cast::<u8>()) };
+        let active = are_boot_services_active();
+        debug_assert!(active, "HandleBuffer dropped after exiting boot services");
+        if active {
+            // SAFETY: This pointer was allocated by the matching UEFI allocator.
+            let _ = unsafe { free_pool(self.buffer.cast::<u8>()) };
+        }
     }
 }
 
@@ -1813,6 +1832,13 @@ impl<P: Protocol + ?Sized + Display> Display for ScopedProtocol<P> {
 
 impl<P: Protocol + ?Sized> Drop for ScopedProtocol<P> {
     fn drop(&mut self) {
+        // The protocol is gone together with the boot services. The value
+        // should have been dropped before, so flag it in debug builds.
+        let active = are_boot_services_active();
+        debug_assert!(active, "ScopedProtocol dropped after exiting boot services");
+        if !active {
+            return;
+        }
         let bt = boot_services_raw_panicking();
         // SAFETY: The pointer is not null and we assume it to be initialized.
         let bt = unsafe { bt.as_ref() };
@@ -1829,9 +1855,10 @@ impl<P: Protocol + ?Sized> Drop for ScopedProtocol<P> {
         // All of the error cases for close_protocol boil down to
         // calling it with a different set of parameters than what was
         // passed to open_protocol. The public API prevents such errors,
-        // and the error can't be propagated out of drop anyway, so just
-        // assert success.
-        assert_eq!(status, Status::SUCCESS);
+        // and the error can't be propagated out of drop anyway. A panic
+        // in drop aborts the program during unwinding, so only check in
+        // debug builds.
+        debug_assert_eq!(status, Status::SUCCESS);
     }
 }
 
@@ -1893,6 +1920,11 @@ impl TplGuard {
 
 impl Drop for TplGuard {
     fn drop(&mut self) {
+        let active = are_boot_services_active();
+        debug_assert!(active, "TplGuard dropped after exiting boot services");
+        if !active {
+            return;
+        }
         let bt = boot_services_raw_panicking();
         // SAFETY: The pointer is not null and we assume it to be initialized.
         let bt = unsafe { bt.as_ref() };

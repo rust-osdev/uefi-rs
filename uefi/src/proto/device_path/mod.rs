@@ -347,13 +347,17 @@ impl DevicePathNode {
 #[cfg(feature = "alloc")]
 impl Display for DevicePathNode {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if boot::are_boot_services_active() {
-            let cstring16 = self
-                .to_string16(DisplayOnly(true), AllowShortcuts(true))
-                .unwrap();
-            write!(f, "{}", cstring16)
-        } else {
-            write!(f, "<device path node: {} bytes>", self.data.len())
+        // The conversion needs boot services, the device path to text
+        // protocol and pool memory, none of which is guaranteed.
+        let text = boot::are_boot_services_active()
+            .then(|| {
+                self.to_string16(DisplayOnly(true), AllowShortcuts(true))
+                    .ok()
+            })
+            .flatten();
+        match text {
+            Some(text) => write!(f, "{text}"),
+            None => write!(f, "<device path node: {} bytes>", self.data.len()),
         }
     }
 }
@@ -703,13 +707,17 @@ impl DevicePath {
 #[cfg(feature = "alloc")]
 impl Display for DevicePath {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if boot::are_boot_services_active() {
-            let cstring16 = self
-                .to_string16(DisplayOnly(true), AllowShortcuts(true))
-                .unwrap();
-            write!(f, "{}", cstring16)
-        } else {
-            write!(f, "<device path: {} bytes>", self.data.len())
+        // The conversion needs boot services, the device path to text
+        // protocol and pool memory, none of which is guaranteed.
+        let text = boot::are_boot_services_active()
+            .then(|| {
+                self.to_string16(DisplayOnly(true), AllowShortcuts(true))
+                    .ok()
+            })
+            .flatten();
+        match text {
+            Some(text) => write!(f, "{text}"),
+            None => write!(f, "<device path: {} bytes>", self.data.len()),
         }
     }
 }

@@ -27,7 +27,9 @@
 - Fixed undefined behavior when parsing TCG event logs. Iteration now
   stops at the last entry instead of walking past the log, an event
   digest count larger than the log header allows is rejected, and the
-  header offset arithmetic no longer overflows on 32-bit targets.
+  header offset arithmetic no longer overflows on 32-bit targets. An
+  event whose size extends past the start of the last entry is rejected
+  as well.
 - Fixed undefined behavior in `DevicePathNode::from_ffi_ptr` and the
   functions built on it, which underflowed the node length for nodes
   shorter than the node header. They now panic instead.
@@ -105,6 +107,21 @@
   use after free.
 - Fixed `Output::current_mode` and `Output::modes`, which passed a pointer
   derived from a shared reference to the firmware as `*mut`.
+- `ScopedProtocol`, `TplGuard`, `HandleBuffer`, `ProtocolsPerHandle` and
+  the types backed by pool memory such as `PoolString` no longer panic
+  in release builds when dropped after boot services have exited. The
+  cleanup is skipped, as the resources are gone together with the boot
+  services. Debug builds still assert that boot services are active.
+- `boot::start_image` now frees the exit data buffer that the started
+  image may hand back. It was leaked before.
+- `FileHandle` no longer panics in `drop` when the firmware fails to
+  close the file. The error is logged instead.
+- The `Display` impls of `DevicePath` and `DevicePathNode` no longer
+  panic when the conversion to text fails, for example because the
+  device path to text protocol is not installed. They print the size
+  instead.
+- Fixed a memory leak in `HttpHelper::response_first`, which did not
+  free the response headers allocated by the driver.
 
 # uefi - v0.40.0 (2026-08-25)
 

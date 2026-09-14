@@ -363,7 +363,7 @@ impl EventLog<'_> {
             // Safety: we trust that the protocol has given us a valid range
             // of memory to read from.
             // SAFETY: The memory is valid.
-            let event = unsafe { v1::PcrEvent::from_ptr(self.location) };
+            let event = unsafe { v1::PcrEvent::from_ptr(self.location, self.last_entry) }?;
             EventLogHeader::new(event)
         }
     }
@@ -448,7 +448,33 @@ pub struct PcrEvent<'a> {
 }
 
 impl<'a> PcrEvent<'a> {
-    unsafe fn from_ptr(ptr: *const u8, header: EventLogHeader<'a>) -> Option<Self> {
+    /// Size of the fields before the digests: PCR index, event type and
+    /// digest count.
+    const DIGESTS_OFFSET: usize = size_of::<PcrIndex>() + size_of::<EventType>() + size_of::<u32>();
+
+    /// Parses the event at `ptr`.
+    ///
+    /// `last_entry` is the start of the last event in the log. Events are
+    /// contiguous, so an event before it must end at or before it, and
+    /// `None` is returned if it does not. The log does not report where the
+    /// last event ends, so the size of that event cannot be checked.
+    ///
+    /// # Safety
+    ///
+    /// The memory from `ptr` up to `last_entry`, or up to the end of the
+    /// event if `ptr` is the last entry, must be valid for reads.
+    unsafe fn from_ptr(
+        ptr: *const u8,
+        header: EventLogHeader<'a>,
+        last_entry: *const u8,
+    ) -> Option<Self> {
+        // `None` for the last event, whose end is unknown.
+        let available = (ptr < last_entry).then(|| last_entry.addr() - ptr.addr());
+        let fits = |size: usize| available.is_none_or(|available| size <= available);
+
+        if !fits(Self::DIGESTS_OFFSET) {
+            return None;
+        }
         let ptr_u32: *const u32 = ptr.cast();
         // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let pcr_index = PcrIndex(unsafe { ptr_u32.read_unaligned() });
@@ -463,28 +489,42 @@ impl<'a> PcrEvent<'a> {
             return None;
         }
         // SAFETY: The memory is valid.
-        let digests_ptr: *const u8 = unsafe { ptr.add(12) };
+        let digests_ptr: *const u8 = unsafe { ptr.add(Self::DIGESTS_OFFSET) };
 
         // Get the byte size of the digests so that the digests iterator
         // can be safe code.
         let mut digests_byte_size = 0;
         let mut elem_ptr = digests_ptr;
         for _ in 0..digests_count {
+            if !fits(Self::DIGESTS_OFFSET + digests_byte_size + size_of::<AlgorithmId>()) {
+                return None;
+            }
             // SAFETY: The source memory may be unaligned, so this uses unaligned access.
             let algorithm_id = AlgorithmId(unsafe { elem_ptr.cast::<u16>().read_unaligned() });
             let alg_and_digest_size = size_of::<AlgorithmId>()
                 + usize::from(header.algorithm_digest_sizes.get_size(algorithm_id)?);
             digests_byte_size += alg_and_digest_size;
+            if !fits(Self::DIGESTS_OFFSET + digests_byte_size) {
+                return None;
+            }
             // SAFETY: The memory is valid.
             elem_ptr = unsafe { elem_ptr.add(alg_and_digest_size) };
         }
 
+        let event_size_offset = Self::DIGESTS_OFFSET + digests_byte_size;
+        if !fits(event_size_offset + size_of::<u32>()) {
+            return None;
+        }
         // SAFETY: The pointer is valid for the requested slice length.
         let digests = unsafe { slice::from_raw_parts(digests_ptr, digests_byte_size) };
         // SAFETY: The memory is valid.
         let event_size_ptr = unsafe { digests_ptr.add(digests_byte_size) };
         // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let event_size = usize_from_u32(unsafe { event_size_ptr.cast::<u32>().read_unaligned() });
+        let event_data_offset = event_size_offset + size_of::<u32>();
+        if !fits(event_data_offset.checked_add(event_size)?) {
+            return None;
+        }
         // SAFETY: The memory is valid.
         let event_data_ptr = unsafe { event_size_ptr.add(4) };
         // SAFETY: The pointer is valid for the requested slice length.
@@ -565,7 +605,9 @@ impl<'a> Iterator for EventLogIter<'a> {
         // Safety: we trust that the protocol has given us a valid range
         // of memory to read from.
         // SAFETY: The memory is valid.
-        let event = unsafe { PcrEvent::from_ptr(self.location, self.header.clone()?)? };
+        let event = unsafe {
+            PcrEvent::from_ptr(self.location, self.header.clone()?, self.log.last_entry)?
+        };
 
         self.location = event.next;
 
@@ -899,6 +941,44 @@ mod tests {
             location: bytes.as_ptr(),
             // SAFETY: The memory is valid.
             last_entry: unsafe { bytes.as_ptr().add(HEADER_SHA1_ONLY.len()) },
+            is_truncated: false,
+        };
+
+        let mut iter = log.iter();
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
+    }
+
+    /// An event before the last one must end at or before `last_entry`.
+    /// Otherwise its size would turn into a slice past the log.
+    #[test]
+    fn test_event_log_v2_event_size_too_large() {
+        let mut bytes = HEADER_SHA1_ONLY.to_vec();
+        #[rustfmt::skip]
+        bytes.extend_from_slice(&[
+            // PCR index
+            0x00, 0x00, 0x00, 0x00,
+            // Event type
+            0x08, 0x00, 0x00, 0x00,
+            // Digest count
+            0x01, 0x00, 0x00, 0x00,
+            // Digests
+            // SHA1
+            0x04, 0x00,
+            0x14, 0x89, 0xf9, 0x23, 0xc4, 0xdc, 0xa7, 0x29, 0x17, 0x8b,
+            0x3e, 0x32, 0x33, 0x45, 0x85, 0x50, 0xd8, 0xdd, 0xdf, 0x29,
+            // Event size: larger than the log
+            0x00, 0x01, 0x00, 0x00,
+            // Event data
+            0x00, 0x00,
+        ]);
+
+        let log = EventLog {
+            _lifetime: PhantomData,
+            location: bytes.as_ptr(),
+            // `last_entry` points right after the event data.
+            // SAFETY: The memory is valid.
+            last_entry: unsafe { bytes.as_ptr().add(bytes.len()) },
             is_truncated: false,
         };
 

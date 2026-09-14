@@ -36,6 +36,14 @@ impl PoolAllocation {
 
 impl Drop for PoolAllocation {
     fn drop(&mut self) {
+        let active = boot::are_boot_services_active();
+        debug_assert!(
+            active,
+            "pool allocation dropped after exiting boot services"
+        );
+        if !active {
+            return;
+        }
         // Ignore errors returned by `free_pool` since we can't propagate them
         // from `drop`.
         // SAFETY: This pointer was allocated by the matching UEFI allocator.

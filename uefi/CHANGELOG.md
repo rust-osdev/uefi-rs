@@ -73,6 +73,10 @@
 - Fixed undefined behavior in `BaseCode::udp_read`, which let the
   firmware write through a pointer derived from a shared reference, and
   in `DiscoverInfo::new_in_buffer`, which left padding uninitialized.
+- Fixed an out-of-bounds read in `GraphicsOutput::query_mode` when the
+  firmware reports a mode info buffer smaller than `ModeInfo`, and
+  documented the alignment requirement of
+  `FrameBuffer::{read_value, write_value}`.
 
 # uefi - v0.40.0 (2026-08-25)
 

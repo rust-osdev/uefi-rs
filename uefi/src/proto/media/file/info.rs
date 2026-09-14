@@ -14,7 +14,7 @@ use uefi_raw::Boolean;
 /// `File::set_info()` or `File::get_info()`.
 ///
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
-pub trait FileProtocolInfo: Align + Identify + FromUefi {}
+pub trait FileProtocolInfo: Align + Identify + FromUefi + Pointee {}
 
 /// Trait for going from a UEFI-originated pointer to a Rust reference
 ///

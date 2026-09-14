@@ -34,6 +34,9 @@ from `*mut Self` to `*const Self`.
   `ScsiIoProtocol::get_device_location` (from `*mut *mut u8`) to `*const *mut
   u8`. The firmware writes the target ID into the caller-provided array and
   only reads the pointer to it.
+- **Breaking**: Changed `HttpRequestOrResponse::response` and
+  `HttpAccessPoint::{ipv4_node, ipv6_node}` from `*const` to `*mut`. The
+  driver writes the status code and the access point through these pointers.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

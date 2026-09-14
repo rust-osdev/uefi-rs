@@ -507,7 +507,8 @@ pub unsafe fn create_event(
 ///
 /// # Safety
 ///
-/// The caller must ensure they are passing a valid `Guid` as `event_group`, if applicable.
+/// This function is unsafe because callbacks must handle exit from boot
+/// services correctly.
 ///
 /// # Errors
 ///
@@ -518,7 +519,7 @@ pub unsafe fn create_event_ex(
     notify_tpl: Tpl,
     notify_fn: Option<EventNotifyFn>,
     notify_ctx: Option<NonNull<c_void>>,
-    event_group: Option<NonNull<Guid>>,
+    event_group: Option<&Guid>,
 ) -> Result<Event> {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.
@@ -543,7 +544,7 @@ pub unsafe fn create_event_ex(
             notify_tpl,
             notify_fn,
             opt_nonnull_to_ptr(notify_ctx),
-            opt_nonnull_to_ptr(event_group),
+            event_group.map_or(ptr::null(), ptr::from_ref),
             &mut event,
         )
     }
@@ -684,13 +685,13 @@ pub fn set_timer(event: &Event, trigger_time: TimerTrigger) -> Result {
 /// * [`Status::UNSUPPORTED`]: the current TPL is not [`Tpl::APPLICATION`].
 ///
 /// [`NOTIFY_SIGNAL`]: EventType::NOTIFY_SIGNAL
-pub fn wait_for_event(events: &mut [Event]) -> Result<usize, Option<usize>> {
+pub fn wait_for_event(events: &[Event]) -> Result<usize, Option<usize>> {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.
     let bt = unsafe { bt.as_ref() };
 
     let number_of_events = events.len();
-    let events: *mut uefi_raw::Event = events.as_mut_ptr().cast();
+    let events: *const uefi_raw::Event = events.as_ptr().cast();
 
     let mut index = 0;
     // SAFETY: The memory is valid.
@@ -1449,7 +1450,7 @@ pub unsafe fn exit(
     image_handle: Handle,
     exit_status: Status,
     exit_data_size: usize,
-    exit_data: *mut Char16,
+    exit_data: *const Char16,
 ) -> Result {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.

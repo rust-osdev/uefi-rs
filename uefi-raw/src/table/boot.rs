@@ -65,7 +65,7 @@ pub struct BootServices {
         unsafe extern "efiapi" fn(event: Event, ty: TimerDelay, trigger_time: u64) -> Status,
     pub wait_for_event: unsafe extern "efiapi" fn(
         number_of_events: usize,
-        events: *mut Event,
+        events: *const Event,
         out_index: *mut usize,
     ) -> Status,
     pub signal_event: unsafe extern "efiapi" fn(event: Event) -> Status,
@@ -134,7 +134,7 @@ pub struct BootServices {
         image_handle: Handle,
         exit_status: Status,
         exit_data_size: usize,
-        exit_data: *mut Char16,
+        exit_data: *const Char16,
     ) -> Status,
     pub unload_image: unsafe extern "efiapi" fn(image_handle: Handle) -> Status,
     pub exit_boot_services:
@@ -200,7 +200,7 @@ pub struct BootServices {
     ) -> Status,
     pub locate_protocol: unsafe extern "efiapi" fn(
         proto: *const Guid,
-        registration: *mut c_void,
+        registration: *const c_void,
         out_proto: *mut *mut c_void,
     ) -> Status,
 
@@ -241,7 +241,7 @@ pub struct BootServices {
         notify_tpl: Tpl,
         notify_fn: Option<EventNotifyFn>,
         notify_ctx: *mut c_void,
-        event_group: *mut Guid,
+        event_group: *const Guid,
         out_event: *mut Event,
     ) -> Status,
 }

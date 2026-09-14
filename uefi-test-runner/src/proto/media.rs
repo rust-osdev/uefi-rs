@@ -333,7 +333,7 @@ fn test_raw_disk_io2(handle: Handle) {
                 .expect("Failed to initiate asynchronous disk I/O read");
 
             // Wait for the transaction to complete
-            boot::wait_for_event(&mut [event]).expect("Failed to wait on completion event");
+            boot::wait_for_event(&[event]).expect("Failed to wait on completion event");
 
             // Verify that the disk's MBR signature is correct
             assert_eq!(task.token.transaction_status, Status::SUCCESS);

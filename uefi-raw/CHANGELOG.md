@@ -47,6 +47,10 @@ from `*mut Self` to `*const Self`.
   to `*const`: the `request` parameter of `UsbIoProtocol::control_transfer`,
   the `data` parameter of `AsyncUsbTransferCallback`, and the `context`
   parameters of the asynchronous transfer functions and the callback.
+- **Breaking**: Changed the read-only inputs `BootServices::create_event_ex`
+  (`event_group`), `BootServices::wait_for_event` (`events`),
+  `BootServices::exit` (`exit_data`) and `BootServices::locate_protocol`
+  (`registration`) from `*mut` to `*const`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

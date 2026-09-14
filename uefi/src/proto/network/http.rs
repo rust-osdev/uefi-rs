@@ -283,7 +283,7 @@ impl HttpHelper {
 
     /// Configure the HTTP Protocol with some sane defaults.
     pub fn configure(&mut self) -> uefi::Result<()> {
-        let ip4 = HttpV4AccessPoint {
+        let mut ip4 = HttpV4AccessPoint {
             use_default_addr: true.into(),
             ..Default::default()
         };
@@ -292,7 +292,9 @@ impl HttpHelper {
             http_version: HttpVersion::HTTP_VERSION_10,
             time_out_millisec: 10_000,
             local_addr_is_ipv6: false.into(),
-            access_point: HttpAccessPoint { ipv4_node: &ip4 },
+            access_point: HttpAccessPoint {
+                ipv4_node: &mut ip4,
+            },
         };
 
         self.protocol.as_mut().unwrap().configure(&config)?;
@@ -386,10 +388,7 @@ impl HttpHelper {
 
         let mut body = vec![0; if expect_body { 16 * 1024 } else { 0 }];
         let mut rx_msg = HttpMessage::default();
-        // The firmware writes the status code through this pointer, so it
-        // must carry write permission although the field is `*const` in the
-        // spec.
-        rx_msg.data.response = ptr::from_mut(&mut rx_rsp).cast_const();
+        rx_msg.data.response = &mut rx_rsp;
         rx_msg.body_length = body.len();
         rx_msg.body = if !body.is_empty() {
             body.as_mut_ptr()

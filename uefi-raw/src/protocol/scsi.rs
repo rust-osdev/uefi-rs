@@ -157,8 +157,11 @@ pub struct ScsiIoScsiRequestPacket {
 pub struct ScsiIoProtocol {
     pub get_device_type:
         unsafe extern "efiapi" fn(this: *const Self, device_type: *mut ScsiIoType) -> Status,
-    pub get_device_location:
-        unsafe extern "efiapi" fn(this: *const Self, target: *mut *mut u8, lun: *mut u64) -> Status,
+    pub get_device_location: unsafe extern "efiapi" fn(
+        this: *const Self,
+        target: *const *mut u8,
+        lun: *mut u64,
+    ) -> Status,
     pub reset_bus: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
     pub reset_device: unsafe extern "efiapi" fn(this: *mut Self) -> Status,
     pub execute_scsi_command: unsafe extern "efiapi" fn(
@@ -203,7 +206,7 @@ pub struct ExtScsiPassThruProtocol {
     pub get_target_lun: unsafe extern "efiapi" fn(
         this: *const Self,
         device_path: *const DevicePathProtocol,
-        target: *mut *const u8,
+        target: *const *mut u8,
         lun: *mut u64,
     ) -> Status,
     pub reset_channel: unsafe extern "efiapi" fn(this: *mut Self) -> Status,

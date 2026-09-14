@@ -35,7 +35,7 @@ pub struct UsbIoProtocol {
         is_new_transfer: Boolean,
         polling_interval: usize,
         data_length: usize,
-        interrupt_callback: AsyncUsbTransferCallback,
+        interrupt_callback: Option<AsyncUsbTransferCallback>,
         context: *mut ffi::c_void,
     ) -> Status,
     pub sync_interrupt_transfer: unsafe extern "efiapi" fn(

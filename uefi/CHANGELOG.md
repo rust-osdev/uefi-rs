@@ -128,6 +128,9 @@
   `From` for the raw key types, and `Input::read_key` and
   `InputEx::read_key` return `DEVICE_ERROR` when the firmware reports a
   character that is not valid UCS-2. This previously panicked.
+- **Breaking**: `SimpleNetwork::transmit` now takes the packet as `&mut [u8]`.
+  The firmware writes the media header into the buffer when `header_size` is
+  nonzero, which was undefined behavior with the shared slice.
 
 # uefi - v0.40.0 (2026-08-25)
 

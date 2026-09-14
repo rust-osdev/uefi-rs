@@ -153,7 +153,7 @@ pub fn test() {
         4_u8, /* Number of elements for echo service */
         1, 2, 3, 4,
     ];
-    let frame = {
+    let mut frame = {
         // IP that was obtained by PXE test running earlier
         // TODO we should make these tests not depend on each other.
         let src_ip = smoltcp::wire::Ipv4Address::new(192, 168, 17, 15);
@@ -202,11 +202,13 @@ pub fn test() {
             .contains(InterruptStatus::TRANSMIT)
     );
 
-    // Send the frame
+    // Send the frame. Passing the media header size makes the firmware fill
+    // in the Ethernet header: its station address as source, the broadcast
+    // address as destination, and the IPv4 ethertype.
     simple_network
         .transmit(
             simple_network.mode().media_header_size as usize,
-            &frame,
+            &mut frame,
             None,
             Some(simple_network.mode().broadcast_address),
             Some(ETHERNET_PROTOCOL_IPV4),

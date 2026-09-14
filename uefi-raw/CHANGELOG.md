@@ -19,6 +19,30 @@ from `*mut Self` to `*const Self`.
   `From` impl, which left 12 of the 16 union bytes uninitialized.
 - **Breaking**: Changed `this` parameter of `SimpleTextOutputProtocol::query_mode`
 from `*mut Self` to `*const Self`.
+- **Breaking**: Changed the `data` parameter of
+  `Usb2HostControllerProtocol::{bulk_transfer, isochronous_transfer,
+  async_isochronous_transfer}` from `*const *const c_void` to `*const *mut
+  c_void`. The buffers are `IN OUT`; the controller writes received data into
+  them.
+- **Breaking**: Changed the callback parameter of
+  `UsbIoProtocol::async_interrupt_transfer` and
+  `Usb2HostControllerProtocol::async_interrupt_transfer` to
+  `Option<AsyncUsbTransferCallback>`. The specification marks it `OPTIONAL`;
+  NULL cancels the transfer.
+- **Breaking**: Changed the `target` parameter of
+  `ExtScsiPassThruProtocol::get_target_lun` (from `*mut *const u8`) and
+  `ScsiIoProtocol::get_device_location` (from `*mut *mut u8`) to `*const *mut
+  u8`. The firmware writes the target ID into the caller-provided array and
+  only reads the pointer to it.
+- **Breaking**: Changed `HttpRequestOrResponse::response` and
+  `HttpAccessPoint::{ipv4_node, ipv6_node}` from `*const` to `*mut`. The
+  driver writes the status code and the access point through these pointers.
+- **Breaking**: Fixed the pointer mutability of several `ShellProtocol` items
+  to match the EDK2 header: `free_file_list` and `remove_dup_in_file_list`
+  take `*mut *mut ShellFileInfo` (the shell frees the list and clears the
+  pointer), `write_file` takes a `*const` buffer, `get_guid_name` returns a
+  `*const` name that points into the shell, and `ShellFileInfo::{full_name,
+  file_name}` are `*const`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

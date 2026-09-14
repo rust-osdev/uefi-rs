@@ -26,8 +26,8 @@ pub struct ListEntry {
 pub struct ShellFileInfo {
     pub link: ListEntry,
     pub status: Status,
-    pub full_name: *mut Char16,
-    pub file_name: *mut Char16,
+    pub full_name: *const Char16,
+    pub file_name: *const Char16,
     pub handle: ShellFileHandle,
     pub info: *mut FileInfo,
 }
@@ -94,9 +94,9 @@ pub struct ShellProtocol {
         open_mode: u64,
         file_list: *mut *mut ShellFileInfo,
     ) -> Status,
-    pub free_file_list: unsafe extern "efiapi" fn(file_list: *const *const ShellFileInfo) -> Status,
+    pub free_file_list: unsafe extern "efiapi" fn(file_list: *mut *mut ShellFileInfo) -> Status,
     pub remove_dup_in_file_list:
-        unsafe extern "efiapi" fn(file_list: *const *const ShellFileInfo) -> Status,
+        unsafe extern "efiapi" fn(file_list: *mut *mut ShellFileInfo) -> Status,
 
     pub batch_is_active: unsafe extern "efiapi" fn() -> Boolean,
     pub is_root_shell: unsafe extern "efiapi" fn() -> Boolean,
@@ -134,7 +134,7 @@ pub struct ShellProtocol {
     pub write_file: unsafe extern "efiapi" fn(
         file_handle: ShellFileHandle,
         buffer_size: *mut usize,
-        buffer: *mut c_void,
+        buffer: *const c_void,
     ) -> Status,
     pub delete_file: unsafe extern "efiapi" fn(file_handle: ShellFileHandle) -> Status,
     pub delete_file_by_name: unsafe extern "efiapi" fn(file_name: *const Char16) -> Status,
@@ -170,7 +170,7 @@ pub struct ShellProtocol {
     pub register_guid_name:
         unsafe extern "efiapi" fn(guid: *const Guid, guid_name: *const Char16) -> Status,
     pub get_guid_name:
-        unsafe extern "efiapi" fn(guid: *const Guid, guid_name: *mut *mut Char16) -> Status,
+        unsafe extern "efiapi" fn(guid: *const Guid, guid_name: *mut *const Char16) -> Status,
     pub get_guid_from_name:
         unsafe extern "efiapi" fn(guid_name: *const Char16, guid: *mut Guid) -> Status,
     pub get_env_ex:

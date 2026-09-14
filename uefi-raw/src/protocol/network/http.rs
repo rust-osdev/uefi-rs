@@ -43,8 +43,8 @@ pub struct HttpV6AccessPoint {
 
 #[repr(C)]
 pub union HttpAccessPoint {
-    pub ipv4_node: *const HttpV4AccessPoint,
-    pub ipv6_node: *const HttpV6AccessPoint,
+    pub ipv4_node: *mut HttpV4AccessPoint,
+    pub ipv6_node: *mut HttpV6AccessPoint,
 }
 
 impl Debug for HttpAccessPoint {
@@ -57,7 +57,7 @@ impl Debug for HttpAccessPoint {
 impl Default for HttpAccessPoint {
     fn default() -> Self {
         Self {
-            ipv4_node: ptr::null(),
+            ipv4_node: ptr::null_mut(),
         }
     }
 }
@@ -143,7 +143,7 @@ pub struct HttpResponseData {
 #[repr(C)]
 pub union HttpRequestOrResponse {
     pub request: *const HttpRequestData,
-    pub response: *const HttpResponseData,
+    pub response: *mut HttpResponseData,
 }
 
 impl Debug for HttpRequestOrResponse {

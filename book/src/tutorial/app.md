@@ -25,7 +25,7 @@ to your `Cargo.toml`. The resulting `Cargo.toml` should look like that:
 [dependencies]
 log = "0.4"
 # Check crates.io for the latest version.
-uefi = { version = "<latest, e.g. 0.36>", features = [ "panic_handler", "logger" ] }
+uefi = { version = "<latest, e.g. 0.41>", features = [ "panic_handler", "logger" ] }
 ```
 
 Replace the contents of `src/main.rs` with this:

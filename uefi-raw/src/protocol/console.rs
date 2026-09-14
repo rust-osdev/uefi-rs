@@ -134,8 +134,10 @@ pub struct SimpleTextInputExProtocol {
         notification_fn: KeyNotifyFn,
         notify_handle: *mut *mut core::ffi::c_void,
     ) -> Status,
-    pub unregister_key_notify:
-        unsafe extern "efiapi" fn(this: *mut Self, notify_handle: *mut core::ffi::c_void) -> Status,
+    pub unregister_key_notify: unsafe extern "efiapi" fn(
+        this: *mut Self,
+        notify_handle: *const core::ffi::c_void,
+    ) -> Status,
 }
 
 impl SimpleTextInputExProtocol {

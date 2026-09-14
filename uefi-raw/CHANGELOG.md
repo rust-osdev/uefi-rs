@@ -64,6 +64,9 @@ from `*mut Self` to `*const Self`.
   parameter of `parse` are `*const`, and the `new_packet` output of the DHCP4
   callback is `*mut *mut Dhcp4Packet` because the driver takes ownership of
   the returned packet.
+- **Breaking**: Changed the `notify_handle` parameter of
+  `SimpleTextInputExProtocol::unregister_key_notify` from `*mut` to `*const
+  c_void`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

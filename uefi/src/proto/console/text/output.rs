@@ -97,9 +97,8 @@ impl Output {
     /// alternative to this method.
     fn query_mode(&self, index: usize) -> Result<(usize, usize)> {
         let (mut columns, mut rows) = (0, 0);
-        let this: *const _ = &self.0;
         // SAFETY: The memory is valid.
-        unsafe { (self.0.query_mode)(this.cast_mut(), index, &mut columns, &mut rows) }
+        unsafe { (self.0.query_mode)(&self.0, index, &mut columns, &mut rows) }
             .to_result_with_val(|| (columns, rows))
     }
 

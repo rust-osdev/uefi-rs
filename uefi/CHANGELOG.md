@@ -103,6 +103,8 @@
   `&mut self`. The shell frees the strings returned by `current_dir` and
   `var` when the value changes, so holding one across the setter was a
   use after free.
+- Fixed `Output::current_mode` and `Output::modes`, which passed a pointer
+  derived from a shared reference to the firmware as `*mut`.
 
 # uefi - v0.40.0 (2026-08-25)
 

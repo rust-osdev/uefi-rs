@@ -17,6 +17,8 @@
 from `*mut Self` to `*const Self`.
 - Fixed undefined behavior in `IpAddress::new_v4` and the corresponding
   `From` impl, which left 12 of the 16 union bytes uninitialized.
+- **Breaking**: Changed `this` parameter of `SimpleTextOutputProtocol::query_mode`
+from `*mut Self` to `*const Self`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

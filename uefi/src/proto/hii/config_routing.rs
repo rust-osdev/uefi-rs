@@ -9,7 +9,8 @@ use uefi_macros::unsafe_protocol;
 use uefi_raw::Char16;
 use uefi_raw::protocol::hii::config::HiiConfigRoutingProtocol;
 
-use crate::{CStr16, Status, StatusExt};
+use crate::data_types::PoolString;
+use crate::{Status, StatusExt};
 
 /// The HII Configuration Routing Protocol.
 ///
@@ -40,7 +41,9 @@ impl HiiConfigRouting {
         if results.is_null() {
             return Err(Status::NOT_FOUND.into());
         }
-        // SAFETY: The firmware provided a NUL-terminated string.
-        Ok(unsafe { CStr16::from_ptr(results.cast()) }.to_string())
+        // SAFETY: The firmware allocated the NUL-terminated string from the
+        // pool; `PoolString` frees it.
+        let results = unsafe { PoolString::new(results.cast()) }?;
+        Ok(results.to_string())
     }
 }

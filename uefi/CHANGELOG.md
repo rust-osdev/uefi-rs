@@ -138,6 +138,8 @@
   firmware only reads these inputs.
 - Relaxed `runtime::set_virtual_address_map` to take `&[MemoryDescriptor]`
   instead of `&mut [MemoryDescriptor]`. The firmware only reads the map.
+- Fixed a memory leak in `HiiConfigRouting::export`, which never freed the
+  result string allocated by the firmware.
 
 # uefi - v0.40.0 (2026-08-25)
 

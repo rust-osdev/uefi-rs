@@ -81,6 +81,10 @@ from `*mut Self` to `*const Self`.
   `PciRootBridgeIoProtocol::allocate_buffer` from `*mut *const c_void` to
   `*mut *mut c_void`. The allocated buffer is writable memory owned by the
   caller.
+- **Breaking**: Changed the return type of the pool-allocating functions of
+  `DevicePathUtilitiesProtocol`, `DevicePathToTextProtocol` and
+  `DevicePathFromTextProtocol` from `*const` to `*mut`. The caller owns and
+  must free the result.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

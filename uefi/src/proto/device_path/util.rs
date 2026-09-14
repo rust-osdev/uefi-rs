@@ -41,7 +41,7 @@ impl DevicePathUtilities {
         // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.duplicate_device_path)(path.as_ffi_ptr().cast());
-            NonNull::new(ptr.cast_mut())
+            NonNull::new(ptr)
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
@@ -65,7 +65,7 @@ impl DevicePathUtilities {
         unsafe {
             let ptr =
                 (self.0.append_device_path)(path0.as_ffi_ptr().cast(), path1.as_ffi_ptr().cast());
-            NonNull::new(ptr.cast_mut())
+            NonNull::new(ptr)
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
@@ -89,7 +89,7 @@ impl DevicePathUtilities {
         unsafe {
             let ptr =
                 (self.0.append_device_node)(basepath.as_ffi_ptr().cast(), node.as_ffi_ptr().cast());
-            NonNull::new(ptr.cast_mut())
+            NonNull::new(ptr)
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
@@ -115,7 +115,7 @@ impl DevicePathUtilities {
                 basepath.as_ffi_ptr().cast(),
                 instance.as_ffi_ptr().cast(),
             );
-            NonNull::new(ptr.cast_mut())
+            NonNull::new(ptr)
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }

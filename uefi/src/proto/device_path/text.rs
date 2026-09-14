@@ -133,7 +133,7 @@ impl DevicePathFromText {
         // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.convert_text_to_device_node)(text_device_node.as_ptr().cast());
-            NonNull::new(ptr.cast_mut())
+            NonNull::new(ptr)
                 .map(|p| PoolDevicePathNode(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }
@@ -151,7 +151,7 @@ impl DevicePathFromText {
         // SAFETY: The memory is valid.
         unsafe {
             let ptr = (self.0.convert_text_to_device_path)(text_device_path.as_ptr().cast());
-            NonNull::new(ptr.cast_mut())
+            NonNull::new(ptr)
                 .map(|p| PoolDevicePath(PoolAllocation::new(p.cast())))
                 .ok_or_else(|| Status::OUT_OF_RESOURCES.into())
         }

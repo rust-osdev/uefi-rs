@@ -246,12 +246,12 @@ pub struct DevicePathToTextProtocol {
         device_node: *const DevicePathProtocol,
         display_only: Boolean,
         allow_shortcuts: Boolean,
-    ) -> *const Char16,
+    ) -> *mut Char16,
     pub convert_device_path_to_text: unsafe extern "efiapi" fn(
         device_path: *const DevicePathProtocol,
         display_only: Boolean,
         allow_shortcuts: Boolean,
-    ) -> *const Char16,
+    ) -> *mut Char16,
 }
 
 impl DevicePathToTextProtocol {
@@ -262,9 +262,9 @@ impl DevicePathToTextProtocol {
 #[repr(C)]
 pub struct DevicePathFromTextProtocol {
     pub convert_text_to_device_node:
-        unsafe extern "efiapi" fn(text_device_node: *const Char16) -> *const DevicePathProtocol,
+        unsafe extern "efiapi" fn(text_device_node: *const Char16) -> *mut DevicePathProtocol,
     pub convert_text_to_device_path:
-        unsafe extern "efiapi" fn(text_device_path: *const Char16) -> *const DevicePathProtocol,
+        unsafe extern "efiapi" fn(text_device_path: *const Char16) -> *mut DevicePathProtocol,
 }
 
 impl DevicePathFromTextProtocol {
@@ -278,30 +278,30 @@ pub struct DevicePathUtilitiesProtocol {
         unsafe extern "efiapi" fn(device_path: *const DevicePathProtocol) -> usize,
     pub duplicate_device_path: unsafe extern "efiapi" fn(
         device_path: *const DevicePathProtocol,
-    ) -> *const DevicePathProtocol,
+    ) -> *mut DevicePathProtocol,
     pub append_device_path: unsafe extern "efiapi" fn(
         src1: *const DevicePathProtocol,
         src2: *const DevicePathProtocol,
-    ) -> *const DevicePathProtocol,
+    ) -> *mut DevicePathProtocol,
     pub append_device_node: unsafe extern "efiapi" fn(
         device_path: *const DevicePathProtocol,
         device_node: *const DevicePathProtocol,
-    ) -> *const DevicePathProtocol,
+    ) -> *mut DevicePathProtocol,
     pub append_device_path_instance: unsafe extern "efiapi" fn(
         device_path: *const DevicePathProtocol,
         device_path_instance: *const DevicePathProtocol,
-    ) -> *const DevicePathProtocol,
+    ) -> *mut DevicePathProtocol,
     pub get_next_device_path_instance: unsafe extern "efiapi" fn(
         device_path_instance: *mut *const DevicePathProtocol,
         device_path_instance_size: *mut usize,
-    ) -> *const DevicePathProtocol,
+    ) -> *mut DevicePathProtocol,
     pub is_device_path_multi_instance:
         unsafe extern "efiapi" fn(device_path: *const DevicePathProtocol) -> Boolean,
     pub create_device_node: unsafe extern "efiapi" fn(
         node_type: DeviceType,
         node_sub_type: DeviceSubType,
         node_length: u16,
-    ) -> *const DevicePathProtocol,
+    ) -> *mut DevicePathProtocol,
 }
 
 impl DevicePathUtilitiesProtocol {

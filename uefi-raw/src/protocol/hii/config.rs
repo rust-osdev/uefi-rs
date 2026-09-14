@@ -5,7 +5,7 @@
 use core::fmt::Debug;
 
 use super::form_browser::BrowserActionRequest;
-use super::{FormId, QuestionId, StringId};
+use super::{HiiDate, HiiRef, HiiTime, QuestionId, StringId};
 use crate::protocol::device_path::DevicePathProtocol;
 use crate::{Boolean, Char16, Guid, Status, guid, newtype_enum};
 
@@ -70,37 +70,6 @@ newtype_enum! {
         DEFAULT_FIRMWARE = 0x4000,
     }
 }
-
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
-pub struct HiiTime {
-    pub hour: u8,
-    pub minute: u8,
-    pub second: u8,
-}
-
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
-pub struct HiiDate {
-    pub year: u16,
-    pub month: u8,
-    pub day: u8,
-}
-
-#[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
-pub struct HiiRef {
-    pub question_id: QuestionId,
-    pub form_id: FormId,
-    pub guid: Guid,
-    pub string_id: StringId,
-}
-
-// Compile-time ABI check.
-const _: () = {
-    assert!(size_of::<HiiRef>() == 22);
-    assert!(align_of::<HiiRef>() == 1);
-};
 
 #[repr(C, packed)]
 #[derive(Copy, Clone)]

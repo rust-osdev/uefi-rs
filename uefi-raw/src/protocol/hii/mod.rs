@@ -225,3 +225,37 @@ const _: () = {
     assert!(size_of::<KeyDescriptor>() == 16);
     assert!(align_of::<KeyDescriptor>() == 1);
 };
+
+/// `EFI_HII_TIME`
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct HiiTime {
+    pub hour: u8,
+    pub minute: u8,
+    pub second: u8,
+}
+
+/// `EFI_HII_DATE`
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct HiiDate {
+    pub year: u16,
+    pub month: u8,
+    pub day: u8,
+}
+
+/// `EFI_HII_REF`
+#[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
+pub struct HiiRef {
+    pub question_id: QuestionId,
+    pub form_id: FormId,
+    pub guid: Guid,
+    pub string_id: StringId,
+}
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiRef>() == 22);
+    assert!(align_of::<HiiRef>() == 1);
+};

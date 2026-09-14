@@ -78,9 +78,9 @@ pub struct ShellProtocol {
     pub get_map_from_device_path:
         unsafe extern "efiapi" fn(device_path: *mut *mut DevicePathProtocol) -> *const Char16,
     pub get_device_path_from_file_path:
-        unsafe extern "efiapi" fn(path: *const Char16) -> *const DevicePathProtocol,
+        unsafe extern "efiapi" fn(path: *const Char16) -> *mut DevicePathProtocol,
     pub get_file_path_from_device_path:
-        unsafe extern "efiapi" fn(path: *const DevicePathProtocol) -> *const Char16,
+        unsafe extern "efiapi" fn(path: *const DevicePathProtocol) -> *mut Char16,
     pub set_map: unsafe extern "efiapi" fn(
         device_path: *const DevicePathProtocol,
         mapping: *const Char16,
@@ -110,7 +110,7 @@ pub struct ShellProtocol {
         best_device_name: *mut *mut Char16,
     ) -> Status,
 
-    pub get_file_info: unsafe extern "efiapi" fn(file_handle: ShellFileHandle) -> *const FileInfo,
+    pub get_file_info: unsafe extern "efiapi" fn(file_handle: ShellFileHandle) -> *mut FileInfo,
     pub set_file_info: unsafe extern "efiapi" fn(
         file_handle: ShellFileHandle,
         file_info: *const FileInfo,

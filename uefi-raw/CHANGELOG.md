@@ -104,6 +104,11 @@ from `*mut Self` to `*const Self`.
   `BootServices::open_protocol_information` (`entry_buffer`) and
   `RuntimeServices::convert_pointer` (`address`) from `*const` to `*mut`,
   matching the non-const C declarations.
+- **Breaking**: Changed the callee-allocated results of
+  `ShellProtocol::{get_device_path_from_file_path,
+  get_file_path_from_device_path, get_file_info}` from `*const` to `*mut` (the
+  caller must free them), and `ShellFileHandle` from `*const c_void` to `*mut
+  c_void` like the other opaque handles.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

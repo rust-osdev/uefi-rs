@@ -3,7 +3,7 @@
 use crate::{Char16, Guid, guid};
 use core::ffi::c_void;
 
-pub type ShellFileHandle = *const c_void;
+pub type ShellFileHandle = *mut c_void;
 
 #[derive(Debug)]
 #[repr(C)]

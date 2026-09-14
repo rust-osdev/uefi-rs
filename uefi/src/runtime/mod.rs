@@ -554,7 +554,7 @@ pub fn reset(reset_type: ResetType, status: Status, data: Option<&[u8]>) -> ! {
 /// * [`Status::NOT_FOUND`]: `map` contains an address that is not in the
 ///   current memory map.
 pub unsafe fn set_virtual_address_map(
-    map: &mut [MemoryDescriptor],
+    map: &[MemoryDescriptor],
     new_system_table_virtual_addr: *const uefi_raw::table::system::SystemTable,
 ) -> Result {
     let rt = runtime_services_raw_panicking();
@@ -568,7 +568,7 @@ pub unsafe fn set_virtual_address_map(
     let map_size = size_of_val(map);
     let entry_size = size_of::<MemoryDescriptor>();
     let entry_version = MemoryDescriptor::VERSION;
-    let map_ptr = map.as_mut_ptr();
+    let map_ptr = map.as_ptr();
     // SAFETY: The memory is valid.
     unsafe { (rt.set_virtual_address_map)(map_size, entry_size, entry_version, map_ptr) }
         .to_result()?;

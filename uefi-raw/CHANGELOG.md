@@ -51,6 +51,9 @@ from `*mut Self` to `*const Self`.
   (`event_group`), `BootServices::wait_for_event` (`events`),
   `BootServices::exit` (`exit_data`) and `BootServices::locate_protocol`
   (`registration`) from `*mut` to `*const`.
+- **Breaking**: Changed the `virtual_map` parameter of
+  `RuntimeServices::set_virtual_address_map` from `*mut` to `*const
+  MemoryDescriptor`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

@@ -136,6 +136,8 @@
 - Relaxed `boot::wait_for_event` to take `&[Event]` instead of `&mut [Event]`
   and `boot::exit` to take `*const Char16` instead of `*mut Char16`. The
   firmware only reads these inputs.
+- Relaxed `runtime::set_virtual_address_map` to take `&[MemoryDescriptor]`
+  instead of `&mut [MemoryDescriptor]`. The firmware only reads the map.
 
 # uefi - v0.40.0 (2026-08-25)
 

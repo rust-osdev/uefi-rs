@@ -84,6 +84,10 @@
 - Fixed undefined behavior in the ATA, NVMe and SCSI pass-thru response
   accessors, which trusted the transfer length reported by the firmware
   and could return a slice pointing past the buffer.
+- Fixed undefined behavior in `HttpHelper::{request, response_first,
+  response_more}`, which left a token pointing into a dead stack frame
+  when polling failed, and passed the response data to the driver
+  through a read-only pointer.
 
 # uefi - v0.40.0 (2026-08-25)
 

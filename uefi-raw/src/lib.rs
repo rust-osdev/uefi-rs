@@ -1,12 +1,79 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Raw interface for working with UEFI.
-//!
-//! This crate is intended for implementing UEFI services. It is also used for
-//! implementing the [`uefi`] crate, which provides a safe wrapper around UEFI.
+//! Raw UEFI types and bindings for protocols, boot, and runtime services. This
+//! can serve as base for an UEFI firmware implementation or a high-level
+//! wrapper to access UEFI functionality from an UEFI image.
 //!
 //! For creating UEFI applications and drivers, consider using the [`uefi`]
 //! crate instead of `uefi-raw`.
+//!
+//! # Relation to the UEFI Specification
+//!
+//! The types in this crate follow the UEFI specification as closely as
+//! possible, so that they are ABI compatible with the firmware. Where the
+//! spec is inconsistent or inaccurate, the EDK2 headers and sources are
+//! consulted. Where that still leaves a choice, types are modeled for code
+//! that calls into UEFI rather than for implementing UEFI, although the
+//! latter is possible as well.
+//!
+//! ## Mapping of C Qualifiers to Rust
+//!
+//! The spec annotates parameters with `IN`, `OUT`, `IN OUT`, `CONST` and
+//! `OPTIONAL`. In C these are comments; in Rust they become pointer types,
+//! so that a signature tells you what the firmware does with your memory.
+//! Two questions decide the type: who writes through the pointer, and who
+//! owns the pointee. `*mut` means "written by the firmware" or "owned by
+//! the caller, who must free it"; `*const` means read-only for both sides.
+//! Raw pointers are nullable, so `OPTIONAL` on an input does not change
+//! the type.
+//!
+//! Scalars and structs:
+//!
+//! | C                                | Rust                 |
+//! |----------------------------------|----------------------|
+//! | `IN T Name`                      | `T`                  |
+//! | `IN T *Name`, `IN CONST T *Name` | `*const T`           |
+//! | `OUT T *Name`, `IN OUT T *Name`  | `*mut T`             |
+//! | `IN T *Name OPTIONAL`            | `*const T`           |
+//! | `OUT T *Name OPTIONAL`           | `Option<NonNull<T>>` |
+//!
+//! `NonNull` has no const form, which is why optional read-only inputs
+//! stay `*const`.
+//!
+//! Buffers (`VOID *Buffer` plus a length) follow the same rule:
+//! `*const c_void` if the firmware reads them, `*mut c_void` if it writes
+//! them. This holds even where the spec says `IN` but its text says the
+//! buffer is filled, for example `LoadFile.Buffer`. See the following table
+//! for further guidance:
+//!
+//! | C                        | Rust                   | Explanation                           |
+//! |--------------------------|------------------------|---------------------------------------|
+//! | `OUT T **Name`           | `*mut *mut T`          | callee allocates, caller frees        |
+//! | `OUT T **Name`           | `*mut *const T`        | points into firmware-owned memory     |
+//! | `OUT T **Name`           | `*const *mut T`        | caller's array, firmware fills it     |
+//! | `IN OUT VOID *Name[N]`   | `*const *mut c_void`   | caller's buffers, firmware fills them |
+//! | `IN CONST CHAR16 **Name` | `*const *const Char16` | read-only strings                     |
+//!
+//! This covers arrays too; the count parameter says how many elements the
+//! caller owns, as in `LocateHandleBuffer`. `ProtocolsPerHandle` combines
+//! two rows, a callee-allocated array of pointers into firmware-owned
+//! memory, hence `*mut *mut *const Guid`.
+//!
+//! The same rule applies to return values: a pool allocation the caller
+//! must free is returned as `*mut T`, firmware-owned memory as `*const T`.
+//!
+//! Further conventions:
+//!
+//! - `This` is `*const Self` if the function only reads the protocol
+//!   instance, otherwise `*mut Self`.
+//! - Firmware-owned structures that consumers only read, such as `Mode`
+//!   pointers, are `*const` even where C has no `CONST`.
+//! - Function pointer members are `Option` only if the spec allows null.
+//! - Opaque handles such as `EFI_HANDLE` and `EFI_EVENT` are `*mut c_void`
+//!   aliases passed by value.
+//!
+//! Some inconsistencies will remain. Where these rules do not settle a
+//! case, it is decided case-by-case by what works with real firmware.
 //!
 //! [`uefi`]: https://crates.io/crates/uefi
 

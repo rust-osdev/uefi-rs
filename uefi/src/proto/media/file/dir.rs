@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use super::{File, FileHandle, FileInfo, FromUefi, RegularFile};
-use crate::Result;
 use crate::data_types::Align;
-use core::ffi::c_void;
+use crate::{Error, Result};
 #[cfg(feature = "alloc")]
 use {crate::mem::make_boxed, alloc::boxed::Box};
 
@@ -41,7 +40,9 @@ impl Directory {
     ///
     /// # Errors
     ///
-    /// All errors come from calls to [`RegularFile::read`].
+    /// All errors come from calls to [`RegularFile::read`] or
+    /// [`FromUefi::from_uefi`]. Like in [`File::get_info`], the required buffer
+    /// size includes the trailing padding of `FileInfo`.
     pub fn read_entry<'buf>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -50,16 +51,16 @@ impl Directory {
         FileInfo::assert_aligned(buffer);
 
         // Read the directory entry into the aligned storage
-        self.0.read_unchunked(buffer).map(|read_bytes| {
-            // 0 read bytes signals that the last directory entry was read
-            let last_directory_entry_read = read_bytes == 0;
-            if last_directory_entry_read {
-                None
-            } else {
-                // SAFETY: The memory is valid.
-                unsafe { Some(FileInfo::from_uefi(buffer.as_mut_ptr().cast::<c_void>())) }
-            }
-        })
+        let read_bytes = self.0.read_unchunked(buffer).map_err(|err| {
+            let (status, required_size) = err.split();
+            Error::new(status, required_size.map(FileInfo::round_up_to_alignment))
+        })?;
+
+        // 0 read bytes signals that the last directory entry was read
+        if read_bytes == 0 {
+            return Ok(None);
+        }
+        FileInfo::from_uefi(buffer, read_bytes).map(Some)
     }
 
     /// Wrapper around [`Self::read_entry`] that returns an owned copy of the data. It has the same

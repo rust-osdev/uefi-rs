@@ -3,8 +3,7 @@
 use super::FileAttribute;
 use crate::data_types::Align;
 use crate::runtime::Time;
-use crate::{CStr16, Char16, Guid, Identify};
-use core::ffi::c_void;
+use crate::{CStr16, Char16, Error, Guid, Identify, Status};
 use core::fmt::{self, Display, Formatter};
 use core::ptr;
 use ptr_meta::Pointee;
@@ -16,19 +15,31 @@ use uefi_raw::Boolean;
 /// The long-winded name is needed because "FileInfo" is already taken by UEFI.
 pub trait FileProtocolInfo: Align + Identify + FromUefi + Pointee {}
 
-/// Trait for going from a UEFI-originated pointer to a Rust reference
+/// Trait for going from a buffer filled by UEFI to a Rust reference
 ///
 /// This is trivial for `Sized` types, but requires some work when operating on
 /// dynamic-sized types like `NamedFileProtocolInfo`, as the second member of
 /// the fat pointer must be reconstructed using hidden UEFI-provided metadata.
 pub trait FromUefi {
-    /// Turn a UEFI-provided pointer-to-base into a (possibly fat) Rust reference
+    /// Turn a buffer filled by UEFI into a (possibly fat) Rust reference
     ///
-    /// # Safety
+    /// `buffer` is the whole buffer that was passed to the firmware and
+    /// `written` is the number of bytes the firmware reported to have written
+    /// into it. Only those bytes are trusted, so the name's NUL terminator
+    /// must be among them.
     ///
-    /// This function can lead to undefined behavior if the given pointer is not
-    /// pointing to a valid object of the specified type.
-    unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self;
+    /// # Errors
+    ///
+    /// * [`Status::BAD_BUFFER_SIZE`]: the written bytes do not contain a
+    ///   complete, NUL-terminated structure.
+    /// * [`Status::BUFFER_TOO_SMALL`]: `buffer` cannot hold the structure
+    ///   including the trailing padding of the Rust type. The required size
+    ///   is returned as the error payload.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `buffer` is not aligned for `Self`.
+    fn from_uefi(buffer: &mut [u8], written: usize) -> crate::Result<&mut Self, Option<usize>>;
 }
 
 /// Internal trait for initializing one of the info types.
@@ -114,14 +125,36 @@ impl<T> FromUefi for T
 where
     T: InfoInternal + ?Sized,
 {
-    unsafe fn from_uefi<'ptr>(ptr: *mut c_void) -> &'ptr mut Self {
-        // SAFETY: The memory is valid.
-        let name_ptr = unsafe { Self::name_ptr(ptr.cast::<u8>()) };
-        // SAFETY: The memory is valid.
-        let name = unsafe { CStr16::from_ptr(name_ptr) };
-        let name_len = name.as_slice_with_nul().len();
-        // SAFETY: The pointer is not null, aligned, and initialized.
-        unsafe { &mut *ptr_meta::from_raw_parts_mut(ptr.cast::<()>(), name_len) }
+    fn from_uefi(buffer: &mut [u8], written: usize) -> crate::Result<&mut Self, Option<usize>> {
+        Self::assert_aligned(buffer);
+
+        // Only the bytes the firmware wrote are meaningful. Anything beyond
+        // may be stale data from the caller.
+        let written = &buffer[..written.min(buffer.len())];
+        let name = written
+            .get(Self::name_offset()..)
+            .ok_or(Error::new(Status::BAD_BUFFER_SIZE, None))?;
+        // Length of the UCS-2 name including its NUL terminator.
+        let (name, _) = name.as_chunks::<{ size_of::<Char16>() }>();
+        let name_len_ucs2 = name
+            .iter()
+            .position(|c| *c == [0, 0])
+            .ok_or(Error::new(Status::BAD_BUFFER_SIZE, None))?
+            + 1;
+
+        // The Rust type has trailing padding, so the reference may span more
+        // bytes than the firmware wrote. All of them must be in the buffer.
+        let name_size = name_len_ucs2 * size_of::<Char16>();
+        let info_size = Self::round_up_to_alignment(Self::name_offset() + name_size);
+        if buffer.len() < info_size {
+            return Err(Error::new(Status::BUFFER_TOO_SMALL, Some(info_size)));
+        }
+
+        // SAFETY: The pointer is aligned and the first `info_size` bytes are
+        // initialized and in bounds. Every bit pattern is a valid header.
+        Ok(unsafe {
+            &mut *ptr_meta::from_raw_parts_mut(buffer.as_mut_ptr().cast::<()>(), name_len_ucs2)
+        })
     }
 }
 
@@ -558,5 +591,47 @@ mod tests {
         validate_layout(info, &info.volume_label);
 
         assert_eq!(info.volume_label(), name);
+    }
+
+    #[test]
+    fn test_file_info_from_uefi() {
+        #[repr(align(8))]
+        struct Storage([u8; 88]);
+
+        // Header size 80 + name "ab" with NUL 6 = 86, padded to 88.
+        let mut storage = Storage([0; 88]);
+        let name = CString16::try_from("ab").unwrap();
+        let time = Time::invalid();
+        FileInfo::new(
+            &mut storage.0,
+            0,
+            0,
+            time,
+            time,
+            time,
+            FileAttribute::empty(),
+            &name,
+        )
+        .unwrap();
+
+        // Firmware reports the unpadded size; the padding must be in the
+        // buffer nevertheless.
+        let info = FileInfo::from_uefi(&mut storage.0, 86).unwrap();
+        assert_eq!(size_of_val(info), 88);
+        assert_eq!(info.file_name(), name);
+        assert_eq!(
+            FileInfo::from_uefi(&mut storage.0[..86], 86).unwrap_err(),
+            Error::new(Status::BUFFER_TOO_SMALL, Some(88))
+        );
+
+        // NUL terminator not within the written bytes.
+        assert_eq!(
+            FileInfo::from_uefi(&mut storage.0, 85).unwrap_err(),
+            Error::new(Status::BAD_BUFFER_SIZE, None)
+        );
+        assert_eq!(
+            FileInfo::from_uefi(&mut storage.0, 0).unwrap_err(),
+            Error::new(Status::BAD_BUFFER_SIZE, None)
+        );
     }
 }

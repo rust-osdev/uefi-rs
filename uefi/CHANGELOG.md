@@ -77,6 +77,10 @@
   firmware reports a mode info buffer smaller than `ModeInfo`, and
   documented the alignment requirement of
   `FrameBuffer::{read_value, write_value}`.
+- Fixed `UnicodeCollation::{str_lwr, str_upr, fat_to_str}`, which
+  returned a `CStr16` covering the whole output buffer and thus violated
+  the invariants of that type when the buffer was larger than the
+  string.
 
 # uefi - v0.40.0 (2026-08-25)
 

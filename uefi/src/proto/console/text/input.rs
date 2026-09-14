@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use crate::data_types::chars::CharConversionError;
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Error, Event, Result, Status, StatusExt};
 use core::mem::MaybeUninit;
@@ -40,7 +41,8 @@ impl Input {
     ///
     /// # Errors
     ///
-    /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device
+    /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device,
+    ///   or if it reported a character that is not valid UCS-2
     ///
     /// # Examples
     ///
@@ -79,11 +81,14 @@ impl Input {
         let mut key = MaybeUninit::<InputKey>::uninit();
 
         // SAFETY: The memory is valid.
-        match unsafe { (self.0.read_key_stroke)(&mut self.0, key.as_mut_ptr()) } {
-            Status::NOT_READY => Ok(None),
+        let key = match unsafe { (self.0.read_key_stroke)(&mut self.0, key.as_mut_ptr()) } {
+            Status::NOT_READY => return Ok(None),
             // SAFETY: The memory is valid.
-            other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
-        }
+            other => other.to_result_with_val(|| unsafe { key.assume_init() })?,
+        };
+        // The firmware reported a character that is not valid UCS-2.
+        let key = Key::try_from(key).map_err(|_| Error::from(Status::DEVICE_ERROR))?;
+        Ok(Some(key))
     }
 
     /// Event to be used with [`boot::wait_for_event`] in order to wait
@@ -106,12 +111,16 @@ pub enum Key {
     Special(ScanCode),
 }
 
-impl From<InputKey> for Key {
-    fn from(k: InputKey) -> Self {
+impl TryFrom<InputKey> for Key {
+    type Error = CharConversionError;
+
+    /// Fails if the key carries a character that is not valid UCS-2, such
+    /// as a surrogate code unit.
+    fn try_from(k: InputKey) -> core::result::Result<Self, Self::Error> {
         if k.scan_code == ScanCode::NULL.0 {
-            Self::Printable(Char16::try_from(k.unicode_char).unwrap())
+            Char16::try_from(k.unicode_char).map(Self::Printable)
         } else {
-            Self::Special(ScanCode(k.scan_code))
+            Ok(Self::Special(ScanCode(k.scan_code)))
         }
     }
 }
@@ -212,16 +221,20 @@ impl InputEx {
     ///
     /// # Errors
     ///
-    /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device
+    /// - [`Status::DEVICE_ERROR`] if there was an issue with the input device,
+    ///   or if it reported a character that is not valid UCS-2
     pub fn read_key(&mut self) -> Result<Option<KeyData>> {
         let mut key = MaybeUninit::<RawKeyData>::uninit();
 
         // SAFETY: The memory is valid.
-        match unsafe { (self.0.read_key_stroke_ex)(&mut self.0, key.as_mut_ptr()) } {
-            Status::NOT_READY => Ok(None),
+        let key = match unsafe { (self.0.read_key_stroke_ex)(&mut self.0, key.as_mut_ptr()) } {
+            Status::NOT_READY => return Ok(None),
             // SAFETY: The memory is valid.
-            other => other.to_result_with_val(|| Some(unsafe { key.assume_init() }.into())),
-        }
+            other => other.to_result_with_val(|| unsafe { key.assume_init() })?,
+        };
+        // The firmware reported a character that is not valid UCS-2.
+        let key = KeyData::try_from(key).map_err(|_| Error::from(Status::DEVICE_ERROR))?;
+        Ok(Some(key))
     }
 
     /// Sets certain state for the input device.
@@ -325,12 +338,16 @@ pub struct KeyData {
     pub key_state: KeyState,
 }
 
-impl From<RawKeyData> for KeyData {
-    fn from(k: RawKeyData) -> Self {
-        Self {
-            key: k.key.into(),
+impl TryFrom<RawKeyData> for KeyData {
+    type Error = CharConversionError;
+
+    /// Fails if the key carries a character that is not valid UCS-2, see
+    /// [`Key::try_from`].
+    fn try_from(k: RawKeyData) -> core::result::Result<Self, Self::Error> {
+        Ok(Self {
+            key: k.key.try_into()?,
             key_state: k.key_state.into(),
-        }
+        })
     }
 }
 
@@ -357,5 +374,35 @@ impl From<RawKeyState> for KeyState {
                 None
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_key_from_raw() {
+        let raw = InputKey {
+            scan_code: ScanCode::NULL.0,
+            unicode_char: u16::from(b'a'),
+        };
+        assert_eq!(
+            Key::try_from(raw),
+            Ok(Key::Printable(Char16::try_from('a').unwrap()))
+        );
+
+        let raw = InputKey {
+            scan_code: ScanCode::ESCAPE.0,
+            unicode_char: 0,
+        };
+        assert_eq!(Key::try_from(raw), Ok(Key::Special(ScanCode::ESCAPE)));
+
+        // A surrogate is not a valid UCS-2 character.
+        let raw = InputKey {
+            scan_code: ScanCode::NULL.0,
+            unicode_char: 0xd800,
+        };
+        assert!(Key::try_from(raw).is_err());
     }
 }

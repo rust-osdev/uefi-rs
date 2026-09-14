@@ -122,6 +122,8 @@
   instead.
 - Fixed a memory leak in `HttpHelper::response_first`, which did not
   free the response headers allocated by the driver.
+- `HttpHelper::response_first` no longer panics when a response header
+  is not valid UTF-8. Invalid bytes are replaced with U+FFFD.
 
 # uefi - v0.40.0 (2026-08-25)
 

@@ -145,15 +145,21 @@ impl PciRootBridgeIo {
     /// - [`Status::UNSUPPORTED`] The current configuration of this PCI root bridge could not be retrieved.
     #[cfg(feature = "alloc")]
     pub fn configuration(&self) -> crate::Result<Vec<QwordAddressSpaceDescriptor>> {
+        use crate::Status;
         use crate::proto::pci::configuration;
         // The storage for the resource descriptors is allocated by this function. The caller must treat
         // the return buffer as read-only data, and the buffer must not be freed by the caller.
         let mut resources: *const c_void = ptr::null();
         // SAFETY: The memory is valid.
-        unsafe {
-            ((self.0.configuration)(&self.0, &mut resources))
-                .to_result_with_val(|| configuration::parse(resources))
+        unsafe { (self.0.configuration)(&self.0, &mut resources) }.to_result()?;
+        // The parser walks the list until its end tag, so a null pointer
+        // would be dereferenced.
+        if resources.is_null() {
+            return Err(Status::DEVICE_ERROR.into());
         }
+        // SAFETY: The firmware returned a descriptor list terminated by an
+        // end tag.
+        Ok(unsafe { configuration::parse(resources) })
     }
 
     // ###################################################

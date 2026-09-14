@@ -54,7 +54,7 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{Result, StatusExt, boot};
+use crate::{Error, Result, Status, StatusExt, boot};
 use core::fmt::{Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
@@ -87,25 +87,33 @@ impl GraphicsOutput {
         // variable. In this buffer, the queried data can be found.
         // SAFETY: The memory is valid.
         unsafe { (self.0.query_mode)(&self.0, index, &mut info_sz, &mut info_heap_ptr) }
-            .to_result_with_val(|| {
-                // Transform to owned info on the stack.
-                // SAFETY: The memory is valid.
-                let info = unsafe { *info_heap_ptr };
+            .to_result()?;
 
-                let info_heap_ptr = info_heap_ptr.cast::<u8>().cast_mut();
+        // A buggy firmware may hand out a buffer shorter than the struct,
+        // which must not be read past its end.
+        let info = if info_sz >= size_of::<GraphicsOutputModeInformation>() {
+            // Transform to owned info on the stack.
+            // SAFETY: The buffer is at least as large as the struct.
+            Some(unsafe { *info_heap_ptr })
+        } else {
+            None
+        };
 
-                // User has no benefit from propagating this error. If this
-                // fails, it is an error of the UEFI implementation.
-                // SAFETY: This pointer was allocated by the matching UEFI allocator.
-                unsafe { boot::free_pool(NonNull::new(info_heap_ptr).unwrap()) }
-                    .expect("buffer should be deallocatable");
+        let info_heap_ptr = info_heap_ptr.cast::<u8>().cast_mut();
 
-                Mode {
-                    index,
-                    info_sz,
-                    info: ModeInfo(info),
-                }
-            })
+        // User has no benefit from propagating this error. If this
+        // fails, it is an error of the UEFI implementation.
+        // SAFETY: This pointer was allocated by the matching UEFI allocator.
+        unsafe { boot::free_pool(NonNull::new(info_heap_ptr).unwrap()) }
+            .expect("buffer should be deallocatable");
+
+        let info = info.ok_or(Error::from(Status::BAD_BUFFER_SIZE))?;
+
+        Ok(Mode {
+            index,
+            info_sz,
+            info: ModeInfo(info),
+        })
     }
 
     /// Returns a [`ModeIter`].
@@ -631,12 +639,19 @@ impl FrameBuffer<'_> {
     /// This operation is unsafe because...
     /// - It is your responsibility to make sure that the value type makes sense
     /// - You must honor the pixel format and stride specified by the mode info
-    /// - There is no bound checking on memory accesses in release mode
+    /// - The frame buffer address plus `index` must be aligned to
+    ///   `align_of::<T>()`, as the value is accessed as a `T`
+    /// - There is no bound or alignment checking on memory accesses in
+    ///   release mode
     #[inline]
     pub unsafe fn write_value<T>(&mut self, index: usize, value: T) {
         debug_assert!(
             index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
+        );
+        debug_assert!(
+            self.base.wrapping_add(index).cast::<T>().is_aligned(),
+            "Frame buffer accessed at unaligned index"
         );
         // SAFETY: The memory is valid.
         unsafe {
@@ -656,13 +671,20 @@ impl FrameBuffer<'_> {
     /// This operation is unsafe because...
     /// - It is your responsibility to make sure that the value type makes sense
     /// - You must honor the pixel format and stride specified by the mode info
-    /// - There is no bound checking on memory accesses in release mode
+    /// - The frame buffer address plus `index` must be aligned to
+    ///   `align_of::<T>()`, as the value is accessed as a `T`
+    /// - There is no bound or alignment checking on memory accesses in
+    ///   release mode
     #[inline]
     #[must_use]
     pub unsafe fn read_value<T>(&self, index: usize) -> T {
         debug_assert!(
             index.saturating_add(size_of::<T>()) <= self.size,
             "Frame buffer accessed out of bounds"
+        );
+        debug_assert!(
+            self.base.wrapping_add(index).cast::<T>().is_aligned(),
+            "Frame buffer accessed at unaligned index"
         );
         // SAFETY: The source layout matches the target view.
         unsafe { (self.base.add(index) as *const T).read_volatile() }

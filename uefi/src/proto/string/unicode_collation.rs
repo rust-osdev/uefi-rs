@@ -65,18 +65,13 @@ impl UnicodeCollation {
         s: &CStr16,
         buf: &'a mut [u16],
     ) -> Result<&'a CStr16, StrConversionError> {
-        let mut last_index = 0;
-        for (i, c) in s.iter().enumerate() {
-            *buf.get_mut(i).ok_or(StrConversionError::BufferTooSmall)? = (*c).into();
-            last_index = i;
-        }
-        *buf.get_mut(last_index + 1)
-            .ok_or(StrConversionError::BufferTooSmall)? = 0;
+        let buf = copy_with_nul(s, buf)?;
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.str_lwr)(&self.0, buf.as_mut_ptr()) };
 
-        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
+        // SAFETY: `buf` holds exactly the NUL-terminated copy of `s`, which
+        // the case conversion changes in place.
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
 
@@ -86,18 +81,13 @@ impl UnicodeCollation {
         s: &CStr16,
         buf: &'a mut [u16],
     ) -> Result<&'a CStr16, StrConversionError> {
-        let mut last_index = 0;
-        for (i, c) in s.iter().enumerate() {
-            *buf.get_mut(i).ok_or(StrConversionError::BufferTooSmall)? = (*c).into();
-            last_index = i;
-        }
-        *buf.get_mut(last_index + 1)
-            .ok_or(StrConversionError::BufferTooSmall)? = 0;
+        let buf = copy_with_nul(s, buf)?;
 
         // SAFETY: The memory is valid.
         unsafe { (self.0.str_upr)(&self.0, buf.as_mut_ptr()) };
 
-        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
+        // SAFETY: `buf` holds exactly the NUL-terminated copy of `s`, which
+        // the case conversion changes in place.
         Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
     }
 
@@ -107,20 +97,18 @@ impl UnicodeCollation {
         fat: &CStr8,
         buf: &'a mut [u16],
     ) -> Result<&'a CStr16, StrConversionError> {
-        if buf.len() < fat.as_bytes().len() {
-            return Err(StrConversionError::BufferTooSmall);
-        }
+        // The conversion writes one character per FAT character plus the
+        // NUL terminator, so the output is at most as long as `fat` with
+        // its NUL.
+        let fat_len = fat.as_bytes().len();
+        let buf = buf
+            .get_mut(..fat_len)
+            .ok_or(StrConversionError::BufferTooSmall)?;
         // SAFETY: The memory is valid.
-        unsafe {
-            (self.0.fat_to_str)(
-                &self.0,
-                fat.as_bytes().len(),
-                fat.as_ptr().cast(),
-                buf.as_mut_ptr(),
-            )
-        };
-        // SAFETY: The input was validated to be NUL-terminated with no interior NULs.
-        Ok(unsafe { CStr16::from_u16_with_nul_unchecked(buf) })
+        unsafe { (self.0.fat_to_str)(&self.0, fat_len, fat.as_ptr().cast(), buf.as_mut_ptr()) };
+        // The firmware wrote the output, so validate it instead of trusting
+        // it blindly.
+        CStr16::from_u16_until_nul(buf).map_err(|_| StrConversionError::ConversionFailed)
     }
 
     /// Converts the null terminated string `s` to legal characters in a FAT file name.
@@ -162,6 +150,17 @@ impl UnicodeCollation {
     }
 }
 
+/// Copies `s` including its NUL terminator to the start of `buf` and returns
+/// the written part.
+fn copy_with_nul<'a>(s: &CStr16, buf: &'a mut [u16]) -> Result<&'a mut [u16], StrConversionError> {
+    let src = s.to_u16_slice_with_nul();
+    let dst = buf
+        .get_mut(..src.len())
+        .ok_or(StrConversionError::BufferTooSmall)?;
+    dst.copy_from_slice(src);
+    Ok(dst)
+}
+
 /// Errors returned by [`UnicodeCollation::str_lwr`] and [`UnicodeCollation::str_upr`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StrConversionError {
@@ -185,3 +184,127 @@ impl Display for StrConversionError {
 }
 
 impl core::error::Error for StrConversionError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{cstr8, cstr16};
+    use core::ptr;
+    use uefi_raw::{Boolean, Char8, Char16};
+
+    /// Mock of `UnicodeCollationProtocol::str_lwr` for ASCII strings.
+    ///
+    /// # Safety
+    /// `s` must point to a NUL-terminated string.
+    unsafe extern "efiapi" fn mock_str_lwr(_: *const UnicodeCollationProtocol, s: *mut Char16) {
+        let mut p = s.cast::<u16>();
+        // SAFETY: Guaranteed by the caller.
+        unsafe {
+            while *p != 0 {
+                *p = u16::from((*p as u8).to_ascii_lowercase());
+                p = p.add(1);
+            }
+        }
+    }
+
+    /// Mock of `UnicodeCollationProtocol::fat_to_str` with EDK2 semantics:
+    /// copy until NUL or `fat_size` is exhausted, then write a NUL.
+    ///
+    /// # Safety
+    /// `fat` must be valid for reading and `s` for writing `fat_size` items
+    /// plus one.
+    unsafe extern "efiapi" fn mock_fat_to_str(
+        _: *const UnicodeCollationProtocol,
+        fat_size: usize,
+        fat: *const Char8,
+        s: *mut Char16,
+    ) {
+        // SAFETY: Guaranteed by the caller.
+        let fat = unsafe { core::slice::from_raw_parts(fat.cast::<u8>(), fat_size) };
+        let len = fat.iter().position(|&b| b == 0).unwrap_or(fat_size);
+        for (i, &b) in fat[..len].iter().enumerate() {
+            // SAFETY: Guaranteed by the caller.
+            unsafe { s.cast::<u16>().add(i).write(u16::from(b)) };
+        }
+        // SAFETY: Guaranteed by the caller.
+        unsafe { s.cast::<u16>().add(len).write(0) };
+    }
+
+    // Stubs for the operations the tests do not exercise.
+
+    extern "efiapi" fn stub_stri_coll(
+        _: *const UnicodeCollationProtocol,
+        _: *const Char16,
+        _: *const Char16,
+    ) -> isize {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_metai_match(
+        _: *const UnicodeCollationProtocol,
+        _: *const Char16,
+        _: *const Char16,
+    ) -> Boolean {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_str_upr(_: *const UnicodeCollationProtocol, _: *mut Char16) {
+        unimplemented!()
+    }
+
+    extern "efiapi" fn stub_str_to_fat(
+        _: *const UnicodeCollationProtocol,
+        _: *const Char16,
+        _: usize,
+        _: *mut Char8,
+    ) -> Boolean {
+        unimplemented!()
+    }
+
+    const MOCK: UnicodeCollationProtocol = UnicodeCollationProtocol {
+        stri_coll: stub_stri_coll,
+        metai_match: stub_metai_match,
+        str_lwr: mock_str_lwr,
+        str_upr: stub_str_upr,
+        fat_to_str: mock_fat_to_str,
+        str_to_fat: stub_str_to_fat,
+        supported_languages: ptr::null(),
+    };
+
+    fn mock() -> &'static UnicodeCollation {
+        // SAFETY: `UnicodeCollation` is a transparent wrapper.
+        unsafe { &*ptr::from_ref(&MOCK).cast::<UnicodeCollation>() }
+    }
+
+    #[test]
+    fn test_str_lwr_oversized_buffer() {
+        let mut buf = [0x41; 8];
+        let s = mock().str_lwr(cstr16!("AbC"), &mut buf).unwrap();
+        assert_eq!(s.num_chars(), 3);
+        assert_eq!(s, cstr16!("abc"));
+
+        let mut buf = [0x41; 2];
+        let s = mock().str_lwr(cstr16!(""), &mut buf).unwrap();
+        assert_eq!(s.num_chars(), 0);
+
+        let mut buf = [0x41; 3];
+        assert_eq!(
+            mock().str_lwr(cstr16!("AbC"), &mut buf).unwrap_err(),
+            StrConversionError::BufferTooSmall
+        );
+    }
+
+    #[test]
+    fn test_fat_to_str_oversized_buffer() {
+        let mut buf = [0x41; 16];
+        let s = mock().fat_to_str(cstr8!("AB"), &mut buf).unwrap();
+        assert_eq!(s.num_chars(), 2);
+        assert_eq!(s, cstr16!("AB"));
+
+        let mut buf = [0x41; 2];
+        assert_eq!(
+            mock().fat_to_str(cstr8!("AB"), &mut buf).unwrap_err(),
+            StrConversionError::BufferTooSmall
+        );
+    }
+}

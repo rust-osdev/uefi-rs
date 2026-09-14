@@ -7,7 +7,7 @@ use crate::mem::memory_map::MemoryType;
 use crate::proto::unsafe_protocol;
 use crate::{Handle, Result, Status, StatusExt};
 use core::ffi::c_void;
-use uefi_raw::table::boot::AllocateType;
+use uefi_raw::table::boot::{AllocateType, PAGE_SIZE};
 
 pub use crate::proto::dma::{DmaBuffer, Mapping};
 pub use uefi_raw::protocol::iommu::{
@@ -145,11 +145,16 @@ impl Iommu {
             )
         };
 
-        status.to_result_with_val(|| {
-            // SAFETY: On success, firmware initialized `host_address` with a
-            // buffer allocated by this IOMMU protocol for `pages` pages.
-            unsafe { DmaBuffer::from_raw(host_address, pages, self) }
-        })
+        status.to_result()?;
+
+        // The firmware does not guarantee zeroed memory, but `DmaBuffer`
+        // derefs to `[u8]`, so every byte must be initialized.
+        //
+        // SAFETY: The memory range is valid.
+        unsafe { host_address.cast::<u8>().write_bytes(0, pages * PAGE_SIZE) };
+
+        // SAFETY: The memory range is valid.
+        Ok(unsafe { DmaBuffer::from_raw(host_address, pages, self) })
     }
 
     /// Free a buffer allocated with allocate_buffer

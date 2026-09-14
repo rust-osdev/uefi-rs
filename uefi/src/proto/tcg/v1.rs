@@ -290,6 +290,11 @@ impl EventLog<'_> {
     }
 
     /// Iterator of events in the log.
+    ///
+    /// The firmware reports where the last event starts, but not where the
+    /// log ends. Every event before the last one must end at or before the
+    /// last one, and the iterator stops at the first event that does not.
+    /// The size of the last event is taken from the log without a check.
     #[must_use]
     pub const fn iter(&self) -> EventLogIter<'_> {
         EventLogIter {

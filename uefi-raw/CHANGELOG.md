@@ -85,6 +85,11 @@ from `*mut Self` to `*const Self`.
   `DevicePathUtilitiesProtocol`, `DevicePathToTextProtocol` and
   `DevicePathFromTextProtocol` from `*const` to `*mut`. The caller owns and
   must free the result.
+- **Breaking**: Changed the `device_path` output of
+  `ExtScsiPassThruProtocol::build_device_path`,
+  `AtaPassThruProtocol::build_device_path` and
+  `NvmExpressPassThruProtocol::build_device_path` from `*mut *const` to `*mut
+  *mut DevicePathProtocol`. The caller owns and must free the result.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

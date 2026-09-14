@@ -145,7 +145,7 @@ pub struct AtaPassThruProtocol {
         this: *const Self,
         port: u16,
         port_multiplier_port: u16,
-        device_path: *mut *const DevicePathProtocol,
+        device_path: *mut *mut DevicePathProtocol,
     ) -> Status,
     pub get_device: unsafe extern "efiapi" fn(
         this: *const Self,

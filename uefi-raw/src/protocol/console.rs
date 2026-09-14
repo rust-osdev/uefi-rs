@@ -48,7 +48,7 @@ pub struct AbsolutePointerProtocol {
     pub get_state:
         unsafe extern "efiapi" fn(this: *const Self, state: *mut AbsolutePointerState) -> Status,
     pub wait_for_input: Event,
-    pub mode: *mut AbsolutePointerMode,
+    pub mode: *const AbsolutePointerMode,
 }
 
 impl AbsolutePointerProtocol {
@@ -173,7 +173,7 @@ pub struct SimpleTextOutputProtocol {
     pub set_cursor_position:
         unsafe extern "efiapi" fn(this: *mut Self, column: usize, row: usize) -> Status,
     pub enable_cursor: unsafe extern "efiapi" fn(this: *mut Self, visible: Boolean) -> Status,
-    pub mode: *mut SimpleTextOutputMode,
+    pub mode: *const SimpleTextOutputMode,
 }
 
 impl SimpleTextOutputProtocol {
@@ -238,7 +238,7 @@ pub struct GraphicsOutputProtocol {
         height: usize,
         delta: usize,
     ) -> Status,
-    pub mode: *mut GraphicsOutputProtocolMode,
+    pub mode: *const GraphicsOutputProtocolMode,
 }
 
 impl GraphicsOutputProtocol {
@@ -250,7 +250,7 @@ impl GraphicsOutputProtocol {
 pub struct GraphicsOutputProtocolMode {
     pub max_mode: u32,
     pub mode: u32,
-    pub info: *mut GraphicsOutputModeInformation,
+    pub info: *const GraphicsOutputModeInformation,
     pub size_of_info: usize,
     pub frame_buffer_base: PhysicalAddress,
     pub frame_buffer_size: usize,

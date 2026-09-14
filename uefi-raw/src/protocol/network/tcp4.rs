@@ -125,9 +125,11 @@ pub struct Tcp4Protocol {
     /// instance is in the [`Tcp4ConnectionState::ESTABLISHED`]
     /// state.
     ///
-    /// The [`new_child_handle`][Tcp4ListenToken::new_child_handle]
-    /// will be signaled when a new connection is accepted, the user
-    /// aborts the listen, or the connection is reset.
+    /// The event of the [`completion_token`][Tcp4ListenToken::completion_token]
+    /// is signaled when a new connection is accepted, the user aborts
+    /// the listen, or the connection is reset. On success,
+    /// [`new_child_handle`][Tcp4ListenToken::new_child_handle] holds
+    /// the instance of the accepted connection.
     ///
     /// This function can only be called when the current TCP instance
     /// is in [`Tcp4ConnectionState::LISTEN`] state.

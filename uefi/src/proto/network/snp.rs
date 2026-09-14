@@ -302,7 +302,7 @@ impl SimpleNetwork {
     /// The firmware updates the mode from the methods that take `&mut self`,
     /// so the returned reference cannot be held across those calls.
     #[must_use]
-    pub fn mode(&self) -> &NetworkMode {
+    pub const fn mode(&self) -> &NetworkMode {
         // SAFETY: The memory is valid.
         unsafe { &*self.0.mode }
     }

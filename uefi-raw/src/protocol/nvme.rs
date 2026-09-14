@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use super::device_path::DevicePathProtocol;
-use crate::{Status, newtype_enum};
+use crate::{Event, Status, newtype_enum};
 use core::ffi::c_void;
 use uguid::{Guid, guid};
 
@@ -120,7 +120,7 @@ pub struct NvmExpressPassThruProtocol {
         this: *mut Self,
         namespace_id: u32,
         packet: *mut NvmExpressPassThruCommandPacket,
-        event: *mut c_void,
+        event: Event,
     ) -> Status,
     pub get_next_namespace:
         unsafe extern "efiapi" fn(this: *const Self, namespace_id: *mut u32) -> Status,

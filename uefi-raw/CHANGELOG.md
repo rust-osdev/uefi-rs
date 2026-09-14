@@ -71,6 +71,12 @@ from `*mut Self` to `*const Self`.
   `*const c_void` in `EventNotifyFn` and in the `notify_ctx` parameter of
   `BootServices::{create_event, create_event_ex}`. The firmware passes the
   pointer through unchanged.
+- **Breaking**: Changed the firmware-owned, read-only mode and info pointers
+  `SimpleNetworkProtocol::mode`, `AbsolutePointerProtocol::mode`,
+  `SimpleTextOutputProtocol::mode`, `GraphicsOutputProtocol::mode`,
+  `GraphicsOutputProtocolMode::info` and
+  `Ip4Config2InterfaceInfo::route_table` from `*mut` to `*const`, matching the
+  other mode pointers in the crate.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

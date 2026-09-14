@@ -183,6 +183,8 @@ pub struct HiiFontExProtocol {
         row_info_array_size: *mut usize,
         column_info_array: *mut usize,
     ) -> Status,
+    // NOTE: UEFI 2.11 declares `Baseline` by value in this prototype but
+    // refers to `GetGlyph()` for its meaning, where it is `OUT UINTN *`.
     pub get_glyph_ex: unsafe extern "efiapi" fn(
         this: *const Self,
         char: Char16,

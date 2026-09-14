@@ -228,7 +228,9 @@ impl SimpleNetwork {
     ///   the corresponding [`NetworkMode`] and the `dst_addr` and `protocol`
     ///   parameters must not be `None`.
     /// - `buffer`: The buffer containing the whole network packet with all
-    ///   its payload including the header for the medium.
+    ///   its payload including the header for the medium. If `header_size`
+    ///   is nonzero, the function writes the media header into the start of
+    ///   the buffer.
     /// - `src_addr`: The optional source address.
     /// - `dst_addr`: The optional destination address.
     /// - `protocol`: Ether Type as of RFC 3232. See
@@ -239,7 +241,7 @@ impl SimpleNetwork {
     pub fn transmit(
         &self,
         header_size: usize,
-        buffer: &[u8],
+        buffer: &mut [u8],
         src_addr: Option<EfiMacAddr>,
         dst_addr: Option<EfiMacAddr>,
         protocol: Option<u16>,
@@ -250,7 +252,7 @@ impl SimpleNetwork {
                 &self.0,
                 header_size,
                 buffer.len(),
-                buffer.as_ptr().cast(),
+                buffer.as_mut_ptr().cast(),
                 src_addr.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),
                 dst_addr.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),
                 protocol.as_ref().map(ptr::from_ref).unwrap_or(ptr::null()),

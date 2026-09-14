@@ -59,6 +59,11 @@ from `*mut Self` to `*const Self`.
   `free_buffer`, and the `mapping` parameter of `set_attribute` and `unmap`.
 - **Breaking**: Changed the `buffer` parameter of
   `FirmwareVolumeBlock2Protocol::write` from `*mut u8` to `*const u8`.
+- **Breaking**: Fixed the pointer mutability of `Dhcp4Protocol`: the
+  `seed_packet` and `delete_list` parameters of `build` and the `packet`
+  parameter of `parse` are `*const`, and the `new_packet` output of the DHCP4
+  callback is `*mut *mut Dhcp4Packet` because the driver takes ownership of
+  the returned packet.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

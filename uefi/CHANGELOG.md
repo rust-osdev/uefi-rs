@@ -81,6 +81,9 @@
   returned a `CStr16` covering the whole output buffer and thus violated
   the invariants of that type when the buffer was larger than the
   string.
+- Fixed undefined behavior in the ATA, NVMe and SCSI pass-thru response
+  accessors, which trusted the transfer length reported by the firmware
+  and could return a slice pointing past the buffer.
 
 # uefi - v0.40.0 (2026-08-25)
 

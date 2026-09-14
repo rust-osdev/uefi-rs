@@ -38,6 +38,11 @@ pub struct NvmeRequest<'buffers> {
     io_align: u32,
     cmd: NvmExpressCommand,
     packet: NvmExpressPassThruCommandPacket,
+    /// Capacity of the buffer the firmware was given. The firmware reports
+    /// how much it transferred in the packet, but a bogus value must not
+    /// produce an out-of-bounds slice.
+    transfer_capacity: usize,
+    meta_data_capacity: usize,
     transfer_buffer: Option<AlignedBuffer>,
     meta_data_buffer: Option<AlignedBuffer>,
     _phantom: PhantomData<&'buffers u8>,
@@ -113,6 +118,8 @@ impl<'buffers> NvmeRequestBuilder<'buffers> {
                     nvme_cmd: ptr::null(),            // filled during execution
                     nvme_completion: ptr::null_mut(), // filled during execution
                 },
+                transfer_capacity: 0,
+                meta_data_capacity: 0,
                 transfer_buffer: None,
                 meta_data_buffer: None,
                 _phantom: PhantomData,
@@ -158,6 +165,7 @@ impl<'buffers> NvmeRequestBuilder<'buffers> {
         // check alignment of externally supplied buffer
         bfr.check_alignment(self.req.io_align as usize)?;
         self.req.transfer_buffer = None;
+        self.req.transfer_capacity = bfr.size();
         self.req.packet.transfer_buffer = bfr.ptr_mut().cast();
         self.req.packet.transfer_length = bfr.size() as u32;
         Ok(self)
@@ -172,6 +180,7 @@ impl<'buffers> NvmeRequestBuilder<'buffers> {
     /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
     pub fn with_transfer_buffer(mut self, len: usize) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(len, self.req.io_align as usize)?;
+        self.req.transfer_capacity = bfr.size();
         self.req.packet.transfer_buffer = bfr.ptr_mut().cast();
         self.req.packet.transfer_length = bfr.size() as u32;
         self.req.transfer_buffer = Some(bfr);
@@ -199,6 +208,7 @@ impl<'buffers> NvmeRequestBuilder<'buffers> {
         // check alignment of externally supplied buffer
         bfr.check_alignment(self.req.io_align as usize)?;
         self.req.meta_data_buffer = None;
+        self.req.meta_data_capacity = bfr.size();
         self.req.packet.meta_data_buffer = bfr.ptr_mut().cast();
         self.req.packet.meta_data_length = bfr.size() as u32;
         Ok(self)
@@ -213,6 +223,7 @@ impl<'buffers> NvmeRequestBuilder<'buffers> {
     /// `Result<Self, LayoutError>` indicating success or a memory allocation error.
     pub fn with_metadata_buffer(mut self, len: usize) -> Result<Self, LayoutError> {
         let mut bfr = AlignedBuffer::from_size_align(len, self.req.io_align as usize)?;
+        self.req.meta_data_capacity = bfr.size();
         self.req.packet.meta_data_buffer = bfr.ptr_mut().cast();
         self.req.packet.meta_data_length = bfr.size() as u32;
         self.req.meta_data_buffer = Some(bfr);
@@ -251,11 +262,16 @@ impl NvmeResponse<'_> {
         if self.req.packet.transfer_buffer.is_null() {
             return None;
         }
-        // SAFETY: The memory is valid.
+        // The firmware reports the transferred length; clamp it so that a
+        // bogus value cannot produce an out-of-bounds slice.
+        let reported = self.req.packet.transfer_length as usize;
+        let cap = self.req.transfer_capacity;
+        let len = if reported < cap { reported } else { cap };
+        // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.req.packet.transfer_buffer.cast(),
-                self.req.packet.transfer_length as usize,
+                len,
             ))
         }
     }
@@ -269,11 +285,16 @@ impl NvmeResponse<'_> {
         if self.req.packet.meta_data_buffer.is_null() {
             return None;
         }
-        // SAFETY: The memory is valid.
+        // The firmware reports the transferred length; clamp it so that a
+        // bogus value cannot produce an out-of-bounds slice.
+        let reported = self.req.packet.meta_data_length as usize;
+        let cap = self.req.meta_data_capacity;
+        let len = if reported < cap { reported } else { cap };
+        // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(core::slice::from_raw_parts(
                 self.req.packet.meta_data_buffer.cast(),
-                self.req.packet.meta_data_length as usize,
+                len,
             ))
         }
     }

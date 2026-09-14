@@ -114,6 +114,8 @@
   services. Debug builds still assert that boot services are active.
 - `boot::start_image` now frees the exit data buffer that the started
   image may hand back. It was leaked before.
+- `FileHandle` no longer panics in `drop` when the firmware fails to
+  close the file. The error is logged instead.
 
 # uefi - v0.40.0 (2026-08-25)
 

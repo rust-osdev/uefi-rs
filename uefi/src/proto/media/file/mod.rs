@@ -317,8 +317,11 @@ impl Drop for FileHandle {
     fn drop(&mut self) {
         // SAFETY: The memory is valid.
         let result: Result = unsafe { (self.imp().close)(self.imp()) }.to_result();
-        // The spec says this always succeeds.
-        result.expect("Failed to close file");
+        // The spec says this always succeeds. Let's not panic in a drop for
+        // higher reliability.
+        if let Err(err) = result {
+            log::error!("Failed to close file: {err:?}");
+        }
     }
 }
 

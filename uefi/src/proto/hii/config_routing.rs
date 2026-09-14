@@ -34,7 +34,7 @@ impl HiiConfigRouting {
     /// * [`Status::NOT_FOUND`] - The firmware reported success but did not
     ///   provide a result string.
     pub fn export(&self) -> uefi::Result<String> {
-        let mut results: *const Char16 = ptr::null();
+        let mut results: *mut Char16 = ptr::null_mut();
         // SAFETY: The memory is valid.
         unsafe { (self.0.export_config)(&self.0, &mut results) }.to_result()?;
         if results.is_null() {

@@ -93,6 +93,12 @@ from `*mut Self` to `*const Self`.
 - **Breaking**: Changed the `info` output of
   `GraphicsOutputProtocol::query_mode` from `*mut *const` to `*mut *mut
   GraphicsOutputModeInformation`. The caller owns and must free the buffer.
+- **Breaking**: Changed the callee-allocated result strings of the HII
+  configuration protocols (`ConfigKeywordHandlerProtocol::get_data`,
+  `HiiConfigAccessProtocol::extract_config`,
+  `HiiConfigRoutingProtocol::{extract_config, export_config, block_to_config,
+  get_alt_cfg}`) from `*mut *const` to `*mut *mut Char16`. The caller owns and
+  must free them.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

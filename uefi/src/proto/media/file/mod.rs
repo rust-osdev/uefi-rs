@@ -109,6 +109,8 @@ pub trait File: Sized {
     ///
     /// The information will be written into a user-provided buffer.
     /// If the buffer is too small, the required buffer size will be returned as part of the error.
+    /// That size includes the trailing padding of `Info`, so it may be larger than what the
+    /// firmware reports.
     ///
     /// The buffer must be aligned on an `<Info as Align>::alignment()` boundary.
     ///
@@ -124,6 +126,8 @@ pub trait File: Sized {
     /// * [`Status::DEVICE_ERROR`]
     /// * [`Status::VOLUME_CORRUPTED`]
     /// * [`Status::BUFFER_TOO_SMALL`]
+    /// * [`Status::BAD_BUFFER_SIZE`] if the firmware returned an incomplete structure. See
+    ///   [`FromUefi::from_uefi`].
     fn get_info<'buf, Info: FileProtocolInfo + ?Sized>(
         &mut self,
         buffer: &'buf mut [u8],
@@ -139,17 +143,16 @@ pub trait File: Sized {
                 buffer.as_mut_ptr().cast(),
             )
         }
-        .to_result_with(
-            // SAFETY: The memory is valid.
-            || unsafe { Info::from_uefi(buffer.as_mut_ptr().cast::<c_void>()) },
-            |s| {
-                if s == Status::BUFFER_TOO_SMALL {
-                    Some(buffer_size)
-                } else {
-                    None
-                }
-            },
-        )
+        .to_result_with_err(|s| {
+            if s == Status::BUFFER_TOO_SMALL {
+                // Account for the trailing padding of the Rust type, so that
+                // a buffer of the reported size is accepted by `from_uefi`.
+                Some(Info::round_up_to_alignment(buffer_size))
+            } else {
+                None
+            }
+        })?;
+        Info::from_uefi(buffer, buffer_size)
     }
 
     /// Sets some information about a file

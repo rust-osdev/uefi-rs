@@ -19,6 +19,11 @@ from `*mut Self` to `*const Self`.
   `From` impl, which left 12 of the 16 union bytes uninitialized.
 - **Breaking**: Changed `this` parameter of `SimpleTextOutputProtocol::query_mode`
 from `*mut Self` to `*const Self`.
+- **Breaking**: Changed the `data` parameter of
+  `Usb2HostControllerProtocol::{bulk_transfer, isochronous_transfer,
+  async_isochronous_transfer}` from `*const *const c_void` to `*const *mut
+  c_void`. The buffers are `IN OUT`; the controller writes received data into
+  them.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

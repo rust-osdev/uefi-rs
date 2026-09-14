@@ -150,16 +150,14 @@ impl IpAddress {
 
     /// Construct a new IPv4 address.
     ///
-    /// The type won't know that it is an IPv6 address and additional context
-    /// is needed.
-    ///
-    /// # Safety
-    /// The constructor only initializes the bytes needed for IPv4 addresses.
+    /// The type won't know that it is an IPv4 address and additional context
+    /// is needed. The bytes not covered by the IPv4 address are zero.
     #[must_use]
     pub const fn new_v4(octets: [u8; 4]) -> Self {
-        Self {
-            v4: Ipv4Address(octets),
-        }
+        // Fully initialize all bytes first.
+        let mut addr = Self::ZERO;
+        addr.v4 = Ipv4Address(octets);
+        addr
     }
 
     /// Construct a new IPv6 address.
@@ -480,5 +478,16 @@ mod tests {
         };
         let expected = [42, 42, 42, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 42];
         assert_eq!(ipv6_addr.octets(), expected);
+    }
+
+    /// `new_v4` must initialize all 16 bytes so that the value can be
+    /// byte-copied as a whole, e.g. into a device path node.
+    #[test]
+    fn test_new_v4_initializes_all_bytes() {
+        let uefi_addr = IpAddress::new_v4(TEST_IPV4);
+        // SAFETY: `new_v4` initializes the whole union.
+        let words = unsafe { uefi_addr.addr };
+        assert_eq!(words[0], u32::from_ne_bytes(TEST_IPV4));
+        assert_eq!(words[1..], [0; 3]);
     }
 }

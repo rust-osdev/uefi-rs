@@ -27,6 +27,7 @@ use uefi_raw::protocol::network::http::{
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[unsafe_protocol(HttpProtocol::GUID)]
+#[repr(transparent)]
 pub struct Http(HttpProtocol);
 
 impl Http {
@@ -110,6 +111,7 @@ impl Http {
 /// HTTP Service Binding Protocol.
 #[derive(Debug)]
 #[unsafe_protocol(HttpProtocol::SERVICE_BINDING_GUID)]
+#[repr(transparent)]
 pub struct HttpBinding(ServiceBindingProtocol);
 
 impl HttpBinding {

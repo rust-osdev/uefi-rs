@@ -398,6 +398,12 @@ impl MemoryMapOwned {
     /// (stored inside the provided buffer) and the corresponding
     /// [`MemoryMapMeta`].
     pub(crate) fn from_initialized_mem(buf: MemoryMapBackingMemory, meta: MemoryMapMeta) -> Self {
+        // `sort` trusts `map_size` when it accesses descriptors through the
+        // backing memory, so the map must fit into it.
+        assert!(
+            meta.map_size <= buf.as_slice().len(),
+            "The memory map size should not exceed the backing memory"
+        );
         // Validate `desc_size` fully: besides being large enough, it must be a
         // multiple of the descriptor alignment. Otherwise descriptors past the
         // first would be accessed through misaligned references.
@@ -654,5 +660,18 @@ mod tests {
         assert_eq!(mmap.buffer().len(), map_size);
         // SAFETY: The memory is valid.
         assert_eq!(unsafe { mmap.buffer_mut() }.len(), map_size);
+    }
+
+    /// The map must fit into the backing memory, as `sort` accesses the
+    /// descriptors without bounds checks against the buffer.
+    #[test]
+    #[should_panic(expected = "should not exceed the backing memory")]
+    fn memory_map_owned_map_size_exceeds_buffer() {
+        let mut memory = new_mmap_memory();
+        let (mmap, mut meta) = mmap_raw(&mut memory);
+        meta.map_size += meta.desc_size;
+        let mmap = MemoryMapBackingMemory::from_slice(mmap);
+        let mut mmap = MemoryMapOwned::from_initialized_mem(mmap, meta);
+        mmap.sort();
     }
 }

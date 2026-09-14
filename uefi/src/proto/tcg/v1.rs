@@ -305,19 +305,21 @@ impl<'a> Iterator for EventLogIter<'a> {
             return None;
         }
 
+        // `last_entry` points to the start of the last event, so the log
+        // ends once the location moves past it. Comparing with `>` rather
+        // than for equality also ends the iteration if `last_entry` is not
+        // on an event boundary, instead of walking past the end of the log.
+        if self.location > self.log.last_entry {
+            return None;
+        }
+
         // Safety: we trust that the protocol has given us a valid range
         // of memory to read from.
         // SAFETY: The memory is valid.
         let event = unsafe { PcrEvent::from_ptr(self.location) };
 
-        // If this is the last entry, set the location to null so that
-        // future calls to `next()` return `None`.
-        if self.location == self.log.last_entry {
-            self.location = ptr::null();
-        } else {
-            // SAFETY: The memory is valid.
-            self.location = unsafe { self.location.add(size_of_val(event)) };
-        }
+        // SAFETY: The memory is valid.
+        self.location = unsafe { self.location.add(size_of_val(event)) };
 
         Some(event)
     }
@@ -537,6 +539,50 @@ mod tests {
             event,
             &*PcrEvent::new_in_box(PcrIndex(4), EventType::IPL, digest, &data).unwrap()
         );
+    }
+
+    /// A `last_entry` that is not on an event boundary must not make the
+    /// iterator walk past the end of the log.
+    #[test]
+    fn test_event_log_v1_last_entry_not_on_boundary() {
+        #[rustfmt::skip]
+        let bytes = [
+            // Event 1
+            // PCR index
+            0x00, 0x00, 0x00, 0x00,
+            // Event type
+            0x08, 0x00, 0x00, 0x00,
+            // SHA1 digest
+            0x14, 0x89, 0xf9, 0x23, 0xc4, 0xdc, 0xa7, 0x29, 0x17, 0x8b,
+            0x3e, 0x32, 0x33, 0x45, 0x85, 0x50, 0xd8, 0xdd, 0xdf, 0x29,
+            // Event data size
+            0x02, 0x00, 0x00, 0x00,
+            // Event data
+            0x00, 0x00,
+
+            // Event 2
+            // PCR index
+            0x00, 0x00, 0x00, 0x00,
+            // Event type
+            0x08, 0x00, 0x00, 0x80,
+            // SHA1 digest
+            0xc7, 0x06, 0xe7, 0xdd, 0x36, 0x39, 0x29, 0x84, 0xeb, 0x06,
+            0xaa, 0xa0, 0x8f, 0xf3, 0x36, 0x84, 0x40, 0x77, 0xb3, 0xed,
+            // Event data size
+            0x02, 0x00, 0x00, 0x00,
+            // Event data
+            0x00, 0x00,
+        ];
+
+        // `last_entry` points into the middle of event 1.
+        // SAFETY: The memory is valid.
+        let log = unsafe { EventLog::new(bytes.as_ptr(), bytes.as_ptr().add(1), false) };
+        let mut iter = log.iter();
+
+        let entry = iter.next().unwrap();
+        assert_eq!(entry.event_type(), EventType::CRTM_VERSION);
+        // Event 2 starts past `last_entry`, so it is not part of the log.
+        assert_eq!(iter.count(), 0);
     }
 
     #[test]

@@ -22,6 +22,7 @@ use uefi_raw::protocol::network::ip4_config2::{
 /// [`Protocol`]: uefi::proto::Protocol
 #[derive(Debug)]
 #[unsafe_protocol(Ip4Config2Protocol::GUID)]
+#[repr(transparent)]
 pub struct Ip4Config2(pub Ip4Config2Protocol);
 
 impl Ip4Config2 {

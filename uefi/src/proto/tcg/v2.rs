@@ -281,8 +281,11 @@ impl<'a> EventLogHeader<'a> {
         let version_errata = *event.get(22)?;
         let uintn_size = *event.get(23)?;
         let number_of_algorithms = usize_from_u32(u32_le_from_bytes_at_offset(event, 24)?);
-        let vendor_info_size_byte_offset =
-            28 + (number_of_algorithms * size_of::<AlgorithmDigestSize>());
+        // Checked arithmetic: on 32-bit targets a bogus count could wrap
+        // to a small offset that passes the bounds check below.
+        let vendor_info_size_byte_offset = number_of_algorithms
+            .checked_mul(size_of::<AlgorithmDigestSize>())?
+            .checked_add(28)?;
         let vendor_info_size = usize::from(*event.get(vendor_info_size_byte_offset)?);
 
         // Safety: we know the slice is big enough because we just
@@ -453,6 +456,12 @@ impl<'a> PcrEvent<'a> {
         let event_type = EventType(unsafe { ptr_u32.add(1).read_unaligned() });
         // SAFETY: The source memory may be unaligned, so this uses unaligned access.
         let digests_count = unsafe { ptr_u32.add(2).read_unaligned() };
+        // An event holds at most one digest per algorithm listed in the
+        // header. A larger count is malformed and would walk past the
+        // digest list below.
+        if usize_from_u32(digests_count) > header.algorithm_digest_sizes.0.len() {
+            return None;
+        }
         // SAFETY: The memory is valid.
         let digests_ptr: *const u8 = unsafe { ptr.add(12) };
 
@@ -547,18 +556,18 @@ impl<'a> Iterator for EventLogIter<'a> {
             return None;
         }
 
+        // `last_entry` points to the start of the last event, so the log
+        // ends once the location moves past it.
+        if self.location > self.log.last_entry {
+            return None;
+        }
+
         // Safety: we trust that the protocol has given us a valid range
         // of memory to read from.
         // SAFETY: The memory is valid.
         let event = unsafe { PcrEvent::from_ptr(self.location, self.header.clone()?)? };
 
-        // If this is the last entry, set the location to null so that
-        // future calls to `next()` return `None`.
-        if self.location == self.log.last_entry {
-            self.location = ptr::null();
-        } else {
-            self.location = event.next;
-        }
+        self.location = event.next;
 
         Some(event)
     }
@@ -810,6 +819,92 @@ mod tests {
             event,
             &*PcrEventInputs::new_in_box(PcrIndex(4), EventType::IPL, &event_data).unwrap()
         );
+    }
+
+    /// Spec ID header event listing SHA-1 as the only algorithm.
+    #[rustfmt::skip]
+    const HEADER_SHA1_ONLY: [u8; 65] = [
+        // PCR index
+        0x00, 0x00, 0x00, 0x00,
+        // Event type
+        0x03, 0x00, 0x00, 0x00,
+        // SHA1 digest
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        // Event data size
+        0x21, 0x00, 0x00, 0x00,
+        // Spec ID event data
+        // Signature
+        0x53, 0x70, 0x65, 0x63,
+        0x20, 0x49, 0x44, 0x20,
+        0x45, 0x76, 0x65, 0x6e,
+        0x74, 0x30, 0x33, 0x00,
+        // Platform class
+        0x00, 0x00, 0x00, 0x00,
+        // Spec version (minor, major, errata)
+        0x00, 0x02, 0x00,
+        // Uintn size
+        0x02,
+        // Number of algorithms
+        0x01, 0x00, 0x00, 0x00,
+        // Digest sizes
+        // SHA1, size
+        0x04, 0x00,
+        0x14, 0x00,
+        // Vendor info size
+        0x00,
+    ];
+
+    /// A log that holds only the header event: `last_entry` points to the
+    /// header, i.e. before the first location the iterator would read.
+    #[test]
+    fn test_event_log_v2_header_only() {
+        let bytes = HEADER_SHA1_ONLY;
+
+        let log = EventLog {
+            _lifetime: PhantomData,
+            location: bytes.as_ptr(),
+            last_entry: bytes.as_ptr(),
+            is_truncated: false,
+        };
+
+        assert!(log.header().is_some());
+        let mut iter = log.iter();
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_event_log_v2_digest_count_too_large() {
+        let mut bytes = HEADER_SHA1_ONLY.to_vec();
+        #[rustfmt::skip]
+        bytes.extend_from_slice(&[
+            // PCR index
+            0x00, 0x00, 0x00, 0x00,
+            // Event type
+            0x08, 0x00, 0x00, 0x00,
+            // Digest count: more than the one algorithm in the header
+            0x02, 0x00, 0x00, 0x00,
+            // Digests
+            // SHA1
+            0x04, 0x00,
+            0x14, 0x89, 0xf9, 0x23, 0xc4, 0xdc, 0xa7, 0x29, 0x17, 0x8b,
+            0x3e, 0x32, 0x33, 0x45, 0x85, 0x50, 0xd8, 0xdd, 0xdf, 0x29,
+            // The log ends here, so any further digest would be read
+            // out of bounds.
+        ]);
+
+        let log = EventLog {
+            _lifetime: PhantomData,
+            location: bytes.as_ptr(),
+            // SAFETY: The memory is valid.
+            last_entry: unsafe { bytes.as_ptr().add(HEADER_SHA1_ONLY.len()) },
+            is_truncated: false,
+        };
+
+        let mut iter = log.iter();
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
     }
 
     #[test]

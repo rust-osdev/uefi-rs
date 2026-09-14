@@ -16,6 +16,8 @@ use crate::{CStr16, Char16};
 use core::slice;
 
 /// Get the firmware vendor string.
+///
+/// Returns an empty string if the firmware does not provide a vendor string.
 #[must_use]
 pub fn firmware_vendor() -> &'static CStr16 {
     let st = table::system_table_raw_panicking();
@@ -23,8 +25,14 @@ pub fn firmware_vendor() -> &'static CStr16 {
     let st = unsafe { st.as_ref() };
 
     let vendor: *const Char16 = st.firmware_vendor.cast();
+    // The spec does not allow a null pointer here, but do not let a
+    // non-conforming firmware turn a safe call into a null dereference.
+    if vendor.is_null() {
+        return crate::cstr16!();
+    }
 
-    // SAFETY: this assumes that the firmware vendor string is never mutated or freed.
+    // SAFETY: The pointer is not null, and this assumes that the firmware
+    // vendor string is never mutated or freed.
     unsafe { CStr16::from_ptr(vendor) }
 }
 
@@ -68,6 +76,11 @@ pub fn uefi_revision() -> Revision {
 ///     }
 /// });
 /// ```
+///
+/// # Panics
+///
+/// This function will panic if the firmware provides a misaligned
+/// configuration table pointer.
 pub fn with_config_table<F, R>(mut f: F) -> R
 where
     F: FnMut(&[ConfigTableEntry]) -> R,
@@ -81,7 +94,11 @@ where
     let slice = if ptr.is_null() {
         &[]
     } else {
-        // SAFETY: The pointer is valid for the requested slice length.
+        // A slice reference must be aligned. Fail loudly on a firmware bug
+        // rather than silently hiding all entries.
+        assert!(ptr.is_aligned(), "configuration table is misaligned");
+        // SAFETY: The pointer is non-null, aligned, and valid for the
+        // requested slice length.
         unsafe { slice::from_raw_parts(ptr, len) }
     };
 

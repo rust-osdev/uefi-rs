@@ -15,6 +15,22 @@
 - Fixed undefined behavior in `PciRootBridgeIo::{pci, memory, io}`. The
   returned `PciIoAccess` held a mutable reference into the protocol instance
   while passing a pointer to the whole instance to the firmware.
+- Fixed undefined behavior in `boot::memory_map`, which trusted the map
+  size reported by the firmware. Sorting a map larger than its buffer
+  read out of bounds.
+- Fixed undefined behavior in `system::firmware_vendor` and
+  `system::with_config_table`, which dereferenced a null vendor pointer
+  and built a slice from a misaligned configuration table.
+- Added the missing `repr(transparent)` to the `Http`, `HttpBinding` and
+  `Ip4Config2` protocol wrappers, which are created by casting a raw
+  pointer provided by the firmware.
+- Fixed undefined behavior when parsing TCG event logs. Iteration now
+  stops at the last entry instead of walking past the log, an event
+  digest count larger than the log header allows is rejected, and the
+  header offset arithmetic no longer overflows on 32-bit targets.
+- Fixed undefined behavior in `DevicePathNode::from_ffi_ptr` and the
+  functions built on it, which underflowed the node length for nodes
+  shorter than the node header. They now panic instead.
 
 # uefi - v0.40.0 (2026-08-25)
 

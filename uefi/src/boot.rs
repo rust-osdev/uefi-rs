@@ -342,6 +342,8 @@ pub(crate) fn memory_map_size() -> MemoryMapMeta {
 ///
 /// * [`Status::INVALID_PARAMETER`]: Invalid [`MemoryType`]
 /// * [`Status::OUT_OF_RESOURCES`]: allocation failed.
+/// * [`Status::BAD_BUFFER_SIZE`]: the firmware reported a memory map larger
+///   than the buffer it was given.
 ///
 /// # Panics
 ///
@@ -371,6 +373,11 @@ pub fn memory_map(mt: MemoryType) -> Result<MemoryMapOwned> {
 /// Calls the underlying `GetMemoryMap` function of UEFI. On success,
 /// the buffer is mutated and contains the map. The map might be shorter
 /// than the buffer, which is reflected by the return value.
+///
+/// # Errors
+///
+/// * [`Status::BAD_BUFFER_SIZE`]: the firmware reported success but a map
+///   size larger than the buffer.
 pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.
@@ -398,7 +405,16 @@ pub(crate) fn get_memory_map(buf: &mut [u8]) -> Result<MemoryMapMeta> {
             &mut desc_version,
         )
     }
-    .to_result_with_val(|| MemoryMapMeta {
+    .to_result()?;
+
+    // On success, `map_size` is the size of the map written to the buffer.
+    // A value larger than the buffer would make `MemoryMapOwned` read past
+    // the allocation, so treat it as an error.
+    if map_size > buf.len() {
+        return Err(Status::BAD_BUFFER_SIZE.into());
+    }
+
+    Ok(MemoryMapMeta {
         map_size,
         desc_size,
         map_key,

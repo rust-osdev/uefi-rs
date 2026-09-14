@@ -424,9 +424,11 @@ impl HttpHelper {
                 n = CStr::from_ptr((*rx_msg.header.add(i)).field_name.cast::<c_char>());
                 v = CStr::from_ptr((*rx_msg.header.add(i)).field_value.cast::<c_char>());
             }
+            // The strings come from the server and are not guaranteed to be
+            // UTF-8.
             headers.push((
-                n.to_str().unwrap().to_lowercase(),
-                String::from(v.to_str().unwrap()),
+                String::from_utf8_lossy(n.to_bytes()).to_lowercase(),
+                String::from_utf8_lossy(v.to_bytes()).into_owned(),
             ));
         }
         // SAFETY: `rx_msg` was filled by the driver.

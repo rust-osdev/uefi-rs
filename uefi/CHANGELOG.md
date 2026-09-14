@@ -122,6 +122,12 @@
   instead.
 - Fixed a memory leak in `HttpHelper::response_first`, which did not
   free the response headers allocated by the driver.
+- `HttpHelper::response_first` no longer panics when a response header
+  is not valid UTF-8. Invalid bytes are replaced with U+FFFD.
+- **Breaking**: `Key` and `KeyData` now implement `TryFrom` instead of
+  `From` for the raw key types, and `Input::read_key` and
+  `InputEx::read_key` return `DEVICE_ERROR` when the firmware reports a
+  character that is not valid UCS-2. This previously panicked.
 
 # uefi - v0.40.0 (2026-08-25)
 

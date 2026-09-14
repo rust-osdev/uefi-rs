@@ -92,7 +92,7 @@ pub struct HiiDatabaseProtocol {
     pub get_keyboard_layout: unsafe extern "efiapi" fn(
         this: *const Self,
         key_guid: *const Guid,
-        leyboard_layout_length: *mut u16,
+        keyboard_layout_length: *mut u16,
         keyboard_layout: *mut HiiKeyboardLayout,
     ) -> Status,
     pub set_keyboard_layout:

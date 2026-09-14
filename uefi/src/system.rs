@@ -107,6 +107,10 @@ where
 
 /// Call `f` with the [`Input`] protocol attached to stdin.
 ///
+/// `f` must not call `with_stdin` again. Each call creates an exclusive
+/// reference to the same protocol, and creating a second one while the
+/// first is still in use is undefined behavior.
+///
 /// # Panics
 ///
 /// This function will panic if called after exiting boot services, or if stdin
@@ -132,10 +136,18 @@ where
 
 /// Call `f` with the [`Output`] protocol attached to stdout.
 ///
+/// `f` must not call `with_stdout` again, directly or through the `print!`
+/// and `println!` macros, which use it. The same applies to the `log`
+/// macros while the logger from [`helpers`] writes to stdout. Each call
+/// creates an exclusive reference to the same protocol, and creating a
+/// second one while the first is still in use is undefined behavior.
+///
 /// # Panics
 ///
 /// This function will panic if called after exiting boot services, or if stdout
 /// is not available.
+///
+/// [`helpers`]: crate::helpers
 pub fn with_stdout<F, R>(mut f: F) -> R
 where
     F: FnMut(&mut Output) -> R,
@@ -156,6 +168,10 @@ where
 }
 
 /// Call `f` with the [`Output`] protocol attached to stderr.
+///
+/// `f` must not call `with_stderr` again. Each call creates an exclusive
+/// reference to the same protocol, and creating a second one while the
+/// first is still in use is undefined behavior.
 ///
 /// # Panics
 ///

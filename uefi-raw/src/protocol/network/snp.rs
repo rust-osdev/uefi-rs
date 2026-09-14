@@ -76,7 +76,7 @@ pub struct SimpleNetworkProtocol {
         protocol: *mut u16,
     ) -> Status,
     pub wait_for_packet: Event,
-    pub mode: *mut NetworkMode,
+    pub mode: *const NetworkMode,
 }
 
 impl SimpleNetworkProtocol {

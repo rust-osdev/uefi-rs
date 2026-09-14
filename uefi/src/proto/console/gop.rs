@@ -310,7 +310,7 @@ impl GraphicsOutput {
     #[must_use]
     pub const fn current_mode_info(&self) -> ModeInfo {
         // SAFETY: The memory is valid.
-        unsafe { *self.mode().info.cast_const().cast::<ModeInfo>() }
+        unsafe { *self.mode().info.cast::<ModeInfo>() }
     }
 
     /// Access the frame buffer directly
@@ -331,7 +331,7 @@ impl GraphicsOutput {
 
     const fn mode(&self) -> &GraphicsOutputProtocolMode {
         // SAFETY: The memory is valid.
-        unsafe { &*self.0.mode.cast_const() }
+        unsafe { &*self.0.mode }
     }
 }
 

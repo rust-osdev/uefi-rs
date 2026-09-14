@@ -170,10 +170,8 @@ impl Output {
     /// Get a reference to `OutputData`. The lifetime of the reference is tied
     /// to `self`.
     const fn data(&self) -> &SimpleTextOutputMode {
-        // Can't dereference mut pointers in a const function, so cast to const.
-        let mode = self.0.mode.cast_const();
         // SAFETY: The memory is valid.
-        unsafe { &*mode }
+        unsafe { &*self.0.mode }
     }
 }
 

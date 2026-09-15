@@ -6,6 +6,7 @@ pub mod config;
 pub mod database;
 pub mod font;
 pub mod form_browser;
+pub mod ifr;
 pub mod image;
 pub mod popup;
 pub mod string;
@@ -20,6 +21,7 @@ pub type StringId = u16;
 pub type FormId = u16;
 pub type VarstoreId = u16;
 pub type AnimationId = u16;
+pub type DefaultId = u16;
 
 /// `EFI_HII_PACKAGE_HEADER`
 #[derive(Debug, Clone, Copy)]
@@ -270,4 +272,18 @@ pub struct HiiRef {
 const _: () = {
     assert!(size_of::<HiiRef>() == 22);
     assert!(align_of::<HiiRef>() == 1);
+};
+
+/// `EFI_HII_FORM_PACKAGE_HDR`
+#[derive(Clone, Copy, Debug)]
+#[repr(C, packed)]
+pub struct HiiFormPackageHdr {
+    // NOTE: UEFI spec incorrectly declares this a pointer.
+    pub header: HiiPackageHeader,
+}
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiFormPackageHdr>() == 4);
+    assert!(align_of::<HiiFormPackageHdr>() == 1);
 };

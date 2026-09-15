@@ -8,6 +8,7 @@
   `EFI_PCI_ATTRIBUTE_EMBEDDED_DEVICE`, and `EFI_PCI_ATTRIBUTE_EMBEDDED_ROM`
   to `PciRootBridgeIoProtocolAttributes`.
 - Added `Clone` and `Copy` derives to `PciRootBridgeIoAccess`.
+- Added HII Internal Forms Representation (IFR) types
 
 ## Changed
 - **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for
@@ -113,6 +114,8 @@ from `*mut Self` to `*const Self`.
   `protocol::hii::config` to `protocol::hii`.
 - **Breaking**: `HiiPackageListHeader` and `HiiPackageHeader` are now packed
   to match the layout mandated by the UEFI specification.
+- **Breaking**: `IfrTypeValue` is moved from `protocol::hii::config` to
+  `protocol::hii::ifr`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

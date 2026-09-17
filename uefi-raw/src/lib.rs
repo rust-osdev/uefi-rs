@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Raw interface for working with UEFI.
-//!
-//! This crate is intended for implementing UEFI services. It is also used for
-//! implementing the [`uefi`] crate, which provides a safe wrapper around UEFI.
+//! Raw UEFI types and bindings for protocols, boot, and runtime services. This
+//! can serve as base for an UEFI firmware implementation or a high-level
+//! wrapper to access UEFI functionality from an UEFI image.
 //!
 //! For creating UEFI applications and drivers, consider using the [`uefi`]
 //! crate instead of `uefi-raw`.
 //!
+//! The types follow the UEFI specification as closely as possible and use raw
+//! pointers, whose mutability reflects who writes through them and who owns
+//! the pointee. See the [API guidelines] for the detailed rules.
+//!
+//! [API guidelines]: https://github.com/rust-osdev/uefi-rs/blob/main/uefi-raw/api_guidelines.md
 //! [`uefi`]: https://crates.io/crates/uefi
 
 #![no_std]

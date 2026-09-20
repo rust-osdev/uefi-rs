@@ -13,6 +13,9 @@
 `PxeBaseCodeSrvlist::new`.
 - Fixed undefined behavior in `IpAddress::new_v4` and the corresponding
   `From` impl, which left 12 of the 16 union bytes uninitialized.
+- Fixed `EdkiiIommuAttribute::INVALID_FOR_ALLOCATE_BUFFER`, which was `0`
+  instead of the complement of `VALID_FOR_ALLOCATE_BUFFER`, because
+  `from_bits_truncate` dropped every bit that is not a named attribute.
 - **Breaking**: Changed `this` parameter of `SimpleTextOutputProtocol::query_mode`
 from `*mut Self` to `*const Self`.
 - **Breaking**: Changed the `data` parameter of

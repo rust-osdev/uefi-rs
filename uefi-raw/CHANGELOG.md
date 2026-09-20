@@ -1,116 +1,98 @@
 # uefi-raw - [Unreleased]
 
+Most of this release is the outcome of an audit of the crate against UEFI 2.11
+and the EDK2 headers. Accordingly, the bulk of the entries below are pointer
+declarations that now express who writes through a pointer and who owns the
+pointee, as described in `api_guidelines.md`. None of them change the ABI or
+the memory that the firmware sees, so adapting to them usually means adding or
+dropping a `cast_mut()`/`cast_const()`. Everything under `## Changed` is
+breaking.
+
 ## Added
-- Added `MemoryAttribute::HOT_PLUGGABLE` (UEFI 2.11).
-- Added `HttpStatusCode::STATUS_429_TOO_MANY_REQUESTS` (UEFI 2.11).
-- Added `Clone` and `Copy` derives to `PciRootBridgeIoAccess`.
-- Added HII Internal Forms Representation (IFR) types
-- Added `EdidDiscoveredProtocol`.
+- HII Internal Forms Representation (IFR) bindings in `protocol::hii::ifr`.
+- `EdidDiscoveredProtocol`.
+- `MemoryAttribute::HOT_PLUGGABLE` (UEFI 2.11) and
+  `HttpStatusCode::STATUS_429_TOO_MANY_REQUESTS`.
+- `Clone` and `Copy` derives for `PciRootBridgeIoAccess`.
+
+## Fixed
+- `IpAddress::new_v4` and the corresponding `From` impl left 12 of the 16 union
+  bytes uninitialized, which is undefined behavior.
+- `EdkiiIommuAttribute::INVALID_FOR_ALLOCATE_BUFFER` was always `0`, because
+  `from_bits_truncate` drops every bit that is not a named attribute.
 
 ## Changed
-- **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for
-`PxeBaseCodeSrvlist::server_type` and for the `server_type` parameter of
-`PxeBaseCodeSrvlist::new`.
-- Fixed undefined behavior in `IpAddress::new_v4` and the corresponding
-  `From` impl, which left 12 of the 16 union bytes uninitialized.
-- Fixed `EdkiiIommuAttribute::INVALID_FOR_ALLOCATE_BUFFER`, which was `0`
-  instead of the complement of `VALID_FOR_ALLOCATE_BUFFER`, because
-  `from_bits_truncate` dropped every bit that is not a named attribute.
-- **Breaking**: Changed `this` parameter of `SimpleTextOutputProtocol::query_mode`
-from `*mut Self` to `*const Self`.
-- **Breaking**: Changed the `data` parameter of
-  `Usb2HostControllerProtocol::{bulk_transfer, isochronous_transfer,
-  async_isochronous_transfer}` from `*const *const c_void` to `*const *mut
-  c_void`. The buffers are `IN OUT`; the controller writes received data into
-  them.
-- **Breaking**: Changed the callback parameter of
-  `UsbIoProtocol::async_interrupt_transfer` and
-  `Usb2HostControllerProtocol::async_interrupt_transfer` to
-  `Option<AsyncUsbTransferCallback>`. The specification marks it `OPTIONAL`;
-  NULL cancels the transfer.
-- **Breaking**: Changed the `target` parameter of
-  `ExtScsiPassThruProtocol::get_target_lun` (from `*mut *const u8`) and
-  `ScsiIoProtocol::get_device_location` (from `*mut *mut u8`) to `*const *mut
-  u8`. The firmware writes the target ID into the caller-provided array and
-  only reads the pointer to it.
-- **Breaking**: Changed `HttpRequestOrResponse::response` and
-  `HttpAccessPoint::{ipv4_node, ipv6_node}` from `*const` to `*mut`. The
-  driver writes the status code and the access point through these pointers.
-- **Breaking**: Fixed the pointer mutability of several `ShellProtocol` items
-  to match the EDK2 header: `free_file_list` and `remove_dup_in_file_list`
-  take `*mut *mut ShellFileInfo` (the shell frees the list and clears the
-  pointer), `write_file` takes a `*const` buffer, `get_guid_name` returns a
-  `*const` name that points into the shell, and `ShellFileInfo::{full_name,
-  file_name}` are `*const`.
-- **Breaking**: Changed the read-only inputs of the USB protocols from `*mut`
-  to `*const`: the `request` parameter of `UsbIoProtocol::control_transfer`,
-  the `data` parameter of `AsyncUsbTransferCallback`, and the `context`
-  parameters of the asynchronous transfer functions and the callback.
-- **Breaking**: Changed the read-only inputs `BootServices::create_event_ex`
-  (`event_group`), `BootServices::wait_for_event` (`events`) and
-  `BootServices::locate_protocol` (`registration`) from `*mut` to `*const`.
-- **Breaking**: Changed the `virtual_map` parameter of
-  `RuntimeServices::set_virtual_address_map` from `*mut` to `*const
-  MemoryDescriptor`.
-- **Breaking**: Changed the read-only inputs of `EdkiiIommuProtocol` from
-  `*mut` to `*const c_void`: the `host_address` parameter of `free_buffer`,
-  and the `mapping` parameter of `set_attribute` and `unmap`.
-- **Breaking**: Changed the `buffer` parameter of
-  `FirmwareVolumeBlock2Protocol::write` from `*mut u8` to `*const u8`.
-- **Breaking**: Fixed the pointer mutability of `Dhcp4Protocol`: the
-  `seed_packet` and `delete_list` parameters of `build` and the `packet`
-  parameter of `parse` are `*const`, and the `new_packet` output of the DHCP4
-  callback is `*mut *mut Dhcp4Packet` because the driver takes ownership of
-  the returned packet.
-- **Breaking**: Changed the `notify_handle` parameter of
-  `SimpleTextInputExProtocol::unregister_key_notify` from `*mut` to `*const
-  c_void`.
-- **Breaking**: Changed the `notify_ctx` parameter of
-  `BootServices::create_event_ex` from `*mut c_void` to `*const c_void`,
-  matching its `IN CONST VOID *NotifyContext` declaration.
-- **Breaking**: Changed the firmware-owned, read-only mode and info pointers
-  `SimpleNetworkProtocol::mode`, `AbsolutePointerProtocol::mode`,
-  `SimpleTextOutputProtocol::mode`, `GraphicsOutputProtocol::mode` and
-  `GraphicsOutputProtocolMode::info` from `*mut` to `*const`, matching the
-  other mode pointers in the crate.
-- **Breaking**: Changed the `host_addr` parameter of
-  `PciRootBridgeIoProtocol::allocate_buffer` from `*mut *const c_void` to
-  `*mut *mut c_void`. The allocated buffer is writable memory owned by the
-  caller.
-- **Breaking**: Changed the return type of the pool-allocating functions of
-  `DevicePathUtilitiesProtocol`, `DevicePathToTextProtocol` and
-  `DevicePathFromTextProtocol` from `*const` to `*mut`. The caller owns and
-  must free the result.
-- **Breaking**: Changed the `device_path` output of
-  `ExtScsiPassThruProtocol::build_device_path`,
-  `AtaPassThruProtocol::build_device_path` and
-  `NvmExpressPassThruProtocol::build_device_path` from `*mut *const` to `*mut
-  *mut DevicePathProtocol`. The caller owns and must free the result.
-- **Breaking**: Changed the `info` output of
-  `GraphicsOutputProtocol::query_mode` from `*mut *const` to `*mut *mut
-  GraphicsOutputModeInformation`. The caller owns and must free the buffer.
-- **Breaking**: Changed the callee-allocated result strings of the HII
-  configuration protocols (`ConfigKeywordHandlerProtocol::get_data`,
-  `HiiConfigAccessProtocol::extract_config`,
+
+### Callee-allocated results are `*mut`, as the caller must free them
+- The pool-allocating functions of `DevicePathUtilitiesProtocol`,
+  `DevicePathToTextProtocol` and `DevicePathFromTextProtocol`.
+- `device_path` of `build_device_path` of `ExtScsiPassThruProtocol`,
+  `AtaPassThruProtocol` and `NvmExpressPassThruProtocol`.
+- `info` of `GraphicsOutputProtocol::query_mode`.
+- The result strings of `ConfigKeywordHandlerProtocol::get_data`,
+  `HiiConfigAccessProtocol::extract_config` and
   `HiiConfigRoutingProtocol::{extract_config, export_config, block_to_config,
-  get_alt_cfg}`) from `*mut *const` to `*mut *mut Char16`. The caller owns and
-  must free them.
-- **Breaking**: Changed the inner pointer of the outputs
-  `BootServices::register_protocol_notify` (`registration`),
-  `BootServices::open_protocol_information` (`entry_buffer`) and
-  `RuntimeServices::convert_pointer` (`address`) from `*const` to `*mut`,
-  matching the non-const C declarations.
-- **Breaking**: Changed the callee-allocated results of
-  `ShellProtocol::{get_device_path_from_file_path,
-  get_file_path_from_device_path, get_file_info}` from `*const` to `*mut` (the
-  caller must free them), and `ShellFileHandle` from `*const c_void` to `*mut
-  c_void` like the other opaque handles.
-- **Breaking**: `HiiRef`, `HiiTime`, and `HiiDate` are moved from
-  `protocol::hii::config` to `protocol::hii`.
-- **Breaking**: `HiiPackageListHeader` and `HiiPackageHeader` are now packed
-  to match the layout mandated by the UEFI specification.
-- **Breaking**: `IfrTypeValue` is moved from `protocol::hii::config` to
-  `protocol::hii::ifr`.
+  get_alt_cfg}`.
+- `ShellProtocol::{get_device_path_from_file_path,
+  get_file_path_from_device_path, get_file_info}`, plus `ShellFileHandle`,
+  which is now `*mut c_void` like the other opaque handles.
+- `host_addr` of `PciRootBridgeIoProtocol::allocate_buffer`, which is writable
+  memory owned by the caller.
+
+### Pointers whose pointee the firmware writes are `*mut`
+- `data` of `Usb2HostControllerProtocol::{bulk_transfer, isochronous_transfer,
+  async_isochronous_transfer}` is `*const *mut c_void`. The buffers are
+  `IN OUT`; the controller writes received data into them.
+- `target` of `ExtScsiPassThruProtocol::get_target_lun` and
+  `ScsiIoProtocol::get_device_location` is `*const *mut u8`. The firmware fills
+  the caller's array and only reads the pointer to it.
+- `HttpRequestOrResponse::response` and `HttpAccessPoint::{ipv4_node,
+  ipv6_node}`.
+- The inner pointer of the outputs `registration` of
+  `BootServices::register_protocol_notify`, `entry_buffer` of
+  `BootServices::open_protocol_information` and `address` of
+  `RuntimeServices::convert_pointer`.
+- `ShellProtocol::{free_file_list, remove_dup_in_file_list}` take
+  `*mut *mut ShellFileInfo`, as the shell frees the list and clears the pointer.
+- The `new_packet` output of the DHCP4 callback is `*mut *mut Dhcp4Packet`, as
+  the driver takes ownership of the returned packet.
+
+### Inputs that the firmware only reads are `*const`
+- USB: `request` of `UsbIoProtocol::control_transfer`, `data` of
+  `AsyncUsbTransferCallback`, and the `context` parameters of the asynchronous
+  transfer functions and the callback.
+- Boot services: `event_group` and `notify_ctx` of `create_event_ex`, `events`
+  of `wait_for_event`, and `registration` of `locate_protocol`.
+- `virtual_map` of `RuntimeServices::set_virtual_address_map`.
+- `EdkiiIommuProtocol`: `host_address` of `free_buffer`, and `mapping` of
+  `set_attribute` and `unmap`.
+- `buffer` of `FirmwareVolumeBlock2Protocol::write`.
+- DHCP4: `seed_packet` and `delete_list` of `build`, and `packet` of `parse`.
+- `notify_handle` of `SimpleTextInputExProtocol::unregister_key_notify`.
+- The `write_file` buffer of `ShellProtocol`.
+- `this` of `SimpleTextOutputProtocol::query_mode`, which only reads the
+  protocol.
+
+### Firmware-owned memory that consumers only read is `*const`
+- The mode and info pointers `SimpleNetworkProtocol::mode`,
+  `AbsolutePointerProtocol::mode`, `SimpleTextOutputProtocol::mode`,
+  `GraphicsOutputProtocol::mode` and `GraphicsOutputProtocolMode::info`,
+  matching the other mode pointers in the crate.
+- The name returned by `ShellProtocol::get_guid_name` and
+  `ShellFileInfo::{full_name, file_name}`, which point into the shell.
+
+### Types, layout and module paths
+- `PxeBaseCodeSrvlist::server_type` and the `server_type` parameter of
+  `PxeBaseCodeSrvlist::new` use the newtype-enum `PxeBaseCodeBootType` instead
+  of `u16`.
+- The callback of `UsbIoProtocol::async_interrupt_transfer` and
+  `Usb2HostControllerProtocol::async_interrupt_transfer` is
+  `Option<AsyncUsbTransferCallback>`. The specification marks it `OPTIONAL`,
+  and NULL cancels the transfer.
+- `HiiPackageListHeader` and `HiiPackageHeader` are packed, as the
+  specification mandates.
+- `HiiRef`, `HiiTime` and `HiiDate` moved from `protocol::hii::config` to
+  `protocol::hii`, and `IfrTypeValue` moved to `protocol::hii::ifr`.
 
 # uefi-raw - v0.16.0 (2026-08-25)
 

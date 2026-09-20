@@ -175,6 +175,24 @@
 - `UnicodeCollation::str_to_fat` now zeroes the output buffer before the
   conversion. Previously, the result could contain garbage from the
   uninitialized buffer, or reference one byte past its end.
+- **Breaking:** The response accessors of `proto::ata::AtaResponse`,
+  `proto::nvme::NvmeResponse` and `proto::scsi::ScsiResponse` now borrow from
+  `self` instead of returning the lifetime of the underlying buffer.
+- `proto::media::file::FileSystemInfo` stores `read_only` as `Boolean`
+  instead of `bool`. Previously, a firmware value other than 0 or 1 produced
+  an invalid `bool`.
+- `mem::memory_map::MemoryMapOwned::from_initialized_mem` now rejects a
+  `desc_size` that is not a multiple of the descriptor alignment, like the
+  other constructors. Previously, all entries but the first were accessed
+  through a misaligned reference.
+- `proto::media::file::RegularFile::read` clamps the length reported by the
+  firmware to the requested size. Previously, a larger value wrote past the
+  end of the caller's buffer.
+- `proto::network::ip4config2::Ip4Config2::get_interface_info` no longer
+  forms a misaligned reference into its byte-aligned buffer.
+- PCI enumeration maps the dwords of the configuration space onto its
+  internal register views with `repr(C)`. Previously, the mapping relied on
+  the compiler happening to keep the declaration order of those fields.
 
 ## Removed
 

@@ -51,10 +51,10 @@ impl Pointer {
     pub fn read_state(&mut self) -> Result<Option<PointerState>> {
         let mut state = PointerState::default();
 
-        // SAFETY: We have an exclusive reference to `self`, `&self.0` is a
+        // SAFETY: We have an exclusive reference to `self`, `&mut self.0` is a
         // valid protocol pointer and `&mut state` is a valid pointer to stack
         // memory initialized to receive the output.
-        match unsafe { (self.0.get_state)(&self.0, &mut state) } {
+        match unsafe { (self.0.get_state)(&mut self.0, &mut state) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(state)),
         }

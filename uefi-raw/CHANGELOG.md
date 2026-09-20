@@ -11,8 +11,6 @@
 - **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for
 `PxeBaseCodeSrvlist::server_type` and for the `server_type` parameter of
 `PxeBaseCodeSrvlist::new`.
-- **Breaking**: Changed `this` parameter of `SimplePointerProtocol::get_state`
-from `*mut Self` to `*const Self`.
 - Fixed undefined behavior in `IpAddress::new_v4` and the corresponding
   `From` impl, which left 12 of the 16 union bytes uninitialized.
 - **Breaking**: Changed `this` parameter of `SimpleTextOutputProtocol::query_mode`

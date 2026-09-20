@@ -46,9 +46,8 @@ from `*mut Self` to `*const Self`.
   the `data` parameter of `AsyncUsbTransferCallback`, and the `context`
   parameters of the asynchronous transfer functions and the callback.
 - **Breaking**: Changed the read-only inputs `BootServices::create_event_ex`
-  (`event_group`), `BootServices::wait_for_event` (`events`),
-  `BootServices::exit` (`exit_data`) and `BootServices::locate_protocol`
-  (`registration`) from `*mut` to `*const`.
+  (`event_group`), `BootServices::wait_for_event` (`events`) and
+  `BootServices::locate_protocol` (`registration`) from `*mut` to `*const`.
 - **Breaking**: Changed the `virtual_map` parameter of
   `RuntimeServices::set_virtual_address_map` from `*mut` to `*const
   MemoryDescriptor`.

@@ -53,8 +53,8 @@ from `*mut Self` to `*const Self`.
   `RuntimeServices::set_virtual_address_map` from `*mut` to `*const
   MemoryDescriptor`.
 - **Breaking**: Changed the read-only inputs of `EdkiiIommuProtocol` from
-  `*mut` to `*const c_void`: the `host_address` parameter of `map` and
-  `free_buffer`, and the `mapping` parameter of `set_attribute` and `unmap`.
+  `*mut` to `*const c_void`: the `host_address` parameter of `free_buffer`,
+  and the `mapping` parameter of `set_attribute` and `unmap`.
 - **Breaking**: Changed the `buffer` parameter of
   `FirmwareVolumeBlock2Protocol::write` from `*mut u8` to `*const u8`.
 - **Breaking**: Fixed the pointer mutability of `Dhcp4Protocol`: the

@@ -58,7 +58,7 @@ pub struct BootServices {
         ty: EventType,
         notify_tpl: Tpl,
         notify_func: Option<EventNotifyFn>,
-        notify_ctx: *const c_void,
+        notify_ctx: *mut c_void,
         out_event: *mut Event,
     ) -> Status,
     pub set_timer:
@@ -289,7 +289,12 @@ pub enum InterfaceType: u32 => {
 }}
 
 /// Raw event notification function.
-pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *const c_void);
+///
+/// The firmware passes the context of `CreateEvent()`/`CreateEventEx()`
+/// through unchanged. It is the caller's own memory, which the notification
+/// function may write through, hence `*mut`. Note that `CreateEventEx()`
+/// declares the very same pointer `IN CONST VOID *NotifyContext`.
+pub type EventNotifyFn = unsafe extern "efiapi" fn(event: Event, context: *mut c_void);
 
 bitflags! {
     /// Flags describing the capabilities of a memory range.

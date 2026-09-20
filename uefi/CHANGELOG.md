@@ -1,146 +1,135 @@
 # uefi - [Unreleased]
 
+This release is dominated by a soundness audit of the safe wrappers. Most
+entries below fix a place where a wrapper trusted the firmware: a pointer that
+can be null, a length that can exceed the buffer it describes, memory that the
+firmware may leave uninitialized, or a `BOOLEAN` that is neither `0` nor `1`.
+Nearly all of those fixes are invisible to callers. The ones that are not are
+listed under `## Changed`; they are breaking because a shared reference is not
+sound where the firmware writes, or because a conversion that used to panic now
+reports an error.
+
 ## Added
+- `proto::console::pointer::AbsolutePointer` and
+  `proto::console::gop::EdidDiscovered`.
+- `CString16::clear`, `CString16::extend` and `PathBuf::clear`.
 - Exported `data_types::FromSliceUntilNulError`.
-- Added `proto::console::pointer::AbsolutePointer` protocol.
-- Added `CString::clear` and `PathBuf::clear` functions.
-- Added `CString16::extend` function.
-- Added `proto::console::gop::EdidDiscovered` protocol.
 
 ## Changed
-- **Breaking**: Changed `Server::server_type` and the `server_type` parameter
-  of `Server::new` from `u16` to `BootstrapType`.
-- **Breaking**: Changed `fs::path::Components::Item` from `CString16` to `&[Char16]`,
-  which avoids heap allocation during iteration. Users can use the recently added
-  `CString16::extend` function to add a `&[Char16]` value to a `CString16`.
-- Fixed undefined behavior in `PciRootBridgeIo::{pci, memory, io}`. The
-  returned `PciIoAccess` held a mutable reference into the protocol instance
-  while passing a pointer to the whole instance to the firmware.
-- Fixed undefined behavior in `boot::memory_map`, which trusted the map
-  size reported by the firmware. Sorting a map larger than its buffer
-  read out of bounds.
-- Fixed undefined behavior in `system::firmware_vendor` and
-  `system::with_config_table`, which dereferenced a null vendor pointer
-  and built a slice from a misaligned configuration table.
-- Added the missing `repr(transparent)` to the `Http`, `HttpBinding` and
-  `Ip4Config2` protocol wrappers, which are created by casting a raw
-  pointer provided by the firmware.
-- Fixed undefined behavior when parsing TCG event logs. Iteration now
-  stops at the last entry instead of walking past the log, an event
-  digest count larger than the log header allows is rejected, and the
-  header offset arithmetic no longer overflows on 32-bit targets. An
-  event whose size extends past the start of the last entry is rejected
-  as well.
-- Fixed undefined behavior in `DevicePathNode::from_ffi_ptr` and the
-  functions built on it, which underflowed the node length for nodes
-  shorter than the node header. They now panic instead.
-- Fixed undefined behavior in `AlignedBuffer`, which exposed
-  uninitialized memory through its safe accessors and allocated with a
-  zero-size layout for an empty buffer.
-- Fixed undefined behavior in the internal `make_boxed` helper, which
-  deallocated with a layout that did not match the allocation when the
-  firmware reported a larger size than it wrote. This affects
-  `get_boxed_info`, `read_entry_boxed`, `get_variable_boxed`,
-  `load_file` and `HiiDatabase::export_all_raw`.
-- Fixed undefined behavior in `boot::locate_handle`,
-  `boot::locate_handle_buffer`, `boot::protocols_per_handle` and
-  `boot::locate_device_path`, which turned null pointers returned by the
-  firmware into handles or references.
-- Fixed undefined behavior in `Shell::vars`, `ShellParameters::args`,
-  `ComponentName::{driver_name, controller_name}`,
-  `ComponentName::supported_languages` and `HiiConfigRouting::export`,
-  which dereferenced null pointers returned by the firmware.
-- Fixed undefined behavior in `LoadFile::load_file`,
-  `LoadFile2::load_file` and `HiiDatabase::export_all_raw`, which
-  returned a buffer with an uninitialized tail if the firmware wrote
-  less than it reported.
-- **Breaking**: Changed `FromUefi::from_uefi` to a safe function that
-  takes the buffer and the number of bytes written by the firmware, and
-  returns a `Result`. It previously built a reference that could exceed
-  the buffer and trusted the firmware to NUL-terminate the name. The
-  required size reported by `File::get_info` now includes the trailing
-  padding of the requested type.
-- **Breaking**: `BlockIO::read_blocks` and `BlockIO2::read_blocks_ex`
-  now take `&mut self`. The firmware may update the media structure
-  during a read, which conflicted with the shared reference returned by
-  `media`.
-- Fixed undefined behavior in `UsbIo::{control_transfer,
-  sync_bulk_receive, sync_interrupt_receive}`, which let the firmware
-  write through a pointer derived from a shared reference, and in
-  `UsbIo::supported_languages`, which built a slice from a null
-  pointer.
-- Fixed undefined behavior in `PciRootBridgeIo::configuration`, which
-  parsed a null resource descriptor list returned by the firmware.
-- Fixed undefined behavior in `Iommu::allocate_buffer`, whose returned
-  `DmaBuffer` exposed uninitialized memory as `[u8]`.
-- Fixed undefined behavior in `BaseCode::udp_read`, which let the
-  firmware write through a pointer derived from a shared reference, and
-  in `DiscoverInfo::new_in_buffer`, which left padding uninitialized.
-- Fixed an out-of-bounds read in `GraphicsOutput::query_mode` when the
-  firmware reports a mode info buffer smaller than `ModeInfo`, and
-  documented the alignment requirement of
-  `FrameBuffer::{read_value, write_value}`.
-- Fixed `UnicodeCollation::{str_lwr, str_upr, fat_to_str}`, which
-  returned a `CStr16` covering the whole output buffer and thus violated
-  the invariants of that type when the buffer was larger than the
-  string.
-- Fixed undefined behavior in the ATA, NVMe and SCSI pass-thru response
-  accessors, which trusted the transfer length reported by the firmware
-  and could return a slice pointing past the buffer.
-- Fixed undefined behavior in `HttpHelper::{request, response_first,
-  response_more}`, which left a token pointing into a dead stack frame
-  when polling failed, and passed the response data to the driver
-  through a read-only pointer.
-- **Breaking**: `PointerMode` and `PointerState` are now re-exports of
-  `SimplePointerMode` and `SimplePointerState` from `uefi-raw`, instead
-  of duplicates that declared the firmware's `BOOLEAN` fields as Rust
-  `bool`. Reading those as `bool` was undefined behavior for any value
-  other than 0 and 1. The fields are now named as in the specification;
-  convert a button with `bool::from`.
 - **Breaking**: `SimpleNetwork::{start, stop, initialize, reset, shutdown,
   receive_filters, station_address, get_interrupt_status,
-  get_recycled_transmit_buffer_status}` now take `&mut self`. The firmware
-  updates the network mode during these calls, which conflicted with the
-  shared reference returned by `mode`.
-- **Breaking**: `Shell::set_current_dir` and `Shell::set_var` now take
-  `&mut self`. The shell frees the strings returned by `current_dir` and
-  `var` when the value changes, so holding one across the setter was a
-  use after free.
-- Fixed `Output::current_mode` and `Output::modes`, which passed a pointer
-  derived from a shared reference to the firmware as `*mut`.
-- `ScopedProtocol`, `TplGuard`, `HandleBuffer`, `ProtocolsPerHandle` and
-  the types backed by pool memory such as `PoolString` no longer panic
-  in release builds when dropped after boot services have exited. The
-  cleanup is skipped, as the resources are gone together with the boot
-  services. Debug builds still assert that boot services are active.
-- `boot::start_image` now frees the exit data buffer that the started
-  image may hand back. It was leaked before.
-- `FileHandle` no longer panics in `drop` when the firmware fails to
-  close the file. The error is logged instead.
-- The `Display` impls of `DevicePath` and `DevicePathNode` no longer
-  panic when the conversion to text fails, for example because the
-  device path to text protocol is not installed. They print the size
-  instead.
-- Fixed a memory leak in `HttpHelper::response_first`, which did not
-  free the response headers allocated by the driver.
-- `HttpHelper::response_first` no longer panics when a response header
-  is not valid UTF-8. Invalid bytes are replaced with U+FFFD.
-- **Breaking**: `Key` and `KeyData` now implement `TryFrom` instead of
-  `From` for the raw key types, and `Input::read_key` and
-  `InputEx::read_key` return `DEVICE_ERROR` when the firmware reports a
-  character that is not valid UCS-2. This previously panicked.
-- **Breaking**: `SimpleNetwork::transmit` now takes the packet as `&mut [u8]`.
-  The firmware writes the media header into the buffer when `header_size` is
-  nonzero, which was undefined behavior with the shared slice.
-- **Breaking**: `boot::create_event_ex` now takes the event group as
+  get_recycled_transmit_buffer_status}`, `BlockIO::read_blocks` and
+  `BlockIO2::read_blocks_ex` take `&mut self`. The firmware updates the mode
+  and media structures during these calls, which conflicted with the shared
+  reference returned by `mode` and `media`.
+- **Breaking**: `SimpleNetwork::transmit` takes the packet as `&mut [u8]`,
+  because the firmware writes the media header into the buffer when
+  `header_size` is nonzero.
+- **Breaking**: `Shell::{set_current_dir, set_var}` take `&mut self`. The shell
+  frees the strings returned by `current_dir` and `var` when the value changes,
+  so holding one across a setter was a use after free.
+- **Breaking**: `PointerMode` and `PointerState` are re-exports of
+  `SimplePointerMode` and `SimplePointerState` from `uefi-raw`, instead of
+  duplicates that declared the firmware's `BOOLEAN` fields as Rust `bool`,
+  which is undefined behavior for any value other than `0` and `1`. The fields
+  are now named as in the specification; convert a button with `bool::from`.
+- **Breaking**: `Key` and `KeyData` implement `TryFrom` instead of `From` for
+  the raw key types, and `Input::read_key` and `InputEx::read_key` return
+  `DEVICE_ERROR` when the firmware reports a character that is not valid UCS-2.
+  This previously panicked.
+- **Breaking**: `FromUefi::from_uefi` is a safe function that takes the buffer
+  and the number of bytes written by the firmware and returns a `Result`. It
+  previously built a reference that could exceed the buffer and trusted the
+  firmware to NUL-terminate the name. The required size reported by
+  `File::get_info` now includes the trailing padding of the requested type.
+- **Breaking**: `fs::path::Components::Item` is `&[Char16]` instead of
+  `CString16`, which avoids a heap allocation during iteration. Use the new
+  `CString16::extend` to collect one.
+- **Breaking**: `Server::server_type` and the `server_type` parameter of
+  `Server::new` take `BootstrapType` instead of `u16`.
+- **Breaking**: `boot::create_event_ex` takes the event group as
   `Option<&Guid>` instead of `Option<NonNull<Guid>>`.
-- Relaxed `boot::wait_for_event` to take `&[Event]` instead of `&mut [Event]`
-  and `boot::exit` to take `*const Char16` instead of `*mut Char16`. The
-  firmware only reads these inputs.
-- Relaxed `runtime::set_virtual_address_map` to take `&[MemoryDescriptor]`
-  instead of `&mut [MemoryDescriptor]`. The firmware only reads the map.
-- Fixed a memory leak in `HiiConfigRouting::export`, which never freed the
-  result string allocated by the firmware.
+- Relaxed `boot::wait_for_event` to `&[Event]` and
+  `runtime::set_virtual_address_map` to `&[MemoryDescriptor]`. The firmware
+  only reads those inputs.
+
+## Fixed
+
+### Null pointers returned by the firmware
+- `boot::{locate_handle, locate_handle_buffer, protocols_per_handle,
+  locate_device_path}` turned them into handles or references.
+- `Shell::vars`, `ShellParameters::args`, `ComponentName::{driver_name,
+  controller_name, supported_languages}`, `HiiConfigRouting::export`,
+  `UsbIo::supported_languages`, `PciRootBridgeIo::configuration` and
+  `system::firmware_vendor` dereferenced them.
+
+### Sizes and lengths reported by the firmware
+- `boot::memory_map` trusted the reported map size, so sorting a map larger
+  than its buffer read out of bounds.
+- The ATA, NVMe and SCSI pass-thru response accessors trusted the transfer
+  length and could return a slice pointing past the buffer.
+- `GraphicsOutput::query_mode` read out of bounds when the firmware reports a
+  mode info buffer smaller than `ModeInfo`.
+- `DevicePathNode::from_ffi_ptr` and the functions built on it underflowed the
+  node length for nodes shorter than the node header. They now panic instead.
+- Parsing a TCG event log walked past the log, accepted a digest count larger
+  than the header allows, accepted an event extending past the last entry, and
+  overflowed the header offset arithmetic on 32-bit targets.
+- The internal `make_boxed` helper deallocated with a layout that did not match
+  the allocation when the firmware reported a larger size than it wrote. This
+  affects `get_boxed_info`, `read_entry_boxed`, `get_variable_boxed`,
+  `load_file` and `HiiDatabase::export_all_raw`.
+
+### Uninitialized memory
+- `LoadFile::load_file`, `LoadFile2::load_file` and
+  `HiiDatabase::export_all_raw` returned a buffer with an uninitialized tail
+  when the firmware wrote less than it reported.
+- `AlignedBuffer` exposed uninitialized memory through its safe accessors and
+  allocated with a zero-size layout for an empty buffer.
+- The `DmaBuffer` of `Iommu::allocate_buffer` exposed uninitialized memory as
+  `[u8]`, and `DiscoverInfo::new_in_buffer` left padding uninitialized.
+
+### Firmware writing through a pointer derived from a shared reference
+- `PciRootBridgeIo::{pci, memory, io}` returned a `PciIoAccess` that held a
+  mutable reference into the protocol instance while a pointer to the whole
+  instance was passed to the firmware.
+- `UsbIo::{control_transfer, sync_bulk_receive, sync_interrupt_receive}`,
+  `BaseCode::udp_read`, `HttpHelper::{request, response_first, response_more}`
+  and `Output::{current_mode, modes}` handed such a pointer to firmware that
+  writes through it. `HttpHelper` additionally left a token pointing into a
+  dead stack frame when polling failed.
+
+### Layout and alignment
+- `system::with_config_table` built a slice from a misaligned configuration
+  table.
+- The `Http`, `HttpBinding` and `Ip4Config2` protocol wrappers were missing
+  `repr(transparent)`, although they are created by casting a raw pointer
+  provided by the firmware.
+- Documented the alignment requirement of `FrameBuffer::{read_value,
+  write_value}`.
+
+### Type invariants
+- `UnicodeCollation::{str_lwr, str_upr, fat_to_str}` returned a `CStr16`
+  covering the whole output buffer, which violates the invariants of that type
+  when the buffer is larger than the string.
+
+### Leaks
+- `boot::start_image` frees the exit data buffer that the started image may
+  hand back, `HttpHelper::response_first` frees the response headers allocated
+  by the driver, and `HiiConfigRouting::export` frees the result string. All
+  three were leaked before.
+
+### Panics
+- `ScopedProtocol`, `TplGuard`, `HandleBuffer`, `ProtocolsPerHandle` and the
+  types backed by pool memory such as `PoolString` no longer panic in release
+  builds when dropped after boot services have exited. The cleanup is skipped,
+  as the resources are gone together with the boot services. Debug builds still
+  assert that boot services are active.
+- `FileHandle` logs a failed close in `drop` instead of panicking, the
+  `Display` impls of `DevicePath` and `DevicePathNode` print the size when the
+  conversion to text fails, for example because the device path to text
+  protocol is not installed, and `HttpHelper::response_first` replaces invalid
+  UTF-8 in a response header with U+FFFD.
 
 # uefi - v0.40.0 (2026-08-25)
 
@@ -176,6 +165,24 @@
 - `UnicodeCollation::str_to_fat` now zeroes the output buffer before the
   conversion. Previously, the result could contain garbage from the
   uninitialized buffer, or reference one byte past its end.
+- **Breaking:** The response accessors of `proto::ata::AtaResponse`,
+  `proto::nvme::NvmeResponse` and `proto::scsi::ScsiResponse` now borrow from
+  `self` instead of returning the lifetime of the underlying buffer.
+- `proto::media::file::FileSystemInfo` stores `read_only` as `Boolean`
+  instead of `bool`. Previously, a firmware value other than 0 or 1 produced
+  an invalid `bool`.
+- `mem::memory_map::MemoryMapOwned::from_initialized_mem` now rejects a
+  `desc_size` that is not a multiple of the descriptor alignment, like the
+  other constructors. Previously, all entries but the first were accessed
+  through a misaligned reference.
+- `proto::media::file::RegularFile::read` clamps the length reported by the
+  firmware to the requested size. Previously, a larger value wrote past the
+  end of the caller's buffer.
+- `proto::network::ip4config2::Ip4Config2::get_interface_info` no longer
+  forms a misaligned reference into its byte-aligned buffer.
+- PCI enumeration maps the dwords of the configuration space onto its
+  internal register views with `repr(C)`. Previously, the mapping relied on
+  the compiler happening to keep the declaration order of those fields.
 
 ## Removed
 

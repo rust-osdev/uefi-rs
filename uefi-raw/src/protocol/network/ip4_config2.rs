@@ -25,7 +25,7 @@ pub struct Ip4Config2InterfaceInfo {
     pub station_addr: Ipv4Address,
     pub subnet_mask: Ipv4Address,
     pub route_table_size: u32,
-    pub route_table: *const Ip4RouteTable,
+    pub route_table: *mut Ip4RouteTable,
 }
 
 newtype_enum! {

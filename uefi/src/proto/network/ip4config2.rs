@@ -105,7 +105,7 @@ impl Ip4Config2 {
         };
         Ok(Ip4Config2InterfaceInfo {
             route_table_size: 0,
-            route_table: core::ptr::null(),
+            route_table: core::ptr::null_mut(),
             ..info
         })
     }

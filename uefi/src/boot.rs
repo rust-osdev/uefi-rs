@@ -1446,11 +1446,15 @@ pub fn start_image(image_handle: Handle) -> Result {
 /// uninstalled. If such a callback is invoked after exiting the application,
 /// the function's code may no longer be loaded in memory, leading to a crash or
 /// other unexpected behavior.
+///
+/// `exit_data`, if present, must be a buffer allocated with
+/// [`allocate_pool`]. Ownership of that buffer passes to whoever started this
+/// image: the caller of `StartImage()` receives it and must free it.
 pub unsafe fn exit(
     image_handle: Handle,
     exit_status: Status,
     exit_data_size: usize,
-    exit_data: *const Char16,
+    exit_data: *mut Char16,
 ) -> Result {
     let bt = boot_services_raw_panicking();
     // SAFETY: The pointer is not null and we assume it to be initialized.

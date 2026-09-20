@@ -34,7 +34,8 @@ improves clarity.
 
 ## Layout
 
-All types must be `repr(C)`, `repr(C, packed)`, or `repr(transparent)`.
+All types must be `repr(C)`, `repr(C, packed)`, `repr(C, align(N))`, or
+`repr(transparent)`.
 
 Types created with the `bitflags!` macro must set `repr(transparent)`.
 
@@ -112,6 +113,9 @@ pointer type such as `EFI_EVENT_NOTIFY`.
 | `IN F Name`                      | `unsafe extern "efiapi" fn(...)`         |
 | `IN F Name OPTIONAL`             | `Option<unsafe extern "efiapi" fn(...)>` |
 
+`OPTIONAL` only changes the Rust type for function pointers: a raw pointer can
+already be null, whereas a bare `fn` pointer cannot, so it needs `Option`.
+
 Buffers (`VOID *Buffer` plus a length) follow the same rule: `*const c_void` if
 the firmware reads them, `*mut c_void` if it writes them. Pointers to pointers
 depend on who owns each level:
@@ -139,8 +143,8 @@ is `*mut Self`, even if the protocol structure itself is not written.
 
 ## Allowed top-level items
 
-The allowed top-level items are `const`, `impl`, `macro`, `struct`, and
-`type`.
+The allowed top-level items are `const`, `impl`, `macro`, `struct`, `type`, and
+`union`.
 
 Rust `enum`s are not allowed; use the `bitflags!` or `newtype_enum!` macros
 instead.

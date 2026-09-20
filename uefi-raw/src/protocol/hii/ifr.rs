@@ -44,12 +44,6 @@ pub union IfrTypeValue {
     pub hii_ref: HiiRef,  // EFI_IFR_TYPE_REF
 }
 
-// Compile-time ABI check.
-const _: () = {
-    assert!(size_of::<IfrTypeValue>() == 22);
-    assert!(align_of::<IfrTypeValue>() == 1);
-};
-
 impl fmt::Debug for IfrTypeValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("IfrTypeValue").finish()
@@ -1313,3 +1307,143 @@ pub struct IfrWrite {
 pub struct IfrZero {
     pub header: IfrOpHeader,
 }
+
+// Compile-time ABI checks.
+//
+// EDK2 declares all of these C structs inside `#pragma pack(1)`, so each of
+// them has an alignment of one byte and a size without any padding. The types
+// that end in a zero-length array are smaller than their C counterparts by
+// exactly that array, as described in the API guidelines.
+const _: () = {
+    macro_rules! check_abi {
+        ($($ty:ty => $size:expr),+ $(,)?) => {
+            $(
+                assert!(size_of::<$ty>() == $size);
+                assert!(align_of::<$ty>() == 1);
+            )+
+        };
+    }
+
+    check_abi! {
+        IfrAction => 15,
+        IfrAction1 => 13,
+        IfrAdd => 2,
+        IfrAnd => 2,
+        IfrAnimation => 4,
+        IfrBitwiseAnd => 2,
+        IfrBitwiseNot => 2,
+        IfrBitwiseOr => 2,
+        IfrCatenate => 2,
+        IfrCheckbox => 14,
+        IfrConditional => 2,
+        IfrDate => 14,
+        IfrDefault => 27,
+        IfrDefault2 => 5,
+        IfrDefaultStore => 6,
+        IfrDisableIf => 2,
+        IfrDivide => 2,
+        IfrDup => 2,
+        IfrEnd => 2,
+        IfrEqIdId => 6,
+        IfrEqIdVal => 6,
+        IfrEqIdValList => 6,
+        IfrEqual => 2,
+        IfrFalse => 2,
+        IfrFind => 3,
+        IfrForm => 6,
+        IfrFormMap => 4,
+        IfrFormMapMethod => 18,
+        IfrFormSet => 23,
+        IfrGet => 7,
+        IfrGrayOutIf => 2,
+        IfrGreaterEqual => 2,
+        IfrGreaterThan => 2,
+        IfrGuid => 18,
+        IfrImage => 4,
+        IfrInconsistentIf => 4,
+        IfrLength => 2,
+        IfrLessEqual => 2,
+        IfrLessThan => 2,
+        IfrLocked => 2,
+        IfrMap => 2,
+        IfrMatch => 2,
+        IfrMatch2 => 18,
+        IfrMid => 2,
+        IfrModalTag => 2,
+        IfrModulo => 2,
+        IfrMultiply => 2,
+        IfrNoSubmitIf => 4,
+        IfrNot => 2,
+        IfrNotEqual => 2,
+        IfrNumeric => 38,
+        IfrNumericData => 24,
+        IfrNumericFlags => 1,
+        IfrNumericU16 => 6,
+        IfrNumericU32 => 12,
+        IfrNumericU64 => 24,
+        IfrNumericU8 => 3,
+        IfrOne => 2,
+        IfrOneOf => 38,
+        IfrOneOfOption => 28,
+        IfrOnes => 2,
+        IfrOpHeader => 2,
+        IfrOr => 2,
+        IfrOrderedList => 15,
+        IfrPassword => 17,
+        IfrQuestionHeader => 11,
+        IfrQuestionRef1 => 4,
+        IfrQuestionRef2 => 2,
+        IfrQuestionRef3 => 2,
+        IfrQuestionRef32 => 4,
+        IfrQuestionRef33 => 20,
+        IfrRead => 2,
+        IfrRef => 15,
+        IfrRef2 => 17,
+        IfrRef3 => 33,
+        IfrRef4 => 35,
+        IfrRef5 => 13,
+        IfrRefresh => 3,
+        IfrRefreshId => 18,
+        IfrResetButton => 8,
+        IfrRule => 3,
+        IfrRuleRef => 3,
+        IfrSecurity => 18,
+        IfrSet => 7,
+        IfrShiftLeft => 2,
+        IfrShiftRight => 2,
+        IfrSpan => 3,
+        IfrStatementHeader => 4,
+        IfrString => 16,
+        IfrStringRef1 => 4,
+        IfrStringRef2 => 2,
+        IfrSubtitle => 7,
+        IfrSubtract => 2,
+        IfrSuppressIf => 2,
+        IfrText => 8,
+        IfrThis => 2,
+        IfrTime => 14,
+        IfrToBoolean => 2,
+        IfrToken => 2,
+        IfrToLower => 2,
+        IfrToString => 3,
+        IfrToUint => 2,
+        IfrToUpper => 2,
+        IfrTrue => 2,
+        IfrTypeValue => 22,
+        IfrUint16 => 4,
+        IfrUint32 => 6,
+        IfrUint64 => 10,
+        IfrUint8 => 3,
+        IfrUndefined => 2,
+        IfrValue => 2,
+        IfrVarstore => 22,
+        IfrVarstoreDevice => 4,
+        IfrVarstoreEfi => 26,
+        IfrVarstoreNameValue => 20,
+        IfrVersion => 2,
+        IfrWarningIf => 5,
+        IfrWrite => 2,
+        IfrZero => 2,
+        VarstoreInfo => 2,
+    }
+};

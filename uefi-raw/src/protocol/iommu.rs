@@ -25,7 +25,7 @@ pub struct EdkiiIommuProtocol {
     pub map: unsafe extern "efiapi" fn(
         this: *const Self,
         operation: EdkiiIommuOperation,
-        host_address: *const c_void,
+        host_address: *mut c_void,
         number_of_bytes: *mut usize,
         device_address: *mut u64,
         mapping: *mut *mut c_void,

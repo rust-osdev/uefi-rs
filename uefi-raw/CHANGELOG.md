@@ -9,6 +9,7 @@
   to `PciRootBridgeIoProtocolAttributes`.
 - Added `Clone` and `Copy` derives to `PciRootBridgeIoAccess`.
 - Added HII Internal Forms Representation (IFR) types
+- Added `EdidDiscoveredProtocol`.
 
 ## Changed
 - **Breaking**: Use `PxeBaseCodeBootType` (newtype-enum) instead of `u16` for

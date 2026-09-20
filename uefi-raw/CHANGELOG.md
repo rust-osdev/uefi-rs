@@ -71,9 +71,8 @@ from `*mut Self` to `*const Self`.
   pointer through unchanged.
 - **Breaking**: Changed the firmware-owned, read-only mode and info pointers
   `SimpleNetworkProtocol::mode`, `AbsolutePointerProtocol::mode`,
-  `SimpleTextOutputProtocol::mode`, `GraphicsOutputProtocol::mode`,
-  `GraphicsOutputProtocolMode::info` and
-  `Ip4Config2InterfaceInfo::route_table` from `*mut` to `*const`, matching the
+  `SimpleTextOutputProtocol::mode`, `GraphicsOutputProtocol::mode` and
+  `GraphicsOutputProtocolMode::info` from `*mut` to `*const`, matching the
   other mode pointers in the crate.
 - **Breaking**: Changed the `host_addr` parameter of
   `PciRootBridgeIoProtocol::allocate_buffer` from `*mut *const c_void` to

@@ -249,6 +249,12 @@ pub struct HiiTime {
     pub second: u8,
 }
 
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiTime>() == 3);
+    assert!(align_of::<HiiTime>() == 1);
+};
+
 /// `EFI_HII_DATE`
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
@@ -257,6 +263,12 @@ pub struct HiiDate {
     pub month: u8,
     pub day: u8,
 }
+
+// Compile-time ABI check.
+const _: () = {
+    assert!(size_of::<HiiDate>() == 4);
+    assert!(align_of::<HiiDate>() == 1);
+};
 
 /// `EFI_HII_REF`
 #[repr(C, packed)]

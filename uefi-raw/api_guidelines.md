@@ -3,7 +3,8 @@
 The `uefi-raw` crate should closely match the definitions in the [UEFI
 Specification], with only some light changes to make it more friendly for use in
 Rust (e.g. casing follows Rust's conventions and modules are used to provide
-some hierarchy).
+some hierarchy). Where the spec is inconsistent or inaccurate, the EDK2 headers
+and sources are consulted.
 
 This document describes the API rules in detail. Some of these rules can be
 checked with `cargo xtask check-raw`, and that check is run automatically in CI
@@ -80,14 +81,61 @@ Pointer mutability (`*mut` vs `*const`) is not a UB concern the way reference
 mutability is. In general, it is not UB to `cast_mut` a const pointer and write
 through it. So picking `*mut` vs `*const` is more about semantics.
 
-Pointer fields in structs should always be `*mut`. Even if the pointer should
-not be used for mutation by bootloaders and OSes, these types are intended to be
-useful for UEFI _implementations_ as well, which may need to mutate data.
+Two questions decide the type: who writes through the pointer, and who owns the
+pointee. `*mut` means "written by the firmware" or "owned by the caller, who
+must free it", whereas `*const` means read-only for both sides.
+
+Pointer fields in structs follow the same rule. Pointers to firmware-owned
+structures that consumers must only read, such as the `Mode` pointer of a
+protocol, are generally still `*mut`. Callers that just read such structure can
+use `cast_const()`.
 
 In function parameters, pick between `*const` and `*mut` based on how the
 parameter is described in the spec. An `OUT` or `IN OUT` pointer must be
-`*mut`. An `IN` pointer _may_ be `*mut`, but `*const` may be more appropriate if
-the parameter is described as being source data.
+`*mut`. An `IN` pointer is `*const` if the parameter is described as being
+source data, but `*mut` if the spec text says that the pointee is written, for
+example `Buffer` of `EFI_LOAD_FILE_PROTOCOL.LoadFile()`.
+
+### Mapping of C Qualifiers
+
+The spec annotates parameters with `IN`, `OUT`, `IN OUT`, `CONST` and
+`OPTIONAL`. In the following tables, `T` is a data type and `F` is a function
+pointer type such as `EFI_EVENT_NOTIFY`.
+
+| C                                | Rust                                     |
+|----------------------------------|------------------------------------------|
+| `IN T Name`                      | `T`                                      |
+| `IN T *Name`, `IN CONST T *Name` | `*const T`                               |
+| `IN T *Name OPTIONAL`            | `*const T`                               |
+| `OUT T *Name`, `IN OUT T *Name`  | `*mut T`                                 |
+| `OUT T *Name OPTIONAL`           | `*mut T`                                 |
+| `IN F Name`                      | `unsafe extern "efiapi" fn(...)`         |
+| `IN F Name OPTIONAL`             | `Option<unsafe extern "efiapi" fn(...)>` |
+
+Buffers (`VOID *Buffer` plus a length) follow the same rule: `*const c_void` if
+the firmware reads them, `*mut c_void` if it writes them. Pointers to pointers
+depend on who owns each level:
+
+| C                        | Rust                   | Explanation                           |
+|--------------------------|------------------------|---------------------------------------|
+| `OUT T **Name`           | `*mut *mut T`          | callee allocates, caller frees        |
+| `OUT T **Name`           | `*mut *const T`        | points into firmware-owned memory     |
+| `OUT T **Name`           | `*const *mut T`        | caller's array, firmware fills it     |
+| `IN OUT VOID *Name[N]`   | `*const *mut c_void`   | caller's buffers, firmware fills them |
+| `IN CONST CHAR16 **Name` | `*const *const Char16` | read-only strings                     |
+
+This covers arrays too; the count parameter says how many elements the caller
+owns, as in `LocateHandleBuffer`. `ProtocolsPerHandle` combines two rows, a
+callee-allocated array of pointers into firmware-owned memory, hence
+`*mut *mut *const Guid`.
+
+The same rule applies to return values: a pool allocation the caller must free
+is returned as `*mut T`, but firmware-owned memory as `*const T`.
+
+The `This` parameter of a protocol function is `*const Self` if the function
+only reads state, such as `QueryMode()` of `EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL`.
+If the function logically modifies state, such as `Reset()` or `SetMode()`, it
+is `*mut Self`, even if the protocol structure itself is not written.
 
 ## Allowed top-level items
 

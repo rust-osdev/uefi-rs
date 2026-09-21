@@ -6,8 +6,9 @@ use super::image::ImageOutput;
 use super::{HiiHandle, StringId};
 use crate::protocol::console::GraphicsOutputBltPixel;
 use crate::{Char8, Char16, Guid, Status, guid};
+use core::ffi;
 
-pub type FontHandle = *mut core::ffi::c_void;
+pub type FontHandle = *mut ffi::c_void;
 
 #[derive(Debug)]
 #[repr(C)]

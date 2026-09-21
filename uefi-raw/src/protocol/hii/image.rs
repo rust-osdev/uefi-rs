@@ -5,7 +5,7 @@
 use super::{HiiHandle, ImageId};
 use crate::protocol::console::{GraphicsOutputBltPixel, GraphicsOutputProtocol};
 use crate::{Guid, Status, guid};
-use core::fmt;
+use core::{fmt, ptr};
 
 bitflags::bitflags! {
     /// EFI_HII_DRAW_FLAGS
@@ -64,7 +64,7 @@ impl fmt::Debug for ImageOutputDest {
 impl Default for ImageOutputDest {
     fn default() -> Self {
         Self {
-            bitmap: core::ptr::null_mut(),
+            bitmap: ptr::null_mut(),
         }
     }
 }

@@ -6,9 +6,9 @@
 #[cfg(feature = "time03")]
 pub use integration_common::TimeConversionError;
 
-use core::fmt;
 use core::fmt::{Debug, Display, Formatter};
-use uefi_raw::time::Daylight;
+use core::{error, fmt, result};
+use uefi_raw::time::{Daylight, Time as RawTime};
 
 #[cfg(any(feature = "jiff02", feature = "time03"))]
 mod integration_common;
@@ -39,7 +39,7 @@ mod integration_time_crate;
 /// [jiff crate]: https://crates.io/crates/jiff
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct Time(uefi_raw::time::Time);
+pub struct Time(RawTime);
 
 /// Input parameters for [`Time::new`].
 #[derive(Copy, Clone, Debug)]
@@ -90,7 +90,7 @@ pub struct TimeError {
     pub daylight: bool,
 }
 
-impl core::error::Error for TimeError {}
+impl error::Error for TimeError {}
 
 impl Display for TimeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -130,12 +130,12 @@ impl Display for TimeError {
 
 impl Time {
     /// Unspecified Timezone/local time.
-    const UNSPECIFIED_TIMEZONE: i16 = uefi_raw::time::Time::UNSPECIFIED_TIMEZONE;
+    const UNSPECIFIED_TIMEZONE: i16 = RawTime::UNSPECIFIED_TIMEZONE;
 
     /// Create a `Time` value. If a field is not in the valid range,
     /// [`TimeError`] is returned.
-    pub fn new(params: TimeParams) -> core::result::Result<Self, TimeError> {
-        let time = Self(uefi_raw::time::Time {
+    pub fn new(params: TimeParams) -> result::Result<Self, TimeError> {
+        let time = Self(RawTime {
             year: params.year,
             month: params.month,
             day: params.day,
@@ -160,11 +160,11 @@ impl Time {
     /// [`File::set_info`]: uefi::proto::media::file::File::set_info
     #[must_use]
     pub const fn invalid() -> Self {
-        Self(uefi_raw::time::Time::invalid())
+        Self(RawTime::invalid())
     }
 
     /// `Ok()` if all fields are within valid ranges, `Err(TimeError)` otherwise.
-    pub fn is_valid(&self) -> core::result::Result<(), TimeError> {
+    pub fn is_valid(&self) -> result::Result<(), TimeError> {
         let mut err = TimeError::default();
         if !(1900..=9999).contains(&self.year()) {
             err.year = true;
@@ -308,7 +308,7 @@ impl Display for TimeByteConversionError {
 impl TryFrom<&[u8]> for Time {
     type Error = TimeByteConversionError;
 
-    fn try_from(bytes: &[u8]) -> core::result::Result<Self, Self::Error> {
+    fn try_from(bytes: &[u8]) -> result::Result<Self, Self::Error> {
         if size_of::<Self>() <= bytes.len() {
             let year = u16::from_le_bytes(bytes[0..2].try_into().unwrap());
             let month = bytes[2];

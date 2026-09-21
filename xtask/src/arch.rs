@@ -16,7 +16,7 @@ pub enum UefiArch {
 }
 
 impl UefiArch {
-    fn as_str(self) -> &'static str {
+    const fn as_str(self) -> &'static str {
         match self {
             Self::AArch64 => "aarch64",
             Self::IA32 => "ia32",
@@ -24,7 +24,7 @@ impl UefiArch {
         }
     }
 
-    pub fn as_triple(self) -> &'static str {
+    pub const fn as_triple(self) -> &'static str {
         match self {
             Self::AArch64 => "aarch64-unknown-uefi",
             Self::IA32 => "i686-unknown-uefi",

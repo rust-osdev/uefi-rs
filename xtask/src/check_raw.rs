@@ -45,6 +45,7 @@ enum ErrorKind {
     ForbiddenAbi,
     ForbiddenAllow,
     ForbiddenAttr,
+    ForbiddenExpect,
     ForbiddenItemKind(ItemKind),
     ForbiddenRepr(Vec<Repr>),
     ForbiddenType,
@@ -63,6 +64,7 @@ impl Display for ErrorKind {
             Self::ForbiddenAbi => write!(f, "forbidden ABI"),
             Self::ForbiddenAllow => write!(f, "forbidden allow"),
             Self::ForbiddenAttr => write!(f, "forbidden attribute"),
+            Self::ForbiddenExpect => write!(f, "forbidden expect"),
             Self::ForbiddenItemKind(ItemKind::Enum) => write!(
                 f,
                 "forbidden use of enum; use the `newtype_enum!` macro instead"
@@ -138,7 +140,7 @@ impl Error {
 
 /// True if the visibility is public without restriction (i.e. just `pub`, not
 /// `pub(crate)` or similar).
-fn is_pub(vis: &Visibility) -> bool {
+const fn is_pub(vis: &Visibility) -> bool {
     matches!(vis, Visibility::Public(_))
 }
 
@@ -146,6 +148,12 @@ fn is_pub(vis: &Visibility) -> bool {
 #[derive(Debug, Clone, Copy)]
 enum Allow {
     NonCamelCaseTypes,
+}
+
+/// Allowed `#[expect]` attributes.
+#[derive(Debug, Clone, Copy)]
+enum Expect {
+    MissingDocs,
 }
 
 /// Type repr. A type may have more than one of these (e.g. both `C` and `packed`).
@@ -164,6 +172,7 @@ enum Repr {
 enum ParsedAttr {
     Allow(Allow),
     Derive,
+    Expect(Expect),
     Doc,
     Repr(Repr),
 }
@@ -218,6 +227,20 @@ fn parse_attrs(attrs: &[Attribute], src: &Path) -> Result<Vec<ParsedAttr>, Error
             if unknown_allow_found {
                 return Err(Error::new(ErrorKind::ForbiddenAllow, src, attr));
             }
+        } else if path.is_ident("expect") {
+            let mut unknown_expect_found = false;
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("missing_docs") {
+                    va.push(ParsedAttr::Expect(Expect::MissingDocs));
+                } else {
+                    unknown_expect_found = true;
+                }
+                Ok(())
+            })
+            .map_err(|_| Error::new(ErrorKind::MalformedAttrs, src, attr))?;
+            if unknown_expect_found {
+                return Err(Error::new(ErrorKind::ForbiddenExpect, src, attr));
+            }
         } else {
             return Err(Error::new(ErrorKind::ForbiddenAttr, src, attr));
         }
@@ -246,11 +269,11 @@ fn is_efiapi(f: &TypeFnPtr) -> bool {
     if let Some(Abi {
         name: Some(name), ..
     }) = &f.abi
+        && name.value() == "efiapi"
     {
-        if name.value() == "efiapi" {
-            return true;
-        }
+        return true;
     }
+
     false
 }
 
@@ -310,10 +333,10 @@ fn check_fields(fields: &Punctuated<Field, Comma>, src: &Path) -> Result<(), Err
         }
 
         // Ensure field name doesn't start with `_`.
-        if let Some(ident) = &field.ident {
-            if ident.to_string().starts_with('_') {
-                return Err(Error::new(ErrorKind::UnderscoreField, src, ident));
-            }
+        if let Some(ident) = &field.ident
+            && ident.to_string().starts_with('_')
+        {
+            return Err(Error::new(ErrorKind::UnderscoreField, src, ident));
         }
 
         // Ensure a valid field type.
@@ -478,10 +501,10 @@ pub fn check_raw() -> Result<()> {
         let entry = entry?;
         let path = entry.path();
 
-        if let Some(ext) = path.extension() {
-            if ext == "rs" {
-                check_file(path)?;
-            }
+        if let Some(ext) = path.extension()
+            && ext == "rs"
+        {
+            check_file(path)?;
         }
     }
 

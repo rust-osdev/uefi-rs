@@ -22,7 +22,7 @@ pub fn create_mbr_test_disk(path: &Path) -> Result<()> {
     let partition_byte_range;
     let mut disk = vec![0; size_in_bytes];
     {
-        let mut cur = std::io::Cursor::new(&mut disk);
+        let mut cur = Cursor::new(&mut disk);
 
         let mut mbr = MBR::new_from(&mut cur, SECTOR_SIZE as u32, [0xff; 4])?;
         mbr[1] = MBRPartitionEntry {

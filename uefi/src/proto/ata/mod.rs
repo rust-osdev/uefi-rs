@@ -6,8 +6,8 @@ use crate::mem::{AlignedBuffer, AlignmentError};
 use crate::util::usize_from_u32;
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
-use core::ptr;
 use core::time::Duration;
+use core::{ptr, slice};
 use uefi_raw::protocol::ata::{
     AtaCommandBlock, AtaPassThruCommandPacket, AtaPassThruLength, AtaStatusBlock,
 };
@@ -374,7 +374,7 @@ impl AtaResponse<'_> {
         let len = if reported < cap { reported } else { cap };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.req.packet.in_data_buffer.cast(),
                 len,
             ))

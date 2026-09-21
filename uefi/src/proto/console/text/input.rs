@@ -3,7 +3,9 @@
 use crate::data_types::chars::CharConversionError;
 use crate::proto::unsafe_protocol;
 use crate::{Char16, Error, Event, Result, Status, StatusExt};
+use core::ffi::c_void;
 use core::mem::MaybeUninit;
+use core::{ptr, result};
 use uefi_raw::protocol::console::{
     InputKey, KeyData as RawKeyData, KeyNotifyFn, KeyShiftState, KeyState as RawKeyState,
     KeyToggleState, SimpleTextInputExProtocol, SimpleTextInputProtocol,
@@ -116,7 +118,7 @@ impl TryFrom<InputKey> for Key {
 
     /// Fails if the key carries a character that is not valid UCS-2, such
     /// as a surrogate code unit.
-    fn try_from(k: InputKey) -> core::result::Result<Self, Self::Error> {
+    fn try_from(k: InputKey) -> result::Result<Self, Self::Error> {
         if k.scan_code == ScanCode::NULL.0 {
             Char16::try_from(k.unicode_char).map(Self::Printable)
         } else {
@@ -278,7 +280,7 @@ impl InputEx {
         key_data: KeyData,
         notify_function: KeyNotifyFn,
     ) -> Result<KeyNotifyHandle> {
-        let mut handle = core::ptr::null_mut();
+        let mut handle = ptr::null_mut();
 
         // We must convert our high-level KeyData back to the raw format the firmware expects
         let raw_key_data = RawKeyData {
@@ -327,7 +329,7 @@ impl InputEx {
 /// A handle to a registered key notification.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct KeyNotifyHandle(*mut core::ffi::c_void);
+pub struct KeyNotifyHandle(*mut c_void);
 
 /// A key read from the console and associated keyboard state.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -343,7 +345,7 @@ impl TryFrom<RawKeyData> for KeyData {
 
     /// Fails if the key carries a character that is not valid UCS-2, see
     /// [`Key::try_from`].
-    fn try_from(k: RawKeyData) -> core::result::Result<Self, Self::Error> {
+    fn try_from(k: RawKeyData) -> result::Result<Self, Self::Error> {
         Ok(Self {
             key: k.key.try_into()?,
             key_state: k.key_state.into(),

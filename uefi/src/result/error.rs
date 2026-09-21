@@ -3,7 +3,8 @@
 //! Module for UEFI-specific error encodings. See [`Error`].
 
 use super::Status;
-use core::fmt::{Debug, Display};
+use core::error;
+use core::fmt::{self, Debug, Display, Formatter};
 
 /// An UEFI-related error with optionally additional payload data. The error
 /// kind is encoded in the `status` field (see [`Status`]). Additional payload
@@ -50,7 +51,7 @@ impl From<Status> for Error<()> {
 }
 
 impl<Data: Debug> Display for Error<Data> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "UEFI Error {}: {:?}", self.status(), self.data())
     }
 }
@@ -69,4 +70,4 @@ impl<Data: Debug> Error<Data> {
     }
 }
 
-impl<Data: Debug> core::error::Error for Error<Data> {}
+impl<Data: Debug> error::Error for Error<Data> {}

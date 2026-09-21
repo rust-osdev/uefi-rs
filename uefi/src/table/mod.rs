@@ -11,15 +11,15 @@ pub use uefi_raw::table::Revision;
 
 use core::ptr::{self, NonNull};
 use core::sync::atomic::{AtomicPtr, Ordering};
+use uefi_raw::table::system::SystemTable;
 
 /// Global system table pointer. This is only modified by [`set_system_table`].
-static SYSTEM_TABLE: AtomicPtr<uefi_raw::table::system::SystemTable> =
-    AtomicPtr::new(ptr::null_mut());
+static SYSTEM_TABLE: AtomicPtr<SystemTable> = AtomicPtr::new(ptr::null_mut());
 
 /// Get the raw system table pointer.
 ///
 /// If called before `set_system_table` has been called, this will return `None`.
-pub fn system_table_raw() -> Option<NonNull<uefi_raw::table::system::SystemTable>> {
+pub fn system_table_raw() -> Option<NonNull<SystemTable>> {
     let ptr = SYSTEM_TABLE.load(Ordering::Acquire);
     NonNull::new(ptr)
 }
@@ -31,7 +31,7 @@ pub fn system_table_raw() -> Option<NonNull<uefi_raw::table::system::SystemTable
 ///
 /// Panics if the global system table pointer is null.
 #[track_caller]
-pub(crate) fn system_table_raw_panicking() -> NonNull<uefi_raw::table::system::SystemTable> {
+pub(crate) fn system_table_raw_panicking() -> NonNull<SystemTable> {
     system_table_raw().expect("global system table pointer is not set")
 }
 
@@ -52,9 +52,8 @@ pub(crate) fn system_table_raw_panicking() -> NonNull<uefi_raw::table::system::S
 /// This function should only be called as described above, and the
 /// `ptr` must be a valid [`SystemTable`].
 ///
-/// [`SystemTable`]: uefi_raw::table::system::SystemTable
 /// [`set_virtual_address_map`]: uefi::runtime::set_virtual_address_map
-pub unsafe fn set_system_table(ptr: *const uefi_raw::table::system::SystemTable) {
+pub unsafe fn set_system_table(ptr: *const SystemTable) {
     SYSTEM_TABLE.store(ptr.cast_mut(), Ordering::Release);
 }
 

@@ -18,7 +18,7 @@ pub enum Package {
 
 impl Package {
     /// Get package name.
-    fn name(self) -> &'static str {
+    const fn name(self) -> &'static str {
         match self {
             Self::Uefi => "uefi",
             Self::UefiApp => "uefi-app",
@@ -30,12 +30,12 @@ impl Package {
     }
 
     /// All published packages, in the order that publishing should occur.
-    pub fn published() -> Vec<Package> {
+    pub fn published() -> Vec<Self> {
         vec![Self::UefiRaw, Self::UefiMacros, Self::Uefi]
     }
 
     /// All the packages except for xtask.
-    pub fn all_except_xtask() -> Vec<Package> {
+    pub fn all_except_xtask() -> Vec<Self> {
         vec![
             Self::Uefi,
             Self::UefiApp,
@@ -69,7 +69,7 @@ pub enum Feature {
 }
 
 impl Feature {
-    fn as_str(&self) -> &'static str {
+    const fn as_str(&self) -> &'static str {
         match self {
             Self::Alloc => "alloc",
             Self::GlobalAllocator => "global_allocator",
@@ -137,7 +137,7 @@ impl Feature {
         base_features
     }
 
-    fn comma_separated_string(features: &[Feature]) -> String {
+    fn comma_separated_string(features: &[Self]) -> String {
         features
             .iter()
             .map(|f| f.as_str())
@@ -181,9 +181,9 @@ pub enum TargetTypes {
 impl TargetTypes {
     const fn args(self) -> &'static [&'static str] {
         match self {
-            TargetTypes::Default => &[],
-            TargetTypes::BinsExamples => &["--bins", "--examples"],
-            TargetTypes::BinsExamplesLib => &[
+            Self::Default => &[],
+            Self::BinsExamples => &["--bins", "--examples"],
+            Self::BinsExamplesLib => &[
                 "--bins",
                 "--examples",
                 // This flag is not plural like the others because a

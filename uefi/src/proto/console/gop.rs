@@ -55,9 +55,10 @@
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
 use crate::{Error, Result, Status, StatusExt, boot};
-use core::fmt::{Debug, Formatter};
+use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
+use core::slice;
 use uefi_raw::protocol::console::{
     EdidDiscoveredProtocol, GraphicsOutputBltOperation, GraphicsOutputBltPixel,
     GraphicsOutputModeInformation, GraphicsOutputProtocol, GraphicsOutputProtocolMode,
@@ -457,7 +458,7 @@ impl Iterator for ModeIter<'_> {
 }
 
 impl Debug for ModeIter<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("ModeIter")
             .field("current", &self.current)
             .field("max", &self.max)
@@ -717,7 +718,7 @@ impl EdidDiscovered {
             // The memory is valid for `size_of_edid` bytes for the
             // lifetime of the protocol, matching the lifetime of `&self`.
             unsafe {
-                Some(core::slice::from_raw_parts(
+                Some(slice::from_raw_parts(
                     self.0.edid,
                     usize_from_u32(self.0.size_of_edid),
                 ))

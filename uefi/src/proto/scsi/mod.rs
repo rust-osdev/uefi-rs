@@ -5,8 +5,8 @@
 use crate::mem::{AlignedBuffer, AlignmentError};
 use core::alloc::LayoutError;
 use core::marker::PhantomData;
-use core::ptr;
 use core::time::Duration;
+use core::{ptr, slice};
 use uefi_raw::protocol::scsi::{
     ScsiIoDataDirection, ScsiIoHostAdapterStatus, ScsiIoScsiRequestPacket, ScsiIoTargetStatus,
 };
@@ -19,7 +19,7 @@ pub mod pass_thru;
 /// Represents the data direction for a SCSI request.
 ///
 /// Used to specify whether the request involves reading, writing, or bidirectional data transfer.
-pub type ScsiRequestDirection = uefi_raw::protocol::scsi::ScsiIoDataDirection;
+pub type ScsiRequestDirection = ScsiIoDataDirection;
 
 /// Represents a SCSI request packet.
 ///
@@ -324,7 +324,7 @@ impl ScsiResponse<'_> {
         let len = if reported < cap { reported } else { cap };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
-            Some(core::slice::from_raw_parts(
+            Some(slice::from_raw_parts(
                 self.0.packet.in_data_buffer.cast(),
                 len,
             ))
@@ -349,12 +349,7 @@ impl ScsiResponse<'_> {
         let cap = self.0.sense_data_capacity;
         let len = if reported < cap { reported } else { cap };
         // SAFETY: The buffer holds at least `len` initialized bytes.
-        unsafe {
-            Some(core::slice::from_raw_parts(
-                self.0.packet.sense_data.cast(),
-                len,
-            ))
-        }
+        unsafe { Some(slice::from_raw_parts(self.0.packet.sense_data.cast(), len)) }
     }
 
     /// Retrieves the status of the host adapter after executing the SCSI request.

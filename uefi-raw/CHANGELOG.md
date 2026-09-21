@@ -56,6 +56,10 @@ breaking.
   `*mut *mut ShellFileInfo`, as the shell frees the list and clears the pointer.
 - The `new_packet` output of the DHCP4 callback is `*mut *mut Dhcp4Packet`, as
   the driver takes ownership of the returned packet.
+- `this` of `AbsolutePointerProtocol::get_state`. The call consumes the state
+  it reports: it returns `EFI_NOT_READY` unless the state changed since the
+  last call, and clears the change flag. `SimplePointerProtocol::get_state`
+  already declares `this` this way.
 
 ### Inputs that the firmware only reads are `*const`
 - USB: `request` of `UsbIoProtocol::control_transfer`, `data` of

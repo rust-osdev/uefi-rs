@@ -46,7 +46,7 @@ pub struct AbsolutePointerState {
 pub struct AbsolutePointerProtocol {
     pub reset: unsafe extern "efiapi" fn(this: *mut Self, extended_verification: Boolean) -> Status,
     pub get_state:
-        unsafe extern "efiapi" fn(this: *const Self, state: *mut AbsolutePointerState) -> Status,
+        unsafe extern "efiapi" fn(this: *mut Self, state: *mut AbsolutePointerState) -> Status,
     pub wait_for_input: Event,
     pub mode: *const AbsolutePointerMode,
 }

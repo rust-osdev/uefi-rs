@@ -3,14 +3,13 @@
 //! Pointer device access.
 
 pub use uefi_raw::protocol::console::{
+    AbsolutePointerMode, AbsolutePointerModeAttributes, AbsolutePointerState,
     SimplePointerMode as PointerMode, SimplePointerState as PointerState,
 };
 
 use crate::proto::unsafe_protocol;
 use crate::{Error, Event, Result, Status, StatusExt};
-use uefi_raw::protocol::console::{
-    AbsolutePointerMode, AbsolutePointerProtocol, AbsolutePointerState, SimplePointerProtocol,
-};
+use uefi_raw::protocol::console::{AbsolutePointerProtocol, SimplePointerProtocol};
 
 /// Simple Pointer [`Protocol`]. Provides information about a pointer device.
 ///
@@ -119,9 +118,9 @@ impl AbsolutePointer {
         let mut state = AbsolutePointerState::default();
         let state_ptr: *mut _ = &mut state;
 
-        // SAFETY: We have an exclusive reference to `self`, `&self.0` is a
-        // valid protocol pointer and `pointer_state_ptr` is a valid pointer to
-        // stack memory initialized to receive the output.
+        // SAFETY: We have an exclusive reference to `self`, `&mut self.0` is a
+        // valid protocol pointer and `state_ptr` is a valid pointer to stack
+        // memory initialized to receive the output.
         match unsafe { (self.0.get_state)(&mut self.0, state_ptr) } {
             Status::NOT_READY => Ok(None),
             other => other.to_result_with_val(|| Some(state)),

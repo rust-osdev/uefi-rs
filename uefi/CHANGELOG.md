@@ -11,7 +11,9 @@ reports an error.
 
 ## Added
 - `proto::console::pointer::AbsolutePointer` and
-  `proto::console::gop::EdidDiscovered`.
+  `proto::console::gop::EdidDiscovered`. `proto::console::pointer` re-exports
+  `AbsolutePointerMode`, `AbsolutePointerModeAttributes` and
+  `AbsolutePointerState`.
 - `CString16::clear`, `CString16::extend` and `PathBuf::clear`.
 - Exported `data_types::FromSliceUntilNulError`.
 

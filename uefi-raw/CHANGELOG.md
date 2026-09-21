@@ -1,12 +1,24 @@
 # uefi-raw - [Unreleased]
 
-Most of this release is the outcome of an audit of the crate against UEFI 2.11
-and the EDK2 headers. Accordingly, the bulk of the entries below are pointer
-declarations that now express who writes through a pointer and who owns the
-pointee, as described in `api_guidelines.md`. None of them change the ABI or
-the memory that the firmware sees, so adapting to them usually means adding or
-dropping a `cast_mut()`/`cast_const()`. Everything under `## Changed` is
-breaking.
+## Added
+
+## Changed
+
+## Removed
+
+
+# uefi-raw - v0.17.0 (2026-09-21)
+
+Most of this release is the outcome of an LLM-assisted audit of the crate
+against UEFI 2.11 and the EDK2 headers. Accordingly, the bulk of the entries
+below are pointer declarations that now express who writes through a pointer and
+who owns the pointee, as described in `api_guidelines.md`. None of them change
+the ABI or the memory that the firmware sees, so adapting to them usually means
+adding or dropping a `cast_mut()`/`cast_const()`. Everything under `## Changed`
+is breaking.
+
+We use LLMs to find problems, not to write code we do not understand. Nothing
+unreviewed lands in this crate.
 
 ## Added
 - HII Internal Forms Representation (IFR) bindings in `protocol::hii::ifr`.

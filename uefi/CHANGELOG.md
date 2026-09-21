@@ -1,13 +1,25 @@
 # uefi - [Unreleased]
 
-This release is dominated by a soundness audit of the safe wrappers. Most
-entries below fix a place where a wrapper trusted the firmware: a pointer that
-can be null, a length that can exceed the buffer it describes, memory that the
-firmware may leave uninitialized, or a `BOOLEAN` that is neither `0` nor `1`.
-Nearly all of those fixes are invisible to callers. The ones that are not are
-listed under `## Changed`; they are breaking because a shared reference is not
-sound where the firmware writes, or because a conversion that used to panic now
-reports an error.
+## Added
+
+## Changed
+
+## Removed
+
+
+# uefi - v0.41.0 (2026-09-21)
+
+This release is dominated by a  LLM-assisted soundness audit of the safe
+wrappers. Most entries below fix a place where a wrapper trusted the firmware: a
+pointer that can be null, a length that can exceed the buffer it describes,
+memory that the firmware may leave uninitialized, or a `BOOLEAN` that is neither
+`0` nor `1`. Nearly all of those fixes are invisible to callers. The ones that
+are not are listed under `## Changed`: they are breaking because a shared
+reference is not sound where the firmware writes, or because a conversion that
+used to panic now reports an error.
+
+We use LLMs to find problems, not to write code we do not understand. Nothing
+unreviewed lands in this crate.
 
 ## Added
 - `proto::console::pointer::AbsolutePointer` and

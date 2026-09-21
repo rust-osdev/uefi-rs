@@ -3,6 +3,7 @@
 ## Added
 
 ## Changed
+- **Breaking**: The MSRV is now 1.91 for `extended_varargs_abi_support`.
 
 ## Removed
 

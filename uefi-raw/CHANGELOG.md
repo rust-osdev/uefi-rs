@@ -4,6 +4,8 @@
 
 ## Changed
 - **Breaking**: The MSRV is now 1.91 for `extended_varargs_abi_support`.
+- **Breaking**: Changed ABI of c-variadic function pointers from `extern "C"`
+  to `extern "efiapi"`.
 
 ## Removed
 

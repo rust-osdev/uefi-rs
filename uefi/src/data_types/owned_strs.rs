@@ -10,7 +10,7 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt::{self, Display, Formatter};
-use core::{ops, ptr};
+use core::{error, ops, ptr};
 
 /// Error returned by [`CString16::try_from::<&str>`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -34,7 +34,7 @@ impl Display for FromStrError {
     }
 }
 
-impl core::error::Error for FromStrError {}
+impl error::Error for FromStrError {}
 
 /// An owned UCS-2 null-terminated string.
 ///

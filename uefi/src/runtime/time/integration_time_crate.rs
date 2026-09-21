@@ -5,6 +5,7 @@
 use super::Time;
 use super::integration_common::{ConversionErrorInner, TimeConversionError};
 use crate::runtime::TimeParams;
+use time::error::ComponentRange;
 use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
 impl TryFrom<Time> for PrimitiveDateTime {
@@ -19,7 +20,7 @@ impl TryFrom<Time> for PrimitiveDateTime {
 
         // Emulated try {} block to keep the `?` error propagation scoped
         // (we have a different error type here)
-        let datetime: Result<Self, time::error::ComponentRange> = (|| {
+        let datetime: Result<Self, ComponentRange> = (|| {
             let month = time::Month::try_from(value.0.month)?;
             let date = time::Date::from_calendar_date(value.0.year as i32, month, value.0.day)?;
             let time = time::Time::from_hms_nano(

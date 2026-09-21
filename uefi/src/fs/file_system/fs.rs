@@ -448,8 +448,8 @@ impl Debug for FileSystem {
     }
 }
 
-impl From<uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>> for FileSystem {
-    fn from(proto: uefi::boot::ScopedProtocol<SimpleFileSystemProtocol>) -> Self {
+impl From<ScopedProtocol<SimpleFileSystemProtocol>> for FileSystem {
+    fn from(proto: ScopedProtocol<SimpleFileSystemProtocol>) -> Self {
         Self(proto)
     }
 }

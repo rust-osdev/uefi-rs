@@ -2,6 +2,13 @@
 
 //! Pci root bus resource configuration descriptor parsing.
 
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+#[cfg(feature = "alloc")]
+use core::ffi::c_void;
+#[cfg(feature = "alloc")]
+use core::ptr;
+
 /// Represents the type of resource described by a QWORD Address Space Descriptor.
 /// This corresponds to the `resource_type` field at offset 0x03 in the descriptor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,11 +76,8 @@ pub struct QwordAddressSpaceDescriptor {
 /// `base` must be non-null and point to a descriptor list that is terminated
 /// by an End Tag descriptor.
 #[cfg(feature = "alloc")]
-pub(crate) unsafe fn parse(
-    base: *const core::ffi::c_void,
-) -> alloc::vec::Vec<QwordAddressSpaceDescriptor> {
+pub(crate) unsafe fn parse(base: *const c_void) -> Vec<QwordAddressSpaceDescriptor> {
     use alloc::slice;
-    use alloc::vec::Vec;
     const PCI_RESTBL_QWORDADDRSPEC_TAG: u8 = 0x8a;
     const PCI_RESTBL_END_TAG: u8 = 0x79;
 
@@ -83,7 +87,7 @@ pub(crate) unsafe fn parse(
     let mut offset = 0;
     loop {
         // SAFETY: The memory is valid.
-        let tag = unsafe { core::ptr::read(base.add(offset)) };
+        let tag = unsafe { ptr::read(base.add(offset)) };
         offset += match tag {
             PCI_RESTBL_QWORDADDRSPEC_TAG => 3 + 0x2B,
             PCI_RESTBL_END_TAG => break,

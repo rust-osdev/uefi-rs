@@ -2,6 +2,7 @@
 
 //! PCI Bus device function and bridge enumeration.
 
+use core::error;
 use core::fmt::{Display, Formatter};
 use core::mem::{self, MaybeUninit};
 
@@ -91,8 +92,8 @@ impl Display for PciDevicePathBuildError {
     }
 }
 
-impl core::error::Error for PciDevicePathBuildError {
-    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+impl error::Error for PciDevicePathBuildError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::PathBuildError(e) => Some(e),
             Self::DevicePathUtilitiesError(e) => Some(e),

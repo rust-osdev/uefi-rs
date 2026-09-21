@@ -3,6 +3,7 @@
 //! HII Database protocol.
 
 use alloc::boxed::Box;
+use core::ptr;
 use uefi_macros::unsafe_protocol;
 use uefi_raw::protocol::hii::database::HiiDatabaseProtocol;
 
@@ -36,7 +37,7 @@ impl HiiDatabase {
                 let status = {
                     (proto.0.export_package_lists)(
                         &proto.0,
-                        core::ptr::null_mut(),
+                        ptr::null_mut(),
                         &mut size,
                         buf.as_mut_ptr().cast(),
                     )

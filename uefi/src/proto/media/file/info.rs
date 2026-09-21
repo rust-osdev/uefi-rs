@@ -5,9 +5,13 @@ use crate::data_types::Align;
 use crate::runtime::Time;
 use crate::{CStr16, Char16, Error, Guid, Identify, Status};
 use core::fmt::{self, Display, Formatter};
-use core::ptr;
+use core::{error, ptr, result};
 use ptr_meta::Pointee;
 use uefi_raw::Boolean;
+use uefi_raw::protocol::file_system::{
+    FileInfo as RawFileInfo, FileSystemInfo as RawFileSystemInfo,
+    FileSystemVolumeLabel as RawFileSystemVolumeLabel,
+};
 
 /// Common trait for data structures that can be used with
 /// `File::set_info()` or `File::get_info()`.
@@ -178,7 +182,7 @@ impl Display for FileInfoCreationError {
     }
 }
 
-impl core::error::Error for FileInfoCreationError {}
+impl error::Error for FileInfoCreationError {}
 
 /// Generic file information
 ///
@@ -230,7 +234,7 @@ impl FileInfo {
         modification_time: Time,
         attribute: FileAttribute,
         file_name: &CStr16,
-    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
+    ) -> result::Result<&'buf mut Self, FileInfoCreationError> {
         // SAFETY: The memory is valid.
         unsafe {
             Self::new_impl(storage, file_name, |ptr, size| {
@@ -309,7 +313,7 @@ impl Align for FileInfo {
 
 // SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl Identify for FileInfo {
-    const GUID: Guid = uefi_raw::protocol::file_system::FileInfo::ID;
+    const GUID: Guid = RawFileInfo::ID;
 }
 
 impl InfoInternal for FileInfo {
@@ -354,7 +358,7 @@ impl FileSystemInfo {
         free_space: u64,
         block_size: u32,
         volume_label: &CStr16,
-    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
+    ) -> result::Result<&'buf mut Self, FileInfoCreationError> {
         // SAFETY: The memory is valid.
         unsafe {
             Self::new_impl(storage, volume_label, |ptr, size| {
@@ -407,7 +411,7 @@ impl Align for FileSystemInfo {
 
 // SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl Identify for FileSystemInfo {
-    const GUID: Guid = uefi_raw::protocol::file_system::FileSystemInfo::ID;
+    const GUID: Guid = RawFileSystemInfo::ID;
 }
 
 impl InfoInternal for FileSystemInfo {
@@ -440,7 +444,7 @@ impl FileSystemVolumeLabel {
     pub fn new<'buf>(
         storage: &'buf mut [u8],
         volume_label: &CStr16,
-    ) -> core::result::Result<&'buf mut Self, FileInfoCreationError> {
+    ) -> result::Result<&'buf mut Self, FileInfoCreationError> {
         // SAFETY: The memory is valid.
         unsafe { Self::new_impl(storage, volume_label, |_ptr, _size| {}) }
     }
@@ -461,7 +465,7 @@ impl Align for FileSystemVolumeLabel {
 
 // SAFETY: The type satisfies the contract required by this unsafe impl.
 unsafe impl Identify for FileSystemVolumeLabel {
-    const GUID: Guid = uefi_raw::protocol::file_system::FileSystemVolumeLabel::ID;
+    const GUID: Guid = RawFileSystemVolumeLabel::ID;
 }
 
 impl InfoInternal for FileSystemVolumeLabel {
@@ -488,7 +492,7 @@ mod tests {
             unsafe {
                 name.as_ptr()
                     .cast::<u8>()
-                    .offset_from(core::ptr::from_ref(info).cast::<u8>())
+                    .offset_from(ptr::from_ref(info).cast::<u8>())
             },
             T::name_offset() as isize
         );

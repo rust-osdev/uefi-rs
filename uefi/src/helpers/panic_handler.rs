@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use core::panic::PanicInfo;
+use core::ptr;
 use core::time::Duration;
 
 use crate::{boot, println};
 use cfg_if::cfg_if;
 
 #[panic_handler]
-fn panic_handler(info: &core::panic::PanicInfo) -> ! {
+fn panic_handler(info: &PanicInfo) -> ! {
     println!("[PANIC]: {}", info);
 
     // Give the user some time to read the message
@@ -18,7 +20,7 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
         for i in 0..300_000_000 {
             // SAFETY: we own the memory.
             unsafe {
-                core::ptr::write_volatile(&mut dummy, i);
+                ptr::write_volatile(&mut dummy, i);
             }
         }
     }

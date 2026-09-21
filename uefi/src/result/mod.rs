@@ -3,6 +3,7 @@
 //! Facilities for dealing with UEFI operation results.
 
 use core::fmt::Debug;
+use core::result;
 
 /// The error type that we use, essentially a status code + optional additional data
 mod error;
@@ -24,7 +25,7 @@ pub use status::{Status, StatusExt};
 /// an abnormal situation.
 ///
 /// Some convenience methods are provided by the [`ResultExt`] trait.
-pub type Result<Output = (), ErrData = ()> = core::result::Result<Output, Error<ErrData>>;
+pub type Result<Output = (), ErrData = ()> = result::Result<Output, Error<ErrData>>;
 
 /// Extension trait which provides some convenience methods for [`Result`].
 pub trait ResultExt<Output, ErrData: Debug> {

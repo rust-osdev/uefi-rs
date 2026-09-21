@@ -45,6 +45,7 @@ enum ErrorKind {
     ForbiddenAbi,
     ForbiddenAllow,
     ForbiddenAttr,
+    ForbiddenExpect,
     ForbiddenItemKind(ItemKind),
     ForbiddenRepr(Vec<Repr>),
     ForbiddenType,
@@ -63,6 +64,7 @@ impl Display for ErrorKind {
             Self::ForbiddenAbi => write!(f, "forbidden ABI"),
             Self::ForbiddenAllow => write!(f, "forbidden allow"),
             Self::ForbiddenAttr => write!(f, "forbidden attribute"),
+            Self::ForbiddenExpect => write!(f, "forbidden expect"),
             Self::ForbiddenItemKind(ItemKind::Enum) => write!(
                 f,
                 "forbidden use of enum; use the `newtype_enum!` macro instead"
@@ -148,6 +150,12 @@ enum Allow {
     NonCamelCaseTypes,
 }
 
+/// Allowed `#[expect]` attributes.
+#[derive(Debug, Clone, Copy)]
+enum Expect {
+    MissingDocs,
+}
+
 /// Type repr. A type may have more than one of these (e.g. both `C` and `packed`).
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 enum Repr {
@@ -164,6 +172,7 @@ enum Repr {
 enum ParsedAttr {
     Allow(Allow),
     Derive,
+    Expect(Expect),
     Doc,
     Repr(Repr),
 }
@@ -217,6 +226,20 @@ fn parse_attrs(attrs: &[Attribute], src: &Path) -> Result<Vec<ParsedAttr>, Error
             .map_err(|_| Error::new(ErrorKind::MalformedAttrs, src, attr))?;
             if unknown_allow_found {
                 return Err(Error::new(ErrorKind::ForbiddenAllow, src, attr));
+            }
+        } else if path.is_ident("expect") {
+            let mut unknown_expect_found = false;
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("missing_docs") {
+                    va.push(ParsedAttr::Expect(Expect::MissingDocs));
+                } else {
+                    unknown_expect_found = true;
+                }
+                Ok(())
+            })
+            .map_err(|_| Error::new(ErrorKind::MalformedAttrs, src, attr))?;
+            if unknown_expect_found {
+                return Err(Error::new(ErrorKind::ForbiddenExpect, src, attr));
             }
         } else {
             return Err(Error::new(ErrorKind::ForbiddenAttr, src, attr));

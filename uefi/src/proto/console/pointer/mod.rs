@@ -3,14 +3,13 @@
 //! Pointer device access.
 
 pub use uefi_raw::protocol::console::{
+    AbsolutePointerMode, AbsolutePointerModeAttributes, AbsolutePointerState,
     SimplePointerMode as PointerMode, SimplePointerState as PointerState,
 };
 
 use crate::proto::unsafe_protocol;
 use crate::{Error, Event, Result, Status, StatusExt};
-use uefi_raw::protocol::console::{
-    AbsolutePointerMode, AbsolutePointerProtocol, AbsolutePointerState, SimplePointerProtocol,
-};
+use uefi_raw::protocol::console::{AbsolutePointerProtocol, SimplePointerProtocol};
 
 /// Simple Pointer [`Protocol`]. Provides information about a pointer device.
 ///

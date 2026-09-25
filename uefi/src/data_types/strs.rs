@@ -198,6 +198,42 @@ impl CStr8 {
         self.0.as_ptr()
     }
 
+    /// Returns the underlying [`Char8`]s as a slice without the trailing null.
+    #[must_use]
+    pub fn as_slice(&self) -> &[Char8] {
+        &self.0[..self.num_chars()]
+    }
+
+    /// Returns the underlying [`Char8`]s as a slice including the trailing null.
+    #[must_use]
+    pub const fn as_slice_with_nul(&self) -> &[Char8] {
+        &self.0
+    }
+
+    /// Returns the number of characters without the trailing null character.
+    #[must_use]
+    pub const fn num_chars(&self) -> usize {
+        self.0.len() - 1
+    }
+
+    /// Returns whether the string is empty. This ignores the null character.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.num_chars() == 0
+    }
+
+    /// Returns the number of bytes in the string, including the trailing null.
+    #[must_use]
+    pub const fn num_bytes(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Checks if all characters in this string are within the ASCII range.
+    #[must_use]
+    pub fn is_ascii(&self) -> bool {
+        self.0.iter().all(|c| c.is_ascii())
+    }
+
     /// Returns the underlying bytes as slice including the terminating null
     /// character.
     #[must_use]
@@ -921,9 +957,111 @@ mod tests {
     }
 
     #[test]
-    fn test_cstr16_num_bytes() {
+    fn test_cstr8_metadata() {
+        // ASCII string.
+        let s = CStr8::from_bytes_with_nul(&[65, 66, 67, 0]).unwrap();
+        assert_eq!(s.num_bytes(), 4);
+        assert_eq!(s.num_chars(), 3);
+        assert_eq!(s.is_empty(), false);
+        assert_eq!(s.is_ascii(), true);
+        assert_eq!(
+            s.as_slice(),
+            &[Char8::from(65), Char8::from(66), Char8::from(67)]
+        );
+        assert_eq!(
+            s.as_slice_with_nul(),
+            &[
+                Char8::from(65),
+                Char8::from(66),
+                Char8::from(67),
+                Char8::from(0),
+            ]
+        );
+
+        // Empty string.
+        let s = CStr8::from_bytes_with_nul(&[0]).unwrap();
+        assert_eq!(s.num_bytes(), 1);
+        assert_eq!(s.num_chars(), 0);
+        assert_eq!(s.is_empty(), true);
+        assert_eq!(s.is_ascii(), true);
+        assert_eq!(s.as_slice(), {
+            let a: &[Char8] = &[];
+            a
+        });
+        assert_eq!(s.as_slice_with_nul(), &[Char8::from(0)]);
+
+        // Latin-1 string.
+        let s = CStr8::from_bytes_with_nul(&[163, 49, 0]).unwrap();
+        assert_eq!(s.num_bytes(), 3);
+        assert_eq!(s.num_chars(), 2);
+        assert_eq!(s.is_empty(), false);
+        assert_eq!(s.is_ascii(), false);
+        assert_eq!(s.as_slice(), &[Char8::from(163), Char8::from(49)]);
+        assert_eq!(
+            s.as_slice_with_nul(),
+            &[Char8::from(163), Char8::from(49), Char8::from(0),]
+        );
+    }
+
+    #[test]
+    fn test_cstr16_metadata() {
+        // ASCII string.
         let s = CStr16::from_u16_with_nul(&[65, 66, 67, 0]).unwrap();
         assert_eq!(s.num_bytes(), 8);
+        assert_eq!(s.num_chars(), 3);
+        assert_eq!(s.is_empty(), false);
+        assert_eq!(s.is_ascii(), true);
+        assert_eq!(
+            s.as_slice(),
+            &[
+                Char16::try_from(65).unwrap(),
+                Char16::try_from(66).unwrap(),
+                Char16::try_from(67).unwrap(),
+            ]
+        );
+        assert_eq!(
+            s.as_slice_with_nul(),
+            &[
+                Char16::try_from(65).unwrap(),
+                Char16::try_from(66).unwrap(),
+                Char16::try_from(67).unwrap(),
+                Char16::try_from(0).unwrap(),
+            ]
+        );
+
+        // Empty string.
+        let s = CStr16::from_u16_with_nul(&[0]).unwrap();
+        assert_eq!(s.num_bytes(), 2);
+        assert_eq!(s.num_chars(), 0);
+        assert_eq!(s.is_empty(), true);
+        assert_eq!(s.is_ascii(), true);
+        assert_eq!(s.as_slice(), {
+            let a: &[Char16] = &[];
+            a
+        });
+        assert_eq!(s.as_slice_with_nul(), &[Char16::try_from(0).unwrap()]);
+
+        // Latin-1 string.
+        let s = CStr16::from_u16_with_nul(&[163, 49, 0]).unwrap();
+        assert_eq!(s.num_bytes(), 6);
+        assert_eq!(s.num_chars(), 2);
+        assert_eq!(s.is_empty(), false);
+        assert_eq!(s.is_ascii(), false);
+        assert_eq!(
+            s.as_slice(),
+            &[
+                Char16::try_from(163).unwrap(),
+                Char16::try_from(49).unwrap()
+            ]
+        );
+        assert_eq!(
+            s.as_slice_with_nul(),
+            &[
+                Char16::try_from(163).unwrap(),
+                Char16::try_from(49).unwrap(),
+                Char16::try_from(0).unwrap(),
+            ]
+        );
     }
 
     #[test]

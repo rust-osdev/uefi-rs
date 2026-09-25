@@ -27,6 +27,14 @@ impl error::Error for CharConversionError {}
 #[repr(transparent)]
 pub struct Char8(u8);
 
+impl Char8 {
+    /// Checks if the value is within the ASCII range.
+    #[must_use]
+    pub const fn is_ascii(&self) -> bool {
+        self.0 <= 127
+    }
+}
+
 impl TryFrom<char> for Char8 {
     type Error = CharConversionError;
 

@@ -2,6 +2,9 @@
 
 ## Added
 
+- `CStr8::as_slice`, `CStr8::as_slice_with_nul`, `CStr8::num_chars`, `CStr8::is_empty`,
+  `CStr8::num_bytes`, `CStr8::is_ascii`, and `Char8::is_ascii`.
+
 ## Changed
 
 ## Removed

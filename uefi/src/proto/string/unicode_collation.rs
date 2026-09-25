@@ -101,7 +101,7 @@ impl UnicodeCollation {
         // The conversion writes one character per FAT character plus the
         // NUL terminator, so the output is at most as long as `fat` with
         // its NUL.
-        let fat_len = fat.as_bytes().len();
+        let fat_len = fat.num_bytes();
         let buf = buf
             .get_mut(..fat_len)
             .ok_or(StrConversionError::BufferTooSmall)?;

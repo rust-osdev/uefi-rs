@@ -245,7 +245,13 @@ impl CStr8 {
 
 impl fmt::Debug for CStr8 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CStr8({:?})", &self.0)
+        write!(f, "CStr8(\"")?;
+        for c in self.as_slice() {
+            let c: char = (*c).into();
+            write!(f, "{}", c.escape_debug())?;
+        }
+        write!(f, "\")")?;
+        Ok(())
     }
 }
 
@@ -820,7 +826,13 @@ impl<'a> Iterator for CStr16Iter<'a> {
 
 impl fmt::Debug for CStr16 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CStr16({:?})", &self.0)
+        write!(f, "CStr16(\"")?;
+        for c in self.as_slice() {
+            let c: char = (*c).into();
+            write!(f, "{}", c.escape_debug())?;
+        }
+        write!(f, "\")")?;
+        Ok(())
     }
 }
 
@@ -1390,5 +1402,21 @@ mod tests {
         let bytes = unsafe { slice::from_raw_parts(aligned.as_ptr().cast::<u8>(), 2) };
         let s = CStr16::from_bytes_with_nul(bytes).unwrap();
         assert!(s.is_empty());
+    }
+
+    #[test]
+    fn test_cstr16_debug_format() {
+        assert_eq!(
+            "CStr16(\"hello, \\\"world\\\"\")",
+            format!("{:?}", cstr16!("hello, \"world\""))
+        );
+    }
+
+    #[test]
+    fn test_cstr8_debug_format() {
+        assert_eq!(
+            "CStr8(\"hello, \\\"world\\\"\")",
+            format!("{:?}", cstr8!("hello, \"world\""))
+        );
     }
 }

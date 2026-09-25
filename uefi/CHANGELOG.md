@@ -7,6 +7,8 @@
 
 ## Changed
 
+- Improve the debug format of `CStr8`, `CStr16`, and `CString16`.
+
 ## Removed
 
 

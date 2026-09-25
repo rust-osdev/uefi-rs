@@ -51,7 +51,7 @@ impl error::Error for FromStrError {}
 /// let s = CString16::try_from("abc").unwrap();
 /// assert_eq!(s.to_string(), "abc");
 /// ```
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CString16(Vec<Char16>);
 
 impl CString16 {
@@ -263,12 +263,24 @@ impl<StrType: AsRef<str> + ?Sized> EqStrUntilNul<StrType> for CString16 {
     }
 }
 
+impl fmt::Debug for CString16 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "CString16(\"")?;
+        for c in self.as_slice() {
+            let c: char = (*c).into();
+            write!(f, "{}", c.escape_debug())?;
+        }
+        write!(f, "\")")?;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{char16, cstr16};
     use alloc::string::String;
-    use alloc::vec;
+    use alloc::{format, vec};
 
     #[test]
     fn test_cstring16_from_str() {
@@ -399,5 +411,13 @@ mod tests {
 
         str.clear();
         assert_eq!(str.0, [NUL_16]);
+    }
+
+    #[test]
+    fn test_cstring16_debug_format() {
+        assert_eq!(
+            "CString16(\"hello, \\\"world\\\"\")",
+            format!("{:?}", cstr16!("hello, \"world\"").to_owned())
+        );
     }
 }

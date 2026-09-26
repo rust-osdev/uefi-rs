@@ -1,0 +1,177 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - main
+      - version-*
+  pull_request:
+    branches:
+      - main
+      - version-*
+  schedule:
+    - cron:  '0 0 * * 0-6'
+
+jobs:
+  test_aarch64:
+    name: Build and run tests on AArch64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install qemu and OVMF
+      run: |
+        # Ubuntu 20.04 provides qemu 4.2, which crashes on exit in this
+        # test. Add a PPA to provide a more recent version of qemu.
+        sudo add-apt-repository ppa:canonical-server/server-backports
+        sudo apt-get update
+        sudo apt-get install qemu-system-arm qemu-efi-aarch64 -y
+
+    - name: Build
+      run: cargo xtask build --target aarch64
+
+    - name: Run VM tests
+      run: cargo xtask run --target aarch64 --headless --ci
+      timeout-minutes: 2
+
+  test_x86_64:
+    name: Build and run tests on x86_64
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install qemu and OVMF
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu-system-x86 ovmf -y
+
+    - name: Build
+      run: cargo xtask build --target x86_64
+
+    - name: Run VM tests
+      run: cargo xtask run --target x86_64 --headless --ci
+      timeout-minutes: 2
+
+  test_ia32:
+    name: Build and run tests on IA32
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Install qemu
+      run: |
+        # Ubuntu 20.04 provides qemu 4.2, which crashes on exit in this
+        # test. Add a PPA to provide a more recent version of qemu.
+        sudo add-apt-repository ppa:canonical-server/server-backports
+        sudo apt-get update
+        sudo apt-get install qemu-system-x86 -y
+
+    # Starting in ubuntu 21.04 there's an `ovmf-ia32` package, but the
+    # github runners are on ubuntu 20.04. For now, install the OVMF
+    # files from a repo that provides unofficial nightly builds:
+    # https://github.com/retrage/edk2-nightly
+    - name: Install OVMF
+      env:
+        # Pin to a specific commit in the retrage/edk2-nightly repo to
+        # guard against external changes breaking the CI.
+        EDK2_NIGHTLY_COMMIT: 'ebb83e5475d49418afc32857f66111949928bcdc'
+      run: |
+        curl -o OVMF32_CODE.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_CODE.fd
+        curl -o OVMF32_VARS.fd https://raw.githubusercontent.com/retrage/edk2-nightly/${EDK2_NIGHTLY_COMMIT}/bin/RELEASEIa32_OVMF_VARS.fd
+
+    - name: Build
+      run: cargo xtask build --target ia32
+
+    - name: Run VM tests
+      run: cargo xtask run --target ia32 --headless --ci --ovmf-code OVMF32_CODE.fd --ovmf-vars OVMF32_VARS.fd
+      timeout-minutes: 2
+
+  test:
+    name: Run tests and documentation tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Run cargo test
+        run: cargo xtask test
+
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Run cargo fmt
+        run: |
+          rustup component add rustfmt
+          cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: |
+          rustup component add clippy
+          cargo xtask clippy --warnings-as-errors
+
+      - name: Run cargo doc
+        run: cargo xtask doc --warnings-as-errors
+
+  miri:
+    name: Run unit tests and doctests under Miri
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Run miri
+        run: |
+          rustup component add miri
+          cargo xtask miri
+
+  # This job tests that the template app builds successfully with the
+  # released versions of the libraries on crates.io.
+  #
+  # Since a nightly toolchain is currently required to build uefi-rs,
+  # the released versions can suddenly stop building when a new nightly
+  # compiler with a breaking change is released. This job provides an
+  # alert when this situation occurs.
+  test_latest_release:
+    name: Build the template against the released version of uefi-rs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: cargo xtask test-latest-release
+
+  windows:
+    name: Check that the build works on a Windows target
+    runs-on: windows-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: cargo xtask build
+
+  # Run the build with our current nightly MSRV (specified in
+  # ./msrv_toolchain.toml). This serves to check that we don't
+  # accidentally start relying on a new feature without intending
+  # to. Having a test for this makes it easier for us to be intentional
+  # about making changes that require a newer version.
+  build_msrv:
+    name: Check that the build works on our nightly MSRV
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+
+    - name: Set toolchain
+      run: cp .github/workflows/msrv_toolchain.toml rust-toolchain.toml
+
+    - name: Build
+      run: cargo xtask build

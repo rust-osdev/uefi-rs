@@ -457,8 +457,10 @@ impl BaseCode {
     ///   [`UdpOpFlags::ANY_SRC_PORT`] is set. If it not set, packets must match
     ///   the specified port. Otherwise, the corresponding port is written into
     ///   the provided buffer.
-    /// - `header`: Optional header of the data inside `buffer`.
-    /// - `buffer`: Buffer for the UDP packet's content.
+    /// - `header`: Optional header of the data inside `buffer`. This is not the
+    ///   UDP header but a potential payload specific header.
+    /// - `buffer`: Buffer for the UDP packet's content. If `Header` is `Some`,
+    ///   this includes only the data after the header.
     #[expect(clippy::too_many_arguments)]
     pub fn udp_read(
         &mut self,
@@ -470,18 +472,10 @@ impl BaseCode {
         header: Option<&mut [u8]>,
         buffer: &mut [u8],
     ) -> Result<usize> {
-        let mut header_size_tmp;
-        let (header_size, header_ptr) = if let Some(header) = header {
-            header_size_tmp = header.len();
-            // The spec declares `HeaderSize` as an IN parameter, but EDK2
-            // writes the actual header size back through it. The pointer
-            // must therefore carry write permission.
-            (
-                ptr::from_mut(&mut header_size_tmp).cast_const(),
-                header.as_mut_ptr().cast(),
-            )
-        } else {
-            (null(), null_mut())
+        let mut header_size = header.as_ref().map_or(0, |h| h.len());
+        let (header_size_ptr, header_ptr) = match header {
+            Some(header) => (&raw mut header_size, header.as_mut_ptr().cast()),
+            None => (null_mut(), null_mut()),
         };
 
         let mut buffer_size = buffer.len();
@@ -498,7 +492,9 @@ impl BaseCode {
                 opt_mut_to_ptr(dest_port),
                 opt_ip_addr_to_ptr_mut(src_ip_efi.as_mut()),
                 opt_mut_to_ptr(src_port),
-                header_size,
+                // header size might be shrunk if the UDP packets payload was
+                // smaller than the requested payload header size.
+                header_size_ptr,
                 header_ptr,
                 &mut buffer_size,
                 buffer.as_mut_ptr().cast(),

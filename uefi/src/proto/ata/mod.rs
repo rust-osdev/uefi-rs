@@ -8,6 +8,7 @@ use core::alloc::LayoutError;
 use core::marker::PhantomData;
 use core::time::Duration;
 use core::{ptr, slice};
+use log::warn;
 use uefi_raw::protocol::ata::{
     AtaCommandBlock, AtaPassThruCommandPacket, AtaPassThruLength, AtaStatusBlock,
 };
@@ -363,7 +364,7 @@ impl AtaResponse<'_> {
     /// # Returns
     /// `Option<&[u8]>`: A slice of the data read from the device, or `None` if no read buffer was used.
     #[must_use]
-    pub const fn read_buffer(&self) -> Option<&[u8]> {
+    pub fn read_buffer(&self) -> Option<&[u8]> {
         if self.req.packet.in_data_buffer.is_null() {
             return None;
         }
@@ -371,7 +372,15 @@ impl AtaResponse<'_> {
         // bogus value cannot produce an out-of-bounds slice.
         let reported = self.req.packet.in_transfer_length as usize;
         let cap = self.req.in_data_capacity;
-        let len = if reported < cap { reported } else { cap };
+        let len = if reported > cap {
+            warn!(
+                "Firmware reported {} bytes, exceeding buffer capacity of {} bytes",
+                reported, cap
+            );
+            cap
+        } else {
+            reported
+        };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(slice::from_raw_parts(

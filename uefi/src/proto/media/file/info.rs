@@ -132,10 +132,14 @@ where
     fn from_uefi(buffer: &mut [u8], written: usize) -> crate::Result<&mut Self, Option<usize>> {
         Self::assert_aligned(buffer);
 
+        if written > buffer.len() {
+            return Err(Error::new(Status::BAD_BUFFER_SIZE, None));
+        }
+
         // Only the bytes the firmware wrote are meaningful. Anything beyond
         // may be stale data from the caller.
-        let written = &buffer[..written.min(buffer.len())];
-        let name = written
+        let written_bytes = &buffer[..written.min(buffer.len())];
+        let name = written_bytes
             .get(Self::name_offset()..)
             .ok_or(Error::new(Status::BAD_BUFFER_SIZE, None))?;
         // Length of the UCS-2 name including its NUL terminator.

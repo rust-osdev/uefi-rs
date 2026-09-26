@@ -52,7 +52,9 @@ pub struct PxeBaseCodeProtocol {
         dest_port: *mut PxeBaseCodeUdpPort,
         src_ip: *mut IpAddress,
         src_port: *mut PxeBaseCodeUdpPort,
-        header_size: *const usize,
+        // "IN" in spec but edk2 shrinks this if the payload's packet is too
+        // small to fill in a whole header.
+        header_size: *mut usize,
         header_ptr: *mut c_void,
         buffer_size: *mut usize,
         buffer_ptr: *mut c_void,

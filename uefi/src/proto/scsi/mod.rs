@@ -7,6 +7,7 @@ use core::alloc::LayoutError;
 use core::marker::PhantomData;
 use core::time::Duration;
 use core::{ptr, slice};
+use log::warn;
 use uefi_raw::protocol::scsi::{
     ScsiIoDataDirection, ScsiIoHostAdapterStatus, ScsiIoScsiRequestPacket, ScsiIoTargetStatus,
 };
@@ -313,7 +314,7 @@ impl ScsiResponse<'_> {
     /// # Safety
     /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
     #[must_use]
-    pub const fn read_buffer(&self) -> Option<&[u8]> {
+    pub fn read_buffer(&self) -> Option<&[u8]> {
         if self.0.packet.in_data_buffer.is_null() {
             return None;
         }
@@ -321,7 +322,15 @@ impl ScsiResponse<'_> {
         // bogus value cannot produce an out-of-bounds slice.
         let reported = self.0.packet.in_transfer_length as usize;
         let cap = self.0.in_data_capacity;
-        let len = if reported < cap { reported } else { cap };
+        let len = if reported > cap {
+            warn!(
+                "Firmware reported {} bytes, exceeding buffer capacity of {} bytes",
+                reported, cap
+            );
+            cap
+        } else {
+            reported
+        };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(slice::from_raw_parts(
@@ -339,7 +348,7 @@ impl ScsiResponse<'_> {
     /// # Safety
     /// - If the buffer pointer is `NULL`, the method returns `None` and avoids dereferencing it.
     #[must_use]
-    pub const fn sense_data(&self) -> Option<&[u8]> {
+    pub fn sense_data(&self) -> Option<&[u8]> {
         if self.0.packet.sense_data.is_null() {
             return None;
         }
@@ -347,7 +356,15 @@ impl ScsiResponse<'_> {
         // that a bogus value cannot produce an out-of-bounds slice.
         let reported = self.0.packet.sense_data_length as usize;
         let cap = self.0.sense_data_capacity;
-        let len = if reported < cap { reported } else { cap };
+        let len = if reported > cap {
+            warn!(
+                "Firmware reported {} bytes, exceeding buffer capacity of {} bytes",
+                reported, cap
+            );
+            cap
+        } else {
+            reported
+        };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe { Some(slice::from_raw_parts(self.0.packet.sense_data.cast(), len)) }
     }

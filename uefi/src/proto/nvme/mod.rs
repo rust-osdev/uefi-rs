@@ -7,6 +7,7 @@ use core::alloc::LayoutError;
 use core::marker::PhantomData;
 use core::time::Duration;
 use core::{ptr, slice};
+use log::warn;
 use uefi_raw::protocol::nvme::{
     NvmExpressCommand, NvmExpressCommandCdwValidity, NvmExpressCompletion,
     NvmExpressPassThruCommandPacket, NvmExpressQueueType,
@@ -259,7 +260,7 @@ impl NvmeResponse<'_> {
     /// # Returns
     /// `Option<&[u8]>`: A slice of the transfer buffer, or `None` if the request was started without.
     #[must_use]
-    pub const fn transfer_buffer(&self) -> Option<&[u8]> {
+    pub fn transfer_buffer(&self) -> Option<&[u8]> {
         if self.req.packet.transfer_buffer.is_null() {
             return None;
         }
@@ -267,7 +268,15 @@ impl NvmeResponse<'_> {
         // bogus value cannot produce an out-of-bounds slice.
         let reported = self.req.packet.transfer_length as usize;
         let cap = self.req.transfer_capacity;
-        let len = if reported < cap { reported } else { cap };
+        let len = if reported > cap {
+            warn!(
+                "Firmware reported {} bytes, exceeding buffer capacity of {} bytes",
+                reported, cap
+            );
+            cap
+        } else {
+            reported
+        };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(slice::from_raw_parts(
@@ -282,7 +291,7 @@ impl NvmeResponse<'_> {
     /// # Returns
     /// `Option<&[u8]>`: A slice of the metadata buffer, or `None` if the request was started without.
     #[must_use]
-    pub const fn metadata_buffer(&self) -> Option<&[u8]> {
+    pub fn metadata_buffer(&self) -> Option<&[u8]> {
         if self.req.packet.meta_data_buffer.is_null() {
             return None;
         }
@@ -290,7 +299,15 @@ impl NvmeResponse<'_> {
         // bogus value cannot produce an out-of-bounds slice.
         let reported = self.req.packet.meta_data_length as usize;
         let cap = self.req.meta_data_capacity;
-        let len = if reported < cap { reported } else { cap };
+        let len = if reported > cap {
+            warn!(
+                "Firmware reported {} bytes, exceeding buffer capacity of {} bytes",
+                reported, cap
+            );
+            cap
+        } else {
+            reported
+        };
         // SAFETY: The buffer holds at least `len` initialized bytes.
         unsafe {
             Some(slice::from_raw_parts(

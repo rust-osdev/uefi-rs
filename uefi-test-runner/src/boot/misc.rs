@@ -28,6 +28,17 @@ pub fn test() {
     test_install_configuration_table();
     info!("Testing crc32...");
     test_calculate_crc32();
+    info!("Testing monotonic count...");
+    test_monotonic_count();
+}
+
+fn test_monotonic_count() {
+    let first = boot::get_next_monotonic_count().expect("failed to get monotonic count");
+    let second = boot::get_next_monotonic_count().expect("failed to get monotonic count");
+    assert!(
+        second > first,
+        "monotonic count did not increase: {first} then {second}"
+    );
 }
 
 fn test_tpl() {

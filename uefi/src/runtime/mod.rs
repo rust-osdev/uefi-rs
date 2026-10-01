@@ -70,6 +70,33 @@ pub fn get_time_and_caps() -> Result<(Time, TimeCapabilities)> {
     unsafe { (rt.get_time)(time_ptr.cast(), &mut caps) }.to_result_with_val(|| (time, caps))
 }
 
+/// Returns the next high 32 bits of the platform's monotonic counter.
+///
+/// The high half of the counter is non-volatile and is incremented by this
+/// call. It is intended to be used by an operating system to extend the
+/// platform monotonic counter after exiting boot services: snapshot the full
+/// 64-bit value with [`boot::get_next_monotonic_count`] before
+/// `ExitBootServices`, manage the volatile low 32 bits locally, and call this
+/// function to bump the high 32 bits when the low half rolls over.
+///
+/// # Errors
+///
+/// * [`Status::DEVICE_ERROR`]: the counter could not be saved due to a hardware
+///   error.
+/// * [`Status::UNSUPPORTED`]: this platform does not support the monotonic
+///   counter at runtime.
+///
+/// [`boot::get_next_monotonic_count`]: crate::boot::get_next_monotonic_count
+pub fn get_next_high_monotonic_count() -> Result<u32> {
+    let rt = runtime_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
+    let rt = unsafe { rt.as_ref() };
+
+    let mut high_count = 0;
+    // SAFETY: The memory is valid.
+    unsafe { (rt.get_next_high_monotonic_count)(&mut high_count) }.to_result_with_val(|| high_count)
+}
+
 /// Sets the current local time and date information
 ///
 /// During runtime, if a PC-AT CMOS device is present in the platform, the

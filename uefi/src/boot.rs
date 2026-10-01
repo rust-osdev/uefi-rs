@@ -1616,6 +1616,34 @@ pub unsafe fn install_configuration_table(
     unsafe { (bt.install_configuration_table)(guid_entry, table_ptr) }.to_result()
 }
 
+/// Returns the next value of the platform's 64-bit monotonic counter.
+///
+/// The counter is guaranteed to return a numerically larger value on every
+/// call for the lifetime of the current boot. It is not related to any time
+/// source, so it must not be used for delays or time measurement.
+///
+/// The platform monotonic counter is split into two 32-bit halves. This boot
+/// service manages all 64 bits; the volatile low half is incremented by each
+/// call, while the non-volatile high half is incremented on reset or low-half
+/// overflow. After exiting boot services, an operating system can extend the
+/// counter at runtime with [`runtime::get_next_high_monotonic_count`].
+///
+/// # Errors
+///
+/// * [`Status::DEVICE_ERROR`]: the counter could not be read due to a hardware
+///   error.
+///
+/// [`runtime::get_next_high_monotonic_count`]: crate::runtime::get_next_high_monotonic_count
+pub fn get_next_monotonic_count() -> Result<u64> {
+    let bt = boot_services_raw_panicking();
+    // SAFETY: The pointer is not null and we assume it to be initialized.
+    let bt = unsafe { bt.as_ref() };
+
+    let mut count = 0;
+    // SAFETY: The memory is valid.
+    unsafe { (bt.get_next_monotonic_count)(&mut count) }.to_result_with_val(|| count)
+}
+
 /// Sets the watchdog timer.
 ///
 /// UEFI will start a 5-minute countdown after a UEFI image is loaded. The

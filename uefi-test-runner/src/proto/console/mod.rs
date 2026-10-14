@@ -14,6 +14,7 @@ pub fn test() {
     pointer::test_pointer();
     pointer::test_absolute_pointer();
     gop::test_edid_discovered();
+    gop::test_edid_active();
 }
 
 mod gop;

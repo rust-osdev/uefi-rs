@@ -336,3 +336,14 @@ pub struct EdidDiscoveredProtocol {
 impl EdidDiscoveredProtocol {
     pub const GUID: Guid = guid!("1c0c34f6-d380-41fa-a049-8ad06c1a66aa");
 }
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[repr(C)]
+pub struct EdidActiveProtocol {
+    pub size_of_edid: u32,
+    pub edid: *const u8,
+}
+
+impl EdidActiveProtocol {
+    pub const GUID: Guid = guid!("bd8c1056-9f36-44ec-92a8-a6337f817986");
+}

@@ -60,7 +60,7 @@ use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
 use core::slice;
 use uefi_raw::protocol::console::{
-    EdidDiscoveredProtocol, GraphicsOutputBltOperation, GraphicsOutputBltPixel,
+    EdidActiveProtocol, EdidDiscoveredProtocol, GraphicsOutputBltOperation, GraphicsOutputBltPixel,
     GraphicsOutputModeInformation, GraphicsOutputProtocol, GraphicsOutputProtocolMode,
 };
 
@@ -709,6 +709,41 @@ impl EdidDiscovered {
     /// Get the discovered EDID as raw bytes.
     ///
     /// Return `None` if no EDID was discovered for this display device.
+    #[must_use]
+    pub const fn edid(&self) -> Option<&[u8]> {
+        if self.0.edid.is_null() {
+            None
+        } else {
+            // SAFETY:
+            // The memory is valid for `size_of_edid` bytes for the
+            // lifetime of the protocol, matching the lifetime of `&self`.
+            unsafe {
+                Some(slice::from_raw_parts(
+                    self.0.edid,
+                    usize_from_u32(self.0.size_of_edid),
+                ))
+            }
+        }
+    }
+}
+
+/// EDID Active [`Protocol`]. Exposes the active EDID information that is
+/// currently in use for the device backing a [`GraphicsOutput`] handle.
+///
+/// This protocol is installed on the same handle as [`GraphicsOutput`] handle,
+/// since both are produced by the same output device driver.
+///
+/// [`Protocol`]: uefi::proto::Protocol
+/// [`GraphicsOutput`]: crate::proto::console::gop::GraphicsOutput
+#[derive(Debug)]
+#[repr(transparent)]
+#[unsafe_protocol(EdidActiveProtocol::GUID)]
+pub struct EdidActive(EdidActiveProtocol);
+
+impl EdidActive {
+    /// Get the active EDID as raw bytes.
+    ///
+    /// Return `None` if no EDID is active for this display device.
     #[must_use]
     pub const fn edid(&self) -> Option<&[u8]> {
         if self.0.edid.is_null() {

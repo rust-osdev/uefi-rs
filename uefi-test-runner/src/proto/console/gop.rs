@@ -3,7 +3,7 @@
 use crate::{HostRequest, send_request_to_host};
 use uefi::boot::{self, OpenProtocolAttributes, OpenProtocolParams};
 use uefi::proto::console::gop::{
-    BltOp, BltPixel, EdidDiscovered, FrameBuffer, GraphicsOutput, PixelFormat,
+    BltOp, BltPixel, EdidActive, EdidDiscovered, FrameBuffer, GraphicsOutput, PixelFormat,
 };
 
 pub unsafe fn gop_test() {
@@ -123,5 +123,22 @@ pub fn test_edid_discovered() {
     match edid.edid() {
         Some(bytes) => info!("Discovered EDID: {} bytes", bytes.len()),
         None => info!("EdidDiscovered protocol present but no EDID was discovered"),
+    }
+}
+
+pub fn test_edid_active() {
+    info!("Running EDID active protocol test");
+
+    let Ok(handle) = boot::get_handle_for_protocol::<EdidActive>() else {
+        info!("No EdidActive protocol handle found, skipping EDID test");
+        return;
+    };
+
+    let edid = boot::open_protocol_exclusive::<EdidActive>(handle)
+        .expect("failed to open EdidActive protocol");
+
+    match edid.edid() {
+        Some(bytes) => info!("Active EDID: {} bytes", bytes.len()),
+        None => info!("EdidActive protocol present but no EDID is active"),
     }
 }

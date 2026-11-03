@@ -2,7 +2,7 @@
 
 pub mod serial;
 
-use crate::{Boolean, Char16, Event, Guid, PhysicalAddress, Status, guid, newtype_enum};
+use crate::{Boolean, Char16, Event, Guid, Handle, PhysicalAddress, Status, guid, newtype_enum};
 use bitflags::bitflags;
 use core::{ffi, ptr};
 
@@ -346,4 +346,30 @@ pub struct EdidActiveProtocol {
 
 impl EdidActiveProtocol {
     pub const GUID: Guid = guid!("bd8c1056-9f36-44ec-92a8-a6337f817986");
+}
+
+bitflags! {
+    /// Attributes associated with and EDID override.
+    #[repr(transparent)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct EdidOverrideAttributes: u32 {
+        const DONT_OVERRIDE = 0x0000_0001;
+        const ENABLE_HOT_PLUG = 0x0000_0002;
+    }
+}
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct EdidOverrideProtocol {
+    pub get_edid: unsafe extern "efiapi" fn(
+        this: *const Self,
+        child_handle: *const Handle,
+        attributes: *mut EdidOverrideAttributes,
+        edid_size: *mut usize,
+        edid: *mut *const u8,
+    ) -> Status,
+}
+
+impl EdidOverrideProtocol {
+    pub const GUID: Guid = guid!("48ecb431-fb72-45c0-a922-f458fe040bd5");
 }

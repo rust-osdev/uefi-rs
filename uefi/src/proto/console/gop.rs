@@ -54,17 +54,18 @@
 
 use crate::proto::unsafe_protocol;
 use crate::util::usize_from_u32;
-use crate::{Error, Result, Status, StatusExt, boot};
+use crate::{Error, Handle, Result, Status, StatusExt, boot};
 use core::fmt::{self, Debug, Formatter};
 use core::marker::PhantomData;
 use core::ptr::{self, NonNull};
 use core::slice;
 use uefi_raw::protocol::console::{
-    EdidActiveProtocol, EdidDiscoveredProtocol, GraphicsOutputBltOperation, GraphicsOutputBltPixel,
-    GraphicsOutputModeInformation, GraphicsOutputProtocol, GraphicsOutputProtocolMode,
+    EdidActiveProtocol, EdidDiscoveredProtocol, EdidOverrideProtocol, GraphicsOutputBltOperation,
+    GraphicsOutputBltPixel, GraphicsOutputModeInformation, GraphicsOutputProtocol,
+    GraphicsOutputProtocolMode,
 };
 
-pub use uefi_raw::protocol::console::PixelBitmask;
+pub use uefi_raw::protocol::console::{EdidOverrideAttributes, PixelBitmask};
 
 /// Graphics Output [`Protocol`] (GOP). Provides access to the video hardware's
 /// frame buffer.
@@ -758,6 +759,77 @@ impl EdidActive {
                     usize_from_u32(self.0.size_of_edid),
                 ))
             }
+        }
+    }
+}
+
+/// Information returned by [`EdidOverride::get_edid`]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct EdidOverrideData<'a> {
+    /// Override attributes for the video output device.
+    pub attributes: EdidOverrideAttributes,
+
+    /// Raw EDID bytes to use for the display device, or `None` if the platform
+    /// provides no EDID for this child handle (for example, when only policy
+    /// attributes are specified or `EdidSize` is zero).
+    pub edid: Option<&'a [u8]>,
+}
+
+/// EDID Override [`Protocol`].
+///
+/// [`Protocol`]: uefi::proto::Protocol
+#[derive(Debug)]
+#[repr(transparent)]
+#[unsafe_protocol(EdidOverrideProtocol::GUID)]
+pub struct EdidOverride(EdidOverrideProtocol);
+
+impl EdidOverride {
+    /// Return the EDID policy and data for a video output device.
+    ///
+    ///
+    /// This function returns `Ok(Some(...))` when the firmware defines an
+    /// override policy or replacement EDID for `child_handle`. Note that
+    /// [`EdidOverrideData::edid`] may still be `None` within `Some(...)`
+    /// if the firmware returns only policy attributes, such as enabling
+    /// hot-plug detection, without providing replacement EDID bytes.
+    ///
+    /// This function returns `Ok(None)` when the firmware defines no overrides
+    /// for this device, which corresponds to [`Status::UNSUPPORTED`] from the
+    /// underlying firmware call.
+    pub fn get_edid(&self, child_handle: Handle) -> Result<Option<EdidOverrideData<'_>>> {
+        let mut attributes = EdidOverrideAttributes::empty();
+        let mut edid_size = 0usize;
+        let mut edid_ptr = ptr::null();
+        let raw_handle = child_handle.as_ptr();
+
+        // SAFETY:
+        // `&self.0` is a valid protocol pointer.
+        // `&raw_handle` points to a valid Handle.
+        // `attributes`, `edid_size` and `edid_ptr` point to initialized stack
+        // storage.
+        let status = unsafe {
+            (self.0.get_edid)(
+                &self.0,
+                &raw_handle,
+                &mut attributes,
+                &mut edid_size,
+                &mut edid_ptr,
+            )
+        };
+
+        match status {
+            Status::SUCCESS => {
+                let edid = if edid_ptr.is_null() || edid_size == 0 {
+                    None
+                } else {
+                    // SAFETY:
+                    // The call succeeded and `edid_ptr` is not null.
+                    unsafe { Some(slice::from_raw_parts(edid_ptr, edid_size)) }
+                };
+                Ok(Some(EdidOverrideData { attributes, edid }))
+            }
+            Status::UNSUPPORTED => Ok(None),
+            error => Err(error.into()),
         }
     }
 }

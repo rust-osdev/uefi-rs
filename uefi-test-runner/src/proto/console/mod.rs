@@ -15,6 +15,7 @@ pub fn test() {
     pointer::test_absolute_pointer();
     gop::test_edid_discovered();
     gop::test_edid_active();
+    gop::test_edid_override();
 }
 
 mod gop;

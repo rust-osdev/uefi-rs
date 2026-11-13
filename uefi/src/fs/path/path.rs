@@ -285,8 +285,11 @@ mod tests {
             Some(PathBuf::from(cstr16!("a"))),
         );
         assert_eq!(
-            Path::new(cstr16!("\\a\\b")).parent().unwrap().to_cstr16(),
-            cstr16!("\\a"),
+            Path::new(cstr16!("\\a\\b"))
+                .parent()
+                .as_ref()
+                .map(|parent| parent.to_cstr16()),
+            Some(cstr16!("\\a")),
         );
         assert_eq!(
             Path::new(cstr16!("a\\b\\c\\d")).parent(),
@@ -306,13 +309,20 @@ mod tests {
             (cstr16!("EFI\\BOOT\\loader.efi"), cstr16!("EFI\\BOOT")),
             (cstr16!("EFI\\BOOT\\"), cstr16!("EFI\\BOOT")),
         ] {
-            let parent = Path::new(path).parent().unwrap();
-            assert_eq!(parent.to_cstr16(), expected, "path: {path}");
+            let parent = Path::new(path).parent();
+            assert_eq!(
+                parent.as_ref().map(|parent| parent.to_cstr16()),
+                Some(expected),
+                "path: {path}",
+            );
         }
 
         let path = Path::new(cstr16!("\\EFI\\loader.efi"));
-        let parent = path.parent().unwrap();
-        assert_eq!(parent.parent().unwrap().to_cstr16(), cstr16!("\\"));
+        let parent = path.parent().and_then(|parent| parent.parent());
+        assert_eq!(
+            parent.as_ref().map(|parent| parent.to_cstr16()),
+            Some(cstr16!("\\")),
+        );
     }
 
     #[test]

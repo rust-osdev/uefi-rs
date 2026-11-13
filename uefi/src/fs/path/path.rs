@@ -47,7 +47,8 @@ impl Path {
 
     /// Returns the parent directory as [`PathBuf`].
     ///
-    /// If the path is a top-level component, this returns None.
+    /// Preserves the leading separator of an absolute path. Returns `None`
+    /// for an empty path, the root directory, or a relative path without a separator.
     #[must_use]
     pub fn parent(&self) -> Option<PathBuf> {
         let components_count = self.components().count();
@@ -66,17 +67,22 @@ impl Path {
             return None;
         }
 
-        let path =
-            self.components()
-                .take(components_count - 1)
-                .fold(CString16::new(), |mut acc, next| {
-                    // Add separator, as needed.
-                    if !acc.is_empty() && *acc.as_slice().last().unwrap() != SEPARATOR {
-                        acc.push(SEPARATOR);
-                    }
-                    acc.extend(next);
-                    acc
-                });
+        let mut path = CString16::new();
+        if self.0.as_slice().first() == Some(&SEPARATOR) {
+            path.push(SEPARATOR);
+        }
+
+        let path = self
+            .components()
+            .take(components_count - 1)
+            .fold(path, |mut acc, next| {
+                // Add separator, as needed.
+                if !acc.is_empty() && *acc.as_slice().last().unwrap() != SEPARATOR {
+                    acc.push(SEPARATOR);
+                }
+                acc.extend(next);
+                acc
+            });
         let path = PathBuf::from(path);
         Some(path)
     }
@@ -279,14 +285,44 @@ mod tests {
             Some(PathBuf::from(cstr16!("a"))),
         );
         assert_eq!(
-            Path::new(cstr16!("\\a\\b")).parent(),
-            Some(PathBuf::from(cstr16!("a"))),
+            Path::new(cstr16!("\\a\\b"))
+                .parent()
+                .as_ref()
+                .map(|parent| parent.to_cstr16()),
+            Some(cstr16!("\\a")),
         );
         assert_eq!(
             Path::new(cstr16!("a\\b\\c\\d")).parent(),
             Some(PathBuf::from(cstr16!("a\\b\\c"))),
         );
         assert_eq!(Path::new(cstr16!("abc")).parent(), None,);
+    }
+
+    #[test]
+    fn test_parent_preserves_root_separator() {
+        // Compare strings because path equality ignores the leading separator.
+        for (path, expected) in [
+            (cstr16!("\\loader.efi"), cstr16!("\\")),
+            (cstr16!("\\EFI\\BOOT\\loader.efi"), cstr16!("\\EFI\\BOOT")),
+            (cstr16!("\\EFI\\BOOT\\"), cstr16!("\\EFI\\BOOT")),
+            (cstr16!("\\Caf\u{e9}\\loader.efi"), cstr16!("\\Caf\u{e9}")),
+            (cstr16!("EFI\\BOOT\\loader.efi"), cstr16!("EFI\\BOOT")),
+            (cstr16!("EFI\\BOOT\\"), cstr16!("EFI\\BOOT")),
+        ] {
+            let parent = Path::new(path).parent();
+            assert_eq!(
+                parent.as_ref().map(|parent| parent.to_cstr16()),
+                Some(expected),
+                "path: {path}",
+            );
+        }
+
+        let path = Path::new(cstr16!("\\EFI\\loader.efi"));
+        let parent = path.parent().and_then(|parent| parent.parent());
+        assert_eq!(
+            parent.as_ref().map(|parent| parent.to_cstr16()),
+            Some(cstr16!("\\")),
+        );
     }
 
     #[test]

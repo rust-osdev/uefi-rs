@@ -271,7 +271,8 @@
 #![no_std]
 #![deny(
     clippy::all,
-    clippy::absolute_paths,
+    // TODO: see https://github.com/rust-lang/rust-clippy/issues/17985
+    // clippy::absolute_paths,
     clippy::missing_const_for_fn,
     clippy::must_use_candidate,
     clippy::missing_safety_doc,

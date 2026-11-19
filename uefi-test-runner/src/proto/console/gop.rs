@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::{HostRequest, send_request_to_host};
+use uefi::Status;
 use uefi::boot::{self, OpenProtocolAttributes, OpenProtocolParams};
 use uefi::proto::console::gop::{
-    BltOp, BltPixel, EdidActive, EdidDiscovered, FrameBuffer, GraphicsOutput, PixelFormat,
+    BltOp, BltPixel, EdidActive, EdidDiscovered, EdidOverride, FrameBuffer, GraphicsOutput,
+    PixelFormat,
 };
 
 pub unsafe fn gop_test() {
@@ -140,5 +142,45 @@ pub fn test_edid_active() {
     match edid.edid() {
         Some(bytes) => info!("Active EDID: {} bytes", bytes.len()),
         None => info!("EdidActive protocol present but no EDID is active"),
+    }
+}
+
+pub fn test_edid_override() {
+    info!("Running EDID override protocol test");
+
+    // NOTE: Currently the `EFI_EDID_OVERRIDE_PROTOCOL` is not available in the
+    // OVMF image that we use for tests. Therefore, this test is expected to
+    // skip under our standard QEMU tests.
+    let Ok(override_handle) = boot::get_handle_for_protocol::<EdidOverride>() else {
+        info!("No EdidOverride protocol handle found, skipping EDID override test");
+        return;
+    };
+
+    let edid_override = boot::open_protocol_exclusive::<EdidOverride>(override_handle)
+        .expect("failed to open EdidOverride protocol");
+
+    let Ok(gop_handle) = boot::get_handle_for_protocol::<GraphicsOutput>() else {
+        info!("No GraphicsOutput protocol handle found to test EDID override");
+        return;
+    };
+
+    match edid_override.get_edid(gop_handle) {
+        Ok(record) => match record.edid {
+            Some(bytes) => info!(
+                "EDID override present for GOP handle: attributes={:?}, size={}",
+                record.attributes,
+                bytes.len()
+            ),
+            None => info!(
+                "EDID override present for GOP handle: attributes={:?}, but no EDID data provided",
+                record.attributes,
+            ),
+        },
+        Err(err) if err.status() == Status::UNSUPPORTED => {
+            info!("EdidOverride present, but no override defined for GOP handle");
+        }
+        Err(err) => {
+            info!("EdidOverride::get_edid failed: {:?}", err);
+        }
     }
 }

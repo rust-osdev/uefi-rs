@@ -90,6 +90,22 @@ impl CString16 {
         self.extend(str.as_slice());
     }
 
+    /// Removes a character at the end of the string, right before the null
+    /// character, and returns it.
+    ///
+    /// Returns `None` if the string is empty.
+    pub fn pop(&mut self) -> Option<Char16> {
+        if self.0.len() <= 1 {
+            return None;
+        }
+        self.0.pop();
+        let last_elem = self
+            .0
+            .last_mut()
+            .expect("There should be at least one character remaining");
+        Some(core::mem::replace(last_elem, NUL_16))
+    }
+
     /// Replaces all chars in the string with the replace value in-place.
     pub fn replace_char(&mut self, search: Char16, replace: Char16) {
         assert_ne!(search, NUL_16, "Replacing a null character is illegal");
@@ -388,6 +404,24 @@ mod tests {
     #[should_panic]
     fn test_push_str_panic() {
         CString16::new().push(NUL_16);
+    }
+
+    #[test]
+    fn test_pop() {
+        let mut input = CString16::try_from("test").unwrap();
+        assert_eq!(input.pop(), Some(char16!('t')));
+        assert_eq!(input, cstr16!("tes"));
+        assert_eq!(input.pop(), Some(char16!('s')));
+        assert_eq!(input, cstr16!("te"));
+        assert_eq!(input.pop(), Some(char16!('e')));
+        assert_eq!(input, cstr16!("t"));
+        assert_eq!(input.pop(), Some(char16!('t')));
+        assert_eq!(input, cstr16!(""));
+        assert_eq!(input.pop(), None);
+        assert_eq!(input, cstr16!(""));
+        assert_eq!(input.pop(), None);
+        assert_eq!(input, cstr16!(""));
+        assert_eq!(input.pop(), None);
     }
 
     #[test]

@@ -45,8 +45,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
             // If we don't have any shutdown mechanism handy, the best we can do is loop
             log::error!("Could not shut down, please power off the system manually...");
 
-            cfg_if! {
-                if #[cfg(target_arch = "x86_64")] {
+            cfg_select! {
+                target_arch = "x86_64" => {
                     loop {
                         // SAFETY: No side-effects on memory.
                         unsafe {
@@ -54,7 +54,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
                             core::arch::asm!("hlt", options(nomem, nostack));
                         }
                     }
-                } else if #[cfg(target_arch = "aarch64")] {
+                }
+                target_arch = "aarch64" => {
                     loop {
                         // SAFETY: No side-effects on memory.
                         unsafe {
@@ -62,7 +63,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
                             core::arch::asm!("hlt 420", options(nomem, nostack));
                         }
                     }
-                } else {
+                }
+                _ => {
                     loop {
                         // just run forever dammit how do you return never anyway
                     }

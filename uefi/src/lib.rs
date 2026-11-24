@@ -70,7 +70,7 @@
 //!
 //! ## MSRV
 //!
-//! The minimum supported Rust version is currently 1.91.
+//! The minimum supported Rust version is currently 1.95.
 //! Our policy is to support at least the past two stable releases.
 //!
 //! # API/User Documentation, Documentation Structure, and other Resources

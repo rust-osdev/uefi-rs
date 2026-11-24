@@ -46,7 +46,6 @@ jiff = { workspace = true, optional = true }
 time = { workspace = true, optional = true }
 qemu-exit = { workspace = true, optional = true }
 uguid.workspace = true
-cfg-if = "1.0.0"
 ucs2 = "0.3.3"
 uefi-macros = "0.20.0"
 uefi-raw = "0.17.0"

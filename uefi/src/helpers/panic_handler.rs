@@ -5,7 +5,6 @@ use core::ptr;
 use core::time::Duration;
 
 use crate::{boot, println};
-use cfg_if::cfg_if;
 
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
@@ -25,15 +24,16 @@ fn panic_handler(info: &PanicInfo) -> ! {
         }
     }
 
-    cfg_if! {
-        if #[cfg(all(target_arch = "x86_64", feature = "qemu"))] {
+    cfg_select! {
+        all(target_arch = "x86_64", feature = "qemu") => {
             // If running in QEMU, use the f4 exit port to signal the error and exit
             use qemu_exit::QEMUExit;
             let custom_exit_success = 3;
             // SAFETY: the I/O port matches the one of the QEMU environment.
             let qemu_exit_handle = unsafe { qemu_exit::X86::new(0xF4, custom_exit_success) };
             qemu_exit_handle.exit_failure();
-        } else {
+        }
+        _ => {
             // If the system table is available, use UEFI's standard shutdown mechanism
             if let Some(st) = crate::table::system_table_raw() {
                 // SAFETY: The handle is known to point to live storage here.

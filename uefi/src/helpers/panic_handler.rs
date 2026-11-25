@@ -5,7 +5,6 @@ use core::ptr;
 use core::time::Duration;
 
 use crate::{boot, println};
-use cfg_if::cfg_if;
 
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
@@ -25,15 +24,16 @@ fn panic_handler(info: &PanicInfo) -> ! {
         }
     }
 
-    cfg_if! {
-        if #[cfg(all(target_arch = "x86_64", feature = "qemu"))] {
+    cfg_select! {
+        all(target_arch = "x86_64", feature = "qemu") => {
             // If running in QEMU, use the f4 exit port to signal the error and exit
             use qemu_exit::QEMUExit;
             let custom_exit_success = 3;
             // SAFETY: the I/O port matches the one of the QEMU environment.
             let qemu_exit_handle = unsafe { qemu_exit::X86::new(0xF4, custom_exit_success) };
             qemu_exit_handle.exit_failure();
-        } else {
+        }
+        _ => {
             // If the system table is available, use UEFI's standard shutdown mechanism
             if let Some(st) = crate::table::system_table_raw() {
                 // SAFETY: The handle is known to point to live storage here.
@@ -45,8 +45,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
             // If we don't have any shutdown mechanism handy, the best we can do is loop
             log::error!("Could not shut down, please power off the system manually...");
 
-            cfg_if! {
-                if #[cfg(target_arch = "x86_64")] {
+            cfg_select! {
+                target_arch = "x86_64" => {
                     loop {
                         // SAFETY: No side-effects on memory.
                         unsafe {
@@ -54,7 +54,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
                             core::arch::asm!("hlt", options(nomem, nostack));
                         }
                     }
-                } else if #[cfg(target_arch = "aarch64")] {
+                }
+                target_arch = "aarch64" => {
                     loop {
                         // SAFETY: No side-effects on memory.
                         unsafe {
@@ -62,7 +63,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
                             core::arch::asm!("hlt 420", options(nomem, nostack));
                         }
                     }
-                } else {
+                }
+                _ => {
                     loop {
                         // just run forever dammit how do you return never anyway
                     }

@@ -6,7 +6,7 @@
 - `EdidOverrideProtocolol`.
 
 ## Changed
-- **Breaking**: The MSRV is now 1.91 for `extended_varargs_abi_support`.
+- **Breaking**: MSRV increased to 1.95.
 - **Breaking**: Changed ABI of c-variadic function pointers from `extern "C"`
   to `extern "efiapi"`.
 - **Breaking**: `udp_read()`'s `header_size` parameter is now mutable. The spec

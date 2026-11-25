@@ -1,5 +1,8 @@
 # uefi-macros - [Unreleased]
 
+## Changed
+- **Breaking**: MSRV increased to 1.95.
+
 # uefi-macros - v0.20 (2026-09-21)
 
 ## Added

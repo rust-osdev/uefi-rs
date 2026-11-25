@@ -996,7 +996,6 @@ name = "uefi"
 version = "0.41.0"
 dependencies = [
  "bitflags 2.13.2",
- "cfg-if",
  "jiff",
  "log",
  "ptr_meta",

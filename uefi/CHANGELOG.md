@@ -15,6 +15,7 @@
 
 - **Breaking**: MSRV increased to 1.95.
 - Improve the debug format of `CStr8`, `CStr16`, and `CString16`.
+- Preserve the leading separator in `fs::Path::parent`.
 
 ## Removed
 
